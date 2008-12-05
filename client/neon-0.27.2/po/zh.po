@@ -1,0 +1,458 @@
+# The simplified chinese translation for neon.
+# Dongsheng Song <dongsheng.song@gmail.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sitecopy 0.26.0\n"
+"Report-Msgid-Bugs-To: neon@webdav.org\n"
+"POT-Creation-Date: 2007-09-25 10:21+0100\n"
+"PO-Revision-Date: 2006-05-11 10:50+0800\n"
+"Last-Translator: <dongsheng.song@gmail.com>\n"
+"Language-Team: zh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/ne_207.c:198
+#, c-format
+msgid ""
+"Invalid HTTP status line in status element at line %d of response:\n"
+"Status line was: %s"
+msgstr ""
+"响应信息中 %d 行的状态元素中发现非法HTTP状态行：\n"
+"状态行是: %s"
+
+#: src/ne_auth.c:130
+#, fuzzy, c-format
+msgid "Could not authenticate to server: %s"
+msgstr "不能连接到服务器"
+
+#: src/ne_auth.c:135
+#, fuzzy, c-format
+msgid "Could not authenticate to proxy server: %s"
+msgstr "不能连接到代理服务器"
+
+#: src/ne_auth.c:342
+#, c-format
+msgid "rejected %s challenge"
+msgstr ""
+
+#: src/ne_auth.c:358
+#, fuzzy
+msgid "missing realm in Basic challenge"
+msgstr "在摘要认证询问中丢失了现时或领域"
+
+#: src/ne_auth.c:453
+msgid "invalid Negotiate token"
+msgstr ""
+
+#: src/ne_auth.c:476
+#, fuzzy
+msgid "GSSAPI authentication error: "
+msgstr "GSSAPI 认证错误 (%s)"
+
+#: src/ne_auth.c:489
+#, c-format
+msgid "GSSAPI failure (code %u)"
+msgstr ""
+
+#: src/ne_auth.c:524
+msgid "ignoring empty Negotiate continuation"
+msgstr ""
+
+#: src/ne_auth.c:539
+#, c-format
+msgid "Negotiate response verification failed: invalid response header token"
+msgstr ""
+
+#: src/ne_auth.c:561
+#, fuzzy, c-format
+msgid "Negotiate response verification failure: %s"
+msgstr "服务器证书校验失败"
+
+#: src/ne_auth.c:624
+#, fuzzy
+msgid "unknown algorithm in Digest challenge"
+msgstr "在摘要认证询问中发现未知的算法"
+
+#: src/ne_auth.c:628
+#, fuzzy
+msgid "incompatible algorithm in Digest challenge"
+msgstr "在摘要认证询问中发现不兼容的算法"
+
+#: src/ne_auth.c:632
+#, fuzzy
+msgid "missing parameter in Digest challenge"
+msgstr "在摘要认证询问中丢失了现时或领域"
+
+#: src/ne_auth.c:636
+msgid "initial Digest challenge was stale"
+msgstr ""
+
+#: src/ne_auth.c:643
+msgid "stale Digest challenge with new algorithm or realm"
+msgstr ""
+
+#: src/ne_auth.c:921
+#, c-format
+msgid "Digest mutual authentication failure: missing parameters"
+msgstr "摘要互相认证失败：参数遗漏"
+
+#: src/ne_auth.c:926
+#, c-format
+msgid "Digest mutual authentication failure: client nonce mismatch"
+msgstr "摘要互相认证失败：客户现时不匹配"
+
+#: src/ne_auth.c:936
+#, fuzzy, c-format
+msgid "Digest mutual authentication failure: could not parse nonce count"
+msgstr "摘要互相认证失败：客户现时不匹配"
+
+#: src/ne_auth.c:941
+#, c-format
+msgid "Digest mutual authentication failure: nonce count mismatch (%u not %u)"
+msgstr "摘要互相认证失败：现时计算不匹配 (应该是 %u，不是 %u)"
+
+#: src/ne_auth.c:984
+#, c-format
+msgid "Digest mutual authentication failure: request-digest mismatch"
+msgstr "摘要互相认证失败：请求摘要不匹配"
+
+#: src/ne_auth.c:1069
+msgid ", "
+msgstr ""
+
+#: src/ne_auth.c:1110
+#, c-format
+msgid "ignored %s challenge"
+msgstr ""
+
+#: src/ne_auth.c:1186
+#, fuzzy
+msgid "could not parse challenge"
+msgstr "不能解析块大小"
+
+#: src/ne_basic.c:94
+#, c-format
+msgid "Could not determine file size: %s"
+msgstr "不能确定的文件大小：%s"
+
+#: src/ne_basic.c:145
+#, c-format
+msgid "Response did not include requested range"
+msgstr "响应没有包含请求范围"
+
+#: src/ne_basic.c:179
+#, c-format
+msgid "Range is not satisfiable"
+msgstr "不能满足的范围"
+
+#: src/ne_basic.c:184
+#, fuzzy, c-format
+msgid "Resource does not support ranged GET requests"
+msgstr "资源不支持部分存取"
+
+#: src/ne_compress.c:173
+#, c-format
+msgid "%s: %s"
+msgstr "%s：%s"
+
+#: src/ne_compress.c:184
+#, c-format
+msgid "%s: %s (code %d)"
+msgstr "%s： %s (代码 %d)"
+
+#: src/ne_compress.c:232
+msgid "Could not inflate data"
+msgstr "解压数据失败"
+
+#: src/ne_compress.c:293
+msgid "Could not initialize zlib"
+msgstr "初始化zlib失败"
+
+#: src/ne_gnutls.c:162
+#, c-format
+msgid "[unprintable:#%lu]"
+msgstr ""
+
+#: src/ne_gnutls.c:188
+msgid "[unprintable]"
+msgstr ""
+
+#: src/ne_gnutls.c:685 src/ne_openssl.c:419
+#, c-format
+msgid "Server certificate was missing commonName attribute in subject name"
+msgstr "服务器证书在主题名称遗漏了属性commonName"
+
+#: src/ne_gnutls.c:721 src/ne_openssl.c:632
+#, c-format
+msgid "SSL negotiation failed: %s"
+msgstr "SSL 协商失败：%s"
+
+#: src/ne_gnutls.c:730
+#, c-format
+msgid "Server did not send certificate chain"
+msgstr "服务器不能发送证书链"
+
+#: src/ne_locks.c:584
+msgid "LOCK response missing Lock-Token header"
+msgstr "LOCK的响应遗漏了Lock-Token行"
+
+#: src/ne_locks.c:759
+#, c-format
+msgid "Response missing activelock for %s"
+msgstr "锁定 %s 的响应遗漏了主动锁"
+
+#: src/ne_locks.c:801
+#, c-format
+msgid "No activelock for <%s> returned in LOCK refresh response"
+msgstr "刷新锁定 %s 的响应没有返回主动锁"
+
+#: src/ne_openssl.c:451
+#, c-format
+msgid "Certificate verification error: %s"
+msgstr "证书校验失败：%s"
+
+#: src/ne_openssl.c:651
+#, c-format
+msgid "SSL server did not present certificate"
+msgstr "SSL 服务器不能呈现证书"
+
+#: src/ne_openssl.c:660
+#, c-format
+msgid "Server certificate changed: connection intercepted?"
+msgstr "服务器证书改变：是否被拦截攻击？"
+
+#: src/ne_props.c:371 src/ne_props.c:411
+msgid "Response exceeds maximum property count"
+msgstr "响应超过了属性的最大计数"
+
+#: src/ne_redirect.c:92
+#, fuzzy, c-format
+msgid "Could not parse redirect destination URL"
+msgstr "不能解析重定向位置"
+
+#: src/ne_request.c:193
+#, fuzzy, c-format
+msgid "%s: connection was closed by proxy server"
+msgstr "%s：连接被代理服务器关闭"
+
+#: src/ne_request.c:196
+#, fuzzy, c-format
+msgid "%s: connection was closed by server"
+msgstr "%s：连接被服务器关闭"
+
+#: src/ne_request.c:201
+#, fuzzy, c-format
+msgid "%s: connection timed out"
+msgstr "%s：连接超时"
+
+#: src/ne_request.c:306
+msgid "offset invalid"
+msgstr "非法偏移"
+
+#: src/ne_request.c:311
+#, c-format
+msgid "Could not seek to offset %s of request body file: %s"
+msgstr "在请求主体文件不能定位到偏移 %s： %s"
+
+#: src/ne_request.c:359
+msgid "Could not send request body"
+msgstr "不能发送请求主体"
+
+#: src/ne_request.c:692
+msgid "Could not read chunk size"
+msgstr "不能读块大小"
+
+#: src/ne_request.c:699
+msgid "Could not parse chunk size"
+msgstr "不能解析块大小"
+
+#: src/ne_request.c:736
+msgid "Could not read response body"
+msgstr "不能读取响应主体"
+
+#: src/ne_request.c:752
+msgid "Could not read chunk delimiter"
+msgstr "不能读块分割符"
+
+#: src/ne_request.c:755
+msgid "Chunk delimiter was invalid"
+msgstr "非法的分割符"
+
+#: src/ne_request.c:861
+msgid "Could not read status line"
+msgstr "不能读状态行"
+
+#: src/ne_request.c:883
+#, fuzzy
+msgid "Could not parse response status line"
+msgstr "不能解析块状态行"
+
+#: src/ne_request.c:895
+msgid "Could not read interim response headers"
+msgstr "不能读临时响应头"
+
+#: src/ne_request.c:929
+msgid "Could not send request"
+msgstr "不能发送请求"
+
+#: src/ne_request.c:977 src/ne_request.c:995 src/ne_request.c:1005
+msgid "Error reading response headers"
+msgstr "读取响应头出错"
+
+#: src/ne_request.c:1023
+#, c-format
+msgid "Response header too long"
+msgstr "响应头太长"
+
+#: src/ne_request.c:1105
+#, fuzzy
+msgid "Response exceeded maximum number of header fields"
+msgstr "响应域超出了最大数量"
+
+#: src/ne_request.c:1122
+#, c-format
+msgid "Could not resolve hostname `%s': %s"
+msgstr "不能解析主机`%s': %s"
+
+#: src/ne_request.c:1233
+msgid "Unknown transfer-coding in response"
+msgstr ""
+
+#: src/ne_request.c:1244
+msgid "Invalid Content-Length in response"
+msgstr "非法的Content-Length响应域"
+
+#: src/ne_request.c:1317
+#, c-format
+msgid "Could not write to file: %s"
+msgstr "不能写入文件：%s"
+
+#: src/ne_request.c:1390
+#, fuzzy, c-format
+msgid "Could not create SSL connection through proxy server: %s"
+msgstr "不能通过代理服务器创建SSL连接"
+
+#: src/ne_request.c:1437
+#, c-format
+msgid "Could not create socket"
+msgstr "不能创建套接字"
+
+#: src/ne_request.c:1496
+msgid "Could not connect to proxy server"
+msgstr "不能连接到代理服务器"
+
+#: src/ne_request.c:1497
+msgid "Could not connect to server"
+msgstr "不能连接到服务器"
+
+#: src/ne_session.c:339 src/ne_session.c:350
+msgid "[invalid date]"
+msgstr "[非法日期]"
+
+#: src/ne_session.c:363
+msgid "certificate is not yet valid"
+msgstr "证书还未生效"
+
+#: src/ne_session.c:364
+msgid "certificate has expired"
+msgstr "证书已经过时"
+
+#: src/ne_session.c:365
+msgid "certificate issued for a different hostname"
+msgstr "此证书是为不同的主机名称颁发"
+
+#: src/ne_session.c:366
+msgid "issuer is not trusted"
+msgstr "证书发行者不被信任"
+
+#: src/ne_session.c:371
+msgid "Server certificate verification failed: "
+msgstr "服务器证书校验失败"
+
+#: src/ne_socket.c:501 src/ne_socket.c:555 src/ne_socket.c:658
+msgid "Connection closed"
+msgstr "连接关闭"
+
+#: src/ne_socket.c:565 src/ne_socket.c:670
+msgid "Secure connection truncated"
+msgstr "安全连接切断"
+
+#: src/ne_socket.c:577 src/ne_socket.c:682
+#, c-format
+msgid "SSL error: %s"
+msgstr "SSL 错误：%s"
+
+#: src/ne_socket.c:580
+#, c-format
+msgid "SSL error code %d/%d/%lu"
+msgstr "SSL 错误代码 %d/%d/%lu"
+
+#: src/ne_socket.c:663
+#, c-format
+msgid "SSL alert received: %s"
+msgstr "收到SSL警报： %s"
+
+#: src/ne_socket.c:678
+msgid "SSL socket read failed"
+msgstr "SSL 套接字读取失败"
+
+#: src/ne_socket.c:777
+msgid "Line too long"
+msgstr "太长的行"
+
+#: src/ne_socket.c:917 src/ne_socket.c:923
+msgid "Host not found"
+msgstr "没有发现主机"
+
+#: src/ne_socket.c:1030
+#, fuzzy
+msgid "Connection timed out"
+msgstr "%s：连接超时"
+
+#: src/ne_socket.c:1128
+msgid "Socket descriptor number exceeds FD_SETSIZE"
+msgstr "套接字数量超过FD_SETSIZE"
+
+#: src/ne_socket.c:1342
+msgid "Client certificate verification failed"
+msgstr "客户证书校验失败"
+
+#: src/ne_socket.c:1358
+msgid "SSL disabled due to lack of entropy"
+msgstr "由于缺少熵，SSL已经禁用"
+
+#: src/ne_socket.c:1365
+msgid "SSL disabled due to library version mismatch"
+msgstr "由于库版本不匹配，SSL已经禁用"
+
+#: src/ne_socket.c:1371
+msgid "Could not create SSL structure"
+msgstr "不能创建SSL结构"
+
+#: src/ne_xml.c:280
+#, c-format
+msgid "XML parse error at line %d: invalid element name"
+msgstr "在%d行解析XML错误：非法元素名称"
+
+#: src/ne_xml.c:452
+msgid "Unknown error"
+msgstr "未知错误"
+
+#: src/ne_xml.c:537
+msgid "Invalid Byte Order Mark"
+msgstr "非法字节顺序标记（BOM）"
+
+#: src/ne_xml.c:625
+#, fuzzy, c-format
+msgid "XML parse error at line %d: %s"
+msgstr "在%d行解析XML错误：%s。"
+
+#: src/ne_xmlreq.c:36
+#, c-format
+msgid "Could not parse response: %s"
+msgstr "不能解析响应：%s"
+
+#~ msgid "No Lock-Token header given"
+#~ msgstr "没有Lock-Token行"

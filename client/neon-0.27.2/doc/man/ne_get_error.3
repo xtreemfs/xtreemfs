@@ -1,0 +1,76 @@
+.\"     Title: ne_get_error
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_GET_ERROR" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_get_error, ne_set_error \- error handling for HTTP sessions
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_session.h>
+.fi
+.ft
+.HP 25
+.BI "const char *ne_get_error(ne_sesssion\ *" "session" ");"
+.HP 18
+.BI "void ne_set_error(ne_sesssion\ *" "session" ", const\ char\ *" "format" ", ...);"
+.SH "DESCRIPTION"
+.PP
+The session error string is used to store any human\-readable error information associated with any errors which occur whilst using the HTTP session.
+.PP
+The
+\fBne_get_error\fR
+function returns the current session error string. This string persists only until it is changed by a subsequent operation on the session. If localisation was enabled at build time, and if necessary enabled at run\-time if necessary using
+ne_i18n_init, the returned string may have been translated into the user's current locale.
+.PP
+The
+\fBne_set_error\fR
+function can be used to set a new session error string, using a
+\fBprintf\fR\-style format string interface.
+.SH "RETURN VALUE"
+.PP
+\fBne_set_error\fR
+returns a constant
+NUL\-terminated string. In the default English locale, the returned string will
+\fInot\fR
+have a terminating
+\(lq.\(rq
+period character.
+.SH "EXAMPLES"
+.PP
+Retrieve the current error string:
+.sp
+.RS 4
+.nf
+ne_session *sess = ne_session_create(...);
+\&...
+printf("Error was: %s\en", ne_get_error(sess));
+.fi
+.RE
+.PP
+Set a new error string:
+.sp
+.RS 4
+.nf
+ne_session *sess = ne_session_create(...);
+\&...
+ne_set_error(sess, "Response missing header %s", "somestring");
+.fi
+.RE
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

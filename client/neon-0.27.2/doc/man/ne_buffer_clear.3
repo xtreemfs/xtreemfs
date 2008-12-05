@@ -1,0 +1,58 @@
+.\"     Title: ne_buffer_clear
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_BUFFER_CLEAR" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_buffer_clear, ne_buffer_grow, ne_buffer_altered \- general purpose of group of functions
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_string.h>
+.fi
+.ft
+.HP 21
+.BI "void ne_buffer_clear(ne_buffer\ *" "buf" ");"
+.HP 23
+.BI "void ne_buffer_altered(ne_buffer\ *" "buf" ");"
+.HP 20
+.BI "void ne_buffer_grow(ne_buffer\ *" "buf" ", size_t\ " "size" ");"
+.SH "DESCRIPTION"
+.PP
+The
+\fBne_buffer_clear\fR
+function sets the string stored in
+\fIbuf\fR
+to be the empty string ("").
+.PP
+The
+\fBne_buffer_altered\fR
+function must be used after the string stored in the buffer
+\fIbuf\fR
+is modified by directly rather than using
+ne_buffer_append,
+ne_buffer_zappend
+or
+ne_buffer_concat.
+.PP
+The
+\fBne_buffer_grow\fR
+function ensures that at least
+\fIsize\fR
+bytes are allocated for the string; this can be used if a large amount of data is going to be appended to the buffer and may result in more efficient memory allocation.
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

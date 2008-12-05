@@ -1,0 +1,74 @@
+.\"     Title: ne_buffer_destroy
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_BUFFER_DESTROY" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_buffer_destroy, ne_buffer_finish \- destroy a buffer object
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_string.h>
+.fi
+.ft
+.HP 23
+.BI "void ne_buffer_destroy(ne_buffer\ *" "buf" ");"
+.HP 23
+.BI "char *ne_buffer_finish(ne_buffer\ *" "buf" ");"
+.SH "DESCRIPTION"
+.PP
+\fBne_buffer_destroy\fR
+frees all memory associated with the buffer.
+\fBne_buffer_finish\fR
+frees the buffer structure, but not the actual string stored in the buffer, which is returned and must be
+\fBfree\fR()d by the caller.
+.PP
+Any use of the buffer object after calling either of these functions gives undefined behaviour.
+.SH "RETURN VALUE"
+.PP
+\fBne_buffer_finish\fR
+returns the
+\fBmalloc\fR\-allocated string stored in the buffer.
+.SH "EXAMPLES"
+.PP
+An example use of
+\fBne_buffer_finish\fR; the
+\fBduplicate\fR
+function returns a string made up of
+\fIn\fR
+copies of
+\fIstr\fR:
+.sp
+.RS 4
+.nf
+static char *duplicate(int n, const char *str)
+{
+  ne_buffer *buf = ne_buffer_create();
+  while (n\-\-) {
+    ne_buffer_zappend(buf, str);
+  }
+  return ne_buffer_finish(buf);
+}
+.fi
+.RE
+.SH "SEE ALSO"
+.PP
+ne_buffer,
+ne_buffer_create,
+ne_buffer_zappend
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

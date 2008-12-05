@@ -1,0 +1,100 @@
+.\"     Title: ne_ssl_cert_identity
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_SSL_CERT_IDENTITY" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_ssl_cert_identity, ne_ssl_cert_signedby, ne_ssl_cert_issuer, ne_ssl_cert_subject \- functions to access certificate properties
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_ssl.h>
+.fi
+.ft
+.HP 33
+.BI "const char *ne_ssl_cert_identity(const\ ne_ssl_certificate\ *" "cert" ");"
+.HP 47
+.BI "const ne_ssl_certificate *ne_ssl_cert_signedby(const\ ne_ssl_certificate\ *" "cert" ");"
+.HP 40
+.BI "const ne_ssl_dname *ne_ssl_cert_subject(const\ ne_ssl_certificate\ *" "cert" ");"
+.HP 39
+.BI "const ne_ssl_dname *ne_ssl_cert_issuer(const\ ne_ssl_certificate\ *" "cert" ");"
+.SH "DESCRIPTION"
+.PP
+The function
+\fBne_ssl_cert_identity\fR
+retrieves the
+\(lqidentity\(rq
+of a certificate; for an SSL server certificate, this will be the hostname for which the certificate was issued. In PKI parlance, the identity is the
+\fIcommon name\fR
+attribute of the distinguished name of the certificate subject.
+.PP
+The functions
+\fBne_ssl_cert_subject\fR
+and
+\fBne_ssl_cert_issuer\fR
+can be used to access the objects representing the distinguished name of the subject and of the issuer of a certificate, respectively.
+.PP
+If a certificate object is part of a certificate chain, then
+\fBne_ssl_cert_signedby\fR
+can be used to find the certificate which signed a particular certificate. For a self\-signed certificate or a certificate for which the full chain is not available, this function will return
+NULL.
+.SH "RETURN VALUE"
+.PP
+\fBne_ssl_cert_issuer\fR
+and
+\fBne_ssl_cert_subject\fR
+are guaranteed to never return
+NULL.
+\fBne_ssl_cert_identity\fR
+may return
+NULL
+if the certificate has no specific
+\(lqidentity\(rq.
+\fBne_ssl_cert_signedby\fR
+may return
+NULL
+as covered above.
+.SH "EXAMPLES"
+.PP
+The following function could be used to display information about a given certificate:
+.sp
+.RS 4
+.nf
+void dump_cert(const ne_ssl_certificate *cert) {
+  const char *id = ne_ssl_cert_identity(cert);
+  char *dn;
+
+  if (id) 
+    printf("Certificate was issued for '%s'.\en", id);
+
+  dn = ne_ssl_readable_dname(ne_ssl_cert_subject(cert));
+  printf("Subject: %s\en", dn);
+  free(dn);
+
+  dn = ne_ssl_readable_dname(ne_ssl_cert_issuer(cert));
+  printf("Issuer: %s\en", dn);
+  free(dn);
+}
+.fi
+.RE
+.SH "SEE ALSO"
+.PP
+ne_ssl_cert_cmp,
+ne_ssl_readable_dname
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

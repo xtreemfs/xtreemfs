@@ -1,0 +1,464 @@
+# The German translation for sitecopy.
+# Thomas Schultz <tststs@gmx.de>, 2000.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sitecopy 0.11.3\n"
+"Report-Msgid-Bugs-To: neon@webdav.org\n"
+"POT-Creation-Date: 2007-09-25 10:21+0100\n"
+"PO-Revision-Date: 2002-01-13 13:37+0100\n"
+"Last-Translator: Thomas Schultz <tststs@gmx.de>\n"
+"Language-Team: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/ne_207.c:198
+#, c-format
+msgid ""
+"Invalid HTTP status line in status element at line %d of response:\n"
+"Status line was: %s"
+msgstr ""
+"Ungültige HTTP Status-Zeile im Status-Element in Zeile %d der Antwort:\n"
+"Status-Zeile war: %s"
+
+#: src/ne_auth.c:130
+#, fuzzy, c-format
+msgid "Could not authenticate to server: %s"
+msgstr "Verbindungsaufbau zum Server gescheitert."
+
+#: src/ne_auth.c:135
+#, fuzzy, c-format
+msgid "Could not authenticate to proxy server: %s"
+msgstr "Verbindungsaufbau zum Proxy-Server gescheitert."
+
+#: src/ne_auth.c:342
+#, c-format
+msgid "rejected %s challenge"
+msgstr ""
+
+#: src/ne_auth.c:358
+msgid "missing realm in Basic challenge"
+msgstr ""
+
+#: src/ne_auth.c:453
+msgid "invalid Negotiate token"
+msgstr ""
+
+#: src/ne_auth.c:476
+#, fuzzy
+msgid "GSSAPI authentication error: "
+msgstr "Anmeldung wird benötigt auf %s `%s':\n"
+
+#: src/ne_auth.c:489
+#, c-format
+msgid "GSSAPI failure (code %u)"
+msgstr ""
+
+#: src/ne_auth.c:524
+msgid "ignoring empty Negotiate continuation"
+msgstr ""
+
+#: src/ne_auth.c:539
+#, c-format
+msgid "Negotiate response verification failed: invalid response header token"
+msgstr ""
+
+#: src/ne_auth.c:561
+#, c-format
+msgid "Negotiate response verification failure: %s"
+msgstr ""
+
+#: src/ne_auth.c:624
+msgid "unknown algorithm in Digest challenge"
+msgstr ""
+
+#: src/ne_auth.c:628
+msgid "incompatible algorithm in Digest challenge"
+msgstr ""
+
+#: src/ne_auth.c:632
+msgid "missing parameter in Digest challenge"
+msgstr ""
+
+#: src/ne_auth.c:636
+msgid "initial Digest challenge was stale"
+msgstr ""
+
+#: src/ne_auth.c:643
+msgid "stale Digest challenge with new algorithm or realm"
+msgstr ""
+
+#: src/ne_auth.c:921
+#, c-format
+msgid "Digest mutual authentication failure: missing parameters"
+msgstr ""
+
+#: src/ne_auth.c:926
+#, c-format
+msgid "Digest mutual authentication failure: client nonce mismatch"
+msgstr ""
+
+#: src/ne_auth.c:936
+#, c-format
+msgid "Digest mutual authentication failure: could not parse nonce count"
+msgstr ""
+
+#: src/ne_auth.c:941
+#, c-format
+msgid "Digest mutual authentication failure: nonce count mismatch (%u not %u)"
+msgstr ""
+
+#: src/ne_auth.c:984
+#, c-format
+msgid "Digest mutual authentication failure: request-digest mismatch"
+msgstr ""
+
+#: src/ne_auth.c:1069
+msgid ", "
+msgstr ""
+
+#: src/ne_auth.c:1110
+#, c-format
+msgid "ignored %s challenge"
+msgstr ""
+
+#: src/ne_auth.c:1186
+#, fuzzy
+msgid "could not parse challenge"
+msgstr "Parser-Fehler bei Ermittlung der Blockgröße"
+
+#: src/ne_basic.c:94
+#, fuzzy, c-format
+msgid "Could not determine file size: %s"
+msgstr "Konnte Länge der Datei nicht herausfinden: %s"
+
+#: src/ne_basic.c:145
+#, c-format
+msgid "Response did not include requested range"
+msgstr ""
+
+#: src/ne_basic.c:179
+#, fuzzy, c-format
+msgid "Range is not satisfiable"
+msgstr "Range is not satisfiable."
+
+#: src/ne_basic.c:184
+#, fuzzy, c-format
+msgid "Resource does not support ranged GET requests"
+msgstr "Server ermöglicht keine teilweisen GETs."
+
+#: src/ne_compress.c:173
+#, fuzzy, c-format
+msgid "%s: %s"
+msgstr "%s: %s\n"
+
+#: src/ne_compress.c:184
+#, c-format
+msgid "%s: %s (code %d)"
+msgstr ""
+
+#: src/ne_compress.c:232
+#, fuzzy
+msgid "Could not inflate data"
+msgstr "Konnte Datei nicht öffnen: "
+
+#: src/ne_compress.c:293
+#, fuzzy
+msgid "Could not initialize zlib"
+msgstr "Konnte Datei nicht öffnen: "
+
+#: src/ne_gnutls.c:162
+#, c-format
+msgid "[unprintable:#%lu]"
+msgstr ""
+
+#: src/ne_gnutls.c:188
+msgid "[unprintable]"
+msgstr ""
+
+#: src/ne_gnutls.c:685 src/ne_openssl.c:419
+#, c-format
+msgid "Server certificate was missing commonName attribute in subject name"
+msgstr ""
+
+#: src/ne_gnutls.c:721 src/ne_openssl.c:632
+#, fuzzy, c-format
+msgid "SSL negotiation failed: %s"
+msgstr "Konnte nicht in diese Datei schreiben: %s"
+
+#: src/ne_gnutls.c:730
+#, c-format
+msgid "Server did not send certificate chain"
+msgstr ""
+
+#: src/ne_locks.c:584
+msgid "LOCK response missing Lock-Token header"
+msgstr ""
+
+#: src/ne_locks.c:759
+#, c-format
+msgid "Response missing activelock for %s"
+msgstr ""
+
+#: src/ne_locks.c:801
+#, c-format
+msgid "No activelock for <%s> returned in LOCK refresh response"
+msgstr ""
+
+#: src/ne_openssl.c:451
+#, c-format
+msgid "Certificate verification error: %s"
+msgstr ""
+
+#: src/ne_openssl.c:651
+#, c-format
+msgid "SSL server did not present certificate"
+msgstr ""
+
+#: src/ne_openssl.c:660
+#, c-format
+msgid "Server certificate changed: connection intercepted?"
+msgstr ""
+
+#: src/ne_props.c:371 src/ne_props.c:411
+#, fuzzy
+msgid "Response exceeds maximum property count"
+msgstr "Antwort hatte zu viele Header-Felder."
+
+#: src/ne_redirect.c:92
+#, fuzzy, c-format
+msgid "Could not parse redirect destination URL"
+msgstr "Konnte Status-Zeile des Servers nicht interpretieren."
+
+#: src/ne_request.c:193
+#, fuzzy, c-format
+msgid "%s: connection was closed by proxy server"
+msgstr "%s: Verbindung vom Proxy-Server geschlossen."
+
+#: src/ne_request.c:196
+#, fuzzy, c-format
+msgid "%s: connection was closed by server"
+msgstr "%s: Verbindung vom Server geschlossen."
+
+#: src/ne_request.c:201
+#, fuzzy, c-format
+msgid "%s: connection timed out"
+msgstr "%s: Verbindung wegen Zeitüberschreitung geschlossen."
+
+#: src/ne_request.c:306
+msgid "offset invalid"
+msgstr ""
+
+#: src/ne_request.c:311
+#, fuzzy, c-format
+msgid "Could not seek to offset %s of request body file: %s"
+msgstr "Konnte nicht in diese Datei schreiben: %s"
+
+#: src/ne_request.c:359
+msgid "Could not send request body"
+msgstr "Konnte den Rumpf der Anfrage nicht schicken"
+
+#: src/ne_request.c:692
+msgid "Could not read chunk size"
+msgstr "Lesefehler bei Ermittlung der Blockgröße"
+
+#: src/ne_request.c:699
+msgid "Could not parse chunk size"
+msgstr "Parser-Fehler bei Ermittlung der Blockgröße"
+
+#: src/ne_request.c:736
+msgid "Could not read response body"
+msgstr "Konnte Rumpf der Antwort nicht lesen"
+
+#: src/ne_request.c:752
+#, fuzzy
+msgid "Could not read chunk delimiter"
+msgstr "Lesefehler bei Ermittlung der Blockgröße"
+
+#: src/ne_request.c:755
+msgid "Chunk delimiter was invalid"
+msgstr ""
+
+#: src/ne_request.c:861
+msgid "Could not read status line"
+msgstr "Konnte Status-Zeile des Servers nicht lesen"
+
+#: src/ne_request.c:883
+#, fuzzy
+msgid "Could not parse response status line"
+msgstr "Konnte Status-Zeile des Servers nicht interpretieren."
+
+#: src/ne_request.c:895
+#, fuzzy
+msgid "Could not read interim response headers"
+msgstr "Konnte Rumpf der Antwort nicht lesen"
+
+#: src/ne_request.c:929
+msgid "Could not send request"
+msgstr "Konnte keine Anfrage (request) schicken"
+
+#: src/ne_request.c:977 src/ne_request.c:995 src/ne_request.c:1005
+msgid "Error reading response headers"
+msgstr "Fehler beim Lesen der Kopfzeilen (header) der Antwort"
+
+#: src/ne_request.c:1023
+#, c-format
+msgid "Response header too long"
+msgstr "Kopfzeilen (header) der Antwort zu lang"
+
+#: src/ne_request.c:1105
+#, fuzzy
+msgid "Response exceeded maximum number of header fields"
+msgstr "Antwort hatte zu viele Header-Felder."
+
+#: src/ne_request.c:1122
+#, fuzzy, c-format
+msgid "Could not resolve hostname `%s': %s"
+msgstr "%s: Fehler: Konnte den Namen des Servers nicht auflösen (%s).\n"
+
+#: src/ne_request.c:1233
+msgid "Unknown transfer-coding in response"
+msgstr ""
+
+#: src/ne_request.c:1244
+msgid "Invalid Content-Length in response"
+msgstr ""
+
+#: src/ne_request.c:1317
+#, c-format
+msgid "Could not write to file: %s"
+msgstr "Konnte nicht in diese Datei schreiben: %s"
+
+#: src/ne_request.c:1390
+#, fuzzy, c-format
+msgid "Could not create SSL connection through proxy server: %s"
+msgstr "Konnte durch den Proxy-Server keine SSL-Verbindung herstellen"
+
+#: src/ne_request.c:1437
+#, fuzzy, c-format
+msgid "Could not create socket"
+msgstr "Konnte keine SSL-Sitzung herstellen"
+
+#: src/ne_request.c:1496
+msgid "Could not connect to proxy server"
+msgstr "Verbindungsaufbau zum Proxy-Server gescheitert."
+
+#: src/ne_request.c:1497
+msgid "Could not connect to server"
+msgstr "Verbindungsaufbau zum Server gescheitert."
+
+#: src/ne_session.c:339 src/ne_session.c:350
+msgid "[invalid date]"
+msgstr ""
+
+#: src/ne_session.c:363
+msgid "certificate is not yet valid"
+msgstr ""
+
+#: src/ne_session.c:364
+msgid "certificate has expired"
+msgstr ""
+
+#: src/ne_session.c:365
+msgid "certificate issued for a different hostname"
+msgstr ""
+
+#: src/ne_session.c:366
+msgid "issuer is not trusted"
+msgstr ""
+
+#: src/ne_session.c:371
+msgid "Server certificate verification failed: "
+msgstr ""
+
+#: src/ne_socket.c:501 src/ne_socket.c:555 src/ne_socket.c:658
+#, fuzzy
+msgid "Connection closed"
+msgstr "Verbindung vom Server geschlossen"
+
+#: src/ne_socket.c:565 src/ne_socket.c:670
+#, fuzzy
+msgid "Secure connection truncated"
+msgstr "Verbindung wegen Zeitüberschreitung abgebrochen."
+
+#: src/ne_socket.c:577 src/ne_socket.c:682
+#, fuzzy, c-format
+msgid "SSL error: %s"
+msgstr "%s: Fehler: %s\n"
+
+#: src/ne_socket.c:580
+#, c-format
+msgid "SSL error code %d/%d/%lu"
+msgstr ""
+
+#: src/ne_socket.c:663
+#, fuzzy, c-format
+msgid "SSL alert received: %s"
+msgstr "%s: Fehler: %s\n"
+
+#: src/ne_socket.c:678
+msgid "SSL socket read failed"
+msgstr ""
+
+#: src/ne_socket.c:777
+msgid "Line too long"
+msgstr "Zeile zu lang"
+
+#: src/ne_socket.c:917 src/ne_socket.c:923
+msgid "Host not found"
+msgstr "Host nicht gefunden"
+
+#: src/ne_socket.c:1030
+#, fuzzy
+msgid "Connection timed out"
+msgstr "%s: Verbindung wegen Zeitüberschreitung geschlossen."
+
+#: src/ne_socket.c:1128
+msgid "Socket descriptor number exceeds FD_SETSIZE"
+msgstr ""
+
+#: src/ne_socket.c:1342
+msgid "Client certificate verification failed"
+msgstr ""
+
+#: src/ne_socket.c:1358
+msgid "SSL disabled due to lack of entropy"
+msgstr ""
+
+#: src/ne_socket.c:1365
+msgid "SSL disabled due to library version mismatch"
+msgstr ""
+
+#: src/ne_socket.c:1371
+#, fuzzy
+msgid "Could not create SSL structure"
+msgstr "Konnte keine SSL-Sitzung herstellen"
+
+#: src/ne_xml.c:280
+#, fuzzy, c-format
+msgid "XML parse error at line %d: invalid element name"
+msgstr "Fehler beim XML-Parsing in Zeile %d: %s."
+
+#: src/ne_xml.c:452
+#, fuzzy
+msgid "Unknown error"
+msgstr "Unbekannter System-Fehler"
+
+#: src/ne_xml.c:537
+msgid "Invalid Byte Order Mark"
+msgstr ""
+
+#: src/ne_xml.c:625
+#, fuzzy, c-format
+msgid "XML parse error at line %d: %s"
+msgstr "Fehler beim XML-Parsing in Zeile %d: %s."
+
+#: src/ne_xmlreq.c:36
+#, fuzzy, c-format
+msgid "Could not parse response: %s"
+msgstr "Konnte Rumpf der Antwort nicht lesen"
+
+#, fuzzy
+#~ msgid " of request body file: %s"
+#~ msgstr "Konnte nicht in diese Datei schreiben: %s"

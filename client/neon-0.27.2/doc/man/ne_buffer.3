@@ -1,0 +1,68 @@
+.\"     Title: ne_buffer
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_BUFFER" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_buffer \- string buffer handling
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_string.h>
+
+typedef struct {
+    char *data;
+    size_t used;
+    size_t length;
+} ne_buffer;
+.fi
+.ft
+.SH "DESCRIPTION"
+.PP
+The
+\fBne_buffer\fR
+type represents an expandable memory buffer for holding
+NUL\-terminated strings. The
+data
+field points to the beginnning of the string, the length of which is given by the
+used
+field. The current size of memory allocated is given by the
+length
+field. It is not recommended that the fields of a buffer are manipulated directly. The
+data
+pointer may change when the buffer is modified.
+.PP
+A buffer is created using
+ne_buffer_create
+or
+ne_buffer_ncreate, and destroyed using
+ne_buffer_destroy
+or
+ne_buffer_finish. The functions
+ne_buffer_append,
+ne_buffer_zappend
+and
+ne_buffer_concat
+are used to append data to a buffer.
+.PP
+If the string referenced by the
+data
+pointer is modified directly (rather than using one of the functions listed above),
+\fBne_buffer_altered\fR
+must be called.
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

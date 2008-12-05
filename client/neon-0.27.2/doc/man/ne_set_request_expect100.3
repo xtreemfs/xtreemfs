@@ -1,0 +1,53 @@
+.\"     Title: ne_set_request_expect100
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_SET_REQUEST_EXPEC" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_set_request_expect100 \- function to enable Expect: 100\-continue support
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_request.h>
+.fi
+.ft
+.HP 30
+.BI "void ne_set_request_expect100(ne_request\ *" "request" ", int\ " "flag" ");"
+.SH "DESCRIPTION"
+.PP
+An extension introduced in the HTTP/1.1 specification was the use of the
+Expect: 100\-continue
+header. This header allows an HTTP client to be informed of the expected response status before the request message body is sent: a useful optimisation for situations where a large message body is to be sent. The
+\fBne_set_request_expect100\fR
+function can be used to enable this feature by passing the
+\fIflag\fR
+parameter as any non\-zero integer.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+\fBWarning\fR
+.PP
+Unfortunately, if this header is sent to a server which is not fully compliant with the HTTP/1.1 specification, a deadlock occurs resulting in a temporarily "hung" connection. neon will recover gracefully from this situation, but only after a 15 second timeout. It is highly recommended that this option is not enabled unless it is known that the server in use correctly implements
+Expect: 100\-continue
+support.
+.SH "SEE ALSO"
+.PP
+ne_request_create.
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

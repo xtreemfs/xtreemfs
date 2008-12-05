@@ -1,0 +1,50 @@
+.\"     Title: ne_buffer_create
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_BUFFER_CREATE" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_buffer_create, ne_buffer_ncreate \- general purpose of group of functions
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_alloc.h>
+.fi
+.ft
+.HP 28
+.BI "ne_buffer *ne_buffer_create(void);"
+.HP 29
+.BI "ne_buffer *ne_buffer_ncreate(size_t\ " "size" ");"
+.SH "DESCRIPTION"
+.PP
+\fBne_buffer_create\fR
+creates a new buffer object, with an implementation\-defined initial size.
+\fBne_buffer_ncreate\fR
+creates an
+\fBne_buffer\fR
+where the minimum initial size is given in the
+\fIsize\fR
+parameter. The buffer created will contain the empty string ("").
+.SH "RETURN VALUE"
+.PP
+Both functions return a pointer to a new buffer object, and never
+NULL.
+.SH "SEE ALSO"
+.PP
+ne_buffer
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

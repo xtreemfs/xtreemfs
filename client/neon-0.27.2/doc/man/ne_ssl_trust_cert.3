@@ -1,0 +1,64 @@
+.\"     Title: ne_ssl_trust_cert
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_SSL_TRUST_CERT" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_ssl_trust_cert, ne_ssl_trust_default_ca \- functions to indicate that certificates are trusted
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_session.h>
+.fi
+.ft
+.HP 23
+.BI "void ne_ssl_trust_cert(ne_session\ *" "session" ", const\ ne_ssl_certificate\ *" "cert" ");"
+.HP 29
+.BI "void ne_ssl_trust_default_ca(ne_session\ *" "session" ");"
+.SH "DESCRIPTION"
+.PP
+To indicate that a given certificate is trusted by the user, the certificate object can be passed to
+\fBne_ssl_trust_cert\fR. The certificate object is duplicated internally and can subsequently be destroyed.
+.PP
+The SSL library in use by neon may include a default set of CA certificates; calling the
+\fBne_ssl_trust_default_ca\fR
+function will indicate that these CAs are trusted by the user.
+.SH "EXAMPLES"
+.PP
+Load the CA certificate stored in
+\fI/path/to/cacert.pem\fR:
+.sp
+.RS 4
+.nf
+ne_session *sess = ne_session_create(...);
+ne_ssl_certificate *cert = ne_ssl_cert_read("/path/to/cacert.pem");
+
+if (cert) {
+   ne_ssl_trust_cert(sess, cert);
+   ne_ssl_cert_free(cert);
+} else {
+   printf("Could not load CA cert: %s\en", ne_get_error(sess));
+}
+.fi
+.RE
+.SH "SEE ALSO"
+.PP
+ne_ssl_cert_read,
+ne_ssl_cert_import,
+ne_ssl_cert_free
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

@@ -1,0 +1,53 @@
+.\"     Title: ne_shave
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_SHAVE" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_shave \- trim whitespace from a string
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_string.h>
+.fi
+.ft
+.HP 15
+.BI "char *ne_shave(char\ *" "str" ", const\ char\ *" "whitespace" ");"
+.SH "DESCRIPTION"
+.PP
+\fBne_shave\fR
+returns a portion of
+\fIstr\fR
+with any leading or trailing characters in the
+\fIwhitespace\fR
+array removed.
+\fIstr\fR
+may be modified. Note that the return value may not be equal to
+\fIstr\fR.
+.SH "EXAMPLES"
+.PP
+The following code segment will output
+"fish":
+.sp
+.RS 4
+.nf
+char s[] = ".!.fish!.!";
+puts(ne_shave(s, ".!"));
+.fi
+.RE
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

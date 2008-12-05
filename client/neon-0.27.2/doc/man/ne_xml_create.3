@@ -1,0 +1,46 @@
+.\"     Title: ne_xml_create
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_XML_CREATE" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_xml_create, ne_xml_destroy \- create and destroy an XML parser
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_xml.h>
+.fi
+.ft
+.HP 29
+.BI "ne_xml_parser *ne_xml_create(void);"
+.HP 20
+.BI "void ne_xml_destroy(ne_xml_parser\ *" "parser" ");"
+.SH "DESCRIPTION"
+.PP
+The
+\fBne_xml_create\fR
+function creates an XML parser object, which can be used for parsing XML documents using stacked SAX handlers.
+.SH "RETURN VALUE"
+.PP
+\fBne_xml_create\fR
+returns a pointer to an XML parser object, and never
+NULL
+.SH "SEE ALSO"
+.PP
+XXX
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+

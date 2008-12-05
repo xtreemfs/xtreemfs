@@ -1,0 +1,166 @@
+	
+Guide to neon
+=============
+
+Using libneon from applications
+-------------------------------
+
+The neon source package is designed to be easily incorporated into
+applications:
+
+- autoconf macros are distributed in the 'macros' subdirectory of the
+  neon distribution.  Use NEON_LIBRARY from your configure.in to check
+  for the presence of the neon library installed on the system.  The
+  macro adds an '--with-neon=...' argument to configure, which allows
+  the user to specify a location for the library (the standard /usr
+  and /usr/local directories are checked automatically without having
+  to be specified).
+
+- The 'src' directory of the neon package can be imported directly
+  into your application, if you do not wish to add an external
+  dependency.  If you wish to bundle, use the NEON_BUNDLED macro
+  to configure neon in your application: here, the neon sources are
+  bundled in a directory called 'libneon':
+
+     NEON_BUNDLED(libneon, ...)
+
+  If your application supports builds where srcdir != builddir, you 
+  should use the NEON_VPATH_BUNDLED macro like this:
+
+     NEON_VPATH_BUNDLED(${srcdir}/libneon, libneon, ...)
+
+  (thanks to Peter Moulder for getting this working properly).
+
+  If you use this macro, a '--with-included-neon' option will 
+  be added to the generated configure script.  This allows the user
+  to force the bundled neon to be used in the application, rather than
+  any neon library found on the system. If you allow neon to be 
+  configured this way, you must also configure an XML parser. Use
+  the NEON_XML_PARSER macro to do this.
+
+- The final argument to the _BUNDLED macros is a set of actions which
+  are executed if the bundled build *is* chosen (rather than an 
+  external neon which might have been found on the user's system).
+  In here, use either the NEON_LIBTOOL_BUILD or NEON_NORMAL_BUILD
+  macro to set up the neon Makefile appropriately: including adding
+  the neon source directory to the recursive make.
+
+- A full fragment might be:
+
+   NEON_BUNDLED(libneon, [
+       NEON_NORMAL_BUILD
+       NEON_XML_PARSER
+       SUBDIRS="libneon $SUBDIRS"
+   ])
+  
+  This means the bundled neon source directory (called 'libneon') is
+  used if no neon is found on the system, and the standard XML parser
+  search is used.
+
+The neon API
+============
+
+neon offers two levels of API for use in applications:
+
+- Low-level HTTP request/response handling
+- High-level method invocation
+
+The low-level interface allows for easily designing new method
+handlers, taking care of things like persistent connections,
+authentication, and proxy servers.  The high-level interface allows
+you to easily integrate existing HTTP (and WebDAV) methods into your
+application.  This document details both interfaces.
+
+N.B.: Documentation is always WRONG.  The definitive API reference is in
+src/*.c, with src/*.h is hopefully fairly similar.
+
+PLEASE NOTE: the neon API is NOT STABLE, and is not considered to be
+stable or backwards-compatible until version 1.0 is reached.  If
+you are not happy with this constraint, then please either:
+
+1. pick a version of neon and never upgrade
+2. don't use neon (yet).
+3. contribute sufficient development resources to neon that all
+   bugs are fixed yesterday, features added tomorrow, and 1.0 is
+   reached on by the end of the week.
+
+An Important Note
+-----------------
+
+Most neon functions which allocate memory with malloc() will call
+abort() if malloc() returns NULL.  This is a design decision, the
+rationale being:
+
+- it makes the interfaces cleaner.
+
+- if malloc() DOES return NULL there is not much you can do about it.
+
+- Apparently, malloc() won't return NULL on systems which over-commit
+  memory (e.g. Linux), so it doesn't make any real difference anyway.
+
+The author is open to persuasion on this: mail neon@webdav.org.
+
+Namespaces
+----------
+
+neon reserves these namespaces:
+   ne_*
+   uri_*
+   sock_*
+
+Eventually all symbols globally defined by the library should fall
+within a reserved namespace. The author is considering moving
+all symbols into the ne_* namespace.
+
+Note that the XML parser used will also reserve a namespace:
+expat takes XML_*, libxml takes xml*
+
+The http_session type
+---------------------
+
+The http_session type is used whether you are writing to the low-level
+or the high-level interface.  An http_session object is created to
+store data which persists beyond a single HTTP request:
+
+ - Protocol options, e.g. (proxy) server details
+ - Authentication information
+ - Persistent connection
+
+A session is created with the 'ne_session_create' call.  Before
+creating a request for the session, the server details must be set, as
+follows:
+
+   ne_session *sess;
+   /* Initialize the socket library */
+   sock_init();
+   /* Create the session */
+   sess = ne_session_create();
+   /* Optionally, set a proxy server */
+   ne_session_proxy(sess, "proxy.myisp.com", 8080);
+   /* Set the server */
+   ne_session_server(sess, "my.server.com", 80);
+
+The proxy server should be set BEFORE the origin server; otherwise a
+DNS lookup will be performed on the origin server by the
+ne_session_server call, which may well fail if the client is
+firewalled.  ne_session_{proxy,server} will return NE_LOOKUP if
+the DNS lookup fails; otherwise NE_OK.
+
+The 'ne_set_persist' call can be used to turn off persistent
+connection handling: it is on by default.
+
+The 'ne_set_useragent' call can be used to set the User-Agent header
+to be sent with requests.  A product token of the form
+"myhttpclient/0.1.2" should be passed, and will have "neon/x.y.z"
+appended in the actual header sent.
+
+When a session has been finished with, it should be destroyed using
+ne_session_destroy.  Any subsequent operations on the session object
+will have undefined results (i.e. will segfault).
+
+Low-level HTTP Request/Response Handling
+----------------------------------------
+
+...
+
+

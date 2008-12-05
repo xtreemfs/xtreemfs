@@ -1,0 +1,87 @@
+.\"     Title: ne_status
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_STATUS" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_status \- HTTP status structure
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_utils.h>
+
+typedef struct {
+    int major_version, minor_version;
+    int code, klass;
+    const char *reason_phrase;
+} ne_status;
+.fi
+.ft
+.SH "DESCRIPTION"
+.PP
+An
+\fBne_status\fR
+type represents an HTTP response status; used in response messages giving a result of request. The
+major_version
+and
+minor_version
+fields give the HTTP version supported by the server issuing the response. The
+code
+field gives the status code of the result (lying between 100 and 999 inclusive), and the
+klass
+field gives the class\&[1], which is equal to the most significant digit of the status.
+.PP
+There are five classes of HTTP status code defined by RFC2616:
+.PP
+1xx
+.RS 4
+Informational response.
+.RE
+.PP
+2xx
+.RS 4
+Success: the operation was successful
+.RE
+.PP
+3xx
+.RS 4
+Redirection
+.RE
+.PP
+4xx
+.RS 4
+Client error: the request made was incorrect in some manner.
+.RE
+.PP
+5xx
+.RS 4
+Server error
+.RE
+.SH "SEE ALSO"
+.PP
+ne_get_status.
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+.SH "REFERENCES"
+.IP " 1." 4
+the field is named
+\(lqklass\(rq
+not
+\(lqclass\(rq
+so that the header can be used from a C++ program, in which
+\(lqclass\(rq
+is a reserved word)
+

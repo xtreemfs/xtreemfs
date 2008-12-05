@@ -1,0 +1,55 @@
+.\"     Title: ne_add_request_header
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: 25 September 2007
+.\"    Manual: neon API reference
+.\"    Source: neon 0.27.2
+.\"
+.TH "NE_ADD_REQUEST_HEADE" "3" "25 September 2007" "neon 0.27.2" "neon API reference"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+ne_add_request_header, ne_print_request_header \- add headers to a request
+.SH "SYNOPSIS"
+.sp
+.ft B
+.nf
+#include <ne_request.h>
+.fi
+.ft
+.HP 27
+.BI "void ne_add_request_header(ne_request\ *" "request" ", const\ char\ *" "name" ", const\ char\ *" "value" ");"
+.HP 29
+.BI "void ne_print_request_header(ne_request\ *" "request" ", const\ char\ *" "name" ", const\ char\ *" "format" ", ...);"
+.SH "DESCRIPTION"
+.PP
+The functions
+\fBne_add_request_header\fR
+and
+\fBne_print_request_header\fR
+can be used to add headers to a request, before it is sent.
+.PP
+\fBne_add_request_header\fR
+simply adds a header of given
+\fIname\fR, with given
+\fIvalue\fR.
+.PP
+\fBne_print_request_header\fR
+adds a header of given
+\fIname\fR, taking the value from the
+\fBprintf\fR\-like
+\fIformat\fR
+string parameter and subsequent variable\-length argument list.
+.SH "SEE ALSO"
+.PP
+ne_request_create
+.SH "AUTHOR"
+.PP
+\fBJoe Orton\fR <\&neon@webdav.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.SH "COPYRIGHT"
+
