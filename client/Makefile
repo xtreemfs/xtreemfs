@@ -25,6 +25,9 @@ TOPDIR = $(shell pwd)
 export TOPDIR
 -include make.config
 
+XTFS_BINDIR = $(shell pwd)/bin
+export XTFS_BINDIR
+
 TARGETS = client tools tests json neon
 .PHONY:	clean distclean
 
