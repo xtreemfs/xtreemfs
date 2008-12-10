@@ -10,31 +10,32 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 SERVER_WHITE_LIST=(
-	"servers/build.xml" "build.xml"
+	"servers/build.xml" ""
 	"servers/bin" "bin"
 	"servers/config" "config"
 	"servers/init.d-scripts" "init.d-scripts"
 	"servers/lib" "lib"
 	"servers/man" "man"
-	"servers/nbproject" "nbproject"
-	"servers/src" "src"
+	"servers/dist" "dist"
+	"packaging/generate_uuid" "packaging"
 )
 
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 CLIENT_WHITE_LIST=(
-	"client/bootstrap.sh" "bootstrap.sh"
-	"client/config.h.in" "config.h.in"
-	"client/configure.ac" "configure.ac"
-	"client/make.config" "make.config"
-	"client/Makefile" "Makefile"
-	"client/Makefile.am" "Makefile.am"
+	"client/bootstrap.sh" ""
+	"client/config.h.in" ""
+	"client/configure.ac" ""
+	"client/make.config" ""
+	"client/Makefile" ""
+	"client/Makefile.am" ""
 	"client/bin" "bin"
-	"client/json*" "json"
+	"client/json-c-0.7" "json-c-0.7"
 	"client/man" "man"
-	"client/neon*" "neon"
+	"client/neon-0.27.2" "neon-0.27.2"
 	"client/src" "src"
 	"client/tools" "tools"
+	"client/tests" "tests"
 	"servers/config/default_dir" "config/default_dir"
 )
 

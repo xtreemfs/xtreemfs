@@ -1,0 +1,24 @@
+#!/bin/bash
+# this scripts uses the tool 'uuidgen'
+
+CFGFILE=$1 #name of the config file (osdconfig, mrcconfig)
+
+grep -e '^uuid\W*=\W*\w\+' $CFGFILE > /dev/null
+
+if [ $? -ne 0 ]
+then
+	if [ -e /usr/bin/uuidgen ]
+	then
+		UUID=`/usr/bin/uuidgen`
+	else
+		UUID=$RANDOM"-"$RANDOM"-"$RANDOM"-"$RANDOM
+		echo "WARNING: uuidgen is not available, the generated UUID contains just random numbers. THIS UUID IS PROBABLY NOT UNIQUE, PLEASE CREATE A REAL UUID OF YOU INTED TO USE THIS SERVICE IN A MULTI-SERVER ENVIRONMENT."
+	fi
+
+        echo "" >> $CFGFILE
+        echo "# The UUID is the globally unique name of this service." >> $CFGFILE
+        echo "# You must not change the UUID once the service has been used" >> $CFGFILE
+        echo "# to change the address/hostname or port of a service please" >> $CFGFILE
+        echo "# change the UUID Mapping in the directory service." >> $CFGFILE
+        echo "uuid = "$UUID >> $CFGFILE
+fi

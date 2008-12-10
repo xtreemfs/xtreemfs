@@ -1,0 +1,12 @@
+Source: xtreemfs-client
+Section: unknown
+Priority: optional
+Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
+Build-Depends: debhelper (>= 5), make (>=3.8.1), gcc (>=4), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), libxml2-dev (>= 2.6)
+Standards-Version: 3.7.2
+
+Package: xtreemfs-client
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, fuse-utils (>= 2.6), attr (>=2)
+Description: XtreemFS client
+ XtreemFS is an object-based file system that is designed for federated IT infrastructures that are connected by wide-area networks. This packages containes the XtreemFS client component.
