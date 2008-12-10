@@ -1,0 +1,99 @@
+.TH xtfs_mkvol 1 "July 2008" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_mkvol \- create a new XtreemFS volume on an MRC
+.SH SYNOPSIS
+.B "xtfs_mkvol --help"
+.br
+\fBxtfs_mkvol [ \fIoptions\fB ] \fImrc_URL\fR/\fIvolume_name
+.br
+
+.SH DESCRIPTION
+.I xtfs_mkvol
+creates a new volume named
+.I volume_name
+on the Metdata Server (MRC) with the address
+.I mrc_URL
+.
+
+.SH EXAMPLE USAGE
+.B "xtfs_mkvol -p RAID0,256,4 -a 2 http://remote.mrc.machine/myVolume"
+.PP
+creates a new volume named myVolume on the MRC at remote.mrc.machine with a default stripe size of 256kB and a width of 4 storage servers (OSDs). POSIX permissions are used.
+
+
+.SH OPTIONS
+.TP
+.TP
+.B \-h
+Print help.
+.TP
+\fB\-p/\-\-striping-policy=\fIpolicy
+Defines the default striping policy to use for the volume. The format is \fIname\fR,\fIstripe_size\fR,\fIwidth.
+.RS
+.TP
+.I name
+the name of the striping policy to use
+.RS
+.B RAID0
+.RE
+.TP
+.I stripe_size
+The size in kB of each stripe of the file.
+.TP
+.I width
+The number of OSDs to stripe over.
+.PP
+The default policy if nothing is specified is RAID0,4,1
+.RE
+
+\fB\-s/\-\-osd-selection=\fIid\fR
+.RS
+.br
+Defines the default OSD selection method to use for the volume.
+.TP
+.I 1
+random OSD selection
+.TP
+.I 2
+IP-address proximity-based OSD selection.
+.PP
+The default selection method is 1.
+.RE
+
+\fB\-s/\-\-access-policy=\fIid\fR
+.RS
+.br
+Defines the access policy to use for authorizing access to the volume.
+.TP
+.I 1
+no access policy - everyone is authorized
+.TP
+.I 2
+POSIX ACLs - regular POSIX permissions / ACL based authorization
+.TP
+.I 3
+Volume ACLs - similar to POSIX ACLs but there is only a single set of ACLs for the whole volume. Thsi means there are no individual permissions per file/directory.
+.PP
+The default access policy is 1.
+.RE
+
+\fB\-c/\-\-cert=\fIfile\fR
+Used to specify the PKCS#12 file with the credentials (cert + private key) to authenticate at the MRC. Must be used if SSL is used.
+
+
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_showmount (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_sp (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+.BR
+
+
+.SH AVAILABILITY
+The xtfs_mkvol command is part of the XtreemFS-client package and is available from http://www.XtreemFS.org

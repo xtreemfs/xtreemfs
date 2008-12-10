@@ -1,0 +1,33 @@
+.TH xtfs_lsvol 1 "July 2008" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_lsvol \- list all volumes on a metadata server (MRC).
+.SH SYNOPSIS
+\fBxtfs_lsvol \fImrc_URL\fR
+.br
+
+.SH DESCRIPTION
+.I xtfs_lsvol
+lists all volumes on the Metdata Server (MRC) with the address
+.I mrc_URL
+
+.SH EXAMPLE USAGE
+.B "xtfs_lsvol http://localhost"
+.br
+.B "xtfs_lsvol https://some.remote.machine:12345"
+
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_showmount (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_sp (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+.BR
+
+
+.SH AVAILABILITY
+The xtfs_lsvol command is part of the XtreemFS-client package and is available from http://www.XtreemFS.org
