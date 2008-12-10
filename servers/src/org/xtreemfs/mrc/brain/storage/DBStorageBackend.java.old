@@ -1,0 +1,379 @@
+package org.xtreemfs.mrc.brain.storage;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.xtreemfs.mrc.brain.storage.entities.AbstractFileEntity;
+import org.xtreemfs.mrc.brain.storage.entities.DirEntity;
+import org.xtreemfs.mrc.brain.storage.entities.FileAttributeEntity;
+import org.xtreemfs.mrc.brain.storage.entities.FileEntity;
+
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.persist.EntityCursor;
+import com.sleepycat.persist.EntityStore;
+import com.sleepycat.persist.PrimaryIndex;
+import com.sleepycat.persist.SecondaryIndex;
+import com.sleepycat.persist.StoreConfig;
+
+/**
+ * The storage backend used to store files and directories.
+ *
+ * @author stender
+ *
+ */
+public class DBStorageBackend implements StorageBackend {
+
+    private Environment env;
+
+    private EntityStore store;
+
+    private File dbDir;
+
+    private PrimaryIndex<Long, FileEntity> fileIdIndex;
+
+    private PrimaryIndex<Long, DirEntity> dirIdIndex;
+
+    private SecondaryIndex<String, Long, FileEntity> fileIndex;
+
+    private SecondaryIndex<String, Long, DirEntity> dirIndex;
+
+    private SecondaryIndex<Long, Long, FileEntity> fileParentIndex;
+
+    private SecondaryIndex<Long, Long, DirEntity> dirParentIndex;
+
+    private PrimaryIndex<String, FileAttributeEntity> attrIndex;
+
+    public DBStorageBackend(String dbDirectory, String volumeOwnerId,
+            String volumeGroupId) throws BackendException {
+
+        try {
+
+            EnvironmentConfig envCfg = new EnvironmentConfig();
+            StoreConfig storeCfg = new StoreConfig();
+
+            envCfg.setReadOnly(false);
+            storeCfg.setReadOnly(false);
+
+            envCfg.setAllowCreate(true);
+            storeCfg.setAllowCreate(true);
+
+            envCfg.setTransactional(false);
+            storeCfg.setTransactional(false);
+
+            storeCfg.setDeferredWrite(true);
+
+            dbDir = new File(dbDirectory);
+            dbDir.mkdir();
+
+            envCfg.setLocking(false);
+            envCfg.setCachePercent(90);
+            envCfg.setTxnNoSync(true);
+            // envCfg.setConfigParam("je.env.recovery", "false");
+            // envCfg.setConfigParam("je.env.isTransactional", "false");
+            // envCfg.setConfigParam("je.log.memOnly", "true");
+            envCfg.setConfigParam("je.env.runCheckpointer", "false");
+            envCfg.setConfigParam("je.env.runCleaner", "false");
+            envCfg.setConfigParam("je.env.checkLeaks", "false");
+            envCfg.setConfigParam("je.log.useNIO", "true");
+            envCfg.setConfigParam("je.log.directNIO", "false");
+            envCfg.setConfigParam("je.env.runINCompressor", "false");
+            envCfg.setConfigParam("je.deferredWrite.temp", "true");
+
+            env = new Environment(dbDir, envCfg);
+            env.sync();
+
+            store = new EntityStore(env, "EntityStore", storeCfg);
+            store.getSequenceConfig("Sequence_File").setCacheSize(0);
+            // store.getSequenceConfig("Sequence_File").setExclusiveCreate(true);
+
+            fileIdIndex = store.getPrimaryIndex(Long.class, FileEntity.class);
+            dirIdIndex = store.getPrimaryIndex(Long.class, DirEntity.class);
+
+            fileIndex = store.getSecondaryIndex(fileIdIndex, String.class,
+                    "indexId");
+            dirIndex = store.getSecondaryIndex(dirIdIndex, String.class,
+                    "indexId");
+
+            fileParentIndex = store.getSecondaryIndex(fileIdIndex, Long.class,
+                    "parentId");
+            dirParentIndex = store.getSecondaryIndex(dirIdIndex, Long.class,
+                    "parentId");
+
+            attrIndex = store.getPrimaryIndex(String.class,
+                    FileAttributeEntity.class);
+
+            // if the root element does not exist, create it
+            if (dirIdIndex.count() == 0) {
+                long time = System.currentTimeMillis() / 1000;
+                dirIdIndex.put(new DirEntity(0, "/", -1, volumeOwnerId,
+                        volumeGroupId, time, time, time, null));
+            }
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public AbstractFileEntity getFileById(long fileId) throws BackendException {
+
+        try {
+
+            AbstractFileEntity data = dirIdIndex.get(fileId);
+            if (data == null)
+                data = fileIdIndex.get(fileId);
+
+            return data;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public List<FileAttributeEntity> getAttrsByFileId(long fileId, long attrType)
+            throws BackendException {
+
+        try {
+
+            List<FileAttributeEntity> result = new LinkedList<FileAttributeEntity>();
+
+            EntityCursor<FileAttributeEntity> csr = attrIndex.entities();
+            for (FileAttributeEntity data : csr)
+                if (data.getFileId() == fileId && data.getType() == attrType)
+                    result.add(data);
+
+            csr.close();
+
+            return result;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public List<FileAttributeEntity> getAttrsByFileId(long fileId)
+            throws BackendException {
+
+        try {
+
+            List<FileAttributeEntity> result = new LinkedList<FileAttributeEntity>();
+
+            EntityCursor<FileAttributeEntity> csr = attrIndex.entities();
+            for (FileAttributeEntity data : csr)
+                if (data.getFileId() == fileId)
+                    result.add(data);
+
+            csr.close();
+
+            return result;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public String getUserAttrByFileId(long fileId, String attr)
+            throws BackendException {
+
+        try {
+
+            EntityCursor<FileAttributeEntity> csr = attrIndex.entities();
+            for (FileAttributeEntity data : csr)
+                if (data.getFileId() == fileId
+                        && data.getType() == FileAttributeEntity.TYPE_USER
+                        && data.getKey().equals(attr)) {
+                    csr.close();
+                    return (String) data.getValue();
+                }
+
+            csr.close();
+            return null;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public Object getSystemAttrByFileId(long fileId, String attr)
+            throws BackendException {
+
+        try {
+
+            EntityCursor<FileAttributeEntity> csr = attrIndex.entities();
+            for (FileAttributeEntity data : csr)
+                if (data.getFileId() == fileId
+                        && data.getType() == FileAttributeEntity.TYPE_SYSTEM
+                        && data.getKey().equals(attr)) {
+                    csr.close();
+                    return data.getValue();
+                }
+
+            csr.close();
+            return null;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public Collection<FileEntity> getFilesByParent(long parentId)
+            throws BackendException {
+
+        try {
+            return fileParentIndex.subIndex(parentId).map().values();
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public Collection<DirEntity> getDirsByParent(long parentId)
+            throws BackendException {
+
+        try {
+            return dirParentIndex.subIndex(parentId).map().values();
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void deleteFile(long fileId) throws BackendException {
+
+        try {
+
+            // delete the file
+            if (!fileIdIndex.delete(fileId))
+                dirIdIndex.delete(fileId);
+
+            // delete all related attributes
+            EntityCursor<FileAttributeEntity> csr = attrIndex.entities();
+            for (FileAttributeEntity data : csr) {
+                if (data.getFileId() == fileId)
+                    csr.delete();
+            }
+            csr.close();
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public AbstractFileEntity getChild(String name, long parentId)
+            throws BackendException {
+
+        try {
+
+            AbstractFileEntity file = dirIndex.get(createId(parentId, name));
+            if (file == null)
+                file = fileIndex.get(createId(parentId, name));
+
+            return file;
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void deleteAttribute(long fileId, String key)
+            throws BackendException {
+        try {
+            attrIndex.delete(fileId + ":" + key);
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void put(FileAttributeEntity data) throws BackendException {
+        try {
+            attrIndex.put(data);
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void put(FileEntity data) throws BackendException {
+        try {
+            fileIdIndex.put(data);
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void put(DirEntity data) throws BackendException {
+        try {
+            dirIdIndex.put(data);
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void sync() throws BackendException {
+        try {
+            env.sync();
+            store.sync();
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void close() throws BackendException {
+
+        try {
+
+            if (store != null)
+                store.close();
+
+            if (env != null)
+                env.close();
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    public void destroy() {
+
+        if (store != null)
+            try {
+                store.close();
+            } catch (DatabaseException dbe) {
+            }
+
+        if (env != null)
+            try {
+                env.close();
+            } catch (DatabaseException dbe) {
+            }
+
+        FSTools.delTree(dbDir);
+    }
+
+    public void dumpDB() throws BackendException {
+
+        try {
+
+            System.out.println("files:");
+            EntityCursor<FileEntity> csr = fileIndex.entities();
+            for (AbstractFileEntity data : csr)
+                System.out.println(data);
+            csr.close();
+
+            System.out.println("\ndirectories:");
+            EntityCursor<DirEntity> csr2 = dirIndex.entities();
+            for (AbstractFileEntity data : csr2)
+                System.out.println(data);
+            csr2.close();
+
+        } catch (DatabaseException exc) {
+            throw new BackendException(exc);
+        }
+    }
+
+    private static String createId(long parentId, String name) {
+        return name + "#" + parentId;
+    }
+
+}

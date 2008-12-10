@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#####################################################################################
+#
+# This script will start the server-side of the Httperf test.
+# It starts the DIR and the OSD.
+#
+# At first it starts the DIR and the original OSD. The orininal OSD is needet for
+# creating files at the OSD. Therefor the WriteFilesToOSD-class is necessary.
+# After the creation-process the old OSD will be killed and the special
+# HttperfOSD will be started.
+# Now the user can start with the tests.
+#
+# The "*files_urls"-files contain the special URL-formatting which is used by
+# the WriteFilesToOSD-class and httperf.
+# It is necessary that you use the same "*files_urls"-file for the
+# WriteFilesToOSD-class and httperf.
+#
+# You need to specify the following parameters for this script:
+# OSD_FILEPATH: absolute path where OSD saves the files
+# URLS_FILE: absolute path to the "*files_urls"-file
+# FILESIZE: filesize of the files which will be created
+#
+#####################################################################################
+
+$dir_pid
+$osd_pid
+OSD_FILEPATH=$1
+URLS_FILE=$2
+FILESIZE=$3
+
+cd $XTREEMFS
+mkdir /tmp/xtreemfs_httperf_test/
+
+# start DIR
+echo "start DIR"
+bin/xtreemfs_start ds -p 32638 -i -d localhost -c /tmp/xtreemfs_httperf_test/ds.cfg -s /tmp/xtreemfs_httperf_test/ds -l /tmp/xtreemfs_httperf_test/ds.log &
+dir_pid=$!
+
+sleep 10
+
+# start original OSD
+echo "start OSD"
+bin/xtreemfs_start osd -p 32637 -i -d localhost -c /tmp/xtreemfs_httperf_test/osd.cfg -s $OSD_FILEPATH &
+osd_pid=$!
+
+sleep 10
+
+cd java/build/classes
+# start writing files
+echo "start writing files"
+java org.xtreemfs.sandbox.httperf.WriteFilesToOSD localhost 32637 $URLS_FILE $FILESIZE
+
+sleep 10
+
+# kill original OSD
+echo "kill OSD"
+if [ -d /proc/$osd_pid ]; then
+    echo "Killing process $dir_pid"
+    kill -9 $osd_pid
+fi
+
+sleep 1
+
+# start adapted OSD for httperf
+echo "start HttPerfOSD"
+java org.xtreemfs.sandbox.httperf.HttperfOSD /tmp/xtreemfs_httperf_test/osd.cfg &
+osd_pid=$!
+
+sleep 10
+echo
+echo "services are running"
+echo "press a button to kill all services"
+read key
+if [ -d /proc/$osd_pid ]; then
+    echo "Killing process $osd_pid"
+    kill -9 $osd_pid
+fi
+if [ -d /proc/$dir_pid ]; then
+    echo "Killing process $dir_pid"
+    kill -9 $dir_pid
+fi
+echo "services stopped"
+
+cd ../../src/org/xtreemfs/sandbox/httperf
+
+
+
+usage() {
+    cat <<EOF
+Usage:
+   $0 <ABSOLUTE PATH where OSD saves the files> <ABSOLUTE PATH to urls containing file> <FILESIZE of the files which will be created>
+
+EOF
+}

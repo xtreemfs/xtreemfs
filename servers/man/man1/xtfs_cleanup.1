@@ -1,0 +1,48 @@
+.TH xtfs_cleanup 1 "September 2008" "The XtreemFS Distributed File System" "XtreemFS server"
+.SH NAME
+xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
+.SH SYNOPSIS
+\fBxtfs_cleanup [ \fIoptions\fB ] \fI<osd_address>\fB | \fIuuid:<osd_uuid>
+.BR
+
+.SH DESCRIPTION
+.I xtfs_cleanup
+performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not. 
+Returns a list of those files which properly can be deleted.
+
+.SH EXAMPLE USAGE
+.B "xtfs_cleanup [options] uuid:<osd_uuid>"
+.PP
+Cleans up the OSD with the given uuid.
+
+.SH OPTIONS
+.TP
+.TP
+\fB-h\fP 						show usage info
+.TP
+\fB-v\fP 						verbose mode - no listing of file details
+.TP
+\fB-h\fP 						restore mode - all files will be restored to directory '/Lost+Found/' at the volume they are located
+.TP
+\fB-e\fP 						!erase mode - all files will be removed without further request!
+.TP
+\fB-d\fP <dir_address>       	directory service (DIR) to use (e.g. 'http://localhost:32638')
+If no DIR URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'.
+
+
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_showmount (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_sp (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_scrub (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_cleanup command is part of the XtreemFS-server package and is available from http://www.XtreemFS.org.

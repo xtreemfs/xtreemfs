@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#####################################################################################
+#
+# This script will start the client-side of the Httperf test.
+# It starts httperf.
+#
+# At first, please start the OSD and DIR (it's recommended to use the start_osd
+# script).
+# Now the user can start with the tests.
+#
+# The "*files_urls"-files contain the special URL-formatting which is used by
+# the WriteFilesToOSD-class and httperf.
+# It is necessary that you use the same "*files_urls"-file for the
+# WriteFilesToOSD-class and httperf.
+#
+# You need to specify the following parameters for this script:
+# URLS_FILE: PATH to the "*files_urls"-file
+# OSD_SERVER: url to the OSD
+# OSD_PORT: OSD port (the start_osd script ueses port 32637)
+# CONNECTIONS: concurrent connections (httperf param)
+# TIMEOUT: reply-timeout (httperf param)
+#
+#####################################################################################
+
+URLS_FILE=$1
+OSD_SERVER=$2
+OSD_PORT=$3
+CONNECTIONS=$4
+TIMEOUT=$5
+
+httperf --hog --wsesslog=$CONNECTIONS,2,$URLS_FILE --server=$OSD_SERVER --port=$OSD_PORT --http-version=1.1 --print-request --timeout=$TIMEOUT
+
+usage() {
+    cat <<EOF
+Usage:
+   $0 <PATH to urls containing file> <OSD server url> <OSD port> <concurrent connections> <reply-timeout>
+
+EOF
+}

@@ -1,0 +1,156 @@
+<HTML>
+    <HEAD>
+        <TITLE>XtreemFS OSD @ <!-- $UUID --></TITLE>
+        <STYLE>
+            td.title { border-top:1px solid black;
+                border-bottom: 1px solid black;
+                background-color:#EEEEEE;
+                font-weight:bold;
+            }
+            td.subtitle { text-align:right;
+                border-right:10px solid white;
+            }
+            body {
+                font-family: Verdana, Arial, Sans-Serif;
+                }
+            td {
+                text-align: left;
+                }
+            span.levelOK {
+                background-color: #CCFFCC;
+            }
+            span.levelWARN {
+                background-color: #FFFF99;
+            }
+            span.levelERROR {
+                background-color: #FF7F7F;
+            }
+        </STYLE>
+    </HEAD>
+
+    <BODY>
+        <H1><A HREF="http://www.XtreemFS.org"><IMG SRC="http://www.xtreemfs.com/imgs/Logo_200px.jpg" border="0" align="bottom"></A> OSD <!-- $UUID --></H1>
+        <BR>
+        <TABLE border="0">
+            <TR>
+                <TD class="title" colspan="2">
+                    Configuration
+                </TD>
+            </TR>
+            <TR><TD>TCP &amp; UDP port</TD>
+                <TD><!-- $PORT --></TD>
+            </TR>
+            <TR><TD>Directory Service</TD>
+                <TD><A href="<!-- $DIRURL -->"><!-- $DIRURL --></A></TD>
+            </TR>
+
+            <TR><TD>Debug Level</TD>
+                <TD><!-- $DEBUG --></TD>
+            </TR>
+            
+            <TR><TD>Statisticts</TD>
+                <TD><!-- $STATCOLLECT --></TD>
+            </TR>
+
+            <TR>
+                <TD class="title" colspan="2">
+                    Load
+                </TD>
+            </TR>
+            <TR><TD># HTTP connections (pinky)</TD>
+                <TD><!-- $NUMCON --></TD>
+            </TR>
+            <TR><TD>HTTP server (pinky) queue length</TD>
+                <TD><!-- $PINKYQ --></TD>
+            </TR>
+            <TR><TD>Parser Stage queue length</TD>
+                <TD><!-- $PARSERQ --></TD>
+            </TR>
+            <TR><TD>Auth Stage queue length</TD>
+                <TD><!-- $AUTHQ --></TD>
+            </TR>
+            <TR><TD>Storage Stage queue length</TD>
+                <TD><!-- $STORAGEQ --></TD>
+            </TR>
+            <TR><TD>Deletion Stage queue length</TD>
+                <TD><!-- $DELETIONQ --></TD>
+            </TR>
+            <TR><TD>Open files</TD>
+                <TD><!-- $OPENFILES --></TD>
+            </TR>
+
+            <TR>
+                <TD class="title" colspan="2">
+                    Transfer
+                </TD>
+            </TR>
+            <TR><TD># object written</TD>
+                <TD><!-- $OBJWRITE --></TD>
+            </TR>
+            <TR><TD># object read</TD>
+                <TD><!-- $OBJREAD --></TD>
+            </TR>
+            <TR><TD>bytes sent</TD>
+                <TD><!-- $BYTETX --></TD>
+            </TR>
+            <TR><TD>bytes received</TD>
+                <TD><!-- $BYTERX --></TD>
+            </TR>
+            <TR><TD># GMAX packets received</TD>
+                <TD><!-- $GMAXMSG --></TD>
+            </TR>
+            <TR><TD># GMAX requests sent</TD>
+                <TD><!-- $GMAXRPC --></TD>
+            </TR>
+            <TR><TD># files deleted</TD>
+                <TD><!-- $DELETES --></TD>
+            </TR>
+
+
+            <TR>
+                <TD class="title" colspan="2">
+                    VM Info / Memory
+                </TD>
+            </TR>
+            <TR><TD>Free Disk Space</TD>
+                <TD><!-- $DISKFREE --></TD>
+            </TR>
+            <TR><TD>Memory free/max/total</TD>
+                <TD><!-- $MEMSTAT --></TD>
+            </TR>
+            <TR><TD>Buffer Pool stats</TD>
+                <TD><PRE><!-- $BPSTATS --></PRE></TD>
+            </TR>
+
+            <TR>
+                <TD class="title" colspan="2">
+                    Time
+                </TD>
+            </TR>
+            <TR><TD>global XtreeemFS time</TD>
+                <TD><!-- $GLOBALTIME --></TD>
+            </TR>
+
+            <TR><TD>resync interval for global time</TD>
+                <TD><!-- $GLOBALRESYNC --> ms</TD>
+            </TR>
+
+            <TR><TD>local system time</TD>
+                <TD><!-- $LOCALTIME --></TD>
+            </TR>
+
+            <TR><TD>local time update interval</TD>
+                <TD><!-- $LOCALRESYNC --> ms</TD>
+            </TR>
+            
+            <TR>
+                <TD class="title" colspan="2">
+                    UUID Mapping Cache
+                </TD>
+            </TR>
+            <TR><TD colspan="2"><PRE><!-- $UUIDCACHE --></PRE></TD>
+            </TR>
+
+        </TABLE>
+    </BODY>
+</HTML>
