@@ -1,0 +1,149 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          xtreemos-ds
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     3 4 5
+# Short-Description: XtreemFS MRC
+# Description:       XtreemFS MRC. http://www.xtreemfs.org/
+### END INIT INFO
+
+
+# Source function library.
+if [ -e /lib/lsb/init-functions ]
+then
+	. /lib/lsb/init-functions
+else
+	. /etc/init.d/functions
+fi
+
+LOCKDIR=/var/lock/subsys
+LOCKFILE=$LOCKDIR/xtreemfs-mrc
+
+XTREEMFS_USER=xtreemfs
+
+PID_MRC=/var/run/xtreemfs_mrc.pid
+
+CONFIG_MRC=/etc/xos/xtreemfs/mrcconfig.properties
+
+LOG_MRC=/var/log/xtreemfs/mrc.log
+
+if [ -z $JAVA_HOME ]; then
+	export JAVA_HOME=/usr
+fi
+JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar"
+
+pre_check() {
+
+	exists=`grep -c $XTREEMFS_USER /etc/passwd`
+	if [ $exists -eq 0 ]
+	then
+		mkdir /var/lib/xtreemfs
+		useradd --home /var/lib/xtreemfs $XTREEMFS_USER
+		chown $XTREEMFS_USER /var/lib/xtreemfs
+	else
+        [ -d /var/lib/xtreemfs ] || mkdir /var/lib/xtreemfs
+        chown -R $XTREEMFS_USER /var/lib/xtreemfs
+    fi
+	dir=`dirname $LOG_MRC`
+	if [ ! -e $dir ]
+	then
+		mkdir $dir
+	fi
+}
+
+start() {
+    if [ -f $LOCKFILE ]
+    then
+	echo -n "XtreemFS Metadata and Replica Catalog (MRC) already started"
+        log_failure_msg
+	echo
+        return 0
+    fi
+
+    pre_check
+
+    echo >> $LOG_MRC
+    date >> $LOG_MRC
+    echo -e "Starting XtreemFS Metadata and Replica Catalog (MRC)...\n\n" >> $LOG_MRC
+
+    echo -n "starting XtreemFS Metadata and Replica Catalog (MRC)..."
+    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC >> $LOG_MRC 2>&1 &
+    PROCPID=$!
+    echo $PROCPID > $PID_MRC
+    sleep 1s
+
+    if [ -e /proc/$PROCPID ]
+    then
+	log_success_msg
+	echo
+    else
+	log_failure_msg
+	echo
+	return 1
+    fi
+
+    if [ ! -d $LOCKDIR ]; then mkdir -p $LOCKDIR; fi
+    touch $LOCKFILE
+    return 0
+}
+
+stop() {
+    if [ -f $PID_MRC ]
+    then
+        echo -n "stoping XtreemFS Metadata and Replica Catalog (MRC)..."
+        killproc -p $PID_MRC java
+        log_success_msg
+	echo
+    fi
+
+    rm -f $LOCKFILE
+    return 0
+}
+
+status() {
+    if [ -f $PID_MRC ]
+    then
+        PROCPID=`cat $PID_MRC`
+	if [ ! -e /proc/$PROCPID ]
+	then
+		echo "XtreemFS Metadata and Replica Catalog (MRC) has crashed"
+		return 1
+	else
+		echo "XtreemFS Metadata and Replica Catalog (MRC) is running"
+		return 0
+	fi
+    else
+	echo "XtreemFS Metadata and Replica Catalog (MRC)) is not running"
+	return 3
+    fi
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    reload)
+        ;;
+    restart)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo -e "Usage: %0 {start|stop|restart|reload|status}\n"
+	log_failure_msg
+        exit 1
+        ;;
+esac
+
+exit 0
+

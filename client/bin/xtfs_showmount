@@ -1,0 +1,4 @@
+#!/bin/bash
+# a simple wrapper around mount + grep
+
+mount | grep 'xtfs_mount'

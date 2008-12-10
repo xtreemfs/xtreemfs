@@ -1,0 +1,149 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          xtreemos-ds
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     3 4 5
+# Short-Description: XtreemFS OSD
+# Description:       XtreemFS OSD. http://www.xtreemfs.org/
+### END INIT INFO
+
+
+# Source function library.
+if [ -e /lib/lsb/init-functions ]
+then
+	. /lib/lsb/init-functions
+else
+	. /etc/init.d/functions
+fi
+
+LOCKDIR=/var/lock/subsys
+LOCKFILE=$LOCKDIR/xtreemfs-osd
+
+XTREEMFS_USER=xtreemfs
+
+PID_OSD=/var/run/xtreemfs_osd.pid
+
+CONFIG_OSD=/etc/xos/xtreemfs/osdconfig.properties
+
+LOG_OSD=/var/log/xtreemfs/osd.log
+
+if [ -z $JAVA_HOME ]; then
+	export JAVA_HOME=/usr
+fi
+JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar"
+
+pre_check() {
+
+	exists=`grep -c $XTREEMFS_USER /etc/passwd`
+	if [ $exists -eq 0 ]
+	then
+		mkdir /var/lib/xtreemfs
+		useradd --home /var/lib/xtreemfs $XTREEMFS_USER
+		chown $XTREEMFS_USER /var/lib/xtreemfs
+	else
+        [ -d /var/lib/xtreemfs ] || mkdir /var/lib/xtreemfs
+        chown -R $XTREEMFS_USER /var/lib/xtreemfs
+    fi
+	dir=`dirname $LOG_OSD`
+	if [ ! -e $dir ]
+	then
+		mkdir $dir
+	fi
+}
+
+start() {
+    if [ -f $LOCKFILE ]
+    then
+	echo -n "XtreemFS Object Storage Device (OSD) already started"
+        log_failure_msg
+	echo
+        return 0
+    fi
+
+    pre_check
+
+    echo >> $LOG_OSD
+    date >> $LOG_OSD
+    echo -e "Starting XtreemFS Object Storage Device (OSD)...\n\n" >> $LOG_OSD
+
+    echo -n "starting Object Storage Device (OSD)..."
+    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD >> $LOG_OSD 2>&1 &
+    PROCPID=$!
+    echo $PROCPID > $PID_OSD
+    sleep 1s
+
+    if [ -e /proc/$PROCPID ]
+    then
+	log_success_msg
+	echo
+    else
+	log_failure_msg
+	echo
+	return 1
+    fi
+    
+    if [ ! -d $LOCKDIR ]; then mkdir -p $LOCKDIR; fi
+    touch $LOCKFILE
+    return 0
+}
+
+stop() {
+    if [ -f $PID_OSD ]
+    then
+        echo -n "stoping XtreemFS Object Storage Device (OSD)..."
+        killproc -p $PID_OSD java
+        log_success_msg
+	echo
+    fi
+
+    rm -f $LOCKFILE
+    return 0
+}
+
+status() {
+    if [ -f $PID_OSD ]
+    then
+        PROCPID=`cat $PID_OSD`
+	if [ ! -e /proc/$PROCPID ]
+	then
+		echo "XtreemFS Object Storage Device (OSD) has crashed"
+		return 1
+	else
+		echo "XtreemFS Object Storage Device (OSD) is running"
+		return 0
+	fi
+    else
+	echo "XtreemFS Object Storage Device (OSD) is not running"
+	return 3
+    fi
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    reload)
+        ;;
+    restart)
+        stop
+        sleep 1
+        start
+        ;;
+    *)
+        echo -e "Usage: %0 {start|stop|restart|reload|status}\n"
+	log_failure_msg
+        exit 1
+        ;;
+esac
+
+exit 0
+
