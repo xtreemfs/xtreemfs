@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          xtreemos-ds
+# Provides:          xtreemfs-mrc
 # Required-Start:    $network
 # Required-Stop:     $network
 # Default-Start:     3 4 5
@@ -40,7 +40,7 @@ pre_check() {
 	if [ $exists -eq 0 ]
 	then
 		mkdir /var/lib/xtreemfs
-		useradd --home /var/lib/xtreemfs $XTREEMFS_USER
+		useradd -r --home /var/lib/xtreemfs $XTREEMFS_USER
 		chown $XTREEMFS_USER /var/lib/xtreemfs
 	else
         [ -d /var/lib/xtreemfs ] || mkdir /var/lib/xtreemfs
