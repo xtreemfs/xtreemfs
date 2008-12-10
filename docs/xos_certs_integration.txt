@@ -1,0 +1,26 @@
+By default XOS certificates are in the PEM format. For XtreemFS the certificates must be in the PKCS12 or JKS format.
+
+For generating the PKCS12 service certificate file the following files are needed:
+- key.pem (private key)
+- cert.pem (aproppriate certificate)
+- cacert.pem (CA certificate)
+
+Use openssl to convert it to PKCS12:
+	openssl pkcs12 -export -in cert.pem -inkey key.pem -out service1.p12 -name "service1" -CAfile cacert.pem -caname ca -chain
+
+Use the java keytool for building the trusted keystore:
+	keytool -importcert -file cacert.pem -keystore trust.jks -alias ca1
+
+Setting up xtreemfs config files:
+# specify whether SSL is required
+use_ssl = true
+
+# server credentials for SSL handshakes
+ssl_service_creds = ./certs/service1.p12
+ssl_service_creds_pw = passphrase
+ssl_service_creds_container = pkcs12
+
+# trusted certificates for SSL handshakes
+ssl_trusted_certs = ./certs/trust.jks
+ssl_trusted_certs_pw = passphrase
+ssl_trusted_certs_container = jks

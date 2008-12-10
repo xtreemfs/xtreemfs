@@ -1,0 +1,200 @@
+##
+## MobileDevices-HOWTO.txt
+##
+## Author: Jesús Malo Poyatos (jesus.malo@bsc.es)
+## Date:   2008/Oct/27
+##
+## Abstract:
+##         This HOWTO describes how to compile the XtreemFS client code for the
+##     mobile devices flavour of XtreemOS. It also shows some examples of use
+##
+## More information:
+##        http://www.xtreemfs.com/docs.html
+##            Complete description of how to compile and install XtreemFS
+##
+
+Description
+-----------
+
+    This document shows howto to compile and use the XtreemFS client for the
+mobile devices flavour of XtreemOS.
+
+
+Warning
+-------
+
+    This document is not a complete guide about how to compile and install
+XtreemFS. For more information, go to the related documents.
+    XtreemFS client code for mobile devices is currently under development.
+Some functionalities could work wrong or could not work at all. Some bugs and
+issues have to be solved yet. Be aware of this.
+
+
+Overview
+--------
+
+    The procedure for getting the XtreemFS client working in mobile devices can
+be summarized in three steps:
+     - Get the source code
+     - Compile the code properly
+     - Load the module
+    After these steps, you will be able to use XtreemFS from your mobile device.
+
+
+1st step: Get the source code
+-----------------------------
+    If you were able to get this file, you probably already have the source
+code of XtreemFS. In other case, you have to download the source code of
+XtreemFS from the repository.
+    Currently you have to download it from the INRIA SVN repository used for
+the XtreemOS distribution. You can download it with the following command:
+
+    svn co svn+ssh://user@scm.gforge.inria.fr/svn/xtreemos/WP3.4/trunk
+
+    You should have properly configured the access to that repository.
+
+    As you should notice, the previous command will download the latest
+development code of XtreemFS. This code can work well or not. This HOWTO was
+done using the code with revision number 4392. Later revisions are not tested
+yet. In order to get the source code of revision 4392, use the following
+command:
+
+    svn co -r4392 svn+ssh://user@scm.gforge.inria.fr/svn/xtreemos/WP3.4/trunk
+
+
+2nd step: Compile the code properly
+-----------------------------------
+    You only have to compile the code for the client, so you do not need Java
+neither Ant, these are only needed for the services. However, you must have
+installed the third-party libraries required for XtreemFS (see the README
+document).
+
+    Go to the place directory where you downloaded the source code of XtreemFS
+and execute the following command:
+
+    make client
+
+
+3rd step: Load the module
+-------------------------
+    Once you have compiled properly the code, you will be able to work with the
+XtreemFS services using the client.
+    Firstly you should create a volume for storing the data. This information
+is in the README file of XtreemFS.
+    Once you have created a volume, you should be able to mount the file system.
+This is done by means of the 'xtfs_mount' command that you can find in the bin
+directory. This is done with a command line like :
+
+    xtfs_mount -o volume_url=YOUR_VOLUME,direct_io YOUR_MOUNT_POINT
+
+    After that command, you will have XtreemFS mounted and you will able to do
+any typical file system operation in your mount point.
+
+
+Example
+-------
+    Let's say that we have the XtreemFS services installed in the host
+'MyHost'. The MRC is listening on port 32636, the DS is listening on port 32638
+and one OSD is listening on port 32640.
+
+    I will download the code in my mobile device (perhaps you tranfer the file
+    by other mean, like a scp from a desktop):
+    $ svn co -r4392 svn+ssh://user@scm.gforge.inria.fr/svn/xtreemos/WP3.4/trunk
+    $
+
+    I will compile the XtreemFS code for my mobile device:
+    $ cd trunk
+    $ make client
+    $
+
+    As root, I will load the fuse module in my mobile device:
+    $ su -
+    Password:
+    # modprobe fuse
+    # exit
+    $
+
+    I will create a volume called MyVolume:
+    $ cd bin
+    $ ./xtfs_mkvol -a 2 http://MyHost:32636/MyVolume
+    $
+
+    I mount my volume:
+    $ ./xtfs_mount -o volume_url=http://MyHost:32636/MyVolume,direct_io ~/mnt
+    $
+
+    Now I can use XtreemFS through ~/mnt. I will write a file:
+    $ cd ~/mnt
+    $ echo "This is the content of my new file in XtreemFS" > test.txt
+    $
+
+    I will read the file:
+    $ cat test.txt
+    This is the content of my new file in XtreemFS" > test.txt
+    $
+
+    As root, I will umount the XtreemFS:
+    $ cd ..
+    $ su
+    Password:
+    # umount mnt
+    # exit
+    $
+
+
+Testing
+-------
+    In order to test XtreemFS, you can find two light tests in the bin/
+directory: 'basic_ALtests' and 'remote_ALtests'. Both scripts performs the same
+tests: the former starts the XtreemFS services by itself and the later relies
+on a previously started XtreemFS. Both can be used perfectly altough it is
+recommended to use 'remote_ALtest' because it is more suitable to mobile devices
+(you will not run OSDs, DS and MRC on them).
+
+    Testing XtreemFS is as follows: start a XtreemFS installation (OSD, MRC and
+DS), in the mobile device go to the 'bin/' directory and execute the script
+'remote_ALtests' specifying the host where XtreemFS services were started, write
+'test' and wait.
+
+    Example session (PC is a desktop, MD is a mobile device, XtreemFS is
+installed PC:/XtreemFS/ and compiled in MD:/XtreemFS/):
+
+   - Start the XtreemFS services in PC
+    user@PC:~$ cd /XtreemFS
+    user@PC:/XtreemFS$ ./start.sh
+
+   - Execute the test script in MD
+    user@MD:~$ cd /XtreemFS
+    user@MD:/XtreemFS$ cd bin
+    user@MD:/XtreemFS/bin$ ./remote_ALtests --host PC
+    Temporary directory for cfg, logs and data is /tmp/xtreemfs_XXLVPDJc
+    ## making volume x1 (stripesize=128, width=1) in
+    ## mounting volume to /tmp/xtreemfs_XXLVPDJc/mnt/x1
+    + set +x
+    Enter 'test' if you want to run the tests.
+    Anything else will skip the tests and cleanup.
+    > + ./xtfs_mount -f -d -o volume_url=http://bscib04/x1 -o direct_io,logfile=
+    /tmp/xtreemfs_XXLVPDJc/x1.log,debug=4 -o caching=1 /tmp/xtreemfs_XXLVPDJc/mn
+    t/x1
+
+   - Write test and press the 'Enter' key
+    test
+      PID CMD                           RSS    SZ
+    *** Starting parallel ddwrite tests ***
+    ==== Writing in volume x1 ====
+      --- 10MB, 1 client(s) ---
+    5.34759 MB/s
+      PID CMD                           RSS    SZ
+      --- 10MB, 2 client(s) ---
+    1.19474 MB/s
+    ...
+
+   - During the tests you will see if everything worked fined or not.
+
+
+Final words
+-----------
+    I hope this file is useful for you. I know that it can be improved, if you
+have any suggestion or comment about it, don't hesitate to send me an e-mail. I
+will be very glad to know it.
+
