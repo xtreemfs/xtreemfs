@@ -27,12 +27,19 @@ package org.xtreemfs.sandbox.tests;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
+import org.xtreemfs.utils.CLIParser;
+import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *
@@ -43,18 +50,67 @@ public class TortureXtreemFS {
     public static void main(String[] args) {
         MultiSpeedy speedy = null;
         try {
+
+            Map<String, CliOption> options = new HashMap<String, CliOption>();
+            List<String> arguments = new ArrayList<String>(2);
+            options.put("v", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("cp", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
+
+            CLIParser.parseCLI(args, options, arguments);
+
             Logging.start(Logging.LEVEL_WARN);
             TimeSync.initialize(null, 10000, 50, "");
-            final String mrcURL = ((args.length >= 1) ? args[0] : "http://localhost:32636");
 
-            URL url = new URL(mrcURL);  
+            if (arguments.size() != 2) {
+                usage();
+                return;
+            }
+
+            final URL mrcURL = new URL(arguments.get(1));
             
-            final String path = ((args.length >= 2) ? args[1] : "test")+"/torture.data";
+            final String path = (options.get("p").stringValue != null) ?
+                                options.get("p").stringValue : "/torture.data";
+            final String volname = (options.get("v").stringValue != null) ?
+                                    options.get("v").stringValue : "test";
+
+            final URL    dirURL = new URL(arguments.get(0));
+
+            boolean useSSL = false;
+
+            final SSLOptions sslOptions;
+
+            if (dirURL.getProtocol().equalsIgnoreCase("https")) {
+                //require credentials!
+                String serviceCredsFile = null;
+                String serviceCredsPass = null;
+                String trustedCAsFile = null;
+                String trustedCAsPass = null;
+
+                useSSL = true;
+                serviceCredsFile = options.get("c").stringValue;
+                serviceCredsPass = options.get("cp").stringValue;
+                trustedCAsFile = options.get("t").stringValue;
+                trustedCAsPass = options.get("tp").stringValue;
+
+                sslOptions = new SSLOptions(serviceCredsFile, serviceCredsPass,
+                SSLOptions.PKCS12_CONTAINER,
+                trustedCAsFile, trustedCAsPass, SSLOptions.JKS_CONTAINER, false);
+            } else {
+                sslOptions = null;
+            }
             
-            final String dirAddr = ((args.length >= 3) ? args[2] : "http://localhost:32638");
-            final URL    dirURL = new URL(dirAddr);
-            
-            DIRClient dir = new DIRClient(null,new InetSocketAddress(dirURL.getHost(),dirURL.getPort()));
+            if (useSSL)
+                speedy = new MultiSpeedy(sslOptions);
+            else
+                speedy = new MultiSpeedy();
+
+            speedy.start();
+
+            DIRClient dir = new DIRClient(speedy,new InetSocketAddress(dirURL.getHost(),dirURL.getPort()));
             UUIDResolver.start(dir, 10000, 9999999);
             System.out.println("file size from 64k to 512MB with record length from 4k to 1M");
             
@@ -64,10 +120,9 @@ public class TortureXtreemFS {
             final int MIN_REC = 4*1024;
             final int MAX_REC = 1024*1024;
            
-            speedy = new MultiSpeedy();
-            speedy.start(); 
             
-            RandomAccessFile tmp = new RandomAccessFile("cw",url,path+".tmp",speedy);
+            
+            RandomAccessFile tmp = new RandomAccessFile("cw",mrcURL,volname+path+".tmp",speedy);
             System.out.println("Default striping policy is: "+tmp.getStripingPolicy());        
             
             for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
@@ -81,7 +136,7 @@ public class TortureXtreemFS {
                     }
                     
                     long tStart = System.currentTimeMillis();
-                    RandomAccessFile raf = new RandomAccessFile("cw",url,path,speedy);
+                    RandomAccessFile raf = new RandomAccessFile("cw",mrcURL,volname+path,speedy);
                     long tOpen = System.currentTimeMillis();
                     
                     long bytesWritten = 0;
@@ -136,6 +191,24 @@ public class TortureXtreemFS {
             System.exit(1);
         }
         
+    }
+
+    private static void usage() {
+        System.out.println("usage: torture [options] <dir_url> <mrc_url>");
+        System.out.println("  -v <volume name>  name of the volume on the mrc (default: test)");
+        System.out.println("  -p <path>   filename to use for measurements (default: /torture.dat)");
+        
+        System.out
+                .println("            In case of a secured URL ('https://...'), it is necessary to also specify SSL credentials:");
+        System.out
+                .println("              -c  <creds_file>         a PKCS#12 file containing user credentials");
+        System.out
+                .println("              -cp <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
+        System.out
+                .println("              -t  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs");
+        System.out
+                .println("              -tp <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
+        System.out.println("  -h        show usage info");
     }
     
 }
