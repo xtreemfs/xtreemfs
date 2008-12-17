@@ -65,7 +65,7 @@ public class AsyncScrubber {
     
     private HashMap<ServiceUUID, OSDWorkQueue> osds;
     
-    private List<ScrubbedFile>                 currentFiles;
+    private final List<ScrubbedFile>           currentFiles, filesToRemove;
     
     private VolumeWalker                       volumeWalker;
     
@@ -121,7 +121,8 @@ public class AsyncScrubber {
         
         volumeWalker = new VolumeWalker(volumeName, mrcAddress, noFilesToFetch, authString, ssl);
         
-        currentFiles = Collections.synchronizedList(new ArrayList<ScrubbedFile>());
+        currentFiles = new ArrayList<ScrubbedFile>();
+        filesToRemove = new ArrayList<ScrubbedFile>();
         osds = new HashMap<ServiceUUID, OSDWorkQueue>();
         logger = new Logger(null);
         
@@ -233,7 +234,9 @@ public class AsyncScrubber {
                         osds.put(osdId, new OSDWorkQueue(osdId, connectionsPerOSD,sslOptions));
                     }
                 }
-                currentFiles.add(new ScrubbedFile(this, file));
+                synchronized (currentFiles) {
+                    currentFiles.add(new ScrubbedFile(this, file));
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -292,6 +295,9 @@ public class AsyncScrubber {
                 }
             }
         }
+        for (ScrubbedFile file : filesToRemove) {
+            currentFiles.remove(file);
+        }
     }
     
     /**
@@ -312,6 +318,7 @@ public class AsyncScrubber {
         // result in scrubber.shutdown() (when currentFiles.isEmpty) being
         // called before all updates are finished.
         boolean firstCall = currentFiles.contains(file);
+        
         
         if (!firstCall) // do not output messages twice
             return;
@@ -349,7 +356,7 @@ public class AsyncScrubber {
         }
         // must be invoked after the updates have been made, because it sync.
         // with the main thread.
-        currentFiles.remove(file);
+        filesToRemove.add(file);
     }
     
     /**
