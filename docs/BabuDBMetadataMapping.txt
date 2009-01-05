@@ -1,0 +1,96 @@
+This document describes how XtreemFS metadata in the MRC is mapped to BabuDB
+database indices.
+
+The following indices exist, with the following types (the numbers define
+different value types w/ different keys):
+
+FILE_INDEX        XATTR_INDEX     FILE_ID_INDEX
+--------------    -------------   -------------------
+atime        0    XAttrs          parentID + fileName
+ctime        0    (link target)   (file ID mapping)
+mtime        0    (default SP)
+size         0
+type         1
+id           1
+permissions  1    ACL_INDEX       LAST_ID_INDEX
+linkCount    1    ----------      ------------------
+epoch        1    ACLEntries      lastAssignedFileID
+issuedEpoch  1                    (file ID counter; single entry)
+readOnlyFlag 1
+fileName     1
+owner        1
+group        1
+XLocList     2
+
+Indices are structured as follows (numbers indicate entry sizes in bytes):
+
+ FILE_INDEX
+|----------------------------------------------------------------------------|
+|key   | parentID   hash(filename)   type                                    |
+|      | 8          4                1                                       |
+|      |---------------------------------------------------------------------|
+|      | parentID   hash(filename)   type   collisionCount  (hash collision) |
+|      | 8          4                1      2                                |
+|----------------------------------------------------------------------------|
+|value | atime   ctime   mtime   size                                (files) |
+|type=0| 4       4       4       8                                           |
+|      |---------------------------------------------------------------------|
+|      | atime   ctime   mtime                                 (directories) |
+|      | 4       4       4                                                   |
+|----------------------------------------------------------------------------|
+|value | type  id  permissions  linkCount  epoch  issuedEpoch        (files) |
+|type=1| 1     8   2            2          4      4                          |
+|      |                                                                     |
+|      | readOnlyFlag ownerOffset  groupOffset  fileName  owner  group       |
+|      | 1            2            2            var       var    var         |
+|      |---------------------------------------------------------------------|
+|      | type  id  permissions  ownerOffset  groupOffset       (directories) |
+|      | 1     8   2            2            2                               |
+|      |                                                                     |
+|      | fileName  owner  group                                              |
+|      | var       var    var                                                |
+|----------------------------------------------------------------------------|
+|value | XLocList                                                            |
+|type=2| var                                                                 |
+|----------------------------------------------------------------------------|
+
+
+ XATTR_INDEX
+|----------------------------------------------------------------------------|
+|key   | fileID   hash(owner)   hash(attrKey)   collisionCount               |
+|      | 8        4             4               2                            |
+|----------------------------------------------------------------------------|
+|value | keyOffset  valueOffset  attrOwner  attrKey  attrValue               |
+|      | 2          2            var        var      var                     |
+|----------------------------------------------------------------------------|
+
+
+ ACL_INDEX
+|----------------------------------------------------------------------------|
+|key   | fileID   entityName                                                 |
+|      | 8        var                                                        |
+|----------------------------------------------------------------------------|
+|value | rights                                                              |
+|      | 2                                                                   |
+|----------------------------------------------------------------------------|
+
+
+ FILE_ID_INDEX
+|----------------------------------------------------------------------------|
+|key   | fileID                                                              |
+|      | 8                                                                   |
+|----------------------------------------------------------------------------|
+|value | parentID  fileName                                                  |
+|      | 8         var                                                       |
+|----------------------------------------------------------------------------|
+
+
+ LAST_ID_INDEX
+|----------------------------------------------------------------------------|
+|key   | '*'                                                                 |
+|      | 1                                                                   |
+|----------------------------------------------------------------------------|
+|value | lastAssignedFileID                                                  |
+|      | 8                                                                   |
+|----------------------------------------------------------------------------|
+
