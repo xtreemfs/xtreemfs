@@ -28,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 
 /**
@@ -401,6 +400,19 @@ public final class ReusableBuffer {
         if (str != null) {
             byte[] bytes = str.getBytes(HTTPUtils.ENC_UTF8);
             buffer.putInt(bytes.length);
+            buffer.put(bytes);
+        } else {
+            buffer.putInt(-1);
+        }
+        return this;
+    }
+    
+    public ReusableBuffer putShortString(String str) {
+        assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
+        assert(str.length() <= Short.MAX_VALUE);
+        if (str != null) {
+            byte[] bytes = str.getBytes(HTTPUtils.ENC_UTF8);
+            buffer.putShort((short) bytes.length);
             buffer.put(bytes);
         } else {
             buffer.putInt(-1);
