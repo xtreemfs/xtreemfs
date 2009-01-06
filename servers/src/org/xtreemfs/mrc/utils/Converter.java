@@ -201,6 +201,26 @@ public class Converter {
 
         return policyMap;
     }
+    
+    /**
+     * Converts a <code>StripingPolicy</code> object to a map containing
+     * striping policy information.
+     *
+     * @param policy
+     * @return
+     */
+    public static Map<String, Object> stripingPolicyToMap(org.xtreemfs.new_mrc.metadata.StripingPolicy policy) {
+
+        if (policy == null)
+            return null;
+
+        Map<String, Object> policyMap = new HashMap<String, Object>();
+        policyMap.put("policy", policy.getPattern());
+        policyMap.put("stripe-size", policy.getStripeSize());
+        policyMap.put("width", policy.getWidth());
+
+        return policyMap;
+    }
 
     /**
      * Converts a String array to a list of Strings.

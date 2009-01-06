@@ -25,6 +25,7 @@
 package org.xtreemfs.new_mrc.dbaccess;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,16 +37,18 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.metadata.StripingPolicy;
-import org.xtreemfs.mrc.brain.metadata.XLoc;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
+import org.xtreemfs.new_mrc.metadata.XLoc;
 
 public class BabuDBStorageManager implements StorageManager {
     
@@ -83,48 +86,95 @@ public class BabuDBStorageManager implements StorageManager {
         
         private Iterator<Entry<byte[], byte[]>> it;
         
+        private Entry<byte[], byte[]>           next;
+        
+        private Map<Short, byte[][]>            keyMap;
+        
+        private Map<Short, byte[][]>            valMap;
+        
         public ChildrenIterator(Iterator<Entry<byte[], byte[]>> it) {
             this.it = it;
+            this.keyMap = new HashMap<Short, byte[][]>();
+            this.valMap = new HashMap<Short, byte[][]>();
         }
-
+        
         @Override
         public boolean hasNext() {
-            return it.hasNext();
+            return next != null || !this.keyMap.isEmpty() ? true : it.hasNext();
         }
-
+        
         @Override
         public FileMetadata next() {
             
-//            Entry<byte[], byte[]> next = it.next();
-//            
-//            FileMetadata metadata = new BufferBackedFileMetadata();
-            // TODO Auto-generated method stub
-            return null;
+            int prevHash = -1;
+            
+            if (keyMap.isEmpty())
+                while (it.hasNext()) {
+                    
+                    if (next == null)
+                        next = it.next();
+                    
+                    final int currFileNameHash = ByteBuffer.wrap(next.getKey(), 8, 4).getInt();
+                    if (prevHash != -1 && prevHash != currFileNameHash)
+                        break;
+                    
+                    final byte currType = next.getKey()[12];
+                    final short currCollNumber = next.getKey().length <= 13 ? 0 : ByteBuffer.wrap(
+                        next.getKey(), 13, 2).getShort();
+                    
+                    byte[][] keyBufs = keyMap.get(currCollNumber);
+                    byte[][] valBufs = valMap.get(currCollNumber);
+                    if (keyBufs == null) {
+                        
+                        keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
+                        keyMap.put(currCollNumber, keyBufs);
+                        
+                        valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
+                        valMap.put(currCollNumber, valBufs);
+                    }
+                    
+                    keyBufs[currType] = next.getKey();
+                    valBufs[currType] = next.getValue();
+                    next = null;
+                    
+                    prevHash = currFileNameHash;
+                }
+            
+            Short key = keyMap.entrySet().iterator().next().getKey();
+            byte[][] keyBufs = keyMap.remove(key);
+            byte[][] valBufs = valMap.remove(key);
+            
+            return new BufferBackedFileMetadata(keyBufs, valBufs);
         }
-
+        
         @Override
         public void remove() {
-            // TODO Auto-generated method stub
-            
+            throw new UnsupportedOperationException();
         }
         
     }
     
-    public static final String DB_NAME       = "V";
+    public static final String  DB_NAME               = "V";
     
-    public static final int    FILE_INDEX    = 0;
+    public static final int     FILE_INDEX            = 0;
     
-    public static final int    XATTRS_INDEX  = 1;
+    public static final int     XATTRS_INDEX          = 1;
     
-    public static final int    ACL_INDEX     = 2;
+    public static final int     ACL_INDEX             = 2;
     
-    public static final int    FILE_ID_INDEX = 3;
+    public static final int     FILE_ID_INDEX         = 3;
     
-    public static final int    LAST_ID_INDEX = 4;
+    public static final int     LAST_ID_INDEX         = 4;
     
-    public static final byte[] LAST_ID_KEY   = { '*' };
+    public static final byte[]  LAST_ID_KEY           = { '*' };
     
-    private BabuDB             database;
+    private static final String SYSTEM_UID            = "";
+    
+    private static final String DEFAULT_SP_ATTR_NAME  = "default_sp";
+    
+    private static final String LINK_TARGET_ATTR_NAME = "lt";
+    
+    private BabuDB              database;
     
     public BabuDBStorageManager(String dbDir, String dbLogDir) throws DatabaseException {
         try {
@@ -212,7 +262,8 @@ public class BabuDBStorageManager implements StorageManager {
                 
                 collCount = 0; // TODO: check for collisions
                 
-                BufferBackedXAttr lt = new BufferBackedXAttr(id, "", "lt", ref, collCount);
+                BufferBackedXAttr lt = new BufferBackedXAttr(id, SYSTEM_UID, LINK_TARGET_ATTR_NAME,
+                    ref, collCount);
                 ig.addInsert(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
             }
             
@@ -281,8 +332,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public Iterator<FileMetadata> getChildren(long parentId, String fileName)
-        throws DatabaseException {
+    public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException {
         
         try {
             
@@ -399,8 +449,12 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setDefaultStripingPolicy(long parentId, String fileName, StripingPolicy defaultSp)
         throws DatabaseException {
-        // TODO Auto-generated method stub
-        
+        try {
+            Map<String, Object> sp = Converter.stripingPolicyToMap(defaultSp);
+            setXAttr(parentId, fileName, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(sp));
+        } catch (JSONException exc) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+        }
     }
     
     @Override

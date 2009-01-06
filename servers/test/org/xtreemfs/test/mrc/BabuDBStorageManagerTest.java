@@ -26,6 +26,9 @@ package org.xtreemfs.test.mrc;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -166,22 +169,32 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create nested dir
         final String dirName = "someDir";
         
-        nextId = mngr.create(rootDirId, dirName, userId, groupId, stripingPolicy, perms, null,
+        long dirId = mngr.create(rootDirId, dirName, userId, groupId, stripingPolicy, perms, null,
             null, true, listener, null);
         waitForResponse();
         
-        assertEquals(nextId, 3);
+        assertEquals(dirId, 3);
         
         metadata = mngr.getMetadata(rootDirId, dirName);
         assertTrue(metadata.isDirectory());
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
         assertTrue(metadata.getMtime() > 0);
-        assertEquals(nextId, metadata.getId());
+        assertEquals(dirId, metadata.getId());
         assertEquals(perms, metadata.getPerms());
         assertEquals(dirName, metadata.getFileName());
         assertEquals(userId, metadata.getOwnerId());
         assertEquals(groupId, metadata.getOwningGroupId());
+        
+        // list files; both the nested directory and file should be in 'rootDir'
+        Iterator<FileMetadata> children = mngr.getChildren(rootDirId);
+        List<String> tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(2, tmp.size());
+        assertTrue(tmp.contains(dirName));
+        assertTrue(tmp.contains(fileName));
         
         // try to create an existing file
         try {
@@ -209,6 +222,15 @@ public class BabuDBStorageManagerTest extends TestCase {
         if (exc != null)
             throw exc;
         
+        // list files; only the nested directory should be in 'rootDir'
+        children = mngr.getChildren(rootDirId);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(1, tmp.size());
+        assertEquals(dirName, tmp.get(0));
+        
         // create file again
         mngr.create(rootDirId, fileName, userId, groupId, stripingPolicy, perms, null, null, false,
             listener, null);
@@ -219,6 +241,78 @@ public class BabuDBStorageManagerTest extends TestCase {
         if (exc != null)
             throw exc;
         
+        // list files; both the nested directory and file should be in 'rootDir'
+        // again
+        children = mngr.getChildren(rootDirId);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(2, tmp.size());
+        assertTrue(tmp.contains(dirName));
+        assertTrue(tmp.contains(fileName));
+    }
+    
+    public void testCreateDeleteWithCollidingHashCodes() throws Exception {
+        
+        // create two files w/ colliding hash codes in nested dir
+        final long dirId = 0;
+        final String name1 = "Cfat";
+        final String name2 = "CgCU";
+        final String uid1 = "uid1";
+        final String uid2 = "uid2";
+        final String gid1 = "gid1";
+        final String gid2 = "gid2";
+        final short perms1 = 0;
+        final short perms2 = Short.MAX_VALUE;
+        
+        mngr.create(dirId, name1, uid1, gid1, null, perms1, null, null, false, listener, null);
+        
+        synchronized (lock) {
+            lock.wait();
+        }
+        if (exc != null)
+            throw exc;
+        
+        mngr.create(dirId, name2, uid2, gid2, null, perms2, null, null, false, listener, null);
+        
+        synchronized (lock) {
+            lock.wait();
+        }
+        if (exc != null)
+            throw exc;
+        
+        // list files; both the nested files are found and contain the correct
+        // data
+        Iterator<FileMetadata> children = mngr.getChildren(dirId);
+        Map<String, FileMetadata> map = new HashMap<String, FileMetadata>();
+        while (children.hasNext()) {
+            FileMetadata child = children.next();
+            map.put(child.getFileName(), child);
+        }
+        
+        assertEquals(2, map.size());
+        assertEquals(uid1, map.get(name1).getOwnerId());
+        assertEquals(uid2, map.get(name2).getOwnerId());
+        assertEquals(gid1, map.get(name1).getOwningGroupId());
+        assertEquals(gid2, map.get(name2).getOwningGroupId());
+        assertEquals(perms1, map.get(name1).getPerms());
+        assertEquals(perms2, map.get(name2).getPerms());
+        
+        // delete first file
+        mngr.delete(dirId, name1, listener, null);
+        
+        synchronized (lock) {
+            lock.wait();
+        }
+        if (exc != null)
+            throw exc;
+        
+        // list files; ensure that only file 2 remains
+        children = mngr.getChildren(dirId);
+        assertTrue(children.hasNext());
+        assertEquals(name2, children.next().getFileName());
+        assertFalse(children.hasNext());
     }
     
     public void testPathResolution() throws Exception {

@@ -26,11 +26,11 @@ package org.xtreemfs.new_mrc.dbaccess;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.xtreemfs.mrc.brain.metadata.StripingPolicy;
-import org.xtreemfs.mrc.brain.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
+import org.xtreemfs.new_mrc.metadata.XLoc;
 
 public interface StorageManager {
     
@@ -81,8 +81,7 @@ public interface StorageManager {
     public StripingPolicy getDefaultStripingPolicy(long parentId, String fileName)
         throws DatabaseException;
     
-    public Iterator<FileMetadata> getChildren(long parentId, String fileName)
-        throws DatabaseException;
+    public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
     
     // setting metadata
     
