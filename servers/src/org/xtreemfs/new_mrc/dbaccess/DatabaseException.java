@@ -43,6 +43,7 @@ public class DatabaseException extends Exception {
     
     public DatabaseException(Throwable cause) {
         super(cause);
+        this.type = ExceptionType.INTERNAL_DB_ERROR;
     }
     
     public DatabaseException(String message, Throwable cause) {

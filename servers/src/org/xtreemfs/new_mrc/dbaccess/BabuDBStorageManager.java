@@ -39,6 +39,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
@@ -170,7 +171,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     private static final String SYSTEM_UID            = "";
     
-    private static final String DEFAULT_SP_ATTR_NAME  = "default_sp";
+    private static final String DEFAULT_SP_ATTR_NAME  = "sp";
     
     private static final String LINK_TARGET_ATTR_NAME = "lt";
     
@@ -216,8 +217,8 @@ public class BabuDBStorageManager implements StorageManager {
             BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
             
             // get the next collision number
-            short collCount = BabuDBStorageHelper.findNextFreeCollisionNumber(database, DB_NAME,
-                FILE_INDEX, parentId, fileName);
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database,
+                parentId, fileName);
             
             // if the file exists already, throw an exception
             if (collCount == -1)
@@ -249,10 +250,8 @@ public class BabuDBStorageManager implements StorageManager {
             // create default striping policy (XAttr)
             if (stripingPolicy != null) {
                 
-                collCount = 0; // TODO: check for collisions
-                
-                BufferBackedXAttr sp = new BufferBackedXAttr(id, "", "sp", JSONParser
-                        .writeJSON(stripingPolicy), collCount);
+                BufferBackedXAttr sp = new BufferBackedXAttr(id, SYSTEM_UID, DEFAULT_SP_ATTR_NAME,
+                    JSONParser.writeJSON(stripingPolicy), (short) 0);
                 
                 ig.addInsert(XATTRS_INDEX, sp.getKeyBuf(), sp.getValBuf());
             }
@@ -260,10 +259,9 @@ public class BabuDBStorageManager implements StorageManager {
             // create link target (XAttr)
             if (ref != null) {
                 
-                collCount = 0; // TODO: check for collisions
-                
                 BufferBackedXAttr lt = new BufferBackedXAttr(id, SYSTEM_UID, LINK_TARGET_ATTR_NAME,
-                    ref, collCount);
+                    ref, (short) 0);
+                
                 ig.addInsert(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
             }
             
@@ -320,13 +318,13 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public Iterator<ACLEntry> getACL(long parentId, String fileName) throws DatabaseException {
+    public Iterator<ACLEntry> getACL(long fileId) throws DatabaseException {
         // TODO Auto-generated method stub
         return null;
     }
     
     @Override
-    public int getACLEntry(long parentId, String fileName, String entity) throws DatabaseException {
+    public int getACLEntry(long fileId, String entity) throws DatabaseException {
         // TODO Auto-generated method stub
         return 0;
     }
@@ -349,10 +347,22 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public StripingPolicy getDefaultStripingPolicy(long parentId, String fileName)
-        throws DatabaseException {
-        // TODO Auto-generated method stub
-        return null;
+    public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException {
+        
+        try {
+            String spString = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
+            if (spString == null)
+                return null;
+            
+            Map<String, Object> spMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(
+                spString));
+            return Converter.mapToBufferBackedStripingPolicy(spMap);
+            
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
@@ -373,7 +383,7 @@ public class BabuDBStorageManager implements StorageManager {
             while (it.hasNext()) {
                 
                 Entry<byte[], byte[]> curr = it.next();
-                if (BabuDBStorageHelper.getCollisionNumber(curr.getKey()) == collNumber) {
+                if (BabuDBStorageHelper.getFileCollisionNumber(curr.getKey()) == collNumber) {
                     int type = BabuDBStorageHelper.getType(curr.getKey());
                     keyBufs[type] = curr.getKey();
                     valBufs[type] = curr.getValue();
@@ -391,8 +401,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public String getXAttr(long parentId, String fileName, String uid, String key)
-        throws DatabaseException {
+    public String getXAttr(long fileId, String uid, String key) throws DatabaseException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -440,34 +449,65 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setACLEntry(long parentId, String fileName, String entity, Integer rights)
-        throws DatabaseException {
+    public void setACLEntry(long fileId, String entity, Integer rights) throws DatabaseException {
         // TODO Auto-generated method stub
         
     }
     
     @Override
-    public void setDefaultStripingPolicy(long parentId, String fileName, StripingPolicy defaultSp)
-        throws DatabaseException {
+    public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
+        DBAccessResultListener result, Object context) throws DatabaseException {
         try {
             Map<String, Object> sp = Converter.stripingPolicyToMap(defaultSp);
-            setXAttr(parentId, fileName, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(sp));
+            setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(sp), result,
+                context);
         } catch (JSONException exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
         }
     }
     
     @Override
-    public void setMetadata(long parentId, String fileName, FileMetadata metadata)
-        throws DatabaseException {
-        // TODO Auto-generated method stub
-        
+    public void setMetadata(long parentId, String fileName, FileMetadata metadata, int type,
+        DBAccessResultListener result, Object context) throws DatabaseException {
+        try {
+            
+            short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, parentId,
+                fileName);
+            
+            assert (metadata instanceof BufferBackedFileMetadata);
+            BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
+            
+            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
+            if (type == -1)
+                for (int i = 0; i < BufferBackedFileMetadata.NUM_BUFFERS; i++)
+                    ig.addInsert(FILE_INDEX, md.getKeyBuffer(i), md.getValueBuffer(i));
+            else
+                ig.addInsert(FILE_INDEX, md.getKeyBuffer(type), md.getValueBuffer(type));
+            
+            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
-    public void setXAttr(long parentId, String fileName, String uid, String key, String value)
-        throws DatabaseException {
-        // TODO Auto-generated method stub
+    public void setXAttr(long fileId, String uid, String key, String value,
+        DBAccessResultListener result, Object context) throws DatabaseException {
+        
+        try {
+            short collNumber = BabuDBStorageHelper.findXAttrCollisionNumber(database, fileId, uid,
+                key);
+            
+            BufferBackedXAttr xattr = new BufferBackedXAttr(fileId, uid, key, value, collNumber);
+            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
+            
+            ig.addInsert(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
+            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
         
     }
     

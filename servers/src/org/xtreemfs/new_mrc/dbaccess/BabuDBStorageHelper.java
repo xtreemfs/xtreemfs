@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.new_mrc.metadata.BufferBackedRCMetadata;
+import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
 
 public class BabuDBStorageHelper {
     
@@ -41,7 +42,7 @@ public class BabuDBStorageHelper {
         
         while (it.hasNext()) {
             byte[] key = it.next().getKey();
-            if (getCollisionNumber(key) == collNumber)
+            if (getFileCollisionNumber(key) == collNumber)
                 lists[BabuDBStorageManager.FILE_INDEX].add(key);
         }
         
@@ -105,29 +106,66 @@ public class BabuDBStorageHelper {
         if (next == null)
             return -1;
         
-        return getCollisionNumber(next.getKey());
+        return getFileCollisionNumber(next.getKey());
+    }
+    
+    /**
+     * Returns the collision number assigned to an extended attribute, or the
+     * next largest unused number if the attribute does not exist.
+     * 
+     * @param database
+     * @param fileId
+     * @param owner
+     * @param attrKey
+     * @return
+     * @throws BabuDBException
+     */
+    public static short findXAttrCollisionNumber(BabuDB database, long fileId, String owner,
+        String attrKey) throws BabuDBException {
+        
+        // first, determine the collision number
+        byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
+            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.XATTRS_INDEX, prefix);
+        
+        Entry<byte[], byte[]> next = null;
+        Entry<byte[], byte[]> curr = null;
+        while (it.hasNext()) {
+            
+            curr = it.next();
+            BufferBackedXAttr attr = new BufferBackedXAttr(curr.getKey(), curr.getValue());
+            
+            if (owner.equals(attr.getOwner()) && attrKey.equals(attr.getKey())) {
+                next = curr;
+                break;
+            }
+        }
+        
+        if (next == null)
+            return curr == null ? 0 : (short) (getXAttrCollisionNumber(curr.getKey()) + 1);
+        
+        return getXAttrCollisionNumber(next.getKey());
     }
     
     /**
      * Returns the next free collision number that can be assigned to a new file
-     * metadata entry, or -1 if the file exists already
+     * metadata entry, or -1 if the file exists already.
      * 
      * @param database
-     * @param dbName
-     * @param indexId
      * @param parentId
      * @param fileName
-     * @return the key
+     * @return
      * @throws BabuDBException
      */
-    public static short findNextFreeCollisionNumber(BabuDB database, String dbName, int indexId,
-        long parentId, String fileName) throws BabuDBException {
+    public static short findNextFreeFileCollisionNumber(BabuDB database, long parentId,
+        String fileName) throws BabuDBException {
         
         // determine the key prefix
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
         
         // perform a prefix lookup
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, indexId, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
+            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.FILE_INDEX, prefix);
         
         // find the last entry in which the file name hash is included
         Entry<byte[], byte[]> next = null;
@@ -149,7 +187,7 @@ public class BabuDBStorageHelper {
             return 0;
         
         // if the file does not exist, determine the next free collision number
-        return (short) (getCollisionNumber(next.getKey()) + 1);
+        return (short) (getFileCollisionNumber(next.getKey()) + 1);
     }
     
     public static byte[] createFilePrefixKey(long parentId, String fileName, byte type) {
@@ -159,6 +197,15 @@ public class BabuDBStorageHelper {
         buf.putLong(parentId).putInt(fileName.hashCode());
         if (type >= 0)
             buf.put(type);
+        
+        return prefix;
+    }
+    
+    public static byte[] createXAttrPrefixKey(long fileId, String owner, String attrKey) {
+        
+        byte[] prefix = new byte[16];
+        ByteBuffer buf = ByteBuffer.wrap(prefix);
+        buf.putLong(fileId).putInt(owner.hashCode()).putInt(attrKey.hashCode());
         
         return prefix;
     }
@@ -183,7 +230,7 @@ public class BabuDBStorageHelper {
         return buf;
     }
     
-    public static short getCollisionNumber(byte[] key) {
+    public static short getFileCollisionNumber(byte[] key) {
         
         short collNum = 0;
         ByteBuffer tmp = ByteBuffer.wrap(key);
@@ -191,6 +238,18 @@ public class BabuDBStorageHelper {
             collNum = 0;
         else
             collNum = tmp.getShort(13);
+        
+        return collNum;
+    }
+    
+    public static short getXAttrCollisionNumber(byte[] key) {
+        
+        short collNum = 0;
+        ByteBuffer tmp = ByteBuffer.wrap(key);
+        if (key.length == 16)
+            collNum = 0;
+        else
+            collNum = tmp.getShort(16);
         
         return collNum;
     }

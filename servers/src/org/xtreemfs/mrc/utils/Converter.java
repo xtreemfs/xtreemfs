@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Jan Stender (ZIB)
  */
@@ -41,206 +41,224 @@ import org.xtreemfs.mrc.brain.storage.entities.FileEntity;
 import org.xtreemfs.mrc.brain.storage.entities.StripingPolicy;
 import org.xtreemfs.mrc.brain.storage.entities.XLocation;
 import org.xtreemfs.mrc.brain.storage.entities.XLocationsList;
+import org.xtreemfs.new_mrc.metadata.BufferBackedStripingPolicy;
 
 /**
  * Contains static methods for converting Java objects to JSON-compliant data
  * structures and vice versa.
- *
+ * 
  * @author stender
- *
+ * 
  */
 public class Converter {
-
+    
     /**
      * Converts an <code>ACLEntry</code> array to a mapping: userID:String ->
      * rights:Long.
-     *
+     * 
      * @param acl
      * @return
      */
     public static Map<String, Object> aclToMap(ACLEntry[] acl) {
-
+        
         if (acl == null)
             return null;
-
+        
         Map<String, Object> aclMap = new HashMap<String, Object>();
         for (ACLEntry entry : acl)
             aclMap.put(entry.getEntity(), entry.getRights());
-
+        
         return aclMap;
     }
-
+    
     /**
      * Converts a mapping: userID:String -> rights:Long to an
      * <code>ACLEntry</code> array sorted by userID.
-     *
+     * 
      * @param aclMap
      * @return
      */
     public static ACLEntry[] mapToACL(Map<String, Object> aclMap) {
-
+        
         if (aclMap == null)
             return null;
-
+        
         ACLEntry[] acl = new ACLEntry[aclMap.size()];
         Iterator<String> keys = aclMap.keySet().iterator();
         for (int i = 0; i < acl.length; i++) {
             String userId = keys.next();
             acl[i] = new ACLEntry(userId, (Long) aclMap.get(userId));
         }
-
+        
         Arrays.sort(acl, new Comparator<ACLEntry>() {
             public int compare(ACLEntry o1, ACLEntry o2) {
                 return o1.getEntity().compareTo(o2.getEntity());
             }
         });
-
+        
         return acl;
     }
-
+    
     /**
      * Converts an <code>XLocationsList</code> object to a list containing
      * X-Locations data.
-     *
+     * 
      * @param xLocList
      * @return
      */
     public static List<Object> xLocListToList(XLocationsList xLocList) {
-
+        
         if (xLocList == null)
             return null;
-
+        
         List<Object> replicaList = new LinkedList<Object>();
         List<Object> list = new LinkedList<Object>();
         for (XLocation replica : xLocList.getReplicas()) {
-
+            
             List<Object> replicaAsList = new ArrayList<Object>(2);
-            Map<String, Object> policyMap = stripingPolicyToMap(replica
-                    .getStripingPolicy());
+            Map<String, Object> policyMap = stripingPolicyToMap(replica.getStripingPolicy());
             List<String> osdList = stringArrayToList(replica.getOsdList());
-
+            
             replicaAsList.add(policyMap);
             replicaAsList.add(osdList);
-
+            
             replicaList.add(replicaAsList);
         }
-
+        
         list.add(replicaList);
         list.add(xLocList.getVersion());
-
+        
         return list;
     }
-
+    
     /**
      * Converts a list containing X-Locations data to an
      * <code>XLocationsList</code> object.
-     *
+     * 
      * @param xLocs
      * @return
      */
     public static XLocationsList listToXLocList(List<Object> list) {
-
+        
         if (list == null)
             return null;
-
+        
         List<Object> xLocs = (List<Object>) list.get(0);
-
+        
         XLocation[] xLocations = new XLocation[xLocs.size()];
         for (int i = 0; i < xLocs.size(); i++) {
-
+            
             List<Object> replicaAsList = (List<Object>) xLocs.get(i);
-            Map<String, Object> policyMap = (Map<String, Object>) replicaAsList
-                    .get(0);
+            Map<String, Object> policyMap = (Map<String, Object>) replicaAsList.get(0);
             List<String> osdList = (List<String>) replicaAsList.get(1);
-
-            xLocations[i] = new XLocation(mapToStripingPolicy(policyMap),
-                osdList.toArray(new String[osdList.size()]));
+            
+            xLocations[i] = new XLocation(mapToStripingPolicy(policyMap), osdList
+                    .toArray(new String[osdList.size()]));
         }
-
+        
         long version = (Long) list.get(1);
-
+        
         return new XLocationsList(xLocations, version);
     }
-
+    
     /**
      * Converts a map containing striping policy information to a
      * <code>StripingPolicy</code> object.
-     *
+     * 
      * @param policyMap
      * @return
      */
-    public static StripingPolicy mapToStripingPolicy(
-        Map<String, Object> policyMap) {
-
+    public static StripingPolicy mapToStripingPolicy(Map<String, Object> policyMap) {
+        
         if (policyMap == null || policyMap.isEmpty())
             return null;
-
-        StripingPolicy policy = new StripingPolicy((String) policyMap
-                .get("policy"), (Long) policyMap.get("stripe-size"),
-            (Long) policyMap.get("width"));
-
+        
+        StripingPolicy policy = new StripingPolicy((String) policyMap.get("policy"),
+            (Long) policyMap.get("stripe-size"), (Long) policyMap.get("width"));
+        
         return policy;
     }
-
+    
+    /**
+     * Converts a map containing striping policy information to a
+     * <code>StripingPolicy</code> object.
+     * 
+     * @param policyMap
+     * @return
+     */
+    public static BufferBackedStripingPolicy mapToBufferBackedStripingPolicy(
+        Map<String, Object> policyMap) {
+        
+        if (policyMap == null || policyMap.isEmpty())
+            return null;
+        
+        BufferBackedStripingPolicy policy = new BufferBackedStripingPolicy((String) policyMap
+                .get("policy"), (Integer) policyMap.get("stripe-size"), (Integer) policyMap
+                .get("width"));
+        
+        return policy;
+    }
+    
     /**
      * Converts a <code>StripingPolicy</code> object to a map containing
      * striping policy information.
-     *
+     * 
      * @param policy
      * @return
      */
     public static Map<String, Object> stripingPolicyToMap(StripingPolicy policy) {
-
+        
         if (policy == null)
             return null;
-
+        
         Map<String, Object> policyMap = new HashMap<String, Object>();
         policyMap.put("policy", policy.getPolicy());
         policyMap.put("stripe-size", policy.getStripeSize());
         policyMap.put("width", policy.getWidth());
-
+        
         return policyMap;
     }
     
     /**
      * Converts a <code>StripingPolicy</code> object to a map containing
      * striping policy information.
-     *
+     * 
      * @param policy
      * @return
      */
-    public static Map<String, Object> stripingPolicyToMap(org.xtreemfs.new_mrc.metadata.StripingPolicy policy) {
-
+    public static Map<String, Object> stripingPolicyToMap(
+        org.xtreemfs.new_mrc.metadata.StripingPolicy policy) {
+        
         if (policy == null)
             return null;
-
+        
         Map<String, Object> policyMap = new HashMap<String, Object>();
         policyMap.put("policy", policy.getPattern());
         policyMap.put("stripe-size", policy.getStripeSize());
         policyMap.put("width", policy.getWidth());
-
+        
         return policyMap;
     }
-
+    
     /**
      * Converts a String array to a list of Strings.
-     *
+     * 
      * @param array
      * @return
      */
     public static List<String> stringArrayToList(String[] array) {
-
+        
         if (array == null)
             return null;
-
+        
         List<String> list = new ArrayList<String>(array.length);
-
+        
         for (String s : array)
             list.add(s);
-
+        
         return list;
     }
-
+    
     // /**
     // * Converts an entire file tree to a list containing a hierarchically
     // * organized representation of all files in the tree.
@@ -308,60 +326,54 @@ public class Converter {
     // throw new BrainException(exc);
     // }
     // }
-
+    
     /**
-     * Converts a list of <code>FileAttributeEntity</code>s to a list
-     * containing maps storing file attribute information.
-     *
+     * Converts a list of <code>FileAttributeEntity</code>s to a list containing
+     * maps storing file attribute information.
+     * 
      * @param mappedData
      * @return
      */
-    public static List<FileAttributeEntity> attrMapsToAttrList(
-        List<Map<String, Object>> mappedData) {
-
+    public static List<FileAttributeEntity> attrMapsToAttrList(List<Map<String, Object>> mappedData) {
+        
         List<FileAttributeEntity> list = new LinkedList<FileAttributeEntity>();
         for (Map<String, Object> attr : mappedData)
-            list.add(new FileAttributeEntity<Object>((String) attr.get("key"),
-                attr.get("value"), (Long) attr.get("type"), 0, (String) attr
-                        .get("userId")));
-
+            list.add(new FileAttributeEntity<Object>((String) attr.get("key"), attr.get("value"),
+                (Long) attr.get("type"), 0, (String) attr.get("userId")));
+        
         return list;
     }
-
+    
     /**
      * Converts a map containing file or directory metadata to a file or
      * directory entity.
-     *
+     * 
      * @param mappedData
      *            the mapped file or directory data
      * @return a corresponding object that can be stored by the MRC backend
      */
     public static AbstractFileEntity mapToFile(Map<String, Object> mappedData) {
-
+        
         boolean isDirectory = (Boolean) mappedData.get("isDirectory");
-
-        ACLEntry[] acl = Converter.mapToACL((Map<String, Object>) mappedData
-                .get("acl"));
-
+        
+        ACLEntry[] acl = Converter.mapToACL((Map<String, Object>) mappedData.get("acl"));
+        
         if (isDirectory)
-            return new DirEntity(0, (String) mappedData.get("ownerId"),
-                (String) mappedData.get("groupId"), (Long) mappedData
-                        .get("atime"), (Long) mappedData.get("ctime"),
-                (Long) mappedData.get("mtime"), acl, (Long) mappedData
-                        .get("linkCount"));
+            return new DirEntity(0, (String) mappedData.get("ownerId"), (String) mappedData
+                    .get("groupId"), (Long) mappedData.get("atime"),
+                (Long) mappedData.get("ctime"), (Long) mappedData.get("mtime"), acl,
+                (Long) mappedData.get("linkCount"));
         else {
-
-            XLocationsList xLocList = Converter
-                    .listToXLocList((List<Object>) mappedData.get("xLocList"));
-
-            return new FileEntity(0, (String) mappedData.get("ownerId"),
-                (String) mappedData.get("groupId"), (Long) mappedData
-                        .get("atime"), (Long) mappedData.get("ctime"),
-                (Long) mappedData.get("mtime"), (Long) mappedData.get("size"),
-                xLocList, acl, (Long) mappedData.get("linkCount"),
-                (Long) mappedData.get("writeEpoch"), (Long) mappedData
-                        .get("truncEpoch"));
+            
+            XLocationsList xLocList = Converter.listToXLocList((List<Object>) mappedData
+                    .get("xLocList"));
+            
+            return new FileEntity(0, (String) mappedData.get("ownerId"), (String) mappedData
+                    .get("groupId"), (Long) mappedData.get("atime"),
+                (Long) mappedData.get("ctime"), (Long) mappedData.get("mtime"), (Long) mappedData
+                        .get("size"), xLocList, acl, (Long) mappedData.get("linkCount"),
+                (Long) mappedData.get("writeEpoch"), (Long) mappedData.get("truncEpoch"));
         }
     }
-
+    
 }

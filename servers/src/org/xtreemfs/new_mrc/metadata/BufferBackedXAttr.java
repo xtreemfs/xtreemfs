@@ -51,7 +51,7 @@ public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAtt
         
         byte[] ownerBytes = owner.getBytes();
         byte[] keyBytes = key.getBytes();
-        byte[] valBytes = value.getBytes();
+        byte[] valBytes = value == null? new byte[0]: value.getBytes();
         
         keyLen = 18;
         keyBuf = new byte[keyLen];

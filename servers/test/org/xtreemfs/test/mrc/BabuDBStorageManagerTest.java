@@ -215,12 +215,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // delete file
         mngr.delete(rootDirId, fileName, listener, null);
-        
-        synchronized (lock) {
-            lock.wait();
-        }
-        if (exc != null)
-            throw exc;
+        waitForResponse();
         
         // list files; only the nested directory should be in 'rootDir'
         children = mngr.getChildren(rootDirId);
@@ -234,12 +229,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create file again
         mngr.create(rootDirId, fileName, userId, groupId, stripingPolicy, perms, null, null, false,
             listener, null);
-        
-        synchronized (lock) {
-            lock.wait();
-        }
-        if (exc != null)
-            throw exc;
+        waitForResponse();
         
         // list files; both the nested directory and file should be in 'rootDir'
         // again
@@ -267,20 +257,10 @@ public class BabuDBStorageManagerTest extends TestCase {
         final short perms2 = Short.MAX_VALUE;
         
         mngr.create(dirId, name1, uid1, gid1, null, perms1, null, null, false, listener, null);
-        
-        synchronized (lock) {
-            lock.wait();
-        }
-        if (exc != null)
-            throw exc;
+        waitForResponse();
         
         mngr.create(dirId, name2, uid2, gid2, null, perms2, null, null, false, listener, null);
-        
-        synchronized (lock) {
-            lock.wait();
-        }
-        if (exc != null)
-            throw exc;
+        waitForResponse();
         
         // list files; both the nested files are found and contain the correct
         // data
@@ -301,12 +281,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // delete first file
         mngr.delete(dirId, name1, listener, null);
-        
-        synchronized (lock) {
-            lock.wait();
-        }
-        if (exc != null)
-            throw exc;
+        waitForResponse();
         
         // list files; ensure that only file 2 remains
         children = mngr.getChildren(dirId);

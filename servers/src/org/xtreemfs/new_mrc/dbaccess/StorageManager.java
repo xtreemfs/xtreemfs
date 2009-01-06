@@ -38,11 +38,10 @@ public interface StorageManager {
     
     // XAttrs
     
-    public void setXAttr(long parentId, String fileName, String uid, String key, String value)
-        throws DatabaseException;
+    public void setXAttr(long fileId, String uid, String key, String value,
+        DBAccessResultListener result, Object context) throws DatabaseException;
     
-    public String getXAttr(long parentId, String fileName, String uid, String key)
-        throws DatabaseException;
+    public String getXAttr(long fileId, String uid, String key) throws DatabaseException;
     
     public Iterator<XAttr> getXAttrs(long parentId, String fileName) throws DatabaseException;
     
@@ -51,12 +50,11 @@ public interface StorageManager {
     
     // ACLs
     
-    public void setACLEntry(long parentId, String fileName, String entity, Integer rights)
-        throws DatabaseException;
+    public void setACLEntry(long fileId, String entity, Integer rights) throws DatabaseException;
     
-    public int getACLEntry(long parentId, String fileName, String entity) throws DatabaseException;
+    public int getACLEntry(long fileId, String entity) throws DatabaseException;
     
-    public Iterator<ACLEntry> getACL(long parentId, String fileName) throws DatabaseException;
+    public Iterator<ACLEntry> getACL(long fileId) throws DatabaseException;
     
     // file creation and linking
     
@@ -78,18 +76,17 @@ public interface StorageManager {
     
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
     
-    public StripingPolicy getDefaultStripingPolicy(long parentId, String fileName)
-        throws DatabaseException;
+    public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
     
     public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
     
     // setting metadata
     
-    public void setMetadata(long parentId, String fileName, FileMetadata metadata)
-        throws DatabaseException;
+    public void setMetadata(long parentId, String fileName, FileMetadata metadata, int type,
+        DBAccessResultListener result, Object context) throws DatabaseException;
     
-    public void setDefaultStripingPolicy(long parentId, String fileName, StripingPolicy defaultSp)
-        throws DatabaseException;
+    public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
+        DBAccessResultListener result, Object context) throws DatabaseException;
     
     // X-Locations list operation
     

@@ -291,6 +291,14 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return valBufs[XLOC_METADATA].array();
     }
     
+    public byte[] getKeyBuffer(int type) {
+        return keyBufs[type].array();
+    }
+    
+    public byte[] getValueBuffer(int type) {
+        return valBufs[type].array();
+    }
+    
     private ByteBuffer generateKeyBuf(long parentId, String fileName, int type, short collCount) {
         
         byte[] tmp = new byte[collCount == 0 ? 13 : 15];
