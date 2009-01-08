@@ -19,41 +19,46 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB)
+ * AUTHORS: Jan Stender (ZIB)
  */
+package org.xtreemfs.new_mrc.dbaccess;
 
-package org.xtreemfs.new_mrc.operations;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.new_mrc.MRCRequest;
-import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 
 /**
+ * @author stender
  *
- * @author bjko
  */
-public class ShutdownOperation extends MRCOperation {
-
-    public static final String RPC_NAME = ".shutdown";
+public class BabuDBRequestListenerWrapper implements BabuDBRequestListener {
     
-    public ShutdownOperation(MRCRequestDispatcher master) {
-        super(master);
+    private DBAccessResultListener listener;
+    
+    public BabuDBRequestListenerWrapper(DBAccessResultListener listener) {
+        this.listener = listener;
     }
     
     @Override
-    public boolean hasArguments() {
-        return false;
+    public void insertFinished(Object context) {
+        listener.insertFinished(context);
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
-        try {
-            master.shutdown();
-        } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
-        }
+    public void lookupFinished(Object context, byte[] value) {
+        listener.lookupFinished(context, value);
+    }
+    
+    @Override
+    public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
+        listener.prefixLookupFinished(context, iterator);
+    }
+    
+    @Override
+    public void requestFailed(Object context, BabuDBException error) {
+        listener.requestFailed(context, error);
     }
     
 }

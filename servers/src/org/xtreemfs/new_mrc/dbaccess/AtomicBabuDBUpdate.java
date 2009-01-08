@@ -21,28 +21,45 @@
 /*
  * AUTHORS: Jan Stender (ZIB)
  */
-
 package org.xtreemfs.new_mrc.dbaccess;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
+import org.xtreemfs.babudb.BabuDB;
+import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 
-public class DBAccessResultAdapter implements DBAccessResultListener {
+public class AtomicBabuDBUpdate implements AtomicDBUpdate {
     
-    @Override
-    public void insertFinished(Object context) {
+    private BabuDBInsertGroup     ig;
+    
+    private BabuDB                database;
+    
+    private BabuDBRequestListener listener;
+    
+    private Object                context;
+    
+    public AtomicBabuDBUpdate(BabuDB database, String dbName, BabuDBRequestListener listener,
+        Object context) throws BabuDBException {
+        
+        ig = database.createInsertGroup(dbName);
+        
+        this.database = database;
+        this.listener = listener;
+        this.context = context;
     }
     
     @Override
-    public void lookupFinished(Object context, byte[] value) {
+    public void addUpdate(Object... update) {
+        ig.addInsert((Integer) update[0], (byte[]) update[1], (byte[]) update[2]);
     }
     
     @Override
-    public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
-    }
-    
-    @Override
-    public void requestFailed(Object context, Throwable error) {
+    public void execute() throws DatabaseException {
+        try {
+            database.asyncInsert(ig, listener, context);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
 }

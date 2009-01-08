@@ -34,6 +34,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.clients.dir.DIRClient;
@@ -41,6 +42,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultAdapter;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
@@ -59,6 +61,8 @@ public class BabuDBStorageManagerTest extends TestCase {
     private RequestController      dir;
     
     private DIRClient              dirClient;
+    
+    private BabuDB                 database;
     
     private Exception              exc;
     
@@ -102,11 +106,12 @@ public class BabuDBStorageManagerTest extends TestCase {
         File dbDir = new File(DB_DIRECTORY);
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
-        mngr = new BabuDBStorageManager(DB_DIRECTORY, DB_DIRECTORY);
+        database = new BabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60, false);
+        mngr = new BabuDBStorageManager(database, "test");
     }
     
     protected void tearDown() throws Exception {
-        mngr.shutdown();
+        database.shutdown();
         dirClient.shutdown();
         dir.shutdown();
         
@@ -124,11 +129,13 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create root directory
         final String rootDirName = "";
         
-        long rootDirId = mngr.create(0, rootDirName, userId, groupId, stripingPolicy, perms, null,
-            null, true, listener, null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        FileMetadata rootDir = mngr.create(0, rootDirName, userId, groupId, stripingPolicy, perms,
+            null, true, update);
+        update.execute();
         waitForResponse();
         
-        assertEquals(rootDirId, 1);
+        assertEquals(rootDir.getId(), 1);
         
         // retrieve root directory
         FileMetadata metadata = mngr.getMetadata(0, rootDirName);
@@ -136,7 +143,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
         assertTrue(metadata.getMtime() > 0);
-        assertEquals(rootDirId, metadata.getId());
+        assertEquals(rootDir.getId(), metadata.getId());
         assertEquals(perms, metadata.getPerms());
         assertEquals(rootDirName, metadata.getFileName());
         assertEquals(userId, metadata.getOwnerId());
@@ -145,20 +152,22 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create nested file
         final String fileName = "testfile.txt";
         
-        long nextId = mngr.create(rootDirId, fileName, userId, groupId, stripingPolicy, perms,
-            null, null, false, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        FileMetadata nextDir = mngr.create(rootDir.getId(), fileName, userId, groupId,
+            stripingPolicy, perms, null, false, update);
+        update.execute();
         waitForResponse();
         
-        assertEquals(nextId, 2);
+        assertEquals(nextDir.getId(), 2);
         
-        metadata = mngr.getMetadata(rootDirId, fileName);
+        metadata = mngr.getMetadata(rootDir.getId(), fileName);
         assertFalse(metadata.isDirectory());
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
         assertTrue(metadata.getMtime() > 0);
         assertEquals(0, metadata.getEpoch());
         assertEquals(0, metadata.getIssuedEpoch());
-        assertEquals(nextId, metadata.getId());
+        assertEquals(nextDir.getId(), metadata.getId());
         assertEquals(0, metadata.getSize());
         assertEquals(1, metadata.getLinkCount());
         assertEquals(perms, metadata.getPerms());
@@ -169,25 +178,27 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create nested dir
         final String dirName = "someDir";
         
-        long dirId = mngr.create(rootDirId, dirName, userId, groupId, stripingPolicy, perms, null,
-            null, true, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        FileMetadata dir = mngr.create(rootDir.getId(), dirName, userId, groupId, stripingPolicy,
+            perms, null, true, update);
+        update.execute();
         waitForResponse();
         
-        assertEquals(dirId, 3);
+        assertEquals(dir.getId(), 3);
         
-        metadata = mngr.getMetadata(rootDirId, dirName);
+        metadata = mngr.getMetadata(rootDir.getId(), dirName);
         assertTrue(metadata.isDirectory());
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
         assertTrue(metadata.getMtime() > 0);
-        assertEquals(dirId, metadata.getId());
+        assertEquals(dir.getId(), metadata.getId());
         assertEquals(perms, metadata.getPerms());
         assertEquals(dirName, metadata.getFileName());
         assertEquals(userId, metadata.getOwnerId());
         assertEquals(groupId, metadata.getOwningGroupId());
         
         // list files; both the nested directory and file should be in 'rootDir'
-        Iterator<FileMetadata> children = mngr.getChildren(rootDirId);
+        Iterator<FileMetadata> children = mngr.getChildren(rootDir.getId());
         List<String> tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -198,14 +209,11 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // try to create an existing file
         try {
-            mngr.create(rootDirId, fileName, userId, groupId, stripingPolicy, perms, null, null,
-                false, listener, null);
-            
-            synchronized (lock) {
-                lock.wait();
-            }
-            if (exc != null)
-                throw exc;
+            update = mngr.createAtomicDBUpdate(listener, null);
+            mngr.create(rootDir.getId(), fileName, userId, groupId, stripingPolicy, perms, null,
+                false, update);
+            update.execute();
+            waitForResponse();
             
             fail();
             
@@ -214,11 +222,13 @@ public class BabuDBStorageManagerTest extends TestCase {
         }
         
         // delete file
-        mngr.delete(rootDirId, fileName, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.delete(rootDir.getId(), fileName, update);
+        update.execute();
         waitForResponse();
         
         // list files; only the nested directory should be in 'rootDir'
-        children = mngr.getChildren(rootDirId);
+        children = mngr.getChildren(rootDir.getId());
         tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -227,13 +237,15 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(dirName, tmp.get(0));
         
         // create file again
-        mngr.create(rootDirId, fileName, userId, groupId, stripingPolicy, perms, null, null, false,
-            listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.create(rootDir.getId(), fileName, userId, groupId, stripingPolicy, perms, null, false,
+            update);
+        update.execute();
         waitForResponse();
         
         // list files; both the nested directory and file should be in 'rootDir'
         // again
-        children = mngr.getChildren(rootDirId);
+        children = mngr.getChildren(rootDir.getId());
         tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -256,10 +268,14 @@ public class BabuDBStorageManagerTest extends TestCase {
         final short perms1 = 0;
         final short perms2 = Short.MAX_VALUE;
         
-        mngr.create(dirId, name1, uid1, gid1, null, perms1, null, null, false, listener, null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.create(dirId, name1, uid1, gid1, null, perms1, null, false, update);
+        update.execute();
         waitForResponse();
         
-        mngr.create(dirId, name2, uid2, gid2, null, perms2, null, null, false, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.create(dirId, name2, uid2, gid2, null, perms2, null, false, update);
+        update.execute();
         waitForResponse();
         
         // list files; both the nested files are found and contain the correct
@@ -280,7 +296,9 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(perms2, map.get(name2).getPerms());
         
         // delete first file
-        mngr.delete(dirId, name1, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.delete(dirId, name1, update);
+        update.execute();
         waitForResponse();
         
         // list files; ensure that only file 2 remains
@@ -299,23 +317,34 @@ public class BabuDBStorageManagerTest extends TestCase {
         exc = null;
         
         // crete the root directory
-        long rootDirId = mngr.create(0, "", userId, groupId, null, perms, null, null, true,
-            listener, null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        long rootDirId = mngr.create(0, "", userId, groupId, null, perms, null, true, update)
+                .getId();
+        update.execute();
         waitForResponse();
         
         // create a small directory tree and test path resolution
         long nextId = 0;
+        
+        update = mngr.createAtomicDBUpdate(listener, null);
         long comp1Id = nextId = mngr.create(rootDirId, "comp1", userId, groupId, stripingPolicy,
-            perms, null, null, true, listener, null);
+            perms, null, true, update).getId();
+        update.execute();
         waitForResponse();
-        nextId = mngr.create(nextId, "comp2", userId, groupId, stripingPolicy, perms, null, null,
-            true, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        nextId = mngr.create(nextId, "comp2", userId, groupId, stripingPolicy, perms, null, true,
+            update).getId();
+        update.execute();
         waitForResponse();
-        nextId = mngr.create(nextId, "comp3", userId, groupId, stripingPolicy, perms, null, null,
-            true, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        nextId = mngr.create(nextId, "comp3", userId, groupId, stripingPolicy, perms, null, true,
+            update).getId();
+        update.execute();
         waitForResponse();
-        nextId = mngr.create(nextId, "file.txt", "usr", "grp", stripingPolicy, perms, null, null,
-            true, listener, null);
+        update = mngr.createAtomicDBUpdate(listener, null);
+        nextId = mngr.create(nextId, "file.txt", "usr", "grp", stripingPolicy, perms, null, true,
+            update).getId();
+        update.execute();
         waitForResponse();
         
         long id = mngr.resolvePath("comp1");

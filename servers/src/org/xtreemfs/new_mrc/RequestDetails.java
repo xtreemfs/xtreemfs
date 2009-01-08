@@ -19,38 +19,33 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Jan Stender (ZIB)
+ * AUTHORS: Christian Lorenz (ZIB), Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
-package org.xtreemfs.new_mrc.dbaccess;
+package org.xtreemfs.new_mrc;
 
-public class DatabaseException extends Exception {
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 
+ * 29.09.2008
+ * 
+ * @author clorenz
+ */
+public final class RequestDetails {
+        
+    public String              userId;
     
-    public enum ExceptionType {
-        INTERNAL_DB_ERROR, FILE_EXISTS, NO_SUCH_FILE
+    public boolean             superUser;
+    
+    public List<String>        groupIds;
+    
+    public Map<String, Object> context;
+    
+    /**
+	 *
+	 */
+    public RequestDetails() {
+        userId = null;
     }
-    
-    private ExceptionType type;
-    
-    public DatabaseException(ExceptionType type) {
-        this.type = type;
-    }
-    
-    public DatabaseException(String message, ExceptionType type) {
-        super(message);
-        this.type = type;
-    }
-    
-    public DatabaseException(Throwable cause) {
-        super(cause);
-        this.type = ExceptionType.INTERNAL_DB_ERROR;
-    }
-    
-    public DatabaseException(String message, Throwable cause) {
-        super(message, cause);
-    }
-    
-    public ExceptionType getType() {
-        return type;
-    }
-    
 }

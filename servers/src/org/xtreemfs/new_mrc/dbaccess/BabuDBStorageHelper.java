@@ -1,3 +1,26 @@
+/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+
+ This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+ Grid Operating System, see <http://www.xtreemos.eu> for more details.
+ The XtreemOS project has been developed with the financial support of the
+ European Commission's IST program under contract #FP6-033576.
+
+ XtreemFS is free software: you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free
+ Software Foundation, either version 2 of the License, or (at your option)
+ any later version.
+
+ XtreemFS is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+ * AUTHORS: Jan Stender (ZIB)
+ */
 package org.xtreemfs.new_mrc.dbaccess;
 
 import java.nio.ByteBuffer;
@@ -13,10 +36,11 @@ import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
 
 public class BabuDBStorageHelper {
     
-    public static byte[] getLastAssignedFileId(BabuDB database) throws BabuDBException {
+    public static byte[] getLastAssignedFileId(BabuDB database, String dbName)
+        throws BabuDBException {
         
-        byte[] bytes = database.syncLookup(BabuDBStorageManager.DB_NAME,
-            BabuDBStorageManager.LAST_ID_INDEX, BabuDBStorageManager.LAST_ID_KEY);
+        byte[] bytes = database.syncLookup(dbName, BabuDBStorageManager.LAST_ID_INDEX,
+            BabuDBStorageManager.LAST_ID_KEY);
         
         if (bytes == null) {
             bytes = new byte[8];
@@ -27,18 +51,18 @@ public class BabuDBStorageHelper {
         return bytes;
     }
     
-    public static List<byte[]>[] getMetadataKeys(BabuDB database, long parentId, String fileName)
-        throws BabuDBException {
+    public static List<byte[]>[] getMetadataKeys(BabuDB database, String dbName, long parentId,
+        String fileName) throws BabuDBException {
         
         List<byte[]>[] lists = new LinkedList[4];
         
-        short collNumber = findFileCollisionNumber(database, parentId, fileName);
+        short collNumber = findFileCollisionNumber(database, dbName, parentId, fileName);
         
         // metadata index keys
         lists[BabuDBStorageManager.FILE_INDEX] = new LinkedList<byte[]>();
         byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) -1);
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
-            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.FILE_INDEX, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.FILE_INDEX, prefix);
         
         while (it.hasNext()) {
             byte[] key = it.next().getKey();
@@ -48,7 +72,7 @@ public class BabuDBStorageHelper {
         
         // file ID index key
         lists[BabuDBStorageManager.FILE_ID_INDEX] = new LinkedList<byte[]>();
-        long fileId = getId(database, parentId, fileName);
+        long fileId = getId(database, dbName, parentId, fileName);
         byte[] idBytes = new byte[8];
         ByteBuffer.wrap(idBytes).putLong(fileId);
         
@@ -56,16 +80,14 @@ public class BabuDBStorageHelper {
         
         // ACL index
         lists[BabuDBStorageManager.ACL_INDEX] = new LinkedList<byte[]>();
-        it = database.syncPrefixLookup(BabuDBStorageManager.DB_NAME,
-            BabuDBStorageManager.ACL_INDEX, idBytes);
+        it = database.syncPrefixLookup(dbName, BabuDBStorageManager.ACL_INDEX, idBytes);
         
         while (it.hasNext())
             lists[BabuDBStorageManager.ACL_INDEX].add(it.next().getKey());
         
         // XAttrIndex
         lists[BabuDBStorageManager.XATTRS_INDEX] = new LinkedList<byte[]>();
-        it = database.syncPrefixLookup(BabuDBStorageManager.DB_NAME,
-            BabuDBStorageManager.XATTRS_INDEX, idBytes);
+        it = database.syncPrefixLookup(dbName, BabuDBStorageManager.XATTRS_INDEX, idBytes);
         
         while (it.hasNext())
             lists[BabuDBStorageManager.XATTRS_INDEX].add(it.next().getKey());
@@ -83,13 +105,13 @@ public class BabuDBStorageHelper {
      * @return
      * @throws BabuDBException
      */
-    public static short findFileCollisionNumber(BabuDB database, long parentId, String fileName)
-        throws BabuDBException {
+    public static short findFileCollisionNumber(BabuDB database, String dbName, long parentId,
+        String fileName) throws BabuDBException {
         
         // first, determine the collision number
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
-            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.FILE_INDEX, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.FILE_INDEX, prefix);
         
         Entry<byte[], byte[]> next = null;
         while (it.hasNext()) {
@@ -110,6 +132,43 @@ public class BabuDBStorageHelper {
     }
     
     /**
+     * Returns the collision number assigned to an extended attribute, -1 if the
+     * attribute does not exist.
+     * 
+     * @param database
+     * @param fileId
+     * @param owner
+     * @param attrKey
+     * @return
+     * @throws BabuDBException
+     */
+    public static short findXAttrCollisionNumber(BabuDB database, String dbName, long fileId,
+        String owner, String attrKey) throws BabuDBException {
+        
+        // first, determine the collision number
+        byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.XATTRS_INDEX, prefix);
+        
+        Entry<byte[], byte[]> next = null;
+        while (it.hasNext()) {
+            
+            Entry<byte[], byte[]> curr = it.next();
+            BufferBackedXAttr attr = new BufferBackedXAttr(curr.getKey(), curr.getValue());
+            
+            if (owner.equals(attr.getOwner()) && attrKey.equals(attr.getKey())) {
+                next = curr;
+                break;
+            }
+        }
+        
+        if (next == null)
+            return -1;
+        
+        return getXAttrCollisionNumber(next.getKey());
+    }
+    
+    /**
      * Returns the collision number assigned to an extended attribute, or the
      * next largest unused number if the attribute does not exist.
      * 
@@ -120,13 +179,13 @@ public class BabuDBStorageHelper {
      * @return
      * @throws BabuDBException
      */
-    public static short findXAttrCollisionNumber(BabuDB database, long fileId, String owner,
-        String attrKey) throws BabuDBException {
+    public static short findUsedOrNextFreeXAttrCollisionNumber(BabuDB database, String dbName,
+        long fileId, String owner, String attrKey) throws BabuDBException {
         
         // first, determine the collision number
         byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
-            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.XATTRS_INDEX, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.XATTRS_INDEX, prefix);
         
         Entry<byte[], byte[]> next = null;
         Entry<byte[], byte[]> curr = null;
@@ -157,15 +216,15 @@ public class BabuDBStorageHelper {
      * @return
      * @throws BabuDBException
      */
-    public static short findNextFreeFileCollisionNumber(BabuDB database, long parentId,
-        String fileName) throws BabuDBException {
+    public static short findNextFreeFileCollisionNumber(BabuDB database, String dbName,
+        long parentId, String fileName) throws BabuDBException {
         
         // determine the key prefix
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
         
         // perform a prefix lookup
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
-            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.FILE_INDEX, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.FILE_INDEX, prefix);
         
         // find the last entry in which the file name hash is included
         Entry<byte[], byte[]> next = null;
@@ -203,9 +262,13 @@ public class BabuDBStorageHelper {
     
     public static byte[] createXAttrPrefixKey(long fileId, String owner, String attrKey) {
         
-        byte[] prefix = new byte[16];
+        byte[] prefix = new byte[owner == null ? 8 : attrKey == null ? 12 : 16];
         ByteBuffer buf = ByteBuffer.wrap(prefix);
-        buf.putLong(fileId).putInt(owner.hashCode()).putInt(attrKey.hashCode());
+        buf.putLong(fileId);
+        if (owner != null)
+            buf.putInt(owner.hashCode());
+        if (attrKey != null)
+            buf.putInt(attrKey.hashCode());
         
         return prefix;
     }
@@ -254,13 +317,13 @@ public class BabuDBStorageHelper {
         return collNum;
     }
     
-    public static long getId(BabuDB database, long parentId, String fileName)
+    public static long getId(BabuDB database, String dbName, long parentId, String fileName)
         throws BabuDBException {
         
         // first, determine the collision number
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(
-            BabuDBStorageManager.DB_NAME, BabuDBStorageManager.FILE_INDEX, prefix);
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            BabuDBStorageManager.FILE_INDEX, prefix);
         
         long id = -1;
         while (it.hasNext()) {

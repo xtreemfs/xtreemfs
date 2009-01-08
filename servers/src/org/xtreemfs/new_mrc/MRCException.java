@@ -17,40 +17,26 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
- */
+*/
 /*
- * AUTHORS: Jan Stender (ZIB)
+ * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
-package org.xtreemfs.new_mrc.dbaccess;
 
-public class DatabaseException extends Exception {
-    
-    public enum ExceptionType {
-        INTERNAL_DB_ERROR, FILE_EXISTS, NO_SUCH_FILE
-    }
-    
-    private ExceptionType type;
-    
-    public DatabaseException(ExceptionType type) {
-        this.type = type;
-    }
-    
-    public DatabaseException(String message, ExceptionType type) {
-        super(message);
-        this.type = type;
-    }
-    
-    public DatabaseException(Throwable cause) {
-        super(cause);
-        this.type = ExceptionType.INTERNAL_DB_ERROR;
-    }
-    
-    public DatabaseException(String message, Throwable cause) {
+
+package org.xtreemfs.new_mrc;
+
+public class MRCException extends Exception {
+
+    public MRCException(String message, Exception cause) {
         super(message, cause);
     }
     
-    public ExceptionType getType() {
-        return type;
+    public MRCException(String message) {
+        super(message);
+    }
+
+    public MRCException(Exception cause) {
+        super(cause);
     }
     
 }

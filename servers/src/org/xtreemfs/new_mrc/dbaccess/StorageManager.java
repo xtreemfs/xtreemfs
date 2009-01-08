@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
+import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
@@ -34,23 +35,29 @@ import org.xtreemfs.new_mrc.metadata.XLoc;
 
 public interface StorageManager {
     
-    public void shutdown();
+    // misc
+    
+    public void init(String ownerId, String owningGroupId, short perms,
+        Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
+    
+    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
+        throws DatabaseException;
     
     // XAttrs
     
-    public void setXAttr(long fileId, String uid, String key, String value,
-        DBAccessResultListener result, Object context) throws DatabaseException;
+    public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
+        throws DatabaseException;
     
     public String getXAttr(long fileId, String uid, String key) throws DatabaseException;
     
-    public Iterator<XAttr> getXAttrs(long parentId, String fileName) throws DatabaseException;
+    public Iterator<XAttr> getXAttrs(long fileId) throws DatabaseException;
     
-    public Iterator<XAttr> getXAttrs(long parentId, String fileName, String uid)
-        throws DatabaseException;
+    public Iterator<XAttr> getXAttrs(long fileId, String uid) throws DatabaseException;
     
     // ACLs
     
-    public void setACLEntry(long fileId, String entity, Integer rights) throws DatabaseException;
+    public void setACLEntry(long fileId, String entity, Integer rights, AtomicDBUpdate update)
+        throws DatabaseException;
     
     public int getACLEntry(long fileId, String entity) throws DatabaseException;
     
@@ -58,19 +65,17 @@ public interface StorageManager {
     
     // file creation and linking
     
-    public long create(long parentId, String fileName, String userId, String groupId,
-        Map<String, Object> stripingPolicy, short perms, Map<String, Short> aclMap, String ref,
-        boolean directory, DBAccessResultListener result, Object context) throws DatabaseException;
+    public BufferBackedFileMetadata create(long parentId, String fileName, String userId,
+        String groupId, Map<String, Object> stripingPolicy, short perms, String ref,
+        boolean directory, AtomicDBUpdate update) throws DatabaseException;
     
-    public long link(long parentId, String fileName, long newParentId, String newFileName)
-        throws DatabaseException;
+    public long link(long parentId, String fileName, long newParentId, String newFileName,
+        AtomicDBUpdate update) throws DatabaseException;
     
-    public void delete(long parentId, String fileName, DBAccessResultListener result, Object context)
+    public void delete(long parentId, String fileName, AtomicDBUpdate update)
         throws DatabaseException;
     
     public long resolvePath(String path) throws DatabaseException;
-    
-    public long resolvePath(long parentId, String path) throws DatabaseException;
     
     // getting metadata
     
@@ -83,15 +88,17 @@ public interface StorageManager {
     // setting metadata
     
     public void setMetadata(long parentId, String fileName, FileMetadata metadata, int type,
-        DBAccessResultListener result, Object context) throws DatabaseException;
+        AtomicDBUpdate update) throws DatabaseException;
     
     public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
-        DBAccessResultListener result, Object context) throws DatabaseException;
+        AtomicDBUpdate update) throws DatabaseException;
     
     // X-Locations list operation
     
-    public void addReplica(long parentId, String fileName, XLoc replica) throws DatabaseException;
+    public void addReplica(long parentId, String fileName, XLoc replica, AtomicDBUpdate update)
+        throws DatabaseException;
     
-    public void deleteReplica(long parentId, String fileName, int index) throws DatabaseException;
+    public void deleteReplica(long parentId, String fileName, int indexl, AtomicDBUpdate update)
+        throws DatabaseException;
     
 }

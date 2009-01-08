@@ -19,9 +19,8 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
+ * AUTHORS: Jan Stender (ZIB)
  */
-
 package org.xtreemfs.new_mrc.dbaccess;
 
 import java.nio.ByteBuffer;
@@ -33,8 +32,6 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
-import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -43,7 +40,6 @@ import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
-import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
@@ -52,36 +48,6 @@ import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 
 public class BabuDBStorageManager implements StorageManager {
-    
-    static class BabuDBRequestListenerWrapper implements BabuDBRequestListener {
-        
-        private DBAccessResultListener listener;
-        
-        public BabuDBRequestListenerWrapper(DBAccessResultListener listener) {
-            this.listener = listener;
-        }
-        
-        @Override
-        public void insertFinished(Object context) {
-            listener.insertFinished(context);
-        }
-        
-        @Override
-        public void lookupFinished(Object context, byte[] value) {
-            listener.lookupFinished(context, value);
-        }
-        
-        @Override
-        public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
-            listener.prefixLookupFinished(context, iterator);
-        }
-        
-        @Override
-        public void requestFailed(Object context, BabuDBException error) {
-            listener.requestFailed(context, error);
-        }
-        
-    }
     
     static class ChildrenIterator implements Iterator<FileMetadata> {
         
@@ -155,7 +121,70 @@ public class BabuDBStorageManager implements StorageManager {
         
     }
     
-    public static final String  DB_NAME               = "V";
+    static class XAttrIterator implements Iterator<XAttr> {
+        
+        private Iterator<Entry<byte[], byte[]>> it;
+        
+        private String                          owner;
+        
+        private BufferBackedXAttr               next;
+        
+        public XAttrIterator(Iterator<Entry<byte[], byte[]>> it, String owner) {
+            this.it = it;
+            this.owner = owner;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            
+            if (owner == null)
+                return it.hasNext();
+            
+            if (next != null)
+                return true;
+            
+            if (!it.hasNext())
+                return false;
+            
+            while (it.hasNext()) {
+                
+                Entry<byte[], byte[]> tmp = it.next();
+                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
+                if (!owner.equals(next.getOwner()))
+                    continue;
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        @Override
+        public XAttr next() {
+            
+            if (next != null)
+                return next;
+            
+            for (;;) {
+                
+                Entry<byte[], byte[]> tmp = it.next();
+                
+                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
+                if (owner != null && !owner.equals(next.getOwner()))
+                    continue;
+                
+                BufferBackedXAttr tmp2 = next;
+                next = null;
+                return tmp2;
+            }
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
+    }
     
     public static final int     FILE_INDEX            = 0;
     
@@ -175,49 +204,81 @@ public class BabuDBStorageManager implements StorageManager {
     
     private static final String LINK_TARGET_ATTR_NAME = "lt";
     
+    private static final int    ROOT_DIR_ID           = 1;
+    
     private BabuDB              database;
     
-    public BabuDBStorageManager(String dbDir, String dbLogDir) throws DatabaseException {
-        try {
-            database = new BabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60, false);
-            try {
-                database.createDatabase(DB_NAME, 5);
-            } catch (BabuDBException e) {
-                Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir
-                    + "'");
-                // database already exists
-            }
-        } catch (BabuDBException e) {
-            throw new DatabaseException(e);
-        }
+    private String              dbName;
+    
+    public BabuDBStorageManager(BabuDB database, String volumeId) {
         
+        this.database = database;
+        dbName = volumeId;
+        try {
+            // first, try to create a new database; if it already exists, an
+            // exception will be thrown
+            database.createDatabase(dbName, 5);
+            
+        } catch (BabuDBException e) {
+            // database already exists
+            Logging.logMessage(Logging.LEVEL_TRACE, this, "database '" + dbName + "' loaded");
+        }
     }
     
     @Override
-    public void shutdown() {
-        database.shutdown();
+    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
+        throws DatabaseException {
+        try {
+            return new AtomicBabuDBUpdate(database, dbName, new BabuDBRequestListenerWrapper(
+                listener), context);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
-    public void addReplica(long parentId, String fileName, XLoc replica) throws DatabaseException {
+    public void addReplica(long parentId, String fileName, XLoc replica, AtomicDBUpdate update) {
         // TODO Auto-generated method stub
         
     }
     
     @Override
-    public long create(long parentId, String fileName, String userId, String groupId,
-        Map<String, Object> stripingPolicy, short perms, Map<String, Short> aclMap, String ref,
-        boolean directory, DBAccessResultListener result, Object context) throws DatabaseException {
+    public void init(String ownerId, String owningGroupId, short perms,
+        Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
+        
+        // make sure that no database with the given name exists
+        try {
+            database.deleteDatabase(dbName, true);
+        } catch (BabuDBException exc) {
+            // ignore
+        }
+        
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
+        try {
+            // create the database
+            database.createDatabase(dbName, 5);
+            
+            // create the root directory
+            create(0L, "", ownerId, owningGroupId, rootDirDefSp, perms, null, true, update);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public BufferBackedFileMetadata create(long parentId, String fileName, String userId,
+        String groupId, Map<String, Object> stripingPolicy, short perms, String ref,
+        boolean directory, AtomicDBUpdate update) throws DatabaseException {
         
         try {
             
             // atime, ctime, mtime
             int time = (int) (TimeSync.getGlobalTime() / 1000);
             
-            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
-            
             // get the next collision number
-            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database,
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database, dbName,
                 parentId, fileName);
             
             // if the file exists already, throw an exception
@@ -225,26 +286,26 @@ public class BabuDBStorageManager implements StorageManager {
                 throw new DatabaseException(ExceptionType.FILE_EXISTS);
             
             // get the file ID assigned to the last created file or directory
-            byte[] idBytes = BabuDBStorageHelper.getLastAssignedFileId(database);
+            byte[] idBytes = BabuDBStorageHelper.getLastAssignedFileId(database, dbName);
             
             // calculate the new file ID
             ByteBuffer tmp = ByteBuffer.wrap(idBytes);
             long id = tmp.getLong(0) + 1;
             
             tmp.putLong(0, id);
-            ig.addInsert(LAST_ID_INDEX, LAST_ID_KEY, idBytes);
+            update.addUpdate(LAST_ID_INDEX, LAST_ID_KEY, idBytes);
             
             // create metadata
             BufferBackedFileMetadata fileMetadata = directory ? new BufferBackedFileMetadata(
                 parentId, fileName, userId, groupId, id, time, time, time, perms, collCount)
                 : new BufferBackedFileMetadata(parentId, fileName, userId, groupId, id, time, time,
                     time, 0L, perms, (short) 1, 0, 0, false, collCount);
-            ig.addInsert(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
+            update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
                     .getFCMetadataValue());
-            ig.addInsert(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
+            update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
                     .getRCMetadata().getValue());
             
-            ig.addInsert(FILE_ID_INDEX, idBytes, BabuDBStorageHelper.createFileIdIndexValue(
+            update.addUpdate(FILE_ID_INDEX, idBytes, BabuDBStorageHelper.createFileIdIndexValue(
                 parentId, fileName));
             
             // create default striping policy (XAttr)
@@ -253,7 +314,7 @@ public class BabuDBStorageManager implements StorageManager {
                 BufferBackedXAttr sp = new BufferBackedXAttr(id, SYSTEM_UID, DEFAULT_SP_ATTR_NAME,
                     JSONParser.writeJSON(stripingPolicy), (short) 0);
                 
-                ig.addInsert(XATTRS_INDEX, sp.getKeyBuf(), sp.getValBuf());
+                update.addUpdate(XATTRS_INDEX, sp.getKeyBuf(), sp.getValBuf());
             }
             
             // create link target (XAttr)
@@ -262,23 +323,12 @@ public class BabuDBStorageManager implements StorageManager {
                 BufferBackedXAttr lt = new BufferBackedXAttr(id, SYSTEM_UID, LINK_TARGET_ATTR_NAME,
                     ref, (short) 0);
                 
-                ig.addInsert(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
-            }
-            
-            // create ACL
-            if (aclMap != null) {
-                for (Entry<String, Short> entry : aclMap.entrySet()) {
-                    
-                    BufferBackedACLEntry aclEntry = new BufferBackedACLEntry(id, entry.getKey(),
-                        entry.getValue());
-                    ig.addInsert(ACL_INDEX, aclEntry.getKeyBuf(), aclEntry.getValBuf());
-                }
+                update.addUpdate(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
             }
             
             // insert all data in the database
-            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
             
-            return id;
+            return fileMetadata;
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -288,23 +338,19 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void delete(long parentId, String fileName, DBAccessResultListener result, Object context)
+    public void delete(long parentId, String fileName, AtomicDBUpdate update)
         throws DatabaseException {
         
         try {
             
             // get all keys to delete
-            List<byte[]>[] fileKeys = BabuDBStorageHelper.getMetadataKeys(database, parentId,
-                fileName);
+            List<byte[]>[] fileKeys = BabuDBStorageHelper.getMetadataKeys(database, dbName,
+                parentId, fileName);
             
             // add delete requests for each key
-            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
             for (int i = 0; i < fileKeys.length; i++)
                 for (byte[] key : fileKeys[i])
-                    ig.addDelete(i, key);
-            
-            // execute delete requests
-            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
+                    update.addUpdate(i, key, null);
             
         } catch (Exception exc) {
             throw new DatabaseException(exc);
@@ -312,7 +358,8 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void deleteReplica(long parentId, String fileName, int index) throws DatabaseException {
+    public void deleteReplica(long parentId, String fileName, int index, AtomicDBUpdate update)
+        throws DatabaseException {
         // TODO Auto-generated method stub
         
     }
@@ -335,7 +382,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] prefix = BabuDBStorageHelper.createPrefix(parentId);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(DB_NAME, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
                 prefix);
             
             return new ChildrenIterator(it);
@@ -369,12 +416,12 @@ public class BabuDBStorageManager implements StorageManager {
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException {
         
         try {
-            short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, parentId,
-                fileName);
+            short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, dbName,
+                parentId, fileName);
             
             // second, determine the value
             byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) -1);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(DB_NAME, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
                 prefix);
             
             byte[][] keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
@@ -402,26 +449,68 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public String getXAttr(long fileId, String uid, String key) throws DatabaseException {
-        // TODO Auto-generated method stub
-        return null;
+        
+        try {
+            
+            // peform a prefix lookup
+            byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+                prefix);
+            
+            // check whether the entry is the correct one
+            while (it.hasNext()) {
+                
+                Entry<byte[], byte[]> curr = it.next();
+                BufferBackedXAttr xattr = new BufferBackedXAttr(curr.getKey(), curr.getValue());
+                if (uid.equals(xattr.getOwner()) && key.equals(xattr.getKey()))
+                    return xattr.getValue();
+            }
+            
+            return null;
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
-    public Iterator<XAttr> getXAttrs(long parentId, String fileName) throws DatabaseException {
-        // TODO Auto-generated method stub
-        return null;
+    public Iterator<XAttr> getXAttrs(long fileId) throws DatabaseException {
+        
+        try {
+            
+            // peform a prefix lookup
+            byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+                prefix);
+            
+            return new XAttrIterator(it, null);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
-    public Iterator<XAttr> getXAttrs(long parentId, String fileName, String uid)
-        throws DatabaseException {
-        // TODO Auto-generated method stub
-        return null;
+    public Iterator<XAttr> getXAttrs(long fileId, String uid) throws DatabaseException {
+        
+        try {
+            
+            // peform a prefix lookup
+            byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+                prefix);
+            
+            return new XAttrIterator(it, uid);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
     }
     
     @Override
-    public long link(long parentId, String fileName, long newParentId, String newFileName)
-        throws DatabaseException {
+    public long link(long parentId, String fileName, long newParentId, String newFileName,
+        AtomicDBUpdate update) throws DatabaseException {
         // TODO Auto-generated method stub
         return 0;
     }
@@ -431,7 +520,6 @@ public class BabuDBStorageManager implements StorageManager {
         return resolvePath(1, path);
     }
     
-    @Override
     public long resolvePath(long parentId, String path) throws DatabaseException {
         
         int index = path.indexOf('/');
@@ -449,18 +537,18 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setACLEntry(long fileId, String entity, Integer rights) throws DatabaseException {
+    public void setACLEntry(long fileId, String entity, Integer rights, AtomicDBUpdate update)
+        throws DatabaseException {
         // TODO Auto-generated method stub
         
     }
     
     @Override
     public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
-        DBAccessResultListener result, Object context) throws DatabaseException {
+        AtomicDBUpdate update) throws DatabaseException {
         try {
             Map<String, Object> sp = Converter.stripingPolicyToMap(defaultSp);
-            setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(sp), result,
-                context);
+            setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(sp), update);
         } catch (JSONException exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
         }
@@ -468,42 +556,29 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public void setMetadata(long parentId, String fileName, FileMetadata metadata, int type,
-        DBAccessResultListener result, Object context) throws DatabaseException {
-        try {
-            
-            short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, parentId,
-                fileName);
-            
-            assert (metadata instanceof BufferBackedFileMetadata);
-            BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
-            
-            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
-            if (type == -1)
-                for (int i = 0; i < BufferBackedFileMetadata.NUM_BUFFERS; i++)
-                    ig.addInsert(FILE_INDEX, md.getKeyBuffer(i), md.getValueBuffer(i));
-            else
-                ig.addInsert(FILE_INDEX, md.getKeyBuffer(type), md.getValueBuffer(type));
-            
-            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
-            
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
+        AtomicDBUpdate update) {
+        
+        assert (metadata instanceof BufferBackedFileMetadata);
+        BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
+        
+        if (type == -1)
+            for (int i = 0; i < BufferBackedFileMetadata.NUM_BUFFERS; i++)
+                update.addUpdate(FILE_INDEX, md.getKeyBuffer(i), md.getValueBuffer(i));
+        else
+            update.addUpdate(FILE_INDEX, md.getKeyBuffer(type), md.getValueBuffer(type));
     }
     
     @Override
-    public void setXAttr(long fileId, String uid, String key, String value,
-        DBAccessResultListener result, Object context) throws DatabaseException {
+    public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
+        throws DatabaseException {
         
         try {
-            short collNumber = BabuDBStorageHelper.findXAttrCollisionNumber(database, fileId, uid,
-                key);
+            short collNumber = BabuDBStorageHelper.findXAttrCollisionNumber(database, dbName,
+                fileId, uid, key);
             
             BufferBackedXAttr xattr = new BufferBackedXAttr(fileId, uid, key, value, collNumber);
-            BabuDBInsertGroup ig = database.createInsertGroup(DB_NAME);
-            
-            ig.addInsert(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
-            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(result), context);
+            update.addUpdate(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr
+                    .getValBuf());
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
@@ -513,7 +588,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     private long resolveComponent(long parentId, String comp) throws DatabaseException {
         try {
-            return BabuDBStorageHelper.getId(database, parentId, comp);
+            return BabuDBStorageHelper.getId(database, dbName, parentId, comp);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

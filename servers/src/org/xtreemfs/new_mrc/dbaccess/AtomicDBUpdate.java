@@ -21,12 +21,29 @@
 /*
  * AUTHORS: Jan Stender (ZIB)
  */
-package org.xtreemfs.new_mrc.metadata;
+package org.xtreemfs.new_mrc.dbaccess;
 
-public interface ACLEntry {
+/**
+ * Defines a collection of database updates that have to be executed atomically.
+ * 
+ * @author stender
+ * 
+ */
+public interface AtomicDBUpdate {
     
-    public String getEntity();
+    /**
+     * Adds a new update to the collection.
+     * 
+     * @param update
+     *            an array of objects describing the update
+     */
+    public void addUpdate(Object... update);
     
-    public short getRights();
+    /**
+     * Atomically executes all updates.
+     * 
+     * @throws DatabaseException
+     */
+    public void execute() throws DatabaseException;
     
 }

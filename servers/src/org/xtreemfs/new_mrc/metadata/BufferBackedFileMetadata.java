@@ -1,3 +1,26 @@
+/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+
+ This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+ Grid Operating System, see <http://www.xtreemos.eu> for more details.
+ The XtreemOS project has been developed with the financial support of the
+ European Commission's IST program under contract #FP6-033576.
+
+ XtreemFS is free software: you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free
+ Software Foundation, either version 2 of the License, or (at your option)
+ any later version.
+
+ XtreemFS is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+ * AUTHORS: Jan Stender (ZIB)
+ */
 package org.xtreemfs.new_mrc.metadata;
 
 import java.nio.ByteBuffer;
@@ -5,15 +28,6 @@ import java.nio.ByteBuffer;
 public class BufferBackedFileMetadata implements FileMetadata {
     
     public static final short            NUM_BUFFERS   = 3;
-    
-    // frequently-changed metadata
-    public static final byte             FC_METADATA   = 0;
-    
-    // rarely-changed metadata
-    public static final byte             RC_METADATA   = 1;
-    
-    // X-Locations list metadata
-    public static final byte             XLOC_METADATA = 2;
     
     protected static final int           FC_ATIME      = 0;
     
@@ -264,12 +278,14 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return directory;
     }
     
-    // public void setXLocList(BufferBackedXLocList xloc) {
-    // assert (!directory) : "cannot assign locations list to directory";
-    // keyBufs[XLOC_METADATA] = generateKeyBuf(parentId, fileName,
-    // XLOC_METADATA);
-    // valBufs[XLOC_METADATA] = ByteBuffer.wrap(xloc.getBuffer());
-    // }
+    public void setXLocList(BufferBackedXLocList xloc) {
+        assert (!directory) : "cannot assign locations list to directory";
+        
+        byte[] tmp = new byte[keyBufs[FC_SIZE].limit()];
+        System.arraycopy(tmp, 0, keyBufs[XLOC_METADATA].array(), 0, tmp.length);
+        keyBufs[XLOC_METADATA] = ByteBuffer.wrap(tmp).put(12, (byte) XLOC_METADATA);
+        valBufs[XLOC_METADATA] = ByteBuffer.wrap(xloc.getBuffer());
+    }
     
     public byte[] getFCMetadataKey() {
         return keyBufs[FC_METADATA].array();

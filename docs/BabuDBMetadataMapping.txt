@@ -1,8 +1,47 @@
 This document describes how XtreemFS metadata in the MRC is mapped to BabuDB
 database indices.
 
-The following indices exist, with the following types (the numbers define
-different value types w/ different keys):
+Volume metadata is stored in a database called 'V'. It is arranged in the
+following indices:
+
+VOL_INDEX                  VOL_NAME_INDEX (#1)
+------------------         --------------
+fileAccessPolicyId         volIDs
+osdPolicyId                (volume name mapping)
+registerAtDS
+volumeId
+volumeName
+osdPolicyArgs
+
+
+Indices are structured as follows (numbers indicate entry sizes in bytes):
+
+VOL_INDEX (#0)
+|----------------------------------------------------------------------------|
+|key   | volumeId                                                            |
+|      | var                                                                 |
+|----------------------------------------------------------------------------|
+|value | fileAccessPolicyId    osdPolicyId    registerAtDS                   |
+|      | 2                     2              1                              |
+|      |                                                                     |
+|      | volNameOffset osdPolArgsOffset  volumeId  volumeName  osdPolicyArgs |
+|      | 2             2                 var       var         var           |
+|----------------------------------------------------------------------------|
+
+
+VOL_NAME_INDEX (#1)
+|----------------------------------------------------------------------------|
+|key   | volumeName                                                          |
+|      | var                                                                 |
+|----------------------------------------------------------------------------|
+|value | volumeId                                                            |
+|      | var                                                                 |
+|----------------------------------------------------------------------------|
+
+
+File system metadata of a volume is stored in a BabuDB database with the name
+of the volume ID. The following indices exist, with the following types (the
+numbers define different value types):
 
 FILE_INDEX        XATTR_INDEX     FILE_ID_INDEX
 --------------    -------------   -------------------
@@ -24,7 +63,7 @@ XLocList     2
 
 Indices are structured as follows (numbers indicate entry sizes in bytes):
 
- FILE_INDEX
+ FILE_INDEX (#0)
 |----------------------------------------------------------------------------|
 |key   | parentID   hash(filename)   type                                    |
 |      | 8          4                1                                       |
@@ -55,7 +94,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- XATTR_INDEX
+ XATTR_INDEX (#1)
 |----------------------------------------------------------------------------|
 |key   | fileID   hash(owner)   hash(attrKey)   collisionCount               |
 |      | 8        4             4               2                            |
@@ -65,7 +104,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- ACL_INDEX
+ ACL_INDEX (#2)
 |----------------------------------------------------------------------------|
 |key   | fileID   entityName                                                 |
 |      | 8        var                                                        |
@@ -75,7 +114,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- FILE_ID_INDEX
+ FILE_ID_INDEX (#3)
 |----------------------------------------------------------------------------|
 |key   | fileID                                                              |
 |      | 8                                                                   |
@@ -85,7 +124,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- LAST_ID_INDEX
+ LAST_ID_INDEX (#4)
 |----------------------------------------------------------------------------|
 |key   | '*'                                                                 |
 |      | 1                                                                   |
