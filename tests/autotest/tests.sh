@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+# Driver for automated testing of XtreemFS.
+# Requires utils/* for creating server configs and starting the servers.
+# Servers will run on localhost, with storage from the locally mounted
+# filesystem(s).
+#
+# Usage:
+#      ./tests.sh <PATH_TO_XTREEMFS_TREE> [SSL_CERTIFICATE_FILE]
+#
+# When a certificate file isn't specified, the tests will run without SSL.
+#
+# Tests are executed from the tests/ subdirectory, only scripts with names
+# matching [0-9][0-9]_*.sh are executed.
+# By default 3 (three) OSDs will be created, and the stripe size will be set
+# to 128KB. This can be changed by setting the environment variables
+# $NUM_OSDS and $STRIPE_WIDTH to other values before starting the tests.
+#
+# $Id$
+#
 
 create_config() {
 	mkdir -p $WKDIR/config
@@ -7,19 +26,19 @@ create_config() {
 		exit 1
 	fi
 	
-	if [ $USECERT != "" ]
+	if [ "$USECERT" != "" ]
 	then
-		usessl=" use_ssl"
+		USESSL=" use_ssl"
 	else
-		usessl=""
+		USESSL=""
 	fi
 
 	#create configs
-	utils/create_testconfig.pl dir $JAVA_DEBUG localhost default $WKDIR default $usessl> $WKDIR/config/dir.properties
-	utils/create_testconfig.pl mrc $JAVA_DEBUG localhost default $WKDIR default $usessl> $WKDIR/config/mrc.properties
+	utils/create_testconfig.pl dir $JAVA_DEBUG localhost default $WKDIR default $USESSL> $WKDIR/config/dir.properties
+	utils/create_testconfig.pl mrc $JAVA_DEBUG localhost default $WKDIR default $USESSL> $WKDIR/config/mrc.properties
 	
 	for (( i=0 ; i<$NUM_OSDS ; i++ )) ; do
-		utils/create_testconfig.pl osd$i $JAVA_DEBUG localhost default $WKDIR default $usessl > $WKDIR/config/osd$i.properties
+		utils/create_testconfig.pl osd$i $JAVA_DEBUG localhost default $WKDIR default $USESSL > $WKDIR/config/osd$i.properties
 	done
 
 }
@@ -166,7 +185,7 @@ fi
 
 if [ $# -lt 1 ]
 then
-	echo "usage: $0 <xtreemfs dir> <use_ssl>"
+	echo "usage: $0 <xtreemfs dir> [<use_ssl>]"
 	exit 1
 fi
 XTREEMFS=$1
@@ -180,14 +199,23 @@ fi
 export USECERT
 echo "using SSL: $USECERT"
 
-export NUM_OSDS=3
-export STRIPE_WIDTH=128
+export NUM_OSDS=${NUM_OSDS:-3}
+export STRIPE_WIDTH=${STRIPE_WIDTH:-128}
 JAVA_DEBUG=1
 CLIENT_DEBUG=""
 CLIENT_DEBUG_LEVEL=0
 
-# CREATE working directory for xtreemfs
-export WKDIR=/scratch/disk1/xtreemfs_test/`date +'%Y-%m-%d_%H.%M.%S'`
+# if ran from inside the automated tests script, use ZIB-specific settings
+# (actually a bad idea to hardcode the ZIB paths... [EF])
+
+if [ -n "$TEST_SUMMARY" ]; then
+    # CREATE working directory for xtreemfs
+    export WKDIR=/scratch/disk1/xtreemfs_test/`date +'%Y-%m-%d_%H.%M.%S'`
+else
+    export STANDALONE_RUN=y
+    export WKDIR=`mktemp -d`
+    export TEST_SUMMARY=$WKDIR/test_summary_`date +'%Y-%m-%d_%H.%M.%S'`
+fi
 
 create_config
 startup_services
@@ -206,7 +234,7 @@ echo -e "\n\n================== STARTING TESTS ====================\n\n"
 
 result=0
 
-for testfile in tests/*.sh
+for testfile in tests/[0-9][0-9]_*.sh
 do
 	echo -e "TEST: $testfile\n"
 
@@ -230,5 +258,10 @@ fi
 do_unmount
 
 shutdown_services
+
+if [ -n "$STANDALONE_RUN" ]; then
+    cp $TEST_SUMMARY .
+    rm -rf $WKDIR
+fi
 
 exit $result
