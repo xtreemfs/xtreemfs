@@ -75,7 +75,7 @@ shutdown_services() {
 
 do_mount() {
 	VOLUMES=""
-	if [ $USECERT != "" ]
+	if [ "$USECERT" != "" ]
 	then
 		sslmnt="-o ssl_cert=$USECERT "
 		sslmkvol=" -c $USECERT "
