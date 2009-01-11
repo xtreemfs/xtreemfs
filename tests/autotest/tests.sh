@@ -160,14 +160,14 @@ do_unmount() {
 
 		if [ `grep -c "$WKDIR/mnt_$i" /proc/mounts` -gt 0 ]; then
 			echo "Unmounting volume test_$i"
-			/usr/local/bin/fusermount -u $WKDIR/mnt_$i
+			$FUSERMOUNT -u $WKDIR/mnt_$i
 		else
 			echo "volume test_$i not mounted in $WKDIR/mnt_$i, probably crashed"
 		fi
 
 		if [ `grep -c "$WKDIR/mnt_nondirect$i" /proc/mounts` -gt 0 ]; then
 			echo "Unmounting volume test_$i (nondirect)"
-			/usr/local/bin/fusermount -u $WKDIR/mnt_nondirect$i
+			$FUSERMOUNT -u $WKDIR/mnt_nondirect$i
 		else
 			echo "volume test_$i not mounted in $WKDIR/mnt_nondirect$i, probably crashed"
 		fi
@@ -215,6 +215,18 @@ else
     export STANDALONE_RUN=y
     export WKDIR=`mktemp -d`
     export TEST_SUMMARY=$WKDIR/test_summary_`date +'%Y-%m-%d_%H.%M.%S'`
+fi
+
+# normal distros have fusermount installed, but if not, try /usr/local/bin
+
+FUSERMOUNT=`which fusermount 2> /dev/null`
+if [ -z "$FUSERMOUNT" ]; then
+    if [ -x /usr/local/bin/fusermount ]; then
+	FUSERMOUNT=/usr/local/bin/fusermount
+    else
+	echo "Could not find 'fusermount' command in PATH!"
+	exit 1
+    fi
 fi
 
 create_config
