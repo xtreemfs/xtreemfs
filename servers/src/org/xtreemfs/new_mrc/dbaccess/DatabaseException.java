@@ -26,7 +26,7 @@ package org.xtreemfs.new_mrc.dbaccess;
 public class DatabaseException extends Exception {
     
     public enum ExceptionType {
-        INTERNAL_DB_ERROR, FILE_EXISTS, NO_SUCH_FILE
+        INTERNAL_DB_ERROR, FILE_EXISTS
     }
     
     private ExceptionType type;

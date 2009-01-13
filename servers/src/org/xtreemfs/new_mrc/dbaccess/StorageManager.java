@@ -32,8 +32,22 @@ import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
+import org.xtreemfs.new_mrc.metadata.XLocList;
 
 public interface StorageManager {
+    
+    /**
+     * userID for system attributes; can be used w/ <code>getXAttr()</code> and
+     * <code>getXAttrs()</code> to retrieve extended attributes assigned by the
+     * system
+     */
+    public static final String SYSTEM_UID = "";
+    
+    /**
+     * userID for global attributes; can be used w/ <code>getXAttr()</code> and
+     * <code>getXAttrs()</code> to retrieve extended attributes visible to any user
+     */
+    public static final String GLOBAL_ID = "*";
     
     // misc
     
@@ -42,6 +56,16 @@ public interface StorageManager {
     
     public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
         throws DatabaseException;
+    
+    public ACLEntry createACLEntry(long fileId, String entity, short rights);
+    
+    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds);
+    
+    public XLocList createXLocList(XLoc[] replicas, int version);
+    
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width);
+    
+    public XAttr createXAttr(long fileId, String owner, String key, String value);
     
     // XAttrs
     
@@ -82,6 +106,8 @@ public interface StorageManager {
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
     
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
+    
+    public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
     public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
     

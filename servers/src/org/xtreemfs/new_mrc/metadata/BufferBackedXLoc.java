@@ -26,15 +26,8 @@ package org.xtreemfs.new_mrc.metadata;
 
 import java.nio.ByteBuffer;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-
 public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
-    
-    private static final int SP_DYN_INDEX   = 0;
-    
-    private static final int OSDS_DYN_INDEX = 1;
-    
+
     private String[]         osdCache;
     
     private StripingPolicy   stripingPolicy;
@@ -48,7 +41,7 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         super(buffer, offset, len);
         
         ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-        short numOSDs = tmp.getShort(getBufferIndex(OSDS_DYN_INDEX));
+        short numOSDs = tmp.getShort(offset + tmp.getShort(offset));
         
         osdCache = new String[numOSDs];
     }
@@ -70,20 +63,36 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         int spolSize = stripingPolicy.getLength();
         assert (spolSize <= Short.MAX_VALUE);
         
-        // + 2 len bytes for sp
-        int bufSize = 2 + spolSize + osdListSize;
+        int bufSize = spolSize + osdListSize + 2;
         
-        // allocate a new buffer and fill it with the given data
-        ReusableBuffer tmp = BufferPool.allocate(bufSize);
-        tmp.putShort((short) spolSize);
-        tmp.getBuffer().put(stripingPolicy.getBuffer(), stripingPolicy.getOffset(),
-            stripingPolicy.getLength());
+        // allocate a new buffer
+        len = bufSize;
+        buffer = new byte[len];
+        ByteBuffer tmp = ByteBuffer.wrap(buffer);
         
+        // first 2 bytes: osd list offset
+        tmp.putShort((short) (spolSize + 2));
+        
+        // next bytes: striping policy
+        tmp.put(stripingPolicy.getBuffer(), stripingPolicy.getOffset(), stripingPolicy.getLength());
+        
+        // next 2 bytes: # OSDs
         tmp.putShort((short) osds.length);
-        for (String osd : osds)
-            tmp.putShortString(osd);
         
-        BufferPool.free(tmp);
+        // next bytes: osd offsets
+        byte[][] osdBytes = new byte[osds.length][];
+        int ofs0 = tmp.position() - offset;
+        int ofs = 0;
+        for (int i = 0; i < osds.length; i++) {
+            osdBytes[i] = osds[i].getBytes();
+            assert (ofs0 + ofs <= Short.MAX_VALUE);
+            tmp.putShort((short) (ofs0 + osds.length * Short.SIZE / 8 + ofs));
+            ofs += osdBytes[i].length;
+        }
+        
+        // next bytes: osd bytes
+        for (byte[] b : osdBytes)
+            tmp.put(b);
     }
     
     public short getOSDCount() {
@@ -94,16 +103,11 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         
         if (osdCache[osdIndex] == null) {
             
-            // find the correct index position in the buffer
-            int bufOffset = getOSDBufferIndex(osdIndex);
+            // find the correct index offset in the buffer
+            int bufOffset = getOSDBufferOffset(osdIndex);
+            int nextBufOffset = getOSDBufferOffset(osdIndex + 1);
             
-            ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-            
-            // total length = string length + # length bytes
-            short strLen = tmp.getShort(bufOffset);
-            assert (strLen >= 0);
-            
-            osdCache[osdIndex] = new String(buffer, offset + bufOffset + Short.SIZE / 8, strLen);
+            osdCache[osdIndex] = new String(buffer, bufOffset, nextBufOffset - bufOffset);
         }
         
         return osdCache[osdIndex];
@@ -113,54 +117,28 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         
         if (stripingPolicy == null) {
             
-            // find the correct index position in the buffer
-            int bufOffset = getBufferIndex(SP_DYN_INDEX);
-            
             ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-            short bufLen = tmp.getShort(bufOffset);
-            assert (bufLen >= 0);
+            short osdListStart = tmp.getShort(offset);
+            assert (osdListStart >= offset);
             
-            if (bufLen == 0)
+            if (osdListStart == offset + 2)
                 return null;
             
             // create the target object from a view buffer (skip the len bytes)
-            stripingPolicy = new BufferBackedStripingPolicy(buffer, offset + bufOffset, bufLen);
+            stripingPolicy = new BufferBackedStripingPolicy(buffer, offset + 2, osdListStart - 2);
         }
         
         return stripingPolicy;
     }
     
-    private int getBufferIndex(int entityIndex) {
+    private int getOSDBufferOffset(int osdPosition) {
         
-        switch (entityIndex) {
+        ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
+        int osdOffset = offset
+            + (osdPosition >= osdCache.length ? len : tmp.getShort(offset + tmp.getShort(offset) + 2
+                + osdPosition * Short.SIZE / 8));
         
-        case SP_DYN_INDEX:
-            return 0;
-            
-        case OSDS_DYN_INDEX:
-            ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-            short bufLen = tmp.getShort(0);
-            assert (bufLen > 0);
-            return bufLen + 2;
-            
-        default:
-            return -1;
-        }
-    }
-    
-    private int getOSDBufferIndex(int osdPosition) {
-        
-        // calculate the index; skip the first 2 bytes (# OSDs)
-        int index = getBufferIndex(OSDS_DYN_INDEX) + 2;
-        for (int i = 0; i < osdPosition; i++) {
-            ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-            int bufLen = tmp.getShort(index);
-            assert (bufLen > 0);
-            
-            index += bufLen + 2;
-        }
-        
-        return index;
+        return osdOffset;
     }
     
 }

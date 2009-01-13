@@ -27,15 +27,15 @@ import java.nio.ByteBuffer;
 
 public class BufferBackedFileMetadata implements FileMetadata {
     
-    public static final short            NUM_BUFFERS   = 3;
+    public static final short            NUM_BUFFERS = 3;
     
-    protected static final int           FC_ATIME      = 0;
+    protected static final int           FC_ATIME    = 0;
     
-    protected static final int           FC_CTIME      = 4;
+    protected static final int           FC_CTIME    = 4;
     
-    protected static final int           FC_MTIME      = 8;
+    protected static final int           FC_MTIME    = 8;
     
-    protected static final int           FC_SIZE       = 12;
+    protected static final int           FC_SIZE     = 12;
     
     private final boolean                directory;
     
@@ -44,6 +44,8 @@ public class BufferBackedFileMetadata implements FileMetadata {
     private final ByteBuffer[]           valBufs;
     
     private final BufferBackedRCMetadata rcMetadata;
+    
+    private BufferBackedXLocList         xLocList;
     
     /**
      * Creates a new buffer-backed metadata object from a set of buffers.
@@ -70,8 +72,11 @@ public class BufferBackedFileMetadata implements FileMetadata {
             if (valBufs[i] != null)
                 this.valBufs[i] = ByteBuffer.wrap(valBufs[i]);
         
-        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA], valBufs[RC_METADATA]);
-        directory = valBufs[FC_METADATA].length == 12;
+        rcMetadata = valBufs[RC_METADATA] == null ? null : new BufferBackedRCMetadata(
+            keyBufs[RC_METADATA], valBufs[RC_METADATA]);
+        xLocList = valBufs[XLOC_METADATA] == null ? null : new BufferBackedXLocList(
+            valBufs[XLOC_METADATA]);
+        directory = valBufs[FC_METADATA] == null ? null : valBufs[FC_METADATA].length == 12;
     }
     
     /**
@@ -116,6 +121,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId,
             perms, linkCount, epoch, issEpoch, readOnly, collCount);
+        xLocList = null;
         directory = false;
     }
     
@@ -155,6 +161,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms,
             collCount);
+        xLocList = null;
         directory = true;
     }
     
@@ -200,7 +207,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     @Override
     public long getSize() {
-        return valBufs[FC_METADATA].getInt(FC_SIZE);
+        return valBufs[FC_METADATA].getLong(FC_SIZE);
     }
     
     @Override
@@ -274,6 +281,11 @@ public class BufferBackedFileMetadata implements FileMetadata {
     }
     
     @Override
+    public XLocList getXLocList() {
+        return xLocList;
+    }
+    
+    @Override
     public boolean isDirectory() {
         return directory;
     }
@@ -285,6 +297,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         System.arraycopy(tmp, 0, keyBufs[XLOC_METADATA].array(), 0, tmp.length);
         keyBufs[XLOC_METADATA] = ByteBuffer.wrap(tmp).put(12, (byte) XLOC_METADATA);
         valBufs[XLOC_METADATA] = ByteBuffer.wrap(xloc.getBuffer());
+        xLocList = new BufferBackedXLocList(xloc.getBuffer());
     }
     
     public byte[] getFCMetadataKey() {

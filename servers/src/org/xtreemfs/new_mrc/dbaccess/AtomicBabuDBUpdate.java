@@ -56,7 +56,10 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
     @Override
     public void execute() throws DatabaseException {
         try {
-            database.asyncInsert(ig, listener, context);
+            if (listener != null)
+                database.asyncInsert(ig, listener, context);
+            else
+                database.syncInsert(ig);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

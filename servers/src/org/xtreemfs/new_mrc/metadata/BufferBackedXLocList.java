@@ -29,15 +29,16 @@ import java.util.Iterator;
 
 public class BufferBackedXLocList extends BufferBackedMetadata implements XLocList {
     
-    private static final int VERSION_INDEX      = 0;
-    
-    private static final int REPLICA_LIST_INDEX = 4;
-    
-    private XLoc[]           replicaCache;
+    private XLoc[] replicaCache;
     
     public BufferBackedXLocList(byte[] buffer) {
+        
         super(buffer, 0, buffer.length);
-        replicaCache = new XLoc[buffer[REPLICA_LIST_INDEX]];
+        
+        ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
+        int numReplicas = tmp.getInt(offset + 4);
+        
+        replicaCache = new XLoc[numReplicas];
     }
     
     public BufferBackedXLocList(BufferBackedXLoc[] replicas, int version) {
@@ -54,17 +55,21 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
         // allocate a new buffer and fill it with the given data
         buffer = new byte[bufSize];
         ByteBuffer tmp = ByteBuffer.wrap(buffer);
+        
+        // version
         tmp.putInt(version);
+        
+        // # replicas
         tmp.putInt(replicas.length);
         
-        // first, insert all offsets
-        int replOffset = 0;
+        // replica offsets
+        int replOffset = tmp.position() - offset + replicas.length * Integer.SIZE / 8;
         for (BufferBackedXLoc replica : replicas) {
-            replOffset += replica.getLength();
             tmp.putInt(replOffset);
+            replOffset += replica.getLength();
         }
         
-        // second, insert all replicas
+        // replicas
         for (BufferBackedXLoc replica : replicas)
             tmp.put(replica.getBuffer(), replica.getOffset(), replica.getLength());
         
@@ -80,21 +85,18 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
         
         if (replicaCache[replicaIndex] == null) {
             
-            // find the correct index position in the buffer
-            int index = getBufferIndex(replicaIndex);
+            // find the correct offset position in the buffer
+            int index = getBufferOffset(replicaIndex);
             
-            int nextIndex = replicaIndex == getReplicaCount() - 1 ? offset + len
-                : getBufferIndex(replicaIndex + 1);
+            // find the following offset position
+            int nextIndex = replicaIndex >= getReplicaCount() - 1 ? offset + len
+                : getBufferOffset(replicaIndex + 1);
             
-            ByteBuffer tmp = ByteBuffer.wrap(buffer);
-            int length = tmp.getInt(index);
-            assert (length >= 0);
-            
+            int length = nextIndex - index;
             if (length == 0)
                 return null;
             
-            replicaCache[replicaIndex] = new BufferBackedXLoc(buffer, offset + index, offset
-                + nextIndex);
+            replicaCache[replicaIndex] = new BufferBackedXLoc(buffer, offset + index, length);
         }
         
         return replicaCache[replicaIndex];
@@ -102,7 +104,7 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
     
     public int getVersion() {
         ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-        return tmp.getInt(VERSION_INDEX);
+        return tmp.getInt(offset);
     }
     
     public Iterator<XLoc> iterator() {
@@ -125,9 +127,9 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
         };
     }
     
-    private int getBufferIndex(int replicaIndex) {
+    private int getBufferOffset(int replicaIndex) {
         ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
-        return tmp.getInt(REPLICA_LIST_INDEX + replicaIndex * Integer.SIZE / 8);
+        return offset + tmp.getInt(offset + 8 + replicaIndex * Integer.SIZE / 8);
     }
     
 }

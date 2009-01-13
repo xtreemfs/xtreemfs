@@ -81,7 +81,7 @@ public abstract class BufferBackedMetadata {
      * Generates a formatted hex string from the backing buffer.
      */
     public String toString() {
-        return OutputUtils.byteArrayToFormattedHexString(buffer);
+        return OutputUtils.byteArrayToFormattedHexString(buffer, offset, len);
     }
     
 }

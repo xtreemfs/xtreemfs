@@ -58,6 +58,13 @@ public abstract class MRCOperation {
     public abstract boolean hasArguments();
     
     /**
+     * Method to check if operation needs user authentication.
+     * 
+     * @return true, if the user needs to be authenticated
+     */
+    public abstract boolean isAuthRequired();
+    
+    /**
      * Parses and inspects the JSON RPC arguments. This method should be
      * overwritten if <code>hasArguments()</code> evaluates to <code>true</code>
      * ; the parsed arguments have to be attached to the given MRC request.

@@ -60,5 +60,10 @@ public class BabuDBRequestListenerWrapper implements BabuDBRequestListener {
     public void requestFailed(Object context, BabuDBException error) {
         listener.requestFailed(context, error);
     }
+
+    @Override
+    public void userDefinedLookupFinished(Object context, Object result) {
+        listener.userDefinedLookupFinished(context, result);
+    }
     
 }

@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
@@ -46,6 +47,7 @@ import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBRequestListenerWrapper;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageManager;
+import org.xtreemfs.new_mrc.dbaccess.DBAccessResultAdapter;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
@@ -95,18 +97,19 @@ public class BabuDBVolumeManager implements VolumeManager {
     public void init() throws DatabaseException {
         
         try {
-            database = new BabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60, false);
+            database = new BabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC,
+                300, 1000);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
         
         try {
             database.createDatabase(VOLUME_DB_NAME, 2);
-            for (VolumeInfo vol : getVolumes())
-                mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName()));
         } catch (BabuDBException e) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
             // database already exists
+            Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
+            for (VolumeInfo vol : getVolumes())
+                mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName(), vol.getId()));
         }
     }
     
@@ -130,17 +133,38 @@ public class BabuDBVolumeManager implements VolumeManager {
         BufferBackedVolumeInfo volume = new BufferBackedVolumeInfo(volumeId, volumeName,
             fileAccessPolicyId, osdPolicyId, osdPolicyArgs);
         
-        BabuDBStorageManager sMan = new BabuDBStorageManager(database, volumeId);
+        // initialize the volume
+        short perms = 509; // TODO
+        
+        // make sure that no volume database with the given name exists
+        try {
+            database.deleteDatabase(volumeId, true);
+        } catch (BabuDBException exc) {
+            // ignore
+        }
+        
+        // create the volume database
+        try {
+            database.createDatabase(volumeId, 5);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
+        BabuDBStorageManager sMan = new BabuDBStorageManager(database, volumeName, volumeId);
         mngrMap.put(volumeId, sMan);
         
-        // initialize the volume
-        short perms = master.getFileAccessManager().getDefaultVolumeRights(volumeId);
-        
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(listener, context);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         sMan.init(ownerId, owningGroupId, perms, defaultStripingPolicy, update);
-        update.addUpdate(VOL_INDEX, volumeId.getBytes(), volume.getBuffer());
-        update.addUpdate(VOL_NAME_INDEX, volumeName.getBytes(), volumeId.getBytes());
         update.execute();
+        
+        try {
+            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            ig.addInsert(VOL_INDEX, volumeId.getBytes(), volume.getBuffer());
+            ig.addInsert(VOL_NAME_INDEX, volumeName.getBytes(), volumeId.getBytes());
+            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(listener), context);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
         
         notifyVolumeChangeListeners(VolumeChangeListener.MOD_CHANGED, volume);
         
@@ -173,29 +197,28 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             byte[] volId = database.syncLookup(VOLUME_DB_NAME, VOL_NAME_INDEX, volumeName
                     .getBytes());
-            VolumeInfo volume = new BufferBackedVolumeInfo(database.syncLookup(VOLUME_DB_NAME,
-                VOL_INDEX, volId));
-            if (volume == null)
+            if (volId == null)
                 throw new UserException(ErrNo.ENOENT, "volume '" + volumeName
                     + "' not found on this MRC");
-            return volume;
+            
+            byte[] volumeData = database.syncLookup(VOLUME_DB_NAME, VOL_INDEX, volId);
+            
+            return new BufferBackedVolumeInfo(volumeData);
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
-        
     }
     
     public VolumeInfo getVolumeById(String volumeId) throws DatabaseException, UserException {
         
         try {
             
-            VolumeInfo volume = new BufferBackedVolumeInfo(database.syncLookup(VOLUME_DB_NAME,
-                VOL_INDEX, volumeId.getBytes()));
-            if (volume == null)
+            byte[] volumeData = database.syncLookup(VOLUME_DB_NAME, VOL_INDEX, volumeId.getBytes());
+            if (volumeData == null)
                 throw new UserException(ErrNo.ENOENT, "volume with id " + volumeId
                     + " not found on this MRC");
-            return volume;
+            return new BufferBackedVolumeInfo(volumeData);
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
@@ -207,7 +230,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(VOLUME_DB_NAME,
-                VOL_INDEX, null);
+                VOL_INDEX, new byte[0]);
             List<VolumeInfo> list = new LinkedList<VolumeInfo>();
             while (it.hasNext())
                 list.add(new BufferBackedVolumeInfo(it.next().getValue()));
@@ -225,10 +248,6 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             VolumeInfo volume = getVolumeByName(volumeName);
-            if (volume == null)
-                throw new UserException(ErrNo.ENOENT, "volume '" + volumeName
-                    + "' not found on this MRC");
-            
             mngrMap.remove(volume.getId());
             
             BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);

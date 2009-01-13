@@ -36,4 +36,6 @@ public interface DBAccessResultListener {
     
     public void requestFailed(Object context, Throwable error);
     
+    public void userDefinedLookupFinished(Object context, Object result);
+    
 }

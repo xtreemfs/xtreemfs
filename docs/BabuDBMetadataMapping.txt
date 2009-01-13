@@ -1,6 +1,10 @@
 This document describes how XtreemFS metadata in the MRC is mapped to BabuDB
 database indices.
 
+
+1  VOLUME MANAGEMENT METADATA
+==============================================================================
+
 Volume metadata is stored in a database called 'V'. It is arranged in the
 following indices:
 
@@ -8,7 +12,6 @@ VOL_INDEX                  VOL_NAME_INDEX (#1)
 ------------------         --------------
 fileAccessPolicyId         volIDs
 osdPolicyId                (volume name mapping)
-registerAtDS
 volumeId
 volumeName
 osdPolicyArgs
@@ -21,11 +24,11 @@ VOL_INDEX (#0)
 |key   | volumeId                                                            |
 |      | var                                                                 |
 |----------------------------------------------------------------------------|
-|value | fileAccessPolicyId    osdPolicyId    registerAtDS                   |
-|      | 2                     2              1                              |
+|value | fileAccessPolicyId    osdPolicyId    volNameOffset                  |
+|      | 2                     2              2                              |
 |      |                                                                     |
-|      | volNameOffset osdPolArgsOffset  volumeId  volumeName  osdPolicyArgs |
-|      | 2             2                 var       var         var           |
+|      | osdPolArgsOffset   volumeId   volumeName   osdPolicyArgs            |
+|      | 2                  var        var          var                      |
 |----------------------------------------------------------------------------|
 
 
@@ -38,6 +41,9 @@ VOL_NAME_INDEX (#1)
 |      | var                                                                 |
 |----------------------------------------------------------------------------|
 
+
+2  FILE SYSTEM METADATA
+==============================================================================
 
 File system metadata of a volume is stored in a BabuDB database with the name
 of the volume ID. The following indices exist, with the following types (the
@@ -59,7 +65,7 @@ readOnlyFlag 1
 fileName     1
 owner        1
 group        1
-XLocList     2
+xLocList     2
 
 Indices are structured as follows (numbers indicate entry sizes in bytes):
 
@@ -89,7 +95,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |      | fileName  owner  group                                              |
 |      | var       var    var                                                |
 |----------------------------------------------------------------------------|
-|value | XLocList                                                            |
+|value | xLocList                                                            |
 |type=2| var                                                                 |
 |----------------------------------------------------------------------------|
 
@@ -133,3 +139,17 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |      | 8                                                                   |
 |----------------------------------------------------------------------------|
 
+
+Data types are mapped as follows:
+
+xLocList
+|----------------------------------------------------------------------------|
+|version  numReplicas  replica1Offs ... replicaNOffs   xLoc1 ... xLocN       |
+|4        4            4                4              var       var         |
+|----------------------------------------------------------------------------|
+
+xLoc
+|----------------------------------------------------------------------------|
+|osdListOffset stripingPolicy numOSDs osd1ofs ... osdnofs osd1 ... osdn      |
+|2             var            2       2           2       var      var       |
+|----------------------------------------------------------------------------|

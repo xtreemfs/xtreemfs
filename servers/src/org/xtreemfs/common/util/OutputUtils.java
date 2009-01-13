@@ -54,12 +54,16 @@ public final class OutputUtils {
     }
     
     public static final String byteArrayToFormattedHexString(byte[] array) {
-        StringBuilder sb = new StringBuilder(2 * array.length);
-        for (int i = 0; i < array.length; i++) {
+        return byteArrayToFormattedHexString(array, 0, array.length);
+    }
+    
+    public static final String byteArrayToFormattedHexString(byte[] array, int offset, int len) {
+        StringBuilder sb = new StringBuilder(2 * len);
+        for (int i = offset; i < offset + len; i++) {
             sb.append(trHex[((array[i] >> 4) & 0x0F)]);
             sb.append(trHex[(array[i] & 0x0F)]);
-            if (i % 4 == 3) {
-                if (i % 16 == 15)
+            if ((i - offset) % 4 == 3) {
+                if ((i - offset) % 16 == 15)
                     sb.append("\n");
                 else
                     sb.append(" ");
@@ -132,7 +136,7 @@ public final class OutputUtils {
         
         for (int i = 0; i < hexString.length(); i += 2) {
             int b = Integer.parseInt(hexString.substring(i, i + 2), 16);
-            bytes[i / 2] = b >= 128? (byte) (b - 256): (byte) b;
+            bytes[i / 2] = b >= 128 ? (byte) (b - 256) : (byte) b;
         }
         
         return bytes;

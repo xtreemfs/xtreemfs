@@ -28,26 +28,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parses a path separated by '/' into multiple sections.
+ * Parses a path separated by '/' into multiple components.
  * 
  * @author stender
  * 
  */
 public class Path {
     
-    private String        path;
+    private static final char SEPARATOR = '/';
     
-    private List<Integer> compIndices;
+    private String            path;
+    
+    private List<Integer>     compIndices;
     
     public Path(String path) {
         
-        this.path = path;
+        this.path = path.charAt(path.length() - 1) == SEPARATOR ? path.substring(0,
+            path.length() - 1) : path;
         this.compIndices = new ArrayList<Integer>(15);
         compIndices.add(-1);
         
-        byte[] bytes = path.getBytes();
+        byte[] bytes = this.path.getBytes();
         for (int i = 0; i < bytes.length; i++)
-            if (bytes[i] == '/')
+            if (bytes[i] == SEPARATOR)
                 compIndices.add(i);
         
     }
@@ -55,7 +58,7 @@ public class Path {
     public String getComp(int index) {
         
         if (index >= compIndices.size())
-            index = compIndices.size() - 1;
+            return null;
         
         return path.substring(compIndices.get(index) + 1, index == compIndices.size() - 1 ? path
                 .length() : compIndices.get(index + 1));
@@ -65,14 +68,14 @@ public class Path {
     public String getLastComp(int index) {
         
         if (index >= compIndices.size())
-            index = compIndices.size() - 1;
+            return null;
         
         return path.substring(compIndices.get(compIndices.size() - 1 - index) + 1,
             index == 0 ? path.length() : compIndices.get(compIndices.size() - index));
     }
     
     public String getComps(int startIndex, int endIndex) {
-
+        
         if (endIndex < startIndex)
             return "";
         
@@ -91,6 +94,10 @@ public class Path {
         return compIndices.size();
     }
     
+    public String toString() {
+        return path;
+    }
+    
     public static void main(String[] args) {
         Path path = new Path("myVolume/test/blub/bla.txt");
         System.out.println(path);
@@ -107,10 +114,6 @@ public class Path {
         System.out.println(path.getComps(3, 3));
         System.out.println(path.getComps(5, -1));
         System.out.println(path.getCompCount());
-    }
-    
-    public String toString() {
-        return path;
     }
     
 }

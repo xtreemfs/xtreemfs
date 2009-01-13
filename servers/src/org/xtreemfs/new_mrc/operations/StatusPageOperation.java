@@ -114,6 +114,11 @@ public class StatusPageOperation extends MRCOperation {
     }
     
     @Override
+    public boolean isAuthRequired() {
+        return false;
+    }
+    
+    @Override
     public void startRequest(MRCRequest rq) {
         rq.setData(ReusableBuffer.wrap(getStatusPage().getBytes()));
         rq.setDataType(DATA_TYPE.HTML);

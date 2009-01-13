@@ -19,28 +19,43 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB)
+ * AUTHORS: Jan Stender (ZIB)
  */
 
 package org.xtreemfs.new_mrc.operations;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.new_mrc.utils.MessageUtils;
+import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**
- *
- * @author bjko
+ * 
+ * @author stender
  */
-public class PingOperation extends MRCOperation {
-
-    public PingOperation(MRCRequestDispatcher master) {
+public class GetLocalVolumesOperation extends MRCOperation {
+    
+    static class Args {
+        public List<Long> proposedVersions;
+    }
+    
+    public static final String RPC_NAME = "getLocalVolumes";
+    
+    public GetLocalVolumesOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
+    @Override
     public boolean hasArguments() {
-        return true;
+        return false;
     }
     
     @Override
@@ -50,9 +65,21 @@ public class PingOperation extends MRCOperation {
     
     @Override
     public void startRequest(MRCRequest rq) {
-        rq.setData(ReusableBuffer.wrap("ping".getBytes()));
-        rq.setDataType(DATA_TYPE.HTML);
-        this.finishRequest(rq);
+        
+        try {
+            List<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
+            
+            Map<String, String> map = new HashMap<String, String>();
+            for (VolumeInfo data : volumes)
+                map.put(data.getId(), data.getName());
+            
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(map).getBytes()));
+            finishRequest(rq);
+            
+        } catch (Exception exc) {
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
+                "an error has occurred", exc));
+        }
     }
     
 }

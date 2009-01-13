@@ -45,18 +45,18 @@ public class BufferBackedVolumeInfo implements VolumeInfo {
         
         final byte[] idBytes = id.getBytes();
         final byte[] nameBytes = name.getBytes();
-        final byte[] osdPolArgsBytes = osdPolicyArgs.getBytes();
+        final byte[] osdPolArgsBytes = osdPolicyArgs == null? new byte[0]: osdPolicyArgs.getBytes();
         
         byte[] tmp = new byte[8 + idBytes.length + nameBytes.length + osdPolArgsBytes.length];
         buf = ByteBuffer.wrap(tmp);
         buf.putShort(fileAccessPolicyId).putShort(osdPolicyId).putShort(
-            (short) (4 + idBytes.length)).putShort((short) (4 + idBytes.length + nameBytes.length))
+            (short) (8 + idBytes.length)).putShort((short) (8 + idBytes.length + nameBytes.length))
                 .put(idBytes).put(nameBytes).put(osdPolArgsBytes);
     }
     
     public String getId() {
         byte[] bytes = buf.array();
-        return new String(bytes, 4, buf.getShort(4) - 4);
+        return new String(bytes, 8, buf.getShort(4) - 8);
     }
     
     public String getName() {

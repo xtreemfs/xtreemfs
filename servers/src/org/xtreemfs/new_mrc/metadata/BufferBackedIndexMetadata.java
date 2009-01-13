@@ -44,6 +44,7 @@ public abstract class BufferBackedIndexMetadata {
         int valOffs, int valLen) {
         this.keyBuf = keyBuf;
         this.keyOffs = keyOffs;
+        this.valBuf = valBuf;
         this.valOffs = valOffs;
         this.keyLen = keyLen;
         this.valLen = valLen;

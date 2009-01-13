@@ -40,6 +40,7 @@ import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
@@ -47,11 +48,13 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
 import org.xtreemfs.foundation.pinky.PipelinedPinky;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
@@ -251,8 +254,22 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             }
             }
             // we don't need that any more
-            BufferPool.free(request.getData());
+            if (request.getData() != null)
+                BufferPool.free(request.getData());
         } else {
+            if (request.getDataType() == null)
+                request.setDataType(DATA_TYPE.JSON);
+            
+            // TODO: remove this later; it is still necessary to satisfy the client
+            if (request.getData() == null)
+                try {
+                    request.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes(
+                        HTTPUtils.ENC_UTF8)));
+                } catch (JSONException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            
             pr.setResponse(HTTPUtils.SC_OKAY, request.getData(), request.getDataType());
         }
         pinkyStage.sendResponse(pr);
@@ -356,6 +373,11 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     
     @Override
     public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
+        
+    }
+    
+    @Override
+    public void userDefinedLookupFinished(Object context, Object result) {
         
     }
     

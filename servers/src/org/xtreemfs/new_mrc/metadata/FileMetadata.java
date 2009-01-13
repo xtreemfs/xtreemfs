@@ -80,6 +80,8 @@ public interface FileMetadata {
     
     public String getOwningGroupId();
     
+    public XLocList getXLocList();
+    
     public boolean isDirectory();
     
 }

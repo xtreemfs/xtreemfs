@@ -35,6 +35,7 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.babudb.BabuDB;
+import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.clients.dir.DIRClient;
@@ -68,11 +69,14 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     private Object                 lock         = "";
     
+    private boolean                cont;
+    
     private DBAccessResultListener listener     = new DBAccessResultAdapter() {
                                                     
                                                     @Override
                                                     public void insertFinished(Object context) {
                                                         synchronized (lock) {
+                                                            cont = true;
                                                             lock.notify();
                                                         }
                                                     }
@@ -106,8 +110,17 @@ public class BabuDBStorageManagerTest extends TestCase {
         File dbDir = new File(DB_DIRECTORY);
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
-        database = new BabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60, false);
-        mngr = new BabuDBStorageManager(database, "test");
+        database = new BabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60,
+            SyncMode.FDATASYNC, 300, 1000);
+        mngr = new BabuDBStorageManager(database, "volume", "volId");
+        
+        exc = null;
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.init("me", "myGrp", (short) 511, null, update);
+        update.execute();
+        waitForResponse();
+        
+        exc = null;
     }
     
     protected void tearDown() throws Exception {
@@ -120,39 +133,22 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     public void testCreateDelete() throws Exception {
         
-        final String userId = "me";
-        final String groupId = "myGroup";
-        final short perms = 511;
-        final Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
-        exc = null;
-        
-        // create root directory
-        final String rootDirName = "";
-        
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        FileMetadata rootDir = mngr.create(0, rootDirName, userId, groupId, stripingPolicy, perms,
-            null, true, update);
-        update.execute();
-        waitForResponse();
-        
-        assertEquals(rootDir.getId(), 1);
-        
         // retrieve root directory
-        FileMetadata metadata = mngr.getMetadata(0, rootDirName);
-        assertTrue(metadata.isDirectory());
-        assertTrue(metadata.getAtime() > 0);
-        assertTrue(metadata.getCtime() > 0);
-        assertTrue(metadata.getMtime() > 0);
-        assertEquals(rootDir.getId(), metadata.getId());
-        assertEquals(perms, metadata.getPerms());
-        assertEquals(rootDirName, metadata.getFileName());
-        assertEquals(userId, metadata.getOwnerId());
-        assertEquals(groupId, metadata.getOwningGroupId());
+        FileMetadata rootDir = mngr.getMetadata(0, "volume");
+        assertTrue(rootDir.isDirectory());
+        assertTrue(rootDir.getAtime() > 0);
+        assertTrue(rootDir.getCtime() > 0);
+        assertTrue(rootDir.getMtime() > 0);
+        assertEquals(1, rootDir.getId());
         
         // create nested file
         final String fileName = "testfile.txt";
+        final String userId = "me";
+        final String groupId = "myGrp";
+        final short perms = 511;
+        final Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
         
-        update = mngr.createAtomicDBUpdate(listener, null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
         FileMetadata nextDir = mngr.create(rootDir.getId(), fileName, userId, groupId,
             stripingPolicy, perms, null, false, update);
         update.execute();
@@ -160,7 +156,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         assertEquals(nextDir.getId(), 2);
         
-        metadata = mngr.getMetadata(rootDir.getId(), fileName);
+        FileMetadata metadata = mngr.getMetadata(rootDir.getId(), fileName);
         assertFalse(metadata.isDirectory());
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
@@ -258,7 +254,7 @@ public class BabuDBStorageManagerTest extends TestCase {
     public void testCreateDeleteWithCollidingHashCodes() throws Exception {
         
         // create two files w/ colliding hash codes in nested dir
-        final long dirId = 0;
+        final long dirId = 2;
         final String name1 = "Cfat";
         final String name2 = "CgCU";
         final String uid1 = "uid1";
@@ -316,18 +312,11 @@ public class BabuDBStorageManagerTest extends TestCase {
         final Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
         exc = null;
         
-        // crete the root directory
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        long rootDirId = mngr.create(0, "", userId, groupId, null, perms, null, true, update)
-                .getId();
-        update.execute();
-        waitForResponse();
-        
         // create a small directory tree and test path resolution
         long nextId = 0;
         
-        update = mngr.createAtomicDBUpdate(listener, null);
-        long comp1Id = nextId = mngr.create(rootDirId, "comp1", userId, groupId, stripingPolicy,
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        long comp1Id = nextId = mngr.create(1, "comp1", userId, groupId, stripingPolicy,
             perms, null, true, update).getId();
         update.execute();
         waitForResponse();
@@ -361,18 +350,21 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(comp1Id, id);
         
         id = mngr.resolvePath("");
-        assertEquals(rootDirId, id);
+        assertEquals(1, id);
         
         id = mngr.resolvePath("/");
-        assertEquals(rootDirId, id);
+        assertEquals(1, id);
         
     }
     
     private void waitForResponse() throws Exception {
         
         synchronized (lock) {
-            lock.wait();
+            if (!cont)
+                lock.wait();
         }
+        
+        cont = false;
         
         if (exc != null)
             throw exc;

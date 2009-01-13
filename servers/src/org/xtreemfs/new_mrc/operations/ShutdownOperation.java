@@ -48,6 +48,11 @@ public class ShutdownOperation extends MRCOperation {
     }
     
     @Override
+    public boolean isAuthRequired() {
+        return false; // TODO: auth
+    }
+    
+    @Override
     public void startRequest(MRCRequest rq) {
         try {
             master.shutdown();

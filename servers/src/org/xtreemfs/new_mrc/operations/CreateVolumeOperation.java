@@ -29,12 +29,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
@@ -74,6 +75,11 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     @Override
+    public boolean isAuthRequired() {
+        return true;
+    }
+    
+    @Override
     public void startRequest(final MRCRequest rq) {
         
         try {
@@ -107,13 +113,8 @@ public class CreateVolumeOperation extends MRCOperation {
             List<String> attrs = new LinkedList<String>();
             attrs.add("version");
             
-            String authString = master.getAuthString();
-            if (authString == null)
-                authString = rq.getPinkyRequest().requestHeaders
-                        .getHeader(HTTPHeaders.HDR_AUTHORIZATION);
-            
             RPCResponse<Map<String, Map<String, Object>>> response = master.getDirClient()
-                    .getEntities(queryMap, attrs, authString);
+                    .getEntities(queryMap, attrs, master.getAuthString());
             response.setResponseListener(new RPCResponseListener() {
                 public void responseAvailable(RPCResponse response) {
                     processStep2(rqArgs, volumeId, rq, response);
@@ -144,8 +145,7 @@ public class CreateVolumeOperation extends MRCOperation {
             if (!response.isEmpty()) {
                 
                 String uuid = response.keySet().iterator().next();
-                throw new UserException(ErrNo.EEXIST, "volume '"
-                    + rq.getDetails().context.get("volumeName")
+                throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.volumeName
                     + "' already exists in Directory Service, id='" + uuid + "'");
             }
             
@@ -227,9 +227,9 @@ public class CreateVolumeOperation extends MRCOperation {
             if (arguments.size() == 1)
                 return null;
             
-            args.osdSelectionPolicyId = (Short) arguments.get(1);
+            args.osdSelectionPolicyId = ((Long) arguments.get(1)).shortValue();
             args.defaultStripingPolicy = (Map<String, Object>) arguments.get(2);
-            args.acPolicyId = (Short) arguments.get(3);
+            args.acPolicyId = ((Long) arguments.get(3)).shortValue();
             // args.acl = (Map<String, Object>) arguments.get(5);
             
             if (arguments.size() == 6)

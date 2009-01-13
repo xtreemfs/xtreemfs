@@ -107,7 +107,7 @@ public class BabuDBStorageHelper {
      */
     public static short findFileCollisionNumber(BabuDB database, String dbName, long parentId,
         String fileName) throws BabuDBException {
-        
+       
         // first, determine the collision number
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
         Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,

@@ -41,10 +41,16 @@ import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
+import org.xtreemfs.new_mrc.operations.CreateDirOperation;
 import org.xtreemfs.new_mrc.operations.CreateFileOperation;
 import org.xtreemfs.new_mrc.operations.CreateVolumeOperation;
+import org.xtreemfs.new_mrc.operations.GetLocalVolumesOperation;
+import org.xtreemfs.new_mrc.operations.GetProtocolVersionOperation;
 import org.xtreemfs.new_mrc.operations.MRCOperation;
+import org.xtreemfs.new_mrc.operations.ReadDirOperation;
 import org.xtreemfs.new_mrc.operations.ShutdownOperation;
+import org.xtreemfs.new_mrc.operations.StatOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
 
 /**
@@ -72,8 +78,14 @@ public class ProcessingStage extends MRCStage {
     public void installOperations() {
         operations.put(ShutdownOperation.RPC_NAME, new ShutdownOperation(master));
         operations.put(StatusPageOperation.RPC_NAME, new StatusPageOperation(master));
+        operations.put(GetProtocolVersionOperation.RPC_NAME, new GetProtocolVersionOperation(master));
         operations.put(CreateVolumeOperation.RPC_NAME, new CreateVolumeOperation(master));
+        operations.put(GetLocalVolumesOperation.RPC_NAME, new GetLocalVolumesOperation(master));
+        operations.put(StatOperation.RPC_NAME, new StatOperation(master));
+        operations.put(CheckAccessOperation.RPC_NAME, new CheckAccessOperation(master));
+        operations.put(ReadDirOperation.RPC_NAME, new ReadDirOperation(master));
         operations.put(CreateFileOperation.RPC_NAME, new CreateFileOperation(master));
+        operations.put(CreateDirOperation.RPC_NAME, new CreateDirOperation(master));
     }
     
     @Override
@@ -113,6 +125,7 @@ public class ProcessingStage extends MRCStage {
             return;
         }
         
+        // parse arguments, if necessary
         if (op.hasArguments()) {
             if ((theRequest.requestBody == null) || (theRequest.requestBody.capacity() == 0)) {
                 rq.setError(new ErrorRecord(ErrorRecord.ErrorClass.BAD_REQUEST,
@@ -140,32 +153,35 @@ public class ProcessingStage extends MRCStage {
             op.parseRPCBody(rq, args);
         }
         
-        try {
-            
-            // parse the user Id from the "AUTHORIZATION" header
-            String authHeader = theRequest.requestHeaders.getHeader(HTTPHeaders.HDR_AUTHORIZATION);
-            
-            if (authHeader == null)
-                throw new UserException(ErrNo.EPERM, "authorization mechanism required");
-            
-            UserCredentials cred = null;
+        if (op.isAuthRequired()) {
             try {
-                cred = master.getAuthProvider().getEffectiveCredentials(authHeader,
-                    theRequest.getChannelIO());
-                rq.getDetails().superUser = cred.isSuperUser();
-                rq.getDetails().groupIds = cred.getGroupIDs();
-                rq.getDetails().userId = cred.getUserID();
-            } catch (AuthenticationException ex) {
-                throw new UserException(ErrNo.EPERM, ex.getMessage());
+                
+                // parse the user Id from the "AUTHORIZATION" header
+                String authHeader = theRequest.requestHeaders
+                        .getHeader(HTTPHeaders.HDR_AUTHORIZATION);
+                
+                if (authHeader == null)
+                    throw new UserException(ErrNo.EPERM, "authorization mechanism required");
+                
+                UserCredentials cred = null;
+                try {
+                    cred = master.getAuthProvider().getEffectiveCredentials(authHeader,
+                        theRequest.getChannelIO());
+                    rq.getDetails().superUser = cred.isSuperUser();
+                    rq.getDetails().groupIds = cred.getGroupIDs();
+                    rq.getDetails().userId = cred.getUserID();
+                } catch (AuthenticationException ex) {
+                    throw new UserException(ErrNo.EPERM, ex.getMessage());
+                }
+                
+            } catch (Exception exc) {
+                
+                method.getRq().setError(
+                    new ErrorRecord(ErrorRecord.ErrorClass.BAD_REQUEST,
+                        "could not initialize authentication module", exc));
+                master.requestFinished(method.getRq());
+                return;
             }
-            
-        } catch (Exception exc) {
-            
-            method.getRq().setError(
-                new ErrorRecord(ErrorRecord.ErrorClass.BAD_REQUEST,
-                    "could not initialize authentication module", exc));
-            master.requestFinished(method.getRq());
-            return;
         }
         
         op.startRequest(rq);

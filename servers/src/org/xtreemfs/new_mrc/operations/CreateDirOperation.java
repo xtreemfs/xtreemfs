@@ -47,7 +47,7 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CreateFileOperation extends MRCOperation {
+public class CreateDirOperation extends MRCOperation {
     
     static class Args {
         
@@ -55,19 +55,13 @@ public class CreateFileOperation extends MRCOperation {
         
         public Map<String, Object> xAttrs;
         
-        public Map<String, Object> stripingPolicy;
-        
         public short               mode;
-        
-        public boolean             open;
-        
-        public List<Object>        assignedXLocList;
         
     }
     
-    public static final String RPC_NAME = "createFile";
+    public static final String RPC_NAME = "createDir";
     
-    public CreateFileOperation(MRCRequestDispatcher master) {
+    public CreateDirOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -109,69 +103,19 @@ public class CreateFileOperation extends MRCOperation {
             // check whether the file/directory exists already
             res.checkIfFileExistsAlready();
             
-            // prepare file creation in database
+            // prepare directory creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // create the metadata object
             FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.stripingPolicy,
-                rqArgs.mode, null, false, update);
+                    .getDetails().userId, rq.getDetails().groupIds.get(0), null,
+                rqArgs.mode, null, true, update);
             
             // create the user attributes
             for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
                 sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
                         .toString(), update);
-            
-            // TODO: handle open flag
-            // HTTPHeaders headers = null;
-            //            
-            //            
-            // if (open) {
-            // // create a capability for O_CREAT open calls
-            // String capability =
-            // BrainHelper.createCapability(AccessMode.w.toString(),
-            // volume.getId(), file.getId(), 0,
-            // config.getCapabilitySecret()).toString();
-            //                
-            // XLocationsList xLocList = null;
-            // if (assignedXLocList == null) {
-            // // assign a new list
-            // xLocList = BrainHelper.createXLocList(null, sMan, osdMan, p,
-            // file.getId(),
-            // parentDir.getId(), volume,
-            // rq.getPinkyRequest().getClientAddress());
-            // } else {
-            // // log replay, use assigned list
-            // xLocList = Converter.listToXLocList(assignedXLocList);
-            // }
-            //                
-            // // assign the OSDs
-            // file.setXLocList(xLocList);
-            // if (Logging.isDebug())
-            // Logging.logMessage(Logging.LEVEL_DEBUG, this,
-            // "assigned xloc list to " + p
-            // + ": " + xLocList);
-            //                
-            // headers = BrainHelper.createXCapHeaders(capability, xLocList);
-            //                
-            // if (assignedXLocList == null) {
-            // // not necessary when in log replay mode!
-            // // rewrite body
-            // // prepare the request for the log replay
-            // List<Object> args = new ArrayList<Object>(5);
-            // args.add(filePath);
-            // args.add(xAttrs);
-            // args.add(stripingPolicy);
-            // args.add(mode);
-            // args.add(true);
-            // args.add(Converter.xLocListToList(xLocList));
-            //                    
-            // ReusableBuffer body =
-            // ReusableBuffer.wrap(JSONParser.writeJSON(args).getBytes(
-            // HTTPUtils.ENC_UTF8));
-            // }
-            // }
-            
+                        
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
@@ -200,19 +144,10 @@ public class CreateFileOperation extends MRCOperation {
                 return null;
             
             args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.stripingPolicy = (Map<String, Object>) arguments.get(2);
             args.mode = ((Long) arguments.get(3)).shortValue();
-            if (arguments.size() == 4)
+            if (arguments.size() == 3)
                 return null;
-            
-            boolean open = (Boolean) arguments.get(4);
-            if (arguments.size() == 5)
-                return null;
-            
-            args.assignedXLocList = (List<Object>) arguments.get(5);
-            if (arguments.size() == 6)
-                return null;
-            
+                       
             throw new Exception();
             
         } catch (Exception exc) {

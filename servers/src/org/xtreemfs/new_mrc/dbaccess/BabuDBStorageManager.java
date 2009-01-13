@@ -37,15 +37,20 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
-import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
+import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.new_mrc.metadata.BufferBackedStripingPolicy;
 import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
+import org.xtreemfs.new_mrc.metadata.BufferBackedXLoc;
+import org.xtreemfs.new_mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
+import org.xtreemfs.new_mrc.metadata.XLocList;
+import org.xtreemfs.new_mrc.utils.Converter;
 
 public class BabuDBStorageManager implements StorageManager {
     
@@ -198,22 +203,21 @@ public class BabuDBStorageManager implements StorageManager {
     
     public static final byte[]  LAST_ID_KEY           = { '*' };
     
-    private static final String SYSTEM_UID            = "";
-    
     private static final String DEFAULT_SP_ATTR_NAME  = "sp";
     
     private static final String LINK_TARGET_ATTR_NAME = "lt";
-    
-    private static final int    ROOT_DIR_ID           = 1;
     
     private BabuDB              database;
     
     private String              dbName;
     
-    public BabuDBStorageManager(BabuDB database, String volumeId) {
+    private String              volumeName;
+    
+    public BabuDBStorageManager(BabuDB database, String volumeName, String volumeId) {
         
         this.database = database;
-        dbName = volumeId;
+        this.dbName = volumeId;
+        this.volumeName = volumeName;
         try {
             // first, try to create a new database; if it already exists, an
             // exception will be thrown
@@ -229,11 +233,37 @@ public class BabuDBStorageManager implements StorageManager {
     public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
         throws DatabaseException {
         try {
-            return new AtomicBabuDBUpdate(database, dbName, new BabuDBRequestListenerWrapper(
-                listener), context);
+            return new AtomicBabuDBUpdate(database, dbName, listener == null ? null
+                : new BabuDBRequestListenerWrapper(listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
+    }
+    
+    @Override
+    public ACLEntry createACLEntry(long fileId, String entity, short rights) {
+        return new BufferBackedACLEntry(fileId, entity, rights);
+    }
+    
+    @Override
+    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds) {
+        assert (stripingPolicy instanceof BufferBackedStripingPolicy);
+        return new BufferBackedXLoc((BufferBackedStripingPolicy) stripingPolicy, osds);
+    }
+    
+    @Override
+    public XLocList createXLocList(XLoc[] replicas, int version) {
+        return new BufferBackedXLocList((BufferBackedXLoc[]) replicas, version);
+    }
+    
+    @Override
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width) {
+        return new BufferBackedStripingPolicy(pattern, stripeSize, width);
+    }
+    
+    @Override
+    public XAttr createXAttr(long fileId, String owner, String key, String value) {
+        return new BufferBackedXAttr(fileId, owner, key, value, (short) 0);
     }
     
     @Override
@@ -246,25 +276,8 @@ public class BabuDBStorageManager implements StorageManager {
     public void init(String ownerId, String owningGroupId, short perms,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
         
-        // make sure that no database with the given name exists
-        try {
-            database.deleteDatabase(dbName, true);
-        } catch (BabuDBException exc) {
-            // ignore
-        }
-        
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
-        
-        try {
-            // create the database
-            database.createDatabase(dbName, 5);
-            
-            // create the root directory
-            create(0L, "", ownerId, owningGroupId, rootDirDefSp, perms, null, true, update);
-            
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
+        // create the root directory; the name is the database name
+        create(0L, volumeName, ownerId, owningGroupId, rootDirDefSp, perms, null, true, update);
     }
     
     @Override
@@ -403,7 +416,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             Map<String, Object> spMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(
                 spString));
-            return Converter.mapToBufferBackedStripingPolicy(spMap);
+            return Converter.mapToStripingPolicy(this, spMap);
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -416,8 +429,11 @@ public class BabuDBStorageManager implements StorageManager {
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException {
         
         try {
+            
             short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, dbName,
                 parentId, fileName);
+            if (collNumber == -1)
+                return null;
             
             // second, determine the value
             byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) -1);
@@ -438,11 +454,23 @@ public class BabuDBStorageManager implements StorageManager {
             }
             
             if (keyBufs[0] == null)
-                throw new DatabaseException(ExceptionType.NO_SUCH_FILE);
+                return null;
             
             return new BufferBackedFileMetadata(keyBufs, valBufs);
             
         } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public String getSoftlinkTarget(long fileId) throws DatabaseException {
+        
+        try {
+            return getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
     }

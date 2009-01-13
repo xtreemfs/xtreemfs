@@ -34,11 +34,11 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
     
     private static final int PATTERN_INDEX = 8;
     
-    private String pattern;
+    private String           pattern;
     
-    private int stripeSize;
+    private int              stripeSize;
     
-    private int width;
+    private int              width;
     
     public BufferBackedStripingPolicy(byte[] buffer) {
         this(buffer, 0, buffer.length);
@@ -48,25 +48,23 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
         
         super(buffer, offset, len);
         
-        this.pattern = new String(buffer, PATTERN_INDEX, buffer.length - PATTERN_INDEX);
+        this.pattern = new String(buffer, offset + PATTERN_INDEX, len - PATTERN_INDEX);
         
-        ByteBuffer tmp = ByteBuffer.wrap(buffer, SIZE_INDEX, Integer.SIZE / 8);
-        this.stripeSize = tmp.getInt(0);
+        ByteBuffer tmp = ByteBuffer.wrap(buffer, offset + SIZE_INDEX, Integer.SIZE / 8);
+        this.stripeSize = tmp.getInt();
         
-        tmp = ByteBuffer.wrap(buffer, WIDTH_INDEX, Integer.SIZE / 8);
-        this.width =  tmp.getInt(0);
+        tmp = ByteBuffer.wrap(buffer, offset + WIDTH_INDEX, Integer.SIZE / 8);
+        this.width = tmp.getInt();
     }
     
     public BufferBackedStripingPolicy(String pattern, int stripeSize, int width) {
         
         super(null, 0, 0);
         
-        len = pattern.getBytes().length + 12;
+        len = pattern.getBytes().length + 8;
         buffer = new byte[len];
         ByteBuffer tmp = ByteBuffer.wrap(buffer);
-        tmp.putInt(stripeSize);
-        tmp.putInt(width);
-        tmp.put(pattern.getBytes());
+        tmp.putInt(stripeSize).putInt(width).put(pattern.getBytes());
         
         this.pattern = pattern;
         this.stripeSize = stripeSize;
