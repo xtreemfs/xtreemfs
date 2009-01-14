@@ -140,6 +140,10 @@ public final class ParserStage extends Stage {
                 return new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrorCodes.INVALID_FILEID,
                     "fileId contains invalid characters");
             }
+            if (rq.getData() == null) {
+                return new ErrorRecord(ErrorClass.BAD_REQUEST, ErrorCodes.INVALID_PARAMS,
+                        "PUT requires data to write in the HTTP request body");
+            }
             rq.getDetails().setFileId(fileId);
             rq.setOperation(master.getOperation(RequestDispatcher.Operations.WRITE));
 
