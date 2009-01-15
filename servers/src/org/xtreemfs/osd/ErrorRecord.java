@@ -111,8 +111,8 @@ public final class ErrorRecord {
     }
     
     public String toJSON() {
-        return "[ \"error-code\": " + this.errorCode + ", \"error-message\" : \""
-            + (this.errorMessage.replace("\"", "\\\"")) + "\" ]";
+        return "{ \"errno\": " + this.errorCode + ", \"errorMessage\" : \""
+            + (this.errorMessage.replace("\"", "\\\"")) + "\" }";
     }
     
 }
