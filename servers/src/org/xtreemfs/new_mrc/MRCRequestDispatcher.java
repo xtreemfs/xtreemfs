@@ -30,6 +30,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -40,15 +41,16 @@ import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
@@ -59,12 +61,15 @@ import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
+import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
+import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation.Vars;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.stages.ProcessingStage;
 import org.xtreemfs.new_mrc.volumes.BabuDBVolumeManager;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
+import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -101,7 +106,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     private final FileAccessManager      fileAccessManager;
     
     public MRCRequestDispatcher(final MRCConfig config) throws IOException, JSONException,
-        ClassNotFoundException, IllegalAccessException, InstantiationException {
+        ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
         
         this.config = config;
         
@@ -178,6 +183,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             gen, authString, config);
         
         volumeManager = new BabuDBVolumeManager(this);
+        
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
         
     }
@@ -197,6 +203,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         pinkyStage.waitForStartup();
         
         volumeManager.init();
+        volumeManager.addVolumeChangeListener(osdMonitor);
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "MRC operational, listening on port "
             + config.getPort());
@@ -233,6 +240,14 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         if (request.getError() != null) {
             final ErrorRecord error = request.getError();
             switch (error.getErrorClass()) {
+            case REDIRECT: {
+                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage()
+                    + " / request: " + request);
+                
+                HTTPHeaders headers = new HTTPHeaders();
+                headers.addHeader(HTTPHeaders.HDR_LOCATION + ":" + error.getErrorMessage());
+                pr.setResponse(HTTPUtils.SC_SEE_OTHER, null, DATA_TYPE.JSON, headers);
+            }
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage()
                     + " / request: " + request);
@@ -260,17 +275,8 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             if (request.getDataType() == null)
                 request.setDataType(DATA_TYPE.JSON);
             
-            // TODO: remove this later; it is still necessary to satisfy the client
-            if (request.getData() == null)
-                try {
-                    request.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes(
-                        HTTPUtils.ENC_UTF8)));
-                } catch (JSONException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            
-            pr.setResponse(HTTPUtils.SC_OKAY, request.getData(), request.getDataType());
+            pr.setResponse(HTTPUtils.SC_OKAY, request.getData(), request.getDataType(), request
+                    .getAdditionalResponseHeaders());
         }
         pinkyStage.sendResponse(pr);
     }
@@ -306,6 +312,65 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         data.put(Vars.MEMSTAT, span + OutputUtils.formatBytes(freeMem) + " / "
             + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory()) + " / "
             + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory()) + "</span>");
+        
+        // TODO: add request statistics
+        // StringBuffer rqTableBuf = new StringBuffer();
+        // long totalRequests = 0;
+        // for (String req : brainStage._statMap.keySet()) {
+        //
+        // long count = brainStage._statMap.get(req);
+        // totalRequests += count;
+        //
+        // rqTableBuf.append("<tr><td align=\"left\">'");
+        // rqTableBuf.append(req);
+        // rqTableBuf.append("'</td><td>");
+        // rqTableBuf.append(count);
+        // rqTableBuf.append("</td></tr>");
+        // }
+        
+        // add volume statistics
+        try {
+            StringBuffer volTableBuf = new StringBuffer();
+            List<VolumeInfo> vols = volumeManager.getVolumes();
+            for (VolumeInfo v : vols) {
+                
+                Map<String, Map<String, Object>> osdList = osdMonitor.getUsableOSDs(v.getId());
+                
+                volTableBuf.append("<tr><td align=\"left\">");
+                volTableBuf.append(v.getName());
+                volTableBuf
+                        .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
+                Iterator<String> it = osdList.keySet().iterator();
+                while (it.hasNext()) {
+                    final ServiceUUID osdUUID = new ServiceUUID(it.next());
+                    volTableBuf.append("<a href=\"");
+                    volTableBuf.append(osdUUID.toURL());
+                    volTableBuf.append("\">");
+                    volTableBuf.append(osdUUID);
+                    volTableBuf.append("</a>");
+                    if (it.hasNext())
+                        volTableBuf.append(", ");
+                }
+                
+                StripingPolicy defaultSP = volumeManager.getStorageManager(v.getId())
+                        .getDefaultStripingPolicy(1);
+                
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">striping policy</td><td>");
+                volTableBuf.append(defaultSP.getPattern() + ", " + defaultSP.getStripeSize() + ", "
+                    + defaultSP.getWidth());
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">access policy</td><td>");
+                volTableBuf.append(v.getAcPolicyId());
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");
+                volTableBuf.append(v.getOsdPolicyId());
+                volTableBuf.append("</td></tr></table></td></tr>");
+            }
+            
+            data.put(Vars.VOLUMES, volTableBuf.toString());
+        } catch (Exception exc) {
+            data.put(Vars.VOLUMES,
+                "<tr><td align=\"left\">could not retrieve volume info due to an server internal error: "
+                    + exc + "</td></tr>");
+        }
         
         return data;
     }

@@ -121,4 +121,8 @@ public class PathResolver {
         return pathPrefix;
     }
     
+    public String toString() {
+        return path.toString();
+    }
+    
 }

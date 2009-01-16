@@ -103,6 +103,8 @@ public interface StorageManager {
     
     // getting metadata
     
+    public Object[] getParentIdAndFileName(long fileId) throws DatabaseException;
+    
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
     
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;

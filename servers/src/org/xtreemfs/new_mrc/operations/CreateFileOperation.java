@@ -28,9 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
@@ -40,6 +42,8 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.XLocList;
+import org.xtreemfs.new_mrc.operations.MRCOpHelper.AccessMode;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -122,62 +126,51 @@ public class CreateFileOperation extends MRCOperation {
                 sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
                         .toString(), update);
             
-            // TODO: handle open flag
-            // HTTPHeaders headers = null;
-            //            
-            //            
-            // if (open) {
-            // // create a capability for O_CREAT open calls
-            // String capability =
-            // BrainHelper.createCapability(AccessMode.w.toString(),
-            // volume.getId(), file.getId(), 0,
-            // config.getCapabilitySecret()).toString();
-            //                
-            // XLocationsList xLocList = null;
-            // if (assignedXLocList == null) {
-            // // assign a new list
-            // xLocList = BrainHelper.createXLocList(null, sMan, osdMan, p,
-            // file.getId(),
-            // parentDir.getId(), volume,
-            // rq.getPinkyRequest().getClientAddress());
-            // } else {
-            // // log replay, use assigned list
-            // xLocList = Converter.listToXLocList(assignedXLocList);
-            // }
-            //                
-            // // assign the OSDs
-            // file.setXLocList(xLocList);
-            // if (Logging.isDebug())
-            // Logging.logMessage(Logging.LEVEL_DEBUG, this,
-            // "assigned xloc list to " + p
-            // + ": " + xLocList);
-            //                
-            // headers = BrainHelper.createXCapHeaders(capability, xLocList);
-            //                
-            // if (assignedXLocList == null) {
-            // // not necessary when in log replay mode!
-            // // rewrite body
-            // // prepare the request for the log replay
-            // List<Object> args = new ArrayList<Object>(5);
-            // args.add(filePath);
-            // args.add(xAttrs);
-            // args.add(stripingPolicy);
-            // args.add(mode);
-            // args.add(true);
-            // args.add(Converter.xLocListToList(xLocList));
-            //                    
-            // ReusableBuffer body =
-            // ReusableBuffer.wrap(JSONParser.writeJSON(args).getBytes(
-            // HTTPUtils.ENC_UTF8));
-            // }
-            // }
+            // if O_CREAT flag is set ...
+            if (rqArgs.open) {
+                
+                // create a capability for O_CREAT open calls
+                String capability = MRCOpHelper.createCapability(AccessMode.w.toString(),
+                    volume.getId(), file.getId(), 0, master.getConfig().getCapabilitySecret())
+                        .toString();
+                
+                // get the list of replicas associated with the file
+                XLocList xLocList = file.getXLocList();
+                
+                // if no replica exists yet, create one using the default
+                // striping policy together with a set of feasible OSDs from the
+                // OSD status manager
+                if (xLocList == null || !xLocList.iterator().hasNext()) {
+                    
+                    xLocList = MRCOpHelper.createXLocList(xLocList, sMan, master
+                            .getOSDStatusManager(), res.toString(), file.getId(), res
+                            .getParentDirId(), volume, rq.getPinkyRequest().getClientAddress());
+                    
+                    file.setXLocList(xLocList);
+                    
+                    sMan.setMetadata(res.getParentDirId(), res.getFileName(), file,
+                        FileMetadata.XLOC_METADATA, update);
+                }
+                
+                HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);
+                rq.setAdditionalResponseHeaders(headers);
+                
+                // update POSIX timestamps of file
+                MRCOpHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig()
+                        .isNoAtime(), true, true, sMan, update);
+                
+                // update POSIX timestamps of parent directory
+                MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false,
+                    true, true, sMan, update);
+                
+            }
             
-            // update POSIX timestamps of parent directory
-            MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
-                true, sMan, update);
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             update.execute();
-                        
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
@@ -205,7 +198,7 @@ public class CreateFileOperation extends MRCOperation {
             if (arguments.size() == 4)
                 return null;
             
-            boolean open = (Boolean) arguments.get(4);
+            args.open = (Boolean) arguments.get(4);
             if (arguments.size() == 5)
                 return null;
             

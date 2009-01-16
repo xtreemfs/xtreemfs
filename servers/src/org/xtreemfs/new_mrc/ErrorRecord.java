@@ -44,7 +44,11 @@ public final class ErrorRecord {
          * a user exception for which a defined error code exists in the
          * protocol
          */
-        USER_EXCEPTION
+        USER_EXCEPTION,
+        /**
+         * the local MRC is not responsible
+         */
+        REDIRECT
     }
     
     /**

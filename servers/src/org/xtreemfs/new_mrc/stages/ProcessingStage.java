@@ -44,14 +44,20 @@ import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
 import org.xtreemfs.new_mrc.operations.CreateDirOperation;
 import org.xtreemfs.new_mrc.operations.CreateFileOperation;
+import org.xtreemfs.new_mrc.operations.CreateSymLinkOperation;
 import org.xtreemfs.new_mrc.operations.CreateVolumeOperation;
+import org.xtreemfs.new_mrc.operations.DeleteOperation;
 import org.xtreemfs.new_mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.new_mrc.operations.GetProtocolVersionOperation;
+import org.xtreemfs.new_mrc.operations.GetXAttrOperation;
 import org.xtreemfs.new_mrc.operations.MRCOperation;
+import org.xtreemfs.new_mrc.operations.OpenOperation;
 import org.xtreemfs.new_mrc.operations.ReadDirOperation;
+import org.xtreemfs.new_mrc.operations.RenewOperation;
 import org.xtreemfs.new_mrc.operations.ShutdownOperation;
 import org.xtreemfs.new_mrc.operations.StatOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
+import org.xtreemfs.new_mrc.operations.UpdateFileSizeOperation;
 
 /**
  * 
@@ -78,7 +84,8 @@ public class ProcessingStage extends MRCStage {
     public void installOperations() {
         operations.put(ShutdownOperation.RPC_NAME, new ShutdownOperation(master));
         operations.put(StatusPageOperation.RPC_NAME, new StatusPageOperation(master));
-        operations.put(GetProtocolVersionOperation.RPC_NAME, new GetProtocolVersionOperation(master));
+        operations.put(GetProtocolVersionOperation.RPC_NAME,
+            new GetProtocolVersionOperation(master));
         operations.put(CreateVolumeOperation.RPC_NAME, new CreateVolumeOperation(master));
         operations.put(GetLocalVolumesOperation.RPC_NAME, new GetLocalVolumesOperation(master));
         operations.put(StatOperation.RPC_NAME, new StatOperation(master));
@@ -86,6 +93,12 @@ public class ProcessingStage extends MRCStage {
         operations.put(ReadDirOperation.RPC_NAME, new ReadDirOperation(master));
         operations.put(CreateFileOperation.RPC_NAME, new CreateFileOperation(master));
         operations.put(CreateDirOperation.RPC_NAME, new CreateDirOperation(master));
+        operations.put(CreateSymLinkOperation.RPC_NAME, new CreateSymLinkOperation(master));
+        operations.put(GetXAttrOperation.RPC_NAME, new GetXAttrOperation(master));
+        operations.put(DeleteOperation.RPC_NAME, new DeleteOperation(master));
+        operations.put(OpenOperation.RPC_NAME, new OpenOperation(master));
+        operations.put(UpdateFileSizeOperation.RPC_NAME, new UpdateFileSizeOperation(master));
+        operations.put(RenewOperation.RPC_NAME, new RenewOperation(master));
     }
     
     @Override

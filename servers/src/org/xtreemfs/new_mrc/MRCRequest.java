@@ -25,6 +25,7 @@
 package org.xtreemfs.new_mrc;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
 
@@ -47,6 +48,8 @@ public class MRCRequest {
     private String              requestId;
     
     private RequestDetails      details;
+    
+    private HTTPHeaders         additionalResponseHeaders;
     
     public MRCRequest() {
         this(null);
@@ -107,6 +110,14 @@ public class MRCRequest {
     
     public void setDetails(RequestDetails details) {
         this.details = details;
+    }
+    
+    public HTTPHeaders getAdditionalResponseHeaders() {
+        return additionalResponseHeaders;
+    }
+    
+    public void setAdditionalResponseHeaders(HTTPHeaders additionalResponseHeaders) {
+        this.additionalResponseHeaders = additionalResponseHeaders;
     }
     
 }

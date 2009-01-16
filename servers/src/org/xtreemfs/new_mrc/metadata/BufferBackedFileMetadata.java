@@ -290,11 +290,15 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return directory;
     }
     
-    public void setXLocList(BufferBackedXLocList xloc) {
-        assert (!directory) : "cannot assign locations list to directory";
+    public void setXLocList(XLocList xlocList) {
         
-        byte[] tmp = new byte[keyBufs[FC_SIZE].limit()];
-        System.arraycopy(tmp, 0, keyBufs[XLOC_METADATA].array(), 0, tmp.length);
+        assert (!directory) : "cannot assign locations list to directory";
+        assert (xlocList instanceof BufferBackedXLocList);
+        
+        BufferBackedXLocList xloc = (BufferBackedXLocList) xlocList;
+        
+        byte[] tmp = new byte[keyBufs[FC_METADATA].limit()];
+        System.arraycopy(keyBufs[FC_METADATA].array(), 0, tmp, 0, tmp.length);
         keyBufs[XLOC_METADATA] = ByteBuffer.wrap(tmp).put(12, (byte) XLOC_METADATA);
         valBufs[XLOC_METADATA] = ByteBuffer.wrap(xloc.getBuffer());
         xLocList = new BufferBackedXLocList(xloc.getBuffer());

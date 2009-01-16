@@ -187,24 +187,14 @@ public class CreateVolumeOperation extends MRCOperation {
             
             rpcResponse.waitForResponse();
             
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
             // create the volume and its database
             master.getVolumeManager().createVolume(volumeId, rqArgs.volumeName, rqArgs.acPolicyId,
                 rqArgs.osdSelectionPolicyId, null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), rqArgs.defaultStripingPolicy,
-                new DBAccessResultAdapter() {
-                    
-                    @Override
-                    public void insertFinished(Object context) {
-                        finishRequest(rq);
-                    }
-                    
-                    @Override
-                    public void requestFailed(Object context, Throwable error) {
-                        finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                            "database error", error));
-                    }
-                    
-                }, null);
+                rq.getDetails().groupIds.get(0), rqArgs.defaultStripingPolicy, master, rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);

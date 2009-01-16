@@ -19,7 +19,9 @@ osdPolicyArgs
 
 Indices are structured as follows (numbers indicate entry sizes in bytes):
 
-VOL_INDEX (#0)
+VOL_INDEX (BabuDB index #0)
+
+The volume index maps a volume ID to an immutable set of volume metadata.
 |----------------------------------------------------------------------------|
 |key   | volumeId                                                            |
 |      | var                                                                 |
@@ -32,7 +34,9 @@ VOL_INDEX (#0)
 |----------------------------------------------------------------------------|
 
 
-VOL_NAME_INDEX (#1)
+VOL_NAME_INDEX (BabuDB index #1)
+
+The volume name index maps volume names to volume IDs.
 |----------------------------------------------------------------------------|
 |key   | volumeName                                                          |
 |      | var                                                                 |
@@ -52,24 +56,34 @@ numbers define different value types):
 FILE_INDEX        XATTR_INDEX     FILE_ID_INDEX
 --------------    -------------   -------------------
 atime        0    XAttrs          parentID + fileName
-ctime        0    (link target)   (file ID mapping)
-mtime        0    (default SP)
+ctime        0    
+mtime        0    
 size         0
 type         1
 id           1
 permissions  1    ACL_INDEX       LAST_ID_INDEX
 linkCount    1    ----------      ------------------
 epoch        1    ACLEntries      lastAssignedFileID
-issuedEpoch  1                    (file ID counter; single entry)
+issuedEpoch  1    
 readOnlyFlag 1
 fileName     1
 owner        1
 group        1
 xLocList     2
 
+
 Indices are structured as follows (numbers indicate entry sizes in bytes):
 
- FILE_INDEX (#0)
+ FILE_INDEX (BabuDB index #0)
+ 
+ The file index stores the primary metadata of a file or directory. This
+ encapsulates most of the metadata returned by the 'stat' system call. To
+ reduce the size of log entries, metadata has been grouped according to their
+ types: type-0 metadata reflects frequently-changed metadata like time stamps
+ and the file size, while less frequently-changed metadata like access
+ permissions and ownership are defined as type-1 metadata. X-Locations lists
+ which are frequently accessed w/ I/O operations but rarely changed are
+ defined as type-3 metadata. Each such type has its own key in the index.
 |----------------------------------------------------------------------------|
 |key   | parentID   hash(filename)   type                                    |
 |      | 8          4                1                                       |
@@ -100,7 +114,11 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- XATTR_INDEX (#1)
+ XATTR_INDEX (BabuDB index #1)
+ 
+ The extended attribute index contains any user-defined extended attributes
+ assigned to files or directories. Softlink targets and default striping
+ policies are mapped to extended attributes
 |----------------------------------------------------------------------------|
 |key   | fileID   hash(owner)   hash(attrKey)   collisionCount               |
 |      | 8        4             4               2                            |
@@ -110,7 +128,9 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- ACL_INDEX (#2)
+ ACL_INDEX (BabuDB index #2)
+ 
+ The ACL index stores optional access control lists for files.
 |----------------------------------------------------------------------------|
 |key   | fileID   entityName                                                 |
 |      | 8        var                                                        |
@@ -120,7 +140,10 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- FILE_ID_INDEX (#3)
+ FILE_ID_INDEX (BabuDB index #3)
+ 
+ The file ID index maps file IDs to file index keys. The index is used to
+ retrieve files by means of their IDs, if no path is available.
 |----------------------------------------------------------------------------|
 |key   | fileID                                                              |
 |      | 8                                                                   |
@@ -130,7 +153,11 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
- LAST_ID_INDEX (#4)
+ LAST_ID_INDEX (BabuDB index #4)
+  
+The 'last ID' index stores a single key-value pair that contains the last ID
+assigned to a file. This index is needed to assign IDs to newly-created files
+or directories.
 |----------------------------------------------------------------------------|
 |key   | '*'                                                                 |
 |      | 1                                                                   |
@@ -140,16 +167,22 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |----------------------------------------------------------------------------|
 
 
-Data types are mapped as follows:
+Complex data types are mapped as follows:
 
-xLocList
+xLocList - represents an X-Locations list of a file
 |----------------------------------------------------------------------------|
 |version  numReplicas  replica1Offs ... replicaNOffs   xLoc1 ... xLocN       |
 |4        4            4                4              var       var         |
 |----------------------------------------------------------------------------|
 
-xLoc
+xLoc - represents a single replica in an X-Locations list
 |----------------------------------------------------------------------------|
 |osdListOffset stripingPolicy numOSDs osd1ofs ... osdnofs osd1 ... osdn      |
 |2             var            2       2           2       var      var       |
+|----------------------------------------------------------------------------|
+
+stripingPolicy - represents a striping policy
+|----------------------------------------------------------------------------|
+|stripeSize    width    pattern                                              |
+|4             4        var                                                  |
 |----------------------------------------------------------------------------|

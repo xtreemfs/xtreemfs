@@ -253,7 +253,10 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public XLocList createXLocList(XLoc[] replicas, int version) {
-        return new BufferBackedXLocList((BufferBackedXLoc[]) replicas, version);
+        BufferBackedXLoc[] tmp = new BufferBackedXLoc[replicas.length];
+        for (int i = 0; i < replicas.length; i++)
+            tmp[i] = (BufferBackedXLoc) replicas[i];
+        return new BufferBackedXLocList(tmp, version);
     }
     
     @Override
@@ -426,6 +429,25 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public Object[] getParentIdAndFileName(long fileId) throws DatabaseException {
+        
+        try {
+            byte[] key = new byte[8];
+            ByteBuffer.wrap(key).putLong(fileId);
+            
+            byte[] value = database.syncLookup(dbName, FILE_ID_INDEX, key);
+            assert (value != null);
+            
+            ByteBuffer tmp = ByteBuffer.wrap(value);
+            
+            return new Object[] { tmp.getLong(), new String(value, 8, value.length - 8) };
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException {
         
         try {
@@ -482,7 +504,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             // check whether the entry is the correct one

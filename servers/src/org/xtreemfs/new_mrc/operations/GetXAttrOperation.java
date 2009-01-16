@@ -25,8 +25,6 @@
 package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -38,7 +36,6 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -48,21 +45,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CreateDirOperation extends MRCOperation {
+public class GetXAttrOperation extends MRCOperation {
     
     static class Args {
         
-        public String              filePath;
+        public String path;
         
-        public Map<String, Object> xAttrs;
-        
-        public short               mode;
+        public String attrKey;
         
     }
     
-    public static final String RPC_NAME = "createDir";
+    public static final String RPC_NAME = "getXAttr";
     
-    public CreateDirOperation(MRCRequestDispatcher master) {
+    public GetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -86,7 +81,7 @@ public class CreateDirOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.filePath);
+            final Path p = new Path(rqArgs.path);
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
@@ -96,37 +91,32 @@ public class CreateDirOperation extends MRCOperation {
             faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
                 rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volume.getId(), res
-                    .getParentDirId(), 0, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            // check whether file exists
+            res.checkIfFileDoesNotExist();
             
-            // check whether the file/directory exists already
-            res.checkIfFileExistsAlready();
+            // retrieve and prepare the metadata to return
+            FileMetadata file = res.getFile();
             
-            // prepare directory creation in database
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            String value = null;
+            if (rqArgs.attrKey.startsWith("xtreemfs."))
+                value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
+                        .getOSDStatusManager(), volume, p, file, rqArgs.attrKey.substring(9));
+            else {
+                
+                // first, try to fetch an individual user attribute
+                value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.attrKey);
+                
+                // if no such attribute exists, try to fetch a global attribute
+                if (value == null)
+                    value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.attrKey);
+                
+                if (value == null)
+                    value = "";
+            }
             
-            // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null,
-                rqArgs.mode, null, true, update);
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(value).getBytes()));
+            finishRequest(rq);
             
-            // create the user attributes
-            for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                        .toString(), update);
-                        
-            // update POSIX timestamps of parent directory
-            MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
-                true, sMan, update);
-            
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-            
-            update.execute();
-                        
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
@@ -144,15 +134,12 @@ public class CreateDirOperation extends MRCOperation {
         
         try {
             
-            args.filePath = (String) arguments.get(0);
-            if (arguments.size() == 1)
+            args.path = (String) arguments.get(0);
+            args.attrKey = (String) arguments.get(1);
+            
+            if (arguments.size() == 2)
                 return null;
             
-            args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(3)).shortValue();
-            if (arguments.size() == 3)
-                return null;
-                       
             throw new Exception();
             
         } catch (Exception exc) {

@@ -26,13 +26,13 @@ package org.xtreemfs.new_mrc.metadata;
 public interface FileMetadata {
     
     /** frequently-changed metadata */
-    public static final byte             FC_METADATA   = 0;
+    public static final byte FC_METADATA   = 0;
     
     /** rarely-changed metadata */
-    public static final byte             RC_METADATA   = 1;
+    public static final byte RC_METADATA   = 1;
     
     /** X-Locations list metadata */
-    public static final byte             XLOC_METADATA = 2;
+    public static final byte XLOC_METADATA = 2;
     
     public long getId();
     
@@ -74,13 +74,15 @@ public interface FileMetadata {
     
     public void setReadOnly(boolean readOnly);
     
+    public XLocList getXLocList();
+    
+    public void setXLocList(XLocList xLocList);
+    
     public String getFileName();
     
     public String getOwnerId();
     
     public String getOwningGroupId();
-    
-    public XLocList getXLocList();
     
     public boolean isDirectory();
     

@@ -47,7 +47,6 @@ import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBRequestListenerWrapper;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageManager;
-import org.xtreemfs.new_mrc.dbaccess.DBAccessResultAdapter;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
@@ -61,9 +60,6 @@ public class BabuDBVolumeManager implements VolumeManager {
     private static final int                  VOL_INDEX      = 0;
     
     private static final int                  VOL_NAME_INDEX = 1;
-    
-    /** a reference to the request dispatcher */
-    private MRCRequestDispatcher              master;
     
     /** the volume database */
     private BabuDB                            database;
@@ -83,8 +79,6 @@ public class BabuDBVolumeManager implements VolumeManager {
     private final List<VolumeChangeListener>  vcListeners;
     
     public BabuDBVolumeManager(MRCRequestDispatcher master) {
-        
-        this.master = master;
         
         this.vcListeners = new LinkedList<VolumeChangeListener>();
         

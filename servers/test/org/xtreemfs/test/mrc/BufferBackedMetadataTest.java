@@ -147,11 +147,11 @@ public class BufferBackedMetadataTest extends TestCase {
             
             // create XAttrs
             BufferBackedXAttr xattr1 = new BufferBackedXAttr(fileId, uid, key, val, (short) 0);
-            checkXAttr(key, val, xattr1);
+            checkXAttr(key, val, uid, xattr1);
             
             // copy XAttrs
             BufferBackedXAttr xattr2 = new BufferBackedXAttr(xattr1.getKeyBuf(), xattr1.getValBuf());
-            checkXAttr(key, val, xattr2);
+            checkXAttr(key, val, uid, xattr2);
         }
         
         {
@@ -162,11 +162,26 @@ public class BufferBackedMetadataTest extends TestCase {
             
             // create XAttrs
             BufferBackedXAttr xattr1 = new BufferBackedXAttr(fileId, uid, key, val, (short) 0);
-            checkXAttr(key, val, xattr1);
+            checkXAttr(key, val, uid, xattr1);
             
             // copy XAttrs
             BufferBackedXAttr xattr2 = new BufferBackedXAttr(xattr1.getKeyBuf(), xattr1.getValBuf());
-            checkXAttr(key, val, xattr2);
+            checkXAttr(key, val, uid, xattr2);
+        }
+        
+        {
+            final long fileId = 11;
+            final String key = "";
+            final String val = "";
+            final String uid = "";
+            
+            // create XAttrs
+            BufferBackedXAttr xattr1 = new BufferBackedXAttr(fileId, uid, key, val, (short) 0);
+            checkXAttr(key, val, uid, xattr1);
+            
+            // copy XAttrs
+            BufferBackedXAttr xattr2 = new BufferBackedXAttr(xattr1.getKeyBuf(), xattr1.getValBuf());
+            checkXAttr(key, val, uid, xattr2);
         }
         
     }
@@ -292,9 +307,10 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(stripeSize, sp.getStripeSize());
     }
     
-    private void checkXAttr(String key, String val, BufferBackedXAttr xattr) {
+    private void checkXAttr(String key, String val, String owner, BufferBackedXAttr xattr) {
         assertEquals(key, xattr.getKey());
         assertEquals(val, xattr.getValue());
+        assertEquals(owner, xattr.getOwner());
     }
     
     private void checkXLoc(String[] osds, StripingPolicy sp, BufferBackedXLoc xloc) {

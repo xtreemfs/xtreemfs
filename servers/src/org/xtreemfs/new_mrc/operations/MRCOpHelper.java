@@ -23,17 +23,22 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.new_mrc.operations;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.brain.BrainException;
 import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
@@ -42,12 +47,17 @@ import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
+import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.utils.Converter;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 public class MRCOpHelper {
+    
+    protected enum AccessMode {
+        r, w, x, a, ga, c, t, sr, d
+    }
     
     protected enum SysAttrs {
             locations,
@@ -68,7 +78,7 @@ public class MRCOpHelper {
         boolean setCTime, boolean setMTime, StorageManager sMan, AtomicDBUpdate update)
         throws DatabaseException {
         
-        if(parentId == -1)
+        if (parentId == -1)
             return;
         
         int currentTime = (int) (TimeSync.getGlobalTime() / 1000);
@@ -97,7 +107,7 @@ public class MRCOpHelper {
         map.put("atime", file.getAtime());
         map.put("ctime", file.getCtime());
         map.put("mtime", file.getMtime());
-        map.put("linkCount", file.isDirectory()? 1: (long) file.getLinkCount());
+        map.put("linkCount", file.isDirectory() ? 1 : (long) file.getLinkCount());
         
         if (ref != null)
             map.put("linkTarget", ref);
@@ -114,6 +124,111 @@ public class MRCOpHelper {
         return map;
     }
     
+    /**
+     * Creates a capability for accessing a file.
+     * 
+     * @param accessMode
+     * @param volumeId
+     * @param fileId
+     * @param epochNo
+     * @param sharedSecret
+     */
+    public static Capability createCapability(String accessMode, String volumeId, long fileId,
+        long epochNo, String sharedSecret) {
+        
+        return new Capability(volumeId + ":" + fileId, accessMode, epochNo, sharedSecret);
+    }
+    
+    /**
+     * Creates an HTTP headers object containing an X-Capability and X-Locations
+     * list entry.
+     * 
+     * @param capability
+     * @param xLocList
+     * @return
+     * @throws JSONException
+     */
+    public static HTTPHeaders createXCapHeaders(String capability, XLocList xLocList)
+        throws JSONException {
+        
+        HTTPHeaders headers = new HTTPHeaders();
+        if (capability != null)
+            headers.addHeader(HTTPHeaders.HDR_XCAPABILITY, capability);
+        if (xLocList != null)
+            headers.addHeader(HTTPHeaders.HDR_XLOCATIONS, JSONParser.writeJSON(Converter
+                    .xLocListToList(xLocList)));
+        
+        return headers;
+    }
+    
+    /**
+     * Creates a new X-Locations list
+     * 
+     * @param xLocList
+     *            an existing X-Locations list containing a version number (may
+     *            be <tt>null</tt>)
+     * @param sMan
+     *            the Storage Manager responsible for the file
+     * @param osdMan
+     *            the OSD Status Manager that periodically reports a list of
+     *            usable OSDs
+     * @param res
+     *            the path resolver the ID of the parent directory
+     * @param volume
+     *            information about the volume of the file
+     * @return an X-Locations list
+     * @throws UserException
+     * @throws BackendException
+     * @throws BrainException
+     */
+    public static XLocList createXLocList(XLocList xLocList, StorageManager sMan,
+        OSDStatusManager osdMan, String path, long fileId, long parentDirId, VolumeInfo volume,
+        InetSocketAddress clientAddress) throws DatabaseException, MRCException {
+        
+        assert (xLocList == null || xLocList.getReplicaCount() == 0);
+        
+        // first, try to get the striping policy from the file itself
+        StripingPolicy stripingPolicy = sMan.getDefaultStripingPolicy(fileId);
+        
+        // if no such policy exists, try to retrieve it from the parent
+        // directory
+        if (stripingPolicy == null)
+            stripingPolicy = sMan.getDefaultStripingPolicy(parentDirId);
+        
+        // if the parent directory has no default policy, take the one
+        // associated with the volume
+        if (stripingPolicy == null)
+            stripingPolicy = sMan.getDefaultStripingPolicy(1);
+        
+        if (stripingPolicy == null)
+            throw new MRCException("could not open file " + path
+                + ": no default striping policy available");
+        
+        Map<String, Map<String, Object>> osdMaps = (Map<String, Map<String, Object>>) osdMan
+                .getUsableOSDs(volume.getId());
+        
+        if (osdMaps == null || osdMaps.size() == 0)
+            throw new MRCException("could not open file " + path + ": no feasible OSDs available");
+        
+        // determine the actual striping width; if not enough OSDs are
+        // available, the width will be limited to the amount of
+        // available OSDs
+        int width = Math.min((int) stripingPolicy.getWidth(), osdMaps.size());
+        stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy
+                .getStripeSize(), width);
+        
+        // add the OSDs to the X-Locations list, according to the OSD
+        // selection policy
+        String[] osds = osdMan.getOSDSelectionPolicy(volume.getOsdPolicyId()).getOSDsForNewFile(
+            osdMaps, clientAddress.getAddress(), width, volume.getOsdPolicyArgs());
+        
+        XLoc[] replicas = new XLoc[] { sMan.createXLoc(stripingPolicy, osds) };
+        xLocList = sMan
+                .createXLocList(replicas, xLocList == null ? 1 : (xLocList.getVersion() + 1));
+        
+        return xLocList;
+    }
+    
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan,
         OSDStatusManager osdMan, VolumeInfo volume, Path p, FileMetadata file, String keyString)
         throws DatabaseException, JSONException, UnknownUUIDException {
@@ -128,8 +243,9 @@ public class MRCOpHelper {
         switch (key) {
         
         case locations:
-            return file.isDirectory() ? "" : JSONParser.writeJSON(Converter.xLocListToList(file
-                    .getXLocList()));
+            XLocList xLocList = file.getXLocList();
+            return file.isDirectory() ? "" : xLocList == null ? "" : JSONParser.writeJSON(Converter
+                    .xLocListToList(xLocList));
         case file_id:
             return volume.getId() + ":" + file.getId();
         case object_type:
@@ -147,7 +263,7 @@ public class MRCOpHelper {
             StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
             if (sp == null)
                 return "";
-            return sp.toString();
+            return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
         case ac_policy_id:
             return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
         case osdsel_policy_id:
@@ -156,7 +272,7 @@ public class MRCOpHelper {
             return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume
                     .getOsdPolicyArgs()) : "";
         case read_only:
-            if (!file.isDirectory())
+            if (file.isDirectory())
                 return String.valueOf(false);
             
             return String.valueOf(file.isReadOnly());
@@ -166,7 +282,6 @@ public class MRCOpHelper {
         
         return "";
     }
-    
     // public static void setSysAttrValue(StorageManager sMan, VolumeManager
     // vMan,
     // VolumeInfo volume, FileMetadata file, String keyString, String value,

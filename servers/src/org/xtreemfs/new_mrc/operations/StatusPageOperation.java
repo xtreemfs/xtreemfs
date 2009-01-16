@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
@@ -35,7 +36,7 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class StatusPageOperation extends MRCOperation {
@@ -64,20 +65,20 @@ public class StatusPageOperation extends MRCOperation {
             UUIDCACHE("<!-- $UUIDCACHE -->"),
             STATCOLLECT("<!-- $STATCOLLECT -->"),
             DISKFREE("<!-- $DISKFREE -->");
-
+        
         private String template;
-
+        
         Vars(String template) {
             this.template = template;
         }
-
+        
         public String toString() {
             return template;
         }
     }
     
     protected final String statusPageTemplate;
-
+    
     public StatusPageOperation(MRCRequestDispatcher master) {
         super(master);
         
@@ -127,7 +128,7 @@ public class StatusPageOperation extends MRCOperation {
     
     public String getStatusPage() {
         
-        Map<Vars,String> vars = master.getStatusInformation();
+        Map<Vars, String> vars = master.getStatusInformation();
         String tmp = statusPageTemplate;
         for (Vars key : vars.keySet()) {
             tmp = tmp.replace(key.toString(), vars.get(key));
@@ -135,5 +136,5 @@ public class StatusPageOperation extends MRCOperation {
         return tmp;
         
     }
-
+    
 }

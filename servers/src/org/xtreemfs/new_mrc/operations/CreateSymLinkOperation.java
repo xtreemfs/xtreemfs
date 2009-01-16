@@ -25,8 +25,6 @@
 package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -48,21 +46,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CreateDirOperation extends MRCOperation {
+public class CreateSymLinkOperation extends MRCOperation {
     
     static class Args {
         
-        public String              filePath;
+        public String linkPath;
         
-        public Map<String, Object> xAttrs;
-        
-        public short               mode;
+        public String targetPath;
         
     }
     
-    public static final String RPC_NAME = "createDir";
+    public static final String RPC_NAME = "createSymbolicLink";
     
-    public CreateDirOperation(MRCRequestDispatcher master) {
+    public CreateSymLinkOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -86,7 +82,7 @@ public class CreateDirOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.filePath);
+            final Path p = new Path(rqArgs.linkPath);
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
@@ -104,19 +100,14 @@ public class CreateDirOperation extends MRCOperation {
             // check whether the file/directory exists already
             res.checkIfFileExistsAlready();
             
-            // prepare directory creation in database
+            // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // create the metadata object
             FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null,
-                rqArgs.mode, null, true, update);
+                    .getDetails().userId, rq.getDetails().groupIds.get(0), null, (short) 0777,
+                rqArgs.targetPath, false, update);
             
-            // create the user attributes
-            for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                        .toString(), update);
-                        
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
@@ -126,7 +117,7 @@ public class CreateDirOperation extends MRCOperation {
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             update.execute();
-                        
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
@@ -144,15 +135,11 @@ public class CreateDirOperation extends MRCOperation {
         
         try {
             
-            args.filePath = (String) arguments.get(0);
-            if (arguments.size() == 1)
+            args.linkPath = (String) arguments.get(0);
+            args.targetPath = (String) arguments.get(1);
+            if (arguments.size() == 2)
                 return null;
             
-            args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(3)).shortValue();
-            if (arguments.size() == 3)
-                return null;
-                       
             throw new Exception();
             
         } catch (Exception exc) {

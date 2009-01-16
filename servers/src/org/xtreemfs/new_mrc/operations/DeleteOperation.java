@@ -25,13 +25,13 @@
 package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
@@ -48,21 +48,15 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CreateDirOperation extends MRCOperation {
+public class DeleteOperation extends MRCOperation {
     
     static class Args {
-        
-        public String              filePath;
-        
-        public Map<String, Object> xAttrs;
-        
-        public short               mode;
-        
+        public String path;
     }
     
-    public static final String RPC_NAME = "createDir";
+    public static final String RPC_NAME = "delete";
     
-    public CreateDirOperation(MRCRequestDispatcher master) {
+    public DeleteOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -86,7 +80,7 @@ public class CreateDirOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.filePath);
+            final Path p = new Path(rqArgs.path);
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
@@ -101,22 +95,48 @@ public class CreateDirOperation extends MRCOperation {
                     .getParentDirId(), 0, rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
-            // check whether the file/directory exists already
-            res.checkIfFileExistsAlready();
+            // check whether the file/directory exists
+            res.checkIfFileDoesNotExist();
             
-            // prepare directory creation in database
+            FileMetadata file = res.getFile();
+            
+            // check whether the entry itself can be deleted (this is e.g.
+            // important w/ POSIX access control if the sticky bit is set)
+            faMan.checkPermission(FileAccessManager.RM_MV_IN_DIR_ACCESS, volume.getId(), file
+                    .getId(), res.getParentDirId(), rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
+            
+            if (file.isDirectory() && sMan.getChildren(file.getId()).hasNext())
+                throw new UserException(ErrNo.ENOTEMPTY, "'" + p + "' is not empty");
+            
+            HTTPHeaders xCapHeaders = null;
+            
+            // unless the file is a directory, retrieve X-headers for file
+            // deletion on OSDs; if the request was authorized before,
+            // assume that a capability has been issued already.
+            if (!file.isDirectory()) {
+                
+                // obtain a deletion capability for the file
+                String aMode = faMan.translateAccessMode(volume.getId(),
+                    FileAccessManager.DELETE_ACCESS);
+                String capability = MRCOpHelper.createCapability(aMode, volume.getId(),
+                    file.getId(), Integer.MAX_VALUE, master.getConfig().getCapabilitySecret())
+                        .toString();
+                
+                // set the XCapability and XLocationsList headers
+                xCapHeaders = MRCOpHelper.createXCapHeaders(capability, file.getXLocList());
+            }
+            
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null,
-                rqArgs.mode, null, true, update);
+            // unlink the file; if there are still links to the file, reset the
+            // X-headers to null, as the file content must not be deleted
+            sMan.delete(res.getParentDirId(), res.getFileName(), update);
+            if (file.getLinkCount() > 1)
+                xCapHeaders = null;
             
-            // create the user attributes
-            for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                        .toString(), update);
-                        
+            rq.setAdditionalResponseHeaders(xCapHeaders);
+            
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
@@ -126,7 +146,7 @@ public class CreateDirOperation extends MRCOperation {
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             update.execute();
-                        
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
@@ -144,15 +164,10 @@ public class CreateDirOperation extends MRCOperation {
         
         try {
             
-            args.filePath = (String) arguments.get(0);
+            args.path = (String) arguments.get(0);
             if (arguments.size() == 1)
                 return null;
             
-            args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(3)).shortValue();
-            if (arguments.size() == 3)
-                return null;
-                       
             throw new Exception();
             
         } catch (Exception exc) {

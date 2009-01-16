@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,14 +50,14 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     public Map<String, Map<String, Object>> getUsableOSDs(Map<String, Map<String, Object>> osds,
         String args) {
         
-        Set<String> ruleList = null;
+        Set<String> rules = null;
         if (args != null) {
-            try {              
-                ruleList = new HashSet<String>((List<String>) JSONParser.parseJSON(new JSONString(
-                    args)));
+            try {
+                rules = args.length() == 0 ? null : new HashSet<String>((List<String>) JSONParser
+                        .parseJSON(new JSONString(args)));
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "invalid set of suitable OSDs: "
-                    + args);
+                Logging.logMessage(Logging.LEVEL_WARN, this, "invalid set of suitable OSDs: '"
+                    + args + "'");
             }
         }
         
@@ -65,7 +66,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
             
             try {
                 Map<String, Object> osd = osds.get(uuid);
-                if ((ruleList == null || follows(uuid,ruleList))
+                if ((rules == null || follows(uuid, rules))
                     && (hasFreeCapacity(osd) && !hasTimedOut(osd)))
                     suitable.put(uuid, osd);
                 
@@ -77,16 +78,15 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     }
     
     static boolean hasFreeCapacity(Map<String, Object> osd) {
-        Long free = Long.parseLong((String) osd.get("free"));
+        long free = Long.parseLong((String) osd.get("free"));
         return free > MIN_FREE_CAPACITY;
     }
     
     /*
-    static String getLocation(Map<String, Object> osd) {
-        String location = (String) osd.get("location");
-        return location;
-    }*/
-    
+     * static String getLocation(Map<String, Object> osd) { String location =
+     * (String) osd.get("location"); return location; }
+     */
+
     static boolean hasTimedOut(Map<String, Object> osd) {
         
         // if the OSD has contacted the DS within the last 10 minutes,
@@ -102,45 +102,54 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     /**
      * Conventions for rule prefixes:</br>
      * <p>
-     *  * means the following rule matches a URL.</br>
-     *  ! means that the following rule must not be matched.</p>
-     * <p>Constellations like *! as prefix are not allowed.</br>
-     * Every rule must be an identifier for at least one potential OSD.</br> 
-     * At least one rule must be followed.</br>
-     * A not rule (!) is more important then any other rule.</p>
+     * means the following rule matches a URL.</br> ! means that the following
+     * rule must not be matched.
+     * </p>
+     * <p>
+     * Constellations like *! as prefix are not allowed.</br> Every rule must be
+     * an identifier for at least one potential OSD.</br> At least one rule must
+     * be followed.</br> A not rule (!) is more important then any other rule.
+     * </p>
      * 
-     * @param ruleList - rules the OSD must follow.
-     * @param UUID - of the OSD.
-     * @return true, if the OSD with <code>UUID</code> <i>follows</i> the <code>ruleList</code>.</br>
-     *         False is also returned, if the UUID is unknown.
+     * @param rules
+     *            - rules the OSD must follow.
+     * @param UUID
+     *            - of the OSD.
+     * @return true, if the OSD with <code>UUID</code> <i>follows</i> the
+     *         <code>ruleList</code>.</br> False is also returned, if the UUID
+     *         is unknown.
      */
-    static private boolean follows(String UUID,Set<String> ruleList) {
+    static private boolean follows(String UUID, Set<String> rules) {
         boolean follows = false;
         
-        try{
-            for (String rule : ruleList){
-                if (rule.startsWith("!")){
-                    if(matches(UUID,rule.substring(1))) return false;
-                }else{
-                    follows |= matches(UUID,rule);
+        try {
+            for (String rule : rules) {
+                if (rule.startsWith("!")) {
+                    if (matches(UUID, rule.substring(1)))
+                        return false;
+                } else {
+                    follows |= matches(UUID, rule);
                 }
             }
-        }catch (UnknownUUIDException ue) {
+        } catch (UnknownUUIDException ue) {
             return false;
         }
         
         return follows;
     }
-
+    
     /**
      * 
-     * @param UUID - of the OSD.
-     * @param pattern - pattern that must be match.
-     * @return true, if the the OSD with <code>UUID</code> <i>matches</i> the <code>rule</code>. 
-     * @throws UnknownUUIDException 
+     * @param UUID
+     *            - of the OSD.
+     * @param pattern
+     *            - pattern that must be match.
+     * @return true, if the the OSD with <code>UUID</code> <i>matches</i> the
+     *         <code>rule</code>.
+     * @throws UnknownUUIDException
      */
     private static boolean matches(String UUID, String pattern) throws UnknownUUIDException {
-        if (pattern.startsWith("*")){
+        if (pattern.startsWith("*")) {
             String cleanPattern = pattern.substring(1);
             
             // get the address of the UUID
@@ -148,65 +157,84 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
             osd.resolve();
             InetSocketAddress inetAddressOSD = osd.getAddress();
             
-            if (cleanPattern.equals(inetAddressOSD.getHostName())) return true;
-//            else if (cleanPattern.equals(inetAddressOSD.getHostString())) return true;
-            //match subNet-String
-            else{
+            if (cleanPattern.equals(inetAddressOSD.getHostName()))
+                return true;
+            // else if (cleanPattern.equals(inetAddressOSD.getHostString()))
+            // return true;
+            // match subNet-String
+            else {
                 String patternIP = cleanPattern;
-                if (patternIP.startsWith("http://")) patternIP = patternIP.substring(7);
-                else if (patternIP.startsWith("https://")) patternIP = patternIP.substring(8);
-                 
+                if (patternIP.startsWith("http://"))
+                    patternIP = patternIP.substring(7);
+                else if (patternIP.startsWith("https://"))
+                    patternIP = patternIP.substring(8);
+                
                 String[] patternPortIP = patternIP.split(":");
                 int patternPort = 0;
-                if (patternPortIP.length>=2){
-                    try{
+                if (patternPortIP.length >= 2) {
+                    try {
                         patternPort = Integer.valueOf(patternPortIP[1].split("/")[0]);
-                    }catch (NumberFormatException f){
-                        Logging.logMessage(Logging.LEVEL_WARN,null,"'"+pattern+"' port is not valid.");
+                    } catch (NumberFormatException f) {
+                        Logging.logMessage(Logging.LEVEL_WARN, null, "'" + pattern
+                            + "' port is not valid.");
                     }
                 }
                 
-                String[] patternIPv4 = patternPortIP[0].split(".");                                            
-                if (patternIPv4.length==4){
+                String[] patternIPv4 = patternPortIP[0].split(".");
+                if (patternIPv4.length == 4) {
                     String[] osdIPv4 = inetAddressOSD.getAddress().getHostAddress().split(".");
-                    if (patternPort!=0 && patternPort!=inetAddressOSD.getPort()) return false;
+                    if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
+                        return false;
                     
-                    // compare the IP strings 0 is a wildcard, but not if at a later position !=0
-                    try{
+                    // compare the IP strings 0 is a wildcard, but not if at a
+                    // later position !=0
+                    try {
                         boolean wasNotZero = false;
-                        for (int i=3;i<=0;i--){
-                            if (wasNotZero && (Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i]))){
+                        for (int i = 3; i <= 0; i--) {
+                            if (wasNotZero
+                                && (Integer.parseInt(osdIPv4[i]) != Integer
+                                        .parseInt(patternIPv4[i]))) {
                                 return false;
-                            }else{
-                                if (Integer.parseInt(patternIPv4[i])!=0){
+                            } else {
+                                if (Integer.parseInt(patternIPv4[i]) != 0) {
                                     wasNotZero = true;
-                                    if ((Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i]))) return false;
+                                    if ((Integer.parseInt(osdIPv4[i]) != Integer
+                                            .parseInt(patternIPv4[i])))
+                                        return false;
                                 }
                             }
                         }
                         return true;
-                    }catch(NumberFormatException e){
-                        // if not compatible go ignore and jump to the next step 
+                    } catch (NumberFormatException e) {
+                        // if not compatible go ignore and jump to the next step
                     }
                 }
                 
-                try {                   
+                try {
                     URI patternURI = new URI(cleanPattern);
                     patternPort = patternURI.getPort();
-                    String patternHost = patternURI.getHost();        
-                    if (patternHost==null) throw new URISyntaxException(patternURI.toASCIIString(),"unknown host");
+                    String patternHost = patternURI.getHost();
+                    if (patternHost == null)
+                        throw new URISyntaxException(patternURI.toASCIIString(), "unknown host");
                     
                     // check the port
-                    if (patternPort!=0 && patternPort!=inetAddressOSD.getPort()) return false;
+                    if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
+                        return false;
                     
                     return true;
                 } catch (URISyntaxException e) {
-                    Logging.logMessage(Logging.LEVEL_WARN,null,"'"+pattern+"' is not a valid identifier for an osd or osd-range and will be ignored.");
+                    Logging
+                            .logMessage(
+                                Logging.LEVEL_WARN,
+                                null,
+                                "'"
+                                    + pattern
+                                    + "' is not a valid identifier for an osd or osd-range and will be ignored.");
                 }
             }
-        }else{
+        } else {
             return UUID.equals(pattern);
         }
         return false;
-    } 
+    }
 }

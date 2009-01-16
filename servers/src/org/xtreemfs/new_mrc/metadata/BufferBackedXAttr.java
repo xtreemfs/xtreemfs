@@ -40,7 +40,7 @@ public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAtt
         
         ByteBuffer tmp = ByteBuffer.wrap(val);
         
-        ownerOffset = 0;
+        ownerOffset = 4;
         keyOffset = tmp.getShort();
         valOffset = tmp.getShort();
     }
@@ -51,28 +51,21 @@ public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAtt
         
         byte[] ownerBytes = owner.getBytes();
         byte[] keyBytes = key.getBytes();
-        byte[] valBytes = value == null? new byte[0]: value.getBytes();
+        byte[] valBytes = value == null ? new byte[0] : value.getBytes();
         
         keyLen = 18;
         keyBuf = new byte[keyLen];
         ByteBuffer tmp = ByteBuffer.wrap(keyBuf);
-        tmp.putLong(fileId);
-        tmp.putInt(owner.hashCode());
-        tmp.putInt(key.hashCode());
-        tmp.putShort(collCount);
+        tmp.putLong(fileId).putInt(owner.hashCode()).putInt(key.hashCode()).putShort(collCount);
         
-        ownerOffset = 0;
+        ownerOffset = 4;
         keyOffset = (short) (4 + ownerBytes.length);
         valOffset = (short) (4 + ownerBytes.length + keyBytes.length);
         
         valLen = 4 + ownerBytes.length + keyBytes.length + valBytes.length;
         valBuf = new byte[valLen];
-        tmp = ByteBuffer.wrap(valBuf);
-        tmp.putShort(keyOffset);
-        tmp.putShort(valOffset);
-        tmp.put(ownerBytes);
-        tmp.put(keyBytes);
-        tmp.put(valBytes);
+        tmp = ByteBuffer.wrap(valBuf).putShort(keyOffset).putShort(valOffset).put(ownerBytes).put(
+            keyBytes).put(valBytes);
     }
     
     public String getKey() {
