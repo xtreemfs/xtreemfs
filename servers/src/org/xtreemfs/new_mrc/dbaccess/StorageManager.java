@@ -120,13 +120,5 @@ public interface StorageManager {
     
     public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
-    
-    // X-Locations list operation
-    
-    public void addReplica(long parentId, String fileName, XLoc replica, AtomicDBUpdate update)
-        throws DatabaseException;
-    
-    public void deleteReplica(long parentId, String fileName, int indexl, AtomicDBUpdate update)
-        throws DatabaseException;
-    
+
 }

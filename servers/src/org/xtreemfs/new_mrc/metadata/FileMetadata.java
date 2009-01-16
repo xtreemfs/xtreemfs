@@ -80,9 +80,13 @@ public interface FileMetadata {
     
     public String getFileName();
     
+    public void setFileName(String fileName);
+    
     public String getOwnerId();
     
     public String getOwningGroupId();
+    
+    public void setOwnerAndGroup(String owner, String group);
     
     public boolean isDirectory();
     

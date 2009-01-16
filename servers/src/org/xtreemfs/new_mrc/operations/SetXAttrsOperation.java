@@ -24,10 +24,9 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -39,12 +38,9 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.metadata.XAttr;
-import org.xtreemfs.new_mrc.metadata.XLocList;
-import org.xtreemfs.new_mrc.operations.MRCOpHelper.SysAttrs;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -52,23 +48,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class StatOperation extends MRCOperation {
+public class SetXAttrsOperation extends MRCOperation {
     
     static class Args {
         
-        public String  path;
+        public String              path;
         
-        public boolean inclReplicas;
-        
-        public boolean inclXAttrs;
-        
-        public boolean inclACLs;
+        public Map<String, Object> xAttrs;
         
     }
     
-    public static final String RPC_NAME = "stat";
+    public static final String RPC_NAME = "setXAttrs";
     
-    public StatOperation(MRCRequestDispatcher master) {
+    public SetXAttrsOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -107,46 +99,46 @@ public class StatOperation extends MRCOperation {
             
             // retrieve and prepare the metadata to return
             FileMetadata file = res.getFile();
-            String ref = sMan.getSoftlinkTarget(file.getId());
-            XLocList xLocList = !file.isDirectory() && rqArgs.inclReplicas ? file.getXLocList()
-                : null;
             
-            Map<String, Object> xAttrs = null;
-            if (rqArgs.inclXAttrs) {
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            
+            // set all system attributes included in the map
+            for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet()) {
                 
-                Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
-                Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
+                final String attrKey = attr.getKey();
+                final Object attrVal = attr.getValue();
                 
-                // include global attributes
-                xAttrs = new HashMap<String, Object>();
-                while (globalAttrs.hasNext()) {
-                    XAttr attr = globalAttrs.next();
-                    xAttrs.put(attr.getKey(), attr.getValue());
+                // set a system attribute
+                if (attrKey.startsWith("xtreemfs.")) {
+                    
+                    // check whether the user has privileged permissions to set
+                    // system attributes
+                    faMan
+                            .checkPrivilegedPermissions(volume.getId(), file.getId(), rq
+                                    .getDetails().userId, rq.getDetails().superUser, rq
+                                    .getDetails().groupIds);
+                    
+                    MRCOpHelper.setSysAttrValue(sMan, vMan, volume, res.getParentDirId(), file,
+                        attrKey.substring(9), attrVal.toString(), update);
                 }
-                
-                // include individual user attributes
-                while (myAttrs.hasNext()) {
-                    XAttr attr = myAttrs.next();
-                    xAttrs.put(attr.getKey(), attr.getValue());
-                }
-                
-                // include system attributes
-                for (SysAttrs attr : SysAttrs.values()) {
-                    String key = "xtreemfs." + attr.toString();
-                    Object value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
-                            .getOSDStatusManager(), volume, res.toString(), file, attr.toString());
-                    if (!value.equals(""))
-                        xAttrs.put(key, value);
+
+                // set a user attribute
+                else {
+                    
+                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey,
+                        attrVal.toString(), update);
                 }
             }
             
-            Iterator<ACLEntry> acl = rqArgs.inclACLs ? sMan.getACL(file.getId()) : null;
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
-            Object statInfo = MRCOpHelper.createStatInfo(faMan, file, ref, volume.getId(), rq
-                    .getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);
+            // update POSIX timestamps
+            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                update);
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(statInfo).getBytes()));
-            finishRequest(rq);
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -166,11 +158,9 @@ public class StatOperation extends MRCOperation {
         try {
             
             args.path = (String) arguments.get(0);
-            args.inclReplicas = (Boolean) arguments.get(1);
-            args.inclXAttrs = (Boolean) arguments.get(2);
-            args.inclACLs = (Boolean) arguments.get(3);
+            args.xAttrs = (Map<String, Object>) arguments.get(1);
             
-            if (arguments.size() == 4)
+            if (arguments.size() == 2)
                 return null;
             
             throw new Exception();

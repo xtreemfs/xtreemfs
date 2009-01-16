@@ -71,6 +71,10 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
         this.width = width;
     }
     
+    public boolean equals(StripingPolicy pol) {
+        return toString().equals(pol.toString());
+    }
+    
     public String getPattern() {
         return pattern;
     }

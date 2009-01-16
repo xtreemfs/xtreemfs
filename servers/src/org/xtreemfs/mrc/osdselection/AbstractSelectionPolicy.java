@@ -53,8 +53,9 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         Set<String> rules = null;
         if (args != null) {
             try {
-                rules = args.length() == 0 ? null : new HashSet<String>((List<String>) JSONParser
-                        .parseJSON(new JSONString(args)));
+                final List<String> argList = args.length() == 0 ? null : (List<String>) JSONParser
+                        .parseJSON(new JSONString(args));
+                rules = argList == null ? null : new HashSet<String>(argList);
             } catch (Exception exc) {
                 Logging.logMessage(Logging.LEVEL_WARN, this, "invalid set of suitable OSDs: '"
                     + args + "'");

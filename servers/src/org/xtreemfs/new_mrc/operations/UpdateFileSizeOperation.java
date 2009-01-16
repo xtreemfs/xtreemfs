@@ -84,10 +84,17 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 throw new UserException(capString + " is invalid");
             
             // parse volume and file ID from global file ID
-            String globalFileId = cap.getFileId();
-            int i = globalFileId.indexOf(':');
-            String volumeId = cap.getFileId().substring(0, i);
-            long fileId = Long.parseLong(cap.getFileId().substring(i + 1));
+            long fileId = 0;
+            String volumeId = null;
+            try {
+                String globalFileId = cap.getFileId();
+                int i = globalFileId.indexOf(':');
+                volumeId = cap.getFileId().substring(0, i);
+                fileId = Long.parseLong(cap.getFileId().substring(i + 1));
+            } catch (Exception exc) {
+                throw new UserException("invalid global file ID: " + cap.getFileId()
+                    + "; expected pattern: <volume_ID>:<local_file_ID>");
+            }
             StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
             
             // resolve the file ID to parent ID + file Name

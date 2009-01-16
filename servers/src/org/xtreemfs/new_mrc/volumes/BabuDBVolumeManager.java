@@ -103,7 +103,8 @@ public class BabuDBVolumeManager implements VolumeManager {
             // database already exists
             Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
             for (VolumeInfo vol : getVolumes())
-                mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName(), vol.getId()));
+                mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName(), vol
+                        .getId()));
         }
     }
     
@@ -236,17 +237,33 @@ public class BabuDBVolumeManager implements VolumeManager {
         }
     }
     
-    public void deleteVolume(String volumeName, DBAccessResultListener listener, Object context)
+    public void updateVolume(VolumeInfo volume) throws DatabaseException {
+        
+        assert (volume instanceof BufferBackedVolumeInfo);
+        
+        try {
+            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            ig.addInsert(VOL_INDEX, volume.getId().getBytes(), ((BufferBackedVolumeInfo) volume)
+                    .getBuffer());
+            database.syncInsert(ig);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
+        notifyVolumeChangeListeners(VolumeChangeListener.MOD_CHANGED, volume);
+    }
+    
+    public void deleteVolume(String volumeId, DBAccessResultListener listener, Object context)
         throws DatabaseException, UserException {
         
         try {
             
-            VolumeInfo volume = getVolumeByName(volumeName);
+            VolumeInfo volume = getVolumeById(volumeId);
             mngrMap.remove(volume.getId());
             
             BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
-            ig.addDelete(VOL_INDEX, volume.getId().getBytes());
-            ig.addDelete(VOL_NAME_INDEX, volumeName.getBytes());
+            ig.addDelete(VOL_INDEX, volumeId.getBytes());
+            ig.addDelete(VOL_NAME_INDEX, volume.getName().getBytes());
             
             database.asyncInsert(ig, new BabuDBRequestListenerWrapper(listener), context);
             
@@ -306,11 +323,6 @@ public class BabuDBVolumeManager implements VolumeManager {
             notifyVolumeChangeListeners(VolumeChangeListener.MOD_CHANGED, vol);
     }
     
-    public void notifyVolumeChangeListeners(int mod, VolumeInfo vol) {
-        for (VolumeChangeListener listener : vcListeners)
-            listener.volumeChanged(mod, vol);
-    }
-    
     @Override
     public String newVolumeId() {
         try {
@@ -319,6 +331,11 @@ public class BabuDBVolumeManager implements VolumeManager {
             Logging.logMessage(Logging.LEVEL_ERROR, this, e);
             return null;
         }
+    }
+    
+    private void notifyVolumeChangeListeners(int mod, VolumeInfo vol) {
+        for (VolumeChangeListener listener : vcListeners)
+            listener.volumeChanged(mod, vol);
     }
     
     public void dumpDB(String dumpFilePath) throws Exception {

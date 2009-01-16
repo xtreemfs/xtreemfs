@@ -41,19 +41,24 @@ import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.operations.AddReplicaOperation;
+import org.xtreemfs.new_mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
 import org.xtreemfs.new_mrc.operations.CreateDirOperation;
 import org.xtreemfs.new_mrc.operations.CreateFileOperation;
 import org.xtreemfs.new_mrc.operations.CreateSymLinkOperation;
 import org.xtreemfs.new_mrc.operations.CreateVolumeOperation;
 import org.xtreemfs.new_mrc.operations.DeleteOperation;
+import org.xtreemfs.new_mrc.operations.DeleteVolumeOperation;
 import org.xtreemfs.new_mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.new_mrc.operations.GetProtocolVersionOperation;
 import org.xtreemfs.new_mrc.operations.GetXAttrOperation;
 import org.xtreemfs.new_mrc.operations.MRCOperation;
 import org.xtreemfs.new_mrc.operations.OpenOperation;
 import org.xtreemfs.new_mrc.operations.ReadDirOperation;
+import org.xtreemfs.new_mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.new_mrc.operations.RenewOperation;
+import org.xtreemfs.new_mrc.operations.SetXAttrsOperation;
 import org.xtreemfs.new_mrc.operations.ShutdownOperation;
 import org.xtreemfs.new_mrc.operations.StatOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
@@ -87,6 +92,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(GetProtocolVersionOperation.RPC_NAME,
             new GetProtocolVersionOperation(master));
         operations.put(CreateVolumeOperation.RPC_NAME, new CreateVolumeOperation(master));
+        operations.put(DeleteVolumeOperation.RPC_NAME, new DeleteVolumeOperation(master));
         operations.put(GetLocalVolumesOperation.RPC_NAME, new GetLocalVolumesOperation(master));
         operations.put(StatOperation.RPC_NAME, new StatOperation(master));
         operations.put(CheckAccessOperation.RPC_NAME, new CheckAccessOperation(master));
@@ -94,11 +100,15 @@ public class ProcessingStage extends MRCStage {
         operations.put(CreateFileOperation.RPC_NAME, new CreateFileOperation(master));
         operations.put(CreateDirOperation.RPC_NAME, new CreateDirOperation(master));
         operations.put(CreateSymLinkOperation.RPC_NAME, new CreateSymLinkOperation(master));
-        operations.put(GetXAttrOperation.RPC_NAME, new GetXAttrOperation(master));
         operations.put(DeleteOperation.RPC_NAME, new DeleteOperation(master));
+        operations.put(GetXAttrOperation.RPC_NAME, new GetXAttrOperation(master));
+        operations.put(SetXAttrsOperation.RPC_NAME, new SetXAttrsOperation(master));
         operations.put(OpenOperation.RPC_NAME, new OpenOperation(master));
         operations.put(UpdateFileSizeOperation.RPC_NAME, new UpdateFileSizeOperation(master));
         operations.put(RenewOperation.RPC_NAME, new RenewOperation(master));
+        operations.put(ChangeOwnerOperation.RPC_NAME, new ChangeOwnerOperation(master));
+        operations.put(AddReplicaOperation.RPC_NAME, new AddReplicaOperation(master));
+        operations.put(RemoveReplicaOperation.RPC_NAME, new RemoveReplicaOperation(master));
     }
     
     @Override

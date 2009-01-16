@@ -31,6 +31,7 @@ import java.util.Map;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
@@ -116,6 +117,15 @@ public interface VolumeManager {
     public List<VolumeInfo> getVolumes() throws DatabaseException;
     
     /**
+     * Updates mutable volume metadata.
+     * 
+     * @param volume
+     * @param update
+     * @throws DatabaseException
+     */
+    public void updateVolume(VolumeInfo volume) throws DatabaseException;
+    
+    /**
      * Deletes a volume.
      * 
      * @param volumeName
@@ -144,8 +154,6 @@ public interface VolumeManager {
      */
     public void addVolumeChangeListener(VolumeChangeListener listener) throws IOException,
         DatabaseException;
-    
-    public void notifyVolumeChangeListeners(int mod, VolumeInfo vol);
     
     public void dumpDB(String dumpFilePath) throws Exception;
     

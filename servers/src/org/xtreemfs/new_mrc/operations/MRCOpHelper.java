@@ -25,18 +25,23 @@ package org.xtreemfs.new_mrc.operations;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.brain.BrainException;
+import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.MRCException;
@@ -51,6 +56,7 @@ import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.utils.Converter;
+import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 public class MRCOpHelper {
@@ -229,8 +235,58 @@ public class MRCOpHelper {
         return xLocList;
     }
     
+    /**
+     * Checks whether the given replica (i.e. list of OSDs) can be added to the
+     * given X-Locations list without compromising consistency.
+     * 
+     * @param xLocList
+     *            the X-Locations list
+     * @param newOSDs
+     *            the list of new OSDs to add
+     * @return <tt>true</tt>, if adding the OSD list is possible, <tt>false</tt>
+     *         , otherwise
+     */
+    public static boolean isAddable(XLocList xLocList, List<Object> newOSDs) {
+        if (xLocList != null)
+            for (int i = 0; i < xLocList.getReplicaCount(); i++) {
+                XLoc replica = xLocList.getReplica(i);
+                for (int j = 0; j < replica.getOSDCount(); j++)
+                    for (Object newOsd : newOSDs)
+                        if (replica.getOSD(j).equals(newOsd))
+                            return false;
+            }
+        return true;
+    }
+    
+    /**
+     * Checks whether the given X-Locations list is consistent. It is regarded
+     * as consistent if no OSD in any replica occurs more than once.
+     * 
+     * @param xLocList
+     *            the X-Locations list to check for consistency
+     * @return <tt>true</tt>, if the list is consistent, <tt>false</tt>,
+     *         otherwise
+     */
+    public static boolean isConsistent(XLocList xLocList) {
+        Set<String> tmp = new HashSet<String>();
+        if (xLocList != null) {
+            for (int i = 0; i < xLocList.getReplicaCount(); i++) {
+                XLoc replica = xLocList.getReplica(i);
+                for (int j = 0; j < replica.getOSDCount(); j++) {
+                    String osd = replica.getOSD(j);
+                    if (!tmp.contains(osd))
+                        tmp.add(osd);
+                    else
+                        return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan,
-        OSDStatusManager osdMan, VolumeInfo volume, Path p, FileMetadata file, String keyString)
+        OSDStatusManager osdMan, VolumeInfo volume, String path, FileMetadata file, String keyString)
         throws DatabaseException, JSONException, UnknownUUIDException {
         
         SysAttrs key = null;
@@ -252,7 +308,7 @@ public class MRCOpHelper {
             String ref = sMan.getSoftlinkTarget(file.getId());
             return ref != null ? "3" : file.isDirectory() ? "2" : "1";
         case url:
-            return "uuid:" + config.getUUID().toString() + "/" + p.toString();
+            return "uuid:" + config.getUUID().toString() + "/" + path;
         case owner:
             return file.getOwnerId();
         case group:
@@ -282,131 +338,129 @@ public class MRCOpHelper {
         
         return "";
     }
-    // public static void setSysAttrValue(StorageManager sMan, VolumeManager
-    // vMan,
-    // VolumeInfo volume, FileMetadata file, String keyString, String value,
-    // AtomicDBUpdate update)
-    // throws UserException, IOException {
-    //        
-    // SysAttrs key = null;
-    // try {
-    // key = SysAttrs.valueOf(keyString);
-    // } catch (IllegalArgumentException exc) {
-    // // ignore, will be handled by the 'default' case
-    // }
-    //        
-    // switch (key) {
-    //        
-    // case locations:
-    //
-    // // explicitly setting X-Locations lists is only permitted for files
-    // // that haven't yet been assigned an X-Locations list!
-    // if (file.getXLocList() != null)
-    // throw new UserException(ErrNo.EPERM,
-    // "cannot set X-Locations: OSDs have been assigned already");
-    //            
-    // try {
-    // // parse the X-Locations list, ensure that it is correctly
-    // // formatted and consistent
-    // XLocList newXLoc = Converter.listToXLocList(sMan, (List<Object>)
-    // JSONParser
-    // .parseJSON(new JSONString(value)));
-    //                
-    // if (!BrainHelper.isConsistent(newXLoc))
-    // throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
-    // + "at least one OSD occurs more than once");
-    //                
-    // file = sMan.createFileMetadata();
-    // sMan.setMetadata(parentId, fileName, file, FileMetadata.XLOC_METADATA,
-    // update);
-    // sMan.setXLocationsList(file.getId(), newXLoc);
-    //                
-    // } catch (JSONException exc) {
-    // throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " +
-    // value);
-    // }
-    //            
-    // break;
-    //        
-    // case default_sp:
-    //
-    // if (!file.isDirectory())
-    // throw new UserException(ErrNo.EPERM,
-    // "default striping policies can only be set on volumes and directories");
-    //            
-    // try {
-    // Map<String, Object> sp = null;
-    // if (!value.equals("null")) {
-    // StringTokenizer st = new StringTokenizer(value, ", \t");
-    // sp = new HashMap<String, Object>();
-    // sp.put("policy", st.nextToken());
-    // sp.put("stripe-size", Long.parseLong(st.nextToken()));
-    // sp.put("width", Long.parseLong(st.nextToken()));
-    // }
-    //                
-    // if (file.getId() == 1 && sp == null)
-    // throw new UserException(ErrNo.EPERM,
-    // "cannot remove volume default striping policy");
-    //                
-    // sMan.setStripingPolicy(file.getId(), sp);
-    // } catch (NumberFormatException exc) {
-    // throw new UserException(ErrNo.EINVAL, "invalid default striping policy: "
-    // + value);
-    // }
-    //            
-    // break;
-    //        
-    // case osdsel_policy_id:
-    //
-    // if (file.getId() != 1)
-    // throw new UserException(ErrNo.EINVAL,
-    // "OSD selection policies can only be set on volumes");
-    //            
-    // try {
-    // long newPol = Long.parseLong(value);
-    // volume.setOsdPolicyId(newPol);
-    // sliceMan.notifyVolumeChangeListeners(VolumeChangeListener.MOD_CHANGED,
-    // volume);
-    //                
-    // } catch (NumberFormatException exc) {
-    // throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy: " +
-    // value);
-    // }
-    //            
-    // break;
-    //        
-    // case osdsel_policy_args:
-    //
-    // if (file.getId() != 1)
-    // throw new UserException(ErrNo.EINVAL,
-    // "OSD selection policies can only be set and configured on volumes");
-    //            
-    // volume.setOsdPolicyArgs(value);
-    // sliceMan.notifyVolumeChangeListeners(VolumeChangeListener.MOD_CHANGED,
-    // volume);
-    //            
-    // break;
-    //        
-    // case read_only:
-    //
-    // if (!(file instanceof FileEntity))
-    // throw new UserException(ErrNo.EPERM, "only files can be made read-only");
-    //            
-    // boolean readOnly = Boolean.valueOf(value);
-    //            
-    // FileEntity fileAsFile = (FileEntity) file;
-    // if (!readOnly && fileAsFile.getXLocationsList().getReplicas().length > 1)
-    // throw new UserException(ErrNo.EPERM,
-    // "read-only flag cannot be removed from files with multiple replicas");
-    //            
-    // sMan.setReadOnly(file.getId(), readOnly);
-    //            
-    // break;
-    //        
-    // default:
-    // throw new UserException(ErrNo.EINVAL, "system attribute '" + key
-    // + "' unknown or immutable");
-    // }
-    // }
     
+    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, VolumeInfo volume,
+        long parentId, FileMetadata file, String keyString, String value, AtomicDBUpdate update)
+        throws UserException, DatabaseException {
+        
+        SysAttrs key = null;
+        try {
+            key = SysAttrs.valueOf(keyString);
+        } catch (IllegalArgumentException exc) {
+            // ignore, will be handled by the 'default' case
+        }
+        
+        switch (key) {
+        
+        case locations:
+
+            // explicitly setting X-Locations lists is only permitted for files
+            // that haven't yet been assigned an X-Locations list!
+            if (file.getXLocList() != null)
+                throw new UserException(ErrNo.EPERM,
+                    "cannot set X-Locations: OSDs have been assigned already");
+            
+            try {
+                // parse the X-Locations list, ensure that it is correctly
+                // formatted and consistent
+                XLocList newXLoc = Converter.listToXLocList(sMan, (List<Object>) JSONParser
+                        .parseJSON(new JSONString(value)));
+                
+                if (!MRCOpHelper.isConsistent(newXLoc))
+                    throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
+                        + "at least one OSD occurs more than once");
+                
+                file.setXLocList(newXLoc);
+                sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.XLOC_METADATA,
+                    update);
+                
+            } catch (JSONException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " + value);
+            }
+            
+            break;
+        
+        case default_sp:
+
+            if (!file.isDirectory())
+                throw new UserException(ErrNo.EPERM,
+                    "default striping policies can only be set on volumes and directories");
+            
+            try {
+                
+                String pattern = null;
+                int stripeSize = 0;
+                int width = 0;
+                
+                if (!value.equals("null")) {
+                    StringTokenizer st = new StringTokenizer(value, ", \t");
+                    pattern = st.nextToken();
+                    stripeSize = Integer.parseInt(st.nextToken());
+                    width = Integer.parseInt(st.nextToken());
+                }
+                StripingPolicy sp = pattern == null ? null : sMan.createStripingPolicy(pattern,
+                    stripeSize, width);
+                
+                if (file.getId() == 1 && sp == null)
+                    throw new UserException(ErrNo.EPERM,
+                        "cannot remove the volume's default striping policy");
+                
+                sMan.setDefaultStripingPolicy(file.getId(), sp, update);
+                
+            } catch (NumberFormatException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            }
+            
+            break;
+        
+        case osdsel_policy_id:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL,
+                    "OSD selection policies can only be set on volumes");
+            
+            try {
+                short newPol = Short.parseShort(value);
+                
+                volume.setOsdPolicyId(newPol);
+                vMan.updateVolume(volume);
+                
+            } catch (NumberFormatException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy: " + value);
+            }
+            
+            break;
+        
+        case osdsel_policy_args:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL,
+                    "OSD selection policies can only be set and configured on volumes");
+            
+            volume.setOsdPolicyArgs(value);
+            vMan.updateVolume(volume);
+            
+            break;
+        
+        case read_only:
+
+            if (file.isDirectory())
+                throw new UserException(ErrNo.EPERM, "only files can be made read-only");
+            
+            boolean readOnly = Boolean.valueOf(value);
+            
+            if (!readOnly && file.getXLocList() != null && file.getXLocList().getReplicaCount() > 1)
+                throw new UserException(ErrNo.EPERM,
+                    "read-only flag cannot be removed from files with multiple replicas");
+            
+            file.setReadOnly(readOnly);
+            sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.RC_METADATA, update);
+            
+            break;
+        
+        default:
+            throw new UserException(ErrNo.EINVAL, "system attribute '" + key
+                + "' unknown or immutable");
+        }
+    }
 }

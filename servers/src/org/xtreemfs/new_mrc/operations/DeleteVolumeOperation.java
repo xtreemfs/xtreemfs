@@ -25,8 +25,11 @@
 package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
+import java.util.Map;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.RPCResponse;
+import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -35,29 +38,21 @@ import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.ac.FileAccessManager;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
  * @author stender
  */
-public class GetXAttrOperation extends MRCOperation {
+public class DeleteVolumeOperation extends MRCOperation {
     
     static class Args {
-        
-        public String path;
-        
-        public String attrKey;
-        
+        public String volumeName;
     }
     
-    public static final String RPC_NAME = "getXAttr";
+    public static final String RPC_NAME = "deleteVolume";
     
-    public GetXAttrOperation(MRCRequestDispatcher master) {
+    public DeleteVolumeOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -72,51 +67,53 @@ public class GetXAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(final MRCRequest rq) {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final Args rqArgs = (Args) rq.getRequestArgs();
             
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
+            final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.volumeName);
             
-            final Path p = new Path(rqArgs.path);
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
+            // check whether privileged permissions are granted for deleting the
+            // volume
+            master.getFileAccessManager().checkPrivilegedPermissions(volume.getId(), 1,
                 rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
+            // deregister the volume from the Directory Service
+            RPCResponse<Map<String, Map<String, Object>>> response = master.getDirClient()
+                    .deregisterEntity(volume.getId(), master.getAuthString());
+            response.setResponseListener(new RPCResponseListener() {
+                public void responseAvailable(RPCResponse response) {
+                    processStep2(rqArgs, volume.getId(), rq, response);
+                }
+            });
             
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
+        } catch (UserException exc) {
+            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
+                    .getMessage(), exc));
+        } catch (Exception exc) {
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
+                "an error has occurred", exc));
+        }
+    }
+    
+    private void processStep2(final Args rqArgs, final String volumeId, final MRCRequest rq,
+        final RPCResponse rpcResponse) {
+        
+        try {
             
-            String value = null;
-            if (rqArgs.attrKey.startsWith("xtreemfs."))
-                value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
-                        .getOSDStatusManager(), volume, res.toString(), file, rqArgs.attrKey
-                        .substring(9));
-            else {
-                
-                // first, try to fetch an individual user attribute
-                value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.attrKey);
-                
-                // if no such attribute exists, try to fetch a global attribute
-                if (value == null)
-                    value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.attrKey);
-                
-                if (value == null)
-                    value = "";
-            }
+            // check whether an exception has occured; if so, an exception is
+            // thrown when trying to parse the response
+            rpcResponse.waitForResponse();
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(value).getBytes()));
-            finishRequest(rq);
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
+            // delete the volume from the local database
+            master.getVolumeManager().deleteVolume(volumeId, master, rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -135,10 +132,8 @@ public class GetXAttrOperation extends MRCOperation {
         
         try {
             
-            args.path = (String) arguments.get(0);
-            args.attrKey = (String) arguments.get(1);
-            
-            if (arguments.size() == 2)
+            args.volumeName = (String) arguments.get(0);
+            if (arguments.size() == 1)
                 return null;
             
             throw new Exception();

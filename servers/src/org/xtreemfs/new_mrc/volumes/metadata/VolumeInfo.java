@@ -30,9 +30,9 @@ package org.xtreemfs.new_mrc.volumes.metadata;
  * XtreemFS file system content is arranged in volumes, with each volume having
  * its own directory tree. A volume has a globally unique name and id.
  * 
- * A volume holds different immutable policies. The OSD policy determines which
- * OSDs may by default be allocated to files. The access control policy defines
- * the circumstances under which users are allowed to access the volume. The
+ * A volume holds different policies. The OSD policy determines which OSDs may
+ * by default be allocated to files. The access control policy defines the
+ * circumstances under which users are allowed to access the volume. The
  * partitioning policy determines how a volume is split up into slices.
  * 
  * @author stender
@@ -49,5 +49,9 @@ public interface VolumeInfo {
     public String getOsdPolicyArgs();
     
     public short getAcPolicyId();
+    
+    public void setOsdPolicyId(short osdPolicyId);
+    
+    public void setOsdPolicyArgs(String osdPolicyArgs);
     
 }

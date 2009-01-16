@@ -137,7 +137,7 @@ public class CreateVolumeOperation extends MRCOperation {
         try {
             
             // check the response; if a volume with the same name has already
-            // been registered, throw an exception
+            // been registered, return an error
             
             Map<String, Map<String, Object>> response = rpcResponse.get();
             

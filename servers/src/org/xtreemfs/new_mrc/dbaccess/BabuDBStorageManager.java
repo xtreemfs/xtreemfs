@@ -167,8 +167,11 @@ public class BabuDBStorageManager implements StorageManager {
         @Override
         public XAttr next() {
             
-            if (next != null)
-                return next;
+            if (next != null) {
+                XAttr tmp = next;
+                next = null;
+                return tmp;
+            }
             
             for (;;) {
                 
@@ -270,12 +273,6 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void addReplica(long parentId, String fileName, XLoc replica, AtomicDBUpdate update) {
-        // TODO Auto-generated method stub
-        
-    }
-    
-    @Override
     public void init(String ownerId, String owningGroupId, short perms,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
         
@@ -371,13 +368,6 @@ public class BabuDBStorageManager implements StorageManager {
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
-    }
-    
-    @Override
-    public void deleteReplica(long parentId, String fileName, int index, AtomicDBUpdate update)
-        throws DatabaseException {
-        // TODO Auto-generated method stub
-        
     }
     
     @Override
@@ -530,7 +520,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             return new XAttrIterator(it, null);
@@ -547,7 +537,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             return new XAttrIterator(it, uid);

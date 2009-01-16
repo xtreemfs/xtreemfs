@@ -24,10 +24,7 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -39,12 +36,9 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.metadata.XAttr;
-import org.xtreemfs.new_mrc.metadata.XLocList;
-import org.xtreemfs.new_mrc.operations.MRCOpHelper.SysAttrs;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -52,23 +46,21 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class StatOperation extends MRCOperation {
+public class ChangeOwnerOperation extends MRCOperation {
     
     static class Args {
         
-        public String  path;
+        public String path;
         
-        public boolean inclReplicas;
+        public String userId;
         
-        public boolean inclXAttrs;
-        
-        public boolean inclACLs;
+        public String groupId;
         
     }
     
-    public static final String RPC_NAME = "stat";
+    public static final String RPC_NAME = "changeOwner";
     
-    public StatOperation(MRCRequestDispatcher master) {
+    public ChangeOwnerOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -105,48 +97,29 @@ public class StatOperation extends MRCOperation {
             // check whether file exists
             res.checkIfFileDoesNotExist();
             
-            // retrieve and prepare the metadata to return
             FileMetadata file = res.getFile();
-            String ref = sMan.getSoftlinkTarget(file.getId());
-            XLocList xLocList = !file.isDirectory() && rqArgs.inclReplicas ? file.getXLocList()
-                : null;
             
-            Map<String, Object> xAttrs = null;
-            if (rqArgs.inclXAttrs) {
-                
-                Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
-                Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
-                
-                // include global attributes
-                xAttrs = new HashMap<String, Object>();
-                while (globalAttrs.hasNext()) {
-                    XAttr attr = globalAttrs.next();
-                    xAttrs.put(attr.getKey(), attr.getValue());
-                }
-                
-                // include individual user attributes
-                while (myAttrs.hasNext()) {
-                    XAttr attr = myAttrs.next();
-                    xAttrs.put(attr.getKey(), attr.getValue());
-                }
-                
-                // include system attributes
-                for (SysAttrs attr : SysAttrs.values()) {
-                    String key = "xtreemfs." + attr.toString();
-                    Object value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
-                            .getOSDStatusManager(), volume, res.toString(), file, attr.toString());
-                    if (!value.equals(""))
-                        xAttrs.put(key, value);
-                }
-            }
+            // check whether the owner may be changed
+            faMan.checkPrivilegedPermissions(volume.getId(), file.getId(), rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
-            Iterator<ACLEntry> acl = rqArgs.inclACLs ? sMan.getACL(file.getId()) : null;
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            Object statInfo = MRCOpHelper.createStatInfo(faMan, file, ref, volume.getId(), rq
-                    .getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);
+            // change owner and owning group
+            file.setOwnerAndGroup(rqArgs.userId == null ? file.getOwnerId() : rqArgs.userId,
+                rqArgs.groupId == null ? file.getOwningGroupId() : rqArgs.groupId);
+            sMan.setMetadata(res.getParentDirId(), file.getFileName(), file,
+                FileMetadata.RC_METADATA, update);
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(statInfo).getBytes()));
-            finishRequest(rq);
+            // update POSIX timestamps
+            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                update);
+            
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -166,11 +139,10 @@ public class StatOperation extends MRCOperation {
         try {
             
             args.path = (String) arguments.get(0);
-            args.inclReplicas = (Boolean) arguments.get(1);
-            args.inclXAttrs = (Boolean) arguments.get(2);
-            args.inclACLs = (Boolean) arguments.get(3);
+            args.userId = (String) arguments.get(1);
+            args.groupId = (String) arguments.get(2);
             
-            if (arguments.size() == 4)
+            if (arguments.size() == 3)
                 return null;
             
             throw new Exception();
