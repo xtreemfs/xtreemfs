@@ -56,7 +56,7 @@ public class SimpleStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
     }
 
-    public ReusableBuffer readObject(String fileId, long objNo, int version, String checksum,
+    public ReusableBuffer readObjectNotPOSIX(String fileId, long objNo, int version, String checksum,
         StripingPolicy sp, long osdNumber) throws IOException {
         ReusableBuffer bbuf = null;
 
@@ -83,12 +83,7 @@ public class SimpleStorageLayout extends StorageLayout {
 
             f.close();
             bbuf.position(0);
-        } else {
-            // It handles the POSIX behavior of read beyond EOF
-            bbuf = BufferPool.allocate(0);
-            bbuf.position(0);
         }
-
         return bbuf;
     }
 

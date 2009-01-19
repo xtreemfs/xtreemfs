@@ -98,22 +98,22 @@ public final class ReadOperation extends Operation {
 	private void postRead(final OSDRequest rq, StageResponseCode result) {
 
 		// FIXME: comment this out to enable replication
-//		if (result == StageResponseCode.OK)
+		if (result == StageResponseCode.OK)
 			master.requestFinished(rq);
-/*		else if (result == StageResponseCode.FAILED) {
-			master.getStage(Stages.REPLICATION).enqueueOperation(rq,
-					ReplicationStage.STAGEOP_FETCH_OBJECT,
-					new StageCallbackInterface() {
-
-						public void methodExecutionCompleted(
-								OSDRequest request, StageResponseCode result) {
-							// FIXME: testcode
-							System.out.println(rq.getRequestId()
-									+ ": process original callback");
-							postFetchObject(request, result);
-						}
-					});
-		}*/
+//		else if (result == StageResponseCode.FAILED) {
+//			master.getStage(Stages.REPLICATION).enqueueOperation(rq,
+//					ReplicationStage.STAGEOP_FETCH_OBJECT,
+//					new StageCallbackInterface() {
+//
+//						public void methodExecutionCompleted(
+//								OSDRequest request, StageResponseCode result) {
+//							// FIXME: testcode
+//							System.out.println(rq.getRequestId()
+//									+ ": process original callback");
+//							postFetchObject(request, result);
+//						}
+//					});
+//		}
 	}
 
 	private void postFetchObject(OSDRequest rq, StageResponseCode result) {

@@ -54,20 +54,22 @@ public class RandomStrategy extends TransferStrategy {
 	NextRequest next = new NextRequest();
 	// first fetch a preferred object
 	if (!this.preferredObjects.isEmpty()) {
-	    next.objectID = this.preferredObjects.remove(random.nextInt()
+	    next.objectID = this.preferredObjects.remove(getPositiveRandom()
 		    % this.preferredObjects.size());
+	    this.requiredObjects.remove(Long.valueOf(next.objectID));
 	} else { // fetch an object
 	    if (!this.requiredObjects.isEmpty()) {
-		next.objectID = this.requiredObjects.remove(random.nextInt()
+		next.objectID = this.requiredObjects.remove(getPositiveRandom()
 			% this.requiredObjects.size());
 	    } else
+		// nothing to fetch
 		return null;
 	}
 	// use random OSD
 	List<ServiceUUID> osds = this.details.locationList
 		.getOSDsByObject(next.objectID);
 	if (!osds.isEmpty()) {
-	    next.osd = osds.get(random.nextInt() % osds.size());
+	    next.osd = osds.get(getPositiveRandom() % osds.size());
 	} else
 	    return null;
 
@@ -75,4 +77,8 @@ public class RandomStrategy extends TransferStrategy {
 	return next;
     }
 
+    private int getPositiveRandom(){
+	int result = random.nextInt();
+	return (result > 0) ? result : 0-result; 
+    }
 }

@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
@@ -64,6 +66,7 @@ import org.xtreemfs.osd.RequestDetails;
 import org.xtreemfs.osd.RequestDispatcher;
 import org.xtreemfs.osd.ErrorRecord.ErrorClass;
 import org.xtreemfs.osd.RequestDispatcher.Stages;
+import org.xtreemfs.osd.stages.Stage.StageMethod;
 import org.xtreemfs.osd.storage.FileInfo;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
@@ -92,6 +95,8 @@ public class StorageThread extends Stage {
     public static final int   STAGEOP_CLEAN_UP                 = 9;
     
     public static final int   STAGEOP_CLEAN_UP2                = 10;
+
+    public static final int   STAGEOP_LOCAL_READ_OBJECT        = 11;
 
     private MetadataCache     cache;
 
@@ -157,6 +162,10 @@ public class StorageThread extends Stage {
             case STAGEOP_CLEAN_UP2:
                 processCleanUp2(method); 
                 break;
+            case STAGEOP_LOCAL_READ_OBJECT:
+                processLocalReadObject(method); 
+                methodExecutionSuccess(method, StageResponseCode.OK);
+                break;
             }
 
         } catch (OSDException exc) {
@@ -201,88 +210,12 @@ public class StorageThread extends Stage {
 
         // object exists locally ...
         if (data.capacity() > 0) {
-
-            if (Logging.tracingEnabled())
-                Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
-                    + " found locally");
-
-            // check whether the object is complete
-            if (data.capacity() < stripeSize) {
-                // object incomplete
-
-                if (Logging.tracingEnabled())
-                    Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
-                        + " incomplete");
-
-                if (objNo < fi.getLastObjectNumber()) {
-                    // object known to be incomplete: fill object with
-                    // padding zeros
-                    data = padWithZeros(data, (int) sp.getStripeSize(objNo));
-                    if (details.isRangeRequested())
-                        data.range((int) range[0], (int) (range[1] - range[0]) + 1);
-
-                    setReadResponse(rq, data);
-                    return true;
-                }
-
-                else {
-                    // not sure in striped case whether object is complete
-                    // or not
-
-                    // if the read does not go beyond the object size,
-                    // return the data immediately
-                    if (details.isRangeRequested() && data.capacity() >= range[1]) {
-                        data.range((int) range[0], (int) (range[1] - range[0]) + 1);
-                        setReadResponse(rq, data);
-                        return true;
-                    }
-
-                    // otherwise, fetch globalMax if necessary
-                    else {
-
-                        // return the data in the non-striped case
-                        if (sp.getWidth() == 1) {
-
-                            if (details.isRangeRequested()) {
-                                final int rangeSize = (int) (range[1] - range[0]) + 1;
-                                if (data.capacity() >= rangeSize)
-                                    data.range((int) range[0], rangeSize);
-                                else {
-                                    if (Logging.isDebug())
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                            "read beyond EOF: " + rq.getRq().getPinkyRequest());
-                                    final int eofLength = data.capacity() - ((int) range[0]);
-                                    data.range((int) range[0], eofLength);
-                                }
-                            }
-
-                            setReadResponse(rq, data);
-                            return true;
-                        }
-
-                        // fetch globalMax otherwise
-                        else {
-                            rq.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
-                            sendGmaxRequests(rq);
-                            return false;
-                        }
-                    }
-                }
-
-            } else {
-                // object is complete
-
-                if (Logging.tracingEnabled())
-                    Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
-                        + " complete");
-
-                if (details.isRangeRequested())
-                    data.range((int) range[0], (int) (range[1] - range[0]) + 1);
-
-                setReadResponse(rq, data);
-                return true;
+            if(!checkReadObject(rq, data)){
+                rq.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
+                sendGmaxRequests(rq);
+                return false;
             }
-
+            return true;
         }
 
         // object does not exist locally
@@ -323,7 +256,107 @@ public class StorageThread extends Stage {
 
     }
 
-    public void processReadGmaxFetched(StageMethod rq) throws IOException {
+    /**
+     * @param rq
+     * @param data
+     * @return
+     * @throws IOException
+     * @throws JSONException
+     */
+    private boolean checkReadObject(StageMethod rq, ReusableBuffer data)
+            throws IOException, JSONException {
+        final RequestDetails details = rq.getRq().getDetails();
+    
+        final String fileId = details.getFileId();
+        final long objNo = details.getObjectNumber();
+        final StripingPolicy sp = details.getCurrentReplica().getStripingPolicy();
+        final long stripeSize = sp.getStripeSize(objNo);
+        final long[] range = { details.getByteRangeStart(), details.getByteRangeEnd() };
+        final FileInfo fi = layout.getFileInfo(sp, fileId);
+    
+        if (Logging.tracingEnabled())
+            Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
+                + " found locally");
+    
+        // check whether the object is complete
+        if (data.capacity() < stripeSize) {
+            // object incomplete
+    
+            if (Logging.tracingEnabled())
+                Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
+                    + " incomplete");
+    
+            if (objNo < fi.getLastObjectNumber()) {
+                // object known to be incomplete: fill object with
+                // padding zeros
+                data = padWithZeros(data, (int) sp.getStripeSize(objNo));
+                if (details.isRangeRequested())
+                    data.range((int) range[0], (int) (range[1] - range[0]) + 1);
+    
+                setReadResponse(rq, data);
+                return true;
+            }
+    
+            else {
+                // not sure in striped case whether object is complete
+                // or not
+    
+                // if the read does not go beyond the object size,
+                // return the data immediately
+                if (details.isRangeRequested() && data.capacity() >= range[1]) {
+                    data.range((int) range[0], (int) (range[1] - range[0]) + 1);
+                    setReadResponse(rq, data);
+                    return true;
+                }
+    
+                // otherwise, fetch globalMax if necessary
+                else {
+    
+                    // return the data in the non-striped case
+                    if (sp.getWidth() == 1) {
+    
+                        if (details.isRangeRequested()) {
+                            final int rangeSize = (int) (range[1] - range[0]) + 1;
+                            if (data.capacity() >= rangeSize)
+                                data.range((int) range[0], rangeSize);
+                            else {
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "read beyond EOF: " + rq.getRq().getPinkyRequest());
+                                final int eofLength = data.capacity() - ((int) range[0]);
+                                data.range((int) range[0], eofLength);
+                            }
+                        }
+    
+                        setReadResponse(rq, data);
+                        return true;
+                    }
+    
+                    // fetch globalMax otherwise
+                    else {
+                        // rq.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
+                        // sendGmaxRequests(rq);
+                        return false;
+                    }
+                }
+            }
+    
+        } else {
+            // object is complete
+    
+            if (Logging.tracingEnabled())
+                Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
+                    + " complete");
+    
+            if (details.isRangeRequested())
+                data.range((int) range[0], (int) (range[1] - range[0]) + 1);
+    
+            setReadResponse(rq, data);
+            return true;
+        }
+    }
+
+    private void processReadGmaxFetched(StageMethod rq) throws IOException {
 
         // update globalMax from all "globalMax" responses
         striping.processGmaxResponses(rq.getRq());
@@ -1086,6 +1119,58 @@ public class StorageThread extends Stage {
         fi.getObjChecksums().put(objNo, newChecksum);
     }
 
+    /**
+     * @param method
+     * @throws JSONException 
+     */
+    private void processLocalReadObject(StageMethod method) throws IOException, JSONException {
+        final RequestDetails details = method.getRq().getDetails();
+
+        final String fileId = details.getFileId();
+        final long objNo = details.getObjectNumber();
+        final StripingPolicy sp = details.getCurrentReplica().getStripingPolicy();
+        final FileInfo fi = layout.getFileInfo(sp, fileId);
+
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "LOCAL READ: " + fileId + "-" + objNo + ".");
+
+        int objVer = fi.getObjectVersion(objNo);
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting objVer " + objVer);
+
+        String objChksm = fi.getObjectChecksum(objNo);
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "checksum is " + objChksm);
+
+        // retrieve the object from the storage layout
+        ReusableBuffer data = layout.readObjectNotPOSIX(fileId, objNo, objVer, objChksm, sp, sp.getOSDByObject(objNo));
+        
+        // object exists locally ...
+        if (data != null && data.capacity() > 0) {
+            checkReadObject(method, data);
+        }
+
+        // object does not exist locally
+        else {
+            if (Logging.tracingEnabled())
+                Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
+                    + " not found locally");
+
+            Map<String, Long> jsonResponse = new HashMap<String, Long>();
+            // add necessary information
+            // currently no additional information are necessary (an empty map implies a not available object)
+
+            String response = JSONParser.writeJSON(jsonResponse);
+            data = ReusableBuffer.wrap(response.getBytes());
+            method.getRq().setData(data, HTTPUtils.DATA_TYPE.JSON);
+            
+            // TODO: add statistics
+        }
+
+        // add X-New-File-Size header
+        method.getRq().addAdditionalResponseHTTPHeader(HTTPHeaders.HDR_XNEWFILESIZE, Long.toString(fi.getFilesize()));
+    }
+
     private void createPaddingObject(String fileId, long objNo, StripingPolicy sp, int version,
         long size, FileInfo fi) throws IOException {
         String checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
@@ -1210,5 +1295,4 @@ public class StorageThread extends Stage {
         }
         super.methodExecutionFailed(m, err);
     }
-
 }

@@ -509,4 +509,35 @@ public class OSDClient extends RPCClient {
         headers.addHeader(HTTPHeaders.HDR_XFILEID, fileID);
         return sendRPC(osd, RPCTokens.deleteLocalTOKEN, null, authString, headers);
     }
+    
+    /**
+     * It requests to the OSD to perform a local read of the object
+     * 
+     * @param loc
+     *            Location of the file.
+     * @param cap
+     *            Capability of the request
+     * @param file
+     *            File whose size is requested
+     * @param knownSize
+     *            Current known size of the file
+     * @param objectNumber
+     *            the object number
+     * @return The response of the OSD
+     */
+    public RPCResponse readLocalRPC(InetSocketAddress osd, Locations loc,
+	    Capability cap, String file, long objectNumber) throws IOException,
+	    JSONException {
+
+	HTTPHeaders headers = new HTTPHeaders();
+	headers.addHeader(HTTPHeaders.HDR_XCAPABILITY, cap.toString());
+	headers.addHeader(HTTPHeaders.HDR_XLOCATIONS, loc.asJSONString()
+		.asString());
+	headers.addHeader(HTTPHeaders.HDR_XFILEID, file);
+	headers.addHeader(HTTPHeaders.HDR_XOBJECTNUMBER, Long
+		.toString(objectNumber));
+
+	return sendRPC(osd, RPCTokens.readLocalTOKEN, null, null, headers);
+    }
+
 }

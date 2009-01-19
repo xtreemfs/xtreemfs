@@ -52,17 +52,19 @@ public class SimpleStrategy extends TransferStrategy {
 	// first fetch a preferred object
 	if (!this.preferredObjects.isEmpty()) {
 	    next.objectID = this.preferredObjects.remove(0);
+	    this.requiredObjects.remove(Long.valueOf(next.objectID));
 	} else { // fetch an object
 	    if (!this.requiredObjects.isEmpty()) {
 		next.objectID = this.requiredObjects.remove(0);
 	    } else
+		// nothing to fetch
 		return null;
 	}
 	// use the next replica relative to the last used replica
 	List<ServiceUUID> osds = this.details.locationList
 		.getOSDsByObject(next.objectID);
 	if (!osds.isEmpty()) {
-	    this.indexOfLastUsedOSD = indexOfLastUsedOSD++ % osds.size();
+	    this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
 	    next.osd = osds.get(this.indexOfLastUsedOSD);
 	} else
 	    return null;

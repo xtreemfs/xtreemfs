@@ -60,6 +60,7 @@ import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
 import org.xtreemfs.foundation.pinky.PipelinedPinky;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.foundation.pinky.HTTPHeaders.HeaderEntry;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.osd.ops.AcquireLease;
@@ -69,11 +70,13 @@ import org.xtreemfs.osd.ops.CloseFileEvent;
 import org.xtreemfs.osd.ops.DeleteLocalRPC;
 import org.xtreemfs.osd.ops.DeleteOFTRPC;
 import org.xtreemfs.osd.ops.DeleteOperation;
+import org.xtreemfs.osd.ops.FetchAndWriteReplica;
 import org.xtreemfs.osd.ops.FetchGmaxRPC;
 import org.xtreemfs.osd.ops.GetProtocolVersionOperation;
 import org.xtreemfs.osd.ops.GetStatistics;
 import org.xtreemfs.osd.ops.GmaxEvent;
 import org.xtreemfs.osd.ops.Operation;
+import org.xtreemfs.osd.ops.ReadLocalRPC;
 import org.xtreemfs.osd.ops.ReadOperation;
 import org.xtreemfs.osd.ops.ReturnLease;
 import org.xtreemfs.osd.ops.ShutdownOperation;
@@ -82,7 +85,6 @@ import org.xtreemfs.osd.ops.StatusPageOperation;
 import org.xtreemfs.osd.ops.TruncateLocalRPC;
 import org.xtreemfs.osd.ops.TruncateRPC;
 import org.xtreemfs.osd.ops.WriteOperation;
-import org.xtreemfs.osd.ops.FetchAndWriteReplica;
 import org.xtreemfs.osd.stages.AuthenticationStage;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.ParserStage;
@@ -150,7 +152,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
             new ShutdownOperation(this), new CheckObjectRPC(this), new GmaxEvent(this),
             new CloseFileEvent(this), new GetStatistics(this), new StatisticsConfig(this),
             new AcquireLease(this), new ReturnLease(this), new CleanUpOperation(this),
-            new FetchAndWriteReplica(this) };
+            new FetchAndWriteReplica(this), new ReadLocalRPC(this) };
         
         // -------------------------------
         // initialize communication stages
@@ -389,6 +391,12 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                 final String rqId = rq.getDetails().getRequestId();
                 if (rqId != null)
                     headers.addHeader(HTTPHeaders.HDR_XREQUESTID, rqId);
+                
+                // add additional headers, if exist
+                if(rq.getAdditionalResponseHTTPHeaders()!=null)
+                    for(HeaderEntry header : rq.getAdditionalResponseHTTPHeaders()){
+                        headers.addHeader(header.name, header.value);
+                    }
                 
                 if (rq.getData() != null) {
                     

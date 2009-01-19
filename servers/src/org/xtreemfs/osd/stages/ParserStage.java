@@ -302,6 +302,12 @@ public final class ParserStage extends Stage {
                 return result;
         }
 
+        else if (methodName.equals(RPCTokens.readLocalTOKEN)) {
+            final Operation readLocal = master.getOperation(RequestDispatcher.Operations.READ_LOCAL);
+            rq.setOperation(readLocal);
+            return null;
+        }
+
         else {
             return new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrorCodes.METHOD_NOT_IMPLEMENTED,
                 methodName + " not implemented");

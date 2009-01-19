@@ -60,9 +60,9 @@ public abstract class TransferStrategy {
     }
 
     public class NextRequest {
-	ServiceUUID osd;
-	long objectID;
-	boolean requestObjectList;
+	public ServiceUUID osd;
+	public long objectID;
+	public boolean requestObjectList;
     }
 
     protected ReplicationDetails details;
@@ -97,19 +97,59 @@ public abstract class TransferStrategy {
     /**
      * @param e
      * @return
-     * @see java.util.ArrayList#add(java.lang.Object)
      */
     public boolean addRequiredObject(long objectID) {
-	return this.requiredObjects.add(new Long(objectID));
+	return (this.requiredObjects.contains(Long.valueOf(objectID))) ? true
+		: this.requiredObjects.add(Long.valueOf(objectID));
     }
 
     /**
      * @param o
+     * @return true, if the list doesn't contain the element anymore
+     */
+    public boolean removeRequiredObject(long objectID) {
+	boolean removed = true;
+	if (this.requiredObjects.contains(Long.valueOf(objectID)))
+	    removed = this.requiredObjects.remove(Long.valueOf(objectID));
+	return removed;
+    }
+
+    /**
+     * caution: can break the consistency between required and preferred objects
+     * 
+     * @param e
+     * @return
+     * @see java.util.ArrayList#add(java.lang.Object)
+     */
+    public boolean addPreferredObject(long objectID) {
+	boolean added = true;
+	if (!this.preferredObjects.contains(Long.valueOf(objectID))) {
+	    added = this.preferredObjects.add(Long.valueOf(objectID));
+	}
+	if (!addRequiredObject(objectID)) { // rollback
+	    added = false;
+	    this.preferredObjects.remove(Long.valueOf(objectID));
+	}
+	return added;
+    }
+
+    /**
+     * caution: can break the consistency between required and preferred objects
+     * 
+     * @param o
      * @return
      * @see java.util.ArrayList#remove(java.lang.Object)
      */
-    public boolean removeRequiredObject(long objectID) {
-	return this.requiredObjects.remove(new Long(objectID));
+    public boolean removePreferredObject(long objectID) {
+	boolean removed = true;
+	if (this.preferredObjects.contains(Long.valueOf(objectID)))
+	    removed = this.preferredObjects.remove(Long.valueOf(objectID));
+	if (removed)
+	    if (!removeRequiredObject(objectID)) { // rollback
+		this.preferredObjects.add(Long.valueOf(objectID));
+		removed = false;
+	    }
+	return removed;
     }
 
     /**
@@ -118,24 +158,6 @@ public abstract class TransferStrategy {
      */
     public int getRequiredObjectsCount() {
 	return this.requiredObjects.size();
-    }
-
-    /**
-     * @param e
-     * @return
-     * @see java.util.ArrayList#add(java.lang.Object)
-     */
-    public boolean addPreferredObject(long objectID) {
-	return this.preferredObjects.add(new Long(objectID));
-    }
-
-    /**
-     * @param o
-     * @return
-     * @see java.util.ArrayList#remove(java.lang.Object)
-     */
-    public boolean removePreferredObject(long objectID) {
-	return this.preferredObjects.remove(new Long(objectID));
     }
 
     /**

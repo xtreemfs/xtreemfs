@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.striping.StripingPolicy;
@@ -127,6 +128,39 @@ public abstract class StorageLayout {
     protected abstract FileInfo loadFileInfo(String fileId, StripingPolicy sp) throws IOException;
 
     /**
+     * Reads a complete object from the storage device. Follows POSIX.
+     *
+     * @param fileId
+     *            fileId of the object
+     * @param objNo
+     *            object number
+     * @param version
+     *            version to be read
+     * @param checksum
+     *            the checksum currently stored with the object
+     * @param sp
+     *            the striping policy assigned to the file
+     * @param osdNumber
+     *            the number of the OSD assigned to the object
+     * @throws java.io.IOException
+     *             when the object cannot be read
+     * @return a buffer containing the object, or an empty buffer if the
+     *         object does not exist (see POSIX)
+     */
+    public ReusableBuffer readObject(String fileId, long objNo, int version,
+	    String checksum, StripingPolicy sp, long osdNumber)
+	    throws IOException {
+	ReusableBuffer bbuf = readObjectNotPOSIX(fileId, objNo, version,
+		checksum, sp, osdNumber);
+	if (bbuf == null) {
+	    // handles the POSIX behavior of read beyond EOF
+	    bbuf = BufferPool.allocate(0);
+	    bbuf.position(0);
+	}
+	return bbuf;
+    }
+
+    /**
      * Reads a complete object from the storage device.
      *
      * @param fileId
@@ -146,9 +180,10 @@ public abstract class StorageLayout {
      * @return a buffer containing the object, or <code>null</code> if the
      *         object does not exist
      */
-    public abstract ReusableBuffer readObject(String fileId, long objNo, int version,
+    public abstract ReusableBuffer readObjectNotPOSIX(String fileId, long objNo, int version,
         String checksum, StripingPolicy sp, long osdNumber) throws IOException;
 
+    
     /**
      * Determines whether the given data has a correct checksum.
      *

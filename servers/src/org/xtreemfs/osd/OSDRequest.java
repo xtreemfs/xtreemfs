@@ -26,6 +26,7 @@ package org.xtreemfs.osd;
 
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.osd.ops.Operation;
@@ -89,6 +90,12 @@ public final class OSDRequest extends Request {
 	 * list of sub-requests sent via Speedy.
 	 */
 	private SpeedyRequest[] httpRequests;
+
+	/**
+	 * additional HTTPHeaders which will be added to the response
+	 * WARNING: maybe overwrites some header fields later
+	 */
+	private HTTPHeaders additionalResponseHTTPHeaders;
 
 	public OSDRequest(long requestId) {
 		super(null);
@@ -181,6 +188,25 @@ public final class OSDRequest extends Request {
 
 	public void setOriginalOsdRequest(OSDRequest osdRequest) {
 		this.originalOsdRequest = osdRequest;
+	}
+
+	public void addAdditionalResponseHTTPHeader(String name, String value) {
+	    if(this.additionalResponseHTTPHeaders==null)
+		this.additionalResponseHTTPHeaders = new HTTPHeaders();
+	    this.additionalResponseHTTPHeaders.addHeader(name, value);
+	}
+
+	public void addAdditionalResponseHTTPHeader(String name, int value) {
+	    if(this.additionalResponseHTTPHeaders==null)
+		this.additionalResponseHTTPHeaders = new HTTPHeaders();
+	    this.additionalResponseHTTPHeaders.addHeader(name, value);
+	}
+
+	/**
+	 * @return the additionalResponseHTTPHeaders
+	 */
+	public HTTPHeaders getAdditionalResponseHTTPHeaders() {
+	    return additionalResponseHTTPHeaders;
 	}
 
 }
