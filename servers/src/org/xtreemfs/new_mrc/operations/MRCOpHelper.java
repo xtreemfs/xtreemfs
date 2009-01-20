@@ -99,12 +99,12 @@ public class MRCOpHelper {
         sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.FC_METADATA, update);
     }
     
-    public static Map<String, Object> createStatInfo(FileAccessManager faMan, FileMetadata file,
-        String ref, String volumeId, String userId, List<String> groupIds, XLocList xLocList,
+    public static Map<String, Object> createStatInfo(StorageManager sMan, FileAccessManager faMan,
+        FileMetadata file, String ref, String userId, List<String> groupIds, XLocList xLocList,
         Map<String, Object> xAttrs, Iterator<ACLEntry> acl) throws UserException, MRCException {
         
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("fileId", volumeId + ":" + file.getId());
+        map.put("fileId", sMan.getVolumeId() + ":" + file.getId());
         map.put("objType", ref != null ? 3 : file.isDirectory() ? 2 : 1);
         map.put("ownerId", file.getOwnerId());
         map.put("groupId", file.getOwningGroupId());
@@ -124,8 +124,7 @@ public class MRCOpHelper {
         if (acl != null)
             map.put("acl", Converter.aclToMap(acl));
         
-        map.put("posixAccessMode", faMan.getPosixAccessMode(volumeId, file.getId(), userId,
-            groupIds));
+        map.put("posixAccessMode", faMan.getPosixAccessMode(sMan, file, userId, groupIds));
         
         return map;
     }

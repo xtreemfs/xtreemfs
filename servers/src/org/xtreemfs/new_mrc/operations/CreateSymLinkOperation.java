@@ -89,13 +89,12 @@ public class CreateSymLinkOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volume.getId(), res
-                    .getParentDirId(), 0, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), 0, rq
+                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the file/directory exists already
             res.checkIfFileExistsAlready();
@@ -104,9 +103,9 @@ public class CreateSymLinkOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null, (short) 0777,
-                rqArgs.targetPath, false, update);
+            sMan.create(res.getParentDirId(), res.getFileName(), rq.getDetails().userId, rq
+                    .getDetails().groupIds.get(0), null, (short) 0777, rqArgs.targetPath, false,
+                update);
             
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,

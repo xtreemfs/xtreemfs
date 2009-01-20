@@ -42,6 +42,7 @@ import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.operations.AddReplicaOperation;
+import org.xtreemfs.new_mrc.operations.ChangeAccessModeOperation;
 import org.xtreemfs.new_mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
 import org.xtreemfs.new_mrc.operations.CreateDirOperation;
@@ -107,6 +108,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(UpdateFileSizeOperation.RPC_NAME, new UpdateFileSizeOperation(master));
         operations.put(RenewOperation.RPC_NAME, new RenewOperation(master));
         operations.put(ChangeOwnerOperation.RPC_NAME, new ChangeOwnerOperation(master));
+        operations.put(ChangeAccessModeOperation.RPC_NAME, new ChangeAccessModeOperation(master));
         operations.put(AddReplicaOperation.RPC_NAME, new AddReplicaOperation(master));
         operations.put(RemoveReplicaOperation.RPC_NAME, new RemoveReplicaOperation(master));
     }

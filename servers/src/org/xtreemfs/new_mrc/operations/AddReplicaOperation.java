@@ -140,8 +140,8 @@ public class AddReplicaOperation extends MRCOperation {
             
             // check whether privileged permissions are granted for adding
             // replicas
-            faMan.checkPrivilegedPermissions(volumeId, file.getId(), rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether a striping policy is explicitly assigned to the
             // replica; if not, use the one from the file; if none is assigned

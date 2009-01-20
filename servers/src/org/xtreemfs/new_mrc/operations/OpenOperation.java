@@ -93,8 +93,8 @@ public class OpenOperation extends MRCOperation {
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the file/directory exists
             res.checkIfFileDoesNotExist();
@@ -148,7 +148,7 @@ public class OpenOperation extends MRCOperation {
             }
             
             // check whether the permission is granted
-            faMan.checkPermission(rqArgs.accessMode, volume.getId(), file.getId(), 0, rq
+            faMan.checkPermission(rqArgs.accessMode, sMan, file, res.getParentDirId(), rq
                     .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // create the capability

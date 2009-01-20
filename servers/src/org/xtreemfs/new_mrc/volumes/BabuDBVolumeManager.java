@@ -128,8 +128,8 @@ public class BabuDBVolumeManager implements VolumeManager {
         BufferBackedVolumeInfo volume = new BufferBackedVolumeInfo(volumeId, volumeName,
             fileAccessPolicyId, osdPolicyId, osdPolicyArgs);
         
-        // initialize the volume
-        short perms = 509; // TODO
+        // the default set of volume permissions is (rwxr-xr-x)
+        short perms = 509;
         
         // make sure that no volume database with the given name exists
         try {

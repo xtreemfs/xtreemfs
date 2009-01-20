@@ -102,12 +102,12 @@ public class CreateFileOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volume.getId(), res
-                    .getParentDirId(), 0, rq.getDetails().userId, rq.getDetails().superUser, rq
+            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
+                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
             // check whether the file/directory exists already

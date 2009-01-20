@@ -29,6 +29,9 @@ import java.util.Map;
 
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.FileMetadata;
 
 /**
  * This policy will grant access to anyone. It does not allow changeing access
@@ -62,46 +65,44 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
-    public void checkPermission(String volumeId, long fileId, long parentId, String userId,
-        List<String> groupIds, String accessMode) {
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, String accessMode) {
         // do nothing
     }
     
-    public void checkSearchPermission(String volumeId, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) {
         // do nothing
     }
     
-    public void checkPrivilegedPermissions(String volumeId, long fileId, String userId,
+    public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) {
         // do nothing
-    }
-    
-    public short getDefaultVolumeRights(String volumeId) throws MRCException {
-        return 511;
     }
     
     public Map<String, Object> convertToACL(long mode) {
         return null;
     }
     
-    public long getPosixAccessRights(String volumeId, long fileId, String userId,
+    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) {
         return 511; // rwxrwxrwx
     }
     
-    public void setPosixAccessRights(String volumeId, long fileId, String userId,
-        List<String> groupIds, long posixRights) {
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update) {
         // do nothing
     }
     
-    public void setACLEntries(String volumeId, long fileId, String userId, List<String> groupIDs,
-        Map<String, Object> entries) throws MRCException, UserException {
+    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
+        throws MRCException, UserException {
         // do nothing
     }
     
-    public void removeACLEntries(String volumeId, long fileId, String userId,
-        List<String> groupIds, List<Object> entities) throws MRCException, UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
+        throws MRCException, UserException {
         // do nothing
     }
     

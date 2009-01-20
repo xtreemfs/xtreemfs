@@ -99,8 +99,8 @@ public class StatOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -115,7 +115,8 @@ public class StatOperation extends MRCOperation {
             if (rqArgs.inclXAttrs) {
                 
                 Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
-                Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
+                Iterator<XAttr> globalAttrs = sMan
+                        .getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
                 
                 // include global attributes
                 xAttrs = new HashMap<String, Object>();
@@ -142,8 +143,8 @@ public class StatOperation extends MRCOperation {
             
             Iterator<ACLEntry> acl = rqArgs.inclACLs ? sMan.getACL(file.getId()) : null;
             
-            Object statInfo = MRCOpHelper.createStatInfo(faMan, file, ref, volume.getId(), rq
-                    .getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);
+            Object statInfo = MRCOpHelper.createStatInfo(sMan, faMan, file, ref,
+                rq.getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);
             
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(statInfo).getBytes()));
             finishRequest(rq);

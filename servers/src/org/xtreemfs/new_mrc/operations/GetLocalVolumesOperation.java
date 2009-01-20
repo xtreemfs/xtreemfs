@@ -34,7 +34,6 @@ import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.utils.MessageUtils;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**

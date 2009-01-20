@@ -26,11 +26,15 @@ package org.xtreemfs.new_mrc.ac;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
-import org.xtreemfs.mrc.brain.storage.entities.ACLEntry;
 import org.xtreemfs.new_mrc.MRCException;
-import org.xtreemfs.new_mrc.volumes.VolumeManager;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.ACLEntry;
+import org.xtreemfs.new_mrc.metadata.FileMetadata;
 
 /**
  * This policy grants or denies access based on immutable volume ACLs. Note that
@@ -42,19 +46,15 @@ import org.xtreemfs.new_mrc.volumes.VolumeManager;
  */
 public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
-    private VolumeManager       volMan;
+    public static final long    POLICY_ID          = 3;
     
-    public static final long    POLICY_ID = 3;
+    private static final String AM_WRITE           = "w";
     
-    private static final String AM_WRITE  = "w";
+    private static final String AM_READ            = "r";
     
-    private static final String AM_READ   = "r";
+    private static final String AM_DELETE          = "d";
     
-    private static final String AM_DELETE = "d";
-    
-    public VolumeACLFileAccessPolicy(VolumeManager volMan) {
-        this.volMan = volMan;
-    }
+    private static final String DEFAULT_ENTRY_NAME = "default";
     
     public String translateAccessMode(int accessMode) {
         switch (accessMode) {
@@ -71,173 +71,128 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
-    public void checkPermission(String volumeId, long fileId, long parentId, String userId,
-        List<String> groupIds, String accessMode) throws UserException, MRCException {
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, String accessMode) throws UserException, MRCException {
         
-        // TODO
-        
-//        try {
-//            
-//            if (fileId == 0)
-//                return;
-//            
-//            StorageManager sMan = sliceMan.getSliceDB(volumeId, "/", 'r');
-//            
-//            ACLEntry[] acl = sMan.getVolumeACL();
-//            
-//            long rights = getRights(userId, acl);
-//            
-//            if (accessMode.length() == 1) {
-//                switch (accessMode.charAt(0)) {
-//                case 'r':
-//                    if ((rights & (1 << 0)) != 0)
-//                        return;
-//                    break;
-//                case 'w':
-//                    if ((rights & (1 << 1)) != 0)
-//                        return;
-//                    break;
-//                case 'a':
-//                    if ((rights & (1 << 2)) != 0)
-//                        return;
-//                    break;
-//                case 'c':
-//                    if ((rights & (1 << 4)) != 0)
-//                        return;
-//                    break;
-//                case 't':
-//                    if ((rights & (1 << 5)) != 0)
-//                        return;
-//                    break;
-//                case 'd':
-//                    if ((rights & (1 << 7)) != 0)
-//                        return;
-//                    break;
-//                }
-//            } else if (accessMode.length() == 2) {
-//                if (accessMode.equals("ga") && (rights & (1 << 3)) != 0)
-//                    return;
-//                if (accessMode.equals("sr"))
-//                    if ((rights & (1 << 6)) != 0)
-//                        return;
-//            }
-//            
-//        } catch (Exception exc) {
-//            throw new MRCException(exc);
-//        }
-//        
-//        throw new UserException(ErrNo.EACCES, "access denied, volumeId = " + volumeId
-//            + ", fileId = " + fileId + ", accessMode = \"" + accessMode + "\"");
-    }
-    
-    public void checkSearchPermission(String volumeId, String path, String userId,
-        List<String> groupIds) throws UserException, MRCException {
-        checkPermission(volumeId, 1, 0, userId, groupIds, AM_READ);
-    }
-    
-    public void checkPrivilegedPermissions(String volumeId, long fileId, String userId,
-        List<String> groupIds) throws UserException, MRCException {
-        
-        // TODO
-        
-//        try {
-//            
-//            StorageManager sMan = sliceMan.getSliceDB(volumeId, "/", 'r');
-//            
-//            if (!sMan.getFileEntity(1).getUserId().equals(userId))
-//                throw new UserException(ErrNo.EPERM,
-//                    "changing file owner is restricted to file owner");
-//            
-//        } catch (UserException exc) {
-//            throw exc;
-//        } catch (Exception exc) {
-//            throw new MRCException(exc);
-//        }
-    }
-    
-    public short getDefaultVolumeRights(String volumeId) throws MRCException {
-        return 509;
-    }
-    
-    public Map<String, Object> convertToACL(long mode) throws MRCException {
-        return null;
-    }
-    
-    public long getPosixAccessRights(String volumeId, long fileId, String userId,
-        List<String> groupIds) throws MRCException {
-        
-        return 511;
-        // TODO
-        
-//        try {
-//            StorageManager sMan = sliceMan.getSliceDB(volumeId, "/", 'r');
-//            ACLEntry[] acl = sMan.getVolumeACL();
-//            
-//            long rights = getRights(userId, acl);
-//            rights = rights & 3 | ((rights & 1) << 2); // rw-mask, x=r
-//            return rights * (1 << 6);
-//            
-//        } catch (Exception exc) {
-//            throw new MRCException(exc);
-//        }
-    }
-    
-    public void setPosixAccessRights(String volumeId, long fileId, String userId,
-        List<String> groupIds, long posixRights) throws MRCException {
-        // do nothing
-    }
-    
-    public void setACLEntries(String volumeId, long fileId, String userId, List<String> groupIDs,
-        Map<String, Object> entries) throws MRCException, UserException {
-        
-        // TODO
-        
-//        try {
-//            
-//            // set volume ACL initially
-//            StorageManager sMan = sliceMan.getSliceDB(volumeId, "/", 'w');
-//            ACLEntry[] acl = sMan.getVolumeACL();
-//            if (acl == null)
-//                sMan.setFileACL(1, entries);
-//            
-//        } catch (Exception exc) {
-//            throw new MRCException(exc);
-//        }
-    }
-    
-    public void removeACLEntries(String volumeId, long fileId, String userId,
-        List<String> groupIds, List<Object> entities) throws MRCException, UserException {
-        // do nothing
-    }
-    
-    private static long getRights(String userId, ACLEntry[] acl) {
-        
-        // do not permit anything by default
-        if (acl == null)
-            return 0;
-        
-        // find the ACL entry by means of a binary search
-        int low = 0;
-        int high = acl.length - 1;
-        
-        while (low <= high) {
+        try {
             
-            int mid = (low + high) >>> 1;
-            ACLEntry midEntry = acl[mid];
+            if (file == null)
+                return;
             
-            int cmp = midEntry.getEntity().compareTo(userId);
-            if (cmp < 0)
-                low = mid + 1;
-            else if (cmp > 0)
-                high = mid - 1;
-            else
-                return acl[mid].getRights();
+            ACLEntry entry = sMan.getACLEntry(1, userId);
+            if (entry == null)
+                entry = sMan.getACLEntry(1, DEFAULT_ENTRY_NAME);
+            
+            long rights = entry.getRights();
+            
+            if (accessMode.length() == 1) {
+                switch (accessMode.charAt(0)) {
+                case 'r':
+                    if ((rights & (1 << 0)) != 0)
+                        return;
+                    break;
+                case 'w':
+                    if ((rights & (1 << 1)) != 0)
+                        return;
+                    break;
+                case 'a':
+                    if ((rights & (1 << 2)) != 0)
+                        return;
+                    break;
+                case 'c':
+                    if ((rights & (1 << 4)) != 0)
+                        return;
+                    break;
+                case 't':
+                    if ((rights & (1 << 5)) != 0)
+                        return;
+                    break;
+                case 'd':
+                    if ((rights & (1 << 7)) != 0)
+                        return;
+                    break;
+                }
+            } else if (accessMode.length() == 2) {
+                if (accessMode.equals("ga") && (rights & (1 << 3)) != 0)
+                    return;
+                if (accessMode.equals("sr"))
+                    if ((rights & (1 << 6)) != 0)
+                        return;
+            }
+            
+        } catch (Exception exc) {
+            throw new MRCException(exc);
         }
         
-        if (userId.equals("default"))
-            return 0;
-        else
-            return getRights("default", acl);
+        throw new UserException(ErrNo.EACCES, "access denied, volumeId = " + sMan.getVolumeId()
+            + ", fileId = " + file.getId() + ", accessMode = \"" + accessMode + "\"");
+    }
+    
+    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+        List<String> groupIds) throws UserException, MRCException {
+        // checkPermission(sMan, 1, 0, userId, groupIds, AM_READ);
+    }
+    
+    public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
+        List<String> groupIds) throws UserException, MRCException {
+        
+        try {
+            
+            if (!sMan.getMetadata(0, sMan.getVolumeName()).getOwnerId().equals(userId))
+                throw new UserException(ErrNo.EPERM, "no privileged permissions granted");
+            
+        } catch (UserException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
+        List<String> groupIds) throws MRCException {
+        
+        try {
+            ACLEntry entry = sMan.getACLEntry(1, userId);
+            if (entry == null)
+                entry = sMan.getACLEntry(1, DEFAULT_ENTRY_NAME);
+            
+            // rw - mask, x = r
+            short rights = (short) (entry.getRights() & 3 | ((entry.getRights() & 1) << 2));
+            return (short) (rights * (1 << 6));
+            
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
+        throws MRCException {
+        
+        try {
+            sMan.setACLEntry(1, DEFAULT_ENTRY_NAME, posixAccessRights, update);
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
+        throws MRCException, UserException {
+        
+        try {
+            for (Entry<String, Object> entry : entries.entrySet())
+                sMan.setACLEntry(1, entry.getKey(), (Short) entry.getValue(), update);
+            
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
+        throws MRCException, UserException {
+        // do nothing
     }
     
 }

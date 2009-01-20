@@ -24,8 +24,6 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;

@@ -80,10 +80,10 @@ public interface StorageManager {
     
     // ACLs
     
-    public void setACLEntry(long fileId, String entity, Integer rights, AtomicDBUpdate update)
+    public void setACLEntry(long fileId, String entity, short rights, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public int getACLEntry(long fileId, String entity) throws DatabaseException;
+    public ACLEntry getACLEntry(long fileId, String entity) throws DatabaseException;
     
     public Iterator<ACLEntry> getACL(long fileId) throws DatabaseException;
     
@@ -102,6 +102,10 @@ public interface StorageManager {
     public long resolvePath(String path) throws DatabaseException;
     
     // getting metadata
+    
+    public String getVolumeId();
+    
+    public String getVolumeName();
     
     public Object[] getParentIdAndFileName(long fileId) throws DatabaseException;
     

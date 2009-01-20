@@ -24,17 +24,190 @@
 package org.xtreemfs.new_mrc.dbaccess;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.new_mrc.metadata.ACLEntry;
+import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
+import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.new_mrc.metadata.BufferBackedRCMetadata;
 import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
+import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.XAttr;
 
 public class BabuDBStorageHelper {
+    
+    static class ChildrenIterator implements Iterator<FileMetadata> {
+        
+        private Iterator<Entry<byte[], byte[]>> it;
+        
+        private Entry<byte[], byte[]>           next;
+        
+        private Map<Short, byte[][]>            keyMap;
+        
+        private Map<Short, byte[][]>            valMap;
+        
+        public ChildrenIterator(Iterator<Entry<byte[], byte[]>> it) {
+            this.it = it;
+            this.keyMap = new HashMap<Short, byte[][]>();
+            this.valMap = new HashMap<Short, byte[][]>();
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return next != null || !this.keyMap.isEmpty() ? true : it.hasNext();
+        }
+        
+        @Override
+        public FileMetadata next() {
+            
+            int prevHash = -1;
+            
+            if (keyMap.isEmpty())
+                while (it.hasNext()) {
+                    
+                    if (next == null)
+                        next = it.next();
+                    
+                    final int currFileNameHash = ByteBuffer.wrap(next.getKey(), 8, 4).getInt();
+                    if (prevHash != -1 && prevHash != currFileNameHash)
+                        break;
+                    
+                    final byte currType = next.getKey()[12];
+                    final short currCollNumber = next.getKey().length <= 13 ? 0 : ByteBuffer.wrap(
+                        next.getKey(), 13, 2).getShort();
+                    
+                    byte[][] keyBufs = keyMap.get(currCollNumber);
+                    byte[][] valBufs = valMap.get(currCollNumber);
+                    if (keyBufs == null) {
+                        
+                        keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
+                        keyMap.put(currCollNumber, keyBufs);
+                        
+                        valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
+                        valMap.put(currCollNumber, valBufs);
+                    }
+                    
+                    keyBufs[currType] = next.getKey();
+                    valBufs[currType] = next.getValue();
+                    next = null;
+                    
+                    prevHash = currFileNameHash;
+                }
+            
+            Short key = keyMap.entrySet().iterator().next().getKey();
+            byte[][] keyBufs = keyMap.remove(key);
+            byte[][] valBufs = valMap.remove(key);
+            
+            return new BufferBackedFileMetadata(keyBufs, valBufs);
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
+    }
+    
+    static class XAttrIterator implements Iterator<XAttr> {
+        
+        private Iterator<Entry<byte[], byte[]>> it;
+        
+        private String                          owner;
+        
+        private BufferBackedXAttr               next;
+        
+        public XAttrIterator(Iterator<Entry<byte[], byte[]>> it, String owner) {
+            this.it = it;
+            this.owner = owner;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            
+            if (owner == null)
+                return it.hasNext();
+            
+            if (next != null)
+                return true;
+            
+            if (!it.hasNext())
+                return false;
+            
+            while (it.hasNext()) {
+                
+                Entry<byte[], byte[]> tmp = it.next();
+                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
+                if (!owner.equals(next.getOwner()))
+                    continue;
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        @Override
+        public XAttr next() {
+            
+            if (next != null) {
+                XAttr tmp = next;
+                next = null;
+                return tmp;
+            }
+            
+            for (;;) {
+                
+                Entry<byte[], byte[]> tmp = it.next();
+                
+                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
+                if (owner != null && !owner.equals(next.getOwner()))
+                    continue;
+                
+                BufferBackedXAttr tmp2 = next;
+                next = null;
+                return tmp2;
+            }
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
+    }
+    
+    static class ACLIterator implements Iterator<ACLEntry> {
+        
+        private Iterator<Entry<byte[], byte[]>> it;
+        
+        public ACLIterator(Iterator<Entry<byte[], byte[]>> it) {
+            this.it = it;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return it.hasNext();
+        }
+        
+        @Override
+        public ACLEntry next() {
+            Entry<byte[], byte[]> entry = it.next();
+            return new BufferBackedACLEntry(entry.getKey(), entry.getValue());
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
+    }
     
     public static byte[] getLastAssignedFileId(BabuDB database, String dbName)
         throws BabuDBException {
@@ -107,7 +280,7 @@ public class BabuDBStorageHelper {
      */
     public static short findFileCollisionNumber(BabuDB database, String dbName, long parentId,
         String fileName) throws BabuDBException {
-       
+        
         // first, determine the collision number
         byte[] prefix = createFilePrefixKey(parentId, fileName, BufferBackedRCMetadata.TYPE_ID);
         Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
@@ -273,11 +446,21 @@ public class BabuDBStorageHelper {
         return prefix;
     }
     
-    public static byte[] createPrefix(long parentId) {
+    public static byte[] createFilePrefixKey(long parentId) {
         
         byte[] prefix = new byte[8];
         ByteBuffer buf = ByteBuffer.wrap(prefix);
         buf.putLong(parentId);
+        
+        return prefix;
+    }
+    
+    public static byte[] createACLPrefixKey(long fileId, String entityName) {
+        
+        byte[] entityBytes = entityName == null ? new byte[0] : entityName.getBytes();
+        byte[] prefix = new byte[8 + entityBytes.length];
+        ByteBuffer buf = ByteBuffer.wrap(prefix);
+        buf.putLong(fileId).put(entityBytes);
         
         return prefix;
     }

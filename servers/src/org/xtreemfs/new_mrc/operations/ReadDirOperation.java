@@ -87,8 +87,8 @@ public class ReadDirOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -96,9 +96,8 @@ public class ReadDirOperation extends MRCOperation {
             FileMetadata file = res.getFile();
             
             // check whether the directory grants read access
-            faMan.checkPermission(FileAccessManager.READ_ACCESS, volume.getId(), file.getId(), res
-                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.READ_ACCESS, sMan, file, res.getParentDirId(),
+                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = null;
             // if required, update POSIX timestamps

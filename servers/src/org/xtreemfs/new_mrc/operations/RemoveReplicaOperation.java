@@ -138,8 +138,8 @@ public class RemoveReplicaOperation extends MRCOperation {
             
             // check whether privileged permissions are granted for removing
             // replicas
-            faMan.checkPrivilegedPermissions(volumeId, file.getId(), rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             if (!file.isReadOnly())
                 throw new UserException(ErrNo.EPERM,

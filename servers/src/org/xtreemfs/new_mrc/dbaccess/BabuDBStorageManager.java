@@ -24,7 +24,7 @@
 package org.xtreemfs.new_mrc.dbaccess;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +37,9 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ACLIterator;
+import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ChildrenIterator;
+import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
@@ -53,146 +56,6 @@ import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.utils.Converter;
 
 public class BabuDBStorageManager implements StorageManager {
-    
-    static class ChildrenIterator implements Iterator<FileMetadata> {
-        
-        private Iterator<Entry<byte[], byte[]>> it;
-        
-        private Entry<byte[], byte[]>           next;
-        
-        private Map<Short, byte[][]>            keyMap;
-        
-        private Map<Short, byte[][]>            valMap;
-        
-        public ChildrenIterator(Iterator<Entry<byte[], byte[]>> it) {
-            this.it = it;
-            this.keyMap = new HashMap<Short, byte[][]>();
-            this.valMap = new HashMap<Short, byte[][]>();
-        }
-        
-        @Override
-        public boolean hasNext() {
-            return next != null || !this.keyMap.isEmpty() ? true : it.hasNext();
-        }
-        
-        @Override
-        public FileMetadata next() {
-            
-            int prevHash = -1;
-            
-            if (keyMap.isEmpty())
-                while (it.hasNext()) {
-                    
-                    if (next == null)
-                        next = it.next();
-                    
-                    final int currFileNameHash = ByteBuffer.wrap(next.getKey(), 8, 4).getInt();
-                    if (prevHash != -1 && prevHash != currFileNameHash)
-                        break;
-                    
-                    final byte currType = next.getKey()[12];
-                    final short currCollNumber = next.getKey().length <= 13 ? 0 : ByteBuffer.wrap(
-                        next.getKey(), 13, 2).getShort();
-                    
-                    byte[][] keyBufs = keyMap.get(currCollNumber);
-                    byte[][] valBufs = valMap.get(currCollNumber);
-                    if (keyBufs == null) {
-                        
-                        keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
-                        keyMap.put(currCollNumber, keyBufs);
-                        
-                        valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
-                        valMap.put(currCollNumber, valBufs);
-                    }
-                    
-                    keyBufs[currType] = next.getKey();
-                    valBufs[currType] = next.getValue();
-                    next = null;
-                    
-                    prevHash = currFileNameHash;
-                }
-            
-            Short key = keyMap.entrySet().iterator().next().getKey();
-            byte[][] keyBufs = keyMap.remove(key);
-            byte[][] valBufs = valMap.remove(key);
-            
-            return new BufferBackedFileMetadata(keyBufs, valBufs);
-        }
-        
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-    }
-    
-    static class XAttrIterator implements Iterator<XAttr> {
-        
-        private Iterator<Entry<byte[], byte[]>> it;
-        
-        private String                          owner;
-        
-        private BufferBackedXAttr               next;
-        
-        public XAttrIterator(Iterator<Entry<byte[], byte[]>> it, String owner) {
-            this.it = it;
-            this.owner = owner;
-        }
-        
-        @Override
-        public boolean hasNext() {
-            
-            if (owner == null)
-                return it.hasNext();
-            
-            if (next != null)
-                return true;
-            
-            if (!it.hasNext())
-                return false;
-            
-            while (it.hasNext()) {
-                
-                Entry<byte[], byte[]> tmp = it.next();
-                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
-                if (!owner.equals(next.getOwner()))
-                    continue;
-                
-                return true;
-            }
-            
-            return false;
-        }
-        
-        @Override
-        public XAttr next() {
-            
-            if (next != null) {
-                XAttr tmp = next;
-                next = null;
-                return tmp;
-            }
-            
-            for (;;) {
-                
-                Entry<byte[], byte[]> tmp = it.next();
-                
-                next = new BufferBackedXAttr(tmp.getKey(), tmp.getValue());
-                if (owner != null && !owner.equals(next.getOwner()))
-                    continue;
-                
-                BufferBackedXAttr tmp2 = next;
-                next = null;
-                return tmp2;
-            }
-        }
-        
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-    }
     
     public static final int     FILE_INDEX            = 0;
     
@@ -313,11 +176,14 @@ public class BabuDBStorageManager implements StorageManager {
                 parentId, fileName, userId, groupId, id, time, time, time, perms, collCount)
                 : new BufferBackedFileMetadata(parentId, fileName, userId, groupId, id, time, time,
                     time, 0L, perms, (short) 1, 0, 0, false, collCount);
+            
+            // update main metadata in the file index
             update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
                     .getFCMetadataValue());
             update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
                     .getRCMetadata().getValue());
             
+            // add an entry to the file ID index
             update.addUpdate(FILE_ID_INDEX, idBytes, BabuDBStorageHelper.createFileIdIndexValue(
                 parentId, fileName));
             
@@ -372,14 +238,33 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public Iterator<ACLEntry> getACL(long fileId) throws DatabaseException {
-        // TODO Auto-generated method stub
-        return null;
+        
+        try {
+            
+            byte[] prefix = BabuDBStorageHelper.createACLPrefixKey(fileId, null);
+            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, ACL_INDEX,
+                prefix);
+            
+            return new ACLIterator(it);
+            
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
-    public int getACLEntry(long fileId, String entity) throws DatabaseException {
-        // TODO Auto-generated method stub
-        return 0;
+    public ACLEntry getACLEntry(long fileId, String entity) throws DatabaseException {
+        
+        try {
+            
+            byte[] key = BabuDBStorageHelper.createACLPrefixKey(fileId, entity);
+            byte[] value = database.syncLookup(dbName, ACL_INDEX, key);
+            
+            return value == null ? null : new BufferBackedACLEntry(key, value);
+            
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
@@ -387,7 +272,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         try {
             
-            byte[] prefix = BabuDBStorageHelper.createPrefix(parentId);
+            byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId);
             Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
                 prefix);
             
@@ -419,6 +304,16 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public String getVolumeId() {
+        return this.dbName;
+    }
+    
+    @Override
+    public String getVolumeName() {
+        return this.volumeName;
+    }
+    
+    @Override
     public Object[] getParentIdAndFileName(long fileId) throws DatabaseException {
         
         try {
@@ -426,7 +321,8 @@ public class BabuDBStorageManager implements StorageManager {
             ByteBuffer.wrap(key).putLong(fileId);
             
             byte[] value = database.syncLookup(dbName, FILE_ID_INDEX, key);
-            assert (value != null);
+            if (value == null)
+                return null;
             
             ByteBuffer tmp = ByteBuffer.wrap(value);
             
@@ -577,10 +473,11 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setACLEntry(long fileId, String entity, Integer rights, AtomicDBUpdate update)
+    public void setACLEntry(long fileId, String entity, short rights, AtomicDBUpdate update)
         throws DatabaseException {
-        // TODO Auto-generated method stub
         
+        BufferBackedACLEntry entry = new BufferBackedACLEntry(fileId, entity, rights);
+        update.addUpdate(ACL_INDEX, entry.getKeyBuf(), entry.getValBuf());
     }
     
     @Override
@@ -631,6 +528,26 @@ public class BabuDBStorageManager implements StorageManager {
             return BabuDBStorageHelper.getId(database, dbName, parentId, comp);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
+        }
+    }
+    
+    private void dump() throws BabuDBException {
+        
+        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_ID_INDEX,
+            new byte[0]);
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> next = it.next();
+            System.out.println(Arrays.toString(next.getKey()) + " = "
+                + Arrays.toString(next.getValue()));
+        }
+        
+        System.out.println();
+        
+        it = database.syncPrefixLookup(dbName, FILE_INDEX, new byte[0]);
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> next = it.next();
+            System.out.println(Arrays.toString(next.getKey()) + " = "
+                + Arrays.toString(next.getValue()));
         }
     }
     

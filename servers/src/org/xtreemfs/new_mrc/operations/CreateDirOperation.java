@@ -93,12 +93,12 @@ public class CreateDirOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volume.getId(), res
-                    .getParentDirId(), 0, rq.getDetails().userId, rq.getDetails().superUser, rq
+            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
+                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
             // check whether the file/directory exists already
@@ -109,14 +109,14 @@ public class CreateDirOperation extends MRCOperation {
             
             // create the metadata object
             FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null,
-                rqArgs.mode, null, true, update);
+                    .getDetails().userId, rq.getDetails().groupIds.get(0), null, rqArgs.mode, null,
+                true, update);
             
             // create the user attributes
             for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
                 sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
                         .toString(), update);
-                        
+            
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
@@ -126,7 +126,7 @@ public class CreateDirOperation extends MRCOperation {
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             update.execute();
-                        
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
@@ -145,14 +145,15 @@ public class CreateDirOperation extends MRCOperation {
         try {
             
             args.filePath = (String) arguments.get(0);
+            args.mode = 511;
             if (arguments.size() == 1)
                 return null;
             
             args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(3)).shortValue();
+            args.mode = ((Long) arguments.get(2)).shortValue();
             if (arguments.size() == 3)
                 return null;
-                       
+            
             throw new Exception();
             
         } catch (Exception exc) {

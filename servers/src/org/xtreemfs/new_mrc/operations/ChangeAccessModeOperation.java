@@ -36,6 +36,7 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -45,19 +46,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CheckAccessOperation extends MRCOperation {
+public class ChangeAccessModeOperation extends MRCOperation {
     
     static class Args {
         
         public String path;
         
-        public String mode;
+        public short  mode;
         
     }
     
-    public static final String RPC_NAME = "checkAccess";
+    public static final String RPC_NAME = "changeAccessMode";
     
-    public CheckAccessOperation(MRCRequestDispatcher master) {
+    public ChangeAccessModeOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -94,21 +95,27 @@ public class CheckAccessOperation extends MRCOperation {
             // check whether file exists
             res.checkIfFileDoesNotExist();
             
-            // perform the access check
             FileMetadata file = res.getFile();
-            boolean success = false;
-            try {
-                for (int i = 0; i < rqArgs.mode.length(); i++)
-                    faMan.checkPermission(rqArgs.mode.substring(i, i + 1), sMan, file, res
-                            .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
-                        rq.getDetails().groupIds);
-                success = true;
-            } catch (UserException exc) {
-                // permission denied
-            }
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(success).getBytes()));
-            finishRequest(rq);
+            // check whether the access mode may be changed
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
+            
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            
+            // change the access mode
+            faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
+                    .getDetails().groupIds, rqArgs.mode, update);
+            
+            // update POSIX timestamps
+            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                update);
+            
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -128,7 +135,7 @@ public class CheckAccessOperation extends MRCOperation {
         try {
             
             args.path = (String) arguments.get(0);
-            args.mode = (String) arguments.get(1);
+            args.mode = ((Long) arguments.get(1)).shortValue();
             
             if (arguments.size() == 2)
                 return null;

@@ -38,6 +38,8 @@ import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**
@@ -74,10 +76,14 @@ public class DeleteVolumeOperation extends MRCOperation {
             final Args rqArgs = (Args) rq.getRequestArgs();
             
             final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.volumeName);
+            final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
+            
+            // get the volume's root directory
+            FileMetadata file = sMan.getMetadata(0, volume.getName());
             
             // check whether privileged permissions are granted for deleting the
             // volume
-            master.getFileAccessManager().checkPrivilegedPermissions(volume.getId(), 1,
+            master.getFileAccessManager().checkPrivilegedPermissions(sMan, file,
                 rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // deregister the volume from the Directory Service

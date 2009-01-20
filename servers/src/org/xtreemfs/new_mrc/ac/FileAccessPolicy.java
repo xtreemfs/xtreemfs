@@ -29,6 +29,9 @@ import java.util.Map;
 
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.FileMetadata;
 
 /**
  * An interface for a policy defining file access.
@@ -52,14 +55,14 @@ public interface FileAccessPolicy {
      * Checks whether the user with the given ID is allowed to perform
      * operations for the given file with the given access mode.
      * 
-     * @param volumeId
-     *            the volume ID of the file
-     * @param fileId
-     *            the file ID
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
      * @param parentId
-     *            the ID of the file's parent - note that '0' is provided unless
-     *            the check refers to an entity being added, deleted or moved in
-     *            a directory
+     *            the file's parent ID - note that 0 is provided unless the
+     *            check refers to an entity being added, deleted or moved in a
+     *            directory
      * @param userId
      *            the user ID
      * @param groupIds
@@ -72,8 +75,8 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs while trying to get permissions
      */
-    public void checkPermission(String volumeId, long fileId, long parentId, String userId,
-        List<String> groupIds, String accessMode) throws UserException, MRCException;
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, String accessMode) throws UserException, MRCException;
     
     /**
      * Checks whether search permission is granted on the given path. The method
@@ -87,8 +90,8 @@ public interface FileAccessPolicy {
      * method instead of using <code>checkPermission()</code> when checking
      * search access on directories.
      * 
-     * @param volumeId
-     *            the volume ID of the directory
+     * @param sMan
+     *            the volume's Storage Manager
      * @param path
      *            the full path to the file or directory
      * @param userId
@@ -100,19 +103,20 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs at the backend
      */
-    public void checkSearchPermission(String volumeId, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) throws UserException, MRCException;
     
     /**
      * Checks whether permission is granted to change the owner of the file with
      * the given ID.
      * 
-     * @param volumeId
-     *            the volume ID of the file
-     * @param fileId
-     *            the file ID in the volume
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file in the volume
      * @param userId
-     *            the user ID
+     *            the ID of the user on behalf of whom the access check is
+     *            performed
      * @param groupIds
      *            a list of group IDs
      * @throws UserException
@@ -120,33 +124,8 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs at the backend
      */
-    public void checkPrivilegedPermissions(String volumeId, long fileId, String userId,
+    public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws UserException, MRCException;
-    
-    /**
-     * Returns the POSIX access mode that should be assigned to a newly-created volume.
-     * 
-     * @param volumeId
-     *            the volume ID
-     * @return a short value representing the POSIX access mode
-     * @throws MRCException
-     *             if an error occurs while determining the default volume rights
-     */
-    public short getDefaultVolumeRights(String volumeId) throws MRCException;
-    
-    /**
-     * Returns the access control list that is automatically assigned to a newly
-     * created child.
-     * 
-     * The framework will invoke this method when a new file or directory is
-     * created.
-     * 
-     * @param mode
-     *            the access mode from which the initial ACL is calculated
-     * @throws MRCException
-     *             if an error occurs at the backend
-     */
-    public Map<String, Object> convertToACL(long mode) throws MRCException;
     
     /**
      * Returns a POSIX access mode bit mask for the given file and user in the
@@ -155,10 +134,10 @@ public interface FileAccessPolicy {
      * same for the group, and the last three bits for the rest of the world.
      * Any other bits may be used in a policy-specific manner.
      * 
-     * @param volumeId
-     *            the volume ID of the file
-     * @param fileId
-     *            the file ID in the volume
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
      * @param userId
      *            the user ID
      * @param groupIds
@@ -167,37 +146,44 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs when trying to tranlate access rights
      */
-    public long getPosixAccessRights(String volumeId, long fileId, String userId,
+    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException;
     
     /**
      * Modifies the file ACL by means of a POSIX access mode bit mask.
      * 
-     * @param volumeId
-     *            the volume ID
-     * @param fileId
-     *            the file ID
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
+     * @param parentId
+     *            the file's parent ID
      * @param userId
      *            the user ID
      * @param groupIds
      *            a list of group IDs
-     * @param posixRights
+     * @param posixAccessRights
      *            a long value describing the POSIX access rights
+     * @param update
+     *            the database update
      * @throws MRCException
      *             if an error occurs when trying to tranlate access rights
      * @throws UserException
      *             if access is denied
      */
-    public void setPosixAccessRights(String volumeId, long fileId, String userId,
-        List<String> groupIds, long posixRights) throws MRCException, UserException;
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
+        throws MRCException, UserException;
     
     /**
      * Creates or changes a set of entries the current ACL of a file.
      * 
-     * @param volumeId
-     *            the volume ID
-     * @param fileId
-     *            the file ID
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
+     * @param parentId
+     *            the file's parent ID
      * @param userId
      *            the user ID
      * @param groupIds
@@ -205,33 +191,41 @@ public interface FileAccessPolicy {
      * @param entries
      *            a mapping from entity names (ac entities) to long values
      *            (rights masks) representing the ACL entries to add/modify
+     * @param update
+     *            the database update
      * @throws MRCException
      *             if an error occurs when trying to change the ACL
      * @throws UserException
      *             if access is denied
      */
-    public void setACLEntries(String volumeId, long fileId, String userId, List<String> groupIds,
-        Map<String, Object> entries) throws MRCException, UserException;
+    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
+        throws MRCException, UserException;
     
     /**
      * Creates or changes an entry in the current ACL of a file.
      * 
-     * @param volumeId
-     *            the volume ID
-     * @param fileId
-     *            the file ID
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
+     * @param parentId
+     *            the file's parent ID
      * @param userId
      *            the user ID
      * @param groupIds
      *            a list of group IDs
      * @param entities
      *            a list of access control entity names to delete from the ACL
+     * @param update
+     *            the database update
      * @throws MRCException
      *             if an error occurs when trying to change the ACL
      * @throws UserException
      *             if access is denied
      */
-    public void removeACLEntries(String volumeId, long fileId, String userId,
-        List<String> groupIds, List<Object> entities) throws MRCException, UserException;
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
+        throws MRCException, UserException;
     
 }

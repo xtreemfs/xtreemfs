@@ -91,8 +91,8 @@ public class SetXAttrsOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(volume.getId(), res.getPathPrefix(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -113,10 +113,8 @@ public class SetXAttrsOperation extends MRCOperation {
                     
                     // check whether the user has privileged permissions to set
                     // system attributes
-                    faMan
-                            .checkPrivilegedPermissions(volume.getId(), file.getId(), rq
-                                    .getDetails().userId, rq.getDetails().superUser, rq
-                                    .getDetails().groupIds);
+                    faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq
+                            .getDetails().superUser, rq.getDetails().groupIds);
                     
                     MRCOpHelper.setSysAttrValue(sMan, vMan, volume, res.getParentDirId(), file,
                         attrKey.substring(9), attrVal.toString(), update);
