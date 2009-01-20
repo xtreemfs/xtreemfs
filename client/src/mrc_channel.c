@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -123,9 +123,9 @@ DECL_MRCC_FUNC(renew);
 
 struct MRCC_exec_map MRCC_exec_map[] = {
 	EXEC_MAP_ENTRY(COM_UNDEFINED,       "undefined",          NULL),
-	
+
 	EXEC_MAP_ENTRY(COM_INIT_FS,         "initFileSystem",     MRCC_initFS),
-	
+
 	EXEC_MAP_ENTRY(COM_CREATE_VOLUME,		"createVolume",       MRCC_createVol),
 	EXEC_MAP_ENTRY(COM_VOLUME_INFO,			"volumeInfo",         NULL),
 	EXEC_MAP_ENTRY(COM_DELETE_VOLUME,		"deleteVolume",       MRCC_deleteVol),
@@ -159,14 +159,14 @@ struct MRCC_exec_map MRCC_exec_map[] = {
 	EXEC_MAP_ENTRY(COM_RENEW,				"renew",              MRCC_renew),
 };
 
-	
+
 struct MRC_Channel_header *
 MRC_Channel_header_new(char *key, char *value)
 {
 	struct MRC_Channel_header *rv = NULL;
-	
+
 	dbg_msg("Creating header for %s -> %s\n", key, value);
-	
+
 	rv = (struct MRC_Channel_header *)
 		malloc(sizeof(struct MRC_Channel_header));
 	if (rv) {
@@ -341,7 +341,7 @@ MRC_Channel_translate_errors(struct MRC_Channel *mc, char *errMsg)
 	int rv = -1;
 	char *errnum = NULL, *p = NULL;
 	char *endpt = NULL;
-	
+
 	/* Firstly, we try to identify 'errno' */
 	errnum = strstr(errMsg, "errno");
 	if (errnum) {
@@ -359,8 +359,8 @@ MRC_Channel_translate_errors(struct MRC_Channel *mc, char *errMsg)
 				rv = -1;
 		}
 	}
-	
-	
+
+
 	if (rv == -1) {
 		dbg_msg("Need to test other method of determining the error reason.\n");
 	}
@@ -370,7 +370,7 @@ MRC_Channel_translate_errors(struct MRC_Channel *mc, char *errMsg)
 /**
  * Test for an MRC exception.
  *
- * This function tests if there is an (handled) MRC exception. 
+ * This function tests if there is an (handled) MRC exception.
  * It assumes that if there is an exception it is JSON format,
  * so it is better called after 'MRC_Channel_test_java_exception'
  */
@@ -586,7 +586,7 @@ MRC_Channel_analyse_p_response(struct MRC_Channel *mc, struct MRC_payload *p)
 			resp->xloc = NULL;
 			resp->xcap = NULL;
 		}
-	}	
+	}
 		break;
 
 	case COM_OPEN: {
@@ -602,7 +602,7 @@ MRC_Channel_analyse_p_response(struct MRC_Channel *mc, struct MRC_payload *p)
 			rv = -EACCES;
 			break;
 		}
-		
+
 		resp->xloc = xlocs;
 		resp->xcap = xcaps;
 		xlocs = NULL;
@@ -663,7 +663,7 @@ MRC_Channel_analyse_p_response(struct MRC_Channel *mc, struct MRC_payload *p)
 
 	case COM_READ_DIR: {
 		struct MRC_Req_readDir_resp *resp = p->resp.readdir;
-		/* Body of reply should contain a JSON encoded list 
+		/* Body of reply should contain a JSON encoded list
 		   of directory entries. Request reply data contain
 		   an empty list_head */
 		jo = json_tokener_parse(mc->resp_buf->data);
@@ -671,7 +671,7 @@ MRC_Channel_analyse_p_response(struct MRC_Channel *mc, struct MRC_payload *p)
 		    json_object_get_type(jo) == json_type_array) {
 			int len = json_object_array_length(jo);
 			struct json_object *dir_str;
-			
+
 			resp->num_entries = len;
 				resp->dir_entries = (char **)malloc(sizeof(char *) * len);
 				for (i = 0; i < len; i++) {
@@ -688,7 +688,7 @@ MRC_Channel_analyse_p_response(struct MRC_Channel *mc, struct MRC_payload *p)
 
 	case COM_READ_DIR_AND_STAT: {
 		struct MRC_Req_readDirAndStat_resp *resp = p->resp.readdirandstat;
-		/* Body of reply should contain a JSON map/object 
+		/* Body of reply should contain a JSON map/object
 		   of directory entries to stat info */
 		jo = json_tokener_parse(mc->resp_buf->data);
 		if (!is_error(jo) &&
@@ -829,7 +829,7 @@ static ne_request *MRCC_prepare(struct MRC_Channel *mc, struct MRC_payload *p)
 static int MRCC_http_accept(void *userdata, ne_request *req, const ne_status *st)
 {
 	int acc = 0;
-	
+
 	if (st->klass == 2) {
 		acc = 1;
 		dbg_msg("Accept 200 class\n");
@@ -856,7 +856,7 @@ static int MRCC_http_accept(void *userdata, ne_request *req, const ne_status *st
 finish:
 	return acc;
 }
-	
+
 static int MRCC_run(struct MRC_Channel *mc, ne_request *ne_req,
 		    struct json_object *req_params)
 {
@@ -892,11 +892,11 @@ static int MRCC_run(struct MRC_Channel *mc, ne_request *ne_req,
 		err_msg("Error while dispatching request %p (%d)\n",
 			ne_req, err);
 		err_msg("Error was: %s\n", ne_get_error(mc->channel_session));
-
+		/* TODO: is this error passed back? */
 		goto finish;
 	}
 	dbg_msg("Request dispatched successfully.\n");
-	
+
 	/* Store headers in a linked list for later use in the
 	   different analysis phases.                           */
 	MRC_Channel_get_headers(mc, ne_req);
@@ -968,8 +968,8 @@ static int MRCC_updateFileSize(struct MRC_Channel *mc, struct MRC_payload *p)
 		err = -ENOMEM;
 		goto out;
 	}
-	ne_add_request_header(ne_req, "X-Capability", xc->repr);	
-	
+	ne_add_request_header(ne_req, "X-Capability", xc->repr);
+
 	if (newsize >= 0) {
 		sprintf(newsize_str, "[%lld,%d]", newsize, epoch);
 		ne_add_request_header(ne_req, "X-New-File-Size", newsize_str);
@@ -1181,7 +1181,7 @@ static int MRCC_renew(struct MRC_Channel *mc, struct MRC_payload *p)
 	xc = rd->xcap;
 	newsize = rd->new_size;
 	epoch   = rd->epoch;
-	
+
 	ne_req = MRCC_prepare(mc, p);
 	if (!ne_req) {
 		err = -ENOMEM;
@@ -1190,7 +1190,7 @@ static int MRCC_renew(struct MRC_Channel *mc, struct MRC_payload *p)
 	/* req_params = json_object_new_array(); */
 
 	ne_add_request_header(ne_req, "X-Capability", xc->repr);
-	
+
 	if (newsize >= 0) {
 		sprintf(newsize_str, "[%lld,%d]", newsize, epoch);
 		ne_add_request_header(ne_req, "X-New-File-Size", newsize_str);
@@ -1198,7 +1198,7 @@ static int MRCC_renew(struct MRC_Channel *mc, struct MRC_payload *p)
 	} else {
 		dbg_msg("No new size specified!\n");
 	}
-	
+
 	err = MRCC_run(mc, ne_req, req_params);
 	if (err)
 		err = -EIO;
@@ -1227,7 +1227,7 @@ static int MRCC_move(struct MRC_Channel *mc, struct MRC_payload *p)
 			      json_object_new_string(data->from));
 	json_object_array_add(req_params,
 			      json_object_new_string(data->to));
-		
+
 	err = MRCC_run(mc, ne_req, req_params);
  out:
 	return err;
@@ -1340,25 +1340,25 @@ static int MRCC_addReplica(struct MRC_Channel *mc, struct MRC_payload *p)
 	int num_osds = p->data.add_replica.num_osds;
 	char **osds = p->data.add_replica.osds;
 	int i;
-	
+
 	ne_req = MRCC_prepare(mc, p);
 	if (!ne_req) {
 		err = -ENOMEM;
 		goto out;
 	}
-	
+
 	req_params = json_object_new_array();
 	json_object_array_add(req_params, json_object_new_string(fileid));
 	json_object_array_add(req_params, striping_policy_to_json(sp));
-	
+
 	osd_array = json_object_new_array();
 	for(i=0; i<num_osds; i++) {
 		json_object_array_add(osd_array, json_object_new_string(osds[i]));
 	}
 	json_object_array_add(req_params, osd_array);
-	
+
 	err = MRCC_run(mc, ne_req, req_params);
-	
+
 out:
 	return err;
 }
@@ -1370,19 +1370,19 @@ static int MRCC_changeAccessMode(struct MRC_Channel *mc, struct MRC_payload *p)
 	struct json_object *req_params;
 	char *path = p->data.chg_accmode.path;
 	int mode   = p->data.chg_accmode.mode;
-	
+
 	ne_req = MRCC_prepare(mc, p);
 	if (!ne_req) {
 		err = -ENOMEM;
 		goto out;
 	}
-	
+
 	req_params = json_object_new_array();
 	json_object_array_add(req_params, json_object_new_string(path));
 	json_object_array_add(req_params, json_object_new_int(mode));
-	
+
 	err = MRCC_run(mc, ne_req, req_params);
-	
+
 out:
 	return err;
 }
@@ -1445,14 +1445,14 @@ out:
 static int MRCC_setACLEntries(struct MRC_Channel *mc, struct MRC_payload *p)
 {
 	int err = 0;
-	
+
 	return err;
 }
 
 static int MRCC_remACLEntries(struct MRC_Channel *mc, struct MRC_payload *p)
 {
 	int err = 0;
-	
+
 	return err;
 }
 
@@ -1555,7 +1555,7 @@ int MRC_Channel_exec_p(struct MRC_Channel *mc, struct MRC_payload *p,
 	dbg_msg("\n******\n** EXECUTING %s req:%p fid:%s\n******\n",
 		MRCC_exec_map[p->command].fname, req,
 		p->uf ? p->uf->file->fileid_s->fileid : NULL);
-	
+
 	func = MRCC_exec_map[p->command].func;
 	if (func) {
 		err = func(mc, p);

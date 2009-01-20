@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -25,7 +25,7 @@
 /*
 *  C Implementation: osd_channel
 *
-* Description: 
+* Description:
 *
 *
 * Author: Matthias Hess <mhess at hpce dot nec dot de>, (C) 2007
@@ -68,13 +68,13 @@ int
 OSD_Channel_resp_init(struct OSD_Channel_resp *ocr)
 {
 	int rv = 0;
-	
+
 	ocr->location = NULL;
 	ocr->new_size = -1;
 	ocr->length   = -1;
 	ocr->req_id   = NULL;
 	ocr->err      = 0;
-	
+
 	return rv;
 }
 
@@ -92,7 +92,7 @@ OSD_Channel_http_accept(void *userdata, ne_request *req, const ne_status *st)
 	struct OSD_Channel *oc = (struct OSD_Channel *)userdata;
 
 	oc->err = OSC_ERR_NO_ERROR;
-	
+
 	if (st->klass == 2) {
 		dbg_msg("Accept 200 class\n");
 		switch (st->code) {
@@ -143,13 +143,13 @@ struct OSD_Channel *
 OSD_Channel_new(char *osd_id, struct dirservice *ds)
 {
 	struct OSD_Channel *rv = NULL;
-	
+
 	rv = (struct OSD_Channel *)malloc(sizeof(struct OSD_Channel));
 	if(rv && OSD_Channel_init(rv, osd_id, ds)) {
 		OSD_Channel_delete(rv);
 		rv = NULL;
 	}
-	
+
 	return rv;
 }
 
@@ -157,7 +157,7 @@ int
 OSD_Channel_init(struct OSD_Channel *oc, char *osd_id, struct dirservice *ds)
 {
 	int rv = 0;
-	
+
 	memset((void *)oc, 0, sizeof(*oc));
 	oc->resp_buf = NULL;
 	oc->channel_session = NULL;
@@ -175,9 +175,12 @@ OSD_Channel_init(struct OSD_Channel *oc, char *osd_id, struct dirservice *ds)
 		goto finish;
 	}
 
-	if(oc->osd_uri.scheme == NULL) oc->osd_uri.scheme = strdup("http");
-	if(oc->osd_uri.port   == 0)    oc->osd_uri.port   = OSD_DEFAULT_PORT;
-	if(oc->osd_uri.path   == NULL) oc->osd_uri.path   = strdup("/");
+	if(oc->osd_uri.scheme == NULL)
+		oc->osd_uri.scheme = strdup("http");
+	if(oc->osd_uri.port   == 0)
+		oc->osd_uri.port   = OSD_DEFAULT_PORT;
+	if(oc->osd_uri.path   == NULL)
+		oc->osd_uri.path   = strdup("/");
 
 	oc->channel_session = ne_session_create(oc->osd_uri.scheme, oc->osd_uri.host, oc->osd_uri.port);
 	if(oc->channel_session == NULL) {
@@ -231,8 +234,10 @@ void
 OSD_Channel_delete_contents(struct OSD_Channel *oc)
 {
 	ne_uri_free(&oc->osd_uri);
-	if (oc->resp_buf) ne_buffer_destroy(oc->resp_buf);
-	if (oc->channel_session) ne_session_destroy(oc->channel_session);
+	if (oc->resp_buf)
+		ne_buffer_destroy(oc->resp_buf);
+	if (oc->channel_session)
+		ne_session_destroy(oc->channel_session);
 }
 
 void
@@ -241,7 +246,7 @@ OSD_Channel_delete(struct OSD_Channel *oc)
 	OSD_Channel_delete_contents(oc);
 	pthread_cond_destroy(&oc->wait_cond);
 	spin_destroy(&oc->lock);
-	pthread_mutex_destroy(&oc->wait_mutex);	
+	pthread_mutex_destroy(&oc->wait_mutex);
 	free(oc);
 }
 
@@ -250,7 +255,7 @@ int
 OSD_Channel_restart(struct OSD_Channel *oc)
 {
 	int rv = 0;
-	
+
 	if(oc->channel_session != NULL) {
 		ne_session_destroy(oc->channel_session);
 		oc->channel_session = ne_session_create(oc->osd_uri.scheme,
@@ -259,7 +264,7 @@ OSD_Channel_restart(struct OSD_Channel *oc)
 		if (!oc->channel_session)
 			rv = 1;
 	}
-	
+
 	return rv;
 }
 
@@ -289,7 +294,7 @@ OSD_Channel_req_resp_reader(void *userdata, const char *buf, size_t len)
 		dbg_msg("Request has finished\n");
 		// pthread_cond_broadcast(&oc->wait_cond);
 	}
-	
+
 	return NE_OK;
 }
 
@@ -306,7 +311,7 @@ OSD_Channel_analyse_req_response(struct OSD_Channel *oc, ne_request *req,
 
 	resp->new_size = -1;
 	resp->epoch = -1;
-	
+
 	while((ne_cursor = ne_response_header_iterate(req, ne_cursor,
 						     (const char **)&header_name,
 						     (const char **)&header_value))) {
@@ -330,7 +335,7 @@ OSD_Channel_analyse_req_response(struct OSD_Channel *oc, ne_request *req,
 			resp->new_size = (off_t)json_object_get_int(size_obj);
 			resp->epoch    = json_object_get_int(epoch_obj);
 			json_object_put(renew_obj);
-				
+
 			dbg_msg("New size: %lld\n", resp->new_size);
 			dbg_msg("Epoch:    %d\n", resp->epoch);
 		} else if(!strcasecmp(header_name, "location")) {
@@ -384,7 +389,7 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 	dbg_msg("Operation %d for file id '%s'\n", command, fileid);
 	dbg_msg("First byte %lld and last byte %lld\n", firstByte, lastByte);
 
-	
+
 	switch(command) {
 	case OSD_GET:
 		req = ne_request_create(oc->channel_session, "GET", fileid);
@@ -393,23 +398,23 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 		oc->user_buf_size = lastByte - firstByte + 1;
 		oc->use_buf = 1;
 		break;
-	
+
 	case OSD_PUT:
 		req = ne_request_create(oc->channel_session, "PUT", fileid);
 		if (!req)
 			break;
 		/* Set the data, if we have any */
-		if(buf != NULL && lastByte - firstByte >= 0) 
+		if(buf != NULL && lastByte - firstByte >= 0)
 			ne_set_request_body_buffer(req, buf, lastByte - firstByte + 1);
 		oc->use_buf = 0;
 		break;
-	
+
 	case OSD_DELETE:
 		err_msg("Delete is now done in a different place!\n");
 		/* req = ne_request_create(oc->channel_session, "DELETE", fileid); */
 		/* ne_add_request_header(req, "X-Locations", oc->xlocs); */
 		break;
-	
+
 	case OSD_TRUNCATE:
 		err_msg("Truncate is not handled by '%s'.\n", __FUNCTION__);
 		break;
@@ -417,29 +422,29 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 	default:
 		break;
 	}
-	
+
 	if(req == NULL) {
-		rv = 1; 
+		rv = 1;
 		goto finish;
 	}
-	
+
 	/* Set HTTP request headers */
 	/* \todo remove snprintf for performance reasons */
-	
+
 	if(command == OSD_PUT || command == OSD_GET) {
 		snprintf(int_num_str, 22, "%d", obj_num);
 		ne_add_request_header(req, "X-Object-Number", int_num_str);
 		dbg_msg("X-Object-Number: %s\n", int_num_str);
-	
+
 		snprintf(byte_range_str, 128, "bytes %lld-%lld/*", firstByte, lastByte);
 		ne_add_request_header(req, "Content-Range", byte_range_str);
 		dbg_msg("Content-Range: %s\n", byte_range_str);
-	
+
 #if 0
 		snprintf(int_num_str, 22, "%ld", firstByte);
 		ne_add_request_header(req, "firstByte", int_num_str);
 		dbg_msg("firstByte: %s\n", int_num_str);
-	
+
 		snprintf(int_num_str, 22, "%ld", lastByte);
 		ne_add_request_header(req, "lastByte", int_num_str);
 		dbg_msg("lastByte: %s\n", int_num_str);
@@ -475,7 +480,9 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 		err_msg("Error %d while dispatching the request.\n", ne_err);
 		status = ne_get_status(req);
 		err_msg("Reason: %s\n", ne_get_error(oc->channel_session));
+		/* TODO: produce meaningful return code, and eventually retry ... */
 		rv = 2;
+		resp->err = -ENODEV;
 		goto finish;
 	}
 #endif
@@ -495,7 +502,7 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 	/* Check if we have to copy response data */
 	/*!< \todo give the request the location of the data s.t. they are
 	   written immediately to the right place, without copying! */
-	
+
 	if(command == OSD_GET) {
 		if(buf != NULL && oc->use_buf == 0) {
 			size_t copy_size = lastByte - firstByte + 1;
@@ -506,7 +513,7 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 #endif
 		}
 	}
-	
+
 finish:
 	ne_request_destroy(req);
 #ifdef ITAC
@@ -523,7 +530,7 @@ ne_request *OSD_Channel_neon_req(struct OSD_Channel *oc,
 {
 	ne_request *rv = NULL;
 	struct json_object *jo, *json_xlocs;
-	
+
 	switch(func) {
 		case OSD_DELETE:
 			rv = ne_request_create(oc->channel_session, "DELETE", fileid);
@@ -534,12 +541,12 @@ ne_request *OSD_Channel_neon_req(struct OSD_Channel *oc,
 		default:
 		break;
 	}
-	
+
 	if (!rv)
 		goto finish;
 
 	/* Set HTTP request headers */
-	
+
 	json_xlocs = xlocs_list_to_json(xlocs_list);
 	ne_add_request_header(rv, "X-Locations",
 			      json_object_to_json_string(json_xlocs));
@@ -557,7 +564,7 @@ ne_request *OSD_Channel_neon_req(struct OSD_Channel *oc,
 
 	/* Clear response buffer */
 	ne_buffer_clear(oc->resp_buf);
-	
+
 finish:
 	return rv;
 }
@@ -575,6 +582,8 @@ int OSD_Channel_submit_req(struct OSD_Channel *oc,
 		err_msg("Error %d while dispatching the request.\n", ne_err);
 		status = ne_get_status(req);
 		err_msg("Reason: %s\n", ne_get_error(oc->channel_session));
+		/* TODO: produce meaningful return code, and eventually retry ... */
+		resp->err = -ENODEV;
 		err = 2;
 		goto finish;
 	}
@@ -602,18 +611,18 @@ OSD_Channel_del(struct OSD_Channel *oc,
 	ne_request *req;
 	/* ne_status *status; */
 	/* int ne_err; */
-	
+
 	dbg_msg("Operation DELETE for file id '%s'\n", fileid);
-	
+
 #if 0
 	req = ne_request_create(oc->channel_session, "DELETE", fileid);
 	if(req == NULL) {
-		rv = 1; 
+		rv = 1;
 		goto finish;
 	}
-	
+
 	/* Set HTTP request headers */
-	
+
 	json_xlocs = xlocs_list_to_json(xlocs_list);
 	ne_add_request_header(req, "X-Locations",
 			      json_object_to_json_string(json_xlocs));
@@ -670,7 +679,7 @@ OSD_Channel_get(struct OSD_Channel *oc, char *req_id, struct user_file *uf,
 
 #ifdef ITAC
 	VT_begin(itac_osd_get_hdl);
-#endif	
+#endif
 	rv = OSD_Channel_exec(oc, OSD_GET, req_id, uf,
 			      obj_num, firstByte, lastByte, buf, resp);
 
@@ -709,19 +718,19 @@ OSD_Channel_trunc(struct OSD_Channel *oc,
 	ne_request *req;
 	struct json_object *jo = NULL;
 	char *req_params_str = NULL;
-	
+
 	req = OSD_Channel_neon_req(oc, OSD_TRUNCATE, fileid, xlocs_list, xcap);
 	if (!req) {
 		err_msg("Cannot create neon request!\n");
 		err = -ENOMEM;
 		goto finish;
 	}
-	
+
 	/* Add new file size to request */
 	jo = json_object_new_array();
 	json_object_array_add(jo, json_object_new_string(fileid));
 	json_object_array_add(jo, json_object_new_int(new_size));
-	
+
 	req_params_str = strdup(json_object_to_json_string(jo));
 	json_object_put(jo);
 	dbg_msg("JSON parameter string: %s\n", req_params_str);
@@ -748,6 +757,6 @@ int
 OSD_Channel_heartbeat(struct OSD_Channel *oc, struct user_file *uf)
 {
 	int rv = 0;
-	
+
 	return rv;
 }
