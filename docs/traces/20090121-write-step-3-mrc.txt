@@ -1,0 +1,49 @@
+# maybe another FUSE artifact...
+POST checkAccess HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+Content-Length: 29
+
+[ "xtreemfs\/xtreemos", "r" ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 4
+
+true
+
+# I think this call isn't needed either
+POST stat HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+Content-Length: 55
+
+[ "xtreemfs\/xtreemos\/file.txt", false, false, false ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 206
+
+{"fileId":"0004760EDB989891BD4774E2:400964","posixAccessMode":420,"groupId":"users","atime":1232531519,"objType":1,"ownerId":"stender","linkCount":1,"epoch":0,"mtime":1232531519,"ctime":1232531519,"size":0}
+
+# The reason for this call is to update the file size in the MRC, because the
+# MRC has to report the new file size w/ the next 'stat'. However, 'renew' is
+# the wrong call for this - actually, it should be 'updateFileSize'. 'renew'
+# should actually be only used for renewing, i.e. extending the validity of
+# capabilities before they time out - for the sake of simplicity, we formerly
+# used 'renew' also to update file sizes.
+POST renew HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+X-Capability: [ "0004760EDB989891BD4774E2:400964", "w", 1232532119, "*", 0, "583B0B599F428FAC3CE4FC01741B0088" ]
+X-New-File-Size: [5,0]
+Content-Length: 3
+
+[ ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 4
+X-Capability: ["0004760EDB989891BD4774E2:400964","w",1232532119,"*",0,"583B0B599F428FAC3CE4FC01741B0088"]
+
+null

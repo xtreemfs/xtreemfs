@@ -1,0 +1,21 @@
+# write the file content at the OSD
+# the capability + X-Locations list obtained from the 'create' call at the MRC
+# are attached
+# the response header contains the new file size ([size, epoch]), which has to
+# be reported to the MRC afterwards
+PUT 0004760EDB989891BD4774E2:400964 HTTP/1.1
+Host: xtreemfs2.zib.de:32641
+Connection: TE
+TE: trailers
+Content-Length: 5
+X-Object-Number: 0
+Content-Range: bytes 0-4/*
+X-Locations: [ [ [ { "width": 2, "policy": "RAID0", "stripe-size": 512 }, [ "http:\/\/xtreemfs2.zib.de:32641", "http:\/\/01.xtreemfs.com:32641" ] ] ], 1 ]
+X-Capability: [ "0004760EDB989891BD4774E2:400964", "w", 1232532119, "*", 0, "583B0B599F428FAC3CE4FC01741B0088" ]
+
+test
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 0
+X-New-File-Size: [5,0]
+
