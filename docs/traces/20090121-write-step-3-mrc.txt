@@ -1,6 +1,6 @@
 # maybe another FUSE artifact...
 POST checkAccess HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -14,7 +14,7 @@ true
 
 # I think this call isn't needed either
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -33,7 +33,7 @@ Content-Length: 206
 # capabilities before they time out - for the sake of simplicity, we formerly
 # used 'renew' also to update file sizes.
 POST renew HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }

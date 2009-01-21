@@ -4,7 +4,7 @@
 # also contains 'stat' information for each file. Stat information would
 # then have to be cached for some time, though.
 POST readDir HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -20,7 +20,7 @@ Content-Length: 62
 # of these calls, but it seems that the client sends them out via multiple TCP
 # connections, so they are in different TCP streams
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }

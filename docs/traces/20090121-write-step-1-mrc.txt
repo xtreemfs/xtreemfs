@@ -1,7 +1,7 @@
 # first call: check whether the directory is there
 
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -24,7 +24,7 @@ Content-Length: 202
 # implementation coming soon, but the current client implementation
 # crashes if there is no HTTP response body.
 POST createFile HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -34,13 +34,13 @@ Content-Length: 57
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 4
 X-Capability: ["0004760EDB989891BD4774E2:400964","w",1232532119,"*",0,"583B0B599F428FAC3CE4FC01741B0088"]
-X-Locations: [[[{"width":2,"policy":"RAID0","stripe-size":512},["http:\/\/xtreemfs2.zib.de:32641","http:\/\/01.xtreemfs.com:32641"]]],1]
+X-Locations: [[[{"width":2,"policy":"RAID0","stripe-size":512},["http:\/\/host2.zib.de:32641","http:\/\/host1:32641"]]],1]
 
 null
 
 # I don't have a clue what this call is good for...
 POST removeXAttrs HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -54,7 +54,7 @@ null
 
 # this call is not needed either, because access checks are implicitly performed by the operations
 POST checkAccess HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -68,7 +68,7 @@ true
 
 # check whether the file exists already
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -82,7 +82,7 @@ Content-Length: 210
 
 # no clue what this is good for...
 POST getXAttr HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -96,7 +96,7 @@ Content-Length: 6
 
 # this may come from FUSE, I don't know...
 POST checkAccess HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }

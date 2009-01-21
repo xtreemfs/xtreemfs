@@ -1,6 +1,6 @@
 # check whether the parent directory is there...
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -14,7 +14,7 @@ Content-Length: 202
 
 # not needed, maybe a FUSE artifact...
 POST checkAccess HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -28,7 +28,7 @@ true
 
 # open the file for reading - this will return a capability for the OSD call
 POST open HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
@@ -38,13 +38,13 @@ Content-Length: 39
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 4
 X-Capability: ["0004760EDB989891BD4774E2:400964","r",1232534624,"*",0,"32458B0FE948A1FC956709D46435F196"]
-X-Locations: [[[{"width":2,"policy":"RAID0","stripe-size":512},["http:\/\/xtreemfs2.zib.de:32641","http:\/\/01.xtreemfs.com:32641"]]],1]
+X-Locations: [[[{"width":2,"policy":"RAID0","stripe-size":512},["http:\/\/host2.zib.de:32641","http:\/\/host1:32641"]]],1]
 
 null
 
 # not needed, I believe...
 POST stat HTTP/1.1
-Host: xtreemfs1:32636
+Host: host1:32636
 Connection: TE
 TE: trailers
 Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
