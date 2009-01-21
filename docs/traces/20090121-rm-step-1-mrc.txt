@@ -1,0 +1,43 @@
+# check whether the file is there
+POST stat HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+Content-Length: 55
+
+[ "xtreemfs\/xtreemos\/file.txt", false, false, false ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 206
+
+{"fileId":"0004760EDB989891BD4774E2:400964","posixAccessMode":420,"groupId":"users","atime":1232531519,"objType":1,"ownerId":"stender","linkCount":1,"epoch":0,"mtime":1232531519,"ctime":1232531519,"size":5}
+
+# not needed...
+POST checkAccess HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+Content-Length: 29
+
+[ "xtreemfs\/xtreemos", "r" ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 4
+
+true
+
+# call 'delete' to delete the metadata and to obtain a deletion capability to delete the file content
+POST delete HTTP/1.1
+Host: xtreemfs1:32636
+Connection: TE
+TE: trailers
+Authorization: { "mechanism": "nullauth", "guid": "stender", "ggids": [ "users" ] }
+Content-Length: 34
+
+[ "xtreemfs\/xtreemos\/file.txt" ]HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 4
+X-Capability: ["0004760EDB989891BD4774E2:400964","d",1232536602,"*",2147483647,"5F2AFE20F691110E0FBDC75463933DAA"]
+X-Locations: [[[{"width":2,"policy":"RAID0","stripe-size":512},["http:\/\/xtreemfs2.zib.de:32641","http:\/\/01.xtreemfs.com:32641"]]],1]
+
+null
