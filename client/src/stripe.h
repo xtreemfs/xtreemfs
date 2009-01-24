@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -82,7 +82,7 @@ struct sobj_payload {
 	loff_t offset;		/*!< offset in the file object */
 	size_t size;		/*!< transfer size (bytes) */
 	size_t rsize;		/*!< real transfer size (bytes) */
-	char *osd;		/*!< targetted OSD */
+	char *osd;		/*!< targeted OSD */
 	void *buffer;		/*!< pointer to buffer for data */
 	struct user_file *fd; 	/*!< file descriptor of open file */
 	unsigned int order;	/*!< request order */

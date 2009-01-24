@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -308,6 +308,11 @@ void filerw_fobj_done(struct req *req)
 		dbg_msg("Size now: %ld (%ld)\n", (long)resp->new_size, (long)data->new_size);
 	}
 	*(resp->bytes_ptr) += data->num_bytes;
+
+	if (req->error) {
+		dbg_msg("error = %d\n", req->error);
+		frw_req->error = req->error;
+	}
 
 	/* And now we can finish the original filerw request, if last child */
 	if (atomic_dec_return(&frw_req->active_children) == 0) {

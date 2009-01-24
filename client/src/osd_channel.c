@@ -474,23 +474,23 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 
 	bench_timer_start(&neon_timer);
 
-#ifndef OSD_DRY_RUN
 	/* Submit request */
 	if((ne_err = ne_request_dispatch(req)) != NE_OK) {
 		err_msg("Error %d while dispatching the request.\n", ne_err);
 		status = ne_get_status(req);
 		err_msg("Reason: %s\n", ne_get_error(oc->channel_session));
-		/* TODO: produce meaningful return code, and eventually retry ... */
-		rv = 2;
+		rv = OSC_ERR_FAIL;
 		resp->err = -ENODEV;
+		if (ne_err == NE_TIMEOUT || ne_err == NE_CONNECT)
+			rv = OSC_ERR_RETRY;
+		err_msg("ne_err=%d err=%d resp->err=%d\n", ne_err, rv, resp->err);
 		goto finish;
 	}
-#endif
+
 	bench_timer_stop(&neon_timer);
 	bench_timings_add_ms(&neon_timings,
 			     (double)(lastByte - firstByte + 1) / bench_timer_ms(&neon_timer));
 
-#ifndef OSD_DRY_RUN
 	if(OSD_Channel_analyse_req_response(oc, req, resp) != 0) {
 		if (resp->err == 0)
 			rv = 1;
@@ -498,7 +498,7 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 			rv = resp->err;
 		goto finish;
 	}
-#endif
+
 	/* Check if we have to copy response data */
 	/*!< \todo give the request the location of the data s.t. they are
 	   written immediately to the right place, without copying! */
@@ -508,9 +508,7 @@ OSD_Channel_exec(struct OSD_Channel *oc, int command, char *req_id,
 			size_t copy_size = lastByte - firstByte + 1;
 			if (copy_size > resp->length)
 				copy_size = resp->length;
-#ifndef OSD_DRY_RUN
 			memcpy((void *)buf, (void *)oc->resp_buf->data, copy_size);
-#endif
 		}
 	}
 
@@ -576,15 +574,16 @@ int OSD_Channel_submit_req(struct OSD_Channel *oc,
 	ne_status const *status;
 	int ne_err;
 
-#ifndef OSD_DRY_RUN
 	/* Submit request */
 	if((ne_err = ne_request_dispatch(req)) != NE_OK) {
 		err_msg("Error %d while dispatching the request.\n", ne_err);
 		status = ne_get_status(req);
 		err_msg("Reason: %s\n", ne_get_error(oc->channel_session));
-		/* TODO: produce meaningful return code, and eventually retry ... */
+		err = OSC_ERR_FAIL;
 		resp->err = -ENODEV;
-		err = 2;
+		if (ne_err == NE_TIMEOUT || ne_err == NE_CONNECT)
+			err = OSC_ERR_RETRY;
+		err_msg("ne_err=%d err=%d resp->err=%d\n", ne_err, err, resp->err);
 		goto finish;
 	}
 
@@ -592,7 +591,6 @@ int OSD_Channel_submit_req(struct OSD_Channel *oc,
 		err = 1;
 		goto finish;
 	}
-#endif
 
 finish:
 	ne_request_destroy(req);

@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -25,7 +25,7 @@
 /*
 C Interface: osd_channel
 
-Description: 
+Description:
 
 
 Author: Matthias Hess <mhess at hpce dot nec dot de>, (C) 2007
@@ -60,6 +60,12 @@ enum OSD_Channel_errs {
 	OSC_ERR_INV_NEWSIZE,
 	OSC_ERR_INV_EPOCHE,
 	OSC_ERR_INV_LENGTH,
+	OSC_ERR_LOOKUP,			/*!< Failed to lookup server */
+	OSC_ERR_AUTH,			/*!< HTTP/HTTPS authorization failure */
+	OSC_ERR_CONNECT,		/*!< Could not connect to server */
+	OSC_ERR_TIMEOUT,		/*!< Connection timed out */
+	OSC_ERR_RETRY,			/*!< Retry request */
+	OSC_ERR_FAIL,			/*!< Fatal error, fail and propagate upwards */
 	OSC_ERR_GENERAL			/*!< Not able to identify error more closely */
 };
 

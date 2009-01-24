@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -28,7 +28,7 @@
  * In this stage file object requests are processed. They generate file
  * stripe requests. File objects are mapped to stripes and OSDs. Striping
  * patterns other than RAID0 can generate parity object requests...
- * 
+ *
  *
  * @author Erich Focht
  */
@@ -201,7 +201,7 @@ static void fobj_handle(struct req *req)
 #endif
 	dbg_msg("fobj_handle start, state=%d, fobj_id=%d\n",
 		req_state(req), p->fobj_id);
-	
+
 	if (req_state(req) == REQ_STATE_ERROR)
 		goto out;
 
@@ -283,7 +283,7 @@ static void fobj_sobj_done(struct req *req)
 		pr->epoch = d->epoch;
 		pr->new_size = d->new_size;
 	}
- 
+
 	dbg_msg("Fobj-req %p has %d child(ren)\n", fobj_req,
 		atomic_read(&fobj_req->active_children));
 
@@ -296,6 +296,11 @@ static void fobj_sobj_done(struct req *req)
 							  pr->new_size,
 							  pr->epoch,
 							  fobj_req->parent);
+		/* propagate error state up */
+		if (req->error) {
+			dbg_msg("error = %d\n", req->error);
+			answer->error = req->error;
+		}
 		submit_request(filerw_wq, answer);
 		finish_request(fobj_req);
 	}

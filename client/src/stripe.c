@@ -13,7 +13,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -178,14 +178,14 @@ static void sobj_handle(struct req *req)
 		err = -ENOMEM;
 		goto out;
 	}
-	
+
 	switch (req->type) {
 	case REQ_SOBJ_READ:
 		dbg_msg("Read request with size %ld for req %p\n", p->size, req);
 		err = OSD_Proxy_get(op, req->id, p->fd, p->sobj_id, p->offset,
 				    p->offset + p->size - 1, p->buffer,
 				    &osd_resp);
-		dbg_msg("Read request done for req %p\n", req);
+		dbg_msg("Read request done for req %p, err=%d\n", req, err);
 		if (osd_resp.length != p->size)
 			p->rsize = osd_resp.length;
 		break;
@@ -195,7 +195,7 @@ static void sobj_handle(struct req *req)
 		err = OSD_Proxy_put(op, req->id, p->fd, p->sobj_id, p->offset,
 				    p->offset + p->size - 1, p->buffer,
 				    &osd_resp);
-		dbg_msg("Write request done for req %p\n", req);
+		dbg_msg("Write request done for req %p, err=%d\n", req, err);
 
 		/* Check for file size change during write operation */
 		if (osd_resp.new_size != -1 &&
@@ -244,17 +244,34 @@ static void sobj_handle(struct req *req)
 	}
 
 out:
-	dbg_msg("Submitting answer for req %p (from %p)\n", req->parent, req);
-	answer = fobj_sobj_done_req(p->sobj_id, p->offset, p->size,
-				    osd_resp.length, osd_resp.new_size, osd_resp.epoch,
-				    req->parent);
-	submit_request(fobj_wq, answer);
-	if (atomic_read(&req->active_children))
-		dbg_msg("There should not be any children.\n");
-	if (atomic_read(&req->use_count) != 1)
-		dbg_msg("Use count must be 1\n");
+#if 0
+	if (err == OSC_ERR_RETRY) {
+		/* Need to delay requeues, no mechanism for that available.
+		 * Means: any error is propagated back through the client,
+		 * even short connection interruptions lead to an I/O error.
+		 * Requeueing immediately blows up because the sockets stay
+		 * around until they timeout.
+		 */
+		dbg_msg("Re-queueing req %p\n", req);
+		submit_request(sobj_wq, req);
+	} else
+#endif
+	{
+		dbg_msg("Submitting answer for req %p (from %p)\n", req->parent, req);
+		answer = fobj_sobj_done_req(p->sobj_id, p->offset, p->size,
+				osd_resp.length, osd_resp.new_size, osd_resp.epoch,
+				req->parent);
+		/* propagate error in answer */
+		if (err == OSC_ERR_FAIL)
+			answer->error = -ENODEV;
+		submit_request(fobj_wq, answer);
+		if (atomic_read(&req->active_children))
+			dbg_msg("There should not be any children.\n");
+		if (atomic_read(&req->use_count) != 1)
+			dbg_msg("Use count must be 1\n");
 
-	finish_request(req);
+		finish_request(req);
+	}
 
 #ifdef ITAC
 	VT_end(itac_sobj_handle_hdl);
