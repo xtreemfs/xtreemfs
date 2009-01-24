@@ -16,7 +16,7 @@
    the License, or (at your option) any later version.
 
    XtreemFS is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of 
+   WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
@@ -217,7 +217,7 @@ int ds_entry_add_key_value(struct ds_entry *de, char *key, char *value)
 	}
 
 	/* Nope, we must create a new entry! */
-		
+
 	de->keys[act] = strdup(key);
 	de->values[act] = strdup(value);
 
@@ -313,12 +313,14 @@ struct ds_entry_set *json_to_ds_entry_set(struct json_object *jo)
 		}
 		new_entry = ds_entry_new(key, NULL, NULL, 0L);
 		json_object_object_foreach(val, attr, aval) {
+			struct json_object *parsed_aval;
+			parsed_aval = json_tokener_parse(json_object_to_json_string(aval));
 			dbg_msg("Attr: %s\n", attr);
-			ds_entry_add_key_value(new_entry, attr, json_object_to_json_string(aval));
+			ds_entry_add_key_value(new_entry, attr, json_object_get_string(parsed_aval));
 		}
 		ds_entry_set_add(rv, new_entry);
 	}
- 
+
 out:
 	if (err) {
 		err_msg("Error during creation of ds entry set.\n");
@@ -335,7 +337,7 @@ void ds_entry_set_print(struct ds_entry_set *des)
 
 	list_for_each(iter, &des->elems) {
 		de = container_of(iter, struct ds_entry, head);
-		ds_entry_print(de);		
+		ds_entry_print(de);
 	}
 }
 
@@ -399,7 +401,7 @@ void ds_query_del_contents(struct ds_query *dq)
 			free(dq->values[i]);
 		free(dq->values);
 		dq->values = NULL;
-	}	
+	}
 }
 
 void ds_query_destroy(struct ds_query *dq)
@@ -425,7 +427,7 @@ int ds_query_add_query(struct ds_query *dq, char *name, char *value)
 		if (!dq->names || !dq->values)
 			err = 1;
 	}
- 
+
 	return err;
 }
 
@@ -440,7 +442,7 @@ struct json_object *ds_query_to_json(struct ds_query *dq)
 
 	for(i=0; i<dq->num; i++) {
 		json_object_object_add(rv, dq->names[i], json_object_new_string(dq->values[i]));
-	}	
+	}
 out:
 	return rv;
 }
@@ -513,8 +515,8 @@ struct json_object *ds_addr_to_json(struct ds_addr *da)
 				       json_object_new_string(da->match_network));
 	json_object_object_add(rv, "ttl", json_object_new_int(da->ttl));
 
-out:	
-	return rv;	
+out:
+	return rv;
 }
 
 struct ds_addr *json_to_ds_addr(struct json_object *jo)
@@ -548,7 +550,7 @@ struct ds_addr *json_to_ds_addr(struct json_object *jo)
 			rv->match_network = strdup(json_object_get_string(val));
 		} else if (!strcmp(key, "ttl")) {
 			rv->ttl = json_object_get_int(val);
-		}		
+		}
 	}
 out:
 	return rv;
@@ -593,7 +595,7 @@ void ds_addr_map_del_contents(struct ds_addr_map *dam)
 		act = dam->elems.next;
 		da = container_of(act, struct ds_addr, head);
 		list_del(act);
-		ds_addr_destroy(da);		
+		ds_addr_destroy(da);
 	}
 
 	free(dam->uuid);
@@ -713,7 +715,7 @@ void ds_addr_map_set_del_contents(struct ds_addr_map_set *dams)
 		dam = container_of(iter, struct ds_addr_map, head);
 		list_del(iter);
 		ds_addr_map_destroy(dam);
-	}		
+	}
 }
 
 void ds_addr_map_set_destroy(struct ds_addr_map_set *dams)
@@ -775,7 +777,7 @@ struct ds_addr_map_set *json_to_ds_addr_map_set(struct json_object *jo)
 		new_map->uuid = strdup(key);
 		vers = json_object_array_get_idx(val, 0);
 		new_map->version = json_object_get_int(vers);
-		ds_addr_map_set_add(rv, new_map);	
+		ds_addr_map_set_add(rv, new_map);
 	}
 out:
 	return rv;
@@ -907,7 +909,7 @@ int ds_channel_http_accept(void *userdata, ne_request *req, const ne_status *st)
 	struct ds_channel *dsc = (struct ds_channel *)userdata;
 
 	dsc->err = DSC_ERR_NO_ERROR;
-	
+
 	if (st->klass == 2) {
 		acc = 1;
 		dbg_msg("Accept 200 class\n");
@@ -964,7 +966,7 @@ int ds_channel_req_resp_reader(void *userdata, const char *buf, size_t len)
 			dbg_msg("%s\n", dsc->resp_buf);
 		// pthread_cond_broadcast(&oc->wait_cond);
 	}
-	
+
 	return NE_OK;
 }
 
@@ -997,7 +999,7 @@ ne_request *ds_channel_new_req(struct ds_channel *dsc, char *funcname)
 	char auth_str[1024];
 
 	spin_lock(&dsc->lock);
-	
+
 	rv = ne_request_create(dsc->session, "POST", funcname);
 	if (!rv)
 		goto out;
@@ -1039,7 +1041,7 @@ int ds_channel_dispatch_req(struct ds_channel *dsc,
 
 	/* Clear response buffer */
 	ne_buffer_clear(dsc->resp_buf);
-	
+
 	/* Submit request */
 	if((ne_err = ne_request_dispatch(ne_req)) != NE_OK) {
 		err_msg("Error %d while dispatching the request.\n", ne_err);
@@ -1115,7 +1117,7 @@ out:
 		ne_request_destroy(ne_req);
 	}
 	free(req_param_str);
-	
+
 	return err;
 }
 
@@ -1213,7 +1215,7 @@ struct ds_entry_set *ds_channel_getEntities(struct ds_channel *dsc,
 	}
 
 	rv = json_to_ds_entry_set(answer_obj);
- 
+
 out:
 	if (ne_req)
 		ne_request_destroy(ne_req);
@@ -1472,11 +1474,11 @@ int dirservice_register_host(struct dirservice *ds, int port)
 
 	act_addr = hent.h_addr_list[0];
 	while (act_addr) {
-		
+
 		act_addr++;
 	}
 out:
-#endif 
+#endif
 	return err;
 }
 
@@ -1516,7 +1518,7 @@ char *dirservice_get_hostaddress(struct dirservice *ds, char *uuid)
 		snprintf(rv, len, "%s://%s:%s\n", da->protocol, da->address, port_str);
 		rv[len-1] = '\0';
 	}
-	
+
 out:
 	if (map)
 		ds_addr_map_set_destroy(map);
