@@ -90,8 +90,16 @@ public class Path {
         
     }
     
+    public boolean equals(Path p) {
+        return path.equals(p.path);
+    }
+    
     public int getCompCount() {
         return compIndices.size();
+    }
+    
+    public boolean isSubDirOf(Path p) {
+        return path.startsWith(p.path + "/");
     }
     
     public String toString() {

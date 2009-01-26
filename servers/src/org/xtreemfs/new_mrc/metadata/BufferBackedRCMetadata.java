@@ -28,8 +28,6 @@ import java.nio.ByteBuffer;
 
 public class BufferBackedRCMetadata {
     
-    public static final byte   TYPE_ID                  = 1;
-    
     protected static final int RC_TYPE                  = 0;
     
     protected static final int RC_ID                    = 1;
@@ -105,7 +103,7 @@ public class BufferBackedRCMetadata {
         short collCount) {
         
         // assign the key
-        keyBuf = generateKeyBuf(parentId, fileName, TYPE_ID, collCount);
+        keyBuf = generateKeyBuf(parentId, fileName, BufferBackedFileMetadata.RC_METADATA, collCount);
         
         // assign the value
         byte[] fnBytes = fileName.getBytes();
@@ -139,7 +137,7 @@ public class BufferBackedRCMetadata {
         long fileId, short perms, short collCount) {
         
         // assign the key
-        keyBuf = generateKeyBuf(parentId, dirName, TYPE_ID, collCount);
+        keyBuf = generateKeyBuf(parentId, dirName, BufferBackedFileMetadata.RC_METADATA, collCount);
         
         // assign the value
         byte[] fnBytes = dirName.getBytes();
@@ -232,12 +230,9 @@ public class BufferBackedRCMetadata {
         return directory;
     }
     
-    // public void setXLocList(BufferBackedXLocList xloc) {
-    // assert (!directory) : "cannot assign locations list to directory";
-    // keyBufs[XLOC_METADATA] = generateKeyBuf(parentId, fileName,
-    // XLOC_METADATA);
-    // valBufs[XLOC_METADATA] = ByteBuffer.wrap(xloc.getBuffer());
-    // }
+    public short getCollisionCount() {
+        return keyBuf.array().length == 13 ? 0 : keyBuf.getShort(13);
+    }
     
     public byte[] getKey() {
         return keyBuf.array();
@@ -247,7 +242,8 @@ public class BufferBackedRCMetadata {
         return valBuf.array();
     }
     
-    private ByteBuffer generateKeyBuf(long parentId, String fileName, int type, short collCount) {
+    private static ByteBuffer generateKeyBuf(long parentId, String fileName, int type,
+        short collCount) {
         
         byte[] tmp = new byte[collCount == 0 ? 13 : 15];
         ByteBuffer buf = ByteBuffer.wrap(tmp);

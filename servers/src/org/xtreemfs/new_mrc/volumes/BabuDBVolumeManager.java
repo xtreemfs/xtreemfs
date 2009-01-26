@@ -140,7 +140,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         // create the volume database
         try {
-            database.createDatabase(volumeId, 5);
+            database.createDatabase(volumeId, 6);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

@@ -24,14 +24,13 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.mrc.brain.ErrNo;
 import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
@@ -48,15 +47,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class ReadDirOperation extends MRCOperation {
+public class CreateLinkOperation extends MRCOperation {
     
     static class Args {
-        public String path;
+        
+        public String linkPath;
+        
+        public String targetPath;
+        
     }
     
-    public static final String RPC_NAME = "readDir";
+    public static final String RPC_NAME = "createLink";
     
-    public ReadDirOperation(MRCRequestDispatcher master) {
+    public CreateLinkOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -80,44 +83,64 @@ public class ReadDirOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.path);
+            final Path lp = new Path(rqArgs.linkPath);
+            final Path tp = new Path(rqArgs.targetPath);
             
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+            if (!lp.getComp(0).equals(tp.getComp(0)))
+                throw new UserException(ErrNo.EXDEV,
+                    "cannot create hard links across volume boundaries");
+            
+            final VolumeInfo volume = vMan.getVolumeByName(lp.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
+            final PathResolver lRes = new PathResolver(sMan, lp);
+            final PathResolver tRes = new PathResolver(sMan, tp);
             
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+            // check whether the link's path prefix is searchable
+            faMan.checkSearchPermission(sMan, lRes.getPathPrefix(), rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
+            // check whether the link's parent directory grants write access
+            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, lRes.getParentDir(), 0, rq
+                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
-            FileMetadata file = res.getFile();
+            // check whether the link exists already
+            lRes.checkIfFileExistsAlready();
             
-            // check whether the directory grants read access
-            faMan.checkPermission(FileAccessManager.READ_ACCESS, sMan, file, res.getParentDirId(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            // check whether the target path prefix is searchable
+            faMan.checkSearchPermission(sMan, tRes.getPathPrefix(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
-            AtomicDBUpdate update = null;
+            // check whether the target exists
+            tRes.checkIfFileDoesNotExist();
             
-            // if required, update POSIX timestamps
-            if (!master.getConfig().isNoAtime()) {
-                update = sMan.createAtomicDBUpdate(master, rq);
-                MRCOpHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan,
-                    update);
-            }
+            FileMetadata target = tRes.getFile();
+                        
+            if (target.isDirectory())
+                throw new UserException(ErrNo.EPERM, "no support for links to directories");
             
-            List<Object> dirList = new LinkedList<Object>();
-            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
-            while (it.hasNext())
-                dirList.add(it.next().getFileName());
+            // check whether the target file grants write access
+            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, target, tRes
+                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(dirList).getBytes()));
-            if (update != null)
-                update.execute();
-            else
-                finishRequest(rq);
+            // prepare file creation in database
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            
+            // create the link
+            sMan.link(tRes.getParentDirId(), tRes.getFileName(), lRes.getParentDirId(), lRes
+                    .getFileName(), update);
+            
+            // update POSIX timestamps
+            MRCOpHelper.updateFileTimes(lRes.getParentsParentId(), lRes.getParentDir(), false,
+                true, true, sMan, update);
+            MRCOpHelper.updateFileTimes(tRes.getParentDirId(), target, false, true, false, sMan,
+                update);
+            
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -136,9 +159,9 @@ public class ReadDirOperation extends MRCOperation {
         
         try {
             
-            args.path = (String) arguments.get(0);
-            
-            if (arguments.size() == 1)
+            args.linkPath = (String) arguments.get(0);
+            args.targetPath = (String) arguments.get(1);
+            if (arguments.size() == 2)
                 return null;
             
             throw new Exception();

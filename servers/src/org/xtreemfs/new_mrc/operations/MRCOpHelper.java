@@ -80,6 +80,10 @@ public class MRCOpHelper {
             free_space
     }
     
+    protected enum FileType {
+        nexists, dir, file
+    }
+    
     public static void updateFileTimes(long parentId, FileMetadata file, boolean setATime,
         boolean setCTime, boolean setMTime, StorageManager sMan, AtomicDBUpdate update)
         throws DatabaseException {

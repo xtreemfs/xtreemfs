@@ -24,9 +24,10 @@
 
 package org.xtreemfs.new_mrc.operations;
 
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -48,15 +49,15 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class ReadDirOperation extends MRCOperation {
+public class ReadDirAndStatOperation extends MRCOperation {
     
     static class Args {
         public String path;
     }
     
-    public static final String RPC_NAME = "readDir";
+    public static final String RPC_NAME = "readDirAndStat";
     
-    public ReadDirOperation(MRCRequestDispatcher master) {
+    public ReadDirAndStatOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -108,12 +109,22 @@ public class ReadDirOperation extends MRCOperation {
                     update);
             }
             
-            List<Object> dirList = new LinkedList<Object>();
-            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
-            while (it.hasNext())
-                dirList.add(it.next().getFileName());
+            Map<String, Map<String, Object>> result = new HashMap<String, Map<String, Object>>();
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(dirList).getBytes()));
+            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
+            while (it.hasNext()) {
+                
+                FileMetadata child = it.next();
+                
+                Map<String, Object> statInfo = MRCOpHelper.createStatInfo(sMan, faMan, child, sMan
+                        .getSoftlinkTarget(child.getId()), rq.getDetails().userId,
+                    rq.getDetails().groupIds, null, null, null);
+                
+                result.put(child.getFileName(), statInfo);
+            }
+            
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(result).getBytes()));
+            
             if (update != null)
                 update.execute();
             else

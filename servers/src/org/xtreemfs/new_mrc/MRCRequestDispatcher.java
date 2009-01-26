@@ -47,7 +47,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;

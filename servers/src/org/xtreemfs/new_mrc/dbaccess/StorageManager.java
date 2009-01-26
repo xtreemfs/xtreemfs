@@ -45,9 +45,10 @@ public interface StorageManager {
     
     /**
      * userID for global attributes; can be used w/ <code>getXAttr()</code> and
-     * <code>getXAttrs()</code> to retrieve extended attributes visible to any user
+     * <code>getXAttrs()</code> to retrieve extended attributes visible to any
+     * user
      */
-    public static final String GLOBAL_ID = "*";
+    public static final String GLOBAL_ID  = "*";
     
     // misc
     
@@ -93,7 +94,7 @@ public interface StorageManager {
         String groupId, Map<String, Object> stripingPolicy, short perms, String ref,
         boolean directory, AtomicDBUpdate update) throws DatabaseException;
     
-    public long link(long parentId, String fileName, long newParentId, String newFileName,
+    public void link(long parentId, String fileName, long newParentId, String newFileName,
         AtomicDBUpdate update) throws DatabaseException;
     
     public void delete(long parentId, String fileName, AtomicDBUpdate update)
@@ -119,10 +120,10 @@ public interface StorageManager {
     
     // setting metadata
     
-    public void setMetadata(long parentId, String fileName, FileMetadata metadata, int type,
+    public void setMetadata(long parentId, String fileName, FileMetadata metadata, byte type,
         AtomicDBUpdate update) throws DatabaseException;
     
     public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
-
+    
 }

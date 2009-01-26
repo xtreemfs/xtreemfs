@@ -37,8 +37,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     protected static final int     FC_SIZE     = 12;
     
-    private final boolean          directory;
-    
     private final ByteBuffer       fcKeyBuf;
     
     private final ByteBuffer       fcValBuf;
@@ -49,6 +47,8 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     private BufferBackedXLocList   xLocList;
     
+    private boolean                hardLink;
+    
     /**
      * Creates a new buffer-backed metadata object from a set of buffers.
      * 
@@ -58,25 +58,39 @@ public class BufferBackedFileMetadata implements FileMetadata {
      *            the database values
      */
     public BufferBackedFileMetadata(byte[][] keyBufs, byte[][] valBufs) {
+        this(keyBufs, valBufs, false);
+    }
+    
+    /**
+     * Creates a new buffer-backed metadata object from a set of buffers.
+     * 
+     * @param keyBufs
+     *            the database keys
+     * @param valBufs
+     *            the database values
+     * @param hardLink
+     *            indicates whether the metadata is referenced by multiple hard
+     *            links
+     */
+    public BufferBackedFileMetadata(byte[][] keyBufs, byte[][] valBufs, boolean hardLink) {
         
         assert (keyBufs.length == NUM_BUFFERS);
         assert (valBufs.length == NUM_BUFFERS);
         
         // frequently changed metadata
-        fcKeyBuf = keyBufs[FC_METADATA] == null ? null : ByteBuffer.wrap(keyBufs[FC_METADATA]);
-        fcValBuf = valBufs[FC_METADATA] == null ? null : ByteBuffer.wrap(valBufs[FC_METADATA]);
+        fcKeyBuf = ByteBuffer.wrap(keyBufs[FC_METADATA]);
+        fcValBuf = ByteBuffer.wrap(valBufs[FC_METADATA]);
         
         // rarely changed metadata
-        rcMetadata = valBufs[RC_METADATA] == null ? null : new BufferBackedRCMetadata(
-            keyBufs[RC_METADATA], valBufs[RC_METADATA]);
+        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA], valBufs[RC_METADATA]);
         
         // XLocList metadata
-        xLocList = valBufs[XLOC_METADATA] == null ? null : new BufferBackedXLocList(
-            valBufs[XLOC_METADATA]);
-        xLocKeyBuf = keyBufs[XLOC_METADATA] == null ? null : ByteBuffer
-                .wrap(keyBufs[XLOC_METADATA]);
+        if (valBufs[XLOC_METADATA] != null) {
+            xLocList = new BufferBackedXLocList(valBufs[XLOC_METADATA]);
+            xLocKeyBuf = ByteBuffer.wrap(keyBufs[XLOC_METADATA]);
+        }
         
-        directory = valBufs[FC_METADATA] == null ? null : valBufs[FC_METADATA].length == 12;
+        this.hardLink = hardLink;
     }
     
     /**
@@ -112,8 +126,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         // xLocList metadata
         xLocList = null;
-        
-        directory = false;
     }
     
     /**
@@ -142,8 +154,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         // xLocList metadata
         xLocList = null;
-        
-        directory = true;
     }
     
     @Override
@@ -268,13 +278,13 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     @Override
     public boolean isDirectory() {
-        return directory;
+        return rcMetadata.isDirectory();
     }
     
     @Override
     public void setXLocList(XLocList xlocList) {
         
-        assert (!directory) : "cannot assign locations list to directory";
+        assert (!isDirectory()) : "cannot assign locations list to directory";
         assert (xlocList instanceof BufferBackedXLocList);
         
         BufferBackedXLocList xloc = (BufferBackedXLocList) xlocList;
@@ -295,11 +305,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         rcMetadata = new BufferBackedRCMetadata(rcMetadata.getKey(), tmp.getValue());
     }
     
-    @Override
-    public void setFileName(String fileName) {
-        // TODO
-    }
-    
     public byte[] getFCMetadataKey() {
         return fcKeyBuf.array();
     }
@@ -313,11 +318,11 @@ public class BufferBackedFileMetadata implements FileMetadata {
     }
     
     public byte[] getXLocListKey() {
-        return xLocKeyBuf.array();
+        return xLocKeyBuf == null ? null : xLocKeyBuf.array();
     }
     
     public byte[] getXLocListValue() {
-        return xLocList.getBuffer();
+        return xLocList == null ? null : xLocList.getBuffer();
     }
     
     public byte[] getKeyBuffer(int type) {
@@ -334,7 +339,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return null;
     }
     
-    public byte[] getValueBuffer(int type) {
+    public byte[] getValueBuffer(byte type) {
         
         switch (type) {
         case 0:
@@ -346,6 +351,10 @@ public class BufferBackedFileMetadata implements FileMetadata {
         }
         
         return null;
+    }
+    
+    public boolean isHardLink() {
+        return hardLink;
     }
     
     private ByteBuffer generateKeyBuf(long parentId, String fileName, int type, short collCount) {

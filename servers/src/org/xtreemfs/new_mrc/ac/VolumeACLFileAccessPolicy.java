@@ -130,7 +130,13 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
     public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) throws UserException, MRCException {
-        // checkPermission(sMan, 1, 0, userId, groupIds, AM_READ);
+        
+        try {
+            FileMetadata rootDir = sMan.getMetadata(0, sMan.getVolumeName());
+            checkPermission(sMan, rootDir, 0, userId, groupIds, AM_READ);
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
     }
     
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,

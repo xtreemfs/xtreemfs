@@ -80,8 +80,6 @@ public interface FileMetadata {
     
     public String getFileName();
     
-    public void setFileName(String fileName);
-    
     public String getOwnerId();
     
     public String getOwningGroupId();

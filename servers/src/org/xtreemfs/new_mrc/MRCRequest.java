@@ -120,4 +120,15 @@ public class MRCRequest {
         this.additionalResponseHeaders = additionalResponseHeaders;
     }
     
+    public String toString() {
+        
+        if (pinkyRequest == null)
+            return null;
+        
+        StringBuilder sb = new StringBuilder(pinkyRequest.requestURI);
+        if (pinkyRequest.requestBody != null)
+            sb.append(" ").append(new String(pinkyRequest.requestBody.array()));
+        
+        return sb.toString();
+    }
 }

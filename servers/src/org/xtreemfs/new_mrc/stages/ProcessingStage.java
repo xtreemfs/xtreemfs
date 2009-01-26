@@ -47,6 +47,7 @@ import org.xtreemfs.new_mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
 import org.xtreemfs.new_mrc.operations.CreateDirOperation;
 import org.xtreemfs.new_mrc.operations.CreateFileOperation;
+import org.xtreemfs.new_mrc.operations.CreateLinkOperation;
 import org.xtreemfs.new_mrc.operations.CreateSymLinkOperation;
 import org.xtreemfs.new_mrc.operations.CreateVolumeOperation;
 import org.xtreemfs.new_mrc.operations.DeleteOperation;
@@ -55,7 +56,9 @@ import org.xtreemfs.new_mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.new_mrc.operations.GetProtocolVersionOperation;
 import org.xtreemfs.new_mrc.operations.GetXAttrOperation;
 import org.xtreemfs.new_mrc.operations.MRCOperation;
+import org.xtreemfs.new_mrc.operations.MoveOperation;
 import org.xtreemfs.new_mrc.operations.OpenOperation;
+import org.xtreemfs.new_mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.new_mrc.operations.ReadDirOperation;
 import org.xtreemfs.new_mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.new_mrc.operations.RenewOperation;
@@ -98,6 +101,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(StatOperation.RPC_NAME, new StatOperation(master));
         operations.put(CheckAccessOperation.RPC_NAME, new CheckAccessOperation(master));
         operations.put(ReadDirOperation.RPC_NAME, new ReadDirOperation(master));
+        operations.put(ReadDirAndStatOperation.RPC_NAME, new ReadDirAndStatOperation(master));
         operations.put(CreateFileOperation.RPC_NAME, new CreateFileOperation(master));
         operations.put(CreateDirOperation.RPC_NAME, new CreateDirOperation(master));
         operations.put(CreateSymLinkOperation.RPC_NAME, new CreateSymLinkOperation(master));
@@ -111,6 +115,8 @@ public class ProcessingStage extends MRCStage {
         operations.put(ChangeAccessModeOperation.RPC_NAME, new ChangeAccessModeOperation(master));
         operations.put(AddReplicaOperation.RPC_NAME, new AddReplicaOperation(master));
         operations.put(RemoveReplicaOperation.RPC_NAME, new RemoveReplicaOperation(master));
+        operations.put(MoveOperation.RPC_NAME, new MoveOperation(master));
+        operations.put(CreateLinkOperation.RPC_NAME, new CreateLinkOperation(master));
     }
     
     @Override
