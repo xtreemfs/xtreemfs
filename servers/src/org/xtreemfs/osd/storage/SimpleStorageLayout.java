@@ -56,7 +56,7 @@ public class SimpleStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
     }
 
-    public ReusableBuffer readObjectNotPOSIX(String fileId, long objNo, int version, String checksum,
+    public ReusableBuffer readObject(String fileId, long objNo, int version, String checksum,
         StripingPolicy sp, long osdNumber) throws IOException {
         ReusableBuffer bbuf = null;
 
@@ -276,5 +276,25 @@ public class SimpleStorageLayout extends StorageLayout {
     
     public ConcurrentFileMap getAllFiles() throws IOException{
         throw new IOException("This function is not available for the deprecated SimpleStorageLayout!");
+    }
+    
+    @Override
+    public void writeFilesize(String fileId, long size) throws IOException {
+	// update cache
+	super.writeFilesize(fileId, size);
+
+	File parent = new File(storageDir + generateParentDir(fileId));
+        if (!parent.exists())
+            parent.mkdirs();
+        File filesize = new File(parent,LOCAL_KNOWN_FILESIZE_FILENAME);
+        RandomAccessFile rf = new RandomAccessFile(filesize, "rw");
+        rf.writeLong(size);
+        rf.close();
+    }
+
+    @Override
+    public boolean isFilesizeWrittenToDisk(String fileId) throws IOException {
+	File parent = new File(storageDir + generateParentDir(fileId));
+	return parent.exists() && (new File(parent, LOCAL_KNOWN_FILESIZE_FILENAME)).exists();
     }
 }

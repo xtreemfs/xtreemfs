@@ -60,6 +60,17 @@ public final class RequestDetails {
 	private boolean checkOnly;
 
 	private boolean invalidChecksum;
+	
+	/**
+	 * true, if the object doesn't exist on disk
+	 * because read follows POSIX, you won't notice that otherwise
+	 */
+	private boolean objectNotExistsOnDisk = false;
+	
+	/**
+	 * true, if the file is marked as read-only. That is the file cannot be modified anymore.
+	 */
+	private boolean readOnly;
 
 	private ClientLease lease;
 
@@ -216,4 +227,31 @@ public final class RequestDetails {
         this.cowPolicy = cowPolicy;
     }
 
+    /**
+     * @param objectExistsOnDisk the objectExistsOnDisk to set
+     */
+    public void setObjectNotExistsOnDisk(boolean notExisting) {
+	this.objectNotExistsOnDisk = objectNotExistsOnDisk;
+    }
+
+    /**
+     * @return the objectExistsOnDisk
+     */
+    public boolean isObjectNotExistingOnDisk() {
+	return objectNotExistsOnDisk;
+    }
+
+    /**
+     * @return the readOnly
+     */
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    /**
+     * @param readOnly the readOnly to set
+     */
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
 }

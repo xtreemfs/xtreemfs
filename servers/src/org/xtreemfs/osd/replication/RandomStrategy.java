@@ -77,6 +77,10 @@ public class RandomStrategy extends TransferStrategy {
 	return next;
     }
 
+    /**
+     * returns a random positive integer
+     * @return
+     */
     private int getPositiveRandom(){
 	int result = random.nextInt();
 	return (result > 0) ? result : 0-result; 

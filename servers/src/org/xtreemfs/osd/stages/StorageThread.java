@@ -98,6 +98,8 @@ public class StorageThread extends Stage {
 
     public static final int   STAGEOP_LOCAL_READ_OBJECT        = 11;
 
+    public static final int   STAGEOP_LOCAL_READ_OBJECT_GMAX_FETCHED = 12;
+
     private MetadataCache     cache;
 
     private StorageLayout     layout;
@@ -163,7 +165,11 @@ public class StorageThread extends Stage {
                 processCleanUp2(method); 
                 break;
             case STAGEOP_LOCAL_READ_OBJECT:
-                processLocalReadObject(method); 
+                if(processLocalRead(method)) 
+                    methodExecutionSuccess(method, StageResponseCode.OK);
+                break;
+            case STAGEOP_LOCAL_READ_OBJECT_GMAX_FETCHED:
+                processLocalReadGmaxFetched(method);
                 methodExecutionSuccess(method, StageResponseCode.OK);
                 break;
             }
@@ -201,18 +207,19 @@ public class StorageThread extends Stage {
         // retrieve the object from the storage layout
         ReusableBuffer data = layout.readObject(fileId, objNo, objVer, objChksm, sp, sp.getOSDByObject(objNo));
 
-        // test the checksum
-        if (!layout.checkObject(data, objChksm)) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "invalid checksum: file=" + fileId
-                + ", objNo=" + objNo);
-            details.setInvalidChecksum(true);
-        }
-
         // object exists locally ...
-        if (data.capacity() > 0) {
+        if (data!=null && data.capacity() > 0) {
+            // test the checksum
+            if (!layout.checkObject(data, objChksm)) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "invalid checksum: file=" + fileId
+                    + ", objNo=" + objNo);
+                details.setInvalidChecksum(true);
+            }
+
             if(!checkReadObject(rq, data)){
+                // fetch globalMax
                 rq.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
-                sendGmaxRequests(rq);
+                sendGmaxRequests(rq, STAGEOP_READ_OBJECT_GMAX_FETCHED);
                 return false;
             }
             return true;
@@ -220,7 +227,12 @@ public class StorageThread extends Stage {
 
         // object does not exist locally
         else {
-            // check if the object is a 'hole' or an EOF
+	    // handles the POSIX behavior of read beyond EOF
+	    data = BufferPool.allocate(0);
+	    data.position(0);
+
+	    // check if the object is a 'hole' or an EOF
+            details.setObjectNotExistsOnDisk(true);
 
             if (Logging.tracingEnabled())
                 Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
@@ -247,7 +259,7 @@ public class StorageThread extends Stage {
                 // fetch globalMax
                 else {
                     rq.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
-                    sendGmaxRequests(rq);
+                    sendGmaxRequests(rq, STAGEOP_READ_OBJECT_GMAX_FETCHED);
                     return false;
                 }
             }
@@ -286,7 +298,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
                     + " incomplete");
     
-            if (objNo < fi.getLastObjectNumber()) {
+            if (objNo < fi.getLastObjectNumber()) { // => hole
                 // object known to be incomplete: fill object with
                 // padding zeros
                 data = padWithZeros(data, (int) sp.getStripeSize(objNo));
@@ -356,6 +368,114 @@ public class StorageThread extends Stage {
         }
     }
 
+    /**
+     * @param method
+     * @throws JSONException
+     */
+    private boolean processLocalRead(StageMethod method) throws IOException,
+	    JSONException {
+	final RequestDetails details = method.getRq().getDetails();
+
+	final String fileId = details.getFileId();
+	final long objNo = details.getObjectNumber();
+	final StripingPolicy sp = details.getCurrentReplica()
+		.getStripingPolicy();
+	final FileInfo fi = layout.getFileInfo(sp, fileId);
+
+	if (Logging.isDebug())
+	    Logging.logMessage(Logging.LEVEL_DEBUG, this, "LOCAL READ: "
+		    + fileId + "-" + objNo + ".");
+
+	int objVer = fi.getObjectVersion(objNo);
+	if (Logging.isDebug())
+	    Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting objVer "
+		    + objVer);
+
+	String objChksm = fi.getObjectChecksum(objNo);
+	if (Logging.isDebug())
+	    Logging.logMessage(Logging.LEVEL_DEBUG, this, "checksum is "
+		    + objChksm);
+
+	// retrieve the object from the storage layout
+	ReusableBuffer data = layout.readObject(fileId, objNo, objVer,
+		objChksm, sp, sp.getOSDByObject(objNo));
+	method.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
+
+        // striped case and file does exist (at least one object exists)
+	if (sp.getWidth() > 1 && layout.fileExists(fileId)) {
+	    // update filesize to the correct value, if necessary
+	    if (!layout.isFilesizeWrittenToDisk(fileId)) { // => fetch gmax and write it to disk
+		sendGmaxRequests(method, STAGEOP_LOCAL_READ_OBJECT_GMAX_FETCHED);
+		return false;
+	    }
+	}
+	// => gmax already fetched or non-striped => filesize is correct
+	postLocalRead(method);
+	return true;
+    }
+
+    /**
+     * @param method
+     * @return
+     * @throws IOException
+     * @throws JSONException
+     */
+    private void postLocalRead(StageMethod method)
+	    throws IOException, JSONException {
+        final RequestDetails details = method.getRq().getDetails();
+	final String fileId = details.getFileId();
+	final long objNo = details.getObjectNumber();
+	final StripingPolicy sp = details.getCurrentReplica()
+		.getStripingPolicy();
+	final FileInfo fi = layout.getFileInfo(sp, fileId);
+	ReusableBuffer data = method.getRq().getData();
+
+	// object exists locally ...
+	if (data != null && data.capacity() > 0) {
+	    checkReadObject(method, data);
+	}
+	// object does not exist locally
+	else {
+	    if (Logging.tracingEnabled())
+		Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-"
+			+ objNo + " not found locally");
+
+	    Map<String, Long> jsonResponse = new HashMap<String, Long>();
+	    // add necessary information
+	    // currently no additional information are necessary (an empty map
+	    // implies a not available object)
+
+	    String response = JSONParser.writeJSON(jsonResponse);
+	    data = ReusableBuffer.wrap(response.getBytes());
+	    method.getRq().setData(data, HTTPUtils.DATA_TYPE.JSON);
+
+	    // TODO: add statistics
+	}
+
+	// add X-New-File-Size header
+	method.getRq().addAdditionalResponseHTTPHeader(
+		HTTPHeaders.HDR_XNEWFILESIZE, Long.toString(fi.getFilesize()));
+    }
+    
+    private void processLocalReadGmaxFetched(StageMethod rq) throws IOException, JSONException {
+        final RequestDetails details = rq.getRq().getDetails();
+        final String fileId = details.getFileId();
+        final StripingPolicy sp = details.getCurrentReplica().getStripingPolicy();
+
+	// update globalMax from all "globalMax" responses
+        striping.processGmaxResponses(rq.getRq());
+
+        final FileInfo fi = layout.getFileInfo(sp, fileId);
+
+        // store filesize on disk, if file is read-only
+        if(details.isReadOnly()) {
+            // write even updated globalMax from cache to disk 
+            layout.writeFilesize(fileId, fi.getFilesize());
+        }
+
+        postLocalRead(rq);
+    }
+
     private void processReadGmaxFetched(StageMethod rq) throws IOException {
 
         // update globalMax from all "globalMax" responses
@@ -367,7 +487,7 @@ public class StorageThread extends Stage {
         final StripingPolicy sp = details.getCurrentReplica().getStripingPolicy();
         final ReusableBuffer data = rq.getRq().getData();
         final FileInfo fi = layout.getFileInfo(sp, fileId);
-
+        
         // object exists: padding or no padding
         if (data.capacity() > 0) {
 
@@ -485,15 +605,21 @@ public class StorageThread extends Stage {
                     ReusableBuffer oldObj = layout.readObject(fileId, objNo, currentV, checksum,
                         sp, 0l);
 
-                    // test the checksum
-                    if (!layout.checkObject(oldObj, checksum)) {
-                        Logging.logMessage(Logging.LEVEL_WARN, this, "invalid checksum: file="
-                            + fileId + ", objNo=" + objNo);
-                        BufferPool.free(oldObj);
-                        throw new OSDException(ErrorClass.INTERNAL_SERVER_ERROR, "invalid checksum");
+                    if(oldObj==null){ // object does not exist
+                        // handles the POSIX behavior of read beyond EOF
+                	oldObj = BufferPool.allocate(0);
+                	oldObj.position(0);
+                    } else {
+                        // test the checksum
+                        if (!layout.checkObject(oldObj, checksum)) {
+                            Logging.logMessage(Logging.LEVEL_WARN, this, "invalid checksum: file="
+                                + fileId + ", objNo=" + objNo);
+                            BufferPool.free(oldObj);
+                            throw new OSDException(ErrorClass.INTERNAL_SERVER_ERROR, "invalid checksum");
+                        }
                     }
 
-                    // if the old objct does not have sufficient capacity,
+                    // if the old object does not have sufficient capacity,
                     // enlarge it
                     if (oldObj.capacity() < details.getByteRangeEnd() + 1) {
 
@@ -1078,6 +1204,11 @@ public class StorageThread extends Stage {
         final String checksum = fi.getObjectChecksum(objNo);
 
         ReusableBuffer oldData = layout.readObject(fileId, objNo, version, checksum, sp, 0);
+        if(oldData==null){
+            // handles the POSIX behavior of read beyond EOF
+	    oldData = BufferPool.allocate(0);
+	    oldData.position(0);
+        }
 
         // test the checksum
         if (!layout.checkObject(oldData, checksum)) {
@@ -1119,58 +1250,6 @@ public class StorageThread extends Stage {
         fi.getObjChecksums().put(objNo, newChecksum);
     }
 
-    /**
-     * @param method
-     * @throws JSONException 
-     */
-    private void processLocalReadObject(StageMethod method) throws IOException, JSONException {
-        final RequestDetails details = method.getRq().getDetails();
-
-        final String fileId = details.getFileId();
-        final long objNo = details.getObjectNumber();
-        final StripingPolicy sp = details.getCurrentReplica().getStripingPolicy();
-        final FileInfo fi = layout.getFileInfo(sp, fileId);
-
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "LOCAL READ: " + fileId + "-" + objNo + ".");
-
-        int objVer = fi.getObjectVersion(objNo);
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting objVer " + objVer);
-
-        String objChksm = fi.getObjectChecksum(objNo);
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "checksum is " + objChksm);
-
-        // retrieve the object from the storage layout
-        ReusableBuffer data = layout.readObjectNotPOSIX(fileId, objNo, objVer, objChksm, sp, sp.getOSDByObject(objNo));
-        
-        // object exists locally ...
-        if (data != null && data.capacity() > 0) {
-            checkReadObject(method, data);
-        }
-
-        // object does not exist locally
-        else {
-            if (Logging.tracingEnabled())
-                Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
-                    + " not found locally");
-
-            Map<String, Long> jsonResponse = new HashMap<String, Long>();
-            // add necessary information
-            // currently no additional information are necessary (an empty map implies a not available object)
-
-            String response = JSONParser.writeJSON(jsonResponse);
-            data = ReusableBuffer.wrap(response.getBytes());
-            method.getRq().setData(data, HTTPUtils.DATA_TYPE.JSON);
-            
-            // TODO: add statistics
-        }
-
-        // add X-New-File-Size header
-        method.getRq().addAdditionalResponseHTTPHeader(HTTPHeaders.HDR_XNEWFILESIZE, Long.toString(fi.getFilesize()));
-    }
-
     private void createPaddingObject(String fileId, long objNo, StripingPolicy sp, int version,
         long size, FileInfo fi) throws IOException {
         String checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
@@ -1178,7 +1257,7 @@ public class StorageThread extends Stage {
         fi.getObjChecksums().put(objNo, checksum);
     }
 
-    private void sendGmaxRequests(StageMethod rq) throws IOException, JSONException {
+    private void sendGmaxRequests(StageMethod rq, final int stageOpCallback) throws IOException, JSONException {
 
         List<RPCMessage> gMaxReqs = striping.createGmaxRequests(rq.getRq().getDetails());
 
@@ -1201,7 +1280,7 @@ public class StorageThread extends Stage {
                     // check if all responses have been received;
                     // if so, enqueue an operation for the next step
                     if (count == osdReq.getHttpRequests().length)
-                        enqueueOperation(osdReq, STAGEOP_READ_OBJECT_GMAX_FETCHED, req
+                        enqueueOperation(osdReq, stageOpCallback, req
                                 .getCallback());
                 }
 

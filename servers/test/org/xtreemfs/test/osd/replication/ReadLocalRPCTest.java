@@ -65,7 +65,7 @@ public class ReadLocalRPCTest extends TestCase {
 
     private final ServiceUUID serverID;
 
-    private final Locations loc;
+    private Locations loc;
 
     private final String file;
 
@@ -86,6 +86,8 @@ public class ReadLocalRPCTest extends TestCase {
     private OSD osd;
 
     private Capability cap;
+    
+    final String content = "Hello World";
 
     public ReadLocalRPCTest(String testName) throws Exception {
 	super(testName);
@@ -98,13 +100,7 @@ public class ReadLocalRPCTest extends TestCase {
 	stripeSize = 1;
 
 	// It sets the loc attribute
-	List<Location> locations = new ArrayList<Location>(1);
-	StripingPolicy sp = new RAID0(stripeSize, 1);
 	serverID = SetupUtils.getOSD1UUID();
-	List<ServiceUUID> osd = new ArrayList<ServiceUUID>(1);
-	osd.add(serverID);
-	locations.add(new Location(sp, osd));
-	loc = new Locations(locations);
 
 	file = "1:1";
 	objectNumber = 0;
@@ -123,6 +119,13 @@ public class ReadLocalRPCTest extends TestCase {
 
 	FSUtils.delTree(testDir);
 	testDir.mkdirs();
+
+	List<ServiceUUID> osds = new ArrayList<ServiceUUID>(1);
+	StripingPolicy sp = new RAID0(stripeSize, 1);
+	List<Location> locations = new ArrayList<Location>(1);
+	osds.add(serverID);
+	locations.add(new Location(sp, osds));
+	loc = new Locations(locations);
 
 	dir = new RequestController(dirConfig);
 	dir.startup();
@@ -149,9 +152,7 @@ public class ReadLocalRPCTest extends TestCase {
     /**
      * 
      */
-    public void testObjectLocallyAvailable() throws Exception {
-
-	final String content = "Hello World";
+    public void testObjectLocalAvailable() throws Exception {
 	RPCResponse tmp = client.put(serverID.getAddress(), loc, cap, file,
 		objectNumber, ReusableBuffer.wrap(content.getBytes()));
 	tmp.waitForResponse();
@@ -178,14 +179,12 @@ public class ReadLocalRPCTest extends TestCase {
     /**
      * 
      */
-    public void testObjectLocallyNOTAvailable() throws Exception {
+    public void testObjectLocalNOTAvailable() throws Exception {
 	// read object, when none have been written before
 	RPCResponse answer = client.readLocalRPC(serverID.getAddress(), loc, cap, file,
 		objectNumber);
 	answer.waitForResponse();
 	
-	// TODO: enable filesize-check
-
 	assertEquals(HTTPUtils.SC_OKAY, answer.getStatusCode());
 	assertEquals(""+0, answer.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
 	// get empty (JSON-)map, because object was not available
@@ -214,7 +213,7 @@ public class ReadLocalRPCTest extends TestCase {
 	response = (HashMap<String, Long>) JSONParser.parseJSON(new JSONString(new String(answer.getBody().array())));
 	assertEquals(0, response.size());
 
-	// read object that haven't been written (hole)
+	// read object that has not been written (hole)
 	answer = client.put(serverID.getAddress(), loc, cap, file,
 		1l, ReusableBuffer.wrap(content.getBytes()));
 	answer.waitForResponse();
@@ -237,4 +236,52 @@ public class ReadLocalRPCTest extends TestCase {
 	assertEquals(0, response.size());
     }
 
+    public void testObjectLocalAvailableStriped() throws Exception {
+	List<ServiceUUID> osds = new ArrayList<ServiceUUID>(2);
+	StripingPolicy sp = new RAID0(stripeSize, 2);
+	List<Location> locations = new ArrayList<Location>(1);
+	ServiceUUID serverID2 = SetupUtils.getOSD2UUID();
+	osds.add(serverID);
+	osds.add(serverID2);
+	locations.add(new Location(sp, osds));
+	loc = new Locations(locations);
+	OSDConfig osdConfig = SetupUtils.createOSD2Config();
+	OSD osd2 = new OSD(osdConfig);
+	
+	// reuse test
+	testObjectLocalAvailable();
+
+	// test correct filesize update
+//	RPCResponse answer = client.readLocalRPC(serverID2.getAddress(), loc, cap, file,
+//		objectNumber+1);
+//	answer.waitForResponse();
+//
+//	assertEquals(HTTPUtils.SC_OKAY, answer.getStatusCode());
+//	// get correct filesize
+//	assertEquals(""+content.getBytes().length), answer.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
+//	// get empty map, because object was not available
+//	assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), answer.getHeaders().getHeader(HTTPHeaders.HDR_CONTENT_TYPE));
+//	HashMap<String, Long> response = (HashMap<String, Long>) JSONParser.parseJSON(new JSONString(new String(answer.getBody().array())));
+//	assertEquals(0, response.size());
+
+	osd2.shutdown();
+    }
+
+    public void testObjectLocalNOTAvailableStriped() throws Exception {
+	List<ServiceUUID> osds = new ArrayList<ServiceUUID>(2);
+	StripingPolicy sp = new RAID0(stripeSize, 2);
+	List<Location> locations = new ArrayList<Location>(1);
+	ServiceUUID server2ID = SetupUtils.getOSD2UUID();
+	osds.add(serverID);
+	osds.add(server2ID);
+	locations.add(new Location(sp, osds));
+	loc = new Locations(locations);
+	OSDConfig osdConfig = SetupUtils.createOSD2Config();
+	OSD osd2 = new OSD(osdConfig);
+	
+	// reuse test
+	testObjectLocalNOTAvailable();
+	
+	osd2.shutdown();
+    }
 }

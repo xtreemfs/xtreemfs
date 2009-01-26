@@ -49,6 +49,8 @@ public abstract class StorageLayout {
 
     public static final String    VERSION_FILENAME = ".version";
 
+    public static final String    LOCAL_KNOWN_FILESIZE_FILENAME = ".filesize";
+
     protected final String        storageDir;
 
     protected final MetadataCache cache;
@@ -128,39 +130,6 @@ public abstract class StorageLayout {
     protected abstract FileInfo loadFileInfo(String fileId, StripingPolicy sp) throws IOException;
 
     /**
-     * Reads a complete object from the storage device. Follows POSIX.
-     *
-     * @param fileId
-     *            fileId of the object
-     * @param objNo
-     *            object number
-     * @param version
-     *            version to be read
-     * @param checksum
-     *            the checksum currently stored with the object
-     * @param sp
-     *            the striping policy assigned to the file
-     * @param osdNumber
-     *            the number of the OSD assigned to the object
-     * @throws java.io.IOException
-     *             when the object cannot be read
-     * @return a buffer containing the object, or an empty buffer if the
-     *         object does not exist (see POSIX)
-     */
-    public ReusableBuffer readObject(String fileId, long objNo, int version,
-	    String checksum, StripingPolicy sp, long osdNumber)
-	    throws IOException {
-	ReusableBuffer bbuf = readObjectNotPOSIX(fileId, objNo, version,
-		checksum, sp, osdNumber);
-	if (bbuf == null) {
-	    // handles the POSIX behavior of read beyond EOF
-	    bbuf = BufferPool.allocate(0);
-	    bbuf.position(0);
-	}
-	return bbuf;
-    }
-
-    /**
      * Reads a complete object from the storage device.
      *
      * @param fileId
@@ -177,13 +146,13 @@ public abstract class StorageLayout {
      *            the number of the OSD assigned to the object
      * @throws java.io.IOException
      *             when the object cannot be read
-     * @return a buffer containing the object, or <code>null</code> if the
+     * @return a buffer containing the object, or a <code>null</code> if the
      *         object does not exist
      */
-    public abstract ReusableBuffer readObjectNotPOSIX(String fileId, long objNo, int version,
-        String checksum, StripingPolicy sp, long osdNumber) throws IOException;
+    public abstract ReusableBuffer readObject(String fileId, long objNo, int version,
+	    String checksum, StripingPolicy sp, long osdNumber)
+	    throws IOException;
 
-    
     /**
      * Determines whether the given data has a correct checksum.
      *
@@ -332,4 +301,26 @@ public abstract class StorageLayout {
      * @throws IOException if an error occurred
      */
     public abstract ConcurrentFileMap getAllFiles() throws IOException;
+    
+    /**
+     * sets the local known filesize
+     * @param fileId
+     * @param size
+     */
+    public void writeFilesize(String fileId, long size) throws IOException {
+        // try to retrieve metadata from cache
+        FileInfo fi = cache.getFileInfo(fileId);
+
+        // if metadata is cached ...
+        if (fi != null) {
+            fi.setFilesize(size);
+        }
+    }
+    
+    /**
+     * determines, if special disk-file for filesize exists
+     * @return
+     * @throws IOException
+     */
+    public abstract boolean isFilesizeWrittenToDisk(String fileId) throws IOException;
 }

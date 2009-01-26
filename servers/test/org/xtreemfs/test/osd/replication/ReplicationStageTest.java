@@ -161,7 +161,7 @@ public class ReplicationStageTest extends TestCase {
 	
 	try {
 	    // wait 10s, hopefully the request has finished
-	    Thread.sleep(10000);
+	    Thread.sleep(3000);
 	} catch (InterruptedException e) {
 	    //Auto-generated catch block
 	    e.printStackTrace();
@@ -172,6 +172,10 @@ public class ReplicationStageTest extends TestCase {
 //	assertEquals(this.data, request.getData());
     }
 
+    public void testFetchingObject() {
+	
+    }
+    
 /*    private PinkyRequest generateGetRequest(Locations loc, Capability cap,
 	    String file) throws JSONException {
 	HTTPHeaders headers = new HTTPHeaders();

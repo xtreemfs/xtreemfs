@@ -117,7 +117,7 @@ public class ReplicationStage extends Stage {
 		// TODO Auto-generated method stub
 		disseminationLayer.sendFetchObjectRequest(method.getRq());
 		System.out.println(method.getRq().getRequestId() + ": fetch object"); // FIXME:
-																				// testcode
+		// testcode
 	}
 
 	@Override

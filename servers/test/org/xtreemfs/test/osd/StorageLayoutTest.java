@@ -78,16 +78,6 @@ public class StorageLayoutTest extends TestCase {
         basicTests(layout);
     }
 
-    public void testSimpleStorageLayoutAdvanced() throws Exception {
-        SimpleStorageLayout layout = new SimpleStorageLayout(config, new MetadataCache());
-        advancedTests(layout);
-    }
-
-    public void testHashStorageLayoutAdvanced() throws Exception {
-        HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
-        advancedTests(layout);
-    }
-
     /**
      * @param layout
      * @throws IOException
@@ -114,37 +104,6 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(data);
 
         data = layout.readObject(fileId, 1l, 1, null, sp, 0l);
-        assertEquals(0, data.capacity());
-        BufferPool.free(data);
-    }
-
-    /**
-     * 
-     * @param layout
-     * @throws IOException
-     */
-    private void advancedTests(StorageLayout layout) throws IOException {
-        final String fileId = "ABCDEFG:0001";
-	StripingPolicy sp = new RAID0(64, 1);
-
-        assertFalse(layout.fileExists(fileId));
-
-        ReusableBuffer data = BufferPool.allocate(64);
-        for (int i = 0; i < 64; i++) {
-            data.put((byte) (48 + i));
-        }
-
-        layout.writeObject(fileId, 0l, data, 1, 0, null, sp, 0l);
-        BufferPool.free(data);
-
-        data = layout.readObjectNotPOSIX(fileId, 0l, 1, null, sp, 0l);
-        assertEquals(64, data.capacity());
-        for (int i = 0; i < 64; i++) {
-            assertEquals((byte) (48 + i), data.get());
-        }
-        BufferPool.free(data);
-
-        data = layout.readObjectNotPOSIX(fileId, 1l, 1, null, sp, 0l);
         assertNull(data);
         BufferPool.free(data);
     }

@@ -148,7 +148,7 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
     }
 
-    public ReusableBuffer readObjectNotPOSIX(String fileId, long objNo, int version, String checksum,
+    public ReusableBuffer readObject(String fileId, long objNo, int version, String checksum,
         StripingPolicy sp, long osdNumber) throws IOException {
         ReusableBuffer bbuf = null;
 
@@ -418,24 +418,33 @@ public class HashStorageLayout extends StorageLayout {
                     info.getObjChecksums().put(objNum, checksum);
                 }
             }
-            if (lastObjNum > -1) {
-                File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
-                long lastObjSize = lastObjFile.length();
-                // check for empty padding file
-                if (lastObjSize == 0) {
-                    lastObjSize = sp.getStripeSize(lastObjSize);
+
+            // read filesize from file, if exists
+            File filesize = new File(fileDir, LOCAL_KNOWN_FILESIZE_FILENAME);
+            if(filesize.exists()){
+                RandomAccessFile rf = new RandomAccessFile(filesize, "r");
+                info.setFilesize(rf.readLong());
+                rf.close();
+            } else { // otherwise generate filesize from lastObjectNumber
+                if (lastObjNum > -1) {
+                    File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
+                    long lastObjSize = lastObjFile.length();
+                    // check for empty padding file
+                    if (lastObjSize == 0) {
+                        lastObjSize = sp.getStripeSize(lastObjSize);
+                    }
+                    long fsize = lastObjSize;
+                    if (lastObjNum > 0) {
+                        fsize += sp.getLastByte(lastObjNum - 1) + 1;
+                    }
+                    assert (fsize >= 0);
+                    info.setFilesize(fsize);
+                    info.setLastObjectNumber(lastObjNum);
+                } else {
+                    // empty file!
+                    info.setFilesize(0l);
+                    info.setLastObjectNumber(-1);
                 }
-                long fsize = lastObjSize;
-                if (lastObjNum > 0) {
-                    fsize += sp.getLastByte(lastObjNum - 1) + 1;
-                }
-                assert (fsize >= 0);
-                info.setFilesize(fsize);
-                info.setLastObjectNumber(lastObjNum);
-            } else {
-                // empty file!
-                info.setFilesize(0l);
-                info.setLastObjectNumber(-1);
             }
 
             // read truncate epoch from file
@@ -651,5 +660,25 @@ public class HashStorageLayout extends StorageLayout {
         this.fileMap = new ConcurrentFileMap();
         traverseFileTree(this.storageDir);
         return this.fileMap;
+    }
+
+    @Override
+    public void writeFilesize(String fileId, long size) throws IOException {
+	// update cache
+	super.writeFilesize(fileId, size);
+
+        File parent = new File(generateAbsoluteFilePath(fileId));
+        if (!parent.exists())
+            parent.mkdirs();
+        File filesize = new File(parent,LOCAL_KNOWN_FILESIZE_FILENAME);
+        RandomAccessFile rf = new RandomAccessFile(filesize, "rw");
+        rf.writeLong(size);
+        rf.close();
+    }
+    
+    @Override
+    public boolean isFilesizeWrittenToDisk(String fileId) throws IOException {
+        File parent = new File(generateAbsoluteFilePath(fileId));
+        return parent.exists() && (new File(parent,LOCAL_KNOWN_FILESIZE_FILENAME)).exists(); 
     }
 }
