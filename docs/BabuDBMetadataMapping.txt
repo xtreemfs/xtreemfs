@@ -21,7 +21,7 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 
 VOL_INDEX (BabuDB index #0)
 
-The volume index maps a volume ID to an immutable set of volume metadata.
+ The volume index maps a volume ID to an immutable set of volume metadata.
 |----------------------------------------------------------------------------|
 |key   | volumeId                                                            |
 |      | var                                                                 |
@@ -36,7 +36,7 @@ The volume index maps a volume ID to an immutable set of volume metadata.
 
 VOL_NAME_INDEX (BabuDB index #1)
 
-The volume name index maps volume names to volume IDs.
+ The volume name index maps volume names to volume IDs.
 |----------------------------------------------------------------------------|
 |key   | volumeName                                                          |
 |      | var                                                                 |
@@ -91,26 +91,14 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |      | parentID   hash(filename)   type   collisionCount  (hash collision) |
 |      | 8          4                1      2                                |
 |----------------------------------------------------------------------------|
-|value | atime   ctime   mtime   size                                (files) |
-|type=0| 4       4       4       8                                           |
-|      |---------------------------------------------------------------------|
-|      | atime   ctime   mtime                                 (directories) |
-|      | 4       4       4                                                   |
+|value | frequentlyChangedMetadata                                           |
+|type=0| 20 (files), 12 (directories), 8 (link targets)                      |
 |----------------------------------------------------------------------------|
-|value | type  id  permissions  linkCount  epoch  issuedEpoch        (files) |
-|type=1| 1     8   2            2          4      4                          |
-|      |                                                                     |
-|      | readOnlyFlag ownerOffset  groupOffset  fileName  owner  group       |
-|      | 1            2            2            var       var    var         |
-|      |---------------------------------------------------------------------|
-|      | type  id  permissions  ownerOffset  groupOffset       (directories) |
-|      | 1     8   2            2            2                               |
-|      |                                                                     |
-|      | fileName  owner  group                                              |
-|      | var       var    var                                                |
+|value | rarelyChangedMetadata                                               |
+|type=1| var                                                                 |
 |----------------------------------------------------------------------------|
 |value | xLocList                                                            |
-|type=2| var                                                                 |
+|type=2| var (files & directories), 8 (link targets)                         |
 |----------------------------------------------------------------------------|
 
 
@@ -142,22 +130,37 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 
  FILE_ID_INDEX (BabuDB index #3)
  
- The file ID index maps file IDs to file index keys. The index is used to
- retrieve files by means of their IDs, if no path is available.
+ The file ID index is used to retrieve file metadata by means of its ID. It
+ may either map a file ID to a key in the file index, or directly to the three
+ different types of primary file metadata (i.e. types 0-2). The former kind of
+ mapping is used to retrieve file metadata by means of file IDs, which is
+ necessary with some operations that provide a file ID instead of a path. The
+ latter sort of mapping is used to retrieve a file's metadata if the file is
+ referenced by multiple hard links (type 3). In this case, the file's entries
+ in the file index map to the corresponding prefix key in the file ID index. 
 |----------------------------------------------------------------------------|
-|key   | fileID                                                              |
-|      | 8                                                                   |
+|key   | fileID    type                                                      |
+|      | 8         1                                                         |
+|----------------------------------------------------------------------------|
+|value | frequentlyChangedMetadata                                           |
+|type=0| 20 (files), 12 (directories)                                        |
+|----------------------------------------------------------------------------|
+|value | rarelyChangedMetadata                                               |
+|type=1| var                                                                 |
+|----------------------------------------------------------------------------|
+|value | xLocList                                                            |
+|type=2| var                                                                 |
 |----------------------------------------------------------------------------|
 |value | parentID  fileName                                                  |
-|      | 8         var                                                       |
+|type=3| 8         var                                                       |
 |----------------------------------------------------------------------------|
 
 
- LAST_ID_INDEX (BabuDB index #4)
+ LAST_ID_INDEX (BabuDB index #5)
   
-The 'last ID' index stores a single key-value pair that contains the last ID
-assigned to a file. This index is needed to assign IDs to newly-created files
-or directories.
+ The 'last ID' index stores a single key-value pair that contains the last ID
+ assigned to a file. This index is needed to assign IDs to newly-created files
+ or directories.
 |----------------------------------------------------------------------------|
 |key   | '*'                                                                 |
 |      | 1                                                                   |
@@ -168,6 +171,51 @@ or directories.
 
 
 Complex data types are mapped as follows:
+
+
+frequentlyChangedMetadata - comprises file/directory metadata that is
+                            frequently changed
+                            
+ files:
+|----------------------------------------------------------------------------|
+|atime   ctime   mtime   size                                                |
+|4       4       4       8                                                   |
+|----------------------------------------------------------------------------|
+
+ directories:
+|----------------------------------------------------------------------------|
+|atime   ctime   mtime                                                       |
+|4       4       4                                                           |
+|----------------------------------------------------------------------------|
+
+
+rarelyChangedMetadata - comprises file/directory metadata that is rarely
+                        changed
+                        
+ files:
+|----------------------------------------------------------------------------|
+|type  id  permissions  linkCount  epoch  issuedEpoch  readOnlyFlag          |
+|1     8   2            2          4      4            1                     |
+|                                                                            |
+|ownerOffset  groupOffset  fileName  owner  group                            |
+|2            2            var       var    var                              |
+|----------------------------------------------------------------------------|
+
+ directories:
+|----------------------------------------------------------------------------|
+|type id  permissions  linkCount  ownerOffset  groupOffset  fileName   owner |
+|1    8   2            2          2            2            var        var   |
+|                                                                            |
+|group                                                                       |
+|var                                                                         |
+|----------------------------------------------------------------------------|
+
+ link targets:
+|----------------------------------------------------------------------------|
+|type   fileId    fileName                                                   |
+|1      8         var                                                        |
+|----------------------------------------------------------------------------|
+
 
 xLocList - represents an X-Locations list of a file
 |----------------------------------------------------------------------------|
