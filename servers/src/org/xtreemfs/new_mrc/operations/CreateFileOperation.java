@@ -148,8 +148,7 @@ public class CreateFileOperation extends MRCOperation {
                     
                     file.setXLocList(xLocList);
                     
-                    sMan.setMetadata(res.getParentDirId(), res.getFileName(), file,
-                        FileMetadata.XLOC_METADATA, update);
+                    sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
                 }
                 
                 HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);

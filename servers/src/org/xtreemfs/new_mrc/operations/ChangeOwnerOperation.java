@@ -108,8 +108,7 @@ public class ChangeOwnerOperation extends MRCOperation {
             // change owner and owning group
             file.setOwnerAndGroup(rqArgs.userId == null ? file.getOwnerId() : rqArgs.userId,
                 rqArgs.groupId == null ? file.getOwningGroupId() : rqArgs.groupId);
-            sMan.setMetadata(res.getParentDirId(), file.getFileName(), file,
-                FileMetadata.RC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // update POSIX timestamps
             MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,

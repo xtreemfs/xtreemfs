@@ -340,7 +340,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 | ((other.getRights() & PERM_WRITE) > 0 ? POSIX_OTHER_WRITE : 0) | ((other
                     .getRights() & PERM_EXECUTE) > 0 ? POSIX_OTHER_EXEC : 0)));
             
-            sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.RC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
         } catch (Exception exc) {
             throw new MRCException(exc);
@@ -377,7 +377,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             
             // update the permissions value
             file.setPerms(posixAccessRights);
-            sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.RC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // check whether an ACL is defined; if not, return;
             // otherwise, change the ACL entries accordingly
@@ -441,9 +441,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 assert (parentId != 0);
                 
                 // get the parent directory
-                Object[] parentsParentIdAndName = sMan.getParentIdAndFileName(parentId);
-                FileMetadata parent = sMan.getMetadata((Long) parentsParentIdAndName[0],
-                    (String) parentsParentIdAndName[1]);
+                FileMetadata parent = sMan.getMetadata(parentId);
                 
                 // evaluate the parent's sticky bit
                 if ((parent.getPerms() & POSIX_STICKY) != 0)

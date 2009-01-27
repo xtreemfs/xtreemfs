@@ -250,7 +250,7 @@ public class BufferBackedMetadataTest extends TestCase {
             
             // create dir object
             BufferBackedFileMetadata dirObj = new BufferBackedFileMetadata(parentId, dirName,
-                owner, group, fileId, atime, ctime, mtime, perms, (short) 0);
+                owner, group, fileId, atime, ctime, mtime, perms, (short) 1, (short) 0);
             checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, dirObj);
             
             fileId = 77;

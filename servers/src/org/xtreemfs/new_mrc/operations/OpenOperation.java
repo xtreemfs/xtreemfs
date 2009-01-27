@@ -143,8 +143,7 @@ public class OpenOperation extends MRCOperation {
             if (mode == AccessMode.t) {
                 update = sMan.createAtomicDBUpdate(master, rq);
                 file.setIssuedEpoch(file.getIssuedEpoch() + 1);
-                sMan.setMetadata(res.getParentDirId(), res.getFileName(), file,
-                    FileMetadata.RC_METADATA, update);
+                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
             
             // check whether the permission is granted
@@ -172,8 +171,7 @@ public class OpenOperation extends MRCOperation {
                 
                 if (update == null)
                     update = sMan.createAtomicDBUpdate(master, rq);
-                sMan.setMetadata(res.getParentDirId(), res.getFileName(), file,
-                    FileMetadata.XLOC_METADATA, update);
+                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             }
             
             HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);

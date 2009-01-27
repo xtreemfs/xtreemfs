@@ -97,12 +97,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             }
             StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
             
-            // resolve the file ID to parent ID + file Name
-            Object[] parentAndFileName = sMan.getParentIdAndFileName(fileId);
-            long parentId = (Long) parentAndFileName[0];
-            String fileName = (String) parentAndFileName[1];
-            
-            FileMetadata file = sMan.getMetadata(parentId, fileName);
+            FileMetadata file = sMan.getMetadata(fileId);
             if (file == null)
                 throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
             
@@ -134,12 +129,13 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 file.setEpoch(epochNo);
                 
                 AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-                sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.FC_METADATA,
-                    update);
+                sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
                 
-                // update POSIX timestamps
-                MRCOpHelper.updateFileTimes(parentId, file, !master.getConfig().isNoAtime(), false,
-                    true, sMan, update);
+                // TODO: update POSIX time stamps
+                // // update POSIX timestamps
+                // MRCOpHelper.updateFileTimes(parentId, file,
+                // !master.getConfig().isNoAtime(), false,
+                // true, sMan, update);
                 
                 update.execute();
             } else

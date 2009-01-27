@@ -102,14 +102,9 @@ public class RemoveReplicaOperation extends MRCOperation {
             }
             
             StorageManager sMan = vMan.getStorageManager(volumeId);
-            
-            // resolve the file ID to parent ID + file Name
-            Object[] parentAndFileName = sMan.getParentIdAndFileName(fileId);
-            long parentId = (Long) parentAndFileName[0];
-            String fileName = (String) parentAndFileName[1];
-            
+                        
             // retrieve the file metadata
-            FileMetadata file = sMan.getMetadata(parentId, fileName);
+            FileMetadata file = sMan.getMetadata(fileId);
             if (file == null)
                 throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
             
@@ -129,8 +124,6 @@ public class RemoveReplicaOperation extends MRCOperation {
                 sMan = vMan.getStorageManager(volume.getId());
                 PathResolver res = new PathResolver(sMan, p);
                 file = res.getFile();
-                parentId = res.getParentDirId();
-                fileName = res.getFileName();
             }
             
             if (file.isDirectory())
@@ -172,10 +165,7 @@ public class RemoveReplicaOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // update the X-Locations list
-            sMan.setMetadata(parentId, fileName, file, FileMetadata.XLOC_METADATA, update);
-            
-            // update POSIX timestamps
-            MRCOpHelper.updateFileTimes(parentId, file, false, true, false, sMan, update);
+            sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value

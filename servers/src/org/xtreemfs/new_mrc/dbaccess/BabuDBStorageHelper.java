@@ -50,8 +50,6 @@ public class BabuDBStorageHelper {
         
         private final String                          dbName;
         
-        private final long                            parentId;
-        
         private final Iterator<Entry<byte[], byte[]>> it;
         
         private final Map<Short, byte[][]>            keyMap;
@@ -60,12 +58,10 @@ public class BabuDBStorageHelper {
         
         private Entry<byte[], byte[]>                 next;
         
-        public ChildrenIterator(BabuDB database, String dbName, long parentId,
-            Iterator<Entry<byte[], byte[]>> it) {
+        public ChildrenIterator(BabuDB database, String dbName, Iterator<Entry<byte[], byte[]>> it) {
             
             this.database = database;
             this.dbName = dbName;
-            this.parentId = parentId;
             this.it = it;
             this.keyMap = new HashMap<Short, byte[][]>();
             this.valMap = new HashMap<Short, byte[][]>();
@@ -120,14 +116,16 @@ public class BabuDBStorageHelper {
             // in case of a hardlink ...
             if (valBufs[BufferBackedFileMetadata.RC_METADATA][0] == 2)
                 try {
-                    return resolveLink(database, dbName, parentId, keyBufs, valBufs);
+                    return resolveLink(database, dbName,
+                        valBufs[BufferBackedFileMetadata.RC_METADATA]);
                 } catch (BabuDBException exc) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, "could not resolve hard link");
                     return null;
                 }
             
             else
-                return new BufferBackedFileMetadata(keyBufs, valBufs);
+                return new BufferBackedFileMetadata(keyBufs, valBufs,
+                    BabuDBStorageManager.FILE_INDEX);
         }
         
         @Override
@@ -246,14 +244,14 @@ public class BabuDBStorageHelper {
         return bytes;
     }
     
-    public static List<byte[]>[] getMetadataKeys(BabuDB database, String dbName, long parentId,
-        String fileName) throws BabuDBException {
+    public static List<byte[]>[] getKeysToDelete(BabuDB database, String dbName, long parentId,
+        String fileName, boolean lastLink) throws BabuDBException {
         
         List<byte[]>[] lists = new LinkedList[4];
         
         short collNumber = findFileCollisionNumber(database, dbName, parentId, fileName);
         
-        // metadata index keys
+        // file index keys
         lists[BabuDBStorageManager.FILE_INDEX] = new LinkedList<byte[]>();
         byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) -1);
         Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
@@ -265,27 +263,45 @@ public class BabuDBStorageHelper {
                 lists[BabuDBStorageManager.FILE_INDEX].add(key);
         }
         
-        // file ID index key
+        // file ID index
         lists[BabuDBStorageManager.FILE_ID_INDEX] = new LinkedList<byte[]>();
         long fileId = getId(database, dbName, parentId, fileName);
-        byte[] idBytes = new byte[8];
-        ByteBuffer.wrap(idBytes).putLong(fileId);
         
-        lists[BabuDBStorageManager.FILE_ID_INDEX].add(idBytes);
+        it = database.syncPrefixLookup(dbName, BabuDBStorageManager.FILE_ID_INDEX,
+            createFileIdIndexKey(fileId, (byte) -1));
         
-        // ACL index
-        lists[BabuDBStorageManager.ACL_INDEX] = new LinkedList<byte[]>();
-        it = database.syncPrefixLookup(dbName, BabuDBStorageManager.ACL_INDEX, idBytes);
+        while (it.hasNext()) {
+            byte[] key = it.next().getKey();
+            switch (getType(key, BabuDBStorageManager.FILE_ID_INDEX)) {
+            case 3: // backlink: remove in any case
+                lists[BabuDBStorageManager.FILE_ID_INDEX].add(key);
+                break;
+            default: // file metadata: only remove if no more links exist
+                if (lastLink)
+                    lists[BabuDBStorageManager.FILE_ID_INDEX].add(key);
+            }
+        }
         
-        while (it.hasNext())
-            lists[BabuDBStorageManager.ACL_INDEX].add(it.next().getKey());
-        
-        // XAttrIndex
-        lists[BabuDBStorageManager.XATTRS_INDEX] = new LinkedList<byte[]>();
-        it = database.syncPrefixLookup(dbName, BabuDBStorageManager.XATTRS_INDEX, idBytes);
-        
-        while (it.hasNext())
-            lists[BabuDBStorageManager.XATTRS_INDEX].add(it.next().getKey());
+        // if the last link to the file is supposed to be deleted, add the
+        // metadata object including its ACLs and XAttrs
+        if (lastLink) {
+            
+            byte[] idBytes = new byte[8];
+            ByteBuffer.wrap(idBytes).putLong(fileId);
+            
+            // ACL index
+            lists[BabuDBStorageManager.ACL_INDEX] = new LinkedList<byte[]>();
+            it = database.syncPrefixLookup(dbName, BabuDBStorageManager.ACL_INDEX, idBytes);
+            while (it.hasNext())
+                lists[BabuDBStorageManager.ACL_INDEX].add(it.next().getKey());
+            
+            // xattr index
+            lists[BabuDBStorageManager.XATTRS_INDEX] = new LinkedList<byte[]>();
+            it = database.syncPrefixLookup(dbName, BabuDBStorageManager.XATTRS_INDEX, idBytes);
+            while (it.hasNext())
+                lists[BabuDBStorageManager.XATTRS_INDEX].add(it.next().getKey());
+            
+        }
         
         return lists;
     }
@@ -519,11 +535,13 @@ public class BabuDBStorageHelper {
         return buf;
     }
     
-    public static byte[] createLinkIndexKey(long fileId, byte type) {
+    public static byte[] createFileIdIndexKey(long fileId, byte type) {
         
-        byte[] buf = new byte[9];
+        byte[] buf = new byte[type == -1 ? 8 : 9];
         ByteBuffer tmp = ByteBuffer.wrap(buf);
-        tmp.putLong(fileId).put(type);
+        tmp.putLong(fileId);
+        if (type != -1)
+            tmp.put(type);
         
         return buf;
     }
@@ -581,7 +599,7 @@ public class BabuDBStorageHelper {
             
             if (curr.getValue()[0] == 2) {
                 entryId = ByteBuffer.wrap(curr.getValue()).getLong();
-                entryFileName = new String(curr.getValue(), 8, curr.getValue().length - 8);
+                entryFileName = new String(curr.getValue(), 9, curr.getValue().length - 9);
             } else {
                 BufferBackedRCMetadata md = new BufferBackedRCMetadata(curr.getKey(), curr
                         .getValue());
@@ -598,56 +616,53 @@ public class BabuDBStorageHelper {
         return id;
     }
     
-    public static byte getType(byte[] key, boolean link) {
-        return key[link ? 8 : 12];
+    public static byte getType(byte[] key, int index) {
+        return key[index == BabuDBStorageManager.FILE_ID_INDEX ? 8 : 12];
     }
     
-    public static BufferBackedFileMetadata resolveLink(BabuDB database, String dbName,
-        long linkParentId, byte[][] keyBufs, byte[][] valBufs) throws BabuDBException {
-        
-        // determine the link name
-        String linkName = new String(valBufs[FileMetadata.RC_METADATA], 9,
-            valBufs[FileMetadata.RC_METADATA].length - 9);
+    public static BufferBackedFileMetadata resolveLink(BabuDB database, String dbName, byte[] target)
+        throws BabuDBException {
         
         // determine the key for the link index
         byte[] fileIdBytes = new byte[8];
-        System.arraycopy(valBufs[FileMetadata.RC_METADATA], 1, fileIdBytes, 0, fileIdBytes.length);
+        System.arraycopy(target, 1, fileIdBytes, 0, fileIdBytes.length);
+        
+        String fileName = new String(target, 9, target.length - 9);
+        byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
         
         // retrieve the metadata from the link index
         Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
-            BabuDBStorageManager.LINK_INDEX, fileIdBytes);
+            BabuDBStorageManager.FILE_ID_INDEX, fileIdBytes);
         
         while (it.hasNext()) {
             
             Entry<byte[], byte[]> curr = it.next();
             
-            int type = getType(curr.getKey(), true);
+            int type = getType(curr.getKey(), BabuDBStorageManager.FILE_ID_INDEX);
+            if (type == 3) {
+                long fileId = ByteBuffer.wrap(fileIdBytes).getLong();
+                Logging.logMessage(Logging.LEVEL_WARN, null,
+                    "MRC database contains redundant data for file " + fileId);
+                continue;
+            }
             valBufs[type] = curr.getValue();
         }
         
-        // replace file name and parent ID with the ones from the link
-        BufferBackedRCMetadata rcMetadata = new BufferBackedRCMetadata(
-            keyBufs[BufferBackedFileMetadata.RC_METADATA],
-            valBufs[BufferBackedFileMetadata.RC_METADATA]);
+        if (valBufs[FileMetadata.RC_METADATA] == null)
+            return null;
         
-        BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(linkParentId, linkName, rcMetadata
-                .getOwnerId(), rcMetadata.getOwningGroupId(), rcMetadata.getId(), rcMetadata
-                .getPerms(), rcMetadata.getLinkCount(), rcMetadata.getEpoch(), rcMetadata
-                .getIssuedEpoch(), rcMetadata.isReadOnly(), rcMetadata.getCollisionCount());
+        // replace the file name with the link name
+        BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(null,
+            valBufs[FileMetadata.RC_METADATA]);
+        BufferBackedRCMetadata tmp2 = tmp.isDirectory() ? new BufferBackedRCMetadata(0, fileName,
+            tmp.getOwnerId(), tmp.getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp
+                    .getLinkCount(), tmp.getCollisionCount()) : new BufferBackedRCMetadata(0,
+            fileName, tmp.getOwnerId(), tmp.getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp
+                    .getLinkCount(), tmp.getEpoch(), tmp.getIssuedEpoch(), tmp.isReadOnly(), tmp
+                    .getCollisionCount());
+        valBufs[FileMetadata.RC_METADATA] = tmp2.getValue();
         
-        keyBufs[BufferBackedFileMetadata.FC_METADATA] = new byte[tmp.getKey().length];
-        System.arraycopy(tmp.getKey(), 0, keyBufs[BufferBackedFileMetadata.FC_METADATA], 0, tmp
-                .getKey().length);
-        keyBufs[BufferBackedFileMetadata.FC_METADATA][12] = 0;
-        
-        keyBufs[BufferBackedFileMetadata.XLOC_METADATA] = new byte[tmp.getKey().length];
-        System.arraycopy(tmp.getKey(), 0, keyBufs[BufferBackedFileMetadata.XLOC_METADATA], 0, tmp
-                .getKey().length);
-        keyBufs[BufferBackedFileMetadata.XLOC_METADATA][12] = 2;
-        
-        keyBufs[BufferBackedFileMetadata.RC_METADATA] = tmp.getKey();
-        valBufs[BufferBackedFileMetadata.RC_METADATA] = tmp.getValue();
-        
-        return new BufferBackedFileMetadata(keyBufs, valBufs, true);
+        return new BufferBackedFileMetadata(null, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
     }
+    
 }

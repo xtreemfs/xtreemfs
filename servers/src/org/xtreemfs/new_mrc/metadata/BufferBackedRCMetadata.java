@@ -42,11 +42,11 @@ public class BufferBackedRCMetadata {
     
     protected static final int RC_READONLY              = 21;
     
-    protected static final int RC_DIR_OWNER_OFFSET      = 11;
+    protected static final int RC_DIR_OWNER_OFFSET      = 13;
     
-    protected static final int RC_DIR_GROUP_OFFSET      = 13;
+    protected static final int RC_DIR_GROUP_OFFSET      = 15;
     
-    protected static final int DIR_VAR_LEN_PART_OFFSET  = 15;
+    protected static final int DIR_VAR_LEN_PART_OFFSET  = 17;
     
     protected static final int RC_FILE_OWNER_OFFSET     = 22;
     
@@ -76,7 +76,7 @@ public class BufferBackedRCMetadata {
     public BufferBackedRCMetadata(byte[] keyBuf, byte[] valBuf) {
         
         // assign the key and value
-        this.keyBuf = ByteBuffer.wrap(keyBuf);
+        this.keyBuf = keyBuf == null ? null : ByteBuffer.wrap(keyBuf);
         this.valBuf = ByteBuffer.wrap(valBuf);
         
         directory = valBuf[0] == 1;
@@ -134,7 +134,7 @@ public class BufferBackedRCMetadata {
      * @param perms
      */
     public BufferBackedRCMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, short perms, short collCount) {
+        long fileId, short perms, short linkCount, short collCount) {
         
         // assign the key
         keyBuf = generateKeyBuf(parentId, dirName, BufferBackedFileMetadata.RC_METADATA, collCount);
@@ -150,7 +150,7 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(ownerOffset).putShort(
+        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putShort(ownerOffset).putShort(
             groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
         directory = true;
@@ -231,11 +231,11 @@ public class BufferBackedRCMetadata {
     }
     
     public short getCollisionCount() {
-        return keyBuf.array().length == 13 ? 0 : keyBuf.getShort(13);
+        return keyBuf == null ? 0 : keyBuf.array().length == 13 ? 0 : keyBuf.getShort(13);
     }
     
     public byte[] getKey() {
-        return keyBuf.array();
+        return keyBuf == null ? null : keyBuf.array();
     }
     
     public byte[] getValue() {

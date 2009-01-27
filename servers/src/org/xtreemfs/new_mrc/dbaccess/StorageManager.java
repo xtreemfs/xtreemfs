@@ -108,7 +108,7 @@ public interface StorageManager {
     
     public String getVolumeName();
     
-    public Object[] getParentIdAndFileName(long fileId) throws DatabaseException;
+    public FileMetadata getMetadata(long fileId) throws DatabaseException;
     
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
     
@@ -120,8 +120,8 @@ public interface StorageManager {
     
     // setting metadata
     
-    public void setMetadata(long parentId, String fileName, FileMetadata metadata, byte type,
-        AtomicDBUpdate update) throws DatabaseException;
+    public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update)
+        throws DatabaseException;
     
     public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;

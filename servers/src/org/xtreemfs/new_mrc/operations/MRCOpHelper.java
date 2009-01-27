@@ -100,7 +100,7 @@ public class MRCOpHelper {
         if (setMTime)
             file.setMtime(currentTime);
         
-        sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.FC_METADATA, update);
+        sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
     }
     
     public static Map<String, Object> createStatInfo(StorageManager sMan, FileAccessManager faMan,
@@ -374,8 +374,7 @@ public class MRCOpHelper {
                         + "at least one OSD occurs more than once");
                 
                 file.setXLocList(newXLoc);
-                sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.XLOC_METADATA,
-                    update);
+                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
                 
             } catch (JSONException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " + value);
@@ -457,7 +456,7 @@ public class MRCOpHelper {
                     "read-only flag cannot be removed from files with multiple replicas");
             
             file.setReadOnly(readOnly);
-            sMan.setMetadata(parentId, file.getFileName(), file, FileMetadata.RC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             break;
         

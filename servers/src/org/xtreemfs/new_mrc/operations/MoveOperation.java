@@ -26,6 +26,7 @@ package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
 
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -283,6 +284,10 @@ public class MoveOperation extends MRCOperation {
                 true, true, sMan, update);
             MRCOpHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false,
                 true, true, sMan, update);
+            
+            // FIXME: this line is needed due to a BUG in the client which
+            // expects some useless return value
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             update.execute();
             
