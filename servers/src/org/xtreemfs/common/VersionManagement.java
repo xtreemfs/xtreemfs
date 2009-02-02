@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class VersionManagement {
 
-    private static final long[] supportedProtocolVersions = { 39 };
+    private static final long[] supportedProtocolVersions = { 39, 42 };
 
     private static final long   mrcDataVersion            = 2;
 
