@@ -101,12 +101,11 @@ public class NetUtils {
         if (endpoints.isEmpty()) {
             
             ifcs = NetworkInterface.getNetworkInterfaces();
-            NetworkInterface ifc = ifcs.nextElement();
-            List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
             
-            // first, find all globally-reachable endpoints
-            ifcs = NetworkInterface.getNetworkInterfaces();
             while (ifcs.hasMoreElements()) {
+                
+                NetworkInterface ifc = ifcs.nextElement();
+                List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
                 
                 // if there is no "public" IP check for a site local address to
                 // use
