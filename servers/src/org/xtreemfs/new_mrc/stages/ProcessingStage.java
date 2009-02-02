@@ -64,9 +64,11 @@ import org.xtreemfs.new_mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.new_mrc.operations.RenewOperation;
 import org.xtreemfs.new_mrc.operations.SetXAttrsOperation;
 import org.xtreemfs.new_mrc.operations.ShutdownOperation;
+import org.xtreemfs.new_mrc.operations.StatFSOperation;
 import org.xtreemfs.new_mrc.operations.StatOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
 import org.xtreemfs.new_mrc.operations.UpdateFileSizeOperation;
+import org.xtreemfs.new_mrc.operations.UtimeOperation;
 
 /**
  * 
@@ -117,6 +119,8 @@ public class ProcessingStage extends MRCStage {
         operations.put(RemoveReplicaOperation.RPC_NAME, new RemoveReplicaOperation(master));
         operations.put(MoveOperation.RPC_NAME, new MoveOperation(master));
         operations.put(CreateLinkOperation.RPC_NAME, new CreateLinkOperation(master));
+        operations.put(StatFSOperation.RPC_NAME, new StatFSOperation(master));
+        operations.put(UtimeOperation.RPC_NAME, new UtimeOperation(master));
     }
     
     @Override

@@ -61,7 +61,7 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 public class MRCOpHelper {
     
-    protected enum AccessMode {
+    public enum AccessMode {
         r, w, x, a, ga, c, t, sr, d
     }
     

@@ -102,6 +102,10 @@ public final class ErrorRecord {
     public ErrorClass getErrorClass() {
         return errorClass;
     }
+
+    public Throwable getThrowable() {
+        return this.throwable;
+    }
     
     public String toString() {
         
