@@ -194,8 +194,8 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
                         
  files:
 |----------------------------------------------------------------------------|
-|type  id  permissions  linkCount  epoch  issuedEpoch  readOnlyFlag          |
-|1     8   2            2          4      4            1                     |
+|type  id  permissions  linkCount  w32attrs  epoch  issuedEpoch  readOnlyFlag|
+|1     8   2            2          8         4      4            1           |
 |                                                                            |
 |ownerOffset  groupOffset  fileName  owner  group                            |
 |2            2            var       var    var                              |
@@ -203,11 +203,11 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
 
  directories:
 |----------------------------------------------------------------------------|
-|type id  permissions  linkCount  ownerOffset  groupOffset  fileName   owner |
-|1    8   2            2          2            2            var        var   |
+|type id  permissions  linkCount  w32attrs  ownerOffset  groupOffset         |
+|1    8   2            2          8         2            2                   |
 |                                                                            |
-|group                                                                       |
-|var                                                                         |
+|fileName   owner    group                                                   |
+|var        var      var                                                     |
 |----------------------------------------------------------------------------|
 
  link targets:
