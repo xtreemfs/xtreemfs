@@ -212,7 +212,7 @@ public class Brain {
         }
     }
     
-    public void createVolumeStep2(MRCRequest request) throws BrainException {
+    public void createVolumeStep2(MRCRequest request) throws UserException, BrainException {
         
         try {
             
@@ -245,12 +245,14 @@ public class Brain {
             BrainHelper
                     .submitRequest(this, request, dirService, "registerEntity", args, authString);
             
+        } catch (UserException exc) {
+            throw exc;
         } catch (Exception exc) {
             throw new BrainException(exc);
         }
     }
     
-    public void createVolumeStep3(MRCRequest request) throws BrainException {
+    public void createVolumeStep3(MRCRequest request) throws BrainException, UserException {
         
         try {
             
@@ -286,6 +288,8 @@ public class Brain {
             MessageUtils.marshallResponse(request, null);
             this.notifyRequestListener(request);
             
+        } catch (UserException exc) {
+            throw exc;
         } catch (Exception exc) {
             // FIXME: roll back DIR registration
             throw new BrainException(exc);
@@ -1071,11 +1075,11 @@ public class Brain {
      * @throws BrainException
      */
     public void restoreFile(MRCRequest request, String filePath, long fileNumber, long fileSize,
-        Map<String, Object> xAttrs, String osd, long objectSize, String volumeID) throws UserException,
-        BrainException {
+        Map<String, Object> xAttrs, String osd, long objectSize, String volumeID)
+        throws UserException, BrainException {
         try {
             VolumeInfo volume = getVolumeData(volumeID);
-            String path = volume.getName()+"/"+filePath;
+            String path = volume.getName() + "/" + filePath;
             Path p = new Path(path);
             
             StorageManager sMan = sliceMan.getSliceDB(volumeID, p.getPathWithoutVolume(),
@@ -1091,28 +1095,28 @@ public class Brain {
             if (!request.details.authorized) {
                 
                 // check whether the parent directory is searchable
-                faMan.checkSearchPermission(volumeID, "/",
-                    request.details.userId, request.details.superUser, request.details.groupIds);
+                faMan.checkSearchPermission(volumeID, "/", request.details.userId,
+                    request.details.superUser, request.details.groupIds);
                 
                 // check whether the parent directory grants write access
-                faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volumeID, parentDir
-                        .getId(), 0, request.details.userId, request.details.superUser,
-                    request.details.groupIds);
+                faMan.checkPermission(FileAccessManager.WRITE_ACCESS, volumeID, parentDir.getId(),
+                    0, request.details.userId, request.details.superUser, request.details.groupIds);
             }
             
             long lostFoundID = 0L;
-            try{
+            try {
                 lostFoundID = sMan.getFileEntity(filePath).getId();
-            }catch (UserException ue){
+            } catch (UserException ue) {
                 // create lost and found DIR, if necessary
-                lostFoundID = sMan.createFile(null, request.details.userId, request.details.groupIds
-                        .get(0), null, true, acl);
+                lostFoundID = sMan.createFile(null, request.details.userId,
+                    request.details.groupIds.get(0), null, true, acl);
                 
                 // link the metadata object to the given parent directory
                 sMan.linkFile(filePath, lostFoundID, parentDir.getId());
             }
             
-            long size = (objectSize<1024L ? 1L : (objectSize % 1024L != 0L) ? objectSize/1024L+1L : objectSize/1024L);
+            long size = (objectSize < 1024L ? 1L
+                : (objectSize % 1024L != 0L) ? objectSize / 1024L + 1L : objectSize / 1024L);
             
             // make a new xlocl
             XLocationsList xloc = new XLocationsList(new XLocation[] { new XLocation(
@@ -1924,8 +1928,8 @@ public class Brain {
                                 request.details.userId, request.details.superUser,
                                 request.details.groupIds);
                     
-                    BrainHelper.setSysAttrValue(sMan, sliceMan, volume, file, attrKey.substring(9), xAttrs
-                            .get(attrKey).toString());
+                    BrainHelper.setSysAttrValue(sMan, sliceMan, volume, file, attrKey.substring(9),
+                        xAttrs.get(attrKey).toString());
                     
                     xAttrs.remove(attrKey);
                 }
