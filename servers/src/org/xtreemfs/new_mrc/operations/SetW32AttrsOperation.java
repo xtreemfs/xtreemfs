@@ -24,27 +24,21 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
-import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.metadata.XLocList;
-import org.xtreemfs.new_mrc.operations.MRCOpHelper.AccessMode;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -52,27 +46,19 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class CreateFileOperation extends MRCOperation {
+public class SetW32AttrsOperation extends MRCOperation {
     
     static class Args {
         
-        public String              filePath;
+        public String              path;
         
-        public Map<String, Object> xAttrs;
-        
-        public Map<String, Object> stripingPolicy;
-        
-        public short               mode;
-        
-        public boolean             open;
-        
-        public List<Object>        assignedXLocList;
+        public Long                attr;
         
     }
     
-    public static final String RPC_NAME = "createFile";
+    public static final String RPC_NAME = "setW32Attrs";
     
-    public CreateFileOperation(MRCRequestDispatcher master) {
+    public SetW32AttrsOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -96,7 +82,7 @@ public class CreateFileOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.filePath);
+            final Path p = new Path(rqArgs.path);
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
@@ -106,70 +92,24 @@ public class CreateFileOperation extends MRCOperation {
             faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            // check whether file exists
+            res.checkIfFileDoesNotExist();
             
-            // check whether the file/directory exists already
-            res.checkIfFileExistsAlready();
+            // retrieve and prepare the metadata to return
+            FileMetadata file = res.getFile();
             
-            // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.stripingPolicy,
-                rqArgs.mode, null, false, update);
-            
-            // create the user attributes
-            if (rqArgs.xAttrs != null) {
-                for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                            .toString(), update);
-            }
-            
-            // if O_CREAT flag is set ...
-            if (rqArgs.open) {
-                
-                // create a capability for O_CREAT open calls
-                String capability = MRCOpHelper.createCapability(AccessMode.w.toString(),
-                    volume.getId(), file.getId(), 0, master.getConfig().getCapabilitySecret())
-                        .toString();
-                
-                // get the list of replicas associated with the file
-                XLocList xLocList = file.getXLocList();
-                
-                // if no replica exists yet, create one using the default
-                // striping policy together with a set of feasible OSDs from the
-                // OSD status manager
-                if (xLocList == null || !xLocList.iterator().hasNext()) {
-                    
-                    xLocList = MRCOpHelper.createXLocList(xLocList, sMan, master
-                            .getOSDStatusManager(), res.toString(), file.getId(), res
-                            .getParentDirId(), volume, rq.getPinkyRequest().getClientAddress());
-                    
-                    file.setXLocList(xLocList);
-                    
-                    sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-                }
-                
-                HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);
-                rq.setAdditionalResponseHeaders(headers);
-                
-                // update POSIX timestamps of file
-                MRCOpHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig()
-                        .isNoAtime(), true, true, sMan, update);
-                
-                // update POSIX timestamps of parent directory
-                MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false,
-                    true, true, sMan, update);
-                
-            }
+            // set all system attributes included in the map
+            file.setW32Attrs(rqArgs.attr);
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            
+            // update POSIX timestamps
+            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                update);
             
             update.execute();
             
@@ -190,24 +130,10 @@ public class CreateFileOperation extends MRCOperation {
         
         try {
             
-            args.filePath = (String) arguments.get(0);
-            if (arguments.size() == 1) {
-                args.mode = 511;
-                return null;
-            }
+            args.path = (String) arguments.get(0);
+            args.attr = (Long) arguments.get(1);
             
-            args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.stripingPolicy = (Map<String, Object>) arguments.get(2);
-            args.mode = ((Long) arguments.get(3)).shortValue();
-            if (arguments.size() == 4)
-                return null;
-            
-            args.open = (Boolean) arguments.get(4);
-            if (arguments.size() == 5)
-                return null;
-            
-            args.assignedXLocList = (List<Object>) arguments.get(5);
-            if (arguments.size() == 6)
+            if (arguments.size() == 2)
                 return null;
             
             throw new Exception();
