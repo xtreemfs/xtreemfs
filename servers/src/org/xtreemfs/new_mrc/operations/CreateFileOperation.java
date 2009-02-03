@@ -24,6 +24,7 @@
 
 package org.xtreemfs.new_mrc.operations;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,10 +34,10 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
@@ -122,9 +123,10 @@ public class CreateFileOperation extends MRCOperation {
                 rqArgs.mode, null, false, update);
             
             // create the user attributes
-            for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                        .toString(), update);
+            if (rqArgs.xAttrs != null)
+                for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
+                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr
+                            .getValue().toString(), update);
             
             // if O_CREAT flag is set ...
             if (rqArgs.open) {
@@ -188,8 +190,10 @@ public class CreateFileOperation extends MRCOperation {
         try {
             
             args.filePath = (String) arguments.get(0);
-            if (arguments.size() == 1)
+            if (arguments.size() == 1) {
+                args.mode = 511;
                 return null;
+            }
             
             args.xAttrs = (Map<String, Object>) arguments.get(1);
             args.stripingPolicy = (Map<String, Object>) arguments.get(2);

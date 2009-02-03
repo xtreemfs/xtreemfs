@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.PolicyContainer;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
@@ -45,28 +45,28 @@ import org.xtreemfs.new_mrc.volumes.VolumeManager;
  */
 public class FileAccessManager {
     
-    public static final int                   READ_ACCESS         = 1;
+    public static final int                    READ_ACCESS         = 1;
     
-    public static final int                   SEARCH_ACCESS       = 2;
+    public static final int                    SEARCH_ACCESS       = 2;
     
-    public static final int                   WRITE_ACCESS        = 3;
+    public static final int                    WRITE_ACCESS        = 3;
     
-    public static final int                   DELETE_ACCESS       = 4;
+    public static final int                    DELETE_ACCESS       = 4;
     
-    public static final int                   RM_MV_IN_DIR_ACCESS = 5;
+    public static final int                    RM_MV_IN_DIR_ACCESS = 5;
     
-    private final VolumeManager               volMan;
+    private final VolumeManager                volMan;
     
-    private final Map<Long, FileAccessPolicy> policies;
+    private final Map<Short, FileAccessPolicy> policies;
     
-    private PolicyContainer                   policyContainer;
+    private PolicyContainer                    policyContainer;
     
     public FileAccessManager(VolumeManager volMan, PolicyContainer policyContainer) {
         
         this.volMan = volMan;
         this.policyContainer = policyContainer;
         
-        policies = new HashMap<Long, FileAccessPolicy>();
+        policies = new HashMap<Short, FileAccessPolicy>();
         policies.put(POSIXFileAccessPolicy.POLICY_ID, new POSIXFileAccessPolicy());
         policies.put(YesToAnyoneFileAccessPolicy.POLICY_ID, new YesToAnyoneFileAccessPolicy());
         policies.put(VolumeACLFileAccessPolicy.POLICY_ID, new VolumeACLFileAccessPolicy());
@@ -142,7 +142,7 @@ public class FileAccessManager {
             userId, groupIds, entities, update);
     }
     
-    public FileAccessPolicy getFileAccessPolicy(long policyId) {
+    public FileAccessPolicy getFileAccessPolicy(short policyId) {
         
         FileAccessPolicy policy = policies.get(policyId);
         
@@ -165,7 +165,7 @@ public class FileAccessManager {
     protected FileAccessPolicy getVolumeFileAccessPolicy(String volumeId) throws MRCException {
         
         try {
-            long policyId = volMan.getVolumeById(volumeId).getAcPolicyId();
+            short policyId = volMan.getVolumeById(volumeId).getAcPolicyId();
             
             FileAccessPolicy policy = getFileAccessPolicy(policyId);
             

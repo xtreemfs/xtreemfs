@@ -25,12 +25,12 @@
 package org.xtreemfs.new_mrc.volumes;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
@@ -38,18 +38,20 @@ import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.mrc.brain.storage.BackendException;
-import org.xtreemfs.mrc.brain.storage.VolIDGen;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
+import org.xtreemfs.new_mrc.ac.FileAccessManager;
+import org.xtreemfs.new_mrc.ac.FileAccessPolicy;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBRequestListenerWrapper;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.volumes.metadata.BufferBackedVolumeInfo;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -112,10 +114,11 @@ public class BabuDBVolumeManager implements VolumeManager {
         database.shutdown();
     }
     
-    public VolumeInfo createVolume(String volumeId, String volumeName, short fileAccessPolicyId,
-        short osdPolicyId, String osdPolicyArgs, String ownerId, String owningGroupId,
-        Map<String, Object> defaultStripingPolicy, DBAccessResultListener listener, Object context)
-        throws UserException, DatabaseException, MRCException {
+    public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
+        short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
+        String owningGroupId, Map<String, Object> defaultStripingPolicy,
+        DBAccessResultListener listener, Object context) throws UserException, DatabaseException,
+        MRCException {
         
         if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)
             throw new UserException(ErrNo.EINVAL, "volume name must not contain '/' or '\\'");
@@ -127,9 +130,6 @@ public class BabuDBVolumeManager implements VolumeManager {
         // create the volume
         BufferBackedVolumeInfo volume = new BufferBackedVolumeInfo(volumeId, volumeName,
             fileAccessPolicyId, osdPolicyId, osdPolicyArgs);
-        
-        // the default set of volume permissions is (rwxr-xr-x)
-        short perms = 509;
         
         // make sure that no volume database with the given name exists
         try {
@@ -148,8 +148,13 @@ public class BabuDBVolumeManager implements VolumeManager {
         BabuDBStorageManager sMan = new BabuDBStorageManager(database, volumeName, volumeId);
         mngrMap.put(volumeId, sMan);
         
+        // get the default permissions and ACL
+        FileAccessPolicy policy = faMan.getFileAccessPolicy(fileAccessPolicyId);
+        short perms = policy.getDefaultRootRights();
+        ACLEntry[] acl = policy.getDefaultRootACL(sMan);
+        
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-        sMan.init(ownerId, owningGroupId, perms, defaultStripingPolicy, update);
+        sMan.init(ownerId, owningGroupId, perms, acl, defaultStripingPolicy, update);
         update.execute();
         
         try {
@@ -325,12 +330,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     @Override
     public String newVolumeId() {
-        try {
-            return new VolIDGen().getNewVolID();
-        } catch (SocketException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, e);
-            return null;
-        }
+        return UUID.randomUUID().toString();
     }
     
     private void notifyVolumeChangeListeners(int mod, VolumeInfo vol) {

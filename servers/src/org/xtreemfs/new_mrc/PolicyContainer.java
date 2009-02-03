@@ -51,106 +51,106 @@ import org.xtreemfs.new_mrc.ac.FileAccessPolicy;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 
 public class PolicyContainer {
-
+    
     static class PolicyClassLoader extends ClassLoader {
-
+        
         private static final Class[]         POLICY_INTERFACES = { FileAccessPolicy.class,
                                                                    OSDSelectionPolicy.class };
-
+        
         private Map<String, Class>           cache;
-
+        
         private Map<Class, Map<Long, Class>> policyMap;
-
+        
         private File[]                       jarFiles;
-
+        
         private File                         policyDir;
-
+        
         public PolicyClassLoader(String policyDirPath) throws IOException {
-
+            
             this.cache = new HashMap<String, Class>();
             this.policyMap = new HashMap<Class, Map<Long, Class>>();
-
+            
             if (policyDirPath != null)
                 policyDir = new File(policyDirPath);
         }
-
+        
         public void init() throws IOException {
-
+            
             if ((policyDir == null) || (policyDir.exists()))
                 return;
-
+            
             // get all JAR files
             jarFiles = policyDir.listFiles(new FileFilter() {
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".jar");
                 }
             });
-
+            
             // get all Java files recursively
             File[] javaFiles = FSUtils.listRecursively(policyDir, new FileFilter() {
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".java");
                 }
             });
-
+            
             // compile all Java files
             if (javaFiles.length != 0) {
-
+                
                 String cp = System.getProperty("java.class.path") + ":";
                 for (int i = 0; i < jarFiles.length; i++) {
                     cp += jarFiles[i];
                     if (i != jarFiles.length - 1)
                         cp += ":";
                 }
-
+                
                 List<String> options = new ArrayList<String>(1);
                 options.add("-cp");
                 options.add(cp);
-
+                
                 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
                 StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null,
                     null);
-
+                
                 Iterable<? extends JavaFileObject> compilationUnits = fileManager
                         .getJavaFileObjectsFromFiles(Arrays.asList(javaFiles));
                 if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits)
                         .call())
                     Logging.logMessage(Logging.LEVEL_WARN, this, "some policies in '"
                         + policyDir.getAbsolutePath() + "' could not be compiled");
-
+                
                 fileManager.close();
             }
-
+            
             // retrieve all policies from class files
             File[] classFiles = FSUtils.listRecursively(policyDir, new FileFilter() {
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".class");
                 }
             });
-
+            
             for (File cls : classFiles) {
                 try {
-
+                    
                     String className = cls.getAbsolutePath().substring(
                         policyDir.getAbsolutePath().length() + 1,
                         cls.getAbsolutePath().length() - ".class".length()).replace('/', '.');
                     if (cache.containsKey(className))
                         continue;
-
+                    
                     // load the class
                     Class clazz = loadFromStream(new FileInputStream(cls));
-
+                    
                     // check whether the class refers to a policy; if so, cache
                     // it
                     checkClass(clazz);
-
+                    
                 } catch (Exception exc) {
                     Logging.logMessage(Logging.LEVEL_WARN, this,
                         "an error occurred while trying to load class from file " + cls);
                     Logging.logMessage(Logging.LEVEL_WARN, this, exc);
                 }
             }
-
+            
             // retrieve all policies from JAR files
             // for (File jar : jarFiles) {
             //
@@ -182,15 +182,15 @@ public class PolicyContainer {
             // }
             // }
             // }
-
+            
         }
-
+        
         public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-
+            
             // first, check whether the class is cached
             if (cache.containsKey(name))
                 return cache.get(name);
-
+            
             // if not cached, try to resolve the class by means of the system
             // class loader
             try {
@@ -200,39 +200,39 @@ public class PolicyContainer {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not find system class '"
                         + name + "', trying to define the class");
             }
-
+            
             if (policyDir == null || !policyDir.exists())
                 throw new ClassNotFoundException("no built-in policy '" + name
                     + "' available, and no plug-in policy directory specified");
-
+            
             // if it could not be loaded w/ the system class loader, try to
             // define it
             try {
-
+                
                 File classFile = new File(policyDir.getAbsolutePath() + "/"
                     + name.replace('.', '/') + ".class");
-
+                
                 Class clazz = loadFromStream(new FileInputStream(classFile));
-
+                
                 if (resolve)
                     resolveClass(clazz);
-
+                
                 return clazz;
-
+                
             } catch (IOException exc) {
-
+                
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not define class '" + name
                         + "', trying to load the class from a plug-in JAR file");
-
+                
             } catch (LinkageError err) {
-
+                
                 Logging.logMessage(Logging.LEVEL_WARN, this, "could not define class '" + name
                     + "'");
                 Logging.logMessage(Logging.LEVEL_WARN, this, err);
-
+                
             }
-
+            
             // if the class could not be loaded by the system class loader, try
             // to load it from an external JAR file
             URL[] urls = new URL[jarFiles.length];
@@ -242,61 +242,61 @@ public class PolicyContainer {
             } catch (MalformedURLException exc) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
             }
-
+            
             return new URLClassLoader(urls).loadClass(name);
         }
-
+        
         public Class<?> loadClass(long id, Class policyInterFace) throws ClassNotFoundException {
-
+            
             Map<Long, Class> map = policyMap.get(policyInterFace);
             if (map == null)
                 throw new ClassNotFoundException();
-
+            
             Class clazz = map.get(id);
             if (clazz == null)
                 throw new ClassNotFoundException();
-
+            
             return clazz;
         }
-
+        
         private Class loadFromStream(InputStream in) throws IOException {
-
+            
             // load the binary class content
             byte[] classData = new byte[in.available()];
             in.read(classData);
             in.close();
-
+            
             Class clazz = defineClass(null, classData, 0, classData.length);
             cache.put(clazz.getName(), clazz);
-
+            
             return clazz;
         }
-
+        
         private void checkClass(Class clazz) {
-
+            
             // check whether the class matches any of the policy
             // interfaces
             for (Class ifc : POLICY_INTERFACES) {
-
+                
                 if (ifc.isAssignableFrom(clazz)) {
-
+                    
                     // get the policy ID
                     try {
                         long policyId = clazz.getDeclaredField("POLICY_ID").getLong(null);
-
+                        
                         // add the policy to the internal map
                         Map<Long, Class> polIdMap = policyMap.get(ifc);
                         if (polIdMap == null) {
                             polIdMap = new HashMap<Long, Class>();
                             policyMap.put(ifc, polIdMap);
                         }
-
+                        
                         if (polIdMap.containsKey(policyId))
                             Logging.logMessage(Logging.LEVEL_WARN, this,
                                 "duplicate ID for policy '" + ifc + "':" + policyId);
-
+                        
                         polIdMap.put(policyId, clazz);
-
+                        
                     } catch (Exception exc) {
                         Logging.logMessage(Logging.LEVEL_WARN, this,
                             "could not load malformed policy '" + clazz + "'");
@@ -305,24 +305,24 @@ public class PolicyContainer {
                 }
             }
         }
-
+        
     }
-
+    
     private final MRCConfig   config;
-
+    
     private PolicyClassLoader policyClassLoader;
-
+    
     public PolicyContainer(MRCConfig config) throws IOException {
         this.config = config;
         policyClassLoader = new PolicyClassLoader(config.getPolicyDir());
         policyClassLoader.init();
     }
-
+    
     public AuthenticationProvider getAuthenticationProvider() throws InstantiationException,
         IllegalAccessException, ClassNotFoundException {
-
+        
         String authPolicy = config.getAuthenticationProvider();
-
+        
         // first, check whether a built-in policy exists with the given name
         try {
             return (AuthenticationProvider) Class.forName(authPolicy).newInstance();
@@ -332,21 +332,21 @@ public class PolicyContainer {
                     + config.getAuthenticationProvider()
                     + "' exists, searching for plug-in policies...");
         }
-
+        
         // if no built-in policy could be found, check for plug-in policy
         // directory
-
+        
         // if the class file could be found, load it
         Class cls = policyClassLoader.loadClass(authPolicy);
-
+        
         return (AuthenticationProvider) cls.newInstance();
     }
-
-    public FileAccessPolicy getFileAccessPolicy(long id, VolumeManager volMan) throws Exception {
-
+    
+    public FileAccessPolicy getFileAccessPolicy(short id, VolumeManager volMan) throws Exception {
+        
         // load the class
         Class policyClass = policyClassLoader.loadClass(id, FileAccessPolicy.class);
-
+        
         // check whether a default constructor exists; if so, invoke the default
         // constructor
         try {
@@ -354,28 +354,28 @@ public class PolicyContainer {
         } catch (InstantiationException exc) {
             // ignore
         }
-
+        
         // otherwise, check whether a constructor exists that needs the slice
         // manager; if so, invoke it
         try {
-            return (FileAccessPolicy) policyClass
-                    .getConstructor(new Class[] { VolumeManager.class }).newInstance(volMan);
+            return (FileAccessPolicy) policyClass.getConstructor(
+                new Class[] { VolumeManager.class }).newInstance(volMan);
         } catch (InstantiationException exc) {
             // ignore
         }
-
+        
         // otherwise, throw an exception indicating that no suitable constructor
         // was found
         throw new InstantiationException("policy " + policyClass
             + " does not have a suitable constructor");
-
+        
     }
-
+    
     public OSDSelectionPolicy getOSDSelectionPolicy(long id) throws Exception {
         Class policyClass = policyClassLoader.loadClass(id, OSDSelectionPolicy.class);
         return (OSDSelectionPolicy) policyClass.newInstance();
     }
-
+    
     // public static void main(String[] args) throws Exception {
     //
     // Logging.start(Logging.LEVEL_DEBUG);

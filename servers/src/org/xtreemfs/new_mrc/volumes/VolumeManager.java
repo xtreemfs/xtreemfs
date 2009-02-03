@@ -28,10 +28,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.MRCException;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.UserException;
+import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
@@ -54,6 +54,8 @@ public interface VolumeManager {
     /**
      * Creates a new volume.
      * 
+     * @param faMan
+     *            the file access manager
      * @param volumeId
      *            the volume ID
      * @param volumeName
@@ -66,10 +68,11 @@ public interface VolumeManager {
      * @throws UserException
      * @throws DatabaseException
      */
-    public VolumeInfo createVolume(String volumeId, String volumeName, short fileAccessPolicyId,
-        short osdPolicyId, String osdPolicyArgs, String ownerId, String owningGroupId,
-        Map<String, Object> defaultStripingPolicy, DBAccessResultListener listener, Object context)
-        throws UserException, DatabaseException, MRCException;
+    public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
+        short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
+        String owningGroupId, Map<String, Object> defaultStripingPolicy,
+        DBAccessResultListener listener, Object context) throws UserException, DatabaseException,
+        MRCException;
     
     /**
      * Checks whether a volume with the given name is known locally.

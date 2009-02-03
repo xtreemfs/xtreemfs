@@ -31,11 +31,11 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
@@ -126,7 +126,7 @@ public class MoveOperation extends MRCOperation {
             final PathResolver tRes = new PathResolver(sMan, tp);
             
             FileMetadata targetParentDir = tRes.getParentDir();
-            if (!targetParentDir.isDirectory())
+            if (targetParentDir == null || !targetParentDir.isDirectory())
                 throw new UserException(ErrNo.ENOTDIR, "'" + tp.getComps(0, tp.getCompCount() - 2)
                     + "' is not a directory");
             
@@ -175,9 +175,10 @@ public class MoveOperation extends MRCOperation {
                 {
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    sMan.link(sRes.getParentDirId(), sRes.getFileName(), tRes.getParentDirId(),
-                        tRes.getFileName(), update);
-                    sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
+                        update);
+                    source.setLinkCount(newLinkCount);
+                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
                 }
@@ -199,9 +200,10 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    sMan.link(sRes.getParentDirId(), sRes.getFileName(), tRes.getParentDirId(),
-                        tRes.getFileName(), update);
-                    sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
+                        update);
+                    source.setLinkCount(newLinkCount);
+                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
                 }
@@ -226,9 +228,10 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    sMan.link(sRes.getParentDirId(), sRes.getFileName(), tRes.getParentDirId(),
-                        tRes.getFileName(), update);
-                    sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
+                        update);
+                    source.setLinkCount(newLinkCount);
+                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
                 }
@@ -267,9 +270,10 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    sMan.link(sRes.getParentDirId(), sRes.getFileName(), tRes.getParentDirId(),
-                        tRes.getFileName(), update);
-                    sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
+                        update);
+                    source.setLinkCount(newLinkCount);
+                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
                 }

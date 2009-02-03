@@ -31,11 +31,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
@@ -64,7 +64,7 @@ public class AddReplicaOperation extends MRCOperation {
         
     }
     
-    public static final String RPC_NAME = "removeReplica";
+    public static final String RPC_NAME = "addReplica";
     
     public AddReplicaOperation(MRCRequestDispatcher master) {
         super(master);

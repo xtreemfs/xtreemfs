@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
@@ -46,7 +46,7 @@ import org.xtreemfs.new_mrc.metadata.FileMetadata;
  */
 public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
-    public static final long    POLICY_ID          = 3;
+    public static final short   POLICY_ID          = 3;
     
     private static final String AM_WRITE           = "w";
     
@@ -56,6 +56,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
     private static final String DEFAULT_ENTRY_NAME = "default";
     
+    @Override
     public String translateAccessMode(int accessMode) {
         switch (accessMode) {
         case FileAccessManager.READ_ACCESS:
@@ -71,6 +72,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
+    @Override
     public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, String accessMode) throws UserException, MRCException {
         
@@ -128,6 +130,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
             + ", fileId = " + file.getId() + ", accessMode = \"" + accessMode + "\"");
     }
     
+    @Override
     public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
@@ -139,6 +142,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
@@ -154,6 +158,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
         
@@ -171,6 +176,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
         throws MRCException {
@@ -182,6 +188,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
         throws MRCException, UserException {
@@ -195,10 +202,23 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException {
         // do nothing
+    }
+    
+    @Override
+    public ACLEntry[] getDefaultRootACL(StorageManager sMan) {
+        ACLEntry[] acl = new ACLEntry[1];
+        acl[0] = sMan.createACLEntry(1, DEFAULT_ENTRY_NAME, (short) 511);
+        return acl;
+    }
+    
+    @Override
+    public short getDefaultRootRights() {
+        return 0;
     }
     
 }

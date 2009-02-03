@@ -27,10 +27,11 @@ package org.xtreemfs.new_mrc.ac;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 
 /**
@@ -42,7 +43,7 @@ import org.xtreemfs.new_mrc.metadata.FileMetadata;
  */
 public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     
-    public static final long    POLICY_ID = 1;
+    public static final short   POLICY_ID = 1;
     
     private static final String AM_WRITE  = "w";
     
@@ -50,6 +51,7 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     
     private static final String AM_DELETE = "d";
     
+    @Override
     public String translateAccessMode(int accessMode) {
         switch (accessMode) {
         case FileAccessManager.READ_ACCESS:
@@ -65,45 +67,58 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
+    @Override
     public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, String accessMode) {
         // do nothing
     }
     
+    @Override
     public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) {
         // do nothing
     }
     
+    @Override
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) {
         // do nothing
     }
     
-    public Map<String, Object> convertToACL(long mode) {
-        return null;
-    }
-    
+    @Override
     public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) {
         return 511; // rwxrwxrwx
     }
     
+    @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update) {
         // do nothing
     }
     
+    @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
         throws MRCException, UserException {
         // do nothing
     }
     
+    @Override
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException {
         // do nothing
+    }
+    
+    @Override
+    public ACLEntry[] getDefaultRootACL(StorageManager sMan) {
+        return null;
+    }
+    
+    @Override
+    public short getDefaultRootRights() {
+        return 511;
     }
     
 }

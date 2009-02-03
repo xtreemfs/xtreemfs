@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
@@ -96,7 +96,7 @@ import org.xtreemfs.new_mrc.metadata.FileMetadata;
  */
 public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
-    public static final long    POLICY_ID          = 2;
+    public static final short   POLICY_ID          = 2;
     
     private static final String OWNER              = "user:";
     
@@ -176,6 +176,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     public POSIXFileAccessPolicy() {
     }
     
+    @Override
     public String translateAccessMode(int accessMode) {
         switch (accessMode) {
         case FileAccessManager.READ_ACCESS:
@@ -193,6 +194,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
+    @Override
     public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, String accessMode) throws UserException, MRCException {
         
@@ -250,6 +252,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
     }
     
+    @Override
     public void checkSearchPermission(StorageManager sMan, String path, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
@@ -284,6 +287,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
@@ -299,6 +303,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
+    @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
         throws MRCException, UserException {
@@ -348,6 +353,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
     }
     
+    @Override
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException {
@@ -369,6 +375,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
     }
     
+    @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
         throws MRCException, UserException {
@@ -412,9 +419,20 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
     }
     
+    @Override
     public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
         return file.getPerms();
+    }
+    
+    @Override
+    public ACLEntry[] getDefaultRootACL(StorageManager sMan) {
+        return null;
+    }
+    
+    @Override
+    public short getDefaultRootRights() {
+        return 509;
     }
     
     private static boolean checkIfAllowed(StorageManager sMan, String accessMode, short aclRights,

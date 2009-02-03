@@ -41,10 +41,10 @@ import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.brain.BrainException;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.mrc.brain.storage.BackendException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
@@ -332,7 +332,7 @@ public class MRCOpHelper {
                     .getOsdPolicyArgs()) : "";
         case read_only:
             if (file.isDirectory())
-                return String.valueOf(false);
+                return "";
             
             return String.valueOf(file.isReadOnly());
         case free_space:

@@ -86,6 +86,10 @@ public interface FileMetadata {
     
     public void setOwnerAndGroup(String owner, String group);
     
+    public void setW32Attrs(long w32Attrs);
+    
+    public long getW32Attrs();
+    
     public boolean isDirectory();
     
 }

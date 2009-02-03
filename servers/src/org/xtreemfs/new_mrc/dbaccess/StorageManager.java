@@ -52,7 +52,7 @@ public interface StorageManager {
     
     // misc
     
-    public void init(String ownerId, String owningGroupId, short perms,
+    public void init(String ownerId, String owningGroupId, short perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
     
     public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
@@ -94,10 +94,10 @@ public interface StorageManager {
         String groupId, Map<String, Object> stripingPolicy, short perms, String ref,
         boolean directory, AtomicDBUpdate update) throws DatabaseException;
     
-    public void link(long parentId, String fileName, long newParentId, String newFileName,
+    public void link(FileMetadata metadata, long newParentId, String newFileName,
         AtomicDBUpdate update) throws DatabaseException;
     
-    public void delete(long parentId, String fileName, AtomicDBUpdate update)
+    public short delete(long parentId, String fileName, AtomicDBUpdate update)
         throws DatabaseException;
     
     public long resolvePath(String path) throws DatabaseException;

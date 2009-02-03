@@ -30,11 +30,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
@@ -114,7 +114,7 @@ public class CreateLinkOperation extends MRCOperation {
             tRes.checkIfFileDoesNotExist();
             
             FileMetadata target = tRes.getFile();
-                        
+            
             if (target.isDirectory())
                 throw new UserException(ErrNo.EPERM, "no support for links to directories");
             
@@ -127,8 +127,7 @@ public class CreateLinkOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // create the link
-            sMan.link(tRes.getParentDirId(), tRes.getFileName(), lRes.getParentDirId(), lRes
-                    .getFileName(), update);
+            sMan.link(target, lRes.getParentDirId(), lRes.getFileName(), update);
             
             // update POSIX timestamps
             MRCOpHelper.updateFileTimes(lRes.getParentsParentId(), lRes.getParentDir(), false,

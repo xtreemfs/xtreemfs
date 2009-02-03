@@ -24,8 +24,8 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
@@ -64,7 +64,7 @@ public class PathResolver {
      * @param path
      * @throws DatabaseException
      */
-    public PathResolver(StorageManager sMan, Path path) throws DatabaseException {
+    public PathResolver(StorageManager sMan, Path path) throws DatabaseException, UserException {
         
         this.path = path;
         this.sMan = sMan;
@@ -73,6 +73,8 @@ public class PathResolver {
         parentsParentId = path.getCompCount() == 1 ? -1 : path.getCompCount() == 2 ? 0 : sMan
                 .resolvePath(path.getComps(1, path.getCompCount() - 3));
         parentDir = sMan.getMetadata(parentsParentId, getParentDirName());
+        if (parentDir != null && !parentDir.isDirectory())
+            throw new UserException(ErrNo.ENOTDIR, getParentDirName() + " is not a directory");
     }
     
     public String getFileName() {

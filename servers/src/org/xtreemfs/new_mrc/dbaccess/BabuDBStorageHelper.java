@@ -265,7 +265,7 @@ public class BabuDBStorageHelper {
         
         // file ID index
         lists[BabuDBStorageManager.FILE_ID_INDEX] = new LinkedList<byte[]>();
-        long fileId = getId(database, dbName, parentId, fileName);
+        long fileId = getId(database, dbName, parentId, fileName, null);
         
         it = database.syncPrefixLookup(dbName, BabuDBStorageManager.FILE_ID_INDEX,
             createFileIdIndexKey(fileId, (byte) -1));
@@ -581,8 +581,8 @@ public class BabuDBStorageHelper {
         return collNum;
     }
     
-    public static long getId(BabuDB database, String dbName, long parentId, String fileName)
-        throws BabuDBException {
+    public static long getId(BabuDB database, String dbName, long parentId, String fileName,
+        Boolean directory) throws BabuDBException {
         
         // first, determine the collision number
         byte[] prefix = createFilePrefixKey(parentId, fileName,
@@ -598,11 +598,15 @@ public class BabuDBStorageHelper {
             long entryId = -1;
             
             if (curr.getValue()[0] == 2) {
-                entryId = ByteBuffer.wrap(curr.getValue()).getLong();
+                entryId = ByteBuffer.wrap(curr.getValue()).getLong(1);
                 entryFileName = new String(curr.getValue(), 9, curr.getValue().length - 9);
             } else {
+                
                 BufferBackedRCMetadata md = new BufferBackedRCMetadata(curr.getKey(), curr
                         .getValue());
+                if (directory != null && directory && !md.isDirectory())
+                    continue;
+                
                 entryFileName = md.getFileName();
                 entryId = md.getId();
             }

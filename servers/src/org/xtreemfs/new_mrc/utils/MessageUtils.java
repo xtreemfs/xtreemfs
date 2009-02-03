@@ -39,8 +39,8 @@ import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCRequest;
+import org.xtreemfs.new_mrc.UserException;
 
 
 /**

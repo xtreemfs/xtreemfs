@@ -27,10 +27,11 @@ package org.xtreemfs.new_mrc.ac;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.mrc.brain.UserException;
 import org.xtreemfs.new_mrc.MRCException;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 
 /**
@@ -228,4 +229,24 @@ public interface FileAccessPolicy {
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException;
     
+    /**
+     * Returns the default permissions for the root directory. The method is
+     * invoked in order to assign initial access rights to a the root directory
+     * of a newly-created volume.
+     * 
+     * @param sMan
+     *            the volume's Storage Manager
+     * 
+     * @return the default root permissions
+     */
+    public short getDefaultRootRights();
+    
+    /**
+     * Returns the default ACL for the root directory. The method is invoked in
+     * order to assign an initial ACL to a the root directory of a newly-created
+     * volume.
+     * 
+     * @return the default root ACL
+     */
+    public ACLEntry[] getDefaultRootACL(StorageManager sMan);
 }

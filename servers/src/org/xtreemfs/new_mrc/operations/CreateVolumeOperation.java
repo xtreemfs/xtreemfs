@@ -35,12 +35,14 @@ import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.new_mrc.ac.YesToAnyoneFileAccessPolicy;
+import org.xtreemfs.new_mrc.osdselection.RandomSelectionPolicy;
 
 /**
  * 
@@ -57,8 +59,6 @@ public class CreateVolumeOperation extends MRCOperation {
         private Map<String, Object> defaultStripingPolicy;
         
         private short               acPolicyId;
-        
-        // private Map<String, Object> acl;
     }
     
     public static final String RPC_NAME = "createVolume";
@@ -149,13 +149,11 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // otherwise, register the volume at the Directory Service
             
-            String free = String.valueOf(master.getOSDStatusManager().getFreeSpace(volumeId));
-            
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("name", rqArgs.volumeName);
             map.put("mrc", master.getConfig().getUUID().toString());
             map.put("type", "volume");
-            map.put("free", free);
+            map.put("free", "0");
             
             RPCResponse rpcResponse2 = master.getDirClient().registerEntity(volumeId, map, 0L,
                 master.getAuthString());
@@ -190,9 +188,10 @@ public class CreateVolumeOperation extends MRCOperation {
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             // create the volume and its database
-            master.getVolumeManager().createVolume(volumeId, rqArgs.volumeName, rqArgs.acPolicyId,
-                rqArgs.osdSelectionPolicyId, null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), rqArgs.defaultStripingPolicy, master, rq);
+            master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
+                rqArgs.volumeName, rqArgs.acPolicyId, rqArgs.osdSelectionPolicyId, null,
+                rq.getDetails().userId, rq.getDetails().groupIds.get(0),
+                rqArgs.defaultStripingPolicy, master, rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
@@ -212,13 +211,22 @@ public class CreateVolumeOperation extends MRCOperation {
         try {
             
             args.volumeName = (String) arguments.get(0);
-            if (arguments.size() == 1)
+            if (arguments.size() == 1) {
+                
+                args.defaultStripingPolicy = new HashMap<String, Object>();
+                args.defaultStripingPolicy.put("policy", "RAID0");
+                args.defaultStripingPolicy.put("stripe-size", Long.valueOf(64));
+                args.defaultStripingPolicy.put("width", Long.valueOf(1));
+                
+                args.osdSelectionPolicyId = RandomSelectionPolicy.POLICY_ID;
+                args.acPolicyId = YesToAnyoneFileAccessPolicy.POLICY_ID;
+                
                 return null;
+            }
             
             args.osdSelectionPolicyId = ((Long) arguments.get(1)).shortValue();
             args.defaultStripingPolicy = (Map<String, Object>) arguments.get(2);
             args.acPolicyId = ((Long) arguments.get(3)).shortValue();
-            // args.acl = (Map<String, Object>) arguments.get(5);
             
             if (arguments.size() == 6)
                 return null;

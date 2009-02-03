@@ -247,6 +247,11 @@ public class BufferBackedFileMetadata implements FileMetadata {
     }
     
     @Override
+    public void setW32Attrs(long w32Attrs) {
+        rcMetadata.setW32Attrs(w32Attrs);
+    }
+    
+    @Override
     public String getFileName() {
         return rcMetadata.getFileName();
     }
@@ -259,6 +264,11 @@ public class BufferBackedFileMetadata implements FileMetadata {
     @Override
     public String getOwningGroupId() {
         return rcMetadata.getOwningGroupId();
+    }
+    
+    @Override
+    public long getW32Attrs() {
+        return rcMetadata.getW32Attrs();
     }
     
     @Override

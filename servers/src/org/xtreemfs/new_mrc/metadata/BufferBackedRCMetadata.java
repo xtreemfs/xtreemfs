@@ -36,23 +36,25 @@ public class BufferBackedRCMetadata {
     
     protected static final int RC_LINKCOUNT             = 11;
     
-    protected static final int RC_EPOCH                 = 13;
+    protected static final int RC_W32ATTRS              = 13;
     
-    protected static final int RC_ISSEPOCH              = 17;
+    protected static final int RC_EPOCH                 = 21;
     
-    protected static final int RC_READONLY              = 21;
+    protected static final int RC_ISSEPOCH              = 25;
     
-    protected static final int RC_DIR_OWNER_OFFSET      = 13;
+    protected static final int RC_READONLY              = 29;
     
-    protected static final int RC_DIR_GROUP_OFFSET      = 15;
+    protected static final int RC_DIR_OWNER_OFFSET      = 21;
     
-    protected static final int DIR_VAR_LEN_PART_OFFSET  = 17;
+    protected static final int RC_DIR_GROUP_OFFSET      = 23;
     
-    protected static final int RC_FILE_OWNER_OFFSET     = 22;
+    protected static final int DIR_VAR_LEN_PART_OFFSET  = 25;
     
-    protected static final int RC_FILE_GROUP_OFFSET     = 24;
+    protected static final int RC_FILE_OWNER_OFFSET     = 30;
     
-    protected static final int FILE_VAR_LEN_PART_OFFSET = 26;
+    protected static final int RC_FILE_GROUP_OFFSET     = 32;
+    
+    protected static final int FILE_VAR_LEN_PART_OFFSET = 34;
     
     private final short        ownerOffset;
     
@@ -116,7 +118,7 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 0).putLong(fileId).putShort(perms).putShort(linkCount).putInt(epoch)
+        valBuf.put((byte) 0).putLong(fileId).putShort(perms).putShort(linkCount).putLong(0).putInt(epoch)
                 .putInt(issEpoch).put((byte) (readOnly ? 1 : 0)).putShort(ownerOffset).putShort(
                     groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
@@ -150,7 +152,7 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putShort(ownerOffset).putShort(
+        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putLong(0).putShort(ownerOffset).putShort(
             groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
         directory = true;
@@ -208,6 +210,10 @@ public class BufferBackedRCMetadata {
         valBuf.put(RC_READONLY, (byte) (readOnly ? 1 : 0));
     }
     
+    public void setW32Attrs(long w32Attrs) {
+        valBuf.putLong(RC_W32ATTRS, w32Attrs);
+    }
+    
     public String getFileName() {
         int index = directory ? DIR_VAR_LEN_PART_OFFSET : FILE_VAR_LEN_PART_OFFSET;
         int length = ownerOffset - index;
@@ -224,6 +230,10 @@ public class BufferBackedRCMetadata {
         int index = groupOffset;
         int length = valBuf.limit() - index;
         return new String(valBuf.array(), index, length);
+    }
+    
+    public long getW32Attrs() {
+        return valBuf.getLong(RC_W32ATTRS);
     }
     
     public boolean isDirectory() {
