@@ -54,6 +54,7 @@ import org.xtreemfs.new_mrc.operations.DeleteOperation;
 import org.xtreemfs.new_mrc.operations.DeleteVolumeOperation;
 import org.xtreemfs.new_mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.new_mrc.operations.GetProtocolVersionOperation;
+import org.xtreemfs.new_mrc.operations.GetW32AttrsOperation;
 import org.xtreemfs.new_mrc.operations.GetXAttrOperation;
 import org.xtreemfs.new_mrc.operations.MRCOperation;
 import org.xtreemfs.new_mrc.operations.MoveOperation;
@@ -62,6 +63,7 @@ import org.xtreemfs.new_mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.new_mrc.operations.ReadDirOperation;
 import org.xtreemfs.new_mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.new_mrc.operations.RenewOperation;
+import org.xtreemfs.new_mrc.operations.SetW32AttrsOperation;
 import org.xtreemfs.new_mrc.operations.SetXAttrsOperation;
 import org.xtreemfs.new_mrc.operations.ShutdownOperation;
 import org.xtreemfs.new_mrc.operations.StatFSOperation;
@@ -119,6 +121,8 @@ public class ProcessingStage extends MRCStage {
         operations.put(CreateLinkOperation.RPC_NAME, new CreateLinkOperation(master));
         operations.put(StatFSOperation.RPC_NAME, new StatFSOperation(master));
         operations.put(UtimeOperation.RPC_NAME, new UtimeOperation(master));
+        operations.put(SetW32AttrsOperation.RPC_NAME, new SetW32AttrsOperation(master));
+        operations.put(GetW32AttrsOperation.RPC_NAME, new GetW32AttrsOperation(master));
     }
     
     @Override
