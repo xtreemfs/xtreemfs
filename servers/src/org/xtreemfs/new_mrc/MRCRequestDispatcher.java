@@ -427,7 +427,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     
     @Override
     public void insertFinished(Object context) {
-        procStage.enqueueOperation((MRCRequest) context, ProcessingStage.STAGEOP_FINISH, null);
+        requestFinished((MRCRequest) context);
     }
     
     @Override

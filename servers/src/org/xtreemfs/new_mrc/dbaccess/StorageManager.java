@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
-import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
@@ -91,9 +90,9 @@ public interface StorageManager {
     
     // file creation and linking
     
-    public BufferBackedFileMetadata create(long parentId, String fileName, String userId,
-        String groupId, Map<String, Object> stripingPolicy, short perms, String ref,
-        boolean directory, AtomicDBUpdate update) throws DatabaseException;
+    public FileMetadata create(long parentId, String fileName, String userId, String groupId,
+        Map<String, Object> stripingPolicy, short perms, String ref, boolean directory,
+        AtomicDBUpdate update) throws DatabaseException;
     
     public void link(FileMetadata metadata, long newParentId, String newFileName,
         AtomicDBUpdate update) throws DatabaseException;

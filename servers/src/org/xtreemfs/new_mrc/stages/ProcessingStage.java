@@ -78,8 +78,6 @@ public class ProcessingStage extends MRCStage {
     
     public static final int                 STAGEOP_PARSE_AND_EXECUTE = 1;
     
-    public static final int                 STAGEOP_FINISH            = 2;
-    
     private final MRCRequestDispatcher      master;
     
     private final Map<String, MRCOperation> operations;
@@ -128,9 +126,6 @@ public class ProcessingStage extends MRCStage {
         switch (method.getStageMethod()) {
         case STAGEOP_PARSE_AND_EXECUTE:
             parseAndExecute(method);
-            break;
-        case STAGEOP_FINISH:
-            finish(method);
             break;
         default:
             method.getRq().setError(
@@ -220,10 +215,6 @@ public class ProcessingStage extends MRCStage {
         }
         
         op.startRequest(rq);
-    }
-    
-    private void finish(StageMethod method) {
-        master.requestFinished(method.getRq());
     }
     
 }
