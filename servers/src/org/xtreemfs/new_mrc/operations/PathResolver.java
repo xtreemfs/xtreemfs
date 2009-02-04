@@ -41,21 +41,13 @@ import org.xtreemfs.new_mrc.metadata.FileMetadata;
  */
 public class PathResolver {
     
-    private final Path         path;
+    private String               fileName;
     
-    private StorageManager     sMan;
+    private String               parentDirName;
     
-    private final long         parentsParentId;
+    private final Path           path;
     
-    private final FileMetadata parentDir;
-    
-    private String             pathPrefix;
-    
-    private String             parentDirName;
-    
-    private String             fileName;
-    
-    private FileMetadata       file;
+    private final FileMetadata[] resolvedPath;
     
     /**
      * Creates a new resolver for the given path.
@@ -67,14 +59,11 @@ public class PathResolver {
     public PathResolver(StorageManager sMan, Path path) throws DatabaseException, UserException {
         
         this.path = path;
-        this.sMan = sMan;
+        this.resolvedPath = sMan.resolvePath(path);
         
-        // resolve the path
-        parentsParentId = path.getCompCount() == 1 ? -1 : path.getCompCount() == 2 ? 0 : sMan
-                .resolvePath(path.getComps(1, path.getCompCount() - 3));
-        parentDir = sMan.getMetadata(parentsParentId, getParentDirName());
-        if (parentDir != null && !parentDir.isDirectory())
-            throw new UserException(ErrNo.ENOTDIR, getParentDirName() + " is not a directory");
+        // check if the resolved path prefix exists
+        if (resolvedPath.length > 1 && resolvedPath[resolvedPath.length - 2] == null)
+            throw new UserException(ErrNo.ENOENT, "path '" + path + "' does not exist");
     }
     
     public String getFileName() {
@@ -84,9 +73,7 @@ public class PathResolver {
     }
     
     public FileMetadata getFile() throws DatabaseException {
-        if (file == null)
-            file = sMan.getMetadata(getParentDirId(), getFileName());
-        return file;
+        return resolvedPath[resolvedPath.length - 1];
     }
     
     public void checkIfFileExistsAlready() throws DatabaseException, UserException {
@@ -96,7 +83,7 @@ public class PathResolver {
     
     public void checkIfFileDoesNotExist() throws DatabaseException, UserException {
         if (getFile() == null)
-            throw new UserException(ErrNo.EEXIST, "file or directory '" + path + "' does not exist");
+            throw new UserException(ErrNo.ENOENT, "file or directory '" + path + "' does not exist");
     }
     
     public String getParentDirName() {
@@ -106,21 +93,20 @@ public class PathResolver {
     }
     
     public long getParentDirId() throws DatabaseException {
-        return parentDir == null ? 0 : parentDir.getId();
+        return resolvedPath.length == 1 ? 0 : resolvedPath[resolvedPath.length - 2].getId();
     }
     
     public FileMetadata getParentDir() throws DatabaseException {
-        return parentDir;
+        return resolvedPath.length == 1 ? null : resolvedPath[resolvedPath.length - 2];
     }
     
     public long getParentsParentId() throws DatabaseException {
-        return parentsParentId;
+        return resolvedPath.length == 1 ? -1 : resolvedPath.length == 2 ? 0
+            : resolvedPath[resolvedPath.length - 3].getId();
     }
     
-    public String getPathPrefix() {
-        if (pathPrefix == null)
-            pathPrefix = path.getComps(1, path.getCompCount() - 2);
-        return pathPrefix;
+    public FileMetadata[] getResolvedPath() {
+        return resolvedPath;
     }
     
     public String toString() {

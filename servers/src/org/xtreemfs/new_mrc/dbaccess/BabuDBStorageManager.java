@@ -53,6 +53,7 @@ import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
+import org.xtreemfs.new_mrc.operations.Path;
 import org.xtreemfs.new_mrc.utils.Converter;
 
 public class BabuDBStorageManager implements StorageManager {
@@ -247,8 +248,6 @@ public class BabuDBStorageManager implements StorageManager {
                 if (fileKeys[i] != null)
                     for (byte[] key : fileKeys[i])
                         update.addUpdate(i, key, null);
-            
-            System.out.println(update);
             
             return file.getLinkCount();
             
@@ -560,8 +559,21 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public long resolvePath(String path) throws DatabaseException {
-        return resolvePath(1, path, path.indexOf('/'));
+    public FileMetadata[] resolvePath(Path path) throws DatabaseException {
+        
+        FileMetadata[] md = new FileMetadata[path.getCompCount()];
+        
+        long parentId = 0;
+        for (int i = 0; i < md.length; i++) {
+            md[i] = getMetadata(parentId, path.getComp(i));
+            if (md[i] == null || i < md.length - 1 && !md[i].isDirectory()) {
+                md[i] = null;
+                return md;
+            }
+            parentId = md[i].getId();
+        }
+        
+        return md;
     }
     
     @Override
@@ -622,30 +634,6 @@ public class BabuDBStorageManager implements StorageManager {
         
     }
     
-    private long resolvePath(long parentId, String path, int nextCompIndex)
-        throws DatabaseException {
-        
-        String nextComponent = nextCompIndex == -1 ? path : path.substring(0, nextCompIndex);
-        String remainder = nextCompIndex == -1 ? null : nextCompIndex == path.length() - 1 ? null
-            : path.substring(nextCompIndex + 1);
-        
-        long nextId = nextComponent.length() == 0 ? parentId : resolveComponent(parentId,
-            nextComponent, nextCompIndex != -1);
-        if (remainder == null)
-            return nextId;
-        
-        return resolvePath(nextId, remainder, remainder.indexOf('/'));
-    }
-    
-    private long resolveComponent(long parentId, String comp, boolean directory)
-        throws DatabaseException {
-        try {
-            return BabuDBStorageHelper.getId(database, dbName, parentId, comp, directory);
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
-    }
-    
     public void dump() throws BabuDBException {
         
         System.out.println("FILE_ID_INDEX");
@@ -696,7 +684,7 @@ public class BabuDBStorageManager implements StorageManager {
 // file = d;
 // } else {
 // FileEntity f = new FileEntity(0, userId, groupId, time, time, time, 0, null,
-// acl, 0, 0,
+// acl, 0, 0,for()
 // 0);
 // backend.put(f);
 // file = f;

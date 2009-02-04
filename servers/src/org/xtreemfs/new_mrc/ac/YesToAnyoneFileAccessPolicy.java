@@ -33,6 +33,7 @@ import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.PathResolver;
 
 /**
  * This policy will grant access to anyone. It does not allow changeing access
@@ -74,7 +75,7 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, PathResolver res, String userId,
         List<String> groupIds) {
         // do nothing
     }

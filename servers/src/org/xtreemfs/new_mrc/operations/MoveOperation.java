@@ -92,7 +92,7 @@ public class MoveOperation extends MRCOperation {
             final PathResolver sRes = new PathResolver(sMan, sp);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, sRes.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
@@ -147,7 +147,7 @@ public class MoveOperation extends MRCOperation {
             
             // check whether the path prefix of the target file is
             // searchable
-            faMan.checkSearchPermission(sMan, tRes.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory of the target file grants

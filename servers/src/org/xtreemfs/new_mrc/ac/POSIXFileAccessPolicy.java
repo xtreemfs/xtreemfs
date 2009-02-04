@@ -37,6 +37,7 @@ import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.PathResolver;
 
 /**
  * This policy evaluates access rights according to POSIX permissions and access
@@ -204,45 +205,45 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             
             // check whether an ACL exists; if so, use the ACL for the access
             // check ...
-            if (sMan.getACL(file.getId()).hasNext()) {
-                
-                // retrieve the relevant ACL entry for evaluating the access
-                // rights
-                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds,
-                    accessMode);
-                assert (entry != null);
-                
-                // if the ACL entry is 'owner' or 'others', evaluate the access
-                // rights without taking into account the 'mask' entry
-                if (OTHER.equals(entry.getEntity()) || OWNER.equals(entry.getEntity())) {
-                    
-                    if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
-                        return;
-                    } else
-                        accessDenied(sMan.getVolumeId(), file, accessMode);
-                    
-                }
-                
-                // otherwise, check whether both the entry and the mask entry
-                // grant access
-                ACLEntry maskEntry = sMan.getACLEntry(file.getId(), MASK);
-                if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)
-                    && (maskEntry == null || checkIfAllowed(sMan, accessMode,
-                        maskEntry.getRights(), file, parentId, userId)))
-                    return;
-                else
-                    accessDenied(sMan.getVolumeId(), file, accessMode);
-                
-            }
-
-            // if not, use the file permissions for the access check ...
-            else {
+//            if (sMan.getACL(file.getId()).hasNext()) {
+//                
+//                // retrieve the relevant ACL entry for evaluating the access
+//                // rights
+//                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds,
+//                    accessMode);
+//                assert (entry != null);
+//                
+//                // if the ACL entry is 'owner' or 'others', evaluate the access
+//                // rights without taking into account the 'mask' entry
+//                if (OTHER.equals(entry.getEntity()) || OWNER.equals(entry.getEntity())) {
+//                    
+//                    if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
+//                        return;
+//                    } else
+//                        accessDenied(sMan.getVolumeId(), file, accessMode);
+//                    
+//                }
+//                
+//                // otherwise, check whether both the entry and the mask entry
+//                // grant access
+//                ACLEntry maskEntry = sMan.getACLEntry(file.getId(), MASK);
+//                if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)
+//                    && (maskEntry == null || checkIfAllowed(sMan, accessMode,
+//                        maskEntry.getRights(), file, parentId, userId)))
+//                    return;
+//                else
+//                    accessDenied(sMan.getVolumeId(), file, accessMode);
+//                
+//            }
+//
+//            // if not, use the file permissions for the access check ...
+//            else {
                 if (checkIfAllowed(sMan, accessMode, toRelativeACLRights(file.getPerms(), file,
                     parentId, userId, groupIds), file, parentId, userId))
                     return;
                 else
                     accessDenied(sMan.getVolumeId(), file, accessMode);
-            }
+//            }
             
         } catch (UserException exc) {
             throw exc;
@@ -253,32 +254,17 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, PathResolver res, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
         try {
             
-            // first, check search permission for the root directory
-            long parentDirId = 0;
-            FileMetadata dir = sMan.getMetadata(parentDirId, sMan.getVolumeName());
-            checkPermission(sMan, dir, parentDirId, userId, groupIds, AM_EXECUTE);
-            
             // iteratively check search permissions for all directories in the
             // path
-            for (int index = 0; index < path.length();) {
-                
-                int newIndex = path.indexOf('/', index + 1);
-                if (newIndex == -1)
-                    newIndex = path.length();
-                
-                String nextComponent = path.substring(index, newIndex);
-                
-                parentDirId = dir.getId();
-                dir = sMan.getMetadata(parentDirId, nextComponent);
-                checkPermission(sMan, dir, parentDirId, userId, groupIds, AM_EXECUTE);
-                
-                index = newIndex + 1;
-            }
+            FileMetadata[] rp = res.getResolvedPath();
+            for (int i = 0; i < rp.length - 1; i++)
+                checkPermission(sMan, rp[i], i == 0 ? 0 : rp[i - 1].getId(), userId, groupIds,
+                    AM_EXECUTE);
             
         } catch (UserException exc) {
             throw exc;

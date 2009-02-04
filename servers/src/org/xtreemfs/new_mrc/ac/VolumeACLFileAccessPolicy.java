@@ -35,6 +35,7 @@ import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.PathResolver;
 
 /**
  * This policy grants or denies access based on immutable volume ACLs. Note that
@@ -131,7 +132,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, PathResolver res, String userId,
         List<String> groupIds) throws UserException, MRCException {
         
         try {

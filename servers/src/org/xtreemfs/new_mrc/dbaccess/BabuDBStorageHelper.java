@@ -581,7 +581,7 @@ public class BabuDBStorageHelper {
         return collNum;
     }
     
-    public static long getId(BabuDB database, String dbName, long parentId, String fileName,
+    private static long getId(BabuDB database, String dbName, long parentId, String fileName,
         Boolean directory) throws BabuDBException {
         
         // first, determine the collision number

@@ -87,7 +87,7 @@ public class ReadDirOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists

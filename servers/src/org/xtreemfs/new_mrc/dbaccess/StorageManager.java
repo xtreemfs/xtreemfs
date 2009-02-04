@@ -33,6 +33,7 @@ import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
+import org.xtreemfs.new_mrc.operations.Path;
 
 public interface StorageManager {
     
@@ -100,7 +101,7 @@ public interface StorageManager {
     public short delete(long parentId, String fileName, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public long resolvePath(String path) throws DatabaseException;
+    public FileMetadata[] resolvePath(Path path) throws DatabaseException;
     
     // getting metadata
     

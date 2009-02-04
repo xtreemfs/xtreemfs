@@ -35,6 +35,7 @@ import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 
 /**
@@ -72,7 +73,7 @@ public class FileAccessManager {
         policies.put(VolumeACLFileAccessPolicy.POLICY_ID, new VolumeACLFileAccessPolicy());
     }
     
-    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, PathResolver path, String userId,
         boolean superUser, List<String> groupIds) throws UserException, MRCException {
         
         if (superUser)

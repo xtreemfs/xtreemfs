@@ -51,6 +51,7 @@ import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.Path;
 import org.xtreemfs.test.SetupUtils;
 
 public class BabuDBStorageManagerTest extends TestCase {
@@ -116,7 +117,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         exc = null;
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.init("me", "myGrp", (short) 511, null, update);
+        mngr.init("me", "myGrp", (short) 511, null, null, update);
         update.execute();
         waitForResponse();
         
@@ -316,8 +317,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         long nextId = 0;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        long comp1Id = nextId = mngr.create(1, "comp1", userId, groupId, stripingPolicy,
-            perms, null, true, update).getId();
+        long comp1Id = nextId = mngr.create(0, "comp1", userId, groupId, stripingPolicy, perms,
+            null, true, update).getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
@@ -336,25 +337,18 @@ public class BabuDBStorageManagerTest extends TestCase {
         update.execute();
         waitForResponse();
         
-        long id = mngr.resolvePath("comp1");
+        long id = mngr.resolvePath(new Path("comp1"))[0].getId();
         assertEquals(comp1Id, id);
         
-        id = mngr.resolvePath("comp1/comp2/comp3/file.txt");
+        id = mngr.resolvePath(new Path("comp1/comp2/comp3/file.txt"))[3].getId();
         assertEquals(nextId, id);
         
         // test path resolution conrner cases
-        id = mngr.resolvePath("comp1/");
+        id = mngr.resolvePath(new Path("comp1/"))[0].getId();
         assertEquals(comp1Id, id);
         
-        id = mngr.resolvePath("/comp1/");
+        id = mngr.resolvePath(new Path("comp1/comp2/"))[0].getId();
         assertEquals(comp1Id, id);
-        
-        id = mngr.resolvePath("");
-        assertEquals(1, id);
-        
-        id = mngr.resolvePath("/");
-        assertEquals(1, id);
-        
     }
     
     private void waitForResponse() throws Exception {

@@ -33,6 +33,7 @@ import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.operations.PathResolver;
 
 /**
  * An interface for a policy defining file access.
@@ -93,8 +94,8 @@ public interface FileAccessPolicy {
      * 
      * @param sMan
      *            the volume's Storage Manager
-     * @param path
-     *            the full path to the file or directory
+     * @param res
+     *            the path resolver
      * @param userId
      *            the user ID
      * @param groupIds
@@ -104,7 +105,7 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs at the backend
      */
-    public void checkSearchPermission(StorageManager sMan, String path, String userId,
+    public void checkSearchPermission(StorageManager sMan, PathResolver res, String userId,
         List<String> groupIds) throws UserException, MRCException;
     
     /**

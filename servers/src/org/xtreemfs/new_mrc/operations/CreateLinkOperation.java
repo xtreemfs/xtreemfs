@@ -96,7 +96,7 @@ public class CreateLinkOperation extends MRCOperation {
             final PathResolver tRes = new PathResolver(sMan, tp);
             
             // check whether the link's path prefix is searchable
-            faMan.checkSearchPermission(sMan, lRes.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, lRes, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the link's parent directory grants write access
@@ -107,7 +107,7 @@ public class CreateLinkOperation extends MRCOperation {
             lRes.checkIfFileExistsAlready();
             
             // check whether the target path prefix is searchable
-            faMan.checkSearchPermission(sMan, tRes.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the target exists

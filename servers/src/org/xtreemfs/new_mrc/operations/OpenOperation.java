@@ -93,7 +93,7 @@ public class OpenOperation extends MRCOperation {
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res.getPathPrefix(), rq.getDetails().userId, rq
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the file/directory exists
