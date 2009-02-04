@@ -45,6 +45,7 @@ import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.operations.MRCOpHelper.AccessMode;
+import org.xtreemfs.new_mrc.utils.Converter;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -103,8 +104,8 @@ public class CreateFileOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
             faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
@@ -125,8 +126,8 @@ public class CreateFileOperation extends MRCOperation {
             // create the user attributes
             if (rqArgs.xAttrs != null) {
                 for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr.getValue()
-                            .toString(), update);
+                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr
+                            .getValue().toString(), update);
             }
             
             // if O_CREAT flag is set ...
@@ -145,9 +146,10 @@ public class CreateFileOperation extends MRCOperation {
                 // OSD status manager
                 if (xLocList == null || !xLocList.iterator().hasNext()) {
                     
-                    xLocList = MRCOpHelper.createXLocList(xLocList, sMan, master
-                            .getOSDStatusManager(), res.toString(), file.getId(), res
-                            .getParentDirId(), volume, rq.getPinkyRequest().getClientAddress());
+                    xLocList = MRCOpHelper.createXLocList(Converter.mapToStripingPolicy(sMan,
+                        rqArgs.stripingPolicy), xLocList, sMan, master.getOSDStatusManager(), res
+                            .toString(), file.getId(), res.getParentDirId(), volume, rq
+                            .getPinkyRequest().getClientAddress());
                     
                     file.setXLocList(xLocList);
                     

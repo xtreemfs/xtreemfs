@@ -41,6 +41,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.operations.MRCOpHelper.AccessMode;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -93,8 +94,8 @@ public class OpenOperation extends MRCOperation {
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the file/directory exists
             res.checkIfFileDoesNotExist();
@@ -136,6 +137,10 @@ public class OpenOperation extends MRCOperation {
                 && file.isReadOnly())
                 throw new UserException(ErrNo.EPERM, "read-only files cannot be written");
             
+            // check whether the permission is granted
+            faMan.checkPermission(rqArgs.accessMode, sMan, file, res.getParentDirId(), rq
+                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            
             AtomicDBUpdate update = null;
             
             // get the current epoch, use (and increase) the truncate number if
@@ -145,10 +150,6 @@ public class OpenOperation extends MRCOperation {
                 file.setIssuedEpoch(file.getIssuedEpoch() + 1);
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
-            
-            // check whether the permission is granted
-            faMan.checkPermission(rqArgs.accessMode, sMan, file, res.getParentDirId(), rq
-                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // create the capability
             String capability = MRCOpHelper.createCapability(rqArgs.accessMode, volume.getId(),
@@ -163,9 +164,11 @@ public class OpenOperation extends MRCOperation {
             // manager
             if (xLocList == null || !xLocList.iterator().hasNext()) {
                 
-                xLocList = MRCOpHelper.createXLocList(xLocList, sMan, master.getOSDStatusManager(),
-                    res.toString(), file.getId(), res.getParentDirId(), volume, rq
-                            .getPinkyRequest().getClientAddress());
+                StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
+                
+                xLocList = MRCOpHelper.createXLocList(sp, xLocList, sMan, master
+                        .getOSDStatusManager(), res.toString(), file.getId(), res.getParentDirId(),
+                    volume, rq.getPinkyRequest().getClientAddress());
                 
                 file.setXLocList(xLocList);
                 

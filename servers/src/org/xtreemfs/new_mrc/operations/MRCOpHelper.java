@@ -190,16 +190,13 @@ public class MRCOpHelper {
      * @throws BackendException
      * @throws BrainException
      */
-    public static XLocList createXLocList(XLocList xLocList, StorageManager sMan,
-        OSDStatusManager osdMan, String path, long fileId, long parentDirId, VolumeInfo volume,
-        InetSocketAddress clientAddress) throws DatabaseException, MRCException {
+    public static XLocList createXLocList(StripingPolicy stripingPolicy, XLocList xLocList,
+        StorageManager sMan, OSDStatusManager osdMan, String path, long fileId, long parentDirId,
+        VolumeInfo volume, InetSocketAddress clientAddress) throws DatabaseException, MRCException {
         
         assert (xLocList == null || xLocList.getReplicaCount() == 0);
         
-        // first, try to get the striping policy from the file itself
-        StripingPolicy stripingPolicy = sMan.getDefaultStripingPolicy(fileId);
-        
-        // if no such policy exists, try to retrieve it from the parent
+        // if no striping policy is provided, try to retrieve it from the parent
         // directory
         if (stripingPolicy == null)
             stripingPolicy = sMan.getDefaultStripingPolicy(parentDirId);

@@ -177,7 +177,8 @@ public class Converter {
     public static StripingPolicy mapToStripingPolicy(StorageManager sMan,
         Map<String, Object> policyMap) {
         
-        if (policyMap == null || policyMap.isEmpty())
+        if (policyMap == null || policyMap.isEmpty()
+            || ((String) policyMap.get("policy")).isEmpty())
             return null;
         
         StripingPolicy policy = sMan.createStripingPolicy((String) policyMap.get("policy"),
