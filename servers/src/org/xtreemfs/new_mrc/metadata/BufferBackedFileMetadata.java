@@ -336,7 +336,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         case 1:
             return rcMetadata.getKey();
         case 2:
-            return xLocList.getBuffer();
+            return xLocKeyBuf.array();
         }
         
         return null;

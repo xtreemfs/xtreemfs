@@ -228,15 +228,16 @@ public class BabuDBStorageManager implements StorageManager {
                 fileName);
             
             boolean lastLink = file.getLinkCount() == 1;
+            
+            // decrement the link count
             file.setLinkCount((short) (file.getLinkCount() - 1));
             
             // get all keys to delete
             List<byte[]>[] fileKeys = BabuDBStorageHelper.getKeysToDelete(database, dbName,
                 parentId, fileName, lastLink);
             
-            // decrement the link count if there is more than one hardlink to
-            // the file
-            
+            // if there are links remaining after the deletion, update the link
+            // count
             if (!lastLink)
                 update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file
                         .getId(), FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
@@ -246,6 +247,8 @@ public class BabuDBStorageManager implements StorageManager {
                 if (fileKeys[i] != null)
                     for (byte[] key : fileKeys[i])
                         update.addUpdate(i, key, null);
+            
+            System.out.println(update);
             
             return file.getLinkCount();
             
@@ -507,9 +510,11 @@ public class BabuDBStorageManager implements StorageManager {
             BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
             
             // increment the link count
-            md.setLinkCount((short) (metadata.getLinkCount() + 1));
+            short links = metadata.getLinkCount();
+            md.setLinkCount((short) (links + 1));
             
-            // insert the link source in the file ID index
+            // insert the whole metadata of the original file in the file ID
+            // index
             update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
                     .getId(), FileMetadata.FC_METADATA), md.getFCMetadataValue());
             update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
@@ -519,10 +524,11 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
                     .getId(), (byte) 3), null);
             
-            // if the metadata was retrieved from the file index, ensure that
-            // the original file in the file index now points to the file ID
-            // index, and remove the FC and XLoc metadata entries
-            if (md.getIndexId() == FILE_INDEX) {
+            // if the metadata was retrieved from the file index and hasn't been
+            // deleted before (i.e. links == 0), ensure that the original file
+            // in the file index now points to the file ID index, and remove the
+            // FC and XLoc metadata entries
+            if (links != 0 && md.getIndexId() == FILE_INDEX) {
                 
                 update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
                         .createLinkTarget(metadata.getId(), metadata.getFileName()));

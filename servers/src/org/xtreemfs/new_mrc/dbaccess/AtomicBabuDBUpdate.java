@@ -65,4 +65,8 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
         }
     }
     
+    public String toString() {
+        return ig.toString();
+    }
+    
 }
