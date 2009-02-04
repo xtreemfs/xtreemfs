@@ -562,13 +562,13 @@ public final class ParserStage extends Stage {
     }
 
     public static boolean validateFileId(String requestURI) {
-        for (int i = 0; i < requestURI.length(); i++) {
-            char c = requestURI.charAt(i);
-
-            if ((c < '0') || ((c > ':') && (c < 'A')) || (c > 'F')) {
-                return false;
-            }
-        }
+//        for (int i = 0; i < requestURI.length(); i++) {
+//            char c = requestURI.charAt(i);
+//
+//            if ((c < '0') || ((c > ':') && (c < 'A')) || (c > 'F')) {
+//                return false;
+//            }
+//        }
         return true;
     }
 }
