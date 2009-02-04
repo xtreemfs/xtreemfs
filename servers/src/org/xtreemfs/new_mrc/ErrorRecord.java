@@ -113,10 +113,10 @@ public final class ErrorRecord {
         return this.errorClass + "." + this.posixErrorCode + ":" + this.errorMessage
             + (stackTrace == null ? "" : ", caused by: " + stackTrace);
     }
-    
+
     public String toJSON() {
-        return "[ \"error-code\": " + this.posixErrorCode + ", \"error-message\" : \""
-            + (this.errorMessage.replace("\"", "\\\"")) + "\" ]";
+        return "{ \"errno\": " + this.posixErrorCode + ", \"errorMessage\" : \""
+            + (this.errorMessage.replace("\"", "\\\"")) + "\" }";
     }
     
 }
