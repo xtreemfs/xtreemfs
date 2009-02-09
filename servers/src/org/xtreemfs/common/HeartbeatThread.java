@@ -141,7 +141,13 @@ public class HeartbeatThread extends LifeCycleThread {
             } else {
                 //if it is set, we should use that for UUID mapping!
                 endpoints = new ArrayList(1);
-                Map<String,Object> m = RPCClient.generateMap("address", config.getAddress().toString(),
+                
+                // remove the leading '/' if necessary
+                String dottedQuad = config.getAddress().toString();
+                if(dottedQuad.startsWith("/"))
+                    dottedQuad = dottedQuad.substring(1);
+                
+                Map<String,Object> m = RPCClient.generateMap("address", dottedQuad,
                         "port", uuid.getAddress().getPort(), "protocol", uuid.getProtocol(), 
                         "ttl", 3600, "match_network", "*");
                 endpoints.add(m);
