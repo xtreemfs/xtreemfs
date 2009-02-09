@@ -489,6 +489,9 @@ public final class ParserStage extends Stage {
             } catch (JSONException ex) {
                 return new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrorCodes.INVALID_HEADER,
                     "X-Location header is not valid JSON", ex);
+            }  catch (ClassCastException ex) {
+                return new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrorCodes.INVALID_HEADER,
+                    "X-Location header is not valid JSON", ex);
             }
         }
 
