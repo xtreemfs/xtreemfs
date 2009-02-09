@@ -74,11 +74,19 @@ public class TransferStrategiesTest extends TestCase {
 	osds2.add(new ServiceUUID("UUID:localhost:33640"));
 	osds2.add(new ServiceUUID("UUID:localhost:33641"));
 	osds2.add(new ServiceUUID("UUID:localhost:33642"));
+	List<ServiceUUID> osds3 = new ArrayList<ServiceUUID>();
+	osds3.add(new ServiceUUID("UUID:localhost:33643"));
+	osds3.add(new ServiceUUID("UUID:localhost:33644"));
+	osds3.add(new ServiceUUID("UUID:localhost:33645"));
+	List<ServiceUUID> osds4 = new ArrayList<ServiceUUID>();
+	osds4.add(new ServiceUUID("UUID:localhost:33646"));
+	osds4.add(new ServiceUUID("UUID:localhost:33647"));
+	osds4.add(new ServiceUUID("UUID:localhost:33648"));
 
-	locationList
-		.add(new Location(new RAID0(stripeSize, osds.size()), osds));
-	locationList.add(new Location(new RAID0(stripeSize, osds2.size()),
-		osds2));
+	locationList.add(new Location(new RAID0(stripeSize, osds.size()), osds));
+	locationList.add(new Location(new RAID0(stripeSize, osds2.size()), osds2));
+	locationList.add(new Location(new RAID0(stripeSize, osds3.size()), osds3));
+	locationList.add(new Location(new RAID0(stripeSize, osds4.size()), osds4));
 
 	Locations locations = new Locations(locationList);
 
@@ -87,6 +95,8 @@ public class TransferStrategiesTest extends TestCase {
 	this.details.setCapability(capability);
 	this.details.setLocationList(locations);
 	this.details.setObjectNumber(2);
+	
+	// set the first replica as current replica
 	this.details.setCurrentReplica(locations.getLocation(0));
     }
 
@@ -159,37 +169,44 @@ public class TransferStrategiesTest extends TestCase {
 	this.strategy.addRequiredObject(4);
 	this.strategy.addPreferredObject(2);
 
+	int replica = 1;
+	
 	// first request
-	NextRequest next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	NextRequest next = this.strategy.getNext();
 	assertEquals(2, next.objectID);
 	List<ServiceUUID> osds = this.details.getLocationList()
 		.getOSDsByObject(next.objectID);
-	assertEquals(osds.get(0), next.osd);
+	assertEquals(osds.get(replica++), next.osd);
 	assertFalse(next.requestObjectList);
 
 	// second request
-	next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	next = this.strategy.getNext();
 	assertEquals(1, next.objectID);
 	osds = this.details.getLocationList().getOSDsByObject(next.objectID);
-	assertEquals(osds.get(1 % osds.size()), next.osd);
+	assertEquals(osds.get(replica++ % osds.size()), next.osd);
 	assertFalse(next.requestObjectList);
 
 	// third request
-	next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	next = this.strategy.getNext();
 	assertEquals(3, next.objectID);
 	osds = this.details.getLocationList().getOSDsByObject(next.objectID);
-	assertEquals(osds.get(2 % osds.size()), next.osd);
+	assertEquals(osds.get(replica++ % osds.size()), next.osd);
 	assertFalse(next.requestObjectList);
 
 	// fourth request
-	next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	next = this.strategy.getNext();
 	assertEquals(4, next.objectID);
 	osds = this.details.getLocationList().getOSDsByObject(next.objectID);
-	assertEquals(osds.get(3 % osds.size()), next.osd);
+	assertEquals(osds.get((replica++ % osds.size())+1), next.osd);
 	assertFalse(next.requestObjectList);
 
 	// no more requests possible
-	next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	next = this.strategy.getNext();
 	assertNull(next);
     }
 
@@ -216,7 +233,8 @@ public class TransferStrategiesTest extends TestCase {
 
 	NextRequest next;
 	for (int i = 0; i < objectsToRequest.size(); i++) {
-	    next = this.strategy.selectNext();
+	    this.strategy.selectNext();
+	    next = this.strategy.getNext();
 	    requestedObjects.add(Long.valueOf(next.objectID));
 	    assertNotNull(this.details.getLocationList().getLocation(next.osd));
 	    assertFalse(next.requestObjectList);
@@ -226,7 +244,8 @@ public class TransferStrategiesTest extends TestCase {
 	    assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
 
 	// no more requests possible
-	next = this.strategy.selectNext();
+	this.strategy.selectNext();
+	next = this.strategy.getNext();
 	assertNull(next);
     }
 

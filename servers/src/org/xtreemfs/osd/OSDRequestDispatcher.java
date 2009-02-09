@@ -46,6 +46,7 @@ import org.xtreemfs.common.checksums.ChecksumFactory;
 import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.dir.DIRClient;
+import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.trace.Tracer;
@@ -118,7 +119,9 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
     protected final StageStatistics statistics;
     
     protected final DIRClient       dirClient;
-    
+
+    protected final OSDClient       osdClient;
+
     protected long                  requestId;
     
     protected String                authString;
@@ -202,6 +205,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         // ----------------------------------------
         
         dirClient = new DIRClient(speedy, config.getDirectoryService());
+        osdClient = new OSDClient(speedy);
         
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(),
             authString);
@@ -398,30 +402,31 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                         headers.addHeader(header.name, header.value);
                     }
                 
-                if (rq.getData() != null) {
-                    
-                    String mimeType = null;
-                    
-                    switch (rq.getDataType()) {
-                    case BINARY:
-                        mimeType = HTTPUtils.BIN_TYPE;
-                        break;
-                    case JSON:
-                        mimeType = HTTPUtils.JSON_TYPE;
-                        break;
-                    case HTML:
-                        mimeType = HTTPUtils.HTML_TYPE;
-                        break;
-                    }
-                    
-                    headers.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, mimeType);
-                }
+//                String mimeType = null;
+//                if (rq.getData() != null) {
+//                    
+//                    String mimeType = null;
+//                    
+//                    switch (rq.getDataType()) {
+//                    case BINARY:
+//                        mimeType = HTTPUtils.BIN_TYPE;
+//                        break;
+//                    case JSON:
+//                        mimeType = HTTPUtils.JSON_TYPE;
+//                        break;
+//                    case HTML:
+//                        mimeType = HTTPUtils.HTML_TYPE;
+//                        break;
+//                    }
+//                    
+//                    headers.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, mimeType);
+//                }
                 
                 if (Tracer.COLLECT_TRACES)
                     Tracer.trace(rqId, rq.getRequestId(), Tracer.TraceEvent.RESPONSE_SENT, null,
                         null);
                 
-                pr.setResponse(HTTPUtils.SC_OKAY, rq.getData(), HTTPUtils.DATA_TYPE.JSON, headers);
+                pr.setResponse(HTTPUtils.SC_OKAY, rq.getData(), rq.getDataType() == null ? HTTPUtils.DATA_TYPE.JSON : rq.getDataType(), headers);
                 
             } else {
                 
@@ -484,6 +489,10 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
     
     public DIRClient getDIRClient() {
         return dirClient;
+    }
+    
+    public OSDClient getOSDClient() {
+        return osdClient;
     }
     
     public void startupPerformed() {

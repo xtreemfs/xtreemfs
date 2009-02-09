@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.dir.DIRClient;
+import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.osd.ops.Operation;
@@ -69,4 +70,6 @@ public interface RequestDispatcher {
     public void shutdown();
 
     public DIRClient getDIRClient();
+    
+    public OSDClient getOSDClient();
 }

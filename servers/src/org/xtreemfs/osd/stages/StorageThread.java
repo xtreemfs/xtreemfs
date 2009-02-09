@@ -231,13 +231,14 @@ public class StorageThread extends Stage {
 	    data = BufferPool.allocate(0);
 	    data.position(0);
 
-	    // check if the object is a 'hole' or an EOF
+	    // required for the decision if to fetch a replica
             details.setObjectNotExistsOnDisk(true);
 
             if (Logging.tracingEnabled())
                 Logging.logMessage(Logging.LEVEL_TRACE, this, fileId + "-" + objNo
                     + " not found locally");
 
+	    // check if the object is a 'hole' or an EOF
             if (objNo < fi.getLastObjectNumber()) {
                 // hole
                 data = padWithZeros(data, (int) stripeSize);
@@ -467,8 +468,9 @@ public class StorageThread extends Stage {
 
         final FileInfo fi = layout.getFileInfo(sp, fileId);
 
-        // store filesize on disk, if file is read-only
-        if(details.isReadOnly()) {
+        // store filesize on disk, if file is replicated (=> read-only) and returned Gmax is > 0
+        // => at least one OSD stores an object of this file
+        if(details.getLocationList().getNumberOfReplicas()>1 && fi.getFilesize()!=0) {
             // write even updated globalMax from cache to disk 
             layout.writeFilesize(fileId, fi.getFilesize());
         }
@@ -562,7 +564,7 @@ public class StorageThread extends Stage {
         final long objNo = details.getObjectNumber();
         final FileInfo fi = layout.getFileInfo(sp, fileId);
         final String checksum = fi.getObjectChecksum(objNo);
-        final PinkyRequest pr = rq.getRq().getPinkyRequest();
+//        final PinkyRequest pr = rq.getRq().getPinkyRequest();
 
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "WRITE: " + fileId + "-" + objNo + "."
@@ -583,7 +585,7 @@ public class StorageThread extends Stage {
             if (details.isRangeRequested())
                 offset = (int) details.getByteRangeStart();
 
-            ReusableBuffer writeData = pr.requestBody;
+            ReusableBuffer writeData = rq.getRq().getData();
             assert(writeData != null);
             if (StatisticsStage.collect_statistics) {
                 master.getStatistics().bytesRX.addAndGet(writeData.capacity());
@@ -675,7 +677,7 @@ public class StorageThread extends Stage {
 
             // if a new buffer had to be allocated for writing the object, free
             // it now (the request body will be freed automatically)
-            if (writeData != pr.requestBody)
+            if (writeData != rq.getRq().getData())
                 BufferPool.free(writeData);
 
             fi.getObjVersions().put(objNo, nextV);
@@ -688,7 +690,7 @@ public class StorageThread extends Stage {
             // affected:
             if (objNo >= fi.getLastObjectNumber()) {
 
-                long newObjSize = pr.requestBody.capacity();
+                long newObjSize = rq.getRq().getData().capacity();
                 if (details.isRangeRequested())
                     newObjSize += details.getByteRangeStart();
 

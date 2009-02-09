@@ -33,205 +33,201 @@ import org.xtreemfs.osd.storage.CowPolicy;
 
 public final class RequestDetails {
 
-	protected String fileId;
+    protected String fileId;
 
-	protected long objectNumber;
+    protected long objectNumber;
 
-	protected boolean rangeRequested;
+    protected boolean rangeRequested;
 
-	protected long byteRangeStart;
+    protected long byteRangeStart;
 
-	protected long byteRangeEnd;
+    protected long byteRangeEnd;
 
-	protected Capability capability;
+    protected Capability capability;
 
-	protected Locations locationList;
+    protected Locations locationList;
 
-	protected Location currentReplica;
+    protected Location currentReplica;
 
-	protected boolean objectVersionNumberRequested;
+    protected boolean objectVersionNumberRequested;
 
-	protected int objectVersionNumber;
+    protected int objectVersionNumber;
 
-	private long truncateFileSize;
+    private long truncateFileSize;
 
-	private String newFSandEpoch;
+    private String newFSandEpoch;
 
-	private boolean checkOnly;
+    private boolean checkOnly;
 
-	private boolean invalidChecksum;
-	
-	/**
-	 * true, if the object doesn't exist on disk
-	 * because read follows POSIX, you won't notice that otherwise
-	 */
-	private boolean objectNotExistsOnDisk = false;
-	
-	/**
-	 * true, if the file is marked as read-only. That is the file cannot be modified anymore.
-	 */
-	private boolean readOnly;
+    private boolean invalidChecksum;
 
-	private ClientLease lease;
+    /**
+     * true, if the object doesn't exist on disk because read follows POSIX, you
+     * won't notice that otherwise
+     */
+    private boolean objectNotExistsOnDisk = false;
 
-	private TransferStrategy replicationTransfer;
-        
-        private String  requestId;
-        
-        private CowPolicy cowPolicy;
+    private ClientLease lease;
 
-	public String getFileId() {
-		return fileId;
-	}
+    private TransferStrategy replicationTransferStrategy;
 
-	public void setFileId(String fileId) {
-		this.fileId = fileId;
-	}
+    private String requestId;
 
-	public long getObjectNumber() {
-		return objectNumber;
-	}
+    private CowPolicy cowPolicy;
 
-	public void setObjectNumber(long objectNumber) {
-		this.objectNumber = objectNumber;
-	}
+    public String getFileId() {
+	return fileId;
+    }
 
-	public boolean isRangeRequested() {
-		return rangeRequested;
-	}
+    public void setFileId(String fileId) {
+	this.fileId = fileId;
+    }
 
-	public void setRangeRequested(boolean rangeRequested) {
-		this.rangeRequested = rangeRequested;
-	}
+    public long getObjectNumber() {
+	return objectNumber;
+    }
 
-	public long getByteRangeStart() {
-		return byteRangeStart;
-	}
+    public void setObjectNumber(long objectNumber) {
+	this.objectNumber = objectNumber;
+    }
 
-	public void setByteRangeStart(long byteRangeStart) {
-		this.byteRangeStart = byteRangeStart;
-	}
+    public boolean isRangeRequested() {
+	return rangeRequested;
+    }
 
-	public long getByteRangeEnd() {
-		return byteRangeEnd;
-	}
+    public void setRangeRequested(boolean rangeRequested) {
+	this.rangeRequested = rangeRequested;
+    }
 
-	public void setByteRangeEnd(long byteRangeEnd) {
-		this.byteRangeEnd = byteRangeEnd;
-	}
+    public long getByteRangeStart() {
+	return byteRangeStart;
+    }
 
-	public Capability getCapability() {
-		return capability;
-	}
+    public void setByteRangeStart(long byteRangeStart) {
+	this.byteRangeStart = byteRangeStart;
+    }
 
-	public void setCapability(Capability capability) {
-		this.capability = capability;
-	}
+    public long getByteRangeEnd() {
+	return byteRangeEnd;
+    }
 
-	public Locations getLocationList() {
-		return locationList;
-	}
+    public void setByteRangeEnd(long byteRangeEnd) {
+	this.byteRangeEnd = byteRangeEnd;
+    }
 
-	public void setLocationList(Locations locationList) {
-		this.locationList = locationList;
-	}
+    public Capability getCapability() {
+	return capability;
+    }
 
-	public Location getCurrentReplica() {
-		return currentReplica;
-	}
+    public void setCapability(Capability capability) {
+	this.capability = capability;
+    }
 
-	public void setCurrentReplica(Location currentReplica) {
-		this.currentReplica = currentReplica;
-	}
+    public Locations getLocationList() {
+	return locationList;
+    }
 
-	public long getTruncateFileSize() {
-		return truncateFileSize;
-	}
+    public void setLocationList(Locations locationList) {
+	this.locationList = locationList;
+    }
 
-	public void setTruncateFileSize(long fileSize) {
-		this.truncateFileSize = fileSize;
-	}
+    public Location getCurrentReplica() {
+	return currentReplica;
+    }
 
-	public boolean isObjectVersionNumberRequested() {
-		return objectVersionNumberRequested;
-	}
+    public void setCurrentReplica(Location currentReplica) {
+	this.currentReplica = currentReplica;
+    }
 
-	public void setObjectVersionNumberRequested(
-			boolean objectVersionNumberRequested) {
-		this.objectVersionNumberRequested = objectVersionNumberRequested;
-	}
+    public long getTruncateFileSize() {
+	return truncateFileSize;
+    }
 
-	public int getObjectVersionNumber() {
-		return objectVersionNumber;
-	}
+    public void setTruncateFileSize(long fileSize) {
+	this.truncateFileSize = fileSize;
+    }
 
-	public void setObjectVersionNumber(int objectVersionNumber) {
-		this.objectVersionNumber = objectVersionNumber;
-	}
+    public boolean isObjectVersionNumberRequested() {
+	return objectVersionNumberRequested;
+    }
 
-	public String getNewFSandEpoch() {
-		return newFSandEpoch;
-	}
+    public void setObjectVersionNumberRequested(
+	    boolean objectVersionNumberRequested) {
+	this.objectVersionNumberRequested = objectVersionNumberRequested;
+    }
 
-	public void setNewFSandEpoch(String newFSandEpoch) {
-		this.newFSandEpoch = newFSandEpoch;
-	}
+    public int getObjectVersionNumber() {
+	return objectVersionNumber;
+    }
 
-	public boolean isCheckOnly() {
-		return checkOnly;
-	}
+    public void setObjectVersionNumber(int objectVersionNumber) {
+	this.objectVersionNumber = objectVersionNumber;
+    }
 
-	public void setCheckOnly(boolean checkOnly) {
-		this.checkOnly = checkOnly;
-	}
+    public String getNewFSandEpoch() {
+	return newFSandEpoch;
+    }
 
-	public boolean isInvalidChecksum() {
-		return invalidChecksum;
-	}
+    public void setNewFSandEpoch(String newFSandEpoch) {
+	this.newFSandEpoch = newFSandEpoch;
+    }
 
-	public void setInvalidChecksum(boolean invalidChecksum) {
-		this.invalidChecksum = invalidChecksum;
-	}
+    public boolean isCheckOnly() {
+	return checkOnly;
+    }
 
-	public ClientLease getLease() {
-		return lease;
-	}
+    public void setCheckOnly(boolean checkOnly) {
+	this.checkOnly = checkOnly;
+    }
 
-	public void setLease(ClientLease lease) {
-		this.lease = lease;
-	}
+    public boolean isInvalidChecksum() {
+	return invalidChecksum;
+    }
 
-	public TransferStrategy getReplicationTransfer() {
-		return this.replicationTransfer;
-	}
+    public void setInvalidChecksum(boolean invalidChecksum) {
+	this.invalidChecksum = invalidChecksum;
+    }
 
-	public void setReplicationTransfer(TransferStrategy replicationTransfer) {
-		if (this != null)
-			this.replicationTransfer = replicationTransfer;
-		// TODO: throw exception for additional set
-	}
+    public ClientLease getLease() {
+	return lease;
+    }
+
+    public void setLease(ClientLease lease) {
+	this.lease = lease;
+    }
+
+    public TransferStrategy getReplicationTransferStrategy() {
+	return this.replicationTransferStrategy;
+    }
+
+    public void setReplicationTransferStrategy(TransferStrategy strategy) {
+	if (this != null)
+	    this.replicationTransferStrategy = strategy;
+	// TODO: throw exception for additional set
+    }
 
     public String getRequestId() {
-        return requestId;
+	return requestId;
     }
 
     public void setRequestId(String requestId) {
-        this.requestId = requestId;
+	this.requestId = requestId;
     }
 
     public CowPolicy getCowPolicy() {
-        return cowPolicy;
+	return cowPolicy;
     }
 
     public void setCowPolicy(CowPolicy cowPolicy) {
-        this.cowPolicy = cowPolicy;
+	this.cowPolicy = cowPolicy;
     }
 
     /**
-     * @param objectExistsOnDisk the objectExistsOnDisk to set
+     * @param objectExistsOnDisk
+     *            the objectExistsOnDisk to set
      */
     public void setObjectNotExistsOnDisk(boolean notExisting) {
-	this.objectNotExistsOnDisk = objectNotExistsOnDisk;
+	this.objectNotExistsOnDisk = notExisting;
     }
 
     /**
@@ -239,19 +235,5 @@ public final class RequestDetails {
      */
     public boolean isObjectNotExistingOnDisk() {
 	return objectNotExistsOnDisk;
-    }
-
-    /**
-     * @return the readOnly
-     */
-    public boolean isReadOnly() {
-        return readOnly;
-    }
-
-    /**
-     * @param readOnly the readOnly to set
-     */
-    public void setReadOnly(boolean readOnly) {
-        this.readOnly = readOnly;
     }
 }

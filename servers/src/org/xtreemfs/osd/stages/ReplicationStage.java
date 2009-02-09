@@ -24,11 +24,18 @@
 package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
+import java.util.HashMap;
 
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.RequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectDissemination;
+import org.xtreemfs.osd.stages.Stage.StageMethod;
 
 /**
  * 
@@ -37,95 +44,107 @@ import org.xtreemfs.osd.replication.ObjectDissemination;
  * @author clorenz
  */
 public class ReplicationStage extends Stage {
-	public static final int STAGEOP_FETCH_OBJECT = 1;
+    public static final int STAGEOP_FETCH_OBJECT = 1;
 
-	public static final int STAGEOP_INTERNAL_SEND_FETCH_OBJECT_REQUEST = 2;
+    public static final int STAGEOP_INTERNAL_FETCH_OBJECT = 2;
 
-	public static final int STAGEOP_INTERNAL_OBJECT_FETCHED = 3;
+    public static final int STAGEOP_INTERNAL_OBJECT_FETCHED = 3;
 
-	public static final int STAGEOP_INTERNAL_REPLICATION_REQUEST_FINISHED = 4;
+    public static final int STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS = 4;
 
-	private RequestDispatcher master;
+    private RequestDispatcher master;
 
-	private ObjectDissemination disseminationLayer;
+    private ObjectDissemination disseminationLayer;
 
-	public ReplicationStage(RequestDispatcher dispatcher) {
-		super("OSD Replication Stage");
+    public ReplicationStage(RequestDispatcher dispatcher) {
+	super("OSD Replication Stage");
 
-		this.master = dispatcher;
-		this.disseminationLayer = new ObjectDissemination(this, master);
+	this.master = dispatcher;
+	this.disseminationLayer = new ObjectDissemination(this, master);
+    }
+
+    @Override
+    protected void processMethod(StageMethod method) {
+	try {
+	    switch (method.getStageMethod()) {
+	    case STAGEOP_FETCH_OBJECT: {
+		if(!processFetchObject(method))
+		    methodExecutionSuccess(method, StageResponseCode.FAILED);
+		break;
+	    }
+	    case STAGEOP_INTERNAL_FETCH_OBJECT: {
+		if (!processInternalFetchObject(method))
+		    methodExecutionSuccess(method, StageResponseCode.FINISH);
+		break;
+	    }
+	    case STAGEOP_INTERNAL_OBJECT_FETCHED: {
+		if(processInternalObjectFetched(method))
+		    methodExecutionSuccess(method, StageResponseCode.OK);
+		break;
+	    }
+	    case STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS: {
+		processInternalTriggerFurtherRequests(method);
+		methodExecutionSuccess(method, StageResponseCode.OK);
+		break;
+	    }
+	    default: {
+		// TODO: error handling
+	    }
+	    }
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	} catch (JSONException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
 	}
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xtreemfs.osd.stages.Stage#processMethod(org.xtreemfs.osd.stages.Stage.StageMethod)
-	 */
-	@Override
-	protected void processMethod(StageMethod method) {
-		try {
-			switch (method.getStageMethod()) {
-			case STAGEOP_FETCH_OBJECT: {
-				processFetchObject(method);
-				break;
-			}
-			case STAGEOP_INTERNAL_OBJECT_FETCHED: {
-				System.out.println(method.getRq().getRequestId()
-						+ ": object fetched"); // FIXME: testcode
-				methodExecutionSuccess(method, StageResponseCode.OK);
-				break;
-			}
-			case STAGEOP_INTERNAL_SEND_FETCH_OBJECT_REQUEST: {
-				processInternalSendFetchObjectRequest(method);
-				break;
-			}
-			case STAGEOP_INTERNAL_REPLICATION_REQUEST_FINISHED: {
-				processInternalReplicationRequestFinished(method);
-				methodExecutionSuccess(method, StageResponseCode.OK);
-				break;
-			}
-			default: {
-				System.out.println(method.getRq().getRequestId()
-						+ ": not supported method"); // FIXME: testcode
-			}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+    /**
+     * @param method
+     * @return
+     */
+    private boolean processInternalObjectFetched(StageMethod method) {
+	if (disseminationLayer.objectFetched(method.getRq()))
+	    // object fetched
+	    return true;
+	else {
+	    // object not fetched => new try
+	    this.enqueueOperation(method.getRq(), STAGEOP_INTERNAL_FETCH_OBJECT,
+		    method.getRq().getCurrentCallback());
+	    return false;
 	}
+    }
 
-	private void processInternalReplicationRequestFinished(StageMethod method) {
-		System.out.println(method.getRq().getRequestId()
-				+ ": initiating next steps"); // FIXME: testcode
-		disseminationLayer.prepareRequests(method.getRq());
+    private void processInternalTriggerFurtherRequests(StageMethod method) {
+	disseminationLayer.triggerNewRequests(method.getRq());
+    }
 
-	}
+    private boolean processFetchObject(StageMethod method) throws IOException,
+	    JSONException {
+	// if replica exist
+	if(method.getRq().getDetails().getLocationList().getNumberOfReplicas()>1) {
+	    disseminationLayer.fetchObject(method.getRq());
+	    return true;
+	} else
+	    // no replica available => object cannot be fetched
+	    return false;
+    }
 
-	private boolean processFetchObject(StageMethod method) throws IOException,
-			JSONException {
-		System.out.println(method.getRq().getRequestId()
-				+ ": want to fetch object"); // FIXME: testcode
-		disseminationLayer.fetchObject(method.getRq());
-		return true;
-	}
+    private boolean processInternalFetchObject(StageMethod method) {
+	if(!disseminationLayer.prepareRequest(method.getRq()))
+	    // nothing to fetch
+	    return false;
+	disseminationLayer.sendFetchObjectRequest(method.getRq());
+	return true;
+    }
 
-	private void processInternalSendFetchObjectRequest(StageMethod method) {
-		// TODO Auto-generated method stub
-		disseminationLayer.sendFetchObjectRequest(method.getRq());
-		System.out.println(method.getRq().getRequestId() + ": fetch object"); // FIXME:
-		// testcode
-	}
-
-	@Override
-	public void enqueueOperation(OSDRequest rq, int method,
-			StageCallbackInterface callback) {
-		// save callback
-		rq.setCurrentCallback(callback);
-		super.enqueueOperation(rq, method, callback);
-	}
+    @Override
+    public void enqueueOperation(OSDRequest rq, int method,
+	    StageCallbackInterface callback) {
+	// save callback
+	rq.setCurrentCallback(callback);
+	super.enqueueOperation(rq, method, callback);
+    }
 
 }

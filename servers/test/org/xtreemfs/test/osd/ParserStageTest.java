@@ -39,6 +39,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.dir.DIRClient;
+import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.striping.Locations;
@@ -946,6 +947,12 @@ public class ParserStageTest extends TestCase {
 
         @Override
         public DIRClient getDIRClient() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+        
+        @Override
+        public OSDClient getOSDClient() {
             // TODO Auto-generated method stub
             return null;
         }

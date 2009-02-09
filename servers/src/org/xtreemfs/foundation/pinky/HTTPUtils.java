@@ -169,6 +169,16 @@ public class HTTPUtils {
         public String toString() {
             return name;
         }
+
+        public static DATA_TYPE toDataType(String s) throws IllegalArgumentException {
+            if(s.equals(BIN_TYPE))
+        	return BINARY;
+            else if (s.equals(JSON_TYPE))
+        	return JSON;
+            else if (s.equals(HTML_TYPE))
+        	return HTML;
+            else throw new IllegalArgumentException();
+        }
     };
 
     // Tokens of the HTTP methods

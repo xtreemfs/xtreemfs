@@ -133,6 +133,32 @@ public class SetupUtils {
 
         return new OSDConfig(props);
     }
+    
+    public static OSDConfig createOSD4Config() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("dir_service.host", "localhost");
+        props.setProperty("dir_service.port", "33638");
+        props.setProperty("object_dir", TEST_DIR + "/osd3");
+        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("listen.port", "33642");
+        props.setProperty("listen.address", "localhost");
+        props.setProperty("local_clock_renewal", "50");
+        props.setProperty("remote_time_sync", "60000");
+        props.setProperty("ssl.enabled", "" + SSL_ON);
+        props.setProperty("ssl.service_creds", CERT_DIR + "service2.jks");
+        props.setProperty("ssl.service_creds_pw", "passphrase");
+        props.setProperty("ssl.service_creds_container", "jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+        props.setProperty("ssl.trusted_certs.container", "jks");
+        props.setProperty("report_free_space", "true");
+        props.setProperty("checksums.enabled", "true");
+        props.setProperty("checksums.algorithm", "Adler32");
+        props.setProperty("capability_secret", "secretPassphrase");
+        props.setProperty("uuid", getOSD4UUID().toString());
+
+        return new OSDConfig(props);
+    }
 
     public static DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
@@ -231,6 +257,10 @@ public class SetupUtils {
         return new InetSocketAddress("localhost", 33641);
     }
 
+    public static InetSocketAddress getOSD4Addr() {
+        return new InetSocketAddress("localhost", 33642);
+    }
+
     public static InetSocketAddress getDIRAddr() {
         return new InetSocketAddress("localhost", 33638);
     }
@@ -253,6 +283,10 @@ public class SetupUtils {
 
     public static ServiceUUID getOSD3UUID() {
         return new ServiceUUID("UUID:localhost:33641");
+    }
+
+    public static ServiceUUID getOSD4UUID() {
+        return new ServiceUUID("UUID:localhost:33642");
     }
 
     public static void setupLocalResolver() throws IOException, JSONException {

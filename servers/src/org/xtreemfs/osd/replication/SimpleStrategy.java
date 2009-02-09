@@ -47,7 +47,10 @@ public class SimpleStrategy extends TransferStrategy {
     }
 
     @Override
-    public NextRequest selectNext() {
+    public void selectNext() {
+	// prepare
+	super.selectNext();
+	
 	NextRequest next = new NextRequest();
 	// first fetch a preferred object
 	if (!this.preferredObjects.isEmpty()) {
@@ -56,20 +59,21 @@ public class SimpleStrategy extends TransferStrategy {
 	} else { // fetch an object
 	    if (!this.requiredObjects.isEmpty()) {
 		next.objectID = this.requiredObjects.remove(0);
-	    } else
+	    } else {
 		// nothing to fetch
-		return null;
+		next = null;
+	    }
 	}
-	// use the next replica relative to the last used replica
-	List<ServiceUUID> osds = this.details.locationList
-		.getOSDsByObject(next.objectID);
-	if (!osds.isEmpty()) {
+	
+	if(next!=null) {
+	    // use the next replica relative to the last used replica
+	    List<ServiceUUID> osds = this.details.otherReplicas
+		    .getOSDsByObject(next.objectID);
 	    this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
 	    next.osd = osds.get(this.indexOfLastUsedOSD);
-	} else
-	    return null;
 
-	next.requestObjectList = false;
-	return next;
+	    next.requestObjectList = false;
+	    this.next = next;
+	}
     }
 }

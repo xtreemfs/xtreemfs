@@ -233,6 +233,7 @@ public class SSLChannelIO extends ChannelIO {
 					tryFlush();
 /*					throw new IOException(
 						"BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");*/
+					break;
 				}
 				case CLOSED: {
 					throw new IOException("The SSLEngine is already closed.");

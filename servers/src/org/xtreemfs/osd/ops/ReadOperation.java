@@ -36,88 +36,101 @@ import org.xtreemfs.osd.stages.Stage.StageResponseCode;
 
 public final class ReadOperation extends Operation {
 
-	public ReadOperation(RequestDispatcher master) {
-		super(master);
+    public ReadOperation(RequestDispatcher master) {
+	super(master);
+    }
+
+    /**
+     * Start the operation for a request
+     * 
+     * @param rq
+     *            the request
+     */
+    @Override
+    public void startRequest(OSDRequest rq) {
+
+	// use anoymous inner classes impl
+	master.getStage(Stages.AUTH).enqueueOperation(
+		rq,
+		AuthenticationStage.STAGEOP_AUTHENTICATE
+			| AuthenticationStage.STAGEOP_OFT_OPEN,
+		new StageCallbackInterface() {
+
+		    public void methodExecutionCompleted(OSDRequest request,
+			    StageResponseCode result) {
+			postAuthenticate(request, result);
+		    }
+		});
+    }
+
+    /**
+     * called after the authentication stage has processed the request
+     * 
+     * @param rq
+     *            the request
+     * @param result
+     *            authentication stage result
+     * @param error
+     *            error details or null
+     */
+    protected void postAuthenticate(OSDRequest rq, StageResponseCode result) {
+
+	if (result == StageResponseCode.OK) {
+
+	    master.getStage(Stages.STORAGE).enqueueOperation(rq,
+		    StorageThread.STAGEOP_READ_OBJECT,
+		    new StageCallbackInterface() {
+
+			public void methodExecutionCompleted(
+				OSDRequest request, StageResponseCode result) {
+			    postRead(request, result);
+			}
+		    });
+
+	} else {
+	    if (Logging.isDebug())
+		Logging.logMessage(Logging.LEVEL_DEBUG, this,
+			"authentication failed for " + rq.getRequestId());
+	    master.requestFinished(rq);
 	}
+    }
 
-	/**
-	 * Start the operation for a request
-	 *
-	 * @param rq
-	 *            the request
-	 */
-	@Override
-	public void startRequest(OSDRequest rq) {
+    private void postRead(final OSDRequest rq, StageResponseCode result) {
 
-		// use anoymous inner classes impl
-		master.getStage(Stages.AUTH).enqueueOperation(
-				rq,
-				AuthenticationStage.STAGEOP_AUTHENTICATE
-						| AuthenticationStage.STAGEOP_OFT_OPEN,
-				new StageCallbackInterface() {
+	if (result == StageResponseCode.OK)
+	    // FIXME: comment this out to disable replication
+	    // object is not existing and replicas are available
+	    if (rq.getDetails().isObjectNotExistingOnDisk()
+		    && rq.getDetails().getLocationList().getNumberOfReplicas() > 1) {
 
-					public void methodExecutionCompleted(OSDRequest request,
-							StageResponseCode result) {
-						postAuthenticate(request, result);
-					}
-				});
-	}
+		Logging.logMessage(Logging.LEVEL_DEBUG, this, "REPLICATE OBJECT: "
+					+ rq.getDetails().getFileId() + "-"
+					+ rq.getDetails().getObjectNumber() + ".");
 
-	/**
-	 * called after the authentication stage has processed the request
-	 *
-	 * @param rq
-	 *            the request
-	 * @param result
-	 *            authentication stage result
-	 * @param error
-	 *            error details or null
-	 */
-	protected void postAuthenticate(OSDRequest rq, StageResponseCode result) {
+		master.getStage(Stages.REPLICATION).enqueueOperation(rq,
+			ReplicationStage.STAGEOP_FETCH_OBJECT,
+			new StageCallbackInterface() {
 
-		if (result == StageResponseCode.OK) {
-
-			master.getStage(Stages.STORAGE).enqueueOperation(rq,
-					StorageThread.STAGEOP_READ_OBJECT,
-					new StageCallbackInterface() {
-
-						public void methodExecutionCompleted(
-								OSDRequest request, StageResponseCode result) {
-							postRead(request, result);
-						}
-					});
-
-		} else {
-			if (Logging.isDebug())
-				Logging.logMessage(Logging.LEVEL_DEBUG, this,
-						"authentication failed for " + rq.getRequestId());
-			master.requestFinished(rq);
-		}
-	}
-
-	private void postRead(final OSDRequest rq, StageResponseCode result) {
-
-		// FIXME: comment this out to enable replication
-		if (result == StageResponseCode.OK)
-			master.requestFinished(rq);
-//		else if (result == StageResponseCode.FAILED) {
-//			master.getStage(Stages.REPLICATION).enqueueOperation(rq,
-//					ReplicationStage.STAGEOP_FETCH_OBJECT,
-//					new StageCallbackInterface() {
-//
-//						public void methodExecutionCompleted(
-//								OSDRequest request, StageResponseCode result) {
-//							// FIXME: testcode
-//							System.out.println(rq.getRequestId()
-//									+ ": process original callback");
-//							postFetchObject(request, result);
-//						}
-//					});
-//		}
-	}
-
-	private void postFetchObject(OSDRequest rq, StageResponseCode result) {
+			    public void methodExecutionCompleted(
+				    OSDRequest request, StageResponseCode result) {
+				Logging.logMessage(Logging.LEVEL_TRACE, this,
+					"continue processing request after replication: "
+						+ rq.getDetails().getFileId() + "-"
+						+ rq.getDetails().getObjectNumber() + ".");
+				postFetchObject(request, result);
+			    }
+			});
+	    } else {
 		master.requestFinished(rq);
-	}
+	    }
+    }
+
+    private void postFetchObject(OSDRequest rq, StageResponseCode result) {
+	if (result == StageResponseCode.OK)
+	    master.requestFinished(rq);
+	else if (result == StageResponseCode.FAILED)
+	    // TODO: normal response as if object could not be read
+	    master.requestFinished(rq);
+    }
 
 }

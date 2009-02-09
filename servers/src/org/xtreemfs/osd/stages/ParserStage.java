@@ -39,6 +39,7 @@ import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
+import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.ErrorRecord;
 import org.xtreemfs.osd.LocationsCache;
@@ -144,6 +145,7 @@ public final class ParserStage extends Stage {
                 return new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrorCodes.INVALID_PARAMS,
                         "PUT requires data to write in the HTTP request body");
             }
+            rq.setData(pr.requestBody, DATA_TYPE.BINARY);
             rq.getDetails().setFileId(fileId);
             rq.setOperation(master.getOperation(RequestDispatcher.Operations.WRITE));
 

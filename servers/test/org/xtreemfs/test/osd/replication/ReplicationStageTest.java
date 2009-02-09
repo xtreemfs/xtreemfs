@@ -23,11 +23,14 @@
  */
 package org.xtreemfs.test.osd.replication;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -36,16 +39,27 @@ import org.junit.After;
 import org.junit.Before;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.Request;
+import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.RPCClient;
+import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.dir.DIRClient;
+import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.common.striping.RAID0;
 import org.xtreemfs.common.striping.StripingPolicy;
+import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.dir.DIR;
+import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
@@ -54,14 +68,18 @@ import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
+import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.RequestDispatcher;
 import org.xtreemfs.osd.RequestDispatcher.Operations;
 import org.xtreemfs.osd.RequestDispatcher.Stages;
 import org.xtreemfs.osd.ops.Operation;
 import org.xtreemfs.osd.ops.ReadOperation;
 import org.xtreemfs.osd.ops.FetchAndWriteReplica;
+import org.xtreemfs.osd.replication.SimpleStrategy;
+import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.stages.AuthenticationStage;
 import org.xtreemfs.osd.stages.ParserStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
@@ -69,6 +87,7 @@ import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StageCallbackInterface;
 import org.xtreemfs.osd.stages.StageStatistics;
 import org.xtreemfs.osd.stages.StorageStage;
+import org.xtreemfs.osd.stages.StorageThread;
 import org.xtreemfs.osd.stages.Stage.StageResponseCode;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
@@ -84,19 +103,21 @@ import org.xtreemfs.test.osd.ParserStageTest;
  * @author clorenz
  */
 public class ReplicationStageTest extends TestCase {
-    TestRequestDispatcher dispatcher;
+    RequestDispatcher dispatcher;
+    RequestController dir;
+    int requestID = 0;
+
     private Capability capability;
     private String file;
     private List<Location> locationList;
-    
+
     // needed for dummy classes
     private int stripeSize;
     private ReusableBuffer data;
-    
 
     public ReplicationStageTest() {
 	super();
-	// TODO Auto-generated constructor stub
+	// Auto-generated constructor stub
     }
 
     /**
@@ -106,12 +127,16 @@ public class ReplicationStageTest extends TestCase {
     public void setUp() throws Exception {
 	System.out.println("TEST: " + getClass().getSimpleName() + "."
 		+ getName());
-	Logging.start(SetupUtils.DEBUG_LEVEL);
+	Logging.start(Logging.LEVEL_DEBUG);
 
 	this.stripeSize = 128;
-	this.data = generateData(stripeSize*1024);
+	this.data = generateData(stripeSize * 1024);
 
-	this.dispatcher = new TestRequestDispatcher(this.data);
+        DIRConfig dirConfig = SetupUtils.createDIRConfig();
+	dir = new RequestController(dirConfig);
+        dir.startup();
+	dispatcher = new TestRequestDispatcher(new InetSocketAddress(dirConfig
+		.getAddress(), dirConfig.getPort()), this.data);
 
 	file = "1:1";
 	capability = new Capability(file, "read", 0, "IAmTheClient");
@@ -124,21 +149,134 @@ public class ReplicationStageTest extends TestCase {
     @After
     public void tearDown() throws Exception {
 	dispatcher.shutdown();
+	dir.shutdown();
     }
 
-    public void testControlFlow() throws JSONException {
-	OSDRequest request = new OSDRequest(0);
+    /*
+     * does not work properly at the moment
+     */
+    /**
+     * this test has no assertions
+     * @throws JSONException
+     */
+    public void testControlFlowOfFetchAndWriteReplicaOperation()
+    	throws JSONException {
+        int objectNo = 2;
+        
+        OSDRequest request = createOSDRequest(objectNo);
+        request.setOperation(dispatcher
+        	.getOperation(Operations.READ));
+        OSDRequest request2 = createOSDRequest(objectNo+1);
+        request.setOperation(dispatcher
+        	.getOperation(Operations.READ));
+       
+        // enqueue
+        request.getOperation().startRequest(request);
+        request.getOperation().startRequest(request2);
+       
+        try {
+            // wait, hopefully the request has finished
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            // Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
+    /*
+     * does not work properly at the moment
+     */
+    public void testStageMethodsThroughControlFlowOfFetchAndWriteReplicaOperation()
+	    throws JSONException {
+	int objectNo = 2;
+	OSDRequest originalRequest = createOSDRequest(objectNo);
+	originalRequest.setOperation(dispatcher
+		.getOperation(Operations.READ));
+	OSDRequest request = createOSDRequest(objectNo);
+	originalRequest.setCurrentCallback(new StageCallbackInterface() {
+	    public void methodExecutionCompleted(OSDRequest request,
+		    StageResponseCode result) {
+		// assert data has been copied to original request
+		assertEquals(data.getBuffer(), request.getData().getBuffer());
+	    }
+	});
+	request.setOriginalOsdRequest(originalRequest);
+	request.setOperation(dispatcher
+		.getOperation(Operations.FETCH_AND_WRITE_REPLICA));
+
+	TransferStrategy strategy = new SimpleStrategy(request.getDetails());
+	request.getDetails().setReplicationTransferStrategy(strategy);
+	strategy.addPreferredObject(request.getDetails().getObjectNumber());
+
+	// enqueue
+	dispatcher.getStage(Stages.REPLICATION).enqueueOperation(request,
+		ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT,
+		new StageCallbackInterface() {
+		    public void methodExecutionCompleted(OSDRequest request,
+			    StageResponseCode result) {
+			// assert object was fetched
+			assertEquals(data.getBuffer(), request.getData().getBuffer());
+
+			dispatcher.getStage(Stages.STORAGE).enqueueOperation(
+				request, StorageThread.STAGEOP_WRITE_OBJECT,
+				new StageCallbackInterface() {
+				    public void methodExecutionCompleted(
+					    OSDRequest request,
+					    StageResponseCode result) {
+					// assert object has been written to disk (could not be asserted currently)
+
+					// copy to original request
+					OSDRequest originalRq = request.getOriginalOsdRequest();
+					originalRq.setData(request.getData().createViewBuffer(), request
+						.getDataType());
+					// go on with the original request operation-callback
+					originalRq.getCurrentCallback().methodExecutionCompleted(
+						originalRq, result);
+
+					// initiate next steps for replication
+					dispatcher.getStage(Stages.REPLICATION)
+						.enqueueOperation(
+							request,
+							ReplicationStage.STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS,
+							new StageCallbackInterface() {
+							    public void methodExecutionCompleted(
+								    OSDRequest request,
+								    StageResponseCode result) {
+								// assert nothing currently (request has ended)
+							    }
+							});
+
+				    }
+				});
+
+		    }
+		});
+
+	try {
+	    // wait, hopefully the request has finished
+	    Thread.sleep(3000);
+	} catch (InterruptedException e) {
+	    // Auto-generated catch block
+	    e.printStackTrace();
+	}
+	
+        // caution: maybe the assertions have never been executed
+    }
+
+    /**
+     * @return
+     */
+    private OSDRequest createOSDRequest(long objectNo) {
+	OSDRequest request = new OSDRequest(requestID++);
 
 	// add available osds
 	List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
-	osds.add(new ServiceUUID("UUID:localhost:33637"));
-	osds.add(new ServiceUUID("UUID:localhost:33638"));
-	osds.add(new ServiceUUID("UUID:localhost:33639"));
+	osds.add(SetupUtils.getOSD1UUID());
+	osds.add(SetupUtils.getOSD2UUID());
 
 	List<ServiceUUID> osds2 = new ArrayList<ServiceUUID>();
-	osds2.add(new ServiceUUID("UUID:localhost:33640"));
-	osds2.add(new ServiceUUID("UUID:localhost:33641"));
-	osds2.add(new ServiceUUID("UUID:localhost:33642"));
+	osds2.add(SetupUtils.getOSD3UUID());
+	osds2.add(SetupUtils.getOSD4UUID());
 
 	locationList
 		.add(new Location(new RAID0(stripeSize, osds.size()), osds));
@@ -152,47 +290,13 @@ public class ReplicationStageTest extends TestCase {
 	request.getDetails().setCapability(capability);
 	request.getDetails().setFileId(file);
 	request.getDetails().setCurrentReplica(locations.getLocation(0));
-	request.getDetails().setObjectNumber(2);
-
-	// parse
-	request.setOperation(dispatcher
-		.getOperation(Operations.READ));
-	request.getOperation().startRequest(request);
-	
-	try {
-	    // wait 10s, hopefully the request has finished
-	    Thread.sleep(3000);
-	} catch (InterruptedException e) {
-	    //Auto-generated catch block
-	    e.printStackTrace();
-	}
-	
-	// CAUTION: maybe this is a real failure, but not necessarily
-	// because maybe the time to wait was too short for finishing the request
-//	assertEquals(this.data, request.getData());
+	request.getDetails().setObjectNumber(objectNo);
+	return request;
     }
 
-    public void testFetchingObject() {
-	
-    }
-    
-/*    private PinkyRequest generateGetRequest(Locations loc, Capability cap,
-	    String file) throws JSONException {
-	HTTPHeaders headers = new HTTPHeaders();
-	if (cap != null)
-	    headers.addHeader(HTTPHeaders.HDR_XCAPABILITY, cap.toString());
-	if (loc != null)
-	    headers.addHeader(HTTPHeaders.HDR_XLOCATIONS, loc.asJSONString()
-		    .asString());
-	String uri = null;
-	if (file != null)
-	    uri = file;
-
-	return new PinkyRequest(HTTPUtils.GET_TOKEN, uri, null, headers);
-    }*/
-    
     /**
-     * @param size in byte
+     * @param size
+     *            in byte
      * @return
      */
     private ReusableBuffer generateData(int size) {
@@ -204,18 +308,42 @@ public class ReplicationStageTest extends TestCase {
 
     private class TestRequestDispatcher implements RequestDispatcher {
 	MultiSpeedy speedy;
-	ReplicationStage stage;
+	ReplicationStage replication;
+	TestStorageStage storage;
 	DummyStage dummyStage;
-	ParserStage parserStage;
+	private OSDClient osdClient;
+	private DIRClient dirClient;
 
-	public TestRequestDispatcher(ReusableBuffer data) throws IOException {
-	    stage = new ReplicationStage(this);
-	    parserStage = new ParserStage(this);
+	public TestRequestDispatcher(InetSocketAddress dirAddress, ReusableBuffer data) throws IOException {
+	    replication = new ReplicationStage(this);
+	    storage = new TestStorageStage(this);
 	    dummyStage = new DummyStage();
 	    speedy = new TestMultiSpeedy(data);
-	    stage.start();
+	    osdClient = new OSDClient(speedy);
+//	    dirClient = new DIRClient(speedy,dirAddress);
+	    try {
+		dirClient = SetupUtils.initTimeSync();
+	    } catch (JSONException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
+
+	    replication.start();
+	    storage.start();
 	    dummyStage.start();
-	    parserStage.start();
+
+//	    // register/update the current address mapping
+//            try {
+//		RPCResponse r3 = dirClient.registerAddressMapping("localhost", NetUtils.getReachableEndpoints(32636, "http"), 1,
+//		    NullAuthProvider.createAuthString("localhost", "localhost"));
+//		r3.waitForResponse();
+//	    } catch (JSONException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	    } catch (InterruptedException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	    }
 	}
 
 	@Override
@@ -233,9 +361,9 @@ public class ReplicationStageTest extends TestCase {
 	public Stage getStage(Stages stage) {
 	    switch (stage) {
 	    case REPLICATION:
-		return this.stage;
-	    case PARSER:
-		return this.parserStage;
+		return this.replication;
+	    case STORAGE:
+		return this.storage;
 	    default:
 		return this.dummyStage;
 	    }
@@ -270,23 +398,38 @@ public class ReplicationStageTest extends TestCase {
 
 	@Override
 	public void shutdown() {
+	    speedy.shutdown();
+	    try {
+		speedy.waitForShutdown();
+	    } catch (Exception e) {
+		// Auto-generated catch block
+		e.printStackTrace();
+	    }
+	    replication.shutdown();
+	    storage.shutdown();
+	    dummyStage.shutdown();
 	}
 
 	@Override
 	public OSDConfig getConfig() {
-	    //  Auto-generated method stub
+	    // Auto-generated method stub
 	    return null;
 	}
 
 	@Override
 	public DIRClient getDIRClient() {
+	    return dirClient;
+	}
+
+	@Override
+	public OSDClient getOSDClient() {
 	    // Auto-generated method stub
-	    return null;
+	    return osdClient;
 	}
     }
 
     private class TestMultiSpeedy extends MultiSpeedy {
-	SpeedyResponseListener listener;
+//	SpeedyResponseListener listener;
 	ReusableBuffer data;
 
 	public TestMultiSpeedy(ReusableBuffer data) throws IOException {
@@ -298,15 +441,43 @@ public class ReplicationStageTest extends TestCase {
 	public void registerListener(SpeedyResponseListener rl,
 		InetSocketAddress server) {
 	    // Auto-generated method stub
-	    this.listener = rl;
+//	    this.listener = rl;
 	}
 
 	@Override
 	public void sendRequest(SpeedyRequest rq, InetSocketAddress server)
 		throws IOException, IllegalStateException {
-	    // Auto-generated method stub
-	    ((OSDRequest) rq.getOriginalRequest()).setData(this.data, DATA_TYPE.BINARY);
-	    rq.listener.receiveRequest(rq);
+//	    if(rq.getURI().equals("getAddressMapping")) {
+//		
+//		List<Object> endpoints = new ArrayList(1);
+//		Map<String,Object> m = RPCClient.generateMap("address", "127.0.0.1",
+//                        "port", 32636, "protocol", "http", 
+//                        "ttl", 3600, "match_network", "*");
+//                endpoints.add(m);
+//		
+//		Map<String, List<Object>> results = new HashMap<String, List<Object>>();
+//		List<Object> result = new ArrayList<Object>(3);
+//                result.add(1); // version
+//                result.add(endpoints);
+//                results.put("bla", result);
+//                
+//                try {
+//		    ((OSDRequest) rq.getOriginalRequest()).setData(ReusableBuffer.wrap(JSONParser.writeJSON(results).getBytes()),
+//		        DATA_TYPE.JSON);
+//		    rq.listener.receiveRequest(rq);
+//		} catch (JSONException e) {
+//		    // TODO Auto-generated catch block
+//		    e.printStackTrace();
+//		}
+//	    }
+//	    
+//	    else {
+    	    rq.responseHeaders = new HTTPHeaders();
+    	    rq.responseBody = this.data;
+    	    rq.responseHeaders.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, HTTPUtils.DATA_TYPE.BINARY.toString());
+    	    rq.responseHeaders.addHeader(HTTPHeaders.HDR_XNEWFILESIZE, this.data.limit());
+    	    rq.listener.receiveRequest(rq);
+//	    }
 	}
     }
 
@@ -317,6 +488,26 @@ public class ReplicationStageTest extends TestCase {
 
 	@Override
 	protected void processMethod(StageMethod method) {
+	    method.getCallback().methodExecutionCompleted(method.getRq(),
+		    StageResponseCode.OK);
+	}
+    }
+
+    private class TestStorageStage extends StorageThread {
+	ReusableBuffer data;
+
+	/**
+	 * 
+	 */
+	public TestStorageStage(RequestDispatcher dispatcher) {
+	    super(0, dispatcher, null, null, null);
+	    // Auto-generated constructor stub
+	}
+
+	@Override
+	protected void processMethod(StageMethod method) {
+	    // Auto-generated method stub
+	    method.getRq().getDetails().setObjectNotExistsOnDisk(true);
 	    method.getCallback().methodExecutionCompleted(method.getRq(),
 		    StageResponseCode.OK);
 	}

@@ -37,6 +37,7 @@ import org.xtreemfs.osd.RequestDetails;
 /**
  * This class provides the basic functionality needed by the different transfer
  * strategies.
+ * One TransferStrategy manages a whole file (all objects of this file).
  * 
  * 09.09.2008
  * 
@@ -46,16 +47,22 @@ public abstract class TransferStrategy {
     protected class ReplicationDetails {
 	String fileId;
 	Capability capability;
-	Locations locationList;
+	Locations otherReplicas;
 	Location currentReplica;
 
 	ReplicationDetails(String fileId, Capability capability,
 		Locations locationList, Location currentReplica) {
-	    super();
 	    this.fileId = fileId;
 	    this.capability = capability;
-	    this.locationList = locationList;
 	    this.currentReplica = currentReplica;
+	    
+	    // get other Replicas without current
+	    ArrayList<Location> locList = new ArrayList<Location>();
+	    for(Location loc : locationList){
+		if(loc != currentReplica)
+		    locList.add(loc);
+	    }
+	    this.otherReplicas = new Locations(locList);
 	}
     }
 
@@ -64,15 +71,19 @@ public abstract class TransferStrategy {
 	public long objectID;
 	public boolean requestObjectList;
     }
-
+    
+    protected NextRequest next;
+    
     protected ReplicationDetails details;
 
     protected ArrayList<Long> requiredObjects; // maybe additionally current
 
     protected ArrayList<Long> preferredObjects; // requested objects
 
-    protected HashMap<String, List<Long>> aviableObjectsOnOSD;
-    protected HashMap<Long, List<String>> aviableOSDsForObject;
+    protected HashMap<String, List<Long>> availableObjectsOnOSD;
+    protected HashMap<Long, List<String>> availableOSDsForObject;
+    
+    protected long knownFilesize;
 
     /**
      * @param rqDetails
@@ -84,15 +95,30 @@ public abstract class TransferStrategy {
 		.getCurrentReplica());
 	this.requiredObjects = new ArrayList<Long>();
 	this.preferredObjects = new ArrayList<Long>();
-	this.aviableObjectsOnOSD = new HashMap<String, List<Long>>();
-	this.aviableOSDsForObject = new HashMap<Long, List<String>>();
+	this.availableObjectsOnOSD = new HashMap<String, List<Long>>();
+	this.availableOSDsForObject = new HashMap<Long, List<String>>();
+	this.knownFilesize = -1;
+	this.next = null;
     }
 
     /**
-     * 
-     * @return null, if no object to fetch exists
+     * chooses the next object, which will be replicated
      */
-    public abstract NextRequest selectNext();
+    public void selectNext() {
+	if(next != null) {
+	    removePreferredObject(next.objectID);
+	    removeRequiredObject(next.objectID);
+	    next = null;
+	}
+    }
+    
+    /**
+     * Returns the "result" from selectNext().
+     * @return null, if selectNext() did not executed before or no object to fetch exists 
+     */
+    public NextRequest getNext() {
+	return next;
+    }
 
     /**
      * @param e
@@ -166,5 +192,22 @@ public abstract class TransferStrategy {
      */
     public int getPreferredObjectsCount() {
 	return this.preferredObjects.size();
+    }
+
+    /**
+     * Sets the new filesize, if it is bigger than the older one.
+     * 
+     * @param filesize
+     */
+    public void setKnownFilesize(long filesize) {
+	if(knownFilesize < filesize) 
+	    knownFilesize = filesize;
+    }
+    
+    /**
+     * @return the knownFilesize
+     */
+    public long getKnownFilesize() {
+	return knownFilesize;
     }
 }

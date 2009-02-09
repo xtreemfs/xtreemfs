@@ -280,6 +280,8 @@ public class AuthenticationStage extends Stage {
                     }
                 }
                 
+                // TODO: check access mode (read, write, ...)
+
                 if (!isValid) {
                     isValid = rqCap.isValid();
                     if (isValid) {
