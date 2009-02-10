@@ -46,24 +46,24 @@ import org.xtreemfs.foundation.json.JSONException;
  */
 public final class UUIDResolver extends Thread {
 
-    Map<String,UUIDCacheEntry>      cache;
-
-    protected transient boolean     quit;
-
-    protected final DIRClient       dir;
-
-    protected final String          authString;
-
-    protected final List<String>    myNetworks;
-
+    Map<String, UUIDCacheEntry>   cache;
+    
+    protected transient boolean   quit;
+    
+    protected final DIRClient     dir;
+    
+    protected final String        authString;
+    
+    protected final List<String>  myNetworks;
+    
     /**
      * interval between two cache cleanups/renewals in milliseconds
      */
-    public final int         cacheCleanInterval;
-
-    public final int         maxUnusedEntry ;
-
-    protected static transient UUIDResolver   theInstance;
+    public final int              cacheCleanInterval;
+    
+    public final int              maxUnusedEntry;
+    
+    protected static UUIDResolver theInstance;
 
 
     protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry,

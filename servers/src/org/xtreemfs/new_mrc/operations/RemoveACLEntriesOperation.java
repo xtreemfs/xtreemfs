@@ -25,8 +25,8 @@
 package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
+import java.util.Map;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -44,27 +44,22 @@ import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 /**
- * Updates the file's timestamps
  * 
- * @author bjko
+ * @author stender
  */
-public class UtimeOperation extends MRCOperation {
+public class RemoveACLEntriesOperation extends MRCOperation {
     
     static class Args {
         
-        public String path;
+        public String       path;
         
-        public Long   atime;
-        
-        public Long   ctime;
-        
-        public Long   mtime;
+        public List<Object> entries;
         
     }
     
-    public static final String RPC_NAME = "utime";
+    public static final String RPC_NAME = "removeACLEntries";
     
-    public UtimeOperation(MRCRequestDispatcher master) {
+    public RemoveACLEntriesOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -122,37 +117,23 @@ public class UtimeOperation extends MRCOperation {
                 file = res.getFile();
             }
             
-            if ((rqArgs.atime != null) || (rqArgs.ctime != null) || (rqArgs.mtime != null)) {
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq
-                        .getDetails().superUser, rq.getDetails().groupIds);
-            } else {
-                faMan.checkPermission("w", sMan, file, res.getParentDirId(),
-                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            }
+            // check whether the access mode may be changed
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // set all system attributes included in the map
+            // change the ACL
+            faMan.removeACLEntries(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
+                    .getDetails().groupIds, rqArgs.entries, update);
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             // update POSIX timestamps
-            if (rqArgs.atime != null)
-                file.setAtime(rqArgs.atime.intValue());
-            else
-                file.setAtime((int) (TimeSync.getGlobalTime() / 1000l));
-            if (rqArgs.ctime != null)
-                file.setCtime(rqArgs.ctime.intValue());
-            else
-                file.setCtime((int) (TimeSync.getGlobalTime() / 1000l));
-            if (rqArgs.mtime != null)
-                file.setMtime(rqArgs.mtime.intValue());
-            else
-                file.setMtime((int) (TimeSync.getGlobalTime() / 1000l));
-            
-            sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
+            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                update);
             
             update.execute();
             
@@ -174,11 +155,9 @@ public class UtimeOperation extends MRCOperation {
         try {
             
             args.path = (String) arguments.get(0);
-            args.atime = (Long) arguments.get(1);
-            args.ctime = (Long) arguments.get(2);
-            args.mtime = (Long) arguments.get(3);
+            args.entries = (List<Object>) arguments.get(1);
             
-            if (arguments.size() == 4)
+            if (arguments.size() == 2)
                 return null;
             
             throw new Exception();

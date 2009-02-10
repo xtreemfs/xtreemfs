@@ -65,7 +65,7 @@ public class Converter {
         Map<String, Object> aclMap = new HashMap<String, Object>();
         while (acl.hasNext()) {
             ACLEntry next = acl.next();
-            aclMap.put(next.getEntity(), next.getRights());
+            aclMap.put(next.getEntity(), (long) next.getRights());
         }
         
         return aclMap;

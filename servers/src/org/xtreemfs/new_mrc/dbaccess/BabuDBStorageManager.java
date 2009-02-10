@@ -606,11 +606,12 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setACLEntry(long fileId, String entity, short rights, AtomicDBUpdate update)
+    public void setACLEntry(long fileId, String entity, Short rights, AtomicDBUpdate update)
         throws DatabaseException {
         
-        BufferBackedACLEntry entry = new BufferBackedACLEntry(fileId, entity, rights);
-        update.addUpdate(ACL_INDEX, entry.getKeyBuf(), entry.getValBuf());
+        BufferBackedACLEntry entry = new BufferBackedACLEntry(fileId, entity, rights == null ? 0
+            : rights);
+        update.addUpdate(ACL_INDEX, entry.getKeyBuf(), rights == null ? null : entry.getValBuf());
     }
     
     @Override

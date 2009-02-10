@@ -81,20 +81,38 @@ public class ReadDirAndStatOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.path);
             
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
+            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+            StorageManager sMan = vMan.getStorageManager(volume.getId());
+            PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
             
             FileMetadata file = res.getFile();
+            
+            // if the file refers to a symbolic link, resolve the link
+            String target = sMan.getSoftlinkTarget(file.getId());
+            if (target != null) {
+                rqArgs.path = target;
+                p = new Path(rqArgs.path);
+                
+                // if the local MRC is not responsible, send a redirect
+                if (!vMan.hasVolume(p.getComp(0))) {
+                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
+                    return;
+                }
+                
+                volume = vMan.getVolumeByName(p.getComp(0));
+                sMan = vMan.getStorageManager(volume.getId());
+                res = new PathResolver(sMan, p);
+                file = res.getFile();
+            }
             
             // check whether the directory grants read access
             faMan.checkPermission(FileAccessManager.READ_ACCESS, sMan, file, res.getParentDirId(),

@@ -146,6 +146,7 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
                 "[ I | DIR ] operational, listening on port " + config.getPort());
             
         } catch (Exception exc) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
             shutdown();
             throw exc;
         }
@@ -167,17 +168,6 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
     }
     
     public void shutdown() throws Exception {
-        
-        // create status page snapshot for debugging purposes
-        try {
-            String statusPageSnapshot = getStatusPage();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(config.getDbDir()
-                + "/.status.html"));
-            writer.write(statusPageSnapshot);
-            writer.close();
-        } catch (Exception exc) {
-            // ignore
-        }
         
         if (pinkyStage != null)
             pinkyStage.shutdown();
@@ -275,6 +265,8 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
     }
     
     private String getStatusPage() throws SQLException, JSONException {
+        
+        assert (statusPageTemplate != null);
         
         long time = System.currentTimeMillis();
         

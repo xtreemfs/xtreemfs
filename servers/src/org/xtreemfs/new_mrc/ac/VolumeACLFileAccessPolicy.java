@@ -24,6 +24,8 @@
 
 package org.xtreemfs.new_mrc.ac;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -36,6 +38,7 @@ import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.operations.PathResolver;
+import org.xtreemfs.new_mrc.utils.Converter;
 
 /**
  * This policy grants or denies access based on immutable volume ACLs. Note that
@@ -190,13 +193,25 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
+        throws MRCException {
+        
+        try {
+            Iterator<ACLEntry> acl = sMan.getACL(1);
+            return Converter.aclToMap(acl);
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
         throws MRCException, UserException {
         
         try {
             for (Entry<String, Object> entry : entries.entrySet())
-                sMan.setACLEntry(1, entry.getKey(), (Short) entry.getValue(), update);
+                sMan.setACLEntry(1, entry.getKey(), ((Long) entry.getValue()).shortValue(), update);
             
         } catch (Exception exc) {
             throw new MRCException(exc);
@@ -207,7 +222,12 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException {
-        // do nothing
+        
+        Map<String, Object> entries = new HashMap<String, Object>();
+        for (Object entity : entities)
+            entries.put((String) entity, null);
+        
+        setACLEntries(sMan, file, parentId, userId, groupIds, entries, update);
     }
     
     @Override

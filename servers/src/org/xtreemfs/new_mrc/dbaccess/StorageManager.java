@@ -81,7 +81,7 @@ public interface StorageManager {
     
     // ACLs
     
-    public void setACLEntry(long fileId, String entity, short rights, AtomicDBUpdate update)
+    public void setACLEntry(long fileId, String entity, Short rights, AtomicDBUpdate update)
         throws DatabaseException;
     
     public ACLEntry getACLEntry(long fileId, String entity) throws DatabaseException;

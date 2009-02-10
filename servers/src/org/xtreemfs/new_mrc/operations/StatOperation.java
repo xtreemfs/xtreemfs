@@ -40,7 +40,6 @@ import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLocList;
@@ -99,8 +98,8 @@ public class StatOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -141,7 +140,7 @@ public class StatOperation extends MRCOperation {
                 }
             }
             
-            Iterator<ACLEntry> acl = rqArgs.inclACLs ? sMan.getACL(file.getId()) : null;
+            Map<String, Object> acl = rqArgs.inclACLs ? faMan.getACLEntries(sMan, file) : null;
             
             Object statInfo = MRCOpHelper.createStatInfo(sMan, faMan, file, ref,
                 rq.getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);

@@ -105,7 +105,7 @@ public class MRCOpHelper {
     
     public static Map<String, Object> createStatInfo(StorageManager sMan, FileAccessManager faMan,
         FileMetadata file, String ref, String userId, List<String> groupIds, XLocList xLocList,
-        Map<String, Object> xAttrs, Iterator<ACLEntry> acl) throws UserException, MRCException {
+        Map<String, Object> xAttrs, Map<String, Object> acl) throws UserException, MRCException {
         
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("fileId", sMan.getVolumeId() + ":" + file.getId());
@@ -126,7 +126,7 @@ public class MRCOpHelper {
         if (xAttrs != null)
             map.put("xAttrs", xAttrs);
         if (acl != null)
-            map.put("acl", Converter.aclToMap(acl));
+            map.put("acl", acl);
         
         map.put("posixAccessMode", faMan.getPosixAccessMode(sMan, file, userId, groupIds));
         

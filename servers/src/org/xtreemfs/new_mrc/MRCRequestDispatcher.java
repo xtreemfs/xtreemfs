@@ -132,12 +132,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         dirClient = new DIRClient(speedyStage, config.getDirectoryService());
         
-        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(),
-            authString);
-        
-        UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
-        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
-        
         policyContainer = new PolicyContainer(config);
         authProvider = policyContainer.getAuthenticationProvider();
         authProvider.initialize(config.isUsingSSL());
@@ -188,6 +182,13 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     }
     
     public void startup() throws Exception {
+        
+        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(),
+            authString);
+        
+        UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
+        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
+        
         speedyStage.start();
         speedyStage.waitForStartup();
         osdMonitor.start();
@@ -221,12 +222,12 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         procStage.waitForShutdown();
         
         UUIDResolver.shutdown();
-        TimeSync.getInstance().shutdown();
-        
         speedyStage.shutdown();
         speedyStage.waitForShutdown();
         
         volumeManager.shutdown();
+        
+        TimeSync.getInstance().shutdown();
     }
     
     public void requestFinished(MRCRequest request) {
@@ -246,6 +247,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 HTTPHeaders headers = new HTTPHeaders();
                 headers.addHeader(HTTPHeaders.HDR_LOCATION + ":" + error.getErrorMessage());
                 pr.setResponse(HTTPUtils.SC_SEE_OTHER, null, DATA_TYPE.JSON, headers);
+                break;
             }
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage()

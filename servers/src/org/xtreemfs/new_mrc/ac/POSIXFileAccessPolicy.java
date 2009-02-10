@@ -25,6 +25,7 @@
 package org.xtreemfs.new_mrc.ac;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +39,7 @@ import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.operations.PathResolver;
+import org.xtreemfs.new_mrc.utils.Converter;
 
 /**
  * This policy evaluates access rights according to POSIX permissions and access
@@ -205,45 +207,45 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             
             // check whether an ACL exists; if so, use the ACL for the access
             // check ...
-//            if (sMan.getACL(file.getId()).hasNext()) {
-//                
-//                // retrieve the relevant ACL entry for evaluating the access
-//                // rights
-//                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds,
-//                    accessMode);
-//                assert (entry != null);
-//                
-//                // if the ACL entry is 'owner' or 'others', evaluate the access
-//                // rights without taking into account the 'mask' entry
-//                if (OTHER.equals(entry.getEntity()) || OWNER.equals(entry.getEntity())) {
-//                    
-//                    if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
-//                        return;
-//                    } else
-//                        accessDenied(sMan.getVolumeId(), file, accessMode);
-//                    
-//                }
-//                
-//                // otherwise, check whether both the entry and the mask entry
-//                // grant access
-//                ACLEntry maskEntry = sMan.getACLEntry(file.getId(), MASK);
-//                if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)
-//                    && (maskEntry == null || checkIfAllowed(sMan, accessMode,
-//                        maskEntry.getRights(), file, parentId, userId)))
-//                    return;
-//                else
-//                    accessDenied(sMan.getVolumeId(), file, accessMode);
-//                
-//            }
-//
-//            // if not, use the file permissions for the access check ...
-//            else {
+            if (sMan.getACL(file.getId()).hasNext()) {
+                
+                // retrieve the relevant ACL entry for evaluating the access
+                // rights
+                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds,
+                    accessMode);
+                assert (entry != null);
+                
+                // if the ACL entry is 'owner' or 'others', evaluate the access
+                // rights without taking into account the 'mask' entry
+                if (OTHER.equals(entry.getEntity()) || OWNER.equals(entry.getEntity())) {
+                    
+                    if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
+                        return;
+                    } else
+                        accessDenied(sMan.getVolumeId(), file, accessMode);
+                    
+                }
+                
+                // otherwise, check whether both the entry and the mask entry
+                // grant access
+                ACLEntry maskEntry = sMan.getACLEntry(file.getId(), MASK);
+                if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)
+                    && (maskEntry == null || checkIfAllowed(sMan, accessMode,
+                        maskEntry.getRights(), file, parentId, userId)))
+                    return;
+                else
+                    accessDenied(sMan.getVolumeId(), file, accessMode);
+                
+            }
+
+            // if not, use the file permissions for the access check ...
+            else {
                 if (checkIfAllowed(sMan, accessMode, toRelativeACLRights(file.getPerms(), file,
                     parentId, userId, groupIds), file, parentId, userId))
                     return;
                 else
                     accessDenied(sMan.getVolumeId(), file, accessMode);
-//            }
+            }
             
         } catch (UserException exc) {
             throw exc;
@@ -296,40 +298,52 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
         try {
             
+            Map<String, Object> aclMap = null;
+            
             // if no ACl has been defined yet, create a minimal ACL first
-            if (!sMan.getACL(file.getId()).hasNext()) {
-                Map<String, Object> tmp = convertToACL(file.getPerms());
-                entries.putAll(tmp);
+            Iterator<ACLEntry> acl = sMan.getACL(file.getId());
+            if (!acl.hasNext())
+                aclMap = convertToACL(file.getPerms());
+            
+            // otherwise, retrieve the current ACL
+            else {
+                aclMap = new HashMap<String, Object>();
+                while (acl.hasNext()) {
+                    ACLEntry next = acl.next();
+                    aclMap.put(next.getEntity(), next.getRights());
+                }
             }
             
+            aclMap.putAll(entries);
+            
             // add the ACL entries
-            for (Entry<String, Object> entry : entries.entrySet())
-                sMan.setACLEntry(file.getId(), entry.getKey(), (Short) entry.getValue(), update);
+            for (Entry<String, Object> entry : aclMap.entrySet()) {
+                Number rights = (Number) entry.getValue();
+                sMan.setACLEntry(file.getId(), entry.getKey(), rights == null ? null : rights
+                        .shortValue(), update);
+            }
             
             // modify the POSIX access value
-            ACLEntry owner = sMan.getACLEntry(file.getId(), OWNER);
-            ACLEntry group = sMan.getACLEntry(file.getId(), MASK);
+            short owner = ((Number) aclMap.get(OWNER)).shortValue();
+            Short group = aclMap.get(MASK) != null ? ((Number) aclMap.get(MASK)).shortValue()
+                : null;
             if (group == null)
-                group = sMan.getACLEntry(file.getId(), OWNER_GROUP);
-            ACLEntry other = sMan.getACLEntry(file.getId(), OTHER);
-            assert (group != null);
-            assert (other != null);
+                group = ((Number) aclMap.get(OWNER_GROUP)).shortValue();
+            short other = ((Number) aclMap.get(OTHER)).shortValue();
             
-            ACLEntry sticky = sMan.getACLEntry(file.getId(), STICKY_BIT);
-            
-            file.setPerms((short) ((short) ((owner.getRights() & PERM_SUID_SGID) > 0 ? POSIX_SUID
-                : 0)
-                | ((group.getRights() & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0)
-                | ((sticky != null && sticky.getRights() == 1) ? POSIX_STICKY : 0)
-                | ((owner.getRights() & PERM_READ) > 0 ? POSIX_OWNER_READ : 0)
-                | ((owner.getRights() & PERM_WRITE) > 0 ? POSIX_OWNER_WRITE : 0)
-                | ((owner.getRights() & PERM_EXECUTE) > 0 ? POSIX_OWNER_EXEC : 0)
-                | ((group.getRights() & PERM_READ) > 0 ? POSIX_GROUP_READ : 0)
-                | ((group.getRights() & PERM_WRITE) > 0 ? POSIX_GROUP_WRITE : 0)
-                | ((group.getRights() & PERM_EXECUTE) > 0 ? POSIX_GROUP_EXEC : 0)
-                | ((other.getRights() & PERM_READ) > 0 ? POSIX_OTHER_READ : 0)
-                | ((other.getRights() & PERM_WRITE) > 0 ? POSIX_OTHER_WRITE : 0) | ((other
-                    .getRights() & PERM_EXECUTE) > 0 ? POSIX_OTHER_EXEC : 0)));
+            file
+                    .setPerms((short) ((short) ((owner & PERM_SUID_SGID) > 0 ? POSIX_SUID : 0)
+                        | ((group & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0)
+                        | (file.getPerms() & POSIX_STICKY)
+                        | ((owner & PERM_READ) > 0 ? POSIX_OWNER_READ : 0)
+                        | ((owner & PERM_WRITE) > 0 ? POSIX_OWNER_WRITE : 0)
+                        | ((owner & PERM_EXECUTE) > 0 ? POSIX_OWNER_EXEC : 0)
+                        | ((group & PERM_READ) > 0 ? POSIX_GROUP_READ : 0)
+                        | ((group & PERM_WRITE) > 0 ? POSIX_GROUP_WRITE : 0)
+                        | ((group & PERM_EXECUTE) > 0 ? POSIX_GROUP_EXEC : 0)
+                        | ((other & PERM_READ) > 0 ? POSIX_OTHER_READ : 0)
+                        | ((other & PERM_WRITE) > 0 ? POSIX_OTHER_WRITE : 0) | ((other & PERM_EXECUTE) > 0 ? POSIX_OTHER_EXEC
+                        : 0)));
             
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
@@ -340,25 +354,27 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
+        throws MRCException {
+        
+        try {
+            Iterator<ACLEntry> acl = sMan.getACL(file.getId());
+            return Converter.aclToMap(acl);
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
+    }
+    
+    @Override
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
         String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
         throws MRCException, UserException {
         
-        try {
-            
-            // check whether the current user is the owner of the file
-            Map<String, Object> entries = new HashMap<String, Object>();
-            for (Object entity : entities)
-                entries.put((String) entity, null);
-            
-            setACLEntries(sMan, file, parentId, userId, groupIds, entries, update);
-            
-        } catch (UserException exc) {
-            throw exc;
-        } catch (Exception exc) {
-            throw new MRCException(exc);
-        }
+        Map<String, Object> entries = new HashMap<String, Object>();
+        for (Object entity : entities)
+            entries.put((String) entity, null);
         
+        setACLEntries(sMan, file, parentId, userId, groupIds, entries, update);
     }
     
     @Override

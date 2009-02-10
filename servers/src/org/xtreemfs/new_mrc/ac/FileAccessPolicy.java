@@ -205,6 +205,18 @@ public interface FileAccessPolicy {
         throws MRCException, UserException;
     
     /**
+     * Returns the ACL of a file.
+     * 
+     * @param sMan
+     *            the volume's Storage Manager
+     * @param file
+     *            the file
+     * @return the ACL of the given file
+     */
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
+        throws MRCException;
+    
+    /**
      * Creates or changes an entry in the current ACL of a file.
      * 
      * @param sMan
