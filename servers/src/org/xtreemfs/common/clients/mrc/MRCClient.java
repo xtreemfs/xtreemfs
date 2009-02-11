@@ -225,6 +225,14 @@ public class MRCClient extends RPCClient {
         }
     }
 
+    public RPCResponse async_createFile(InetSocketAddress server, String filePath,
+        String authString) throws Exception {
+
+        RPCResponse r = null;
+        return sendRPC(server, "createFile", RPCClient.generateList(filePath),
+                authString, null);
+    }
+
     public void createFile(InetSocketAddress server, String filePath,
         Map<String, Object> attrs, Map<String, Object> stripingPolicy,
         long accessMode, String authString) throws Exception {
@@ -348,6 +356,13 @@ public class MRCClient extends RPCClient {
         } finally {
             r.freeBuffers();
         }
+    }
+
+    public RPCResponse async_delete(InetSocketAddress server, String path, String authString)
+        throws Exception {
+
+        return sendRPC(server, "delete", RPCClient.generateList(path),
+                authString, null);
     }
 
     public void deleteVolume(InetSocketAddress server, String name,
