@@ -738,6 +738,9 @@ public class StorageThread extends Stage {
                 }
 
             }
+            
+            // set the buffer to null, in order not to send it back to the client
+            rq.getRq().setData(null, DATA_TYPE.BINARY);
 
         } catch (IOException ex) {
             ex.printStackTrace();

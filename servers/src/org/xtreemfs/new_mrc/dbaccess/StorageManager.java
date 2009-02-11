@@ -23,6 +23,8 @@
  */
 package org.xtreemfs.new_mrc.dbaccess;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -67,6 +69,8 @@ public interface StorageManager {
     public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width);
     
     public XAttr createXAttr(long fileId, String owner, String key, String value);
+    
+    public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException;
     
     // XAttrs
     

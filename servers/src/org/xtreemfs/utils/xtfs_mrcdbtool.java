@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
@@ -46,6 +47,7 @@ public class xtfs_mrcdbtool {
     public static void main(String[] args) {
         
         Logging.start(Logging.LEVEL_ERROR);
+        TimeSync.initialize(null, 60000, 50, null);
         
         String authString = null;
         try {
@@ -74,7 +76,7 @@ public class xtfs_mrcdbtool {
         }
         
         CliOption h = options.get("h");
-        if(h.switchValue != null) {
+        if (h.switchValue != null) {
             usage();
             return;
         }
@@ -123,7 +125,8 @@ public class xtfs_mrcdbtool {
                             .generateList(dumpFile), authString, null);
                     r.waitForResponse();
                 } finally {
-                    r.freeBuffers();
+                    if (r != null)
+                        r.freeBuffers();
                 }
             }
 
@@ -134,7 +137,8 @@ public class xtfs_mrcdbtool {
                             .generateList(dumpFile), authString, null);
                     r.waitForResponse();
                 } finally {
-                    r.freeBuffers();
+                    if (r != null)
+                        r.freeBuffers();
                 }
             }
 

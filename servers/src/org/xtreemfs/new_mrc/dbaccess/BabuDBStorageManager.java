@@ -23,8 +23,9 @@
  */
 package org.xtreemfs.new_mrc.dbaccess;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +203,7 @@ public class BabuDBStorageManager implements StorageManager {
                         (byte) 3), BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
                     
                     // create default striping policy (XAttr)
-                    if (stripingPolicy != null) {
+                    if (stripingPolicy != null && stripingPolicy.size() != 0) {
                         
                         BufferBackedXAttr sp = new BufferBackedXAttr(id, SYSTEM_UID,
                             DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(stripingPolicy), (short) 0);
@@ -664,414 +665,35 @@ public class BabuDBStorageManager implements StorageManager {
         
     }
     
-    public void dump() throws BabuDBException {
-        
-        System.out.println("FILE_ID_INDEX");
-        
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_ID_INDEX,
-            new byte[0]);
-        while (it.hasNext()) {
-            Entry<byte[], byte[]> next = it.next();
-            System.out.println(Arrays.toString(next.getKey()) + " = "
-                + Arrays.toString(next.getValue()));
-        }
-        
-        System.out.println("\nFILE_INDEX");
-        
-        it = database.syncPrefixLookup(dbName, FILE_INDEX, new byte[0]);
-        while (it.hasNext()) {
-            Entry<byte[], byte[]> next = it.next();
-            System.out.println(Arrays.toString(next.getKey()) + " = "
-                + Arrays.toString(next.getValue()));
-        }
+    // public void dump() throws BabuDBException {
+    //        
+    // System.out.println("FILE_ID_INDEX");
+    //        
+    // Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+    // FILE_ID_INDEX,
+    // new byte[0]);
+    // while (it.hasNext()) {
+    // Entry<byte[], byte[]> next = it.next();
+    // System.out.println(Arrays.toString(next.getKey()) + " = "
+    // + Arrays.toString(next.getValue()));
+    // }
+    //        
+    // System.out.println("\nFILE_INDEX");
+    //        
+    // it = database.syncPrefixLookup(dbName, FILE_INDEX, new byte[0]);
+    // while (it.hasNext()) {
+    // Entry<byte[], byte[]> next = it.next();
+    // System.out.println(Arrays.toString(next.getKey()) + " = "
+    // + Arrays.toString(next.getValue()));
+    // }
+    // }
+    
+    public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
+        BabuDBAdminTool.dumpVolume(xmlWriter, this);
     }
     
 }
 
-// public void setXAttribute(long fileId, String key, String value, String uid)
-// throws DatabaseException {
-// try {
-// database.createInsertGroup("V");
-// } catch (BabuDBException e) {
-// throw new DatabaseException(e);
-// }
-// }
-//
-// public long createFile(String ref, String userId, String groupId,
-// Map<String, Object> stripingPolicy, boolean directory, Map<String, Object>
-// aclMap)
-// throws DatabaseException {
-//
-// long time = TimeSync.getGlobalTime() / 1000;
-//
-// // convert the access control map to a
-// ACLEntry[] acl = Converter.mapToACL(aclMap);
-//
-// AbstractFileEntity file = null;
-// if (directory) {
-// DirEntity d = new DirEntity(0, userId, groupId, time, time, time, acl, 0);
-// backend.put(d);
-// file = d;
-// } else {
-// FileEntity f = new FileEntity(0, userId, groupId, time, time, time, 0, null,
-// acl, 0, 0,for()
-// 0);
-// backend.put(f);
-// file = f;
-// }
-//
-// if (ref != null)
-// backend.put(new FileAttributeEntity<String>("ref", ref,
-// FileAttributeEntity.TYPE_SYSTEM, file.getId(), userId));
-//
-// StripingPolicy spol = stripingPolicy == null ? null : Converter
-// .mapToStripingPolicy(stripingPolicy);
-//
-// if (spol != null)
-// backend.put(new FileAttributeEntity<StripingPolicy>("spol", spol,
-// FileAttributeEntity.TYPE_SYSTEM, file.getId(), userId));
-//
-// return file.getId();
-// }
-//
-// public long createFile(AbstractFileEntity file, List<FileAttributeEntity>
-// attrs)
-// throws DatabaseException {
-//
-// if (file instanceof FileEntity)
-// backend.put((FileEntity) file);
-// else
-// backend.put((DirEntity) file);
-//
-// if (attrs != null)
-// for (FileAttributeEntity attr : attrs) {
-// attr.setFileId(file.getId());
-// backend.put(attr);
-// }
-//
-// return file.getId();
-// }
-//
-// public long linkFile(String fileName, long fileId, long parentDirId) throws
-// DatabaseException {
-// return backend.link(fileId, fileName, parentDirId);
-// }
-//
-// public long unlinkFile(String fileName, long fileId, long parentDirId) throws
-// DatabaseException {
-// return backend.unlink(fileId, fileName, parentDirId);
-// }
-//
-// public void deleteXAttributes(long fileId, List<Object> attrKeys) throws
-// DatabaseException {
-//
-// // if attrKeys == null, delete all attributes
-// if (attrKeys == null) {
-//    
-// Collection<FileAttributeEntity> list = backend.getAttrsByFileId(fileId,
-// FileAttributeEntity.TYPE_USER);
-//    
-// for (FileAttributeEntity att : list)
-// backend.deleteAttribute(att.getFileId(), att.getKey());
-// }
-//
-// else {
-//    
-// for (Object key : attrKeys) {
-//        
-// Collection<FileAttributeEntity> list = backend.getAttrsByFileId(fileId,
-// FileAttributeEntity.TYPE_USER);
-//        
-// for (FileAttributeEntity att : list) {
-// if (att.getKey().equals(key))
-// backend.deleteAttribute(att.getFileId(), att.getKey());
-// }
-// }
-// }
-// }
-//
-// public Iterator<Entry<byte[], byte[]>> getXAttributes(long fileId) throws
-// DatabaseException {
-//
-// }
-//
-// public List<FileAttributeEntity> getAllAttributes(long fileId) throws
-// DatabaseException {
-// return backend.getAttrsByFileId(fileId);
-// }
-//
-// public AbstractFileEntity getFileEntity(String path) throws UserException,
-// DatabaseException {
-//
-// AbstractFileEntity file = getFile(backend.getFileById(1), path);
-// if (file == null)
-// throw new UserException(ErrNo.ENOENT, "could not find file or directory '" +
-// path + "'");
-//
-// return file;
-// }
-//
-// public AbstractFileEntity getFileEntity(String path, boolean directory)
-// throws DatabaseException, UserException {
-//
-// AbstractFileEntity file = getFileEntity(path);
-//
-// if (file.getId() == 1 || file.isDirectory() == directory)
-// return file;
-//
-// throw new UserException(directory ? ErrNo.ENOTDIR : ErrNo.EISDIR, "'" + path
-// + "' is not a " + (directory ? "directory" : "file"));
-// }
-//
-// public AbstractFileEntity getFileEntity(long fileId) throws DatabaseException
-// {
-// return backend.getFileById(fileId);
-// }
-//
-// public XLocationsList getXLocationsList(long fileId) throws
-// DatabaseException, UserException {
-//
-// AbstractFileEntity file = getFileEntity(fileId);
-// if (file == null || !(file instanceof FileEntity))
-// throw new UserException(ErrNo.ENOENT,
-// "file does not exist or is a directory");
-//
-// return ((FileEntity) file).getXLocationsList();
-// }
-//
-// public StripingPolicy getStripingPolicy(long fileId) throws DatabaseException
-// {
-// StripingPolicy sp = (StripingPolicy) backend.getSystemAttrByFileId(fileId,
-// "spol");
-// return sp == null ? null : new StripingPolicy(sp.getPolicy(),
-// sp.getStripeSize(), sp
-// .getWidth());
-// }
-//
-// public StripingPolicy getVolumeStripingPolicy() throws DatabaseException {
-// StripingPolicy sp = (StripingPolicy) backend.getSystemAttrByFileId(1,
-// "spol");
-// return sp == null ? null : new StripingPolicy(sp.getPolicy(),
-// sp.getStripeSize(), sp
-// .getWidth());
-// }
-//
-// public boolean isReadOnly(long fileId) throws DatabaseException {
-// Boolean ro = (Boolean) backend.getSystemAttrByFileId(fileId, "ro");
-// return ro == null ? false : ro;
-// }
-//
-// public String getFileReference(long fileId) throws DatabaseException {
-// return (String) backend.getSystemAttrByFileId(fileId, "ref");
-// }
-//
-// public boolean hasChildren(long fileId) throws DatabaseException {
-// return !(backend.getFilesByParent(fileId).isEmpty() &&
-// backend.getDirsByParent(fileId)
-// .isEmpty());
-// }
-//
-// public AbstractFileEntity getChild(String fileName, long parentDirId) throws
-// DatabaseException {
-// return backend.getChild(fileName, parentDirId);
-// }
-//
-// public List<String> getChildren(long fileId) throws DatabaseException {
-//
-// List<String> list = new LinkedList<String>();
-//
-// Map<String, FileEntity> files = backend.getFilesByParent(fileId);
-// list.addAll(files.keySet());
-//
-// Map<String, DirEntity> dirs = backend.getDirsByParent(fileId);
-// list.addAll(dirs.keySet());
-//
-// return list;
-// }
-//
-// public Map<String, AbstractFileEntity> getChildData(long fileId) throws
-// DatabaseException {
-//
-// Map<String, AbstractFileEntity> map = new HashMap<String,
-// AbstractFileEntity>();
-//
-// Map<String, FileEntity> files = backend.getFilesByParent(fileId);
-// map.putAll(files);
-//
-// Map<String, DirEntity> dirs = backend.getDirsByParent(fileId);
-// map.putAll(dirs);
-//
-// return map;
-// }
-//
-// public ACLEntry[] getVolumeACL() throws DatabaseException {
-// AbstractFileEntity file = backend.getFileById(1);
-// return file.getAcl();
-// }
-//
-// public boolean fileExists(long parentDir, String file) throws
-// DatabaseException {
-// return backend.getChild(file, parentDir) != null;
-// }
-//
-// public void setFileACL(long fileId, Map<String, Object> acl) throws
-// DatabaseException {
-// setFileACL(fileId, Converter.mapToACL(acl));
-// }
-//
-// public void setFileACL(long fileId, ACLEntry[] acl) throws DatabaseException
-// {
-//
-// AbstractFileEntity file = backend.getFileById(fileId);
-// file.setAcl(acl);
-//
-// if (file instanceof FileEntity)
-// backend.put((FileEntity) file);
-// else
-// backend.put((DirEntity) file);
-// }
-//
-// public void setFileSize(long fileId, long fileSize, long epoch, long
-// issuedEpoch)
-// throws DatabaseException {
-//
-// FileEntity file = (FileEntity) backend.getFileById(fileId);
-// file.setSize(fileSize);
-// file.setEpoch(epoch);
-// file.setIssuedEpoch(issuedEpoch);
-// backend.put(file);
-// }
-//
-// public void setFileOwner(long fileId, String owner) throws DatabaseException
-// {
-//
-// AbstractFileEntity file = backend.getFileById(fileId);
-// file.setUserId(owner);
-//
-// if (file instanceof FileEntity)
-// backend.put((FileEntity) file);
-// else
-// backend.put((DirEntity) file);
-// }
-//
-// public void setFileGroup(long fileId, String group) throws DatabaseException
-// {
-//
-// AbstractFileEntity file = backend.getFileById(fileId);
-// file.setGroupId(group);
-//
-// if (file instanceof FileEntity)
-// backend.put((FileEntity) file);
-// else
-// backend.put((DirEntity) file);
-// }
-//
-// public void setXLocationsList(long fileId, XLocationsList xLocList) throws
-// DatabaseException {
-//
-// FileEntity file = (FileEntity) backend.getFileById(fileId);
-// file.setXLocationsList(xLocList);
-// backend.put(file);
-// }
-//
-// public void setVolumeACL(Map<String, Object> acl) throws DatabaseException {
-// setFileACL(1, acl);
-// }
-//
-// public void setVolumeStripingPolicy(Map<String, Object> stripingPolicy)
-// throws DatabaseException {
-// setStripingPolicy(1, stripingPolicy);
-// }
-//
-// public void setStripingPolicy(long fileId, Map<String, Object>
-// stripingPolicy)
-// throws DatabaseException {
-//
-// if (stripingPolicy != null)
-// backend.put(new FileAttributeEntity<StripingPolicy>("spol", Converter
-// .mapToStripingPolicy(stripingPolicy), FileAttributeEntity.TYPE_SYSTEM,
-// fileId,
-// ""));
-// else
-// backend.deleteAttribute(fileId, "spol");
-// }
-//
-// public void setReadOnly(long fileId, boolean readOnly) throws
-// DatabaseException {
-// backend.put(new FileAttributeEntity<Boolean>("ro", readOnly,
-// FileAttributeEntity.TYPE_SYSTEM, fileId, ""));
-// }
-//
-// public void sync() throws DatabaseException {
-// backend.sync();
-// }
-//
-// public void shutdown() throws DatabaseException {
-// backend.close();
-// backend = null;
-// }
-//
-// public void cleanup() {
-// if (backend != null)
-// backend.destroy();
-// backend = null;
-// }
-//
-// private AbstractFileEntity getFile(AbstractFileEntity parent, String path)
-// throws DatabaseException, UserException {
-//
-// if (path.equals(""))
-// return parent;
-//
-// int i = path.indexOf('/');
-// String first = i == -1 ? path : path.substring(0, i);
-// String remainder = i == -1 ? "" : path.substring(i + 1);
-//
-// // check if there is a subdirectory with the name of the topmost path
-// // component
-// AbstractFileEntity child = backend.getChild(first, parent.getId());
-//
-// if (child == null)
-// throw new UserException(ErrNo.ENOENT, "path component '" + first +
-// "' does not exist");
-//
-// if (!child.isDirectory() && remainder.length() > 0)
-// throw new UserException(ErrNo.ENOTDIR, "inner path component '" + first
-// + "' is not a directory");
-//
-// return getFile(child, remainder);
-// }
-//
-// public void updateFileTimes(long fileId, boolean setATime, boolean setCTime,
-// boolean setMTime)
-// throws DatabaseException {
-//
-// AbstractFileEntity file = backend.getFileById(fileId);
-// updateFileTimes(file, setATime, setCTime, setMTime);
-// }
-//
-// private void updateFileTimes(AbstractFileEntity file, boolean setATime,
-// boolean setCTime,
-// boolean setMTime) throws DatabaseException {
-//
-// long currentTime = TimeSync.getGlobalTime() / 1000;
-//
-// if (setATime)
-// file.setAtime(currentTime);
-// if (setCTime)
-// file.setCtime(currentTime);
-// if (setMTime)
-// file.setMtime(currentTime);
-//
-// if (file instanceof FileEntity)
-// backend.put((FileEntity) file);
-// else
-// backend.put((DirEntity) file);
-// }
-//
-// public SliceID getSliceId() {
-// return sliceId;
-// }
 //
 // public long getDBFileSize() {
 // return backend.getDBFileSize();
@@ -1085,123 +707,6 @@ public class BabuDBStorageManager implements StorageManager {
 // return backend.getNumberOfDirs();
 // }
 //
-// public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException,
-// IOException {
-//
-// DirEntity dir = (DirEntity) backend.getFileById(1);
-//
-// // serialize the root directory
-// xmlWriter.write("<dir id=\"" + dir.getId() + "\" name=\"\" uid=\"" +
-// dir.getUserId()
-// + "\" gid=\"" + dir.getGroupId() + "\" atime=\"" + dir.getAtime() +
-// "\" ctime=\""
-// + dir.getCtime() + "\" mtime=\"" + dir.getMtime() + "\">\n");
-//
-// // serialize the root directory's ACL
-// ACLEntry[] acl = dir.getAcl();
-// dumpACL(xmlWriter, acl);
-//
-// // serialize the root directory's attributes
-// List<FileAttributeEntity> attrs = backend.getAttrsByFileId(dir.getId());
-// dumpAttrs(xmlWriter, attrs);
-//
-// dumpDB(xmlWriter, 1);
-// xmlWriter.write("</dir>\n");
-// }
-//
-// private void dumpDB(BufferedWriter xmlWriter, long parentId) throws
-// DatabaseException,
-// IOException {
-//
-// // serialize all directories
-// Map<String, DirEntity> dirs = backend.getDirsByParent(parentId);
-// for (String name : dirs.keySet()) {
-//    
-// DirEntity dir = dirs.get(name);
-//    
-// // serialize the directory
-// xmlWriter.write("<dir id=\"" + dir.getId() + "\" name=\""
-// + OutputUtils.escapeToXML(name) + "\" uid=\"" + dir.getUserId() + "\" gid=\""
-// + dir.getGroupId() + "\" atime=\"" + dir.getAtime() + "\" ctime=\""
-// + dir.getCtime() + "\" mtime=\"" + dir.getMtime() + "\">\n");
-//    
-// // serialize the directory's ACL
-// ACLEntry[] acl = dir.getAcl();
-// dumpACL(xmlWriter, acl);
-//    
-// // serialize the directory's attributes
-// List<FileAttributeEntity> attrs = backend.getAttrsByFileId(dir.getId());
-// dumpAttrs(xmlWriter, attrs);
-//    
-// dumpDB(xmlWriter, dir.getId());
-// xmlWriter.write("</dir>\n");
-// }
-//
-// // serialize all files
-// Map<String, FileEntity> files = backend.getFilesByParent(parentId);
-// for (String name : files.keySet()) {
-//    
-// FileEntity file = files.get(name);
-//    
-// // serialize the file
-// xmlWriter.write("<file id=\"" + file.getId() + "\" name=\""
-// + OutputUtils.escapeToXML(name) + "\" size=\"" + file.getSize() +
-// "\" epoch=\""
-// + file.getEpoch() + "\" issuedEpoch=\"" + file.getIssuedEpoch() + "\" uid=\""
-// + file.getUserId() + "\" gid=\"" + file.getGroupId() + "\" atime=\""
-// + file.getAtime() + "\" ctime=\"" + file.getCtime() + "\" mtime=\""
-// + file.getMtime() + "\">\n");
-//    
-// // serialize the file's xLoc list
-// XLocationsList xloc = file.getXLocationsList();
-// if (xloc != null) {
-// xmlWriter.write("<xlocList version=\"" + xloc.getVersion() + "\">\n");
-// for (XLocation replica : xloc.getReplicas()) {
-// xmlWriter.write("<xloc pattern=\"" + replica.getStripingPolicy() + "\">\n");
-// for (String osd : replica.getOsdList())
-// xmlWriter.write("<osd location=\"" + osd + "\"/>\n");
-// }
-// xmlWriter.write("</xloc>\n");
-// xmlWriter.write("</xlocList>\n");
-// }
-//    
-// // serialize the file's ACL
-// ACLEntry[] acl = file.getAcl();
-// dumpACL(xmlWriter, acl);
-//    
-// // serialize the file's attributes
-// List<FileAttributeEntity> attrs = backend.getAttrsByFileId(file.getId());
-// dumpAttrs(xmlWriter, attrs);
-//    
-// xmlWriter.write("</file>\n");
-// }
-// }
-//
-// private void dumpAttrs(BufferedWriter xmlWriter, List<FileAttributeEntity>
-// attrs)
-// throws IOException {
-//
-// if (attrs != null && attrs.size() != 0) {
-// xmlWriter.write("<attrs>\n");
-// for (FileAttributeEntity attr : attrs)
-// xmlWriter.write("<attr key=\"" + OutputUtils.escapeToXML(attr.getKey())
-// + "\" value=\"" + OutputUtils.escapeToXML(attr.getValue().toString())
-// + "\" type=\"" + attr.getType() + "\" uid=\"" + attr.getUserId() + "\"/>\n");
-// xmlWriter.write("</attrs>\n");
-// }
-// }
-//
-// private void dumpACL(BufferedWriter xmlWriter, ACLEntry[] acl) throws
-// IOException {
-//
-// if (acl != null && acl.length != 0) {
-// xmlWriter.write("<acl>\n");
-// for (ACLEntry entry : acl)
-// xmlWriter.write("<entry entity=\"" + entry.getEntity() + "\" rights=\""
-// + entry.getRights() + "\"/>\n");
-// xmlWriter.write("</acl>\n");
-// }
-// }
 //
 // public void restoreDBFromDump(String entity, Attributes attrs, RestoreState
 // state,
@@ -1353,13 +858,6 @@ public class BabuDBStorageManager implements StorageManager {
 // .put(new FileAttributeEntity(key, value, type, state.currentEntity.getId(),
 // uid));
 // }
-// }
-//
-// /**
-// * VERY EVIL OPERATION!
-// */
-// public StorageBackend getBackend() {
-// return this.backend;
 // }
 //
 // public static class RestoreState {

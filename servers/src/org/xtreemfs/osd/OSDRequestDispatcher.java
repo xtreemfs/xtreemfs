@@ -294,18 +294,6 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         
         try {
             
-            // create status page snapshot for debugging purposes
-            try {
-                String statusPageSnapshot = ((StatusPageOperation) getOperation(Operations.STATUS_PAGE))
-                        .printStatusPage();
-                BufferedWriter writer = new BufferedWriter(new FileWriter(config.getObjDir()
-                    + "/.status.html"));
-                writer.write(statusPageSnapshot);
-                writer.close();
-            } catch (Exception exc) {
-                // ignore
-            }
-            
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
             

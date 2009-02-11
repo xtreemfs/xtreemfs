@@ -62,6 +62,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
+import org.xtreemfs.new_mrc.operations.MRCOpHelper;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation.Vars;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
@@ -144,6 +145,9 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         procStage = new ProcessingStage(this);
         
+        volumeManager = new BabuDBVolumeManager(this);
+        fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
+        
         ServiceDataGenerator gen = new ServiceDataGenerator() {
             public Map<String, Map<String, Object>> getServiceData() {
                 
@@ -164,8 +168,15 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                             .toString(totalRAM), "usedRAM", Long.toString(usedRAM),
                     "geoCoordinates", config.getGeoCoordinates()));
                 
-                // get volume data
-                // FIXME: need volume data!
+                try {
+                    for (VolumeInfo vol : volumeManager.getVolumes()) {
+                        Map<String, Object> dsVolumeInfo = MRCOpHelper.createDSVolumeInfo(vol,
+                            osdMonitor, uuid);
+                        map.put(vol.getId(), dsVolumeInfo);
+                    }
+                } catch (DatabaseException exc) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                }
                 
                 return map;
             }
@@ -174,11 +185,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(),
             gen, authString, config);
-        
-        volumeManager = new BabuDBVolumeManager(this);
-        
-        fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
-        
     }
     
     public void startup() throws Exception {
@@ -196,14 +202,14 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         procStage.start();
         procStage.waitForStartup();
+
+        volumeManager.init();
+        volumeManager.addVolumeChangeListener(osdMonitor);
         
         heartbeatThread.start();
         
         pinkyStage.start();
         pinkyStage.waitForStartup();
-        
-        volumeManager.init();
-        volumeManager.addVolumeChangeListener(osdMonitor);
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "MRC operational, listening on port "
             + config.getPort());

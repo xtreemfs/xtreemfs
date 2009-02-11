@@ -84,6 +84,20 @@ public class MRCOpHelper {
         nexists, dir, file
     }
     
+    public static Map<String, Object> createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan,
+        String mrcUUID) {
+        
+        String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
+        
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("name", vol.getName());
+        map.put("mrc", mrcUUID);
+        map.put("type", "volume");
+        map.put("free", free);
+        
+        return map;
+    }
+    
     public static void updateFileTimes(long parentId, FileMetadata file, boolean setATime,
         boolean setCTime, boolean setMTime, StorageManager sMan, AtomicDBUpdate update)
         throws DatabaseException {
