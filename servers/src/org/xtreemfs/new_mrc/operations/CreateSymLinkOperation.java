@@ -26,6 +26,7 @@ package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -88,8 +89,8 @@ public class CreateSymLinkOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
             faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), 0, rq
@@ -101,10 +102,18 @@ public class CreateSymLinkOperation extends MRCOperation {
             // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
+            // atime, ctime, mtime
+            int time = (int) (TimeSync.getGlobalTime() / 1000);
+            
+            // get the next free file ID
+            long fileId = sMan.getNextFileId();
+            
             // create the metadata object
-            sMan.create(res.getParentDirId(), res.getFileName(), rq.getDetails().userId, rq
-                    .getDetails().groupIds.get(0), null, (short) 0777, rqArgs.targetPath, false,
-                update);
+            sMan.createSymLink(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
+                rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.targetPath, update);
+            
+            // set the file ID as the last one
+            sMan.setLastFileId(fileId, update);
             
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,

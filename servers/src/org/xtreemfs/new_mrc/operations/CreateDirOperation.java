@@ -24,11 +24,11 @@
 
 package org.xtreemfs.new_mrc.operations;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -94,8 +94,8 @@ public class CreateDirOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
             faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
@@ -108,10 +108,19 @@ public class CreateDirOperation extends MRCOperation {
             // prepare directory creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
+            // get the next free file ID
+            long fileId = sMan.getNextFileId();
+            
+            // atime, ctime, mtime
+            int time = (int) (TimeSync.getGlobalTime() / 1000);
+            
             // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), null, rqArgs.mode, null,
-                true, update);
+            FileMetadata file = sMan.createDir(fileId, res.getParentDirId(), res.getFileName(),
+                time, time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0),
+                rqArgs.mode, 0, update);
+            
+            // set the file ID as the last one
+            sMan.setLastFileId(fileId, update);
             
             // create the user attributes
             if (rqArgs.xAttrs != null)

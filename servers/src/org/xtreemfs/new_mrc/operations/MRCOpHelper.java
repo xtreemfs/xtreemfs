@@ -26,7 +26,6 @@ package org.xtreemfs.new_mrc.operations;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +48,6 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XLoc;
@@ -142,7 +140,10 @@ public class MRCOpHelper {
         if (acl != null)
             map.put("acl", acl);
         
-        map.put("posixAccessMode", faMan.getPosixAccessMode(sMan, file, userId, groupIds));
+        int mode = faMan.getPosixAccessMode(sMan, file, userId, groupIds);
+        if (mode < 0)
+            mode = 0x10000 + mode;
+        map.put("posixAccessMode", mode);
         
         return map;
     }

@@ -25,11 +25,10 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.new_mrc.volumes;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 import org.xtreemfs.mrc.brain.storage.BackendException;
-import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
@@ -71,8 +70,7 @@ public interface VolumeManager {
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
         String owningGroupId, Map<String, Object> defaultStripingPolicy,
-        DBAccessResultListener listener, Object context) throws UserException, DatabaseException,
-        MRCException;
+        DBAccessResultListener listener, Object context) throws UserException, DatabaseException;
     
     /**
      * Checks whether a volume with the given name is known locally.
@@ -113,11 +111,11 @@ public interface VolumeManager {
     public VolumeInfo getVolumeById(String volumeId) throws DatabaseException, UserException;
     
     /**
-     * Returns a list of all locally known volumes.
+     * Returns a collection of all locally known volumes.
      * 
-     * @return a list of all locally known volumes
+     * @return a collection of all locally known volumes
      */
-    public List<VolumeInfo> getVolumes() throws DatabaseException;
+    public Collection<VolumeInfo> getVolumes() throws DatabaseException;
     
     /**
      * Updates mutable volume metadata.
@@ -144,7 +142,7 @@ public interface VolumeManager {
     /**
      * Generates a new unique volume ID.
      * 
-     * @return
+     * @return a unique volume ID
      */
     public String newVolumeId();
     
@@ -157,9 +155,5 @@ public interface VolumeManager {
      */
     public void addVolumeChangeListener(VolumeChangeListener listener) throws IOException,
         DatabaseException;
-    
-    public void dumpDB(String dumpFilePath) throws Exception;
-    
-    public void restoreDBFromDump(String dumpFilePath) throws Exception;
     
 }

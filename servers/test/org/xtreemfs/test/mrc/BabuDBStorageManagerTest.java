@@ -35,6 +35,7 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.babudb.BabuDB;
+import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
@@ -111,7 +112,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         File dbDir = new File(DB_DIRECTORY);
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
-        database = new BabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60,
+        database = BabuDBFactory.getBabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60,
             SyncMode.FDATASYNC, 300, 1000);
         mngr = new BabuDBStorageManager(database, "volume", "volId");
         
@@ -143,45 +144,47 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(1, rootDir.getId());
         
         // create nested file
+        final long fileId1 = mngr.getNextFileId();
         final String fileName = "testfile.txt";
         final String userId = "me";
         final String groupId = "myGrp";
         final short perms = 511;
-        final Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
+        final long w32Attrs = 43287473;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        FileMetadata nextDir = mngr.create(rootDir.getId(), fileName, userId, groupId,
-            stripingPolicy, perms, null, false, update);
+        FileMetadata nextDir = mngr.createFile(fileId1, rootDir.getId(), fileName, 1, 1, 1, userId,
+            groupId, perms, w32Attrs, 12, true, 5, 6, update);
+        mngr.setLastFileId(fileId1, update);
         update.execute();
         waitForResponse();
-        
-        assertEquals(nextDir.getId(), 2);
         
         FileMetadata metadata = mngr.getMetadata(rootDir.getId(), fileName);
         assertFalse(metadata.isDirectory());
         assertTrue(metadata.getAtime() > 0);
         assertTrue(metadata.getCtime() > 0);
         assertTrue(metadata.getMtime() > 0);
-        assertEquals(0, metadata.getEpoch());
-        assertEquals(0, metadata.getIssuedEpoch());
+        assertTrue(metadata.isReadOnly());
+        assertEquals(5, metadata.getEpoch());
+        assertEquals(6, metadata.getIssuedEpoch());
         assertEquals(nextDir.getId(), metadata.getId());
-        assertEquals(0, metadata.getSize());
+        assertEquals(12, metadata.getSize());
         assertEquals(1, metadata.getLinkCount());
         assertEquals(perms, metadata.getPerms());
+        assertEquals(w32Attrs, metadata.getW32Attrs());
         assertEquals(fileName, metadata.getFileName());
         assertEquals(userId, metadata.getOwnerId());
         assertEquals(groupId, metadata.getOwningGroupId());
         
         // create nested dir
+        final long fileId2 = mngr.getNextFileId();
         final String dirName = "someDir";
         
         update = mngr.createAtomicDBUpdate(listener, null);
-        FileMetadata dir = mngr.create(rootDir.getId(), dirName, userId, groupId, stripingPolicy,
-            perms, null, true, update);
+        FileMetadata dir = mngr.createDir(fileId2, rootDir.getId(), dirName, 1, 1, 1, userId,
+            groupId, perms, w32Attrs, update);
+        mngr.setLastFileId(fileId2, update);
         update.execute();
         waitForResponse();
-        
-        assertEquals(dir.getId(), 3);
         
         metadata = mngr.getMetadata(rootDir.getId(), dirName);
         assertTrue(metadata.isDirectory());
@@ -204,11 +207,11 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertTrue(tmp.contains(dirName));
         assertTrue(tmp.contains(fileName));
         
-        // try to create an existing file
+        // try to create an existing dir
         try {
             update = mngr.createAtomicDBUpdate(listener, null);
-            mngr.create(rootDir.getId(), fileName, userId, groupId, stripingPolicy, perms, null,
-                false, update);
+            mngr.createDir(77, rootDir.getId(), fileName, 2, 2, 2, userId, groupId, perms,
+                w32Attrs, update);
             update.execute();
             waitForResponse();
             
@@ -233,10 +236,13 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(1, tmp.size());
         assertEquals(dirName, tmp.get(0));
         
+        long fileId3 = mngr.getNextFileId();
+        
         // create file again
         update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.create(rootDir.getId(), fileName, userId, groupId, stripingPolicy, perms, null, false,
-            update);
+        mngr.createFile(fileId3, rootDir.getId(), fileName, 0, 0, 0, userId, groupId, perms,
+            w32Attrs, 11, true, 3, 4, update);
+        mngr.setLastFileId(fileId3, update);
         update.execute();
         waitForResponse();
         
@@ -266,12 +272,12 @@ public class BabuDBStorageManagerTest extends TestCase {
         final short perms2 = Short.MAX_VALUE;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.create(dirId, name1, uid1, gid1, null, perms1, null, false, update);
+        mngr.createDir(3, dirId, name1, 0, 0, 0, uid1, gid1, perms1, 23, update);
         update.execute();
         waitForResponse();
         
         update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.create(dirId, name2, uid2, gid2, null, perms2, null, false, update);
+        mngr.createDir(4, dirId, name2, 0, 0, 0, uid2, gid2, perms2, 55, update);
         update.execute();
         waitForResponse();
         
@@ -310,30 +316,30 @@ public class BabuDBStorageManagerTest extends TestCase {
         final String userId = "me";
         final String groupId = "myGroup";
         final short perms = 511;
-        final Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
+        final long w32Attrs = Long.MIN_VALUE;
         exc = null;
         
         // create a small directory tree and test path resolution
         long nextId = 0;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        long comp1Id = nextId = mngr.create(0, "comp1", userId, groupId, stripingPolicy, perms,
-            null, true, update).getId();
+        long comp1Id = nextId = mngr.createDir(1, 0, "comp1", 0, 0, 0, userId, groupId, perms,
+            w32Attrs, update).getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.create(nextId, "comp2", userId, groupId, stripingPolicy, perms, null, true,
+        nextId = mngr.createDir(2, nextId, "comp2", 0, 0, 0, userId, groupId, perms, w32Attrs,
             update).getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.create(nextId, "comp3", userId, groupId, stripingPolicy, perms, null, true,
+        nextId = mngr.createDir(3, nextId, "comp3", 0, 0, 0, userId, groupId, perms, w32Attrs,
             update).getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.create(nextId, "file.txt", "usr", "grp", stripingPolicy, perms, null, true,
-            update).getId();
+        nextId = mngr.createFile(4, nextId, "file.txt", 0, 0, 0, "usr", "grp", perms, w32Attrs,
+            4711, false, 3, 4, update).getId();
         update.execute();
         waitForResponse();
         
@@ -349,6 +355,15 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         id = mngr.resolvePath(new Path("comp1/comp2/"))[0].getId();
         assertEquals(comp1Id, id);
+        
+        // list files in root dir; there should only be one
+        Iterator<FileMetadata> children = mngr.getChildren(1);
+        List<String> tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(1, tmp.size());
+        assertTrue(tmp.contains("comp2"));
     }
     
     private void waitForResponse() throws Exception {

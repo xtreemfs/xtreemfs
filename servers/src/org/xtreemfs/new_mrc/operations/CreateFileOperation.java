@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -117,10 +118,23 @@ public class CreateFileOperation extends MRCOperation {
             // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
+            // get the next free file ID
+            long fileId = sMan.getNextFileId();
+            
+            // atime, ctime, mtime
+            int time = (int) (TimeSync.getGlobalTime() / 1000);
+            
             // create the metadata object
-            FileMetadata file = sMan.create(res.getParentDirId(), res.getFileName(), rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.stripingPolicy,
-                rqArgs.mode, null, false, update);
+            FileMetadata file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(),
+                time, time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0),
+                rqArgs.mode, 0, 0, false, 0, 0, update);
+            
+            // set the file ID as the last one
+            sMan.setLastFileId(fileId, update);
+            
+            if (rqArgs.stripingPolicy != null)
+                sMan.setDefaultStripingPolicy(fileId, Converter.mapToStripingPolicy(sMan,
+                    rqArgs.stripingPolicy), update);
             
             // create the user attributes
             if (rqArgs.xAttrs != null) {

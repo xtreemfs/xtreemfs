@@ -101,8 +101,8 @@ public class BufferBackedRCMetadata {
      * @param readOnly
      */
     public BufferBackedRCMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, short perms, short linkCount, int epoch, int issEpoch, boolean readOnly,
-        short collCount) {
+        long fileId, short perms, long w32Attrs, short linkCount, int epoch, int issEpoch,
+        boolean readOnly, short collCount) {
         
         // assign the key
         keyBuf = generateKeyBuf(parentId, fileName, BufferBackedFileMetadata.RC_METADATA, collCount);
@@ -118,9 +118,9 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 0).putLong(fileId).putShort(perms).putShort(linkCount).putLong(0).putInt(epoch)
-                .putInt(issEpoch).put((byte) (readOnly ? 1 : 0)).putShort(ownerOffset).putShort(
-                    groupOffset).put(fnBytes).put(oBytes).put(gBytes);
+        valBuf.put((byte) 0).putLong(fileId).putShort(perms).putShort(linkCount).putLong(w32Attrs)
+                .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0))
+                .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
         directory = false;
     }
@@ -136,7 +136,7 @@ public class BufferBackedRCMetadata {
      * @param perms
      */
     public BufferBackedRCMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, short perms, short linkCount, short collCount) {
+        long fileId, short perms, long w32Attrs, short linkCount, short collCount) {
         
         // assign the key
         keyBuf = generateKeyBuf(parentId, dirName, BufferBackedFileMetadata.RC_METADATA, collCount);
@@ -152,8 +152,8 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putLong(0).putShort(ownerOffset).putShort(
-            groupOffset).put(fnBytes).put(oBytes).put(gBytes);
+        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putLong(w32Attrs)
+                .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
         directory = true;
     }

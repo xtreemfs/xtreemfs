@@ -102,8 +102,8 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param readOnly
      */
     public BufferBackedFileMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, long size, short perms, short linkCount,
-        int epoch, int issEpoch, boolean readOnly, short collCount) {
+        long fileId, int atime, int ctime, int mtime, long size, short perms, long w32Atrrs,
+        short linkCount, int epoch, int issEpoch, boolean readOnly, short collCount) {
         
         // frequently changed metadata
         fcKeyBuf = generateKeyBuf(parentId, fileName, FC_METADATA, collCount);
@@ -112,7 +112,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId,
-            perms, linkCount, epoch, issEpoch, readOnly, collCount);
+            perms, w32Atrrs, linkCount, epoch, issEpoch, readOnly, collCount);
         
         // xLocList metadata
         xLocList = null;
@@ -132,7 +132,8 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param perms
      */
     public BufferBackedFileMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, short perms, short linkCount, short collCount) {
+        long fileId, int atime, int ctime, int mtime, short perms, long w32Attrs, short linkCount,
+        short collCount) {
         
         // frequently changed metadata
         fcKeyBuf = generateKeyBuf(parentId, dirName, FC_METADATA, collCount);
@@ -140,7 +141,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms,
-            linkCount, collCount);
+            w32Attrs, linkCount, collCount);
         
         // xLocList metadata
         xLocList = null;
@@ -301,8 +302,9 @@ public class BufferBackedFileMetadata implements FileMetadata {
     public void setOwnerAndGroup(String owner, String group) {
         
         BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(0, rcMetadata.getFileName(), owner,
-            group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getLinkCount(), rcMetadata
-                    .getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata.isReadOnly(), (short) 0);
+            group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
+                    .getLinkCount(), rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata
+                    .isReadOnly(), (short) 0);
         
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(),
             tmp.getValue());

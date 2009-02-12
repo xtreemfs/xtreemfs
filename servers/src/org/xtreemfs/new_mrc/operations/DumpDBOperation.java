@@ -47,9 +47,7 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 public class DumpDBOperation extends MRCOperation {
     
     static class Args {
-        
         public String dumpFile;
-        
     }
     
     public static final String RPC_NAME = ".dumpdb";

@@ -63,7 +63,7 @@ public class BufferBackedMetadataTest extends TestCase {
         final String name = "XtreemFS";
         final short faPol = 34;
         final short osdPol = 44;
-        final String osdPolArgs = "osdPolicyArgs"; 
+        final String osdPolArgs = "osdPolicyArgs";
         
         BufferBackedVolumeInfo vol = new BufferBackedVolumeInfo(id, name, faPol, osdPol, osdPolArgs);
         assertEquals(id, vol.getId());
@@ -245,26 +245,29 @@ public class BufferBackedMetadataTest extends TestCase {
             int ctime = 888;
             int mtime = 777;
             short perms = 255;
+            long w32Attrs = 12;
             String owner = "someone";
             String group = "somegroup";
             
             // create dir object
             BufferBackedFileMetadata dirObj = new BufferBackedFileMetadata(parentId, dirName,
-                owner, group, fileId, atime, ctime, mtime, perms, (short) 1, (short) 0);
-            checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, dirObj);
+                owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1, (short) 0);
+            checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, dirObj);
             
             fileId = 77;
             atime = 111;
             ctime = 111;
             mtime = 111;
             perms = 277;
+            w32Attrs = 3232;
             
             dirObj.setAtime(atime);
             dirObj.setCtime(ctime);
             dirObj.setMtime(mtime);
             dirObj.setId(fileId);
             dirObj.setPerms(perms);
-            checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, dirObj);
+            dirObj.setW32Attrs(w32Attrs);
+            checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, dirObj);
         }
         
     }
@@ -280,6 +283,7 @@ public class BufferBackedMetadataTest extends TestCase {
             int mtime = 0;
             long size = 3298438;
             short perms = 322;
+            long w32Attrs = Integer.MAX_VALUE;
             short linkcount = 3;
             int epoch = 4;
             int issuedEpoch = 5;
@@ -288,10 +292,10 @@ public class BufferBackedMetadataTest extends TestCase {
             String group = "afdsafdsafds";
             // create file object
             BufferBackedFileMetadata fileObj = new BufferBackedFileMetadata(parentId, fileName,
-                owner, group, fileId, atime, ctime, mtime, size, perms, linkcount, epoch,
+                owner, group, fileId, atime, ctime, mtime, size, perms, w32Attrs, linkcount, epoch,
                 issuedEpoch, readonly, (short) 0);
-            checkFileObject(owner, group, fileId, atime, ctime, mtime, perms, size, linkcount,
-                epoch, issuedEpoch, readonly, fileObj);
+            checkFileObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, size,
+                linkcount, epoch, issuedEpoch, readonly, fileObj);
         }
         
     }
@@ -338,26 +342,29 @@ public class BufferBackedMetadataTest extends TestCase {
     }
     
     private void checkDirObject(String owner, String group, long fileId, int atime, int ctime,
-        int mtime, short perms, FileMetadata obj) {
+        int mtime, short perms, long w32Attrs, FileMetadata obj) {
         
         assertEquals(fileId, obj.getId());
         assertEquals(atime, obj.getAtime());
         assertEquals(ctime, obj.getCtime());
         assertEquals(mtime, obj.getMtime());
         assertEquals(perms, obj.getPerms());
+        assertEquals(w32Attrs, obj.getW32Attrs());
         assertEquals(owner, obj.getOwnerId().toString());
         assertEquals(group, obj.getOwningGroupId().toString());
         
     }
     
     private void checkFileObject(String owner, String group, long fileId, int atime, int ctime,
-        int mtime, short perms, long size, short linkcount, int epoch, int issuedEpoch,
-        boolean readonly, FileMetadata obj) {
+        int mtime, short perms, long w32Attrs, long size, short linkcount, int epoch,
+        int issuedEpoch, boolean readonly, FileMetadata obj) {
         
         assertEquals(fileId, obj.getId());
         assertEquals(atime, obj.getAtime());
         assertEquals(ctime, obj.getCtime());
         assertEquals(mtime, obj.getMtime());
+        assertEquals(perms, obj.getPerms());
+        assertEquals(w32Attrs, obj.getW32Attrs());
         assertEquals(size, obj.getSize());
         assertEquals(linkcount, obj.getLinkCount());
         assertEquals(epoch, obj.getEpoch());

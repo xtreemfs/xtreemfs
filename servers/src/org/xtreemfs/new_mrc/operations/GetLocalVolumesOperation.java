@@ -24,6 +24,7 @@
 
 package org.xtreemfs.new_mrc.operations;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class GetLocalVolumesOperation extends MRCOperation {
     public void startRequest(MRCRequest rq) {
         
         try {
-            List<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
+            Collection<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
             
             Map<String, String> map = new HashMap<String, String>();
             for (VolumeInfo data : volumes)

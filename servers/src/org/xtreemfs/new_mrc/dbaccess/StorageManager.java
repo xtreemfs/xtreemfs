@@ -52,10 +52,18 @@ public interface StorageManager {
      */
     public static final String GLOBAL_ID  = "*";
     
-    // misc
+    // initialization
     
     public void init(String ownerId, String owningGroupId, short perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
+    
+    // file ID counter operations
+    
+    public long getNextFileId() throws DatabaseException;
+    
+    public void setLastFileId(long fileId, AtomicDBUpdate update) throws DatabaseException;
+    
+    // entity generators
     
     public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
         throws DatabaseException;
@@ -92,21 +100,35 @@ public interface StorageManager {
     
     public Iterator<ACLEntry> getACL(long fileId) throws DatabaseException;
     
-    // file creation and linking
+    // creating, linking, modifying and deleting files/directories
     
-    public FileMetadata create(long parentId, String fileName, String userId, String groupId,
-        Map<String, Object> stripingPolicy, short perms, String ref, boolean directory,
+    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs,
         AtomicDBUpdate update) throws DatabaseException;
     
+    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs, long size,
+        boolean readOnly, int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException;
+    
+    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, String ref, AtomicDBUpdate update)
+        throws DatabaseException;
+    
     public void link(FileMetadata metadata, long newParentId, String newFileName,
+        AtomicDBUpdate update) throws DatabaseException;
+    
+    public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update)
+        throws DatabaseException;
+    
+    public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
     public short delete(long parentId, String fileName, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public FileMetadata[] resolvePath(Path path) throws DatabaseException;
-    
     // getting metadata
+    
+    public FileMetadata[] resolvePath(Path path) throws DatabaseException;
     
     public String getVolumeId();
     
@@ -121,13 +143,5 @@ public interface StorageManager {
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
     public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
-    
-    // setting metadata
-    
-    public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update)
-        throws DatabaseException;
-    
-    public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
-        AtomicDBUpdate update) throws DatabaseException;
     
 }

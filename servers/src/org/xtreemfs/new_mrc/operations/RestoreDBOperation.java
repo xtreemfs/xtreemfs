@@ -33,22 +33,17 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.storage.SliceID;
-import org.xtreemfs.mrc.brain.storage.StorageManager.RestoreState;
-import org.xtreemfs.mrc.slices.SliceInfo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.ac.FileAccessManager;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.dbaccess.DBAdminTool;
+import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
+import org.xtreemfs.new_mrc.dbaccess.DBAdminTool.DBRestoreState;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -59,13 +54,7 @@ import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 public class RestoreDBOperation extends MRCOperation {
     
     static class Args {
-        
-        public String path;
-        
-        public String userId;
-        
-        public String groupId;
-        
+        public String dumpFile;
     }
     
     public static final String RPC_NAME = ".restoredb";
@@ -90,68 +79,139 @@ public class RestoreDBOperation extends MRCOperation {
         try {
             
             Args rqArgs = (Args) rq.getRequestArgs();
-            
             final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            // First, check if any volume exists already. If so, deny the
+            // operation for security reasons.
+            if (vMan.getVolumes().size() == 0)
+                throw new UserException(
+                    "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
             
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+            SAXParserFactory spf = SAXParserFactory.newInstance();
+            SAXParser sp = spf.newSAXParser();
+            sp.parse(new File(rqArgs.dumpFile), new DefaultHandler() {
                 
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
-                    return;
+                private DBRestoreState state;
+                
+                private int            dbVersion = 1;
+                
+                public void startElement(String uri, String localName, String qName,
+                    Attributes attributes) throws SAXException {
+                    
+                    try {
+                        
+                        if (qName.equals("volume")) {
+                            
+                            final String id = attributes.getValue(attributes.getIndex("id"));
+                            final String name = attributes.getValue(attributes.getIndex("name"));
+                            final short acPol = Short.parseShort(attributes.getValue(attributes
+                                    .getIndex("acPolicy")));
+                            final short osdPol = Short.parseShort(attributes.getValue(attributes
+                                    .getIndex("osdPolicy")));
+                            final String osdPolArgs = attributes.getIndex("osdPolicyArgs") == -1 ? null
+                                : attributes.getValue(attributes.getIndex("osdPolicyArgs"));
+                            
+                            state = new DBRestoreState();
+                            state.currentVolume = new VolumeInfo() {
+                                
+                                public short getAcPolicyId() {
+                                    return acPol;
+                                }
+                                
+                                public String getId() {
+                                    return id;
+                                }
+                                
+                                public String getName() {
+                                    return name;
+                                }
+                                
+                                public String getOsdPolicyArgs() {
+                                    return osdPolArgs;
+                                }
+                                
+                                public short getOsdPolicyId() {
+                                    return osdPol;
+                                }
+                                
+                                public void setOsdPolicyArgs(String osdPolicyArgs) {
+                                }
+                                
+                                public void setOsdPolicyId(short osdPolicyId) {
+                                }
+                                
+                            };
+                            
+                        }
+
+                        else if (qName.equals("filesystem"))
+                            try {
+                                dbVersion = Integer.parseInt(attributes.getValue(attributes
+                                        .getIndex("dbversion")));
+                            } catch (Exception exc) {
+                                Logging.logMessage(Logging.LEVEL_WARN, this,
+                                    "restoring database with invalid version number");
+                            }
+                        
+                        else
+                            handleNestedElement(qName, attributes, true);
+                        
+                    } catch (Exception exc) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                            "could not restore DB from XML dump: " + exc);
+                    }
                 }
                 
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
-            }
+                public void endElement(String uri, String localName, String qName)
+                    throws SAXException {
+                    
+                    try {
+                        if (qName.equals("volume") || qName.equals("slice")
+                            || qName.equals("filesystem"))
+                            return;
+                        
+                        handleNestedElement(qName, null, false);
+                        
+                    } catch (Exception exc) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                            "could not restore DB from XML dump");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                    }
+                }
+                
+                private void handleNestedElement(String qName, Attributes attributes,
+                    boolean openTag) throws UserException, DatabaseException {
+                    
+                    if (qName.equals("dir"))
+                        DBAdminTool.restoreDir(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("file"))
+                        DBAdminTool.restoreFile(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("xLocList"))
+                        DBAdminTool.restoreXLocList(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("xLoc"))
+                        DBAdminTool.restoreXLoc(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("osd"))
+                        DBAdminTool.restoreOSD(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("entry"))
+                        DBAdminTool.restoreEntry(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                    else if (qName.equals("attr"))
+                        DBAdminTool.restoreAttr(vMan, master.getFileAccessManager(), qName,
+                            attributes, state, dbVersion, openTag);
+                }
+                
+            });
             
-            // check whether the owner may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // change owner and owning group
-            file.setOwnerAndGroup(rqArgs.userId == null ? file.getOwnerId() : rqArgs.userId,
-                rqArgs.groupId == null ? file.getOwningGroupId() : rqArgs.groupId);
-            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-            
-            // update POSIX timestamps
-            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
-                update);
-            
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-            
-            update.execute();
+            finishRequest(rq);
             
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, "an error has occurred",
+                exc));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
                 "an error has occurred", exc));
@@ -165,11 +225,9 @@ public class RestoreDBOperation extends MRCOperation {
         
         try {
             
-            args.path = (String) arguments.get(0);
-            args.userId = (String) arguments.get(1);
-            args.groupId = (String) arguments.get(2);
+            args.dumpFile = (String) arguments.get(0);
             
-            if (arguments.size() == 3)
+            if (arguments.size() == 1)
                 return null;
             
             throw new Exception();
@@ -187,99 +245,5 @@ public class RestoreDBOperation extends MRCOperation {
             rq.setRequestArgs(args);
         }
     }
-    
-//    public void restoreDBFromDump(String dumpFilePath) throws Exception {
-//        
-//        // First, check if any volume exists already. If so, deny the operation
-//        // for security reasons.
-//        if (!volumesById.isEmpty())
-//            throw new Exception(
-//                "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
-//        
-//        SAXParserFactory spf = SAXParserFactory.newInstance();
-//        SAXParser sp = spf.newSAXParser();
-//        sp.parse(new File(dumpFilePath), new DefaultHandler() {
-//            
-//            private StorageManager sMan;
-//            
-//            private RestoreState   state;
-//            
-//            private int            dbVersion = 1;
-//            
-//            public void startElement(String uri, String localName, String qName,
-//                Attributes attributes) throws SAXException {
-//                
-//                try {
-//                    
-//                    if (qName.equals("volume")) {
-//                        String id = attributes.getValue(attributes.getIndex("id"));
-//                        String name = attributes.getValue(attributes.getIndex("name"));
-//                        long acPol = Long.parseLong(attributes.getValue(attributes
-//                                .getIndex("acPolicy")));
-//                        long osdPol = Long.parseLong(attributes.getValue(attributes
-//                                .getIndex("osdPolicy")));
-//                        long partPol = Long.parseLong(attributes.getValue(attributes
-//                                .getIndex("partPolicy")));
-//                        String osdPolArgs = attributes.getIndex("osdPolicyArgs") == -1 ? null
-//                            : attributes.getValue(attributes.getIndex("osdPolicyArgs"));
-//                        
-//                        createVolume(id, name, acPol, osdPol, osdPolArgs, partPol, true, false);
-//                    }
-//
-//                    else if (qName.equals("slice")) {
-//                        SliceID id = new SliceID(attributes.getValue(attributes.getIndex("id")));
-//                        
-//                        createSlice(new SliceInfo(id, null), false);
-//                        
-//                        sMan = getSliceDB(id, '*');
-//                        state = new StorageManager.RestoreState();
-//                    }
-//
-//                    else if (qName.equals("filesystem"))
-//                        try {
-//                            dbVersion = Integer.parseInt(attributes.getValue(attributes
-//                                    .getIndex("dbversion")));
-//                        } catch (Exception exc) {
-//                            Logging.logMessage(Logging.LEVEL_WARN, this,
-//                                "restoring database with invalid version number");
-//                        }
-//                    
-//                    else
-//                        sMan.restoreDBFromDump(qName, attributes, state, true, dbVersion);
-//                    
-//                } catch (Exception exc) {
-//                    Logging.logMessage(Logging.LEVEL_ERROR, this,
-//                        "could not restore DB from XML dump: " + exc);
-//                }
-//            }
-//            
-//            public void endElement(String uri, String localName, String qName) throws SAXException {
-//                
-//                try {
-//                    if (qName.equals("volume") || qName.equals("slice")
-//                        || qName.equals("filesystem"))
-//                        return;
-//                    
-//                    sMan.restoreDBFromDump(qName, null, state, false, dbVersion);
-//                } catch (Exception exc) {
-//                    Logging.logMessage(Logging.LEVEL_ERROR, this,
-//                        "could not restore DB from XML dump");
-//                    Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-//                }
-//            }
-//            
-//            public void endDocument() throws SAXException {
-//                try {
-//                    compactDB();
-//                    completeDBCompaction();
-//                } catch (Exception exc) {
-//                    Logging.logMessage(Logging.LEVEL_ERROR, this,
-//                        "could not restore DB from XML dump");
-//                    Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-//                }
-//            }
-//            
-//        });
-//    }
     
 }

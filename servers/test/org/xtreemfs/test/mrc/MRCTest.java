@@ -34,9 +34,14 @@ import java.util.Map;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
+import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCClient;
+import org.xtreemfs.common.clients.RPCResponse;
+import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
@@ -45,14 +50,12 @@ import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.RequestController;
-import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
-import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
-import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
 import org.xtreemfs.mrc.slices.DefaultPartitioningPolicy;
-import org.xtreemfs.osd.OSD;
-import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.new_mrc.ac.POSIXFileAccessPolicy;
+import org.xtreemfs.new_mrc.ac.VolumeACLFileAccessPolicy;
+import org.xtreemfs.new_mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.test.SetupUtils;
 
 /**
@@ -62,9 +65,7 @@ import org.xtreemfs.test.SetupUtils;
  */
 public class MRCTest extends TestCase {
     
-    private RequestController                  mrc1;
-    
-    private RequestController                  mrc2;
+    private MRCRequestDispatcher               mrc1;
     
     private org.xtreemfs.dir.RequestController dirService;
     
@@ -72,17 +73,9 @@ public class MRCTest extends TestCase {
     
     private MRCConfig                          mrcCfg1;
     
-    private MRCConfig                          mrcCfg2;
-    
-    private OSDConfig                          osdConfig;
-    
     private DIRConfig                          dsCfg;
     
-    private OSD                                osd;
-    
     private InetSocketAddress                  mrc1Address;
-    
-    private InetSocketAddress                  mrc2Address;
     
     public MRCTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL);
@@ -97,11 +90,6 @@ public class MRCTest extends TestCase {
         mrcCfg1 = SetupUtils.createMRC1Config();
         mrc1Address = SetupUtils.getMRC1Addr();
         
-        mrcCfg2 = SetupUtils.createMRC2Config();
-        mrc2Address = SetupUtils.getMRC2Addr();
-        
-        osdConfig = SetupUtils.createOSD1Config();
-        
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
         
@@ -112,14 +100,30 @@ public class MRCTest extends TestCase {
         dirService = new org.xtreemfs.dir.RequestController(dsCfg);
         dirService.startup();
         
-        // start the OSD
-        osd = new OSD(osdConfig);
+        // register an OSD at the directory service (needed in order to assign
+        // it to a new file on 'open')
+        DIRClient dirClient = SetupUtils.createDIRClient(1000);
+        String authString = NullAuthProvider.createAuthString("mockUpOSD", "mockUpOSD");
+        Map<String, Object> data = RPCClient.generateMap("type", "OSD", "free", "1000000000",
+            "total", "1000000000", "load", "0", "prot_versions", VersionManagement
+                    .getSupportedProtVersAsString(), "totalRAM", "1000000000", "usedRAM", "0");
+        TimeSync.initialize(dirClient, mrcCfg1.getRemoteTimeSync(), mrcCfg1.getLocalClockRenew(),
+            NullAuthProvider.createAuthString(mrcCfg1.getUUID().toString(), mrcCfg1.getUUID()
+                    .toString()));
+        try {
+            RPCResponse response = dirClient.registerEntity("mockUpOSD", data, 1, authString);
+            response.waitForResponse();
+            response.freeBuffers();
+        } catch (Exception exc) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+        } finally {
+            dirClient.shutdown();
+            dirClient.waitForShutdown();
+        }
         
         // start two MRCs
-        mrc1 = new RequestController(mrcCfg1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
-        mrc2 = new RequestController(mrcCfg2);
-        mrc2.startup();
         
         client = SetupUtils.createMRCClient(10000);
     }
@@ -128,9 +132,7 @@ public class MRCTest extends TestCase {
         
         // shut down all services
         mrc1.shutdown();
-        mrc2.shutdown();
         client.shutdown();
-        osd.shutdown();
         dirService.shutdown();
         
         client.waitForShutdown();
@@ -187,33 +189,24 @@ public class MRCTest extends TestCase {
         // test 'readDir' and 'stat'
         
         List<String> list = client.readDir(mrc1Address, volumeName, authString);
-        assertEquals(list.size(), 2);
+        assertEquals(2, list.size());
         list = client.readDir(mrc1Address, volumeName + "/myDir", authString);
-        assertEquals(list.size(), 10);
+        assertEquals(10, list.size());
         
         Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/myDir/test2.txt",
             true, true, true, authString);
         assertNotNull(statInfo.get("fileId"));
-        assertEquals(statInfo.get("ownerId"), "userXY");
-        assertEquals(statInfo.get("objType").toString(), "1");
-        assertEquals(statInfo.get("size").toString(), "0");
+        assertEquals("userXY", statInfo.get("ownerId"));
+        assertEquals("1", statInfo.get("objType").toString());
+        assertEquals("0", statInfo.get("size").toString());
         assertTrue(((Long) statInfo.get("ctime")) > 0);
-        assertEquals(statInfo.get("posixAccessMode").toString(), "511");
-        assertEquals(statInfo.get("linkTarget"), null);
+        assertEquals("511", statInfo.get("posixAccessMode").toString());
+        assertNull(statInfo.get("linkTarget"));
         
         // test 'delete'
         
         client.delete(mrc1Address, volumeName + "/myDir/test3.txt", authString);
         client.delete(mrc1Address, volumeName + "/anotherDir", authString);
-        
-        // test 'init'
-        client.initFileSystem(mrc1Address, rootAuthString);
-        client.createVolume(mrc1Address, volumeName, authString);
-        assertEquals(client.readDir(mrc1Address, volumeName, authString).size(), 0);
-        Map<String, String> capability = client.createFile(mrc1Address, volumeName + "/test.txt",
-            null, null, 511L, true, authString);
-        assertNotNull(capability.get("X-Locations"));
-        assertNotNull(capability.get("X-Capability"));
     }
     
     public void testUserAttributes() throws Exception {
@@ -225,8 +218,7 @@ public class MRCTest extends TestCase {
         
         client.createVolume(mrc1Address, volumeName, authString);
         
-        // add and delete some user attributes to files
-        
+        // add some user attributes
         Map<String, Object> attrs = new HashMap<String, Object>();
         attrs.put("key1", "quark");
         attrs.put("key2", "quatsch");
@@ -248,25 +240,21 @@ public class MRCTest extends TestCase {
         client.createFile(mrc1Address, volumeName + "/test2.txt", authString);
         client.setXAttrs(mrc1Address, volumeName + "/test2.txt", attrs, authString);
         
-        List<String> keys = new ArrayList<String>(1);
-        keys.add("key2");
-        client.removeXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
+        // delete some user attributes
+        Map<String, Object> keys = new HashMap<String, Object>();
+        keys.put("key2", null);
+        client.setXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
         attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test2.txt", false,
             true, false, authString).get("xAttrs");
         assertEquals("quark", attrs3.get("key1"));
         
-        keys.add("key1");
-        client.removeXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
+        keys.put("key1", null);
+        client.setXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
         attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test2.txt", false,
             true, false, authString).get("xAttrs");
         assertNull(attrs3.get("key1"));
         
-        client.removeXAttrs(mrc1Address, volumeName + "/test.txt", new ArrayList<String>(attrs
-                .keySet()), authString);
-        attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test2.txt", false,
-            true, false, authString).get("xAttrs");
-        assertNull(attrs3.get("key1"));
-        
+        // retrieve a system attribute
         String sysAttr = client.getXAttr(mrc1Address, volumeName + "/test.txt",
             "xtreemfs.object_type", authString);
         assertEquals("1", sysAttr);
@@ -287,8 +275,8 @@ public class MRCTest extends TestCase {
             + "/test.txt", authString);
         Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/testAlias.txt",
             false, false, false, authString);
-        assertEquals(statInfo.get("objType"), 3L);
-        assertEquals(statInfo.get("linkTarget"), volumeName + "/test.txt");
+        assertEquals(3L, statInfo.get("objType"));
+        assertEquals(volumeName + "/test.txt", statInfo.get("linkTarget"));
     }
     
     public void testHardLink() throws Exception {
@@ -369,10 +357,11 @@ public class MRCTest extends TestCase {
         statInfo = client
                 .stat(mrc1Address, volumeName + "/test.txt", true, false, true, authString);
         
-        assertEquals(((List<Object>) ((List<Object>) ((List<Object>) statInfo.get("replicas"))
-                .get(0)).get(0)).size(), 2);
-        assertEquals(((List<Object>) ((List<Object>) ((List<Object>) ((List<Object>) statInfo
-                .get("replicas")).get(0)).get(0)).get(1)).get(0), "177.127.77.90:7477");
+        assertEquals(2, ((List<Object>) ((List<Object>) ((List<Object>) statInfo.get("replicas"))
+                .get(0)).get(0)).size());
+        assertEquals("177.127.77.90:7477",
+            ((List<Object>) ((List<Object>) ((List<Object>) ((List<Object>) statInfo
+                    .get("replicas")).get(0)).get(0)).get(1)).get(0));
     }
     
     public void testOpen() throws Exception {
@@ -396,21 +385,29 @@ public class MRCTest extends TestCase {
         assertNotNull(capability.get("X-Capability"));
         assertNotNull(capability.get("X-Locations"));
         
-        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/test.txt", true,
-            false, true, authString);
-        Map<String, Object> acl = (Map<String, Object>) statInfo.get("acl");
-        acl.put("user::", 128); // sr
+        Map<String, Object> acl = new HashMap<String, Object>();
+        acl.put("user:", 128); // sr
         client.createFile(mrc1Address, volumeName + "/test2.txt", null, getDefaultStripingPolicy(),
             0, authString);
         client.setACLEntries(mrc1Address, volumeName + "/test2.txt", acl, authString);
+        
+        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/test2.txt", true,
+            false, true, authString);
+        acl = (Map<String, Object>) statInfo.get("acl");
+        assertTrue(acl.containsKey("user:"));
+        assertTrue(acl.containsKey("group:") || acl.containsKey("mask:"));
+        assertTrue(acl.containsKey("other:"));
         
         capability = client.open(mrc1Address, volumeName + "/test2.txt", "sr", authString);
         assertNotNull(capability.get("X-Locations"));
         assertNotNull(capability.get("X-Capability"));
         
-        capability = client.open(mrc1Address, volumeName + "/test2.txt", "r", authString);
-        assertNull(capability.get("X-Locations"));
-        assertNull(capability.get("X-Capability"));
+        try {
+            capability = client.open(mrc1Address, volumeName + "/test2.txt", "r", authString);
+            fail();
+        } catch (HttpErrorException exc) {
+            assertEquals(420, exc.getStatusCode());
+        }
         
         // symlinks and directories ...
         client.createDir(mrc1Address, volumeName + "/dir", authString);
@@ -421,7 +418,8 @@ public class MRCTest extends TestCase {
         try {
             client.open(mrc1Address, volumeName + "/dir", "sr", authString);
             fail("opened directory");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
+            assertEquals(420, exc.getStatusCode());
         }
         
         capability = client.open(mrc1Address, volumeName + "/link", "sr", authString);
@@ -456,7 +454,7 @@ public class MRCTest extends TestCase {
         
     }
     
-    public void testLocalMove() throws Exception {
+    public void testMove() throws Exception {
         
         final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
                 .generateStringList("groupZ"));
@@ -470,30 +468,31 @@ public class MRCTest extends TestCase {
         client.createDir(mrc1Address, volumeName + "/mainDir/subDir", authString);
         client.createDir(mrc1Address, volumeName + "/mainDir/subDir/newDir", authString);
         
-        assertTree(mrc1Address, authString, volumeName + "/test.txt", volumeName + "/blub.txt",
-            volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
-                + "/mainDir/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/test.txt", volumeName
+            + "/blub.txt", volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
+            + "/mainDir/subDir/newDir");
         
         // move some files and directories
         
         // file -> none (create w/ different name)
         client.move(mrc1Address, volumeName + "/test.txt", volumeName + "/mainDir/bla.txt",
             authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir/bla.txt", volumeName
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/bla.txt", volumeName
             + "/blub.txt", volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
             + "/mainDir/subDir/newDir");
         
         // file -> file (overwrite)
         client.move(mrc1Address, volumeName + "/mainDir/bla.txt", volumeName + "/blub.txt",
             authString);
-        assertTree(mrc1Address, authString, volumeName + "/blub.txt", volumeName + "/mainDir",
-            volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/blub.txt", volumeName
+            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
         
         // file -> none (create w/ same name)
         client.move(mrc1Address, volumeName + "/blub.txt", volumeName + "/mainDir/blub.txt",
             authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir/blub.txt", volumeName
-            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub.txt",
+            volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
+                + "/mainDir/subDir/newDir");
         
         // file -> dir (invalid operation)
         try {
@@ -506,21 +505,23 @@ public class MRCTest extends TestCase {
         // file -> file (same path, should have no effect)
         client.move(mrc1Address, volumeName + "/mainDir/blub.txt",
             volumeName + "/mainDir/blub.txt", authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir/blub.txt", volumeName
-            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub.txt",
+            volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
+                + "/mainDir/subDir/newDir");
         
         // file -> file (same directory)
         client.move(mrc1Address, volumeName + "/mainDir/blub.txt", volumeName
             + "/mainDir/blub2.txt", authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir/blub2.txt", volumeName
-            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub2.txt",
+            volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
+                + "/mainDir/subDir/newDir");
         
         // dir -> none (create w/ same name)
         client
                 .move(mrc1Address, volumeName + "/mainDir/subDir", volumeName + "/subDir",
                     authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir/blub2.txt", volumeName
-            + "/mainDir", volumeName + "/subDir", volumeName + "/subDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub2.txt",
+            volumeName + "/mainDir", volumeName + "/subDir", volumeName + "/subDir/newDir");
         
         // dir -> dir (overwrite, should fail because of non-empty subdirectory)
         try {
@@ -532,7 +533,8 @@ public class MRCTest extends TestCase {
         // dir -> dir (overwrite)
         client.delete(mrc1Address, volumeName + "/mainDir/blub2.txt", authString);
         client.move(mrc1Address, volumeName + "/subDir", volumeName + "/mainDir", authString);
-        assertTree(mrc1Address, authString, volumeName + "/mainDir", volumeName + "/mainDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir", volumeName
+            + "/mainDir/newDir");
         
         // dir -> volume (should fail because volume can't be overwritten)
         try {
@@ -548,301 +550,9 @@ public class MRCTest extends TestCase {
         } catch (Exception exc) {
         }
         
-        assertTree(mrc1Address, authString, volumeName + "/mainDir", volumeName + "/mainDir/newDir");
+        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir", volumeName
+            + "/mainDir/newDir");
     }
-    
-    // public void testLocalInterVolumeMove() throws Exception {
-    
-    // final String authString = MRCClient.createAuthString("nullauth",
-    // "userXY", MRCClient.generateStringList("groupZ"));
-    // final String volumeName1 = "testVolume";
-    // final String volumeName2 = "testVolume2";
-    // final long accessMode = 511; // rwxrwxrwx
-    //
-    // // create and populate volume 1
-    // client.createVolume(mrc1Address, volumeName1, authString);
-    //
-    // client.createSymbolicLink(mrc1Address, volumeName1 + "/test.txt",
-    // "blub", authString);
-    // client.createFile(mrc1Address, volumeName1 + "/test2.txt", authString);
-    //
-    // // create and populate volume 2
-    // client.createVolume(mrc1Address, volumeName2, authString);
-    //
-    // client.createDir(mrc1Address, volumeName2 + "/testDir", authString);
-    // client.createDir(mrc1Address, volumeName2 + "/testDir/subDir",
-    // authString);
-    //
-    // // create a file with attributes and a striping policy
-    // Map<String, Object> xAttrs = new HashMap<String, Object>();
-    // xAttrs.put("attr", "value");
-    // xAttrs.put("attr2", "value2");
-    // Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
-    //
-    // client.createFile(mrc1Address, volumeName2 + "/testDir/blub.txt",
-    // xAttrs, stripingPolicy, accessMode, authString);
-    //
-    // // open the file in order to assign an OSD to it
-    // Thread.sleep(SHORT_DELAY);
-    // client.open(mrc1Address, volumeName2 + "/testDir/blub.txt", "sr",
-    // authString);
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/test.txt",
-    // volumeName1 + "/test2.txt", volumeName2 + "/testDir", volumeName2
-    // + "/testDir/subDir", volumeName2 + "/testDir/blub.txt");
-    //
-    // // move some files and directories
-    //
-    // // file -> none (create w/ new name)
-    // client.move(mrc1Address, volumeName1 + "/test.txt", volumeName2
-    // + "/newTest.txt", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/test2.txt",
-    // volumeName2 + "/newTest.txt", volumeName2 + "/testDir", volumeName2
-    // + "/testDir/subDir", volumeName2 + "/testDir/blub.txt");
-    // Map<String, Object> statInfo = client.stat(mrc1Address, volumeName2
-    // + "/newTest.txt", false, false, false, authString);
-    // assertEquals(statInfo.get("linkTarget"), "blub");
-    //
-    // // file -> file (overwrite)
-    // Map<String, String> cap = client.move(mrc1Address, volumeName2
-    // + "/newTest.txt", volumeName1 + "/test2.txt", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/test2.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    // assertNotNull(cap);
-    //
-    // // file -> none (create w/ same name)
-    // client.move(mrc1Address, volumeName1 + "/test2.txt", volumeName2
-    // + "/testDir/test2.txt", authString);
-    // assertTree(mrc1Address, authString, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    //
-    // // file -> dir (should fail)
-    // try {
-    // client.move(mrc1Address, volumeName2 + "/testDir/test2.txt",
-    // volumeName2, authString);
-    // fail("moved file to directory");
-    // } catch (Exception exc) {
-    // }
-    //
-    // try {
-    // client.move(mrc1Address, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir/subDir", authString);
-    // fail("moved file to directory");
-    // } catch (Exception exc) {
-    // }
-    //
-    // assertTree(mrc1Address, authString, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    //
-    // // dir -> none
-    // client.move(mrc1Address, volumeName2 + "/testDir", volumeName1
-    // + "/mainDir", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt");
-    // statInfo = client.stat(mrc1Address, volumeName1 + "/mainDir/blub.txt",
-    // true, true, true, authString);
-    // xAttrs = (Map<String, Object>) statInfo.get("xAttrs");
-    // assertEquals(xAttrs.size(), 2);
-    // assertEquals(xAttrs.get("attr"), "value");
-    // assertEquals(xAttrs.get("attr2"), "value2");
-    //
-    // // dir -> dir (non-empty, should fail)
-    //
-    // client.createDir(mrc1Address, volumeName2 + "/someDir", authString);
-    // client
-    // .createDir(mrc1Address, volumeName1 + "/someOtherDir",
-    // authString);
-    // try {
-    // client.move(mrc1Address, volumeName2 + "/someDir", volumeName1
-    // + "/mainDir", authString);
-    // fail("moved directory to non-empty directory");
-    // } catch (Exception exc) {
-    // }
-    //
-    // // dir -> empty dir
-    // client.move(mrc1Address, volumeName2 + "/someDir", volumeName1
-    // + "/someOtherDir", authString);
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt", volumeName1 + "/someOtherDir");
-    //
-    // // dir -> file (should fail)
-    // try {
-    // client.move(mrc1Address, volumeName2 + "/testDir", volumeName1
-    // + "/mainDir", authString);
-    // fail("moved directory to file");
-    // } catch (Exception exc) {
-    // }
-    //
-    // // dir -> volume (should fail)
-    // try {
-    // client.move(mrc1Address, volumeName1 + "/mainDir", volumeName2,
-    // authString);
-    // fail("renamed dir to volume");
-    // } catch (Exception exc) {
-    // }
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt", volumeName1 + "/someOtherDir");
-    // }
-    //
-    // public void testRemoteInterVolumeMove() throws Exception {
-    //
-    // final String authString = "nullauth userXY groupZ";
-    // final String volumeName1 = "testVolume";
-    // final String volumeName2 = "testVolume2";
-    // final long accessMode = 511; // rwxrwxrwx
-    //
-    // // create and populate volume 1
-    // client.createVolume(mrc1Address, volumeName1, authString);
-    //
-    // client.createSymbolicLink(mrc1Address, volumeName1 + "/test.txt",
-    // "blub", authString);
-    // client.createFile(mrc1Address, volumeName1 + "/test2.txt", authString);
-    //
-    // // create and populate volume 2
-    // client.createVolume(mrc2Address, volumeName2, authString);
-    //
-    // client.createDir(mrc2Address, volumeName2 + "/testDir", authString);
-    // client.createDir(mrc2Address, volumeName2 + "/testDir/subDir",
-    // authString);
-    //
-    // // create a file with attributes and a striping policy
-    // Map<String, Object> xAttrs = new HashMap<String, Object>();
-    // xAttrs.put("attr", "value");
-    // xAttrs.put("attr2", "value2");
-    // Map<String, Object> stripingPolicy = getDefaultStripingPolicy();
-    // Map<String, Object> acl = new HashMap<String, Object>();
-    // acl.put("userXY", 90);
-    // acl.put("userBlub", 3);
-    //
-    // client.createFile(mrc2Address, volumeName2 + "/testDir/blub.txt",
-    // xAttrs, stripingPolicy, accessMode, authString);
-    //
-    // // open the file in order to assign an OSD to it
-    // Thread.sleep(SHORT_DELAY);
-    // client.open(mrc2Address, volumeName2 + "/testDir/blub.txt", "sr",
-    // authString);
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/test.txt",
-    // volumeName1 + "/test2.txt");
-    // assertTree(mrc2Address, authString, volumeName2 + "/testDir",
-    // volumeName2 + "/testDir/subDir", volumeName2 + "/testDir/blub.txt");
-    //
-    // // move some files and directories
-    //
-    // // file -> none (create w/ new name)
-    // client.move(mrc1Address, volumeName1 + "/test.txt", volumeName2
-    // + "/newTest.txt", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/test2.txt");
-    // assertTree(mrc2Address, authString, volumeName2 + "/newTest.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    // Map<String, Object> statInfo = client.stat(mrc2Address, volumeName2
-    // + "/newTest.txt", false, false, false, authString);
-    // assertEquals(statInfo.get("linkTarget"), "blub");
-    //
-    // // file -> file (overwrite)
-    // Map<String, String> map = client.move(mrc2Address, volumeName2
-    // + "/newTest.txt", volumeName1 + "/test2.txt", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/test2.txt");
-    // assertTree(mrc2Address, authString, volumeName2 + "/testDir",
-    // volumeName2 + "/testDir/subDir", volumeName2 + "/testDir/blub.txt");
-    // assertNotNull(map);
-    //
-    // // file -> none (create w/ same name)
-    // client.move(mrc1Address, volumeName1 + "/test2.txt", volumeName2
-    // + "/testDir/test2.txt", authString);
-    // assertTree(mrc1Address, authString);
-    // assertTree(mrc2Address, authString, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    //
-    // // file -> dir (should fail)
-    // try {
-    // client.move(mrc2Address, volumeName2 + "/testDir/test2.txt",
-    // volumeName2, authString);
-    // fail("moved file to volume");
-    // } catch (Exception exc) {
-    // }
-    //
-    // try {
-    // client.move(mrc2Address, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir/subDir", authString);
-    // fail("moved file to directory");
-    // } catch (Exception exc) {
-    // }
-    //
-    // assertTree(mrc1Address, authString);
-    // assertTree(mrc2Address, authString, volumeName2 + "/testDir/test2.txt",
-    // volumeName2 + "/testDir", volumeName2 + "/testDir/subDir",
-    // volumeName2 + "/testDir/blub.txt");
-    //
-    // // dir -> none
-    // client.move(mrc2Address, volumeName2 + "/testDir", volumeName1
-    // + "/mainDir", authString);
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt");
-    // assertTree(mrc2Address, authString);
-    //
-    // statInfo = client.stat(mrc1Address, volumeName1 + "/mainDir/blub.txt",
-    // true, true, true, authString);
-    // xAttrs = (Map<String, Object>) statInfo.get("xAttrs");
-    // assertEquals(xAttrs.size(), 2);
-    // assertEquals(xAttrs.get("attr"), "value");
-    // assertEquals(xAttrs.get("attr2"), "value2");
-    // assertNotNull(statInfo.get("replicas"));
-    //
-    // // dir -> dir (non-empty, should fail)
-    //
-    // client.createDir(mrc2Address, volumeName2 + "/someDir", authString);
-    // client
-    // .createDir(mrc1Address, volumeName1 + "/someOtherDir",
-    // authString);
-    // try {
-    // client.move(mrc2Address, volumeName2 + "/someDir", volumeName1
-    // + "/mainDir", authString);
-    // fail("moved directory to non-empty directory");
-    // } catch (Exception exc) {
-    // }
-    //
-    // // dir -> empty dir
-    // client.move(mrc2Address, volumeName2 + "/someDir", volumeName1
-    // + "/someOtherDir", authString);
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt", volumeName1 + "/someOtherDir");
-    // assertTree(mrc2Address, authString);
-    //
-    // // dir -> file (should fail)
-    // try {
-    // client.move(mrc2Address, volumeName2 + "/testDir", volumeName1
-    // + "/mainDir", authString);
-    // fail("moved directory to file");
-    // } catch (Exception exc) {
-    // }
-    //
-    // // dir -> volume (should fail)
-    // try {
-    // client.move(mrc1Address, volumeName1 + "/mainDir", volumeName2,
-    // authString);
-    // fail("renamed dir to volume");
-    // } catch (Exception exc) {
-    // }
-    //
-    // assertTree(mrc1Address, authString, volumeName1 + "/mainDir/test2.txt",
-    // volumeName1 + "/mainDir", volumeName1 + "/mainDir/subDir",
-    // volumeName1 + "/mainDir/blub.txt", volumeName1 + "/someOtherDir");
-    // assertTree(mrc2Address, authString);
-    // }
     
     public void testAccessControl() throws Exception {
         
@@ -857,6 +567,7 @@ public class MRCTest extends TestCase {
         final String posixVolName = "acVol";
         
         Map<String, Object> acl = new HashMap<String, Object>();
+        acl.put("default", 0);
         acl.put("userXY", (1 << 0) | (1 << 1)); // read, write
         acl.put("userAB", 1); // read
         
@@ -894,8 +605,9 @@ public class MRCTest extends TestCase {
         
         // create a volume
         client.createVolume(mrc1Address, volACVolumeName, RandomSelectionPolicy.POLICY_ID, null,
-            VolumeACLFileAccessPolicy.POLICY_ID, DefaultPartitioningPolicy.POLICY_ID, acl,
+            VolumeACLFileAccessPolicy.POLICY_ID, DefaultPartitioningPolicy.POLICY_ID, null,
             authString1);
+        client.setACLEntries(mrc1Address, volACVolumeName, acl, authString1);
         
         // create a new directory: should succeed for 'authString1', fail
         // for 'authString2'
@@ -909,15 +621,15 @@ public class MRCTest extends TestCase {
         
         // readdir: should succeed for both 'authString1' and 'authString2'
         // and fail for 'authString3'
-        assertEquals(client.readDir(mrc1Address, volACVolumeName + "/newDir", authString1).size(),
-            0);
-        assertEquals(client.readDir(mrc1Address, volACVolumeName + "/newDir", authString2).size(),
-            0);
+        assertEquals(0, client.readDir(mrc1Address, volACVolumeName + "/newDir", authString1)
+                .size());
+        assertEquals(0, client.readDir(mrc1Address, volACVolumeName + "/newDir", authString2)
+                .size());
         
         try {
             client.readDir(mrc1Address, volACVolumeName + "/newDir", authString3);
             fail("access should have been denied");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         // create a new file inside the dir: should succeed (in spite of
@@ -932,6 +644,8 @@ public class MRCTest extends TestCase {
                     POSIXFileAccessPolicy.POLICY_ID, DefaultPartitioningPolicy.POLICY_ID, null,
                     authString1);
         
+        client.changeAccessMode(mrc1Address, posixVolName, 0700, authString1);
+        
         // create a new directory: should succeed for 'authString1', fail
         // for 'authString2'
         client.createDir(mrc1Address, posixVolName + "/newDir", authString1);
@@ -941,76 +655,73 @@ public class MRCTest extends TestCase {
         try {
             client.createDir(mrc1Address, posixVolName + "/newDir2", authString2);
             fail("access should have been denied");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         // retrieve the ACL
         Map<String, Object> statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false,
             false, true, authString1);
         acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(3, acl.size());
-        assertEquals(acl.get("user::"), 511L);
-        assertEquals(acl.get("group::"), 511L);
-        assertEquals(acl.get("other::"), 511L);
+        assertEquals(0, acl.size());
         
         // try to change an ACL entry: should fail for 'authString2',
         // succeed for 'authString1'
         Map<String, Object> newEntries = new HashMap<String, Object>();
-        newEntries.put("group::", 5);
+        newEntries.put("group:", 5);
         try {
             client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString2);
             fail("attempt to modify ACl as non-owner should have failed");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         newEntries.clear();
-        newEntries.put("group::", 2);
-        newEntries.put("mask::", 3);
+        newEntries.put("group:", 2);
+        newEntries.put("mask:", 3);
         client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString1);
         
         statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false, false, true,
             authString1);
         acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(acl.size(), 4);
-        assertEquals(acl.get("user::"), 511L);
-        assertEquals(acl.get("group::"), 2L);
-        assertEquals(acl.get("other::"), 511L);
-        assertEquals(acl.get("mask::"), 3L);
+        assertEquals(4, acl.size());
+        assertEquals(511L, acl.get("user:"));
+        assertEquals(2L, acl.get("group:"));
+        assertEquals(511L, acl.get("other:"));
+        assertEquals(3L, acl.get("mask:"));
         
         // change the access mode
         client.changeAccessMode(mrc1Address, posixVolName + "/newDir", 0, authString1);
         statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false, false, true,
             authString1);
         acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(acl.size(), 4);
-        assertEquals(acl.get("user::"), 0L);
-        assertEquals(acl.get("group::"), 2L);
-        assertEquals(acl.get("other::"), 0L);
-        assertEquals(acl.get("mask::"), 0L);
+        assertEquals(4, acl.size());
+        assertEquals(0L, acl.get("user:"));
+        assertEquals(0L, acl.get("group:"));
+        assertEquals(0L, acl.get("other:"));
+        assertEquals(0L, acl.get("mask:"));
         
         // readdir on "/newDir": should fail for any user now
         try {
             client.readDir(mrc1Address, posixVolName + "/newDir", authString1);
             fail("access should have been denied");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         try {
             client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
             fail("access should have been denied");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         // add an entry (and mask) for 'authString2' to 'newDir'
         newEntries.clear();
         newEntries.put("user:userAB", 511);
-        newEntries.put("mask::", 511);
+        newEntries.put("mask:", 511);
         client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString1);
         
         try {
             client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
             fail("access should have been denied due to insufficient search permissions");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         // add an entry (and mask) for 'authString2' to volume
@@ -1018,7 +729,7 @@ public class MRCTest extends TestCase {
         
         assertTrue(client.checkAccess(mrc1Address, posixVolName + "/newDir", "w", authString2));
         
-        assertEquals(client.readDir(mrc1Address, posixVolName + "/newDir", authString2).size(), 0);
+        assertEquals(0, client.readDir(mrc1Address, posixVolName + "/newDir", authString2).size());
         
         client.removeACLEntries(mrc1Address, posixVolName + "/newDir", new ArrayList<Object>(
             newEntries.keySet()), authString1);
@@ -1026,13 +737,12 @@ public class MRCTest extends TestCase {
         try {
             client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
             fail("access should have been denied due to insufficient search permissions");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         client.changeAccessMode(mrc1Address, posixVolName, 0005, authString1); // others
-        // =
-        // rx
-        assertEquals(client.readDir(mrc1Address, posixVolName, authString3).size(), 1);
+        // = rx
+        assertEquals(1, client.readDir(mrc1Address, posixVolName, authString3).size());
         assertFalse(client.checkAccess(mrc1Address, posixVolName, "w", authString3));
         
         // create a POSIX ACL new volume and test "chmod"
@@ -1078,13 +788,13 @@ public class MRCTest extends TestCase {
         try {
             client.delete(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString1);
             fail("access should have been denied due to insufficient delete permissions (sticky bit)");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         try {
             client.move(mrc1Address, posixVolName + "/stickyDir/newfile.txt", posixVolName
                 + "/stickyDir/newfile2.txt", authString1);
             fail("access should have been denied due to insufficient renaming permissions (sticky bit)");
-        } catch (Exception exc) {
+        } catch (HttpErrorException exc) {
         }
         
         client.move(mrc1Address, posixVolName + "/stickyDir/newfile.txt", posixVolName
@@ -1171,6 +881,8 @@ public class MRCTest extends TestCase {
             "stripe-size", 256L);
         Map<String, Object> sp3 = RPCClient.generateMap("width", 1L, "policy", "RAID0",
             "stripe-size", 128L);
+        String sp2String = sp2.get("policy") + ", " + sp2.get("stripe-size") + ", "
+            + sp2.get("width");
         
         // create a new file in a directory in a new volume
         client.createVolume(mrc1Address, volumeName, 1, sp1, 1, 1, null, authString);
@@ -1186,7 +898,10 @@ public class MRCTest extends TestCase {
                 .get(0);
         assertEquals(sp1, spol);
         
-        client.setDefaultStripingPolicy(mrc1Address, dirName, sp2, authString);
+        // set the default striping policy via an extended attribute
+        Map<String, Object> defaultSP = new HashMap<String, Object>();
+        defaultSP.put("xtreemfs.default_sp", sp2String);
+        client.setXAttrs(mrc1Address, dirName, defaultSP, authString);
         
         xLocHeader = client.open(mrc1Address, fileName2, "c", authString).get(
             HTTPHeaders.HDR_XLOCATIONS);

@@ -33,8 +33,6 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.UserDefinedLookup;
-import org.xtreemfs.babudb.lsmdb.LSMLookupInterface;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -143,145 +141,201 @@ public class BabuDBStorageManager implements StorageManager {
     public void init(String ownerId, String owningGroupId, short perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
         
+        // atime, ctime, mtime
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
         // create the root directory; the name is the database name
-        create(0L, volumeName, ownerId, owningGroupId, rootDirDefSp, perms, null, true, update);
+        createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
+        setLastFileId(1, update);
+        
+        // set the default striping policy (must not be null!)
+        assert (rootDirDefSp != null);
+        setDefaultStripingPolicy(1, Converter.mapToStripingPolicy(this, rootDirDefSp), update);
+        
         if (acl != null)
             for (ACLEntry entry : acl)
                 setACLEntry(1L, entry.getEntity(), entry.getRights(), update);
     }
     
     @Override
-    public FileMetadata create(final long parentId, final String fileName, final String userId,
-        final String groupId, final Map<String, Object> stripingPolicy, final short perms,
-        final String ref, final boolean directory, final AtomicDBUpdate update)
-        throws DatabaseException {
+    public long getNextFileId() throws DatabaseException {
         
-        UserDefinedLookup udl = new UserDefinedLookup() {
+        try {
+            // get the file ID assigned to the last created file or
+            // directory
+            byte[] idBytes = BabuDBStorageHelper.getLastAssignedFileId(database, dbName);
             
-            @Override
-            public Object execute(LSMLookupInterface database) throws BabuDBException {
-                
-                try {
-                    
-                    // atime, ctime, mtime
-                    int time = (int) (TimeSync.getGlobalTime() / 1000);
-                    
-                    // get the next collision number
-                    short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database,
-                        parentId, fileName);
-                    
-                    // if the file exists already, throw an exception
-                    if (collCount == -1)
-                        return new DatabaseException(ExceptionType.FILE_EXISTS);
-                    
-                    // get the file ID assigned to the last created file or
-                    // directory
-                    byte[] idBytes = BabuDBStorageHelper.getLastAssignedFileId(database);
-                    
-                    // calculate the new file ID
-                    ByteBuffer tmp = ByteBuffer.wrap(idBytes);
-                    long id = tmp.getLong(0) + 1;
-                    
-                    tmp.putLong(0, id);
-                    update.addUpdate(LAST_ID_INDEX, LAST_ID_KEY, idBytes);
-                    
-                    // create metadata
-                    BufferBackedFileMetadata fileMetadata = directory ? new BufferBackedFileMetadata(
-                        parentId, fileName, userId, groupId, id, time, time, time, perms,
-                        (short) 1, collCount)
-                        : new BufferBackedFileMetadata(parentId, fileName, userId, groupId, id,
-                            time, time, time, 0L, perms, (short) 1, 0, 0, false, collCount);
-                    
-                    // update main metadata in the file index
-                    update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
-                            .getFCMetadataValue());
-                    update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(),
-                        fileMetadata.getRCMetadata().getValue());
-                    
-                    // add an entry to the file ID index
-                    update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(id,
-                        (byte) 3), BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
-                    
-                    // create default striping policy (XAttr)
-                    if (stripingPolicy != null && stripingPolicy.size() != 0) {
-                        
-                        BufferBackedXAttr sp = new BufferBackedXAttr(id, SYSTEM_UID,
-                            DEFAULT_SP_ATTR_NAME, JSONParser.writeJSON(stripingPolicy), (short) 0);
-                        
-                        update.addUpdate(XATTRS_INDEX, sp.getKeyBuf(), sp.getValBuf());
-                    }
-                    
-                    // create link target (XAttr)
-                    if (ref != null) {
-                        
-                        BufferBackedXAttr lt = new BufferBackedXAttr(id, SYSTEM_UID,
-                            LINK_TARGET_ATTR_NAME, ref, (short) 0);
-                        
-                        update.addUpdate(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
-                    }
-                    
-                    return fileMetadata;
-                    
-                } catch (JSONException exc) {
-                    return new DatabaseException(ExceptionType.INTERNAL_DB_ERROR);
-                }
-            }
-        };
+            // calculate the new file ID
+            ByteBuffer tmp = ByteBuffer.wrap(idBytes);
+            long id = tmp.getLong(0) + 1;
+            
+            return id;
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public void setLastFileId(long fileId, AtomicDBUpdate update) throws DatabaseException {
+        
+        byte[] idBytes = new byte[8];
+        ByteBuffer.wrap(idBytes).putLong(0, fileId);
+        
+        update.addUpdate(LAST_ID_INDEX, LAST_ID_KEY, idBytes);
+    }
+    
+    @Override
+    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs,
+        AtomicDBUpdate update) throws DatabaseException {
         
         try {
             
-            Object result = database.syncUserDefinedLookup(dbName, udl);
-            if (result instanceof DatabaseException)
-                throw (DatabaseException) result;
+            // get the next collision number
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database, dbName,
+                parentId, fileName);
             
-            return (BufferBackedFileMetadata) result;
+            // if the file exists already, throw an exception
+            if (collCount == -1)
+                throw new DatabaseException(ExceptionType.FILE_EXISTS);
             
-        } catch (Exception exc) {
+            // create metadata
+            BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId,
+                fileName, userId, groupId, fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1,
+                collCount);
+            
+            // update main metadata in the file index
+            update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
+                    .getFCMetadataValue());
+            update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
+                    .getRCMetadata().getValue());
+            
+            // add an entry to the file ID index
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId,
+                (byte) 3), BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+            
+            return fileMetadata;
+            
+        } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
+    }
+    
+    @Override
+    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs, long size,
+        boolean readOnly, int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException {
+        
+        try {
+            
+            // get the next collision number
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database, dbName,
+                parentId, fileName);
+            
+            // if the file exists already, throw an exception
+            if (collCount == -1)
+                throw new DatabaseException(ExceptionType.FILE_EXISTS);
+            
+            // create metadata
+            BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId,
+                fileName, userId, groupId, fileId, atime, ctime, mtime, size, perms, w32Attrs,
+                (short) 1, epoch, issEpoch, readOnly, collCount);
+            
+            // update main metadata in the file index
+            update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
+                    .getFCMetadataValue());
+            update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
+                    .getRCMetadata().getValue());
+            
+            // add an entry to the file ID index
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId,
+                (byte) 3), BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+            
+            return fileMetadata;
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
+    }
+    
+    @Override
+    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime,
+        int ctime, int mtime, String userId, String groupId, String ref, AtomicDBUpdate update)
+        throws DatabaseException {
+        
+        try {
+            
+            // get the next collision number
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database, dbName,
+                parentId, fileName);
+            
+            // if the file exists already, throw an exception
+            if (collCount == -1)
+                throw new DatabaseException(ExceptionType.FILE_EXISTS);
+            
+            // create metadata
+            BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId,
+                fileName, userId, groupId, fileId, atime, ctime, mtime, ref.length(),
+                (short) 0xFFFF, 0, (short) 1, 0, 0, false, collCount);
+            
+            // create link target (XAttr)
+            BufferBackedXAttr lt = new BufferBackedXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME,
+                ref, (short) 0);
+            update.addUpdate(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
+            
+            // update main metadata in the file index
+            update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata
+                    .getFCMetadataValue());
+            update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata
+                    .getRCMetadata().getValue());
+            
+            // add an entry to the file ID index
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId,
+                (byte) 3), BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+            
+            return fileMetadata;
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
     }
     
     @Override
     public short delete(final long parentId, final String fileName, final AtomicDBUpdate update)
         throws DatabaseException {
         
-        UserDefinedLookup udl = new UserDefinedLookup() {
-            
-            @Override
-            public Object execute(LSMLookupInterface database) throws BabuDBException {
-                
-                // check whether the file refers to a hard link
-                BufferBackedFileMetadata file = BabuDBStorageHelper.getMetadata(database, parentId,
-                    fileName);
-                
-                boolean lastLink = file.getLinkCount() == 1;
-                
-                // decrement the link count
-                file.setLinkCount((short) (file.getLinkCount() - 1));
-                
-                // get all keys to delete
-                List<byte[]>[] fileKeys = BabuDBStorageHelper.getKeysToDelete(database, parentId,
-                    fileName, lastLink);
-                
-                // if there are links remaining after the deletion, update
-                // the link count
-                if (!lastLink)
-                    update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file
-                            .getId(), FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
-                
-                // add delete requests for each key
-                for (int i = 0; i < fileKeys.length; i++)
-                    if (fileKeys[i] != null)
-                        for (byte[] key : fileKeys[i])
-                            update.addUpdate(i, key, null);
-                
-                return file.getLinkCount();
-            }
-        };
-        
         try {
-            return (Short) database.syncUserDefinedLookup(dbName, udl);
-        } catch (Exception exc) {
+            
+            // check whether the file refers to a hard link
+            BufferBackedFileMetadata file = BabuDBStorageHelper.getMetadata(database, dbName,
+                parentId, fileName);
+            
+            boolean lastLink = file.getLinkCount() == 1;
+            
+            // decrement the link count
+            file.setLinkCount((short) (file.getLinkCount() - 1));
+            
+            // get all keys to delete
+            List<byte[]>[] fileKeys = BabuDBStorageHelper.getKeysToDelete(database, dbName,
+                parentId, fileName, lastLink);
+            
+            // if there are links remaining after the deletion, update
+            // the link count
+            if (!lastLink)
+                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file
+                        .getId(), FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
+            
+            // add delete requests for each key
+            for (int i = 0; i < fileKeys.length; i++)
+                if (fileKeys[i] != null)
+                    for (byte[] key : fileKeys[i])
+                        update.addUpdate(i, key, null);
+            
+            return file.getLinkCount();
+            
+        } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
     }
@@ -292,7 +346,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] prefix = BabuDBStorageHelper.createACLPrefixKey(fileId, null);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, ACL_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, ACL_INDEX,
                 prefix);
             
             return new ACLIterator(it);
@@ -308,7 +362,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] key = BabuDBStorageHelper.createACLPrefixKey(fileId, entity);
-            byte[] value = database.syncLookup(dbName, ACL_INDEX, key);
+            byte[] value = database.directLookup(dbName, ACL_INDEX, key);
             
             return value == null ? null : new BufferBackedACLEntry(key, value);
             
@@ -323,7 +377,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, FILE_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, FILE_INDEX,
                 prefix);
             
             return new ChildrenIterator(database, dbName, it);
@@ -375,7 +429,7 @@ public class BabuDBStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName,
                 BabuDBStorageManager.FILE_ID_INDEX, key);
             
             while (it.hasNext()) {
@@ -414,16 +468,8 @@ public class BabuDBStorageManager implements StorageManager {
     public FileMetadata getMetadata(final long parentId, final String fileName)
         throws DatabaseException {
         
-        UserDefinedLookup udl = new UserDefinedLookup() {
-            
-            @Override
-            public Object execute(LSMLookupInterface database) throws BabuDBException {
-                return BabuDBStorageHelper.getMetadata(database, parentId, fileName);
-            }
-        };
-        
         try {
-            return (FileMetadata) database.syncUserDefinedLookup(dbName, udl);
+            return BabuDBStorageHelper.getMetadata(database, dbName, parentId, fileName);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -448,7 +494,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             // check whether the entry is the correct one
@@ -474,7 +520,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             return new XAttrIterator(it, null);
@@ -491,7 +537,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
-            Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName, XATTRS_INDEX,
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, XATTRS_INDEX,
                 prefix);
             
             return new XAttrIterator(it, uid);
@@ -506,68 +552,57 @@ public class BabuDBStorageManager implements StorageManager {
     public void link(final FileMetadata metadata, final long newParentId, final String newFileName,
         final AtomicDBUpdate update) throws DatabaseException {
         
-        UserDefinedLookup udl = new UserDefinedLookup() {
+        try {
+            // get the link source
+            BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
             
-            @Override
-            public Object execute(LSMLookupInterface database) throws BabuDBException {
+            // increment the link count
+            short links = metadata.getLinkCount();
+            md.setLinkCount((short) (links + 1));
+            
+            // insert the whole metadata of the original file in the file ID
+            // index
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
+                    .getId(), FileMetadata.FC_METADATA), md.getFCMetadataValue());
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
+                    .getId(), FileMetadata.RC_METADATA), md.getRCMetadata().getValue());
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
+                    .getId(), FileMetadata.XLOC_METADATA), md.getXLocListValue());
+            update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
+                    .getId(), (byte) 3), null);
+            
+            // if the metadata was retrieved from the file index and hasn't
+            // been
+            // deleted before (i.e. links == 0), ensure that the original
+            // file
+            // in the file index now points to the file ID index, and remove
+            // the
+            // FC and XLoc metadata entries
+            if (links != 0 && md.getIndexId() == FILE_INDEX) {
                 
-                // get the link source
-                BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
-                
-                // increment the link count
-                short links = metadata.getLinkCount();
-                md.setLinkCount((short) (links + 1));
-                
-                // insert the whole metadata of the original file in the file ID
-                // index
-                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
-                        .getId(), FileMetadata.FC_METADATA), md.getFCMetadataValue());
-                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
-                        .getId(), FileMetadata.RC_METADATA), md.getRCMetadata().getValue());
-                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
-                        .getId(), FileMetadata.XLOC_METADATA), md.getXLocListValue());
-                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata
-                        .getId(), (byte) 3), null);
-                
-                // if the metadata was retrieved from the file index and hasn't
-                // been
-                // deleted before (i.e. links == 0), ensure that the original
-                // file
-                // in the file index now points to the file ID index, and remove
-                // the
-                // FC and XLoc metadata entries
-                if (links != 0 && md.getIndexId() == FILE_INDEX) {
-                    
-                    update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
-                            .createLinkTarget(metadata.getId(), metadata.getFileName()));
-                    update.addUpdate(FILE_INDEX, md.getFCMetadataKey(), null);
-                    if (md.getXLocListKey() != null)
-                        update.addUpdate(FILE_INDEX, md.getXLocListKey(), null);
-                }
-                
-                // create an entry for the new link to the metadata in the file
-                // index
-                
-                // retrieve the next free collision number for the new link
-                short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database,
-                    newParentId, newFileName);
-                
-                // if a file with the same name exists already, replace it
-                if (collCount == -1)
-                    collCount = BabuDBStorageHelper.findFileCollisionNumber(database, newParentId,
-                        newFileName);
-                
-                update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(newParentId,
-                    newFileName, FileMetadata.RC_METADATA, collCount), BabuDBStorageHelper
-                        .createLinkTarget(metadata.getId(), newFileName));
-                
-                return null;
+                update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
+                        .createLinkTarget(metadata.getId(), metadata.getFileName()));
+                update.addUpdate(FILE_INDEX, md.getFCMetadataKey(), null);
+                if (md.getXLocListKey() != null)
+                    update.addUpdate(FILE_INDEX, md.getXLocListKey(), null);
             }
             
-        };
-        
-        try {
-            database.syncUserDefinedLookup(dbName, udl);
+            // create an entry for the new link to the metadata in the file
+            // index
+            
+            // retrieve the next free collision number for the new link
+            short collCount = BabuDBStorageHelper.findNextFreeFileCollisionNumber(database, dbName,
+                newParentId, newFileName);
+            
+            // if a file with the same name exists already, replace it
+            if (collCount == -1)
+                collCount = BabuDBStorageHelper.findFileCollisionNumber(database, dbName,
+                    newParentId, newFileName);
+            
+            update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(newParentId,
+                newFileName, FileMetadata.RC_METADATA, collCount), BabuDBStorageHelper
+                    .createLinkTarget(metadata.getId(), newFileName));
+            
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -577,30 +612,22 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public FileMetadata[] resolvePath(final Path path) throws DatabaseException {
         
-        UserDefinedLookup udl = new UserDefinedLookup() {
-            
-            @Override
-            public Object execute(LSMLookupInterface database) throws BabuDBException {
-                
-                FileMetadata[] md = new FileMetadata[path.getCompCount()];
-                
-                long parentId = 0;
-                for (int i = 0; i < md.length; i++) {
-                    md[i] = BabuDBStorageHelper.getMetadata(database, parentId, path.getComp(i));
-                    if (md[i] == null || i < md.length - 1 && !md[i].isDirectory()) {
-                        md[i] = null;
-                        return md;
-                    }
-                    parentId = md[i].getId();
-                }
-                
-                return md;
-                
-            }
-        };
-        
         try {
-            return (FileMetadata[]) database.syncUserDefinedLookup(dbName, udl);
+            FileMetadata[] md = new FileMetadata[path.getCompCount()];
+            
+            long parentId = 0;
+            for (int i = 0; i < md.length; i++) {
+                md[i] = BabuDBStorageHelper
+                        .getMetadata(database, dbName, parentId, path.getComp(i));
+                if (md[i] == null || i < md.length - 1 && !md[i].isDirectory()) {
+                    md[i] = null;
+                    return md;
+                }
+                parentId = md[i].getId();
+            }
+            
+            return md;
+            
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -669,7 +696,7 @@ public class BabuDBStorageManager implements StorageManager {
     //        
     // System.out.println("FILE_ID_INDEX");
     //        
-    // Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+    // Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName,
     // FILE_ID_INDEX,
     // new byte[0]);
     // while (it.hasNext()) {
@@ -680,7 +707,7 @@ public class BabuDBStorageManager implements StorageManager {
     //        
     // System.out.println("\nFILE_INDEX");
     //        
-    // it = database.syncPrefixLookup(dbName, FILE_INDEX, new byte[0]);
+    // it = database.directPrefixLookup(dbName, FILE_INDEX, new byte[0]);
     // while (it.hasNext()) {
     // Entry<byte[], byte[]> next = it.next();
     // System.out.println(Arrays.toString(next.getKey()) + " = "
@@ -689,7 +716,7 @@ public class BabuDBStorageManager implements StorageManager {
     // }
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
-        BabuDBAdminTool.dumpVolume(xmlWriter, this);
+        DBAdminTool.dumpVolume(xmlWriter, this);
     }
     
 }
@@ -705,169 +732,6 @@ public class BabuDBStorageManager implements StorageManager {
 //
 // public long getNumberOfDirs() {
 // return backend.getNumberOfDirs();
-// }
-//
-//
-// public void restoreDBFromDump(String entity, Attributes attrs, RestoreState
-// state,
-// boolean openTag) throws DatabaseException {
-//
-// if (entity.equals("dir")) {
-//    
-// if (openTag) {
-//        
-// Long id = Long.parseLong(attrs.getValue(attrs.getIndex("id")));
-// String name =
-// OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("name")));
-// String uid = attrs.getValue(attrs.getIndex("uid"));
-// String gid = attrs.getValue(attrs.getIndex("gid"));
-// long atime = Long.parseLong(attrs.getValue(attrs.getIndex("atime")));
-// long ctime = Long.parseLong(attrs.getValue(attrs.getIndex("ctime")));
-// long mtime = Long.parseLong(attrs.getValue(attrs.getIndex("mtime")));
-//        
-// DirEntity dir = new DirEntity(id, uid, gid, atime, ctime, mtime, null, 0);
-//        
-// createFile(dir, null);
-// if (state.parentIds.size() != 0)
-// linkFile(name, id, state.parentIds.get(0));
-//        
-// state.parentIds.add(0, id);
-// state.currentEntity = backend.getFileById(id);
-// }
-//
-// else
-// state.parentIds.remove(0);
-// }
-//
-// else if (entity.equals("file") && openTag) {
-//    
-// Long id = Long.parseLong(attrs.getValue(attrs.getIndex("id")));
-// String name =
-// OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("name")));
-//    
-// // since files may be linked to multiple directories, create the
-// // metadata object only if it does not exist yet
-// FileEntity file = (FileEntity) backend.getFileById(id);
-// if (file == null) {
-//        
-// String uid = attrs.getValue(attrs.getIndex("uid"));
-// String gid = attrs.getValue(attrs.getIndex("gid"));
-// long atime = Long.parseLong(attrs.getValue(attrs.getIndex("atime")));
-// long ctime = Long.parseLong(attrs.getValue(attrs.getIndex("ctime")));
-// long mtime = Long.parseLong(attrs.getValue(attrs.getIndex("mtime")));
-// long size = Long.parseLong(attrs.getValue(attrs.getIndex("size")));
-// String writeEpochStr = attrs.getValue(attrs.getIndex("epoch"));
-// long writeEpoch = writeEpochStr == null ? 0 : Long.parseLong(writeEpochStr);
-// String truncEpochStr = attrs.getValue(attrs.getIndex("issuedEpoch"));
-// long truncEpoch = truncEpochStr == null ? 0 : Long.parseLong(truncEpochStr);
-//        
-// file = new FileEntity(id, uid, gid, atime, ctime, mtime, size, null, null, 0,
-// writeEpoch, truncEpoch);
-//        
-// createFile(file, null);
-// }
-//    
-// linkFile(name, id, state.parentIds.get(0));
-//    
-// state.currentEntity = backend.getFileById(id);
-// }
-//
-// else if (entity.equals("xlocList") && openTag) {
-//    
-// long version = Long.parseLong(attrs.getValue(attrs.getIndex("version")));
-// ((FileEntity) state.currentEntity).setXLocationsList(new XLocationsList(null,
-// version));
-// backend.put((FileEntity) state.currentEntity);
-// }
-//
-// else if (entity.equals("xloc") && openTag) {
-//    
-// String pattern = attrs.getValue(attrs.getIndex("pattern"));
-// StringTokenizer st = new StringTokenizer(pattern, " ,");
-// String policy = st.nextToken();
-// long size = Long.parseLong(st.nextToken());
-// long width = Long.parseLong(st.nextToken());
-//    
-// XLocationsList xLocList = ((FileEntity)
-// state.currentEntity).getXLocationsList();
-//    
-// state.currentXLoc = new XLocation(new StripingPolicy(policy, size, width),
-// null);
-// xLocList.addReplicaWithoutVersionChange(state.currentXLoc);
-// }
-//
-// else if (entity.equals("osd") && openTag) {
-//    
-// String osd = attrs.getValue(attrs.getIndex("location"));
-//    
-// String[] osdList = state.currentXLoc.getOsdList();
-// if (osdList == null)
-// osdList = new String[] { osd };
-// else {
-// String[] newOSDList = new String[osdList.length + 1];
-// System.arraycopy(osdList, 0, newOSDList, 0, osdList.length);
-// newOSDList[newOSDList.length - 1] = osd;
-// osdList = newOSDList;
-// }
-//    
-// state.currentXLoc.setOsdList(osdList);
-// }
-//
-// else if (entity.equals("entry") && openTag) {
-//    
-// String userId = attrs.getValue(attrs.getIndex("entity"));
-// long rights = Long.parseLong(attrs.getValue(attrs.getIndex("rights")));
-//    
-// ACLEntry[] acl = state.currentEntity.getAcl();
-// if (acl == null)
-// acl = new ACLEntry[] { new ACLEntry(userId, rights) };
-// else {
-// ACLEntry[] newACL = new ACLEntry[acl.length + 1];
-// System.arraycopy(acl, 0, newACL, 0, acl.length);
-// newACL[newACL.length - 1] = new ACLEntry(userId, rights);
-// acl = newACL;
-// }
-//    
-// state.currentEntity.setAcl(acl);
-// if (state.currentEntity instanceof FileEntity)
-// backend.put((FileEntity) state.currentEntity);
-// else
-// backend.put((DirEntity) state.currentEntity);
-// }
-//
-// else if (entity.equals("attr") && openTag) {
-//    
-// String key =
-// OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("key")));
-// Object value =
-// OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("value")));
-//    
-// // if the value refers to a striping policy, parse it
-// if (key.equals("spol")) {
-// StringTokenizer st = new StringTokenizer(value.toString(), ", ");
-// value = new StripingPolicy(st.nextToken(), Long.parseLong(st.nextToken()),
-// Long
-// .parseLong(st.nextToken()));
-// } else if (key.equals("ro"))
-// value = Boolean.valueOf((String) value);
-//    
-// long type = Long.parseLong(attrs.getValue(attrs.getIndex("type")));
-// String uid = attrs.getValue(attrs.getIndex("uid"));
-//    
-// backend
-// .put(new FileAttributeEntity(key, value, type, state.currentEntity.getId(),
-// uid));
-// }
-// }
-//
-// public static class RestoreState {
-//
-// public List<Long> parentIds = new LinkedList<Long>();
-//
-// public AbstractFileEntity currentEntity;
-//
-// public XLocation currentXLoc;
-//
 // }
 //
 // /**
