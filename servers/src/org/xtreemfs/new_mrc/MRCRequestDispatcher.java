@@ -27,10 +27,10 @@ package org.xtreemfs.new_mrc;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -202,7 +202,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         procStage.start();
         procStage.waitForStartup();
-
+        
         volumeManager.init();
         volumeManager.addVolumeChangeListener(osdMonitor);
         
@@ -338,7 +338,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         // add volume statistics
         try {
             StringBuffer volTableBuf = new StringBuffer();
-            List<VolumeInfo> vols = volumeManager.getVolumes();
+            Collection<VolumeInfo> vols = volumeManager.getVolumes();
             for (VolumeInfo v : vols) {
                 
                 Map<String, Map<String, Object>> osdList = osdMonitor.getUsableOSDs(v.getId());
