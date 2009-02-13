@@ -228,7 +228,12 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public VolumeInfo getVolumeByName(String volumeName) throws DatabaseException, UserException {
         
-        return volNameMap.get(volumeName);
+        VolumeInfo info = volNameMap.get(volumeName);
+        if (info == null)
+            throw new UserException(ErrNo.ENOENT, "volume '" + volumeName
+                + "' not found on this MRC");
+        
+        return info;
         
         // try {
         //            
@@ -251,7 +256,12 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public VolumeInfo getVolumeById(String volumeId) throws DatabaseException, UserException {
         
-        return volIdMap.get(volumeId);
+        VolumeInfo volume = volIdMap.get(volumeId);
+        if (volume == null)
+            throw new UserException(ErrNo.ENOENT, "volume with id " + volumeId
+                + " not found on this MRC");
+        
+        return volume;
         
         // try {
         //            
