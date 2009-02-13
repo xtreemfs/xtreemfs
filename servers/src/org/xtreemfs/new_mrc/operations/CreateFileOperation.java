@@ -63,7 +63,7 @@ public class CreateFileOperation extends MRCOperation {
         
         public Map<String, Object> stripingPolicy;
         
-        public short               mode;
+        public int                 mode;
         
         public boolean             open;
         
@@ -213,7 +213,7 @@ public class CreateFileOperation extends MRCOperation {
             
             args.xAttrs = (Map<String, Object>) arguments.get(1);
             args.stripingPolicy = (Map<String, Object>) arguments.get(2);
-            args.mode = ((Long) arguments.get(3)).shortValue();
+            args.mode = ((Long) arguments.get(3)).intValue();
             if (arguments.size() == 4)
                 return null;
             

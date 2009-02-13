@@ -57,7 +57,7 @@ public class CreateDirOperation extends MRCOperation {
         
         public Map<String, Object> xAttrs;
         
-        public short               mode;
+        public int                 mode;
         
     }
     
@@ -162,7 +162,7 @@ public class CreateDirOperation extends MRCOperation {
             }
             
             args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(2)).shortValue();
+            args.mode = ((Long) arguments.get(2)).intValue();
             if (arguments.size() == 3)
                 return null;
             
