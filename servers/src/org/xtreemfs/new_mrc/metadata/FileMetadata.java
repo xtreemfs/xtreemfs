@@ -54,9 +54,9 @@ public interface FileMetadata {
     
     public void setSize(long size);
     
-    public short getPerms();
+    public int getPerms();
     
-    public void setPerms(short perms);
+    public void setPerms(int perms);
     
     public short getLinkCount();
     

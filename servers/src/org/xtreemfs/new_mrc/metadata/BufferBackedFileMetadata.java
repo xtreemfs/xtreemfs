@@ -102,7 +102,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param readOnly
      */
     public BufferBackedFileMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, long size, short perms, long w32Atrrs,
+        long fileId, int atime, int ctime, int mtime, long size, int perms, long w32Atrrs,
         short linkCount, int epoch, int issEpoch, boolean readOnly, short collCount) {
         
         // frequently changed metadata
@@ -132,7 +132,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param perms
      */
     public BufferBackedFileMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, short perms, long w32Attrs, short linkCount,
+        long fileId, int atime, int ctime, int mtime, int perms, long w32Attrs, short linkCount,
         short collCount) {
         
         // frequently changed metadata
@@ -183,7 +183,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
     }
     
     @Override
-    public short getPerms() {
+    public int getPerms() {
         return rcMetadata.getPerms();
     }
     
@@ -233,7 +233,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
     }
     
     @Override
-    public void setPerms(short perms) {
+    public void setPerms(int perms) {
         rcMetadata.setPerms(perms);
     }
     

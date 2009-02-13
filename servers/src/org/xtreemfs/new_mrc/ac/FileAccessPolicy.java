@@ -148,7 +148,7 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs when trying to tranlate access rights
      */
-    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
+    public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException;
     
     /**
@@ -174,7 +174,7 @@ public interface FileAccessPolicy {
      *             if access is denied
      */
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
+        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
         throws MRCException, UserException;
     
     /**
@@ -252,7 +252,7 @@ public interface FileAccessPolicy {
      * 
      * @return the default root permissions
      */
-    public short getDefaultRootRights();
+    public int getDefaultRootRights();
     
     /**
      * Returns the default ACL for the root directory. The method is invoked in

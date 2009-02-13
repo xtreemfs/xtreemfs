@@ -163,7 +163,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
+    public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
         
         try {
@@ -172,8 +172,8 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
                 entry = sMan.getACLEntry(1, DEFAULT_ENTRY_NAME);
             
             // rw - mask, x = r
-            short rights = (short) (entry.getRights() & 3 | ((entry.getRights() & 1) << 2));
-            return (short) (rights * (1 << 6));
+            int rights = entry.getRights() & 3 | ((entry.getRights() & 1) << 2);
+            return rights * (1 << 6);
             
         } catch (Exception exc) {
             throw new MRCException(exc);
@@ -182,11 +182,11 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
     @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
+        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
         throws MRCException {
         
         try {
-            sMan.setACLEntry(1, DEFAULT_ENTRY_NAME, posixAccessRights, update);
+            sMan.setACLEntry(1, DEFAULT_ENTRY_NAME, (short) posixAccessRights, update);
         } catch (Exception exc) {
             throw new MRCException(exc);
         }
@@ -238,7 +238,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getDefaultRootRights() {
+    public int getDefaultRootRights() {
         return 0;
     }
     

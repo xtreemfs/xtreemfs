@@ -54,7 +54,7 @@ public interface StorageManager {
     
     // initialization
     
-    public void init(String ownerId, String owningGroupId, short perms, ACLEntry[] acl,
+    public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
     
     // file ID counter operations
@@ -103,11 +103,11 @@ public interface StorageManager {
     // creating, linking, modifying and deleting files/directories
     
     public FileMetadata createDir(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs,
+        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs,
         AtomicDBUpdate update) throws DatabaseException;
     
     public FileMetadata createFile(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs, long size,
+        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs, long size,
         boolean readOnly, int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException;
     
     public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime,

@@ -125,29 +125,29 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     private static final String AM_MV_RM_IN_DIR    = "m";
     
-    private static final short  POSIX_OTHER_EXEC   = 1 << 0;
+    private static final int    POSIX_OTHER_EXEC   = 1 << 0;
     
-    private static final short  POSIX_OTHER_WRITE  = 1 << 1;
+    private static final int    POSIX_OTHER_WRITE  = 1 << 1;
     
-    private static final short  POSIX_OTHER_READ   = 1 << 2;
+    private static final int    POSIX_OTHER_READ   = 1 << 2;
     
-    private static final short  POSIX_GROUP_EXEC   = 1 << 3;
+    private static final int    POSIX_GROUP_EXEC   = 1 << 3;
     
-    private static final short  POSIX_GROUP_WRITE  = 1 << 4;
+    private static final int    POSIX_GROUP_WRITE  = 1 << 4;
     
-    private static final short  POSIX_GROUP_READ   = 1 << 5;
+    private static final int    POSIX_GROUP_READ   = 1 << 5;
     
-    private static final short  POSIX_OWNER_EXEC   = 1 << 6;
+    private static final int    POSIX_OWNER_EXEC   = 1 << 6;
     
-    private static final short  POSIX_OWNER_WRITE  = 1 << 7;
+    private static final int    POSIX_OWNER_WRITE  = 1 << 7;
     
-    private static final short  POSIX_OWNER_READ   = 1 << 8;
+    private static final int    POSIX_OWNER_READ   = 1 << 8;
     
-    private static final short  POSIX_STICKY       = 1 << 9;
+    private static final int    POSIX_STICKY       = 1 << 9;
     
-    private static final short  POSIX_SGID         = 1 << 10;
+    private static final int    POSIX_SGID         = 1 << 10;
     
-    private static final short  POSIX_SUID         = 1 << 11;
+    private static final int    POSIX_SUID         = 1 << 11;
     
     private static final short  PERM_READ          = 1 << 0;
     
@@ -324,26 +324,27 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             }
             
             // modify the POSIX access value
-            short owner = ((Number) aclMap.get(OWNER)).shortValue();
-            Short group = aclMap.get(MASK) != null ? ((Number) aclMap.get(MASK)).shortValue()
+            int owner = ((Number) aclMap.get(OWNER)).intValue();
+            Integer group = aclMap.get(MASK) != null ? ((Number) aclMap.get(MASK)).intValue()
                 : null;
             if (group == null)
-                group = ((Number) aclMap.get(OWNER_GROUP)).shortValue();
-            short other = ((Number) aclMap.get(OTHER)).shortValue();
+                group = ((Number) aclMap.get(OWNER_GROUP)).intValue();
+            int other = ((Number) aclMap.get(OTHER)).intValue();
             
-            file
-                    .setPerms((short) ((short) ((owner & PERM_SUID_SGID) > 0 ? POSIX_SUID : 0)
-                        | ((group & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0)
-                        | (file.getPerms() & POSIX_STICKY)
-                        | ((owner & PERM_READ) > 0 ? POSIX_OWNER_READ : 0)
-                        | ((owner & PERM_WRITE) > 0 ? POSIX_OWNER_WRITE : 0)
-                        | ((owner & PERM_EXECUTE) > 0 ? POSIX_OWNER_EXEC : 0)
-                        | ((group & PERM_READ) > 0 ? POSIX_GROUP_READ : 0)
-                        | ((group & PERM_WRITE) > 0 ? POSIX_GROUP_WRITE : 0)
-                        | ((group & PERM_EXECUTE) > 0 ? POSIX_GROUP_EXEC : 0)
-                        | ((other & PERM_READ) > 0 ? POSIX_OTHER_READ : 0)
-                        | ((other & PERM_WRITE) > 0 ? POSIX_OTHER_WRITE : 0) | ((other & PERM_EXECUTE) > 0 ? POSIX_OTHER_EXEC
-                        : 0)));
+            int posixRights = ((owner & PERM_SUID_SGID) > 0 ? POSIX_SUID : 0)
+                | ((group & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0)
+                | (file.getPerms() & POSIX_STICKY)
+                | ((owner & PERM_READ) > 0 ? POSIX_OWNER_READ : 0)
+                | ((owner & PERM_WRITE) > 0 ? POSIX_OWNER_WRITE : 0)
+                | ((owner & PERM_EXECUTE) > 0 ? POSIX_OWNER_EXEC : 0)
+                | ((group & PERM_READ) > 0 ? POSIX_GROUP_READ : 0)
+                | ((group & PERM_WRITE) > 0 ? POSIX_GROUP_WRITE : 0)
+                | ((group & PERM_EXECUTE) > 0 ? POSIX_GROUP_EXEC : 0)
+                | ((other & PERM_READ) > 0 ? POSIX_OTHER_READ : 0)
+                | ((other & PERM_WRITE) > 0 ? POSIX_OTHER_WRITE : 0)
+                | ((other & PERM_EXECUTE) > 0 ? POSIX_OTHER_EXEC : 0);
+            
+            file.setPerms(posixRights);
             
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
@@ -379,7 +380,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update)
+        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
         throws MRCException, UserException {
         
         try {
@@ -422,7 +423,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
+    public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
         return file.getPerms();
     }
@@ -433,7 +434,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getDefaultRootRights() {
+    public int getDefaultRootRights() {
         return 509;
     }
     
@@ -480,7 +481,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         return false;
     }
     
-    private static short toRelativeACLRights(short posixRights, FileMetadata file, long parentId,
+    private static short toRelativeACLRights(int posixRights, FileMetadata file, long parentId,
         String userId, List<String> groupIDs) {
         
         // owner is relevant

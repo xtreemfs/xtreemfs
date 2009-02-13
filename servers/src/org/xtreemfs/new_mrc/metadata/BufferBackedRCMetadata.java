@@ -34,27 +34,27 @@ public class BufferBackedRCMetadata {
     
     protected static final int RC_PERMS                 = 9;
     
-    protected static final int RC_LINKCOUNT             = 11;
+    protected static final int RC_LINKCOUNT             = 13;
     
-    protected static final int RC_W32ATTRS              = 13;
+    protected static final int RC_W32ATTRS              = 15;
     
-    protected static final int RC_EPOCH                 = 21;
+    protected static final int RC_EPOCH                 = 23;
     
-    protected static final int RC_ISSEPOCH              = 25;
+    protected static final int RC_ISSEPOCH              = 27;
     
-    protected static final int RC_READONLY              = 29;
+    protected static final int RC_READONLY              = 31;
     
-    protected static final int RC_DIR_OWNER_OFFSET      = 21;
+    protected static final int RC_DIR_OWNER_OFFSET      = 23;
     
-    protected static final int RC_DIR_GROUP_OFFSET      = 23;
+    protected static final int RC_DIR_GROUP_OFFSET      = 25;
     
-    protected static final int DIR_VAR_LEN_PART_OFFSET  = 25;
+    protected static final int DIR_VAR_LEN_PART_OFFSET  = 27;
     
-    protected static final int RC_FILE_OWNER_OFFSET     = 30;
+    protected static final int RC_FILE_OWNER_OFFSET     = 32;
     
-    protected static final int RC_FILE_GROUP_OFFSET     = 32;
+    protected static final int RC_FILE_GROUP_OFFSET     = 34;
     
-    protected static final int FILE_VAR_LEN_PART_OFFSET = 34;
+    protected static final int FILE_VAR_LEN_PART_OFFSET = 36;
     
     private final short        ownerOffset;
     
@@ -101,7 +101,7 @@ public class BufferBackedRCMetadata {
      * @param readOnly
      */
     public BufferBackedRCMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, short perms, long w32Attrs, short linkCount, int epoch, int issEpoch,
+        long fileId, int perms, long w32Attrs, short linkCount, int epoch, int issEpoch,
         boolean readOnly, short collCount) {
         
         // assign the key
@@ -118,7 +118,7 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 0).putLong(fileId).putShort(perms).putShort(linkCount).putLong(w32Attrs)
+        valBuf.put((byte) 0).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs)
                 .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0))
                 .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
@@ -136,7 +136,7 @@ public class BufferBackedRCMetadata {
      * @param perms
      */
     public BufferBackedRCMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, short perms, long w32Attrs, short linkCount, short collCount) {
+        long fileId, int perms, long w32Attrs, short linkCount, short collCount) {
         
         // assign the key
         keyBuf = generateKeyBuf(parentId, dirName, BufferBackedFileMetadata.RC_METADATA, collCount);
@@ -152,7 +152,7 @@ public class BufferBackedRCMetadata {
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 1).putLong(fileId).putShort(perms).putShort(linkCount).putLong(w32Attrs)
+        valBuf.put((byte) 1).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs)
                 .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
         
         directory = true;
@@ -178,8 +178,8 @@ public class BufferBackedRCMetadata {
         return valBuf.getShort(RC_LINKCOUNT);
     }
     
-    public short getPerms() {
-        return valBuf.getShort(RC_PERMS);
+    public int getPerms() {
+        return valBuf.getInt(RC_PERMS);
     }
     
     public boolean isReadOnly() {
@@ -202,8 +202,8 @@ public class BufferBackedRCMetadata {
         valBuf.putShort(RC_LINKCOUNT, linkCount);
     }
     
-    public void setPerms(short perms) {
-        valBuf.putShort(RC_PERMS, perms);
+    public void setPerms(int perms) {
+        valBuf.putInt(RC_PERMS, perms);
     }
     
     public void setReadOnly(boolean readOnly) {

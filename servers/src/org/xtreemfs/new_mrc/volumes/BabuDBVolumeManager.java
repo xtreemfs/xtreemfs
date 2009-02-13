@@ -174,7 +174,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         // get the default permissions and ACL
         FileAccessPolicy policy = faMan.getFileAccessPolicy(fileAccessPolicyId);
-        short perms = policy.getDefaultRootRights();
+        int perms = policy.getDefaultRootRights();
         ACLEntry[] acl = policy.getDefaultRootACL(sMan);
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);

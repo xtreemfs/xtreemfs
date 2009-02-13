@@ -141,8 +141,6 @@ public class MRCOpHelper {
             map.put("acl", acl);
         
         int mode = faMan.getPosixAccessMode(sMan, file, userId, groupIds);
-        if (mode < 0)
-            mode = 0x10000 + mode;
         map.put("posixAccessMode", mode);
         
         return map;

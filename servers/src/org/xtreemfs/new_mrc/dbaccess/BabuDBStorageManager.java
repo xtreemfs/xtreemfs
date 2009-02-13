@@ -138,7 +138,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void init(String ownerId, String owningGroupId, short perms, ACLEntry[] acl,
+    public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
         
         // atime, ctime, mtime
@@ -148,9 +148,9 @@ public class BabuDBStorageManager implements StorageManager {
         createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
         setLastFileId(1, update);
         
-        // set the default striping policy (must not be null!)
-        assert (rootDirDefSp != null);
-        setDefaultStripingPolicy(1, Converter.mapToStripingPolicy(this, rootDirDefSp), update);
+        // set the default striping policy
+        if (rootDirDefSp != null)
+            setDefaultStripingPolicy(1, Converter.mapToStripingPolicy(this, rootDirDefSp), update);
         
         if (acl != null)
             for (ACLEntry entry : acl)
@@ -186,7 +186,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public FileMetadata createDir(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs,
+        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs,
         AtomicDBUpdate update) throws DatabaseException {
         
         try {
@@ -223,7 +223,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public FileMetadata createFile(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, short perms, long w32Attrs, long size,
+        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs, long size,
         boolean readOnly, int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException {
         
         try {

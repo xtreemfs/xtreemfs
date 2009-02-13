@@ -87,14 +87,14 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
+    public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) {
         return 511; // rwxrwxrwx
     }
     
     @Override
     public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, short posixAccessRights, AtomicDBUpdate update) {
+        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) {
         // do nothing
     }
     
@@ -124,7 +124,7 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public short getDefaultRootRights() {
+    public int getDefaultRootRights() {
         return 511;
     }
     

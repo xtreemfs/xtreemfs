@@ -116,7 +116,7 @@ public class FileAccessManager {
         return getVolumeFileAccessPolicy(volumeId).translateAccessMode(accessMode);
     }
     
-    public short getPosixAccessMode(StorageManager sMan, FileMetadata file, String userId,
+    public int getPosixAccessMode(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
         return getVolumeFileAccessPolicy(sMan.getVolumeId()).getPosixAccessRights(sMan, file,
             userId, groupIds);
