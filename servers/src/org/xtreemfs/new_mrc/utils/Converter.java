@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
@@ -144,7 +145,8 @@ public class Converter {
      * @param xLocs
      * @return
      */
-    public static XLocList listToXLocList(StorageManager sMan, List<Object> list) {
+    public static XLocList listToXLocList(StorageManager sMan, List<Object> list)
+        throws UserException {
         
         if (list == null)
             return null;
@@ -175,17 +177,32 @@ public class Converter {
      * @return
      */
     public static StripingPolicy mapToStripingPolicy(StorageManager sMan,
-        Map<String, Object> policyMap) {
+        Map<String, Object> policyMap) throws UserException {
         
         if (policyMap == null || policyMap.isEmpty()
             || ((String) policyMap.get("policy")).isEmpty())
             return null;
         
-        StripingPolicy policy = sMan.createStripingPolicy((String) policyMap.get("policy"),
-            ((Long) policyMap.get("stripe-size")).intValue(), ((Long) policyMap.get("width"))
-                    .intValue());
-        
-        return policy;
+        try {
+            
+            String pattern = (String) policyMap.get("policy");
+            int stripeSize = ((Long) policyMap.get("stripe-size")).intValue();
+            int width = ((Long) policyMap.get("width")).intValue();
+            
+            if ("RAID0".equals(pattern)) {
+                
+                if (stripeSize == 0 || width == 0)
+                    throw new Exception();
+                
+                return sMan.createStripingPolicy(pattern, stripeSize, width);
+            }
+
+            else
+                throw new Exception();
+            
+        } catch (Exception exc) {
+            throw new UserException("invalid striping policy: " + policyMap);
+        }
     }
     
     /**

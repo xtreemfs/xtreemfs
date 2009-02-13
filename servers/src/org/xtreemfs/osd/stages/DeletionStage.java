@@ -36,6 +36,7 @@ import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.osd.ErrorRecord;
 import org.xtreemfs.osd.OSDException;
 import org.xtreemfs.osd.OSDRequest;
@@ -189,7 +190,7 @@ public class DeletionStage extends Stage {
         if (layout.fileExists(fileId))
             deletor.enqueueFileForDeletion(fileId);
         else
-            throw new OSDException(ErrorClass.USER_EXCEPTION, "file " + fileId + "not found");
+            throw new OSDException(ErrorClass.USER_EXCEPTION, 2, "file " + fileId + " not found");
     }
 
     private void sendDeleteRequests(StageMethod rq) throws IOException, JSONException {
