@@ -57,10 +57,10 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
     public void execute() throws DatabaseException {
         try {
             if (listener != null) {
-                database.syncInsert(ig);
+                database.directInsert(ig);
                 listener.insertFinished(context);
             } else
-                database.syncInsert(ig);
+                database.directInsert(ig);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
