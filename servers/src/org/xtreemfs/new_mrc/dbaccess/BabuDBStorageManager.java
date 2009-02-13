@@ -38,6 +38,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ACLIterator;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ChildrenIterator;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.XAttrIterator;
@@ -141,20 +142,26 @@ public class BabuDBStorageManager implements StorageManager {
     public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
         Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
         
-        // atime, ctime, mtime
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
-        
-        // create the root directory; the name is the database name
-        createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
-        setLastFileId(1, update);
-        
-        // set the default striping policy
-        if (rootDirDefSp != null)
-            setDefaultStripingPolicy(1, Converter.mapToStripingPolicy(this, rootDirDefSp), update);
-        
-        if (acl != null)
-            for (ACLEntry entry : acl)
-                setACLEntry(1L, entry.getEntity(), entry.getRights(), update);
+        try {
+            // atime, ctime, mtime
+            int time = (int) (TimeSync.getGlobalTime() / 1000);
+            
+            // create the root directory; the name is the database name
+            createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
+            setLastFileId(1, update);
+            
+            // set the default striping policy
+            if (rootDirDefSp != null)
+                setDefaultStripingPolicy(1, Converter.mapToStripingPolicy(this, rootDirDefSp),
+                    update);
+            
+            if (acl != null)
+                for (ACLEntry entry : acl)
+                    setACLEntry(1L, entry.getEntity(), entry.getRights(), update);
+            
+        } catch (UserException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override

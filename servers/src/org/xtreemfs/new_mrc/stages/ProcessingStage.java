@@ -192,7 +192,12 @@ public class ProcessingStage extends MRCStage {
                 master.requestFinished(rq);
                 return;
             }
-            op.parseRPCBody(rq, args);
+            ErrorRecord error = op.parseRPCBody(rq, args);
+            if(error != null) {
+                rq.setError(error);
+                master.requestFinished(rq);
+                return;
+            }
         }
         
         if (op.isAuthRequired()) {
