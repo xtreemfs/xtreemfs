@@ -191,7 +191,9 @@ public class CreateVolumeOperation extends MRCOperation {
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
                 rqArgs.volumeName, rqArgs.acPolicyId, rqArgs.osdSelectionPolicyId, null,
                 rq.getDetails().userId, rq.getDetails().groupIds.get(0),
-                rqArgs.defaultStripingPolicy, master, rq);
+                rqArgs.defaultStripingPolicy);
+            
+            finishRequest(rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);

@@ -25,19 +25,23 @@ package org.xtreemfs.new_mrc.dbaccess;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
@@ -49,17 +53,30 @@ public class DBAdminTool {
     
     public static class DBRestoreState {
         
-        public VolumeInfo   currentVolume;
+        public VolumeInfo          currentVolume;
         
-        public List<Long>   parentIds;
+        public List<Long>          parentIds;
         
-        public FileMetadata currentEntity;
+        public FileMetadata        currentEntity;
         
-        public XLoc         currentXLoc;
+        public int                 currentXLocVersion;
+        
+        public StripingPolicy      currentXLocSp;
+        
+        public List<XLoc>          currentReplicaList;
+        
+        public List<String>        currentOSDList;
+        
+        public Map<String, Object> currentACL;
+        
+        public long                largestFileId;
         
         public DBRestoreState() {
             parentIds = new LinkedList<Long>();
             parentIds.add((long) 0);
+            currentOSDList = new LinkedList<String>();
+            currentReplicaList = new LinkedList<XLoc>();
+            currentACL = new HashMap<String, Object>();
         }
         
     }
@@ -86,13 +103,11 @@ public class DBAdminTool {
         }
     }
     
-    public static void restoreDir(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException, UserException {
+    public static void restoreDir(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException,
+        UserException {
         
         if (openTag) {
-            
-            StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
             
             long id = Long.parseLong(attrs.getValue(attrs.getIndex("id")));
             String name = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("name")));
@@ -110,35 +125,43 @@ public class DBAdminTool {
             if (attrs.getIndex("w32Attrs") != -1)
                 w32Attrs = Long.parseLong(attrs.getValue(attrs.getIndex("w32Attrs")));
             
-            // if the directory is the root directory, create the volume
-            // first
+            // if the directory is the root directory, restore the volume
             if (id == 1) {
                 vMan.createVolume(faMan, state.currentVolume.getId(),
                     state.currentVolume.getName(), state.currentVolume.getAcPolicyId(),
                     state.currentVolume.getOsdPolicyId(), state.currentVolume.getOsdPolicyArgs(),
-                    owner, owningGroup, null, null, null);
-                sMan = vMan.getStorageManager(state.currentVolume.getId());
+                    owner, owningGroup, null);
+                
+                StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                state.currentEntity = sMan.getMetadata(1);
+            }
+
+            // otherwise, restore the directory
+            else {
+                
+                // there must not be hard links to directories, so it is not
+                // necessary to check if the directory exists already
+                
+                StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime,
+                    mtime, owner, owningGroup, rights, w32Attrs, update);
+                update.execute();
+                state.currentEntity = dir;
             }
             
-            // there must not be hard links to directories, so it is not
-            // necessary to check if the directory exists already
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-            FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime,
-                mtime, owner, owningGroup, rights, w32Attrs, update);
-            update.execute();
-            
             state.parentIds.add(0, id);
-            state.currentEntity = dir;
+            
+            if (state.currentEntity.getId() > state.largestFileId)
+                state.largestFileId = state.currentEntity.getId();
         }
 
         else
             state.parentIds.remove(0);
     }
     
-    public static void restoreFile(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
+    public static void restoreFile(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
         if (!openTag)
             return;
@@ -169,9 +192,9 @@ public class DBAdminTool {
             if (attrs.getIndex("issuedEpoch") != -1)
                 epoch = Integer.parseInt(attrs.getValue(attrs.getIndex("issuedEpoch")));
             
-            short rights = 511; // set all rights to 511 by default
+            int rights = 511; // set all rights to 511 by default
             if (attrs.getIndex("rights") != -1)
-                rights = Short.parseShort(attrs.getValue(attrs.getIndex("rights")));
+                rights = Integer.parseInt(attrs.getValue(attrs.getIndex("rights")));
             
             long w32Attrs = 0; // set all Win32 attributes to 0 by default
             if (attrs.getIndex("w32Attrs") != -1)
@@ -180,7 +203,7 @@ public class DBAdminTool {
             boolean readOnly = false; // set readOnly attribute to false by
             // default
             if (attrs.getIndex("readOnly") != -1)
-                w32Attrs = Long.parseLong(attrs.getValue(attrs.getIndex("readOnly")));
+                readOnly = Boolean.getBoolean(attrs.getValue(attrs.getIndex("readOnly")));
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
             file = sMan.createFile(id, state.parentIds.get(0), name, atime, ctime, mtime, owner,
@@ -190,128 +213,134 @@ public class DBAdminTool {
 
         // otherwise, create a link
         else {
-            // TODO
-            // linkFile(name, id, state.parentIds.get(0));
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+            sMan.link(file, state.parentIds.get(0), name, update);
+            update.execute();
         }
         
         state.currentEntity = file;
+        
+        if (state.currentEntity.getId() > state.largestFileId)
+            state.largestFileId = state.currentEntity.getId();
     }
     
-    public static void restoreXLocList(VolumeManager vMan, FileAccessManager faMan, String entity,
+    public static void restoreXLocList(VolumeManager vMan, FileAccessManager faMan,
         Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
         throws DatabaseException {
-        
-        if (!openTag)
-            return;
         
         StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
         
-        int version = Integer.parseInt(attrs.getValue(attrs.getIndex("version")));
-        state.currentEntity.setXLocList(sMan.createXLocList(null, version));
+        if (openTag)
+            state.currentXLocVersion = Integer.parseInt(attrs.getValue(attrs.getIndex("version")));
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-        sMan.setMetadata(state.currentEntity, FileMetadata.XLOC_METADATA, update);
-        update.execute();
+        else {
+            
+            state.currentEntity.setXLocList(sMan.createXLocList(state.currentReplicaList
+                    .toArray(new XLoc[state.currentReplicaList.size()]), state.currentXLocVersion));
+            state.currentReplicaList.clear();
+            
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+            sMan.setMetadata(state.currentEntity, FileMetadata.XLOC_METADATA, update);
+            update.execute();
+        }
     }
     
-    public static void restoreXLoc(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
-        
-        if (!openTag)
-            return;
+    public static void restoreXLoc(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
         StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
         
-        String pattern = attrs.getValue(attrs.getIndex("pattern"));
-        StringTokenizer st = new StringTokenizer(pattern, " ,");
-        String policy = st.nextToken();
-        int size = Integer.parseInt(st.nextToken());
-        int width = Integer.parseInt(st.nextToken());
+        if (openTag)
+            state.currentXLocSp = Converter.stringToStripingPolicy(sMan, attrs.getValue(attrs
+                    .getIndex("pattern")));
         
-        XLocList xLocList = state.currentEntity.getXLocList();
-        state.currentXLoc = sMan.createXLoc(sMan.createStripingPolicy(policy, size, width),
-            new String[0]);
-        // TODO: add replica
+        else {
+            
+            state.currentReplicaList.add(sMan.createXLoc(state.currentXLocSp, state.currentOSDList
+                    .toArray(new String[state.currentOSDList.size()])));
+            state.currentOSDList.clear();
+        }
     }
     
-    public static void restoreOSD(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
+    public static void restoreOSD(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
-        if (!openTag)
-            return;
-        
-        // String osd = attrs.getValue(attrs.getIndex("location"));
-        //        
-        // String[] osdList = state.currentXLoc.getOsdList();
-        // if (osdList == null)
-        // osdList = new String[] { osd };
-        // else {
-        // String[] newOSDList = new String[osdList.length + 1];
-        // System.arraycopy(osdList, 0, newOSDList, 0, osdList.length);
-        // newOSDList[newOSDList.length - 1] = osd;
-        // osdList = newOSDList;
-        // }
-        //        
-        // state.currentXLoc.setOsdList(osdList);
+        if (openTag)
+            state.currentOSDList.add(attrs.getValue(attrs.getIndex("location")));
     }
     
-    public static void restoreEntry(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
+    public static void restoreACL(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
-        if (!openTag)
-            return;
-        
-        // String userId = attrs.getValue(attrs.getIndex("entity"));
-        // long rights =
-        // Long.parseLong(attrs.getValue(attrs.getIndex("rights")));
-        //        
-        // ACLEntry[] acl = state.currentEntity.getAcl();
-        // if (acl == null)
-        // acl = new ACLEntry[] { new ACLEntry(userId, rights) };
-        // else {
-        // ACLEntry[] newACL = new ACLEntry[acl.length + 1];
-        // System.arraycopy(acl, 0, newACL, 0, acl.length);
-        // newACL[newACL.length - 1] = new ACLEntry(userId, rights);
-        // acl = newACL;
-        // }
-        //        
-        // state.currentEntity.setAcl(acl);
-        // if (state.currentEntity instanceof FileEntity)
-        // backend.put((FileEntity) state.currentEntity);
-        // else
-        // backend.put((DirEntity) state.currentEntity);
-        
+        // convert old ACLs to POSIX access rights
+        if (!openTag) {
+            
+            String owner = state.currentEntity.getOwnerId();
+            List<String> groups = new ArrayList<String>(1);
+            groups.add(state.currentEntity.getOwningGroupId());
+            
+            StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+            try {
+                faMan.setACLEntries(sMan, state.currentEntity, state.parentIds.get(0), owner,
+                    groups, state.currentACL, update);
+            } catch (MRCException e) {
+                throw new DatabaseException(e);
+            } catch (UserException e) {
+                throw new DatabaseException(e);
+            }
+            
+            update.execute();
+            state.currentACL.clear();
+        }
     }
     
-    public static void restoreAttr(VolumeManager vMan, FileAccessManager faMan, String entity,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
+    public static void restoreEntry(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
-        if (!openTag)
-            return;
+        if (openTag) {
+            
+            String entityId = attrs.getValue(attrs.getIndex("entity"));
+            if (dbVersion < 3 && entityId.contains("::"))
+                entityId = entityId.replace("::", ":");
+            
+            short rights = (short) Long.parseLong(attrs.getValue(attrs.getIndex("rights")));
+            state.currentACL.put(entityId, rights);
+        }
+    }
+    
+    public static void restoreAttr(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
-        // String key =
-        // OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("key")));
-        // Object value =
-        // OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("value")));
-        //        
-        // // if the value refers to a striping policy, parse it
-        // if (key.equals("spol")) {
-        // StringTokenizer st = new StringTokenizer(value.toString(), ", ");
-        // value = new StripingPolicy(st.nextToken(),
-        // Long.parseLong(st.nextToken()), Long
-        // .parseLong(st.nextToken()));
-        // } else if (key.equals("ro"))
-        // value = Boolean.valueOf((String) value);
-        //        
-        // long type = Long.parseLong(attrs.getValue(attrs.getIndex("type")));
-        // String uid = attrs.getValue(attrs.getIndex("uid"));
-        //        
-        // backend.put(new FileAttributeEntity(key, value, type,
-        // state.currentEntity.getId(), uid));
+        if (openTag) {
+            
+            int oIndex = attrs.getIndex("owner");
+            String owner = oIndex == -1 ? "" : attrs.getValue(oIndex);
+            String key = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("key")));
+            String value = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("value")));
+            
+            StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+            
+            // if the value refers to a read-only flag, set it directly
+            if (key.equals("ro")) {
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                state.currentEntity.setReadOnly(Boolean.getBoolean(value));
+                update.execute();
+            }
+
+            else {
+                
+                if (owner.isEmpty() && key.equals("ref"))
+                    key = "lt";
+                
+                if (owner.isEmpty() && key.equals("spol"))
+                    key = "sp";
+                
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                sMan.setXAttr(state.currentEntity.getId(), owner, key, value, update);
+                update.execute();
+            }
+        }
     }
     
     private static void dumpDir(BufferedWriter xmlWriter, StorageManager sMan, long parentId)

@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
@@ -332,7 +331,7 @@ public class MRCOpHelper {
             StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
             if (sp == null)
                 return "";
-            return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
+            return Converter.stripingPolicyToString(sp);
         case ac_policy_id:
             return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
         case osdsel_policy_id:
@@ -400,18 +399,9 @@ public class MRCOpHelper {
             
             try {
                 
-                String pattern = null;
-                int stripeSize = 0;
-                int width = 0;
-                
-                if (!value.equals("null")) {
-                    StringTokenizer st = new StringTokenizer(value, ", \t");
-                    pattern = st.nextToken();
-                    stripeSize = Integer.parseInt(st.nextToken());
-                    width = Integer.parseInt(st.nextToken());
-                }
-                StripingPolicy sp = pattern == null ? null : sMan.createStripingPolicy(pattern,
-                    stripeSize, width);
+                StripingPolicy sp = null;
+                if (!value.equals("null"))
+                    sp = Converter.stringToStripingPolicy(sMan, value);
                 
                 if (file.getId() == 1 && sp == null)
                     throw new UserException(ErrNo.EPERM,

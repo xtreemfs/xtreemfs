@@ -132,7 +132,7 @@ public class CreateFileOperation extends MRCOperation {
             // set the file ID as the last one
             sMan.setLastFileId(fileId, update);
             
-            if (rqArgs.stripingPolicy != null)
+            if (rqArgs.stripingPolicy != null && !rqArgs.stripingPolicy.isEmpty())
                 sMan.setDefaultStripingPolicy(fileId, Converter.mapToStripingPolicy(sMan,
                     rqArgs.stripingPolicy), update);
             

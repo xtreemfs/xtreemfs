@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
 import org.xtreemfs.new_mrc.UserException;
@@ -167,6 +168,36 @@ public class Converter {
         long version = (Long) list.get(1);
         
         return sMan.createXLocList(xLocations, (int) version);
+    }
+    
+    /**
+     * Converts a string containing striping policy information to a
+     * <code>StripingPolicy</code> object.
+     * 
+     * @param sMan
+     *            the storage manager
+     * @param spString
+     *            the striping policy string
+     * @return the striping policy
+     */
+    public static StripingPolicy stringToStripingPolicy(StorageManager sMan, String spString) {
+        
+        StringTokenizer st = new StringTokenizer(spString, " ,\t");
+        String policy = st.nextToken();
+        int size = Integer.parseInt(st.nextToken());
+        int width = Integer.parseInt(st.nextToken());
+        
+        return sMan.createStripingPolicy(policy, size, width);
+    }
+    
+    /**
+     * Converts a striping policy object to a string.
+     * 
+     * @param sp the striping policy object
+     * @return a string containing the striping policy information
+     */
+    public static String stripingPolicyToString(StripingPolicy sp) {
+        return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
     }
     
     /**

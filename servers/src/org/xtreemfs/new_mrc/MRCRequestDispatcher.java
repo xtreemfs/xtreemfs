@@ -67,6 +67,7 @@ import org.xtreemfs.new_mrc.operations.StatusPageOperation;
 import org.xtreemfs.new_mrc.operations.StatusPageOperation.Vars;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.stages.ProcessingStage;
+import org.xtreemfs.new_mrc.utils.Converter;
 import org.xtreemfs.new_mrc.volumes.BabuDBVolumeManager;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
@@ -363,8 +364,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                         .getDefaultStripingPolicy(1);
                 
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">striping policy</td><td>");
-                volTableBuf.append(defaultSP.getPattern() + ", " + defaultSP.getStripeSize() + ", "
-                    + defaultSP.getWidth());
+                volTableBuf.append(Converter.stripingPolicyToString(defaultSP));
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">access policy</td><td>");
                 volTableBuf.append(v.getAcPolicyId());
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");

@@ -63,14 +63,22 @@ public interface VolumeManager {
      *            the access policy
      * @param osdPolicyId
      *            the OSD selection policy
+     * @param osdPolicyArgs
+     *            the OSD selection policy arguments
+     * @param ownerId
+     *            the owner ID
+     * @param owningGroupId
+     *            the owning group ID
+     * @param defaultStripingPolicy
+     *            the default striping policy
      * @return a volume info object
      * @throws UserException
      * @throws DatabaseException
      */
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, Map<String, Object> defaultStripingPolicy,
-        DBAccessResultListener listener, Object context) throws UserException, DatabaseException;
+        String owningGroupId, Map<String, Object> defaultStripingPolicy) throws UserException,
+        DatabaseException;
     
     /**
      * Checks whether a volume with the given name is known locally.

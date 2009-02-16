@@ -41,8 +41,10 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.dbaccess.DBAdminTool;
 import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
+import org.xtreemfs.new_mrc.dbaccess.StorageManager;
 import org.xtreemfs.new_mrc.dbaccess.DBAdminTool.DBRestoreState;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
@@ -83,7 +85,7 @@ public class RestoreDBOperation extends MRCOperation {
             
             // First, check if any volume exists already. If so, deny the
             // operation for security reasons.
-            if (vMan.getVolumes().size() == 0)
+            if (vMan.getVolumes().size() != 0)
                 throw new UserException(
                     "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
             
@@ -158,7 +160,9 @@ public class RestoreDBOperation extends MRCOperation {
                         
                     } catch (Exception exc) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
-                            "could not restore DB from XML dump: " + exc);
+                            "could not restore DB from XML dump");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                        throw new SAXException(exc);
                     }
                 }
                 
@@ -166,8 +170,7 @@ public class RestoreDBOperation extends MRCOperation {
                     throws SAXException {
                     
                     try {
-                        if (qName.equals("volume") || qName.equals("slice")
-                            || qName.equals("filesystem"))
+                        if (qName.equals("slice") || qName.equals("filesystem"))
                             return;
                         
                         handleNestedElement(qName, null, false);
@@ -176,33 +179,46 @@ public class RestoreDBOperation extends MRCOperation {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                             "could not restore DB from XML dump");
                         Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                        throw new SAXException(exc);
                     }
                 }
                 
                 private void handleNestedElement(String qName, Attributes attributes,
                     boolean openTag) throws UserException, DatabaseException {
                     
-                    if (qName.equals("dir"))
-                        DBAdminTool.restoreDir(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                    if (qName.equals("volume")) {
+                        
+                        // set the largest file ID
+                        StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                        sMan.setLastFileId(state.largestFileId, update);
+                        update.execute();
+                        state.largestFileId = 0;
+                        
+                    } else if (qName.equals("dir"))
+                        DBAdminTool.restoreDir(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                     else if (qName.equals("file"))
-                        DBAdminTool.restoreFile(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                        DBAdminTool.restoreFile(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                     else if (qName.equals("xLocList"))
-                        DBAdminTool.restoreXLocList(vMan, master.getFileAccessManager(), qName,
+                        DBAdminTool.restoreXLocList(vMan, master.getFileAccessManager(),
                             attributes, state, dbVersion, openTag);
                     else if (qName.equals("xLoc"))
-                        DBAdminTool.restoreXLoc(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                        DBAdminTool.restoreXLoc(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                     else if (qName.equals("osd"))
-                        DBAdminTool.restoreOSD(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                        DBAdminTool.restoreOSD(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
+                    else if (qName.equals("acl"))
+                        DBAdminTool.restoreACL(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                     else if (qName.equals("entry"))
-                        DBAdminTool.restoreEntry(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                        DBAdminTool.restoreEntry(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                     else if (qName.equals("attr"))
-                        DBAdminTool.restoreAttr(vMan, master.getFileAccessManager(), qName,
-                            attributes, state, dbVersion, openTag);
+                        DBAdminTool.restoreAttr(vMan, master.getFileAccessManager(), attributes,
+                            state, dbVersion, openTag);
                 }
                 
             });
@@ -210,11 +226,14 @@ public class RestoreDBOperation extends MRCOperation {
             finishRequest(rq);
             
         } catch (UserException exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, "an error has occurred",
-                exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getMessage(), exc));
+        } catch (SAXException exc) {
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getException()
+                    .getMessage() == null ? "an error has occured" : exc.getException()
+                    .getMessage(), exc.getException()));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+                exc.getMessage() == null ? "an error has occurred" : exc.getMessage(), exc));
         }
     }
     

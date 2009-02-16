@@ -102,7 +102,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         try {
             database = BabuDBFactory.getBabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60,
-                SyncMode.FDATASYNC, 300, 1000);
+                SyncMode.ASYNC, 0, 1000);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -141,8 +141,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, Map<String, Object> defaultStripingPolicy,
-        DBAccessResultListener listener, Object context) throws UserException, DatabaseException {
+        String owningGroupId, Map<String, Object> defaultStripingPolicy) throws UserException,
+        DatabaseException {
         
         if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)
             throw new UserException(ErrNo.EINVAL, "volume name must not contain '/' or '\\'");
@@ -185,7 +185,9 @@ public class BabuDBVolumeManager implements VolumeManager {
             BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
             ig.addInsert(VOL_INDEX, volumeId.getBytes(), volume.getBuffer());
             ig.addInsert(VOL_NAME_INDEX, volumeName.getBytes(), volumeId.getBytes());
-            database.asyncInsert(ig, new BabuDBRequestListenerWrapper(listener), context);
+            database.directInsert(ig);
+            // database.asyncInsert(ig, new
+            // BabuDBRequestListenerWrapper(listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
