@@ -67,7 +67,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     public static final int     FILE_ID_INDEX         = 3;
     
-    public static final int     LAST_ID_INDEX         = 5;
+    public static final int     LAST_ID_INDEX         = 4;
     
     public static final byte[]  LAST_ID_KEY           = { '*' };
     
@@ -89,7 +89,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             // first, try to create a new database; if it already exists, an
             // exception will be thrown
-            database.createDatabase(dbName, 6);
+            database.createDatabase(dbName, 5);
             
         } catch (BabuDBException e) {
             // database already exists
