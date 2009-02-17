@@ -90,7 +90,7 @@ public class ReplicationTest extends TestCase {
     public void setUp() throws Exception {
 	System.out.println("TEST: " + getClass().getSimpleName() + "."
 		+ getName());
-	Logging.start(SetupUtils.DEBUG_LEVEL);
+	Logging.start(Logging.LEVEL_TRACE);
 
 	this.stripeSize = 128;
 	this.data = generateData(stripeSize * 1024);
@@ -114,7 +114,7 @@ public class ReplicationTest extends TestCase {
 	osds[1] = new OSD(SetupUtils.createOSD2Config());
 	osds[2] = new OSD(SetupUtils.createOSD3Config());
 	osds[3] = new OSD(SetupUtils.createOSD4Config());
-	client = SetupUtils.createOSDClient(1000000);
+	client = SetupUtils.createOSDClient(10000);
 
 	file = "1:1";
 	objectNo = 0;
@@ -155,7 +155,7 @@ public class ReplicationTest extends TestCase {
 	}
     }
 
-    public void testStripedReplication() throws Exception {
+    public void testStriped() throws Exception {
 	// write object to replica 1
 	RPCResponse response = client.put(locations.getOSDsByObject(objectNo)
 		.get(0).getAddress(), this.locations, this.capability,
@@ -184,6 +184,57 @@ public class ReplicationTest extends TestCase {
 	assertEquals(this.data.getBuffer(), response.getBody().getBuffer());
 	response.freeBuffers();
     }
+    
+    public void testHoleAndEOF() throws Exception {
+	// write object to replica 1
+	RPCResponse response = client.put(locations.getOSDsByObject(objectNo)
+		.get(0).getAddress(), this.locations, this.capability,
+		this.file, objectNo, this.data);
+	response.waitForResponse();
+	response.freeBuffers();
+
+	// write object to replica 1
+	response = client.put(locations.getOSDsByObject(objectNo+5)
+		.get(0).getAddress(), this.locations, this.capability,
+		this.file, objectNo+5, this.data);
+	response.waitForResponse();
+	response.freeBuffers();
+
+	// read object from replica 2
+	response = client.get(locations.getOSDsByObject(objectNo).get(1)
+		.getAddress(), this.locations, this.capability, this.file,
+		objectNo);
+	response.waitForResponse();
+	assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
+	assertEquals(HTTPUtils.DATA_TYPE.BINARY.toString(), response.getHeaders()
+		.getHeader(HTTPHeaders.HDR_CONTENT_TYPE));
+	assertEquals(this.data.getBuffer(), response.getBody().getBuffer());
+	response.freeBuffers();
+
+	// read hole from replica 2
+	response = client.get(locations.getOSDsByObject(objectNo+2).get(1)
+		.getAddress(), this.locations, this.capability, this.file,
+		objectNo+2);
+	response.waitForResponse();
+	assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
+	// correct length
+        assertEquals(""+this.stripeSize*1024, response.getHeaders().getHeader(HTTPHeaders.HDR_CONTENT_LENGTH));
+	// filled with zeros
+        for(byte b : response.getBody().array()) {
+            assertEquals(0, b);
+        }
+	response.freeBuffers();
+
+	// read EOF from replica 2
+	response = client.get(locations.getOSDsByObject(objectNo+10).get(1)
+		.getAddress(), this.locations, this.capability, this.file,
+		objectNo+10);
+	response.waitForResponse();
+	assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
+	assertNull(response.getBody());
+	response.freeBuffers();
+    }
+
 
     /*
      * test RPC

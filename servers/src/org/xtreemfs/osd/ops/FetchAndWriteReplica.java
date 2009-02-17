@@ -57,7 +57,7 @@ public class FetchAndWriteReplica extends Operation {
 			    + rq.getRequestId()
 			    + ") with original request piggyback (requestID: "
 			    + rq.getOriginalOsdRequest().getRequestId()
-			    + ") : " + rq.getDetails().getFileId() + "-"
+			    + ") for object: " + rq.getDetails().getFileId() + "-"
 			    + rq.getDetails().getObjectNumber() + ".");
 	master.getStage(Stages.REPLICATION).enqueueOperation(rq,
 		ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT,
@@ -102,9 +102,15 @@ public class FetchAndWriteReplica extends Operation {
 	} else if (result == StageResponseCode.FINISH) {
 	    // object could really not be fetched => stop request
 	    if(originalRq!=null) {
+		// data could be fetched from replica
+		if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
+		    // "copy" fetched data to original request
+		    originalRq.setData(rq.getData().createViewBuffer(), rq
+			    .getDataType());
+		}
 		// go on with the original request operation-callback
 		originalRq.getCurrentCallback().methodExecutionCompleted(
-			originalRq, StageResponseCode.FAILED);
+			originalRq, StageResponseCode.OK); // FIXME: FAILED
 	    }
 	} else {
 	    if (Logging.isDebug())

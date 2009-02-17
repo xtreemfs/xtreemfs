@@ -45,6 +45,8 @@ import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
 
+import com.sun.xml.internal.ws.api.pipe.NextAction;
+
 /**
  * 
  * 18.12.2008
@@ -154,6 +156,23 @@ public class TransferStrategiesTest extends TestCase {
 
 	assertEquals(4, this.strategy.getRequiredObjectsCount());
 	assertEquals(1, this.strategy.getPreferredObjectsCount());
+    }
+
+    @Test
+    public void testCurrentReplicaNotInReplicaList() {
+	this.strategy = new SimpleStrategy(details);
+	for(int i=0; i<20; i++) {
+	    this.strategy.addRequiredObject(i);
+	}
+	while(true) {
+	   this.strategy.selectNext();
+	   NextRequest next = this.strategy.getNext();
+	   if(next!=null) {
+		assertNotSame(this.details.getCurrentReplica(), next.osd);
+	   } else
+	       break;
+	}
+
     }
 
     /**

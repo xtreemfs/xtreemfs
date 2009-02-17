@@ -29,6 +29,7 @@ import org.xtreemfs.common.ClientLease;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.osd.replication.TransferStrategy;
+import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 
 public final class RequestDetails {
@@ -70,7 +71,10 @@ public final class RequestDetails {
     private ClientLease lease;
 
     private TransferStrategy replicationTransferStrategy;
-
+    
+    // FIXME
+    public NextRequest nextReplicationStep;
+    
     private String requestId;
 
     private CowPolicy cowPolicy;

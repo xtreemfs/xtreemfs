@@ -28,14 +28,18 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 
 import org.xtreemfs.babudb.lsmdb.LSMDBWorker.RequestOperation;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.clients.osd.OSDClient;
+import org.xtreemfs.common.striping.StripingPolicy;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
+import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
 import org.xtreemfs.osd.OSDRequest;
@@ -47,7 +51,7 @@ import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
- * 
+ * Handles the fetching of replicas.
  * 15.09.2008
  * 
  * @author clorenz
@@ -67,6 +71,8 @@ public class ObjectDissemination {
     private HashMap<String, TransferStrategy> filesInProgress;
 
     /**
+     * A OSDRequest maybe want to fetch an object, that is already in progress,
+     * so it must wait until the object is fetched.
      * key: <code>fileID:objectID</code>
      */
 //    private HashMap<String, OSDRequest> waitingOSDRequests;
@@ -79,6 +85,10 @@ public class ObjectDissemination {
 //	this.waitingOSDRequests = new HashMap<String, OSDRequest>();
     }
 
+    /**
+     * starts a new FetchAndWriteReplica request to start replicating the object
+     * @param rq
+     */
     public void fetchObject(OSDRequest rq) {
 	RequestDetails rqDetails = rq.getDetails();
 	TransferStrategy strategy = this.filesInProgress.get(rqDetails
@@ -94,7 +104,7 @@ public class ObjectDissemination {
 	strategy.addPreferredObject(rqDetails.getObjectNumber());
 
 	// generate new WriteReplica Request
-	OSDRequest newRq = generateWriteReplicaRequest(rqDetails);
+	OSDRequest newRq = generateFetchAndWriteReplicaRequest(rqDetails);
 	newRq.setOriginalOsdRequest(rq);
 //	waitingOSDRequests.put(rqDetails.getFileId() + ":"
 //		+ rqDetails.getObjectNumber(), rq);
@@ -103,7 +113,12 @@ public class ObjectDissemination {
 	newRq.getOperation().startRequest(newRq);
     }
 
-    private OSDRequest generateWriteReplicaRequest(RequestDetails details) {
+    /**
+     * Creates a new FetchAndWriteReplica request and sets up all necessary infos.
+     * @param details
+     * @return
+     */
+    private OSDRequest generateFetchAndWriteReplicaRequest(RequestDetails details) {
 	OSDRequest newRq = new OSDRequest(requestID--);
 	newRq.setOperation(master.getOperation(Operations.FETCH_AND_WRITE_REPLICA));
 	// TODO: set options for request
@@ -116,12 +131,63 @@ public class ObjectDissemination {
 	newRq.getDetails().setObjectVersionNumber(details.getObjectVersionNumber());
 	newRq.getDetails().setCowPolicy(details.getCowPolicy());
 	newRq.getDetails().setRangeRequested(details.isRangeRequested());
+	
+	// FIXME: set objectID from original OSDRequest
+	newRq.getDetails().setObjectNumber(details.getObjectNumber());
 	return newRq;
     }
 
+    /**
+     * Prepares the request by using the associated TransferStrategy.
+     * @param rq
+     * @return
+     */
+    public boolean prepareRequest(OSDRequest rq) {
+    	TransferStrategy strategy = rq.getDetails().getReplicationTransferStrategy();
+    	strategy.selectNextOSD(rq.getDetails().getObjectNumber());
+    	NextRequest next = strategy.getNext();
+    
+    	if (next != null) { // there is something to fetch
+    	    rq.getDetails().nextReplicationStep = next;
+//    	    rq.getDetails().setObjectNumber(next.objectID);
+    
+    //	    // if a original OSDRequest is waiting for this object, attach it to
+    //	    // the request, which should fetch it
+    //	    if (this.waitingOSDRequests.containsKey(rq.getDetails().getFileId()
+    //		    + ":" + rq.getDetails().getObjectNumber())) {
+    //		rq.setOriginalOsdRequest(this.waitingOSDRequests.remove(rq
+    //			.getDetails().getFileId()
+    //			+ ":" + rq.getDetails().getObjectNumber()));
+    //	    }
+    
+    	    // TODO: set options for request
+    	    return true;
+    	} else {
+    	    // no OSDs available for object anymore
+    	    // check if it is a hole
+	    StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
+	    long currentObject = rq.getDetails().getObjectNumber();
+	    long lastKnownObject = rq.getDetails().getCurrentReplica()
+		    .getStripingPolicy().calculateLastObject(strategy.getKnownFilesize());
+	    if (currentObject < lastKnownObject) { // => hole
+		// padding zeros
+		ReusableBuffer data = BufferPool.allocate(0);
+		data.position(0);
+		data = padWithZeros(data, (int) sp.getStripeSize(currentObject));
+		rq.setData(data, DATA_TYPE.BINARY);
+	    }
+	    // else: no OSD of any replica has data of this object
+	    return false;
+    	}
+    }
+
+    /**
+     * Sends a RPC for reading the object on another OSD.
+     * @param rq
+     */
     public void sendFetchObjectRequest(OSDRequest rq) {
 	RequestDetails details = rq.getDetails();
-	NextRequest next = details.getReplicationTransferStrategy().getNext();
+	NextRequest next = details.nextReplicationStep;
 	
 	OSDClient client = master.getOSDClient();
 	try {
@@ -135,7 +201,7 @@ public class ObjectDissemination {
 		    OSDRequest originalRq = (OSDRequest) response
 			    .getAttachment();
 		    try {
-			// TODO: set attributes
+			// set data
 			originalRq.setData(response.getBody(),
 				HTTPUtils.DATA_TYPE.toDataType(response
 					.getHeaders().getHeader(
@@ -195,32 +261,60 @@ public class ObjectDissemination {
 	}*/
     }
 
-    public boolean prepareRequest(OSDRequest rq) {
+    /**
+     * Checks if the object could be fetched.
+     * If not, retry.
+     * @param rq
+     */
+    public boolean objectFetched(OSDRequest rq) {
 	TransferStrategy strategy = rq.getDetails().getReplicationTransferStrategy();
-	strategy.selectNext();
-	NextRequest next = strategy.getNext();
+	NextRequest next = rq.getDetails().nextReplicationStep;
 
-	if (next != null) { // there is something to fetch
-	    rq.getDetails().setObjectNumber(next.objectID);
+	// TODO:
+        if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
+            // object could be fetched
+            strategy.removeOSDListForObject(next.objectID);
+            strategy.removePreferredObject(next.objectID);
+            return true;
+        } else if (rq.getDataType() == HTTPUtils.DATA_TYPE.JSON) {
+    	    // check if it is a EOF
+	    if(strategy.getKnownFilesize()>0) { // at least one time a correct filesize was fetched
+		StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
+		long currentObject = rq.getDetails().getObjectNumber();
+		long lastKnownObject = rq.getDetails().getCurrentReplica()
+			.getStripingPolicy().calculateLastObject(strategy.getKnownFilesize());
+		if (currentObject > lastKnownObject) { // => EOF
+		    // padding zeros
+		    ReusableBuffer data = BufferPool.allocate(0);
+		    data.position(0);
+		    rq.setData(data, DATA_TYPE.BINARY);
+		    return true;
+		}
+	    }
+	    // object could not be fetched => try another replica
 
-//	    // if a original OSDRequest is waiting for this object, attach it to
-//	    // the request, which should fetch it
-//	    if (this.waitingOSDRequests.containsKey(rq.getDetails().getFileId()
-//		    + ":" + rq.getDetails().getObjectNumber())) {
-//		rq.setOriginalOsdRequest(this.waitingOSDRequests.remove(rq
-//			.getDetails().getFileId()
-//			+ ":" + rq.getDetails().getObjectNumber()));
-//	    }
-
-	    // TODO: set options for request
-	    return true;
-	} else
-	    return false;
+            // save already tested OSDs => otherwise we could not
+	    // determine when we have asked all replicas
+            ServiceUUID lastOsd = next.osd;
+            strategy.removeOSDForObject(next.objectID, lastOsd);
+            
+            // re-enqueue the objectNo
+/*            if(rq.getOriginalOsdRequest() != null) // => urgent
+        	strategy.addPreferredObject(next.objectID);
+            else
+        	strategy.addRequiredObject(next.objectID);
+*/    
+            return false; // begin "new"
+        }
+        return false;
     }
 
+    /**
+     * Decides what to do next, if an object has been successfully replicated.
+     * @param rq
+     */
     public void triggerNewRequests(OSDRequest rq) {
 	// maybe start new requests
-	
 /*	for (int i = 0; i < 4 && this.requestID > -20; i++) {
 	    OSDRequest newRq = generateWriteReplicaRequest(rq.getDetails());
 	    prepareRequest(newRq);
@@ -232,26 +326,25 @@ public class ObjectDissemination {
 	// TODO: error cases
     }
 
-    /**
-     * @param rq
+    /*
+     * copied from StorageThread
      */
-    public boolean objectFetched(OSDRequest rq) {
-	// TODO:
-	if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
-	    // object could be fetched
-	    return true;
-	} else if (rq.getDataType() == HTTPUtils.DATA_TYPE.JSON) {
-	    // object could not be fetched => try another replica
-	    TransferStrategy strategy = rq.getDetails().getReplicationTransferStrategy();
-	    
-	    if(rq.getOriginalOsdRequest() != null) // => urgent
-		strategy.addPreferredObject(rq.getDetails().getObjectNumber());
-	    else
-		strategy.addRequiredObject(rq.getDetails().getObjectNumber());
-
-	    // TODO: save already tested OSDs => otherwise we could not determine when we have asked all replicas
-	    return false; // begin "new"
-	}
-	return false;
+    private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
+        int oldSize = data.capacity();
+        if (!data.enlarge(stripeSize)) {
+            ReusableBuffer tmp = BufferPool.allocate(stripeSize);
+            data.position(0);
+            tmp.put(data);
+            while (tmp.hasRemaining())
+                tmp.put((byte) 0);
+            BufferPool.free(data);
+            return tmp;
+        } else {
+            data.position(oldSize);
+            while (data.hasRemaining())
+                data.put((byte) 0);
+            return data;
+        }
     }
+
 }

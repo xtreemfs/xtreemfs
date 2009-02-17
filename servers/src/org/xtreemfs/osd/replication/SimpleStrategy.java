@@ -50,30 +50,49 @@ public class SimpleStrategy extends TransferStrategy {
     public void selectNext() {
 	// prepare
 	super.selectNext();
-	
-	NextRequest next = new NextRequest();
+
+	long objectID = -1;
+
 	// first fetch a preferred object
 	if (!this.preferredObjects.isEmpty()) {
-	    next.objectID = this.preferredObjects.remove(0);
-	    this.requiredObjects.remove(Long.valueOf(next.objectID));
-	} else { // fetch an object
+	    objectID = this.preferredObjects.remove(0);
+	    this.requiredObjects.remove(Long.valueOf(objectID));
+	} else { // fetch any object
 	    if (!this.requiredObjects.isEmpty()) {
-		next.objectID = this.requiredObjects.remove(0);
-	    } else {
-		// nothing to fetch
-		next = null;
+		objectID = this.requiredObjects.remove(0);
 	    }
 	}
 	
-	if(next!=null) {
-	    // use the next replica relative to the last used replica
-	    List<ServiceUUID> osds = this.details.otherReplicas
-		    .getOSDsByObject(next.objectID);
+	// select OSD
+	if(objectID != -1)
+	    next = selectNextOSDhelper(objectID);
+	else
+	    // nothing to fetch
+	    next = null;
+    }
+
+    @Override
+    public void selectNextOSD(long objectID) {
+	// prepare
+	super.selectNext();
+	// select OSD
+	next = selectNextOSDhelper(objectID);
+    }
+    
+    private NextRequest selectNextOSDhelper(long objectID) {
+	NextRequest next = new NextRequest();
+	next.objectID = objectID;
+	
+	// use the next replica relative to the last used replica
+	List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
+	if (osds.size() > 0) {
 	    this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
 	    next.osd = osds.get(this.indexOfLastUsedOSD);
 
+	    // no object list
 	    next.requestObjectList = false;
-	    this.next = next;
-	}
+	} else
+	    next = null;
+	return next;
     }
 }

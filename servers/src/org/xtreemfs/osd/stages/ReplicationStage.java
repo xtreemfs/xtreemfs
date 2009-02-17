@@ -44,12 +44,24 @@ import org.xtreemfs.osd.stages.Stage.StageMethod;
  * @author clorenz
  */
 public class ReplicationStage extends Stage {
+    /**
+     * fetching an object from another replica
+     */
     public static final int STAGEOP_FETCH_OBJECT = 1;
 
+    /**
+     * INTERNAL STAGE-OP: fetching an object from another replica
+     */
     public static final int STAGEOP_INTERNAL_FETCH_OBJECT = 2;
 
+    /**
+     * INTERNAL STAGE-OP: object (maybe) fetched
+     */
     public static final int STAGEOP_INTERNAL_OBJECT_FETCHED = 3;
 
+    /**
+     * INTERNAL STAGE-OP: object fetched and saved => trigger further replication
+     */
     public static final int STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS = 4;
 
     private RequestDispatcher master;
@@ -101,8 +113,42 @@ public class ReplicationStage extends Stage {
     }
 
     /**
+     * fetch an object
      * @param method
-     * @return
+     * @return true, if replication is possible, otherwise false
+     * @throws IOException
+     * @throws JSONException
+     */
+    private boolean processFetchObject(StageMethod method) throws IOException,
+            JSONException {
+        // if replica exist
+        if(method.getRq().getDetails().getLocationList().getNumberOfReplicas()>1) {
+            disseminationLayer.fetchObject(method.getRq());
+            return true;
+        } else
+            // no replica available => object cannot be fetched
+            return false;
+    }
+
+    /**
+     * prepares the request and sends it
+     * @param method
+     * @return true, if something can be fetched, otherwise false
+     */
+    private boolean processInternalFetchObject(StageMethod method) {
+        if(disseminationLayer.prepareRequest(method.getRq())) {
+            disseminationLayer.sendFetchObjectRequest(method.getRq());
+            return true;
+        } else
+            // nothing to fetch
+            return false;
+    }
+
+    /**
+     * Checks the fetched object.
+     * Tries another replica, if object could not be fetched.
+     * @param method
+     * @return true, if the object could be fetched, otherwise false
      */
     private boolean processInternalObjectFetched(StageMethod method) {
 	if (disseminationLayer.objectFetched(method.getRq()))
@@ -116,27 +162,12 @@ public class ReplicationStage extends Stage {
 	}
     }
 
+    /**
+     * Decides to follow up replication or not.
+     * @param method
+     */
     private void processInternalTriggerFurtherRequests(StageMethod method) {
 	disseminationLayer.triggerNewRequests(method.getRq());
-    }
-
-    private boolean processFetchObject(StageMethod method) throws IOException,
-	    JSONException {
-	// if replica exist
-	if(method.getRq().getDetails().getLocationList().getNumberOfReplicas()>1) {
-	    disseminationLayer.fetchObject(method.getRq());
-	    return true;
-	} else
-	    // no replica available => object cannot be fetched
-	    return false;
-    }
-
-    private boolean processInternalFetchObject(StageMethod method) {
-	if(!disseminationLayer.prepareRequest(method.getRq()))
-	    // nothing to fetch
-	    return false;
-	disseminationLayer.sendFetchObjectRequest(method.getRq());
-	return true;
     }
 
     @Override

@@ -60,7 +60,7 @@ public class RandomStrategy extends TransferStrategy {
 	    next.objectID = this.preferredObjects.remove(getPositiveRandom()
 		    % this.preferredObjects.size());
 	    this.requiredObjects.remove(Long.valueOf(next.objectID));
-	} else { // fetch an object
+	} else { // fetch any object
 	    if (!this.requiredObjects.isEmpty()) {
 		next.objectID = this.requiredObjects.remove(getPositiveRandom()
 			% this.requiredObjects.size());
@@ -71,13 +71,13 @@ public class RandomStrategy extends TransferStrategy {
 	
 	if(next!=null) {
 	    // use random OSD
-	    List<ServiceUUID> osds = this.details.otherReplicas
-		    .getOSDsByObject(next.objectID);
+	    List<ServiceUUID> osds = this.availableOSDsForObject.get(next.objectID);
 	    next.osd = osds.get(getPositiveRandom() % osds.size());
 
+	    // no object list
 	    next.requestObjectList = false;
-	    this.next = next;
 	}
+	this.next = next;
     }
 
     /**
