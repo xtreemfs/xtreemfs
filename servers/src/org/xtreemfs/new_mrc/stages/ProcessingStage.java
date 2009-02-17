@@ -45,6 +45,7 @@ import org.xtreemfs.new_mrc.operations.AddReplicaOperation;
 import org.xtreemfs.new_mrc.operations.ChangeAccessModeOperation;
 import org.xtreemfs.new_mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.new_mrc.operations.CheckAccessOperation;
+import org.xtreemfs.new_mrc.operations.CheckFileListOperation;
 import org.xtreemfs.new_mrc.operations.CreateDirOperation;
 import org.xtreemfs.new_mrc.operations.CreateFileOperation;
 import org.xtreemfs.new_mrc.operations.CreateLinkOperation;
@@ -131,6 +132,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(RemoveACLEntriesOperation.RPC_NAME, new RemoveACLEntriesOperation(master));
         operations.put(DumpDBOperation.RPC_NAME, new DumpDBOperation(master));
         operations.put(RestoreDBOperation.RPC_NAME, new RestoreDBOperation(master));
+        operations.put(CheckAccessOperation.RPC_NAME, new CheckFileListOperation(master));
     }
     
     @Override
@@ -193,7 +195,7 @@ public class ProcessingStage extends MRCStage {
                 return;
             }
             ErrorRecord error = op.parseRPCBody(rq, args);
-            if(error != null) {
+            if (error != null) {
                 rq.setError(error);
                 master.requestFinished(rq);
                 return;

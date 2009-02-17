@@ -24,8 +24,6 @@
  */
 package org.xtreemfs.test.osd.replication;
 
-import static org.junit.Assert.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,8 +42,6 @@ import org.xtreemfs.osd.replication.RandomStrategy;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
-
-import com.sun.xml.internal.ws.api.pipe.NextAction;
 
 /**
  * 
