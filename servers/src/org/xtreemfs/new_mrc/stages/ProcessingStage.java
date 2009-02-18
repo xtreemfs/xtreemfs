@@ -132,7 +132,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(RemoveACLEntriesOperation.RPC_NAME, new RemoveACLEntriesOperation(master));
         operations.put(DumpDBOperation.RPC_NAME, new DumpDBOperation(master));
         operations.put(RestoreDBOperation.RPC_NAME, new RestoreDBOperation(master));
-        operations.put(CheckAccessOperation.RPC_NAME, new CheckFileListOperation(master));
+        operations.put(CheckFileListOperation.RPC_NAME, new CheckFileListOperation(master));
     }
     
     @Override
