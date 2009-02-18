@@ -37,6 +37,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ACLIterator;
 import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageHelper.ChildrenIterator;
@@ -402,7 +403,8 @@ public class BabuDBStorageManager implements StorageManager {
             if (spString == null)
                 return null;
             
-            return Converter.stringToStripingPolicy(this, spString);
+            return Converter.mapToStripingPolicy(this, (Map<String, Object>) JSONParser
+                    .parseJSON(new JSONString(spString)));
             
         } catch (DatabaseException exc) {
             throw exc;
