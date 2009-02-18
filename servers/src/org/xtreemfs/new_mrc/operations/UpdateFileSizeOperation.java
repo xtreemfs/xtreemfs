@@ -107,9 +107,15 @@ public class UpdateFileSizeOperation extends MRCOperation {
                     + " header");
             
             // parse the file size and epoch number
-            long newFileSize = Long.parseLong(newSizeString.substring(1, index));
-            int epochNo = Integer.parseInt(newSizeString.substring(index + 1, newSizeString
-                    .length() - 1));
+            long newFileSize = 0;
+            int epochNo = 0;
+            try {
+                newFileSize = Long.parseLong(newSizeString.substring(1, index));
+                epochNo = Integer.parseInt(newSizeString.substring(index + 1, newSizeString
+                        .length() - 1));
+            } catch (NumberFormatException exc) {
+                throw new UserException("invalid file size/epoch: " + newSizeString);
+            }
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value
