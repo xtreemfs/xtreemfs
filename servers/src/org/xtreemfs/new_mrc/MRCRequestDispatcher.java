@@ -259,6 +259,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage()
                     + " / request: " + request);
+                Logging.logMessage(Logging.LEVEL_ERROR, this,error.getThrowable());
                 pr.setResponse(HTTPUtils.SC_SERVER_ERROR, error.getErrorMessage() + "\n\n");
                 break;
             }
