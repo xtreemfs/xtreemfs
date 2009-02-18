@@ -877,7 +877,7 @@ public class MRCTest extends TestCase {
         
         Map<String, Object> sp1 = RPCClient.generateMap("width", 1L, "policy", "RAID0",
             "stripe-size", 64L);
-        Map<String, Object> sp2 = RPCClient.generateMap("width", 1L, "policy", "RAID1",
+        Map<String, Object> sp2 = RPCClient.generateMap("width", 1L, "policy", "RAID0",
             "stripe-size", 256L);
         Map<String, Object> sp3 = RPCClient.generateMap("width", 1L, "policy", "RAID0",
             "stripe-size", 128L);
