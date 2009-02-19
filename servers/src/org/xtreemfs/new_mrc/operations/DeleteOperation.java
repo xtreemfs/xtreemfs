@@ -87,8 +87,8 @@ public class DeleteOperation extends MRCOperation {
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the parent directory grants write access
             faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), 0, rq
@@ -139,6 +139,10 @@ public class DeleteOperation extends MRCOperation {
             // update POSIX timestamps of parent directory
             MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
+            
+            if (file.getLinkCount() > 1)
+                MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                    update);
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value

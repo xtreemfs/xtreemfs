@@ -26,6 +26,7 @@ package org.xtreemfs.new_mrc.operations;
 
 import java.util.List;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
@@ -178,6 +179,7 @@ public class MoveOperation extends MRCOperation {
                     short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
                         update);
                     source.setLinkCount(newLinkCount);
+                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
@@ -203,6 +205,7 @@ public class MoveOperation extends MRCOperation {
                     short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
                         update);
                     source.setLinkCount(newLinkCount);
+                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
@@ -231,6 +234,7 @@ public class MoveOperation extends MRCOperation {
                     short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
                         update);
                     source.setLinkCount(newLinkCount);
+                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
@@ -273,6 +277,7 @@ public class MoveOperation extends MRCOperation {
                     short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
                         update);
                     source.setLinkCount(newLinkCount);
+                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                     
                     break;
@@ -283,7 +288,7 @@ public class MoveOperation extends MRCOperation {
             }
             }
             
-            // update POSIX timestamps of parent directories
+            // update POSIX timestamps of source and target parent directories
             MRCOpHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false,
                 true, true, sMan, update);
             MRCOpHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false,

@@ -30,6 +30,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.new_mrc.ErrNo;
 import org.xtreemfs.new_mrc.ErrorRecord;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
@@ -118,8 +119,14 @@ public class ChangeOwnerOperation extends MRCOperation {
             }
             
             // check whether the owner may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            if (rqArgs.userId != null) {
+                if (!rq.getDetails().superUser)
+                    throw new UserException(ErrNo.EACCES,
+                        "changing owners is restricted to superusers");
+                
+            } else
+                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq
+                        .getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             

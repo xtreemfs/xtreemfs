@@ -81,212 +81,236 @@ public class cleanup_osd {
     }
     
     public static void main(String[] args) throws Exception{
-        Logging.start(Logging.LEVEL_WARN);
         
-        // parse the call arguments
-        Map<String, CliOption> options = new HashMap<String, CliOption>();
-        List<String> arguments = new ArrayList<String>(1);
-        options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put("v", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put("r", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put("e", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put("d", new CliOption(CliOption.OPTIONTYPE.URL));       
-        
-        CLIParser.parseCLI(args, options, arguments);
-              
-        if (arguments.size() != 1 || options.get("h").switchValue != null) {
-            usage();
-            return;
-        }
-        
-        InetSocketAddress osdAddr = null;
-        boolean useSSL = false;
-        String serviceCredsFile = null;
-        String serviceCredsPass = null;
-        String trustedCAsFile = null;
-        String trustedCAsPass = null;
-        SSLOptions sslOptions = null;
-        URL dirURL = options.get("d").urlValue;
-        boolean verbose = options.get("v").switchValue != null;
-        boolean erase = options.get("e").switchValue != null;
-        boolean restore = options.get("r").switchValue != null;
-        
-        // read default settings for the DIR
-        if (dirURL == null) {
-            DefaultDirConfig cfg = new DefaultDirConfig(DEFAULT_DIR_CONFIG);
-            cfg.read();
+        try {
             
-            // load SSL options
-            useSSL = cfg.isSslEnabled();
-            serviceCredsFile = cfg.getServiceCredsFile();
-            serviceCredsPass = cfg.getServiceCredsPassphrase();
-            trustedCAsFile = cfg.getTrustedCertsFile();
-            trustedCAsPass = cfg.getTrustedCertsPassphrase();
-            sslOptions = useSSL ? new SSLOptions(serviceCredsFile, serviceCredsPass,
-                    trustedCAsFile, trustedCAsPass) : null;
+            Logging.start(Logging.LEVEL_WARN);
             
-            dirClient = new DIRClient(cfg.getDirectoryService(), sslOptions, RPCClient.DEFAULT_TIMEOUT);
-        } else
-            dirClient = new DIRClient(new InetSocketAddress(dirURL.getHost(), dirURL.getPort()), null, RPCClient.DEFAULT_TIMEOUT);
-        
-        // read default settings for the OSD
-        String osdUUID = null;
-        String address = arguments.get(0);
-        boolean isUUID = false;
-        if (address.startsWith("uuid:")) {
-            address = address.substring("uuid:".length());
-            isUUID = true;
-        }
-        
-
-        
-        // resolve UUID if necessary 
-        if (!isUUID){
-            /*
-            URL osdURL;
-            try{
-                osdURL = new URL(address);
-            }catch (MalformedURLException mue){
-                System.out.println("The given address could not be resolved!");
+            // parse the call arguments
+            Map<String, CliOption> options = new HashMap<String, CliOption>();
+            List<String> arguments = new ArrayList<String>(1);
+            options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+            options.put("v", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+            options.put("r", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+            options.put("e", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+            options.put("d", new CliOption(CliOption.OPTIONTYPE.URL));
+            
+            CLIParser.parseCLI(args, options, arguments);
+            
+            if (arguments.size() != 1 || options.get("h").switchValue != null) {
+                usage();
                 return;
-            }         
-            osdAddr = new InetSocketAddress(osdURL.getHost(), osdURL.getPort());
-            */
-            
-            dirClient.shutdown();
-            usage(); 
-        }else{          
-            TimeSync.initialize(dirClient, 60000, 60000, authString);
-            if(!UUIDResolver.isRunning()){
-                UUIDResolver.start(dirClient,  1000, 1000);
             }
-            ServiceUUID service = new ServiceUUID(address);
-            service.resolve();
-            osdAddr = service.getAddress();
-            UUIDResolver.shutdown();   
-            TimeSync.getInstance().shutdown();
             
-            osdUUID = address;    
-        }      
-        
-        // start cleanUp process
-        osdClient = new OSDClient(600000,sslOptions);
-        RPCResponse<?> response = null;
-        ConcurrentFileMap fileList = null;
-        System.out.println("The OSD will now be checked for 'zombie' files. \n" +
-        		   "Depending on the speed of that OSD this check can take a few minutes...\n");
-        try{
-            Map<String,Map<String,Map<String,String>>> rsp = null;
+            InetSocketAddress osdAddr = null;
+            boolean useSSL = false;
+            String serviceCredsFile = null;
+            String serviceCredsPass = null;
+            String trustedCAsFile = null;
+            String trustedCAsPass = null;
+            SSLOptions sslOptions = null;
+            URL dirURL = options.get("d").urlValue;
+            boolean verbose = options.get("v").switchValue != null;
+            boolean erase = options.get("e").switchValue != null;
+            boolean restore = options.get("r").switchValue != null;
             
-            response = osdClient.cleanUp(osdAddr,authString);
+            // read default settings for the DIR
+            if (dirURL == null) {
+                DefaultDirConfig cfg = new DefaultDirConfig(DEFAULT_DIR_CONFIG);
+                cfg.read();
+                
+                // load SSL options
+                useSSL = cfg.isSslEnabled();
+                serviceCredsFile = cfg.getServiceCredsFile();
+                serviceCredsPass = cfg.getServiceCredsPassphrase();
+                trustedCAsFile = cfg.getTrustedCertsFile();
+                trustedCAsPass = cfg.getTrustedCertsPassphrase();
+                sslOptions = useSSL ? new SSLOptions(serviceCredsFile, serviceCredsPass,
+                    trustedCAsFile, trustedCAsPass) : null;
+                
+                dirClient = new DIRClient(cfg.getDirectoryService(), sslOptions,
+                    RPCClient.DEFAULT_TIMEOUT);
+            } else
+                dirClient = new DIRClient(
+                    new InetSocketAddress(dirURL.getHost(), dirURL.getPort()), null,
+                    RPCClient.DEFAULT_TIMEOUT);
             
-            if (response == null || (rsp = (Map<String, Map<String, Map<String, String>>>) response.get()) == null){
-                osdClient.shutdown();
-                System.out.println("This OSD is clean.");
-                System.exit(0);
+            // read default settings for the OSD
+            String osdUUID = null;
+            String address = arguments.get(0);
+            boolean isUUID = false;
+            if (address.startsWith("uuid:")) {
+                address = address.substring("uuid:".length());
+                isUUID = true;
             }
-            fileList = new ConcurrentFileMap(rsp);
-        }catch (NumberFormatException nfe){
-            osdClient.shutdown();
-            usage();   
-        }catch (IllegalArgumentException ia){  
-            osdClient.shutdown();
-            usage(); 
-        }catch (Exception e){
-            System.out.println("Checking the OSD was not successful. Cause: "+e.getLocalizedMessage());
-            osdClient.shutdown();
-            System.exit(1);
-        }finally{
-            if (response!=null)
-                response.freeBuffers();
-        }
+            
+            // resolve UUID if necessary
+            if (!isUUID) {
+                /*
+                 * URL osdURL; try{ osdURL = new URL(address); }catch
+                 * (MalformedURLException mue){
+                 * System.out.println("The given address could not be resolved!"
+                 * ); return; } osdAddr = new
+                 * InetSocketAddress(osdURL.getHost(), osdURL.getPort());
+                 */
 
-        String empty1 = "                                       |";
-        String empty = "                         |";
-        String question;
-        Long fileSize;
-        String filePreview;
-        
-        // user interaction
-        long totalZombiesSize = 0L;
-        for (List<String> volume : fileList.keySetList()){
-            for (String file : fileList.getFileIDSet(volume)){ 
-                totalZombiesSize += fileList.getFileSize(volume, file);
+                dirClient.shutdown();
+                usage();
+            } else {
+                TimeSync.initialize(dirClient, 60000, 60000, authString);
+                if (!UUIDResolver.isRunning()) {
+                    UUIDResolver.start(dirClient, 1000, 1000);
+                }
+                ServiceUUID service = new ServiceUUID(address);
+                service.resolve();
+                osdAddr = service.getAddress();
+                UUIDResolver.shutdown();
+                // TimeSync.getInstance().shutdown();
+                
+                osdUUID = address;
             }
-        }
-        
-        //validate(fileList);
-        
-        if (fileList != null && fileList.size()!=0){
-            if (fileList.size()==1) System.out.println("There is one zombie on that OSD.");
-            else System.out.println("There are '"+fileList.size()+"' zombies with a total size of "+totalZombiesSize+" bytes on that OSD. ");
-            question = ("Do you want to list "+(fileList.size()==1 ? "it":"them")+"? [y/n]");
-            verbose = (verbose) ? true : !requestUserDecision(question);
-            if (!verbose){
-                System.out.println("VolumeID:FileNumber                    |File size in byte        |Preview");
-            }   
-            for (List<String> volume : fileList.keySetList()){
-                for (String file : fileList.getFileIDSet(volume)){   
-                    Long fileNumber = Long.valueOf(file.substring(file.indexOf(":")+1, file.length()));
-                    
-                    // get the file details
-                    fileSize = fileList.getFileSize(volume,file);
-                    filePreview = fileList.getFilePreview(volume, file);
+            
+            // start cleanUp process
+            osdClient = new OSDClient(600000, sslOptions);
+            RPCResponse<?> response = null;
+            ConcurrentFileMap fileList = null;
+            System.out.println("The OSD will now be checked for 'zombie' files. \n"
+                + "Depending on the speed of that OSD this check can take a few minutes...\n");
+            try {
+                Map<String, Map<String, Map<String, String>>> rsp = null;
+                
+                response = osdClient.cleanUp(osdAddr, authString);
+                
+                if (response == null
+                    || (rsp = (Map<String, Map<String, Map<String, String>>>) response.get()) == null) {
+                    osdClient.shutdown();
+                    System.out.println("This OSD is clean.");
+                    System.exit(0);
+                }
+                fileList = new ConcurrentFileMap(rsp);
+            } catch (NumberFormatException nfe) {
+                osdClient.shutdown();
+                usage();
+            } catch (IllegalArgumentException ia) {
+                osdClient.shutdown();
+                usage();
+            } catch (Exception e) {
+                System.out.println("Checking the OSD was not successful. Cause: "
+                    + e.getLocalizedMessage());
+                e.printStackTrace();
+                osdClient.shutdown();
+                System.exit(1);
+            } finally {
+                if (response != null)
+                    response.freeBuffers();
+            }
+            
+            String empty1 = "                                       |";
+            String empty = "                         |";
+            String question;
+            Long fileSize;
+            String filePreview;
+            
+            // user interaction
+            long totalZombiesSize = 0L;
+            for (List<String> volume : fileList.keySetList()) {
+                for (String file : fileList.getFileIDSet(volume)) {
+                    totalZombiesSize += fileList.getFileSize(volume, file);
+                }
+            }
+            
+            // validate(fileList);
+            
+            if (fileList != null && fileList.size() != 0) {
+                if (fileList.size() == 1)
+                    System.out.println("There is one zombie on that OSD.");
+                else
+                    System.out.println("There are '" + fileList.size()
+                        + "' zombies with a total size of " + totalZombiesSize
+                        + " bytes on that OSD. ");
+                question = ("Do you want to list " + (fileList.size() == 1 ? "it" : "them") + "? [y/n]");
+                verbose = (verbose) ? true : !requestUserDecision(question);
+                if (!verbose) {
+                    System.out
+                            .println("VolumeID:FileNumber                    |File size in byte        |Preview");
+                }
+                for (List<String> volume : fileList.keySetList()) {
+                    for (String file : fileList.getFileIDSet(volume)) {
+                        Long fileNumber = Long.valueOf(file.substring(file.indexOf(":") + 1, file
+                                .length()));
                         
-                    if (!verbose){
-                        String f = file+(volume.get(0).equals("unknown") ? "(unknown)" : "");
-                        String out = f+empty1.substring(f.length(),empty1.length())+
-                                     empty.substring(0, empty.length()-(fileSize.toString().length()+2))+
-                                     fileSize+" |"+filePreview;
+                        // get the file details
+                        fileSize = fileList.getFileSize(volume, file);
+                        filePreview = fileList.getFilePreview(volume, file);
                         
-                        System.out.println(out);
-                    }
-                    if (!volume.get(0).equals("unknown") && !erase){
-                        question = ("Do you want to restore File: '"+file+"'? Otherwise it will be permanently deleted. [y/n]");
-                        if ((restore) ? true : requestUserDecision(question)){
-                            if (mrcClient==null) mrcClient = new MRCClient();
-                            try{
-                                mrcClient.restoreFile(
-                                        new InetSocketAddress(volume.get(1),
-                                                Integer.parseInt(volume.get(2))), 
-                                        DEFAULT_RESTORE_PATH, fileNumber, 
-                                        fileList.getFileSize(volume, file),null, 
-                                        authString,osdUUID,fileList.getObjectSize(volume,file),volume.get(0));
-                            }catch (HttpErrorException he){
-                                System.out.println(file+" could not be restored properly. Cause: "+he.getMessage());
-                            }
-                        }else{
-                            if ((erase) ? true : requestUserDecision("Do you really want to delete that file? [y/n]")){
-                                response = osdClient.cleanUpDelete(osdAddr,authString,file);
-                                try{
-                                    response.waitForResponse(1000);
-                                }catch (HttpErrorException he){
-                                    System.out.println(file+" could not be deleted properly. Cause: "+he.getMessage());
+                        if (!verbose) {
+                            String f = file + (volume.get(0).equals("unknown") ? "(unknown)" : "");
+                            String out = f
+                                + empty1.substring(f.length(), empty1.length())
+                                + empty.substring(0, empty.length()
+                                    - (fileSize.toString().length() + 2)) + fileSize + " |"
+                                + filePreview;
+                            
+                            System.out.println(out);
+                        }
+                        if (!volume.get(0).equals("unknown") && !erase) {
+                            question = ("Do you want to restore File: '" + file + "'? Otherwise it will be permanently deleted. [y/n]");
+                            if ((restore) ? true : requestUserDecision(question)) {
+                                if (mrcClient == null)
+                                    mrcClient = new MRCClient();
+                                try {
+                                    mrcClient.restoreFile(new InetSocketAddress(volume.get(1),
+                                        Integer.parseInt(volume.get(2))), DEFAULT_RESTORE_PATH,
+                                        fileNumber, fileList.getFileSize(volume, file), null,
+                                        authString, osdUUID, fileList.getObjectSize(volume, file),
+                                        volume.get(0));
+                                } catch (HttpErrorException he) {
+                                    System.out.println(file
+                                        + " could not be restored properly. Cause: "
+                                        + he.getMessage());
                                 }
-                                if (response!=null) response.freeBuffers();
+                            } else {
+                                if ((erase) ? true
+                                    : requestUserDecision("Do you really want to delete that file? [y/n]")) {
+                                    response = osdClient.cleanUpDelete(osdAddr, authString, file);
+                                    try {
+                                        response.waitForResponse(1000);
+                                    } catch (HttpErrorException he) {
+                                        System.out.println(file
+                                            + " could not be deleted properly. Cause: "
+                                            + he.getMessage());
+                                    }
+                                    if (response != null)
+                                        response.freeBuffers();
+                                }
+                            }
+                        } else {
+                            if ((erase) ? true
+                                : requestUserDecision("Do you really want to delete that file? [y/n]")) {
+                                response = osdClient.cleanUpDelete(osdAddr, authString, file);
+                                try {
+                                    response.waitForResponse(1000);
+                                } catch (HttpErrorException he) {
+                                    System.out.println(file
+                                        + " could not be deleted properly. Cause: "
+                                        + he.getMessage());
+                                }
+                                if (response != null)
+                                    response.freeBuffers();
                             }
                         }
-                    }else{
-                        if((erase) ? true : requestUserDecision("Do you really want to delete that file? [y/n]")){
-                            response = osdClient.cleanUpDelete(osdAddr,authString,file);
-                            try{
-                                response.waitForResponse(1000);
-                            }catch (HttpErrorException he){
-                                System.out.println(file+" could not be deleted properly. Cause: "+he.getMessage());
-                            }
-                            if (response!=null) response.freeBuffers();
-                        }                    
                     }
                 }
-            }        
-        }else
-            System.out.println("\n There are no zombies on that OSD.");
-        
-        // operation finished
-        osdClient.shutdown();
-        if (mrcClient!=null) mrcClient.shutdown();
-        System.out.println("done.");
-        System.exit(0);
+            } else
+                System.out.println("\n There are no zombies on that OSD.");
+                        
+        } finally {
+            osdClient.shutdown();
+            if (mrcClient != null)
+                mrcClient.shutdown();
+            TimeSync.getInstance().shutdown();
+            System.out.println("done.");
+        }
     }
     
     private static void usage(){

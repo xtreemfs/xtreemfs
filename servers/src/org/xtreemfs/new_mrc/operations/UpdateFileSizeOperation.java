@@ -25,6 +25,7 @@
 package org.xtreemfs.new_mrc.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -131,17 +132,16 @@ public class UpdateFileSizeOperation extends MRCOperation {
             // the current epoch
             if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
                 
+                int time = (int) (TimeSync.getGlobalTime() / 1000);
+                
                 file.setSize(newFileSize);
                 file.setEpoch(epochNo);
+                file.setCtime(time);
+                file.setMtime(time);
                 
                 AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
                 sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
-                
-                // TODO: update POSIX time stamps
-                // // update POSIX timestamps
-                // MRCOpHelper.updateFileTimes(parentId, file,
-                // !master.getConfig().isNoAtime(), false,
-                // true, sMan, update);
+                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
                 
                 update.execute();
             } else

@@ -97,7 +97,7 @@ public class CheckFileListOperation extends MRCOperation {
                         + be.getMessage());
                 }
             
-            rq.setData(ReusableBuffer.wrap(response.getBytes()));
+            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(response).getBytes()));
             finishRequest(rq);
             
         } catch (Exception exc) {
