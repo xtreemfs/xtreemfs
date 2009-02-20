@@ -1,0 +1,24 @@
+module xtreemfs
+{
+  module interfaces
+  {
+    struct AddressMapping
+    {
+      string uuid;
+      int version;
+      string protocol;
+      string address;
+      unsigned short port;
+      string match_network;
+      uint64_t ttl;
+    };
+
+    typedef sequence<AddressMapping> AddressMappingSet;
+
+    interface DIRInterface # 1
+    {
+      void getAddressMappings( string uuid, out AddressMappingSet address_mappings ) # 1;
+      uint64_t getGlobalTime() # 2;
+    };
+  };
+};

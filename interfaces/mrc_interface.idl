@@ -1,0 +1,48 @@
+#include "mrc_osd_types.idl"
+// #include "mrc_interface_event.h"
+// #include "interface_exception_event.h"
+
+
+module xtreemfs
+{
+  module interfaces
+  {
+    interface MRCInterface
+    {
+      boolean access( string path, uint32_t mode );
+      void chmod( string path, uint32_t mode );
+      void chown( string path, string userId, string groupId );
+      void create( string path, uint32_t mode, StripingPolicy striping_policy, boolean open_, out XCap xcap, out XLocSet xlocs );      
+      void getattr( string path, out stat_ stbuf );
+      string getxattr( string path, string name );
+      void mkdir( string path, uint32_t mode );      
+      void mkvol( string volume_name, uint8_t osd_selection_policy, StripingPolicy default_striping_policy, uint8_t access_control_policy, uint8_t partitioning_policy ); 
+      void move( string source_path, string target_path, out XCap xcap, out XLocSet xlocs );
+      //void query( string path, string link_path, out StringSet matching_paths );
+      void link( string target_path, string link_path );
+      void listxattr( string path, out StringSet names );
+      // void lsvol( out VolumeMap local_volumes );
+      void open( string path, uint32_t mode, out XCap xcap, out XLocSet xlocs );            
+      void readdir( string path, out DirectoryEntrySet directory_entries );
+      string readlink( string path );
+      void removexattr( string path, string name );
+      void rmdir( string path );
+      void rmvol( string volume_name );
+      void setattr( string path, stat_ stbuf );
+      void symlink( string target_path, string link_path );      
+      void unlink( string path, out XCap xcap, out XLocSet xlocs );
+      void setxattr( string path, string name, string value, int flags );
+      void statfs( string volume_name, out statfs_ statfsbuf );
+      void updateFileSize( XCap xcap, NewFileSize new_file_size );
+      void utime( string path, uint64_t ctime, uint64_t atime, uint64_t mtime );
+
+      // void getDefaultStripingPolicy( string path, out StripingPolicy policy );
+      //void setACLEntries( string path, ACLEntries entries );
+      //void removeACLEntities( string path, StringSet entities );
+      //uint64_t removeReplica( string fileId, StripingPolicy stripingPolicy, StringSet osdList );      
+      //void renew();
+      //void setDefaultStripingPolicy( string path, StripingPolicy policy );
+      //void setReplicas( string fileId, OSDsByStripingPolicy replicas );
+    };
+  };
+};

@@ -1,0 +1,94 @@
+module xtreemfs
+{
+  module interfaces
+  {
+    const uint8_t STRIPING_POLICY_DEFAULT = 0;
+    const uint8_t STRIPING_POLICY_RAID0 = 1;
+
+    const uint8_t ACCESS_CONTROL_POLICY_NULL = 1;
+    const uint8_t ACCESS_CONTROL_POLICY_POSIX = 2;
+    const uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
+
+    const uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
+
+    const uint8_t PARTITIONING_POLICY_ONE_SLICE_PER_VOLUME = 1;
+
+
+    struct XCap
+    {
+      string file_id;
+      uint32_t access_mode;
+      uint64_t expires;
+      string clientIdentity;
+      uint64_t truncateEpoch;
+      string serverSignature;
+      string __json;
+    };
+
+
+    struct StripingPolicy
+    {
+      uint8_t policy;
+      uint64_t stripe_size;
+      uint64_t width;
+    };
+
+    struct OSDsByStripingPolicy
+    {
+      StripingPolicy striping_policy;
+      StringSet osd_uuids;
+    };
+
+    typedef sequence<OSDsByStripingPolicy> OSDsByStripingPolicySet;
+
+    struct XLocSet
+    {
+      OSDsByStripingPolicySet osds_by_striping_policy;
+      uint64_t version;
+      string repUpdatePolicy;
+      string __json;
+    };
+
+
+    struct stat_
+    {
+      uint32_t mode;
+      uint32_t nlink;
+      uint32_t uid;
+      uint32_t gid;
+      int16_t dev;
+      uint64_t size;
+      uint64_t atime;
+      uint64_t mtime;
+      uint64_t ctime;
+
+      // Win32
+      uint32_t attributes;
+    };
+
+    struct DirectoryEntry
+    {
+      string path;
+      stat_ stbuf;
+      // TODO: put link_target here? and cache it for readlink
+    };
+
+    typedef sequence<DirectoryEntry> DirectoryEntrySet;
+
+    struct statfs_
+    {
+      uint32_t bsize;
+      uint64_t bfree;
+      string fsid;
+      uint32_t namelen;
+    };
+
+
+    struct NewFileSize
+    {
+      uint64_t sizeInBytes;
+      uint64_t epoch;
+      string __json;
+    };
+  };
+};
