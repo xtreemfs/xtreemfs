@@ -2,11 +2,12 @@
 
 import sys, os.path
 
+my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
+
 try: 
     import yidl
 except ImportError:
-    my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
-    yidl_dir_path = os.path.join( my_dir_path, "..", "share", "yidl", "src" )
+    yidl_dir_path = os.path.join( my_dir_path, "..", "share" )
     if not yidl_dir_path in sys.path: sys.path.append( yidl_dir_path )
     import yidl
     
@@ -53,6 +54,7 @@ def _getParentImports( type ):
     
 def _writeGeneratedFile( file_path, file_contents ):
     open( file_path, "w" ).write( file_contents )
+    print "wrote", file_path
 
 
 # The main entry point
@@ -148,7 +150,7 @@ public class ONCRPCRecordFragmentHeader implements Serializable
 
     public int getSize()
     {
-        return Integer.SIZE;
+        return 4;
     }
 
     private int length;
@@ -202,7 +204,7 @@ public class ONCRPCRequestHeader extends ONCRPCRecordFragmentHeader
 
     public int getSize()
     {
-        return super.getSize() + Integer.SIZE * 4;
+        return super.getSize() + 4 * 4;
     }
 
     
@@ -414,7 +416,7 @@ class NumericTypeTraits(PrimitiveTypeTraits):
         if boxed_type == "Integer": boxed_type = "Int"
         return "buf.put%(boxed_type)s( %(identifier)s );" % locals()
         
-    def getSize( self, identifier ): return self.getBoxedType() + ".SIZE"
+    def getSize( self, identifier ): return "( " + self.getBoxedType() + ".SIZE / 8 )"
     def getToString( self, identifier ): return self.getBoxedType() + ".toString( %(identifier)s )" % locals()
 
 
@@ -608,8 +610,27 @@ public class %(type_name)s extends Exception implements Serializable
 }
 """ % locals()
        
-       
-        
 
-if __name__ == "__main__" and len( sys.argv ) >= 2:
-    generateXtreemFSJava( yidl.parseIDL( sys.argv[1] ) )
+if __name__ == "__main__":     
+    src_dir_path = os.path.abspath( os.path.join( my_dir_path, "..", "src" ) )
+    idl_dir_path = os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) )
+
+    os.chdir( src_dir_path )
+    for file_name in os.listdir( idl_dir_path ):
+        if file_name.endswith( "interface.idl" ):
+            file_path = os.path.join( idl_dir_path, file_name )
+            try:
+                parsed_idl = yidl.parseIDL( file_path )
+            except: 
+                print "Error parsing", file_path + ":"
+                import traceback; traceback.print_exc() 
+                print
+                continue
+
+            try:
+                generateXtreemFSJava( parsed_idl )
+                print "Successfully generated code for", file_path
+            except:
+                print "Error generating Java for", file_path + ":"
+                import traceback; traceback.print_exc()
+            print
