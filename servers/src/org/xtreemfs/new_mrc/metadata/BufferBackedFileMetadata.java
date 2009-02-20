@@ -301,10 +301,12 @@ public class BufferBackedFileMetadata implements FileMetadata {
     @Override
     public void setOwnerAndGroup(String owner, String group) {
         
-        BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(0, rcMetadata.getFileName(), owner,
-            group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
-                    .getLinkCount(), rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata
-                    .isReadOnly(), (short) 0);
+        BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata
+                .getFileName(), owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata
+                .getW32Attrs(), rcMetadata.getLinkCount(), (short) 0) : new BufferBackedRCMetadata(
+            0, rcMetadata.getFileName(), owner, group, rcMetadata.getId(), rcMetadata.getPerms(),
+            rcMetadata.getW32Attrs(), rcMetadata.getLinkCount(), rcMetadata.getEpoch(), rcMetadata
+                    .getIssuedEpoch(), rcMetadata.isReadOnly(), (short) 0);
         
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(),
             tmp.getValue());

@@ -284,7 +284,7 @@ public class BabuDBStorageManager implements StorageManager {
             // create metadata
             BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId,
                 fileName, userId, groupId, fileId, atime, ctime, mtime, ref.length(),
-                (short) 0xFFFF, 0, (short) 1, 0, 0, false, collCount);
+                0777, 0, (short) 1, 0, 0, false, collCount);
             
             // create link target (XAttr)
             BufferBackedXAttr lt = new BufferBackedXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME,

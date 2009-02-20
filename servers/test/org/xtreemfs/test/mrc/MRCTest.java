@@ -562,6 +562,7 @@ public class MRCTest extends TestCase {
                 .generateStringList("groupA"));
         final String authString3 = NullAuthProvider.createAuthString("userZZ", MRCClient
                 .generateStringList("groupY"));
+        final String authString4 = NullAuthProvider.createAuthString("root", "root");
         final String noACVolumeName = "noACVol";
         final String volACVolumeName = "volACVol";
         final String posixVolName = "acVol";
@@ -581,7 +582,8 @@ public class MRCTest extends TestCase {
         // test chown
         client.createFile(mrc1Address, noACVolumeName + "/chownTestFile", authString1);
         client.changeOwner(mrc1Address, noACVolumeName + "/chownTestFile", "newUser", "newGroup",
-            authString1);
+            authString4);
+        
         Map<String, Object> stat = client.stat(mrc1Address, noACVolumeName + "/chownTestFile",
             false, false, false, authString3);
         assertEquals("newUser", stat.get("ownerId"));
