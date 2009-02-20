@@ -81,140 +81,6 @@ def _generateXtreemFSJavaInterface( interface ):
     assert interface.uid > 0, "interface "  + interface.qidentifier + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % interface.uid    
     interface_identifier= interface.identifier    
     
-    parent_package = _getPackage( interface.parent )
-    parent_dir_path = _getPackageDirPath( interface.parent )
-    
-    _writeGeneratedFile( os.path.join( parent_dir_path, "Serializable.java" ), """\
-package %(parent_package)s;
-
-import java.nio.ByteBuffer;
-
-
-public interface Serializable
-{
-    public void serialize( ByteBuffer buf );
-    public void deserialize( ByteBuffer buf );
-    public int getSize();
-};   
-""" % locals() )    
-    
-    _writeGeneratedFile( os.path.join( parent_dir_path, "Request.java" ), """\
-package %(parent_package)s;
-
-
-public interface Request extends Serializable
-{
-    Response createDefaultResponse();
-};   
-""" % locals() )    
-
-    _writeGeneratedFile( os.path.join( parent_dir_path, "Response.java" ), """\
-package %(parent_package)s;
-
-
-public interface Response extends Serializable
-{
-};   
-""" % locals() )    
-    
-    _writeGeneratedFile( os.path.join( parent_dir_path, "ONCRPCRecordFragmentHeader.java" ), """\
-package %(parent_package)s;
-
-import java.nio.ByteBuffer;
-
-
-public class ONCRPCRecordFragmentHeader implements Serializable
-{
-    public ONCRPCRecordFragmentHeader()
-    {
-        length = 0;
-        is_last = true;
-    }
-
-    public int getRecordFragmentLength() { return length; }
-    public boolean isLastRecordFragment() { return is_last; }
-    
-    // Serializable
-    public void serialize( ByteBuffer buf )
-    { }
-    
-    public void deserialize( ByteBuffer buf )
-    {
-        int record_fragment_marker = buf.getInt(); 
-        is_last = ( record_fragment_marker << 31 ) != 0;
-        length = record_fragment_marker ^ ( 1 << 31 );
-        System.out.println( "Length " + Integer.toString( length ) );
-        if ( is_last )
-            System.out.println( "Last" );
-    }
-
-    public int getSize()
-    {
-        return 4;
-    }
-
-    private int length;
-    private boolean is_last;
-};
-""" % locals() )    
-    
-    _writeGeneratedFile( os.path.join( parent_dir_path, "ONCRPCRequestHeader.java" ), """\
-package %(parent_package)s;
-
-import java.nio.ByteBuffer;
-
-
-public class ONCRPCRequestHeader extends ONCRPCRecordFragmentHeader
-{    
-    public ONCRPCRequestHeader()
-    {
-        xid = prog = vers = proc = 0;        
-    }
-
-    public int getXID() { return xid; }
-    public int getInterfaceNumber() { return prog - 20000000; }
-    public int getInterfaceVersion() { return vers; }
-    public int getOperationNumber() { return proc; }
-
-    public String toString()
-    {
-        return "ONCRPCRequestHeader( " + Integer.toString( proc ) + " with record fragment size " + Integer.toString( getRecordFragmentLength() ) + " )";
-    }
-        
-    // Serializable    
-    public void deserialize( ByteBuffer buf )
-    {        
-        super.deserialize( buf );
-        xid = buf.getInt();
-        System.out.println( "XID " + Integer.toString( xid ) );
-        int msg_type = buf.getInt();
-        assert msg_type == 0; // CALL    
-        int rpcvers = buf.getInt();
-        System.out.println( "RPC version " + Integer.toString( rpcvers ) );
-        assert rpcvers == 2;
-        prog = buf.getInt();
-        System.out.println( "Prog " + Integer.toString( prog ) );        
-        vers = buf.getInt();
-        System.out.println( "Vers " + Integer.toString( vers ) );        
-        proc = buf.getInt();    
-        System.out.println( "proc " + Integer.toString( proc ) );        
-        buf.getInt(); // cred_auth_flavor
-        buf.getInt(); // verf_auth_flavor
-    }
-
-    public int getSize()
-    {
-        return super.getSize() + 4 * 4;
-    }
-
-    
-    private int xid;
-    private int prog;
-    private int vers;
-    private int proc;    
-}
-""" % locals() )
-
     package, package_dir_path = _makePackageDir( interface )
 
     _generateXtreemFSJavaConstants( interface )
@@ -223,20 +89,25 @@ public class ONCRPCRequestHeader extends ONCRPCRecordFragmentHeader
         _generateXtreemFSJavaType( exception )
 
     request_factories = []
+    response_factories = []
     operation_i = 1   
     for operation in interface.operations:
         assert operation.uid > 0, "operation "  + operation.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % operation.uid
         _generateXtreemFSJavaType( operation, "Request" )
         request_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();" % ( operation_i, operation.name ) )        
         _generateXtreemFSJavaType( operation, "Response" )
+        response_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( operation_i, operation.name ) )                
         operation_i += 1
     request_factories = "\n".join( request_factories )
-    
+    response_factories = "\n".join( response_factories )
+        
     _writeGeneratedFile( os.path.join( package_dir_path, interface.identifier + ".java" ), """\
 package %(package)s;
 
-import %(parent_package)s.Request;
-import %(parent_package)s.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.Request;
+import org.xtreemfs.interfaces.Response;
 
 
 class %(interface_identifier)s
@@ -246,63 +117,32 @@ class %(interface_identifier)s
         return createRequest( header.getOperationNumber() );
     }
 
-    public static Request createRequest( int proc ) throws Exception
+    public static Request createRequest( int uid ) throws Exception
     {
-        switch( proc )
+        switch( uid )
         {
 %(request_factories)s
-            default: throw new Exception( "unknown request number " + Integer.toString( proc ) );
+            default: throw new Exception( "unknown request number " + Integer.toString( uid ) );
         }
     }
-}
-""" % locals() )
-
-    _writeGeneratedFile( os.path.join( package_dir_path, interface.identifier + "_test.java" ), """\
-package %(package)s;
-
-import %(parent_package)s.Request;
-import %(parent_package)s.Response;
-import %(parent_package)s.ONCRPCRequestHeader;
-import %(package)s.%(interface_identifier)s;
-
-import java.nio.ByteBuffer;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-
-public class %(interface_identifier)s_test
-{
-    public static void main( String[] args ) throws Exception
-    {
-        System.out.println( "%(interface_identifier)s_test: waiting for incoming socket connection." );
     
-        ServerSocket server_socket = new ServerSocket( 27095 );
-        
-        Socket peer_socket = server_socket.accept();
-
-        System.out.println( "%(interface_identifier)s_test: accepted incoming socket connection." );
-            
-        byte[] read_bytes = new byte[64 * 1024];
-        int read_len = peer_socket.getInputStream().read( read_bytes );
-        System.out.println( "%(interface_identifier)s_test: read " + Integer.toString( read_len ) + " bytes from the socket " );
-        
-        ByteBuffer read_buf = ByteBuffer.wrap( read_bytes );
-        
-        // Read a request            
-        ONCRPCRequestHeader header = new ONCRPCRequestHeader();
-        header.deserialize( read_buf );
-        Request req = %(interface_identifier)s.createRequest( header );
-        System.out.println( "%(interface_identifier)s_test: got ONC-RPC request header " + header.toString() );        
-        req.deserialize( read_buf );
-        System.out.println( "%(interface_identifier)s_test: got ONC-RPC request " + req.toString() );
-
-        byte[] write_bytes = new byte[64 * 1024];        
-        ByteBuffer write_buf = ByteBuffer.wrap( write_bytes );
-        Response resp = req.createDefaultResponse();
-        resp.serialize( write_buf );
-        peer_socket.getOutputStream().write( write_bytes );        
+    public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
+    {
+        if ( header.getReplyStat() == ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS )
+            return createResponse( header.getXID() );
+        else
+            throw new Exception( "not implemented" );
     }
-};
+
+    public static Response createResponse( int uid ) throws Exception
+    {
+        switch( uid )
+        {
+%(response_factories)s
+            default: throw new Exception( "unknown response number " + Integer.toString( uid ) );
+        }
+    }    
+}
 """ % locals() )
 
         
@@ -577,15 +417,20 @@ public class %(type_name)s implements Serializable
 class OperationTypeTraits(StructTypeTraits):
     def getTypeDef( self, type_name_suffix="Request" ):
         type_name = self.type.name
+        uid = self.type.uid
         if type_name_suffix == "Request":
             params = [param for param in self.type.params if param.in_]            
-            respond = """\
+            type_name_specific_type_def = """\
     // Request
+    public int getOperationNumber() { return %(uid)s; }
     public Response createDefaultResponse() { return new %(type_name)sResponse(); }
 """ % locals()
         elif type_name_suffix == "Response":
             params = [param for param in self.type.params if param.out_]
-            respond = ""
+            type_name_specific_type_def = """\
+    // Response
+    public int getOperationNumber() { return %(uid)s; }    
+""" % locals()
 
         param_type_traits = [( param, getTypeTraits( param.type ) ) for param in params]
         struct_type_def = StructTypeTraits.getStructTypeDef( self, type_name_suffix, params )
@@ -596,7 +441,7 @@ public class %(type_name)s%(type_name_suffix)s implements %(type_name_suffix)s
 {
 %(struct_type_def)s    
 
-%(respond)s
+%(type_name_specific_type_def)s
 }
 """ % locals()
 
