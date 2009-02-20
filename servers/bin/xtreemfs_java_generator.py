@@ -332,15 +332,17 @@ def _generateXtreemFSJavaConstants( module_or_interface ):
     if len( module_or_interface.constants ) > 0:
         constants_package = _getPackage( module_or_interface )
         constant_decls = ( "\n" + INDENT_SPACES ).join( ["public static final " + \
-                                                     getTypeTraits( constant.type ).getDeclarationType() + \
-                                                     constant.identifier                                                     
+                                                     getTypeTraits( constant.type ).getDeclarationType() + " " + \
+                                                     constant.identifier + " = " + \
+                                                     getTypeTraits( constant.type ).getConstantValue( constant.value ) + ";"
                                                      for constant in module_or_interface.constants] )
-        _writeGeneratedFile( os.path.join( _getPackageDirpath( module_or_interface ), "Constants.java" ),"""\
-package %(constants)s package;
+        _writeGeneratedFile( os.path.join( _getPackageDirPath( module_or_interface ), "Constants.java" ),"""\
+package %(constants_package)s;
+
 
 public interface Constants
 {
-    %(constant_decls)s;
+    %(constant_decls)s
 };
 """ % locals() )    
             
@@ -366,10 +368,12 @@ class TypeTraits(dict):
         self.type = type
 
     def getBoxedType( self ): return self.getDeclarationType()
+    def getConstantValue( self, value ): return value
     def getDeclarationType( self ): return self.type.name
 
     
 class StringTypeTraits(TypeTraits):
+    def getConstantValue( self, value ): return "\"%(value)s\""
     def getDeclarationType( self ): return "String"
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = \"\";" % locals()
     def getDeserializer( self, identifier ): return "{ int %(identifier)s_new_length = buf.getInt(); byte[] %(identifier)s_new_bytes = new byte[%(identifier)s_new_length]; buf.get( %(identifier)s_new_bytes ); %(identifier)s = new String( %(identifier)s_new_bytes ); }" % locals()
@@ -617,7 +621,7 @@ if __name__ == "__main__":
 
     os.chdir( src_dir_path )
     for file_name in os.listdir( idl_dir_path ):
-        if file_name.endswith( "interface.idl" ):
+        if file_name.endswith( ".idl" ):
             file_path = os.path.join( idl_dir_path, file_name )
             try:
                 parsed_idl = yidl.parseIDL( file_path )
