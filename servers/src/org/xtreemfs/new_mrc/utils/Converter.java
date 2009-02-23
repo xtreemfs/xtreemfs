@@ -125,7 +125,7 @@ public class Converter {
             Map<String, Object> policyMap = stripingPolicyToMap(replica.getStripingPolicy());
             List<String> osdList = new ArrayList<String>(replica.getOSDCount());
             for (int j = 0; j < replica.getOSDCount(); j++)
-                osdList.add(replica.getOSD(i));
+                osdList.add(replica.getOSD(j));
             
             replicaAsList.add(policyMap);
             replicaAsList.add(osdList);
