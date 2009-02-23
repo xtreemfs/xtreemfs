@@ -5,6 +5,7 @@ import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.Constants;
 
 public class ONCRPCResponseHeader implements Serializable {
 
@@ -57,19 +58,23 @@ public class ONCRPCResponseHeader implements Serializable {
     // Serializable    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt(xid);
+        //message type is REPLY = 1
+        writer.putInt(1);
         writer.putInt(reply_stat);
         writer.putInt(accept_stat);
     }
 
     public void deserialize(ReusableBuffer buf) {
         xid = buf.getInt();
+        int msgType = buf.getInt();
+        assert msgType == 1;
         reply_stat = buf.getInt();
         assert reply_stat == REPLY_STAT_MSG_ACCEPTED;
         accept_stat = buf.getInt();
     }
 
     public int getSize() {
-        return 3 * Integer.SIZE / 8;
+        return 4 * Integer.SIZE / 8;
     }
     private int xid;
 
