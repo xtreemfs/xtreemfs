@@ -221,8 +221,9 @@ class StringTypeTraits(TypeTraits):
     def getConstantValue( self, value ): return "\"%(value)s\""
     def getDeclarationType( self ): return "String"
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = \"\";" % locals()
-    def getDeserializer( self, identifier ): return "{ int %(identifier)s_new_length = buf.getInt(); byte[] %(identifier)s_new_bytes = new byte[%(identifier)s_new_length]; buf.get( %(identifier)s_new_bytes ); %(identifier)s = new String( %(identifier)s_new_bytes ); }" % locals()
-    def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s.length() ); writer.put( %(identifier)s.getBytes() );" % locals()
+    def getDeserializer( self, identifier ): return "{ int %(identifier)s_new_length = buf.getInt(); byte[] %(identifier)s_new_bytes = new byte[%(identifier)s_new_length]; buf.get( %(identifier)s_new_bytes ); %(identifier)s = new String( %(identifier)s_new_bytes ); if (%(identifier)s_new_length %% 4 > 0) {for (int k = 0; k < (4 - (%(identifier)s_new_length %% 4)); k++) { buf.get(); } } }" % locals()
+    #def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s.length() ); writer.put( %(identifier)s.getBytes() );" % locals()
+    def getSerializer( self, identifier ): return "{ final byte[] bytes = %(identifier)s.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length %% 4 > 0) {for (int k = 0; k < (4 - (bytes.length %% 4)); k++) { writer.put((byte)0); } }}" % locals()
     def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
     def getToString( self, identifier ): return '"\\"" + %(identifier)s + "\\""' % locals()
 
