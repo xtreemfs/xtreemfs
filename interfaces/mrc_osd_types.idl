@@ -14,6 +14,9 @@ module xtreemfs
     const uint8_t PARTITIONING_POLICY_ONE_SLICE_PER_VOLUME = 1;
 
 
+    typedef sequence<string> StringSet;
+
+
     struct XCap
     {
       string file_id;
