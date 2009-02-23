@@ -9,11 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.interfaces.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 
 /**
  *

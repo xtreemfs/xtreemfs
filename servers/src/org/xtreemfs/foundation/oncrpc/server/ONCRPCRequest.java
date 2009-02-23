@@ -5,12 +5,11 @@
 
 package org.xtreemfs.foundation.oncrpc.server;
 
-import java.util.List;
-import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.Serializable;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  *
@@ -23,12 +22,6 @@ public class ONCRPCRequest {
     private final ONCRPCRequestHeader requestHeader;
 
     private ONCRPCResponseHeader      responseHeader;
-
-    public static enum RPCResultCode {
-        SUCCESS,
-        INTERNAL_SERVER_ERROR,
-        SYSTEM_ERROR
-    };
 
     public ONCRPCRequest(ONCRPCRecord record) {
         this.record = record;
@@ -66,19 +59,27 @@ public class ONCRPCRequest {
     }
 
     public void sendResponse(ReusableBuffer serializedResponse) {
+        ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
-        responseHeader.serialize(record.getResponseBuffers());
-        record.addResponseBuffer(serializedResponse);
+        responseHeader.serialize(writer);
+        writer.put(serializedResponse);
+        writer.flip();
+        System.out.println(writer);
+        record.setResponseBuffers(writer.getBuffers());
         record.sendResponse();
     }
     
 
     void serializeAndSendRespondse(Serializable response) {
-        responseHeader.serialize(record.getResponseBuffers());
+        ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
+        responseHeader.serialize(writer);
         if (response != null)
-            response.serialize(record.getResponseBuffers());
+            response.serialize(writer);
+        //make ready for sending
+        writer.flip();
+        record.setResponseBuffers(writer.getBuffers());
         record.sendResponse();
     }
 

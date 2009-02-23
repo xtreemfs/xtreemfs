@@ -1,0 +1,57 @@
+package org.xtreemfs.interfaces;
+
+import org.xtreemfs.interfaces.*;
+
+import org.xtreemfs.interfaces.utils.*;
+
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.buffer.BufferPool;
+import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
+
+
+         
+   
+public class NewFileSize implements Serializable
+{
+    public NewFileSize() { sizeInBytes = 0; epoch = 0; __json = ""; }
+    public NewFileSize( long sizeInBytes, long epoch, String __json ) { this.sizeInBytes = sizeInBytes; this.epoch = epoch; this.__json = __json; }
+
+
+    // Object
+    public String toString()
+    {
+        return "NewFileSize( " + Long.toString( sizeInBytes ) + ", " + Long.toString( epoch ) + ", " + "\"" + __json + "\"" + " )";
+    }    
+
+    // Serializable
+    public void serialize(ONCRPCBufferWriter writer) {
+        writer.putLong( sizeInBytes );
+        writer.putLong( epoch );
+        { final byte[] bytes = __json.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+    }
+    
+    public void deserialize( ReusableBuffer buf )
+    {
+        sizeInBytes = buf.getLong();
+        epoch = buf.getLong();
+        { int __json_new_length = buf.getInt(); byte[] __json_new_bytes = new byte[__json_new_length]; buf.get( __json_new_bytes ); __json = new String( __json_new_bytes ); if (__json_new_length % 4 > 0) {for (int k = 0; k < (4 - (__json_new_length % 4)); k++) { buf.get(); } } }    
+    }
+    
+    public int getSize()
+    {
+        int my_size = 0;
+        my_size += ( Long.SIZE / 8 );
+        my_size += ( Long.SIZE / 8 );
+        my_size += 4 + ( __json.length() + 4 - ( __json.length() % 4 ) );
+        return my_size;
+    }
+
+    public long sizeInBytes;
+    public long epoch;
+    public String __json;
+
+}
+

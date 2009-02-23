@@ -1,7 +1,8 @@
-package org.xtreemfs.interfaces;
+package org.xtreemfs.interfaces.utils;
 
 import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 
 public interface Serializable {
@@ -12,7 +13,7 @@ public interface Serializable {
      * for being written (i.e. position = 0 and limit set correctly).
      * @param responseBuffers list
      */
-    public void serialize(List<ReusableBuffer> responseBuffers);
+    public void serialize(ONCRPCBufferWriter writer);
 
     /**
      * Deserialize the message from the buffer. The buffer's

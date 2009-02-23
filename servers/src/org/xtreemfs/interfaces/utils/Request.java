@@ -1,4 +1,4 @@
-package org.xtreemfs.interfaces;
+package org.xtreemfs.interfaces.utils;
 
 
 public interface Request extends Serializable

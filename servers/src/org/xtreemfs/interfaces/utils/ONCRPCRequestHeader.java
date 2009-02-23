@@ -1,9 +1,10 @@
-package org.xtreemfs.interfaces;
+package org.xtreemfs.interfaces.utils;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 public class ONCRPCRequestHeader implements Serializable {
 
@@ -39,18 +40,15 @@ public class ONCRPCRequestHeader implements Serializable {
     }
 
     // Serializable    
-    public void serialize(List<ReusableBuffer> buffers) {
-        ReusableBuffer buf = BufferPool.allocate(this.getSize());
-        buf.putInt(xid);
-        buf.putInt(0); // CALL
-        buf.putInt(2); // RPC version 2
-        buf.putInt(prog);
-        buf.putInt(vers);
-        buf.putInt(proc);
-        buf.putInt(0); // cred_auth_flavor
-        buf.putInt(0); // verf_auth_flavor
-        buf.position(0);
-        buffers.add(buf);
+    public void serialize(ONCRPCBufferWriter writer) {
+        writer.putInt(xid);
+        writer.putInt(0); // CALL
+        writer.putInt(2); // RPC version 2
+        writer.putInt(prog);
+        writer.putInt(vers);
+        writer.putInt(proc);
+        writer.putInt(0); // cred_auth_flavor
+        writer.putInt(0); // verf_auth_flavor
     }
 
     public void deserialize(ReusableBuffer buf) {

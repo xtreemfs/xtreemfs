@@ -1,0 +1,54 @@
+package org.xtreemfs.interfaces.DIRInterface;
+
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.DIRInterface.*;
+
+import org.xtreemfs.interfaces.utils.*;
+
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.buffer.BufferPool;
+import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
+
+
+         
+
+public class getAddressMappingsResponse implements Response
+{
+    public getAddressMappingsResponse() { address_mappings = new org.xtreemfs.interfaces.AddressMappingSet(); }
+    public getAddressMappingsResponse( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
+
+
+    // Object
+    public String toString()
+    {
+        return "getAddressMappingsResponse( " + address_mappings.toString() + " )";
+    }    
+
+    // Serializable
+    public void serialize(ONCRPCBufferWriter writer) {
+        address_mappings.serialize( writer );        
+    }
+    
+    public void deserialize( ReusableBuffer buf )
+    {
+        address_mappings = new org.xtreemfs.interfaces.AddressMappingSet(); address_mappings.deserialize( buf );    
+    }
+    
+    public int getSize()
+    {
+        int my_size = 0;
+        my_size += address_mappings.getSize();
+        return my_size;
+    }
+
+    public AddressMappingSet address_mappings;
+    
+
+    // Response
+    public int getOperationNumber() { return 1; }    
+
+}
+

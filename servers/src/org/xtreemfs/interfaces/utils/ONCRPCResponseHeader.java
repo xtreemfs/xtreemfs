@@ -1,9 +1,10 @@
-package org.xtreemfs.interfaces;
+package org.xtreemfs.interfaces.utils;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 public class ONCRPCResponseHeader implements Serializable {
 
@@ -54,13 +55,10 @@ public class ONCRPCResponseHeader implements Serializable {
     }
 
     // Serializable    
-    public void serialize(List<ReusableBuffer> buffers) {
-        ReusableBuffer buf = BufferPool.allocate(this.getSize());
-        buf.putInt(xid);
-        buf.putInt(reply_stat);
-        buf.putInt(accept_stat);
-        buf.position(0);
-        buffers.add(buf);
+    public void serialize(ONCRPCBufferWriter writer) {
+        writer.putInt(xid);
+        writer.putInt(reply_stat);
+        writer.putInt(accept_stat);
     }
 
     public void deserialize(ReusableBuffer buf) {

@@ -26,8 +26,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
-import org.xtreemfs.interfaces.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 
 /**
  *
@@ -119,6 +118,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * @param request the request
      */
     public void sendResponse(ONCRPCRecord request) {
+        assert(request.getResponseBuffers() != null);
         final ClientConnection connection = request.getConnection();
         if (!connection.isConnectionClosed()) {
             synchronized (connection) {
@@ -237,8 +237,10 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"invalid fragment size ("+fragmentSize+") received, closing connection");
                             }
                             closeConnection(key);
+                            break;
                         }
-
+                        System.out.println("fragHdr "+fragmentHeaderInt);
+                        System.out.println("fragment "+fragmentSize);
                         final ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
 
                         ONCRPCRecord rq = con.getReceive();
@@ -247,11 +249,14 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             con.setReceive(rq);
                         }
                         rq.addNewRequestFragment(fragment);
+                        System.out.println("last fragment: "+lastFragment);
                         rq.setAllFragmentsReceived(lastFragment);
                     }
                 } else {
                     final ONCRPCRecord rq = con.getReceive();
                     final ReusableBuffer fragment = rq.getLastRequestFragment();
+
+                    System.out.println("reading fragment: "+fragment.remaining());
 
                     final int numBytesRead = readData(key, channel, fragment.getBuffer());
                     if (numBytesRead == -1) {

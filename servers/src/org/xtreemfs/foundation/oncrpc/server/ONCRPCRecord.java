@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.ONCRPCResponseHeader;
 
 /**
  *
@@ -41,7 +40,7 @@ public class ONCRPCRecord {
     /**
      * list of buffer that make up the response
      */
-    private final ArrayList<ReusableBuffer>  responseBuffers;
+    private List<ReusableBuffer>  responseBuffers;
 
     /**
      * fragment which is currently sent
@@ -58,7 +57,6 @@ public class ONCRPCRecord {
         this.server = server;
         this.connection = connection;
         this.requestFragments = new ArrayList(RPCNIOSocketServer.MAX_FRAGMENTS);
-        this.responseBuffers = new ArrayList(RPCNIOSocketServer.MAX_FRAGMENTS);
     }
 
     /**
@@ -103,7 +101,7 @@ public class ONCRPCRecord {
     int getResponseSize() {
         int size = 0;
         for (ReusableBuffer buf : responseBuffers) {
-            size += buf.capacity();
+            size += buf.remaining();
         }
         return size;
     }
@@ -157,10 +155,12 @@ public class ONCRPCRecord {
      * Free all response fragment buffers
      */
     public void freeResponseBuffers() {
-        for (ReusableBuffer fragment : responseBuffers) {
-            BufferPool.free(fragment);
+        if (responseBuffers != null) {
+            for (ReusableBuffer fragment : responseBuffers) {
+                BufferPool.free(fragment);
+            }
+            responseBuffers.clear();
         }
-        responseBuffers.clear();
     }
 
     /**
@@ -202,6 +202,10 @@ public class ONCRPCRecord {
 
     List<ReusableBuffer> getResponseBuffers() {
         return this.responseBuffers;
+    }
+
+    void setResponseBuffers(List<ReusableBuffer> responseBuffers) {
+        this.responseBuffers = responseBuffers;
     }
 
 }
