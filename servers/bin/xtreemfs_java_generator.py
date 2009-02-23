@@ -104,10 +104,10 @@ def _generateXtreemFSJavaInterface( interface ):
     _writeGeneratedFile( os.path.join( package_dir_path, interface.identifier + ".java" ), """\
 package %(package)s;
 
-import org.xtreemfs.interfaces.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.Request;
-import org.xtreemfs.interfaces.Response;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.Request;
+import org.xtreemfs.interfaces.utils.Response;
 
 
 class %(interface_identifier)s
@@ -159,7 +159,12 @@ package %(type_package)s;
 
 %(parent_imports)s
 
-import java.nio.ByteBuffer;
+import org.xtreemfs.interfaces.utils.*;
+
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.buffer.BufferPool;
+import java.util.List;
 import java.util.Iterator;
 import java.util.ArrayList;
 
@@ -217,7 +222,7 @@ class StringTypeTraits(TypeTraits):
     def getDeclarationType( self ): return "String"
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = \"\";" % locals()
     def getDeserializer( self, identifier ): return "{ int %(identifier)s_new_length = buf.getInt(); byte[] %(identifier)s_new_bytes = new byte[%(identifier)s_new_length]; buf.get( %(identifier)s_new_bytes ); %(identifier)s = new String( %(identifier)s_new_bytes ); }" % locals()
-    def getSerializer( self, identifier ): return "buf.putInt( %(identifier)s.length() ); buf.put( %(identifier)s.getBytes() );" % locals()
+    def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s.length() ); writer.put( %(identifier)s.getBytes() );" % locals()
     def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
     def getToString( self, identifier ): return '"\\"" + %(identifier)s + "\\""' % locals()
 
@@ -230,7 +235,7 @@ class BoolTypeTraits(PrimitiveTypeTraits):
     def getDeclarationType( self ): return "boolean"
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = false;" % locals(0)
     def getDeserializer( self, identifier ): return "%(identifier)s = buf.getInt() != 0;"
-    def getSerializer( self, identifier ): return "buf.putInt( %(identifier)s ? 1 : 0 );" % locals()
+    def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
     def getSize( self, identifier ): return "4"
     def getToString( self, identifier ): return "Boolean.toString( %(identifier)s )" % locals()
 
@@ -258,7 +263,7 @@ class NumericTypeTraits(PrimitiveTypeTraits):
     def getSerializer( self, identifier ):
         boxed_type= self.getBoxedType()
         if boxed_type == "Integer": boxed_type = "Int"
-        return "buf.put%(boxed_type)s( %(identifier)s );" % locals()
+        return "writer.put%(boxed_type)s( %(identifier)s );" % locals()
         
     def getSize( self, identifier ): return "( " + self.getBoxedType() + ".SIZE / 8 )"
     def getToString( self, identifier ): return self.getBoxedType() + ".toString( %(identifier)s )" % locals()
@@ -271,7 +276,7 @@ class CompoundTypeTraits(TypeTraits):
         
     def getDefaultInitializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s();" % locals()    
     def getDeserializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s(); %(identifier)s.deserialize( buf );" % locals()
-    def getSerializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s.serialize( buf );" % locals()
+    def getSerializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s.serialize( writer );" % locals()
     def getSize( self, identifier ): return "%(identifier)s.getSize()" % locals()
     def getToString( self, identifier ): return "%(identifier)s.toString()" % locals()
     
@@ -288,9 +293,8 @@ class SequenceTypeTraits(CompoundTypeTraits):
         return """\
 public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
 {    
-    public void serialize( ByteBuffer buf )
-    {
-        buf.putInt( size() );
+    public void serialize(ONCRPCBufferWriter writer) {
+        writer.putInt( size() );
         for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
         {
             %(value_boxed_type)s next_value = i.next();        
@@ -298,8 +302,7 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
         }
     }
 
-    public void deserialize( ByteBuffer buf )
-    {
+    public void deserialize( ReusableBuffer buf ) {
         int new_size = buf.getInt();
         for ( int i = 0; i < new_size; i++ )
         {
@@ -308,11 +311,9 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
         }
     }
     
-    public int getSize()
-    {
-        int my_size= 0;
-        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
-        {
+    public int getSize() {
+        int my_size = Integer.SIZE/8;
+        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); ) {
             %(value_boxed_type)s next_value = i.next();
             my_size += %(next_value_size)s;
         }
@@ -327,6 +328,7 @@ class StructTypeTraits(CompoundTypeTraits):
         type_name = self.type.name
         struct_type_def = self.getStructTypeDef()
         return """\
+   
 public class %(type_name)s implements Serializable
 {
 %(struct_type_def)s
@@ -358,12 +360,11 @@ public class %(type_name)s implements Serializable
     }    
 
     // Serializable
-    public void serialize( ByteBuffer buf )
-    {
+    public void serialize(ONCRPCBufferWriter writer) {
 %(member_serializers)s        
     }
     
-    public void deserialize( ByteBuffer buf )
+    public void deserialize( ReusableBuffer buf )
     {
 %(member_deserializers)s    
     }
