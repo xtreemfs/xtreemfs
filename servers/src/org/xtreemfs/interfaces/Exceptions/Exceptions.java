@@ -14,7 +14,6 @@ public class Exceptions
     {
         if ( exception_type_name == "ProtocolException" ) return new ProtocolException();
         else if ( exception_type_name == "errnoException" ) return new errnoException();
-        else if ( exception_type_name == "RedirectException" ) return new RedirectException();
         else throw new Exception( "unknown exception type " + exception_type_name );
     }
 }

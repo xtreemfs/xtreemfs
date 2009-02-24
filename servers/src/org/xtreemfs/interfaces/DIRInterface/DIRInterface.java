@@ -15,7 +15,7 @@ public class DIRInterface
         {
                 case 1: return new getAddressMappingsRequest();
                 case 2: return new getGlobalTimeRequest();
-            default: throw new Exception( "unknown request number " + Integer.toString( uid ) );
+            default: throw new Exception( "unknown request number ") ;
         }
     }
             
@@ -29,14 +29,12 @@ public class DIRInterface
                 {
                 case 1: return new getAddressMappingsResponse();
                 case 2: return new getGlobalTimeResponse();
-                default: throw new Exception( "unknown response number " + Integer.toString( uid ) );
+                default: throw new Exception( "unknown response number ");
                 }
             }
-            break;
             
             default: throw new Exception( "not implemented" );
         }
-        else
     }    
-}
+
 }
