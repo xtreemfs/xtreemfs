@@ -42,11 +42,11 @@ public class OSDsByStripingPolicy implements org.xtreemfs.interfaces.utils.Seria
         osd_uuids = new org.xtreemfs.interfaces.StringSet(); osd_uuids.deserialize( buf );    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
-        my_size += striping_policy.getSize();
-        my_size += osd_uuids.getSize();
+        my_size += striping_policy.calculateSize();
+        my_size += osd_uuids.calculateSize();
         return my_size;
     }
 

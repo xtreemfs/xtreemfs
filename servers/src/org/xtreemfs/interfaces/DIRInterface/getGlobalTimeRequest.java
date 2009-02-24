@@ -37,7 +37,7 @@ public class getGlobalTimeRequest implements Request
     
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
 

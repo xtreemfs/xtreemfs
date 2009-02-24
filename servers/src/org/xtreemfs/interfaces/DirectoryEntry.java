@@ -42,11 +42,11 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
         stbuf = new org.xtreemfs.interfaces.stat_(); stbuf.deserialize( buf );    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
-        my_size += stbuf.getSize();
+        my_size += stbuf.calculateSize();
         return my_size;
     }
 

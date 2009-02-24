@@ -33,7 +33,7 @@ public class StringSet extends ArrayList<String>
         }
     }
     
-    public int getSize() {
+    public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<String> i = iterator(); i.hasNext(); ) {
             String next_value = i.next();

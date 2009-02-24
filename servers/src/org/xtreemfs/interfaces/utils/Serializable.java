@@ -26,5 +26,5 @@ public interface Serializable {
      * Returns the size of this message in bytes.
      * @return
      */
-    public int getSize();
+    public int calculateSize();
 };   

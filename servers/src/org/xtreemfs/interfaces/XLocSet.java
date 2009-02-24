@@ -50,10 +50,10 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
         { int __json_new_length = buf.getInt(); byte[] __json_new_bytes = new byte[__json_new_length]; buf.get( __json_new_bytes ); __json = new String( __json_new_bytes ); if (__json_new_length % 4 > 0) {for (int k = 0; k < (4 - (__json_new_length % 4)); k++) { buf.get(); } } }    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
-        my_size += osds_by_striping_policy.getSize();
+        my_size += osds_by_striping_policy.calculateSize();
         my_size += ( Long.SIZE / 8 );
         my_size += 4 + ( repUpdatePolicy.length() + 4 - ( repUpdatePolicy.length() % 4 ) );
         my_size += 4 + ( __json.length() + 4 - ( __json.length() % 4 ) );

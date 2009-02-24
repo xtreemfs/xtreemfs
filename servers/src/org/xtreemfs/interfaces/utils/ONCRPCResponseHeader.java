@@ -83,8 +83,8 @@ public class ONCRPCResponseHeader implements Serializable {
         accept_stat = buf.getInt();
     }
 
-    public int getSize() {
-        return 4 * Integer.SIZE / 8;
+    public int calculateSize() {
+        return 6 * Integer.SIZE / 8;
     }
     private int xid;
 

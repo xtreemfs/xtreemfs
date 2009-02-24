@@ -202,11 +202,11 @@ public final class ReusableBuffer {
     /** Returns the byte array of the buffer, creating a copy if the buffer is not backed by an array
      *  @return a byte array with a copy of the data
      */
-    public byte [] array() {
+    public byte[] array() {
         assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
-        byte [] array;
+        byte[] array = null;
 
-        if (this.hasArray()) {
+        if (this.hasArray() && (this.viewParent == null)) {
             array = buffer.array();
         } else {
             array = new byte[this.limit()];
@@ -445,6 +445,7 @@ public final class ReusableBuffer {
         assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
         return buffer.getShort();
     }
+
 
     /** @see java.nio.ByteBuffer#isDirect
      */

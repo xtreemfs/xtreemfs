@@ -6,7 +6,7 @@ import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
 
 
-class DIRInterface
+public class DIRInterface
 {
     public static int getVersion() { return 1; }
 

@@ -74,7 +74,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         attributes = buf.getInt();    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );

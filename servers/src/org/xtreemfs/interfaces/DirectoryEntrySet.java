@@ -33,11 +33,11 @@ public class DirectoryEntrySet extends ArrayList<DirectoryEntry>
         }
     }
     
-    public int getSize() {
+    public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<DirectoryEntry> i = iterator(); i.hasNext(); ) {
             DirectoryEntry next_value = i.next();
-            my_size += next_value.getSize();
+            my_size += next_value.calculateSize();
         }
         return my_size;
     }

@@ -33,11 +33,11 @@ public class OSDsByStripingPolicySet extends ArrayList<OSDsByStripingPolicy>
         }
     }
     
-    public int getSize() {
+    public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<OSDsByStripingPolicy> i = iterator(); i.hasNext(); ) {
             OSDsByStripingPolicy next_value = i.next();
-            my_size += next_value.getSize();
+            my_size += next_value.calculateSize();
         }
         return my_size;
     }

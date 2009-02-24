@@ -62,7 +62,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         ttl = buf.getInt();    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );

@@ -48,7 +48,9 @@ public class ONCRPCRequestHeader implements Serializable {
         writer.putInt(vers);
         writer.putInt(proc);
         writer.putInt(0); // cred_auth_flavor
+        writer.putInt(0); // cred auth opaque data
         writer.putInt(0); // verf_auth_flavor
+        writer.putInt(0); // verf auth opaque data
     }
 
     public void deserialize(ReusableBuffer buf) {
@@ -66,11 +68,13 @@ public class ONCRPCRequestHeader implements Serializable {
         proc = buf.getInt();
 //        System.out.println( "proc " + Integer.toString( proc ) );        
         buf.getInt(); // cred_auth_flavor
+        buf.getInt(); // cred auth opaque data
         buf.getInt(); // verf_auth_flavor
+        buf.getInt(); // verf auth opaque data
     }
 
-    public int getSize() {
-        return 8 * Integer.SIZE/8;
+    public int calculateSize() {
+        return 10 * Integer.SIZE/8;
     }
     private int xid;
 

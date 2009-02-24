@@ -39,10 +39,10 @@ public class getAddressMappingsResponse implements Response
         address_mappings = new org.xtreemfs.interfaces.AddressMappingSet(); address_mappings.deserialize( buf );    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
-        my_size += address_mappings.getSize();
+        my_size += address_mappings.calculateSize();
         return my_size;
     }
 

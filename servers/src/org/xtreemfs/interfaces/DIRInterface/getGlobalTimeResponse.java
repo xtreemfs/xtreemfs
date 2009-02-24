@@ -39,7 +39,7 @@ public class getGlobalTimeResponse implements Response
         returnValue = buf.getLong();    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += ( Long.SIZE / 8 );

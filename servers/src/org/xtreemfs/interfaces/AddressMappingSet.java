@@ -33,11 +33,11 @@ public class AddressMappingSet extends ArrayList<AddressMapping>
         }
     }
     
-    public int getSize() {
+    public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); ) {
             AddressMapping next_value = i.next();
-            my_size += next_value.getSize();
+            my_size += next_value.calculateSize();
         }
         return my_size;
     }

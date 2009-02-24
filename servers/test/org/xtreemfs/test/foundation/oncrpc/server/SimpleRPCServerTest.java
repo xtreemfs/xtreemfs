@@ -98,7 +98,7 @@ public class SimpleRPCServerTest {
         ONCRPCRequestHeader rqHdr = new ONCRPCRequestHeader(1, 2, 3, 4);
 
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(5+rqHdr.getSize(), true);
+        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(5+rqHdr.calculateSize(), true);
         System.out.println("fragHdr is "+fragHdr);
         System.out.println("fragment size is "+(fragHdr ^ (1 << 31)));
         writer.putInt(fragHdr);
@@ -116,15 +116,13 @@ public class SimpleRPCServerTest {
         Iterator<ReusableBuffer> bufs = writer.getBuffers().iterator();
         while (bufs.hasNext()) {
             final ReusableBuffer buf = bufs.next();
-            while (buf.hasRemaining()) {
-                out.write(buf.get());
-            }
+            out.write(buf.array());
         }
 
         ONCRPCResponseHeader rhdr = new ONCRPCResponseHeader();
-        final ReusableBuffer buf = BufferPool.allocate(4+rhdr.getSize()+5);
+        final ReusableBuffer buf = BufferPool.allocate(4+rhdr.calculateSize()+5);
         buf.position(0);
-        for (int i = 0; i < 4+rhdr.getSize()+5; i++) {
+        for (int i = 0; i < 4+rhdr.calculateSize()+5; i++) {
             final int dataByte = in.read();
             assertTrue(dataByte != -1);
             buf.put((byte)dataByte);
@@ -134,7 +132,7 @@ public class SimpleRPCServerTest {
         final int respFragHdr = buf.getInt();
         final int fragmentSize = ONCRPCRecordFragmentHeader.getFragmentLength(respFragHdr);
         final boolean isLastFrag = ONCRPCRecordFragmentHeader.isLastFragment(respFragHdr);
-        assertEquals(fragmentSize,5+rhdr.getSize());
+        assertEquals(fragmentSize,5+rhdr.calculateSize());
         assertTrue(isLastFrag);
 
         rhdr.deserialize(buf);
@@ -171,12 +169,12 @@ public class SimpleRPCServerTest {
 
                     getAddressMappingsResponse rpcResponse = new getAddressMappingsResponse();
 
-                    if (rpcRequest.uuid.equalsIgnoreCase("Yagga")) {
-                        rpcResponse.address_mappings.add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
-                        System.out.println("response size is "+rpcResponse.getSize());
+                    if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
+                        rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
+                        System.out.println("response size is "+rpcResponse.calculateSize());
                         rq.sendResponse(rpcResponse);
                     } else {
-                        rq.sendGarbageArgsError();
+                        rq.sendGarbageArgs(null);
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -194,14 +192,14 @@ public class SimpleRPCServerTest {
         OutputStream out = sock.getOutputStream();
         InputStream in = sock.getInputStream();
 
-        ONCRPCRequestHeader rqHdr = new ONCRPCRequestHeader(1, 2, 3, 4);
+        ONCRPCRequestHeader rqHdr = new ONCRPCRequestHeader(1, 20000000+1, 2, 4);
 
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         
         getAddressMappingsRequest rq = new getAddressMappingsRequest("Yagga");
 
-        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.getSize()+rq.getSize(), true);
-        System.out.println("fragment size is "+fragHdr+"/"+(rqHdr.getSize()+rq.getSize()));
+        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.calculateSize()+rq.calculateSize(), true);
+        System.out.println("fragment size is "+fragHdr+"/"+(rqHdr.calculateSize()+rq.calculateSize()));
         System.out.println("fragment size is "+(fragHdr ^ (1 << 31)));
         writer.putInt(fragHdr);
         rqHdr.serialize(writer);
@@ -256,8 +254,8 @@ public class SimpleRPCServerTest {
 
         getAddressMappingsResponse resp = new getAddressMappingsResponse();
         resp.deserialize(buf);
-        assertNotNull(resp.address_mappings.get(0));
-        assertEquals(resp.address_mappings.get(0).address,"localhost");
+        assertNotNull(resp.getAddress_mappings().get(0));
+        assertEquals(resp.getAddress_mappings().get(0).getAddress(),"localhost");
 
         System.out.println("everything ok!");
 

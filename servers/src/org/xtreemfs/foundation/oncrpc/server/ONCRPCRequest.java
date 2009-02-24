@@ -7,6 +7,8 @@ package org.xtreemfs.foundation.oncrpc.server;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
@@ -44,18 +46,25 @@ public class ONCRPCRequest {
         serializeAndSendRespondse(response);
     }
 
-    public void sendError(Serializable response) {
-        assert (responseHeader == null) : "response already sent";
-        responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
-                ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
-        serializeAndSendRespondse(response);
-    }
-
-    public void sendGarbageArgsError() {
+    public void sendGarbageArgs(errnoException exception) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        serializeAndSendRespondse(null);
+        serializeAndSendRespondse(exception);
+    }
+    
+    public void sendInternalServerError(errnoException exception) {
+        assert (responseHeader == null) : "response already sent";
+        responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
+                ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
+        serializeAndSendRespondse(exception);
+    }
+
+    public void sendProtocolException(ProtocolException exception) {
+        assert (responseHeader == null) : "response already sent";
+        responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
+                exception.getAccept_stat());
+        serializeAndSendRespondse(exception);
     }
 
     public void sendResponse(ReusableBuffer serializedResponse) {
@@ -81,6 +90,10 @@ public class ONCRPCRequest {
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
         record.sendResponse();
+    }
+
+    public ONCRPCRequestHeader getRequestHeader() {
+        return this.requestHeader;
     }
 
 

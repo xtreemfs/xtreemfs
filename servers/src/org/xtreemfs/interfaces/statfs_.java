@@ -50,7 +50,7 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
         namelen = buf.getInt();    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );

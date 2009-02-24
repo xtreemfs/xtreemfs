@@ -46,7 +46,7 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
         width = buf.getLong();    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );

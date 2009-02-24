@@ -64,6 +64,10 @@ public class ONCRPCBufferWriter {
         checkAndGetBuffer(Byte.SIZE/8*data.length).put(data);
     }
 
+    public void putShort(short data) {
+        checkAndGetBuffer(Short.SIZE/8).putShort(data);
+    }
+
     public void putInt(int data) {
         checkAndGetBuffer(Integer.SIZE/8).putInt(data);
     }
