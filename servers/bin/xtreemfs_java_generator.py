@@ -248,10 +248,10 @@ class NumericTypeTraits(PrimitiveTypeTraits):
     
     def getDeclarationType( self ):
         if self.type.name == "float" or self.type.name == "double": return self.type.name
-        elif self.type.name.endswith( "int8" ): return "byte"
-        elif self.type.name.endswith( "int16" ): return "short"
-        elif self.type.name.endswith( "int32" ): return "int"
-        elif self.type.name.endswith( "int64" ): return "long"
+        elif self.type.name.endswith( "int8_t" ): return "int"
+        elif self.type.name.endswith( "int16_t" ): return "int"
+        elif self.type.name.endswith( "int32_t" ): return "int"
+        elif self.type.name.endswith( "int64_t" ): return "long"
         else: return "long" # mode_t, etc.
 
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = 0;" % locals()
