@@ -41,6 +41,8 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::XCap"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         { final byte[] bytes = file_id.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
         writer.putInt( access_mode );

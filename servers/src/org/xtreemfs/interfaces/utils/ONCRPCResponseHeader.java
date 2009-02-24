@@ -53,9 +53,11 @@ public class ONCRPCResponseHeader implements Serializable {
 
     public int getReplyStat() {
         return reply_stat;
-    }
-
+    }    
+    
     // Serializable    
+    public String getTypeName() { return "xtreemfs::interfaces::ONCRPCResponseHeader"; }
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt(xid);
         //message type is REPLY = 1

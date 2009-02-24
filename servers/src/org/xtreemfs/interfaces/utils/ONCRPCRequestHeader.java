@@ -40,6 +40,8 @@ public class ONCRPCRequestHeader implements Serializable {
     }
 
     // Serializable    
+    public String getTypeName() { return "xtreemfs::interfaces::ONCRPCRequestHeader"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt(xid);
         writer.putInt(0); // CALL

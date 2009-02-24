@@ -33,6 +33,8 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::StripingPolicy"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( policy );
         writer.putLong( stripe_size );

@@ -35,6 +35,8 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::XLocSet"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         osds_by_striping_policy.serialize( writer );
         writer.putLong( version );

@@ -5,7 +5,12 @@ import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 
 public interface Serializable {
-
+    /**
+     * Gets the IDL module[::interface]::type_name for this Serializable type
+     * @return
+     */
+    public String getTypeName();
+    
     /**
      * Serializes the message into one or more buffers and appends
      * them to the responseBuffers list. The buffers must be ready

@@ -30,6 +30,8 @@ public class getGlobalTimeResponse implements Response
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getGlobalTimeResponse"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putLong( returnValue );        
     }

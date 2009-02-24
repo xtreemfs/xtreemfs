@@ -15,6 +15,9 @@ import java.util.ArrayList;
          
 public class DirectoryEntrySet extends ArrayList<DirectoryEntry>
 {    
+    // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::DirectoryEntrySet"; }
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( size() );
         for ( Iterator<DirectoryEntry> i = iterator(); i.hasNext(); )

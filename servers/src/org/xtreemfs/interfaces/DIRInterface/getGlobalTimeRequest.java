@@ -28,6 +28,8 @@ public class getGlobalTimeRequest implements Request
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getGlobalTimeRequest"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         
     }

@@ -31,6 +31,8 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::DirectoryEntry"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         { final byte[] bytes = path.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
         stbuf.serialize( writer );        

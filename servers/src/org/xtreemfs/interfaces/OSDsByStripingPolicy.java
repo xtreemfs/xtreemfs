@@ -31,6 +31,8 @@ public class OSDsByStripingPolicy implements org.xtreemfs.interfaces.utils.Seria
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::OSDsByStripingPolicy"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         striping_policy.serialize( writer );
         osd_uuids.serialize( writer );        

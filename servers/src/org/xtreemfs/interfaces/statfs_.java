@@ -35,6 +35,8 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::statfs_"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( bsize );
         writer.putLong( bfree );

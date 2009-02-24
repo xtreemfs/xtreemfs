@@ -33,6 +33,8 @@ public class ProtocolException extends Exception implements org.xtreemfs.interfa
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::Exceptions::ProtocolException"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( accept_stat );
         writer.putInt( error_code );

@@ -31,6 +31,8 @@ public class errnoException extends Exception implements org.xtreemfs.interfaces
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::Exceptions::errnoException"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( error_code );
         { final byte[] bytes = stack_trace.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        

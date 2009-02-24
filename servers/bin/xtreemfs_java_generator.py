@@ -94,6 +94,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
+import org.xtreemfs.interfaces.Exceptions.*;
 
 
 public class %(interface_identifier)s
@@ -107,20 +108,20 @@ public class %(interface_identifier)s
         for operation in interface.operations:
             assert operation.uid > 0, "operation "  + operation.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % operation.uid
             _generateXtreemFSJavaType( operation, "Request" )
-            request_factories.append( ( INDENT_SPACES * 4 ) + "case %i: return new %sRequest();" % ( operation.uid, operation.name ) )        
+            request_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();" % ( operation.uid, operation.name ) )        
             if not operation.oneway:
                 _generateXtreemFSJavaType( operation, "Response" )
-                response_factories.append( ( INDENT_SPACES * 4 ) + "case %i: return new %sResponse();" % ( operation.uid, operation.name ) )                
+                response_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( operation.uid, operation.name ) )                
         request_factories = "\n".join( request_factories )
         response_factories = "\n".join( response_factories )
         
-        out += """\
+        out += """
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         switch( header.getOperationNumber() )
         {
 %(request_factories)s
-            default: throw new Exception( "unknown request number " + Integer.toString( uid ) );
+            default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
         }
     }
 """ % locals()
@@ -129,23 +130,12 @@ public class %(interface_identifier)s
             out += """            
     public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
     {
-        switch ( header.getAcceptStat() )
+        switch( header.getXID() )
         {
-            case ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS:
-            {            
-                switch( header.getXID() )
-                {
 %(response_factories)s
-                default: throw new Exception( "unknown response number " + Integer.toString( uid ) );
-                }
-            }
-            break;
-            
-            default: throw new Exception( "not implemented" );
+            default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
-        else
     }    
-}
 """ % locals()
 
     if len( interface.exceptions ) > 0:
@@ -153,7 +143,7 @@ public class %(interface_identifier)s
         for exception in interface.exceptions:
 #            assert operation.uid > 0, "operation "  + operation.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % operation.uid
             _generateXtreemFSJavaType( exception )
-            exception_factories.append( "if ( exception_type_name == \"%s\" ) return new %s();" % ( exception.name, exception.name ) )
+            exception_factories.append( "if ( exception_type_name == \"%s\" ) return new %s();" % ( exception.qname, exception.name ) )
         exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
         out += """
     public static Exception createException( String exception_type_name ) throws Exception
@@ -311,6 +301,7 @@ class CompoundTypeTraits(TypeTraits):
 class SequenceTypeTraits(CompoundTypeTraits):
     def getTypeDef( self ):
         type_name = self.type.name
+        type_qname = self.type.qname
         value_type_traits = getTypeTraits( self.type.value_type )
         value_declaration_type = value_type_traits.getDeclarationType()
         value_boxed_type = value_type_traits.getBoxedType()
@@ -320,6 +311,9 @@ class SequenceTypeTraits(CompoundTypeTraits):
         return """\
 public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
 {    
+    // Serializable
+    public String getTypeName() { return "%(type_qname)s"; }
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( size() );
         for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
@@ -365,6 +359,7 @@ public class %(type_name)s implements org.xtreemfs.interfaces.utils.Serializable
     def getStructTypeDef( self, type_name_suffix="", members=None ):        
         if members is None: members = self.type.members
         type_name = self.type.name
+        type_qname = self.type.qname
         constructors = self.getConstructors( type_name_suffix, members )
         member_accessors = self.getMemberAccessors( members )
         member_tostrings = self.getMemberToStrings( members )
@@ -389,6 +384,8 @@ public class %(type_name)s implements org.xtreemfs.interfaces.utils.Serializable
     }    
 
     // Serializable
+    public String getTypeName() { return "%(type_qname)s%(type_name_suffix)s"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
 %(member_serializers)s        
     }

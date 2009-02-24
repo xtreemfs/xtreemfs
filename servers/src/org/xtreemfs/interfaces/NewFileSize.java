@@ -33,6 +33,8 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::NewFileSize"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putLong( sizeInBytes );
         writer.putLong( epoch );

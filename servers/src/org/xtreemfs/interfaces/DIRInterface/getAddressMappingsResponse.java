@@ -30,6 +30,8 @@ public class getAddressMappingsResponse implements Response
     }    
 
     // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getAddressMappingsResponse"; }    
+    
     public void serialize(ONCRPCBufferWriter writer) {
         address_mappings.serialize( writer );        
     }

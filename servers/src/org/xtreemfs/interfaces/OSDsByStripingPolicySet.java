@@ -15,6 +15,9 @@ import java.util.ArrayList;
          
 public class OSDsByStripingPolicySet extends ArrayList<OSDsByStripingPolicy>
 {    
+    // Serializable
+    public String getTypeName() { return "xtreemfs::interfaces::OSDsByStripingPolicySet"; }
+    
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( size() );
         for ( Iterator<OSDsByStripingPolicy> i = iterator(); i.hasNext(); )
