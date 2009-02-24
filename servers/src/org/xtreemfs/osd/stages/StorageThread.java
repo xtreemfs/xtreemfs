@@ -100,6 +100,8 @@ public class StorageThread extends Stage {
 
     public static final int   STAGEOP_LOCAL_READ_OBJECT_GMAX_FETCHED = 12;
 
+    public static final int   STAGEOP_WRITE_FILESIZE           = 13;
+
     private MetadataCache     cache;
 
     private StorageLayout     layout;
@@ -172,7 +174,11 @@ public class StorageThread extends Stage {
                 processLocalReadGmaxFetched(method);
                 methodExecutionSuccess(method, StageResponseCode.OK);
                 break;
-            }
+            case STAGEOP_WRITE_FILESIZE:
+                processWriteFilesize(method);
+                methodExecutionSuccess(method, StageResponseCode.OK);
+                break;
+        }
 
         } catch (OSDException exc) {
             methodExecutionFailed(method, exc.getErrorRecord());
@@ -403,7 +409,8 @@ public class StorageThread extends Stage {
 	method.getRq().setData(data, HTTPUtils.DATA_TYPE.BINARY);
 
         // striped case and file does exist (at least one object exists)
-	if (sp.getWidth() > 1 && layout.fileExists(fileId)) {
+//	if (sp.getWidth() > 1 && layout.fileExists(fileId)) {
+	if (sp.getWidth() > 1) {
 	    // update filesize to the correct value, if necessary
 	    if (!layout.isFilesizeWrittenToDisk(fileId)) { // => fetch gmax and write it to disk
 		sendGmaxRequests(method, STAGEOP_LOCAL_READ_OBJECT_GMAX_FETCHED);
@@ -453,9 +460,9 @@ public class StorageThread extends Stage {
 	    // TODO: add statistics
 	}
 
-	// add X-New-File-Size header
+	// prepare X-New-File-Size "header"
 	method.getRq().addAdditionalResponseHTTPHeader(
-		HTTPHeaders.HDR_XNEWFILESIZE, Long.toString(fi.getFilesize()));
+		HTTPHeaders.HDR_XNEWFILESIZE, fi.getFilesize()+"");
     }
     
     private void processLocalReadGmaxFetched(StageMethod rq) throws IOException, JSONException {
@@ -685,58 +692,63 @@ public class StorageThread extends Stage {
 
             details.setObjectVersionNumber(nextV);
 
-            // if the write refers to the last known object or to an object
-            // beyond, i.e. the file size and globalMax are potentially
-            // affected:
-            if (objNo >= fi.getLastObjectNumber()) {
-
-                long newObjSize = rq.getRq().getData().capacity();
-                if (details.isRangeRequested())
-                    newObjSize += details.getByteRangeStart();
-
-                // calculate new filesize...
-                long newFS = 0;
-                if (objNo > 0) {
-                    newFS = sp.getLastByte(objNo - 1) + 1 + newObjSize;
-                } else {
-                    newFS = newObjSize;
-                }
-
-                // check whether the file size might have changed; in this case,
-                // ensure that the X-New-Filesize header will be set
-                if (newFS > fi.getFilesize() && objNo >= fi.getLastObjectNumber()) {
-                    // Metadata meta = info.getMetadata();
-                    // meta.putKnownSize(newFS);
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "new filesize: " + newFS);
-                    details.setNewFSandEpoch(JSONParser.toJSON(new Object[] { newFS,
-                        fi.getTruncateEpoch() }));
-                } else {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "no new filesize: " + newFS + "/"
-                        + fi.getFilesize() + ", " + fi.getLastObjectNumber() + "/" + objNo);
-                }
-
-                // update file size and last object number
-                fi.setFilesize(newFS);
-                fi.setLastObjectNumber(objNo);
-
-                // if the written object has a larger ID than the largest
-                // locally-known object of the file, send 'globalMax' messages
-                // to all other OSDs and update local globalMax
-                if (objNo > fi.getLastObjectNumber()) {
-
+            // if the real filesize is known (e.g. through replication of the object)
+            if(details.getKnownFilesize() != -1) {
+        	if(!layout.isFilesizeWrittenToDisk(fileId))
+        	    layout.writeFilesize(fileId, details.getKnownFilesize());
+            } else {
+                // if the write refers to the last known object or to an object
+                // beyond, i.e. the file size and globalMax are potentially
+                // affected:
+                if (objNo >= fi.getLastObjectNumber()) {
+    
+                    long newObjSize = rq.getRq().getData().capacity();
+                    if (details.isRangeRequested())
+                        newObjSize += details.getByteRangeStart();
+    
+                    // calculate new filesize...
+                    long newFS = 0;
+                    if (objNo > 0) {
+                        newFS = sp.getLastByte(objNo - 1) + 1 + newObjSize;
+                    } else {
+                        newFS = newObjSize;
+                    }
+    
+                    // check whether the file size might have changed; in this case,
+                    // ensure that the X-New-Filesize header will be set
+                    if (newFS > fi.getFilesize() && objNo >= fi.getLastObjectNumber()) {
+                        // Metadata meta = info.getMetadata();
+                        // meta.putKnownSize(newFS);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "new filesize: " + newFS);
+                        details.setNewFSandEpoch(JSONParser.toJSON(new Object[] { newFS,
+                            fi.getTruncateEpoch() }));
+                    } else {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "no new filesize: " + newFS + "/"
+                            + fi.getFilesize() + ", " + fi.getLastObjectNumber() + "/" + objNo);
+                    }
+    
+                    // update file size and last object number
+                    fi.setFilesize(newFS);
                     fi.setLastObjectNumber(objNo);
-
-                    List<UDPMessage> msgs = striping.createGmaxMessages(new ASCIIString(fileId),
-                        newFS, objNo, fi.getTruncateEpoch(), details.getCurrentReplica());
-
-                    for (UDPMessage msg : msgs)
-                        master.sendUDP(msg.buf.createViewBuffer(), msg.addr);
-
-                    // one buffer has been allocated, which will not be freed
-                    // automatically; this has to be done here
-                    BufferPool.free(msgs.get(0).buf);
+    
+                    // if the written object has a larger ID than the largest
+                    // locally-known object of the file, send 'globalMax' messages
+                    // to all other OSDs and update local globalMax
+                    if (objNo > fi.getLastObjectNumber()) {
+    
+                        fi.setLastObjectNumber(objNo);
+    
+                        List<UDPMessage> msgs = striping.createGmaxMessages(new ASCIIString(fileId),
+                            newFS, objNo, fi.getTruncateEpoch(), details.getCurrentReplica());
+    
+                        for (UDPMessage msg : msgs)
+                            master.sendUDP(msg.buf.createViewBuffer(), msg.addr);
+    
+                        // one buffer has been allocated, which will not be freed
+                        // automatically; this has to be done here
+                        BufferPool.free(msgs.get(0).buf);
+                    }
                 }
-
             }
             
             // set the buffer to null, in order not to send it back to the client
@@ -1093,6 +1105,20 @@ public class StorageThread extends Stage {
                 }
             });
         } 
+    }
+    
+    /**
+     * writes the filesize stored in <code>rq.getDetails.getKnownFilesize()</code> to disk
+     * @param rq
+     * @throws IOException
+     */
+    private void processWriteFilesize(StageMethod rq) throws IOException {
+        final RequestDetails details = rq.getRq().getDetails();
+
+        final String fileId = details.getFileId();
+	final long size = details.getKnownFilesize();
+        
+	layout.writeFilesize(fileId, size);
     }
 
     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {

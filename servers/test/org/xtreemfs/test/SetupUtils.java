@@ -25,6 +25,7 @@
 package org.xtreemfs.test;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
@@ -55,7 +56,7 @@ public class SetupUtils {
     public static boolean      SSL_ON      = false;
 
     public static final int    DEBUG_LEVEL = Logging.LEVEL_DEBUG;
-
+    
     public static OSDConfig createOSD1Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -160,6 +161,39 @@ public class SetupUtils {
         return new OSDConfig(props);
     }
 
+    public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
+	OSDConfig[] configs = new OSDConfig[number];
+	int startPort = 33643;
+
+	for(int i=0; i<configs.length; i++) {
+		Properties props = new Properties();
+	        props.setProperty("dir_service.host", "localhost");
+	        props.setProperty("dir_service.port", "33638");
+	        props.setProperty("object_dir", TEST_DIR + "/osd"+i);
+	        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+	        props.setProperty("listen.port", ""+startPort);
+	        props.setProperty("listen.address", "localhost");
+	        props.setProperty("local_clock_renewal", "50");
+	        props.setProperty("remote_time_sync", "60000");
+	        props.setProperty("ssl.enabled", "" + SSL_ON);
+	        props.setProperty("ssl.service_creds", CERT_DIR + "service2.jks");
+	        props.setProperty("ssl.service_creds_pw", "passphrase");
+	        props.setProperty("ssl.service_creds_container", "jks");
+	        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+	        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+	        props.setProperty("ssl.trusted_certs.container", "jks");
+	        props.setProperty("report_free_space", "true");
+	        props.setProperty("checksums.enabled", "true");
+	        props.setProperty("checksums.algorithm", "Adler32");
+	        props.setProperty("capability_secret", "secretPassphrase");
+	        props.setProperty("uuid", getOSDUUID("localhost",startPort).toString());
+	        configs[i] = new OSDConfig(props);
+	        
+	        startPort++;
+	}
+        return configs; 
+    }
+    
     public static DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("database.dir", TEST_DIR);
@@ -287,6 +321,10 @@ public class SetupUtils {
 
     public static ServiceUUID getOSD4UUID() {
         return new ServiceUUID("UUID:localhost:33642");
+    }
+
+    private static ServiceUUID getOSDUUID(String listenAddress, int port) {
+        return new ServiceUUID("UUID:"+listenAddress+":"+port);
     }
 
     public static void setupLocalResolver() throws IOException, JSONException {

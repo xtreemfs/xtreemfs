@@ -79,5 +79,5 @@ public interface RPCTokens {
 
     // public static final String queuestatsTOKEN = "/.sys.queuestats";
     
-    public static final String readLocalTOKEN            = "localRead";
+    public static final String readLocalTOKEN            = "readLocal";
 }

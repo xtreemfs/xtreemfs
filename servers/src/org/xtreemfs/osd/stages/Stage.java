@@ -63,8 +63,7 @@ public abstract class Stage extends LifeCycleThread {
         /**
          * finish request by sending the response
          */
-        FINISH
-
+        FINISH,
     }
 
     /**

@@ -24,9 +24,12 @@
 package org.xtreemfs.osd.ops;
 
 import org.xtreemfs.common.buffer.BufferPool;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
+import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.RequestDispatcher;
 import org.xtreemfs.osd.RequestDispatcher.Stages;
@@ -72,10 +75,21 @@ public class FetchAndWriteReplica extends Operation {
     private void postFetchObject(OSDRequest rq, StageResponseCode result) {
 	OSDRequest originalRq = rq.getOriginalOsdRequest();
 	if (result == StageResponseCode.OK) {
-	    // handle original request
-	    if (originalRq != null) {
-		// data could be fetched from replica
-		if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
+	    Logging.logMessage(Logging.LEVEL_TRACE, this,
+		    "fetched filesize for object : "
+			    + rq.getDetails().getFileId() + "-"
+			    + rq.getDetails().getObjectNumber()
+			    + " is " + rq.getDetails().getKnownFilesize() + ".");
+
+	    switch(rq.getDetails().replicationFetchingStatus){
+	    case FETCHED: {
+		Logging.logMessage(Logging.LEVEL_TRACE, this, "object found for: "
+					+ rq.getDetails().getFileId() + "-"
+					+ rq.getDetails().getObjectNumber() + ".");
+
+		// handle original request
+		if (originalRq != null) {
+		    // data could be fetched from replica
 		    Logging.logMessage(Logging.LEVEL_TRACE, this,
 			    "copy fetched data to original request: "
 				    + rq.getDetails().getFileId() + "-"
@@ -89,28 +103,143 @@ public class FetchAndWriteReplica extends Operation {
 			    originalRq, result);
 		    rq.setOriginalOsdRequest(null);
 		}
-	    }
 
-	    master.getStage(Stages.STORAGE).enqueueOperation(rq,
-		    StorageThread.STAGEOP_WRITE_OBJECT,
-		    new StageCallbackInterface() {
-			public void methodExecutionCompleted(
-				OSDRequest request, StageResponseCode result) {
-			    postWrite(request, result);
-			}
-		    });
-	} else if (result == StageResponseCode.FINISH) {
-	    // object could really not be fetched => stop request
-	    if(originalRq!=null) {
-		// data could be fetched from replica
-		if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
-		    // "copy" fetched data to original request
-		    originalRq.setData(rq.getData().createViewBuffer(), rq
-			    .getDataType());
+		// this also writes the known filesize to disk
+		master.getStage(Stages.STORAGE).enqueueOperation(rq,
+			StorageThread.STAGEOP_WRITE_OBJECT,
+			new StageCallbackInterface() {
+			    public void methodExecutionCompleted(
+				    OSDRequest request, StageResponseCode result) {
+				postWrite(request, result);
+			    }
+			});
+		break;
+	    }
+	    case HOLE_WITH_DATA: {
+		Logging.logMessage(Logging.LEVEL_TRACE, this, "data with hole found for: "
+				+ rq.getDetails().getFileId() + "-"
+				+ rq.getDetails().getObjectNumber() + ".");
+
+		// handle original request
+		if (originalRq != null) {
+		    // data could be fetched from replica
+		    Logging.logMessage(Logging.LEVEL_TRACE, this,
+			    "copy fetched and padded data to original request: "
+				    + rq.getDetails().getFileId() + "-"
+				    + rq.getDetails().getObjectNumber() + ".");
+
+		    // padding zeros
+		    StripingPolicy sp = rq.getDetails().getCurrentReplica()
+			    .getStripingPolicy();
+		    long currentObject = rq.getDetails().getObjectNumber();
+		    ReusableBuffer data = padWithZeros(rq.getData(), (int) sp
+			    .getStripeSize(currentObject));
+
+		    // "copy" padded data to original request
+		    originalRq.setData(data, DATA_TYPE.BINARY);
+
+		    // go on with the original request operation-callback
+		    originalRq.getCurrentCallback().methodExecutionCompleted(
+			    originalRq, result);
+		    rq.setOriginalOsdRequest(null);
 		}
-		// go on with the original request operation-callback
-		originalRq.getCurrentCallback().methodExecutionCompleted(
-			originalRq, StageResponseCode.OK); // FIXME: FAILED
+
+		// this also writes the known filesize to disk
+		master.getStage(Stages.STORAGE).enqueueOperation(rq,
+			StorageThread.STAGEOP_WRITE_OBJECT,
+			new StageCallbackInterface() {
+			    public void methodExecutionCompleted(
+				    OSDRequest request, StageResponseCode result) {
+				postWrite(request, result);
+			    }
+			});
+		break;
+	    }
+	    case EOF: {
+		Logging.logMessage(Logging.LEVEL_TRACE, this, "EOF found for: "
+			+ rq.getDetails().getFileId() + "-"
+			+ rq.getDetails().getObjectNumber() + ".");
+
+		// handle original request
+		if (originalRq != null) {
+		    // data could be fetched from replica
+		    Logging.logMessage(Logging.LEVEL_TRACE, this,
+			    "copy empty buffer to original request: "
+				    + rq.getDetails().getFileId() + "-"
+				    + rq.getDetails().getObjectNumber() + ".");
+
+		    // empty buffer
+		    ReusableBuffer data = BufferPool.allocate(0);
+		    data.position(0);
+
+		    // "copy" padded data to original request
+		    originalRq.setData(data, DATA_TYPE.BINARY);
+
+		    // go on with the original request operation-callback
+		    originalRq.getCurrentCallback().methodExecutionCompleted(
+			    originalRq, result);
+		    rq.setOriginalOsdRequest(null);
+		}
+		// write filesize to disk
+		master.getStage(Stages.STORAGE).enqueueOperation(rq,
+			StorageThread.STAGEOP_WRITE_FILESIZE,
+			new StageCallbackInterface() {
+			    public void methodExecutionCompleted(
+				    OSDRequest request, StageResponseCode result) {
+				postWrite(request, result);
+			    }
+			});
+		break;
+	    }
+	    case HOLE: {
+		Logging.logMessage(Logging.LEVEL_TRACE, this,
+			"hole found for: " + rq.getDetails().getFileId() + "-"
+				+ rq.getDetails().getObjectNumber() + ".");
+
+		// handle original request
+		if (originalRq != null) {
+		    // data could be fetched from replica
+		    Logging.logMessage(Logging.LEVEL_TRACE, this,
+			    "copy padded data to original request: "
+				    + rq.getDetails().getFileId() + "-"
+				    + rq.getDetails().getObjectNumber() + ".");
+
+		    // padding zeros
+		    ReusableBuffer data = BufferPool.allocate(0);
+		    data.position(0);
+		    StripingPolicy sp = rq.getDetails().getCurrentReplica()
+			    .getStripingPolicy();
+		    long currentObject = rq.getDetails().getObjectNumber();
+		    data = padWithZeros(data, (int) sp
+			    .getStripeSize(currentObject));
+
+		    // "copy" padded data to original request
+		    originalRq.setData(data, DATA_TYPE.BINARY);
+
+		    // go on with the original request operation-callback
+		    originalRq.getCurrentCallback().methodExecutionCompleted(
+			    originalRq, result);
+		    rq.setOriginalOsdRequest(null);
+		}
+		// write filesize to disk
+		master.getStage(Stages.STORAGE).enqueueOperation(rq,
+			StorageThread.STAGEOP_WRITE_FILESIZE,
+			new StageCallbackInterface() {
+			    public void methodExecutionCompleted(
+				    OSDRequest request, StageResponseCode result) {
+				postWrite(request, result);
+			    }
+			});
+		break;
+	    }
+	    case FAILED: {
+		// TODO: handle it
+		break;
+	    }
+	    default: {
+		// TODO: not allowed
+		break;
+	    }
 	    }
 	} else {
 	    if (Logging.isDebug())
@@ -121,6 +250,7 @@ public class FetchAndWriteReplica extends Operation {
 	    // go on with the original request operation-callback
 	    originalRq.getCurrentCallback().methodExecutionCompleted(
 		    originalRq, result);
+	    // TODO: what should the request respond?
 	    master.requestFinished(rq);
 	}
     }
@@ -160,5 +290,27 @@ public class FetchAndWriteReplica extends Operation {
     private void cleanUp(OSDRequest rq) {
 	if (rq.getData() != null)
 	    BufferPool.free(rq.getData());
+    }
+    
+    /*
+     * copied from StorageThread
+     */
+     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
+        int oldSize = data.capacity();
+        if (!data.enlarge(stripeSize)) {
+            ReusableBuffer tmp = BufferPool.allocate(stripeSize);
+            data.position(0);
+            tmp.put(data);
+            while (tmp.hasRemaining())
+                tmp.put((byte) 0);
+            BufferPool.free(data);
+            return tmp;
+
+        } else {
+            data.position(oldSize);
+            while (data.hasRemaining())
+                data.put((byte) 0);
+            return data;
+        }
     }
 }

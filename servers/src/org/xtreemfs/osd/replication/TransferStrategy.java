@@ -261,7 +261,7 @@ public abstract class TransferStrategy {
      * 
      * @param filesize
      */
-    public synchronized void setKnownFilesize(long filesize) {
+    public void setKnownFilesize(long filesize) {
 	if (knownFilesize < filesize) 
 	    knownFilesize = filesize;
     }
@@ -269,7 +269,7 @@ public abstract class TransferStrategy {
     /**
      * @return the knownFilesize
      */
-    public synchronized long getKnownFilesize() {
+    public long getKnownFilesize() {
 	return knownFilesize;
     }
 

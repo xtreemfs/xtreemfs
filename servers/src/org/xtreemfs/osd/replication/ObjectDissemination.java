@@ -34,9 +34,12 @@ import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.clients.osd.OSDClient;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
@@ -45,6 +48,7 @@ import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.RequestDetails;
 import org.xtreemfs.osd.RequestDispatcher;
+import org.xtreemfs.osd.RequestDetails.FetchingStatus;
 import org.xtreemfs.osd.RequestDispatcher.Operations;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.stages.ReplicationStage;
@@ -64,11 +68,19 @@ public class ObjectDissemination {
     private static long requestID = -10;
 
     /**
-     * files which will be downloaded, maybe in background (without a current
+     * files which will be downloaded, maybe in background (without a client
      * request)
      * key: <code>fileID</code>
      */
     private HashMap<String, TransferStrategy> filesInProgress;
+
+    /**
+     * counts how many requests are actually downloading objects of this file, maybe in background (without a client
+     * request)
+     * key: <code>fileID</code>
+     */
+    // TODO: better way to count requests
+    private HashMap<String, Integer> filesInProgressCounter;
 
     /**
      * A OSDRequest maybe want to fetch an object, that is already in progress,
@@ -82,6 +94,7 @@ public class ObjectDissemination {
 	this.master = master;
 
 	this.filesInProgress = new HashMap<String, TransferStrategy>();
+	this.filesInProgressCounter = new HashMap<String, Integer>();
 //	this.waitingOSDRequests = new HashMap<String, OSDRequest>();
     }
 
@@ -91,14 +104,18 @@ public class ObjectDissemination {
      */
     public void fetchObject(OSDRequest rq) {
 	RequestDetails rqDetails = rq.getDetails();
-	TransferStrategy strategy = this.filesInProgress.get(rqDetails
-		.getFileId());
+	String fileID = rqDetails.getFileId();
+	TransferStrategy strategy = this.filesInProgress.get(fileID);
 	if (strategy == null) {
 	    // file not in progress, so create a new strategy
 	    strategy = new SimpleStrategy(rqDetails);
 	    // keep strategy in mind
-	    this.filesInProgress.put(rqDetails.getFileId(), strategy);
+	    this.filesInProgress.put(fileID, strategy);
+	    this.filesInProgressCounter.put(fileID, new Integer(0));
 	}
+	// count request
+	int oldValue = filesInProgressCounter.get(fileID).intValue();
+	this.filesInProgressCounter.put(fileID, new Integer(oldValue+1));
 	rqDetails.setReplicationTransferStrategy(strategy);
 
 	strategy.addPreferredObject(rqDetails.getObjectNumber());
@@ -131,6 +148,8 @@ public class ObjectDissemination {
 	newRq.getDetails().setObjectVersionNumber(details.getObjectVersionNumber());
 	newRq.getDetails().setCowPolicy(details.getCowPolicy());
 	newRq.getDetails().setRangeRequested(details.isRangeRequested());
+	
+	newRq.getDetails().replicationFetchingStatus = FetchingStatus.IN_PROGRESS;
 	
 	// FIXME: set objectID from original OSDRequest
 	newRq.getDetails().setObjectNumber(details.getObjectNumber());
@@ -170,13 +189,13 @@ public class ObjectDissemination {
 	    long lastKnownObject = rq.getDetails().getCurrentReplica()
 		    .getStripingPolicy().calculateLastObject(strategy.getKnownFilesize());
 	    if (currentObject < lastKnownObject) { // => hole
-		// padding zeros
-		ReusableBuffer data = BufferPool.allocate(0);
-		data.position(0);
-		data = padWithZeros(data, (int) sp.getStripeSize(currentObject));
-		rq.setData(data, DATA_TYPE.BINARY);
+		rq.getDetails().replicationFetchingStatus = FetchingStatus.HOLE;
+	        // copy known filesize to request for writing to disk
+	        rq.getDetails().setKnownFilesize(strategy.getKnownFilesize());
+	    } else {
+		// no OSD of any replica has data of this object
+		rq.getDetails().replicationFetchingStatus = FetchingStatus.FAILED;
 	    }
-	    // else: no OSD of any replica has data of this object
 	    return false;
     	}
     }
@@ -207,11 +226,9 @@ public class ObjectDissemination {
 					.getHeaders().getHeader(
 						HTTPHeaders.HDR_CONTENT_TYPE)));
 			// set filesize
-			long filesize = Long.parseLong(response.getHeaders()
-				.getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-			originalRq.getDetails()
-				.getReplicationTransferStrategy()
-				.setKnownFilesize(filesize);
+			originalRq.getDetails().setKnownFilesize(Long.valueOf(
+					response.getHeaders().getHeader(
+						HTTPHeaders.HDR_XNEWFILESIZE)));
 		    } catch (HttpErrorException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -269,29 +286,53 @@ public class ObjectDissemination {
     public boolean objectFetched(OSDRequest rq) {
 	TransferStrategy strategy = rq.getDetails().getReplicationTransferStrategy();
 	NextRequest next = rq.getDetails().nextReplicationStep;
+	strategy.setKnownFilesize(rq.getDetails().getKnownFilesize());
 
 	// TODO:
         if(rq.getDataType() == HTTPUtils.DATA_TYPE.BINARY) {
             // object could be fetched
             strategy.removeOSDListForObject(next.objectID);
             strategy.removePreferredObject(next.objectID);
+
+            rq.getDetails().replicationFetchingStatus = FetchingStatus.FETCHED;
+            
+/*            // copy known filesize to request for writing to disk
+            rq.getDetails().setKnownFilesize(strategy.getKnownFilesize());
+            // already known by the request, because it has fetched an object
+*/
+            
+            // test if the data contains a hole at the end
+            StripingPolicy sp = rq.getDetails().getCurrentReplica()
+		    .getStripingPolicy();
+    	    long currentObject = rq.getDetails().getObjectNumber();
+            if (rq.getData().limit() != sp.getStripeSize(currentObject)) {
+		long lastKnownObject = sp.calculateLastObject(strategy
+			.getKnownFilesize());
+		// => data with hole or EOF
+		if (currentObject < lastKnownObject) // => hole with data
+		    rq.getDetails().replicationFetchingStatus = FetchingStatus.HOLE_WITH_DATA;
+		// else: EOF ~= normally fetched data
+	    }
             return true;
         } else if (rq.getDataType() == HTTPUtils.DATA_TYPE.JSON) {
     	    // check if it is a EOF
 	    if(strategy.getKnownFilesize()>0) { // at least one time a correct filesize was fetched
-		StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
+	        StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
 		long currentObject = rq.getDetails().getObjectNumber();
-		long lastKnownObject = rq.getDetails().getCurrentReplica()
-			.getStripingPolicy().calculateLastObject(strategy.getKnownFilesize());
+		long lastKnownObject = sp.calculateLastObject(strategy.getKnownFilesize());
 		if (currentObject > lastKnownObject) { // => EOF
-		    // padding zeros
-		    ReusableBuffer data = BufferPool.allocate(0);
-		    data.position(0);
-		    rq.setData(data, DATA_TYPE.BINARY);
+	            rq.getDetails().replicationFetchingStatus = FetchingStatus.EOF;
+         	    // copy known filesize to request for writing to disk
+		    rq.getDetails().setKnownFilesize(strategy.getKnownFilesize());
+
 		    return true;
 		}
 	    }
 	    // object could not be fetched => try another replica
+	    Logging.logMessage(Logging.LEVEL_TRACE, this,
+			"object not fetched => try next replica for "
+			+ rq.getDetails().getFileId() + ":"
+			+ rq.getDetails().getObjectNumber());
 
             // save already tested OSDs => otherwise we could not
 	    // determine when we have asked all replicas
@@ -321,30 +362,14 @@ public class ObjectDissemination {
 	    // start new request
 	    newRq.getOperation().startRequest(newRq);
 	}
-*/	 
+*/	
+	// update maps
+	String fileID = rq.getDetails().getFileId();
+	int oldValue = filesInProgressCounter.get(fileID).intValue();
+	this.filesInProgressCounter.put(fileID, new Integer(--oldValue));
+	if(oldValue==0)
+	    filesInProgress.remove(fileID);
 
 	// TODO: error cases
     }
-
-    /*
-     * copied from StorageThread
-     */
-    private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
-        int oldSize = data.capacity();
-        if (!data.enlarge(stripeSize)) {
-            ReusableBuffer tmp = BufferPool.allocate(stripeSize);
-            data.position(0);
-            tmp.put(data);
-            while (tmp.hasRemaining())
-                tmp.put((byte) 0);
-            BufferPool.free(data);
-            return tmp;
-        } else {
-            data.position(oldSize);
-            while (data.hasRemaining())
-                data.put((byte) 0);
-            return data;
-        }
-    }
-
 }

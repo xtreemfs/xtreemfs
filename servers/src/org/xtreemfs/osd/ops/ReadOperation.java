@@ -19,7 +19,7 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB)
+ * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB), Christian Lorenz (ZIB)
  */
 
 package org.xtreemfs.osd.ops;

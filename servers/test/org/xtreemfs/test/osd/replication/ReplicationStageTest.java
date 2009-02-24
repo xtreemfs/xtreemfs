@@ -54,6 +54,7 @@ import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIR;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.RequestController;
@@ -141,6 +142,8 @@ public class ReplicationStageTest extends TestCase {
 	file = "1:1";
 	capability = new Capability(file, "read", 0, "IAmTheClient");
 	locationList = new ArrayList<Location>();
+
+//	UUIDResolver.addLocalMapping("localhost", 32640, false);
     }
 
     /**
@@ -150,6 +153,7 @@ public class ReplicationStageTest extends TestCase {
     public void tearDown() throws Exception {
 	dispatcher.shutdown();
 	dir.shutdown();
+//	UUIDResolver.shutdown();
     }
 
     /*

@@ -19,7 +19,7 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB)
+ * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB), Christian Lorenz (ZIB)
  */
 
 package org.xtreemfs.osd;
@@ -61,23 +61,42 @@ public final class RequestDetails {
     private boolean checkOnly;
 
     private boolean invalidChecksum;
+    
+    private ClientLease lease;
 
+    private String requestId;
+
+    private CowPolicy cowPolicy;
+    
+    /*
+     * the following fields are only used by the replication stuff
+     */
+    private TransferStrategy replicationTransferStrategy;
+    
     /**
      * true, if the object doesn't exist on disk because read follows POSIX, you
      * won't notice that otherwise
      */
     private boolean objectNotExistsOnDisk = false;
 
-    private ClientLease lease;
-
-    private TransferStrategy replicationTransferStrategy;
-    
     // FIXME
     public NextRequest nextReplicationStep;
+    // FIXME
+    public enum FetchingStatus {
+	IN_PROGRESS,
+	FETCHED,
+	EOF, // without data
+	HOLE,
+	HOLE_WITH_DATA,
+	FAILED,
+    }
+    // FIXME
+    public FetchingStatus replicationFetchingStatus;
     
-    private String requestId;
-
-    private CowPolicy cowPolicy;
+    protected long knownFilesize = -1;
+    /*
+     * end replication stuff
+     */
 
     public String getFileId() {
 	return fileId;
@@ -225,7 +244,10 @@ public final class RequestDetails {
     public void setCowPolicy(CowPolicy cowPolicy) {
 	this.cowPolicy = cowPolicy;
     }
-
+    
+    /*
+     * the following setter/getter are only used by the replication stuff
+     */
     /**
      * @param objectExistsOnDisk
      *            the objectExistsOnDisk to set
@@ -239,5 +261,19 @@ public final class RequestDetails {
      */
     public boolean isObjectNotExistingOnDisk() {
 	return objectNotExistsOnDisk;
+    }
+
+    /**
+     * @return the knownFilesize
+     */
+    public long getKnownFilesize() {
+        return knownFilesize;
+    }
+
+    /**
+     * @param knownFilesize the knownFilesize to set
+     */
+    public void setKnownFilesize(long knownFilesize) {
+        this.knownFilesize = knownFilesize;
     }
 }

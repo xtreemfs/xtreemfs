@@ -34,6 +34,7 @@ import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.RequestDispatcher;
+import org.xtreemfs.osd.RequestDetails.FetchingStatus;
 import org.xtreemfs.osd.replication.ObjectDissemination;
 import org.xtreemfs.osd.stages.Stage.StageMethod;
 
@@ -86,7 +87,7 @@ public class ReplicationStage extends Stage {
 	    }
 	    case STAGEOP_INTERNAL_FETCH_OBJECT: {
 		if (!processInternalFetchObject(method))
-		    methodExecutionSuccess(method, StageResponseCode.FINISH);
+		    methodExecutionSuccess(method, StageResponseCode.OK);
 		break;
 	    }
 	    case STAGEOP_INTERNAL_OBJECT_FETCHED: {
