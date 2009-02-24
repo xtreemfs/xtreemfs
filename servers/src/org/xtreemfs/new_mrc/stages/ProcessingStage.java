@@ -67,6 +67,7 @@ import org.xtreemfs.new_mrc.operations.RemoveACLEntriesOperation;
 import org.xtreemfs.new_mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.new_mrc.operations.RenewOperation;
 import org.xtreemfs.new_mrc.operations.RestoreDBOperation;
+import org.xtreemfs.new_mrc.operations.RestoreFileOperation;
 import org.xtreemfs.new_mrc.operations.SetACLEntriesOperation;
 import org.xtreemfs.new_mrc.operations.SetW32AttrsOperation;
 import org.xtreemfs.new_mrc.operations.SetXAttrsOperation;
@@ -133,6 +134,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(DumpDBOperation.RPC_NAME, new DumpDBOperation(master));
         operations.put(RestoreDBOperation.RPC_NAME, new RestoreDBOperation(master));
         operations.put(CheckFileListOperation.RPC_NAME, new CheckFileListOperation(master));
+        operations.put(RestoreFileOperation.RPC_NAME, new RestoreFileOperation(master));
     }
     
     @Override

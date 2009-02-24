@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Felix Langner (ZIB)
  */
@@ -50,27 +50,31 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
- * <p>OSD service function for the console.
- * Cleans an OSD up, by eliminating zombie files.
- * Supports SSL connection.</p>
+ * <p>
+ * OSD service function for the console. Cleans an OSD up, by eliminating zombie
+ * files. Supports SSL connection.
+ * </p>
  * 
  * @author langner
- *
+ * 
  */
 
-public class cleanup_osd {    
-    private static final String                DEFAULT_DIR_CONFIG = "/etc/xos/xtreemfs/default_dir";
-    private static final String                DEFAULT_RESTORE_PATH = "lost+found";
-
-    private static BufferedReader              answers = new BufferedReader(new InputStreamReader(System.in));
+public class cleanup_osd {
+    private static final String   DEFAULT_DIR_CONFIG   = "/etc/xos/xtreemfs/default_dir";
     
-    private static DIRClient                   dirClient;
+    private static final String   DEFAULT_RESTORE_PATH = "lost+found";
     
-    private static MRCClient                   mrcClient;
+    private static BufferedReader answers              = new BufferedReader(new InputStreamReader(
+                                                           System.in));
     
-    private static OSDClient                   osdClient;
+    private static DIRClient      dirClient;
+    
+    private static MRCClient      mrcClient;
+    
+    private static OSDClient      osdClient;
+    
     // generate authString
-    private static String                      authString;
+    private static String         authString;
     static {
         try {
             authString = NullAuthProvider.createAuthString("root", MRCClient
@@ -80,7 +84,7 @@ public class cleanup_osd {
         }
     }
     
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         
         try {
             
@@ -303,9 +307,10 @@ public class cleanup_osd {
                 }
             } else
                 System.out.println("\n There are no zombies on that OSD.");
-                        
+            
         } finally {
-            osdClient.shutdown();
+            if (osdClient != null)
+                osdClient.shutdown();
             if (mrcClient != null)
                 mrcClient.shutdown();
             TimeSync.getInstance().shutdown();
@@ -313,23 +318,25 @@ public class cleanup_osd {
         }
     }
     
-    private static void usage(){
+    private static void usage() {
         System.out.println("usage: xtfs_cleanup [options] uuid:<osd_uuid>\n");
         System.out.println("              -h        show usage info");
         System.out.println("              -v        verbose");
         System.out.println("              -r        restore all potential zombies");
         System.out.println("              -e        !erase all potential zombies permanently!");
-        System.out.println("              -d <dir_address>         directory service to use (e.g. 'http://localhost:32638')");
-        System.out.println("If no DIR URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'");
+        System.out
+                .println("              -d <dir_address>         directory service to use (e.g. 'http://localhost:32638')");
+        System.out
+                .println("If no DIR URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'");
         System.exit(1);
     }
     
-    private static boolean requestUserDecision(String question){ 
+    private static boolean requestUserDecision(String question) {
         System.out.println(question);
-        String answer;            
+        String answer;
         try {
             answer = answers.readLine();
-            assert(answer!=null && answer.length()>0);
+            assert (answer != null && answer.length() > 0);
         } catch (IOException e) {
             System.out.println("Answer could not be read due an IO Exception.");
             return false;
@@ -337,67 +344,57 @@ public class cleanup_osd {
         return (answer.charAt(0) == 'y' || answer.charAt(0) == 'Y');
     }
     /*
-    @Deprecated
-    private static void validate(ConcurrentFileMap fm) throws IOException, ClassNotFoundException{
-        String path = "/home/flangner/temp/database/";
-        String volID1 = "0004760EDB9818CA9248215D00000001";
-        String volID2 = "0004760EDB982F2A024949CA00000001";
-        String volID3 = "0004760EDB984AECE148237D00000001";
-        String volID4 = "0004760EDB9859CFDC4884D000000001";
-        String volID5 = "0004760EDB986FD49148F20E00000001";
-        String volID6 = "0004760EDB989891BD4774E200000001";
-        String volID7 = "0004760EDB98B11FA0482ECD00000001";
-        String volID8 = "0004760EDB98CDCDDC485C4600000001";
-        String fileName = "/mrcdb.1";
-        File f = null;
-        
-        for (List<String> volume : fm.keySetList()){
-            if(volume.get(0).equals(volID1.substring(0,volID1.length()-8))){
-                f = new File(path+volID1+fileName);
-            }else if(volume.get(0).equals(volID2.substring(0,volID2.length()-8))){
-                f = new File(path+volID2+fileName);
-            }else if(volume.get(0).equals(volID3.substring(0,volID3.length()-8))){
-                f = new File(path+volID3+fileName);
-            }else if(volume.get(0).equals(volID4.substring(0,volID4.length()-8))){
-                f = new File(path+volID4+fileName);
-            }else if(volume.get(0).equals(volID5.substring(0,volID5.length()-8))){
-                f = new File(path+volID5+fileName);
-            }else if(volume.get(0).equals(volID6.substring(0,volID6.length()-8))){
-                f = new File(path+volID6+fileName);
-            }else if(volume.get(0).equals(volID7.substring(0,volID7.length()-8))){
-                f = new File(path+volID7+fileName);
-            }else if(volume.get(0).equals(volID8.substring(0,volID8.length()-8))){
-                f = new File(path+volID8+fileName);
-            }else if(volume.get(0).equals("unknown")){
-                continue;
-            }else{
-                System.out.println("ERROR: Volume not found! Available VolIds are: ");
-                System.out.println(volID1.substring(0,volID1.length()-8));
-                System.out.println(volID2.substring(0,volID2.length()-8));
-                System.out.println(volID3.substring(0,volID3.length()-8));
-                System.out.println(volID4.substring(0,volID4.length()-8));
-                System.out.println(volID5.substring(0,volID5.length()-8));
-                System.out.println(volID6.substring(0,volID6.length()-8));
-                System.out.println(volID7.substring(0,volID7.length()-8));
-                System.out.println(volID8.substring(0,volID8.length()-8));
-                
-                System.out.println("But requested was: "+volume.get(0));
-                break;
-            }
-            FileInputStream fis = new FileInputStream(f);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            Map<Long, FileEntity> fileMap = (TreeMap<Long, FileEntity>) ois.readObject();
-            Set<Long> fileNumbers = fileMap.keySet();
-            
-            for (String file : fm.getFileNumberSet(volume)){ 
-                if (fileNumbers.contains(Long.valueOf(file))){
-                    System.out.println("ERROR: "+volume.get(0)+":"+file+" is no zombie!");
-                }
-            }
-            
-            ois.close();
-            fis.close();
-        }
-    }
-    */
+     * @Deprecated private static void validate(ConcurrentFileMap fm) throws
+     * IOException, ClassNotFoundException{ String path =
+     * "/home/flangner/temp/database/"; String volID1 =
+     * "0004760EDB9818CA9248215D00000001"; String volID2 =
+     * "0004760EDB982F2A024949CA00000001"; String volID3 =
+     * "0004760EDB984AECE148237D00000001"; String volID4 =
+     * "0004760EDB9859CFDC4884D000000001"; String volID5 =
+     * "0004760EDB986FD49148F20E00000001"; String volID6 =
+     * "0004760EDB989891BD4774E200000001"; String volID7 =
+     * "0004760EDB98B11FA0482ECD00000001"; String volID8 =
+     * "0004760EDB98CDCDDC485C4600000001"; String fileName = "/mrcdb.1"; File f
+     * = null;
+     * 
+     * for (List<String> volume : fm.keySetList()){
+     * if(volume.get(0).equals(volID1.substring(0,volID1.length()-8))){ f = new
+     * File(path+volID1+fileName); }else
+     * if(volume.get(0).equals(volID2.substring(0,volID2.length()-8))){ f = new
+     * File(path+volID2+fileName); }else
+     * if(volume.get(0).equals(volID3.substring(0,volID3.length()-8))){ f = new
+     * File(path+volID3+fileName); }else
+     * if(volume.get(0).equals(volID4.substring(0,volID4.length()-8))){ f = new
+     * File(path+volID4+fileName); }else
+     * if(volume.get(0).equals(volID5.substring(0,volID5.length()-8))){ f = new
+     * File(path+volID5+fileName); }else
+     * if(volume.get(0).equals(volID6.substring(0,volID6.length()-8))){ f = new
+     * File(path+volID6+fileName); }else
+     * if(volume.get(0).equals(volID7.substring(0,volID7.length()-8))){ f = new
+     * File(path+volID7+fileName); }else
+     * if(volume.get(0).equals(volID8.substring(0,volID8.length()-8))){ f = new
+     * File(path+volID8+fileName); }else if(volume.get(0).equals("unknown")){
+     * continue; }else{
+     * System.out.println("ERROR: Volume not found! Available VolIds are: ");
+     * System.out.println(volID1.substring(0,volID1.length()-8));
+     * System.out.println(volID2.substring(0,volID2.length()-8));
+     * System.out.println(volID3.substring(0,volID3.length()-8));
+     * System.out.println(volID4.substring(0,volID4.length()-8));
+     * System.out.println(volID5.substring(0,volID5.length()-8));
+     * System.out.println(volID6.substring(0,volID6.length()-8));
+     * System.out.println(volID7.substring(0,volID7.length()-8));
+     * System.out.println(volID8.substring(0,volID8.length()-8));
+     * 
+     * System.out.println("But requested was: "+volume.get(0)); break; }
+     * FileInputStream fis = new FileInputStream(f); ObjectInputStream ois = new
+     * ObjectInputStream(fis); Map<Long, FileEntity> fileMap = (TreeMap<Long,
+     * FileEntity>) ois.readObject(); Set<Long> fileNumbers = fileMap.keySet();
+     * 
+     * for (String file : fm.getFileNumberSet(volume)){ if
+     * (fileNumbers.contains(Long.valueOf(file))){
+     * System.out.println("ERROR: "+volume.get(0)+":"+file+" is no zombie!"); }
+     * }
+     * 
+     * ois.close(); fis.close(); } }
+     */
 }

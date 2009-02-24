@@ -578,12 +578,9 @@ public class BabuDBStorageManager implements StorageManager {
                     .getId(), (byte) 3), null);
             
             // if the metadata was retrieved from the file index and hasn't
-            // been
-            // deleted before (i.e. links == 0), ensure that the original
-            // file
-            // in the file index now points to the file ID index, and remove
-            // the
-            // FC and XLoc metadata entries
+            // been deleted before (i.e. links == 0), ensure that the original
+            // file in the file index now points to the file ID index, and remove
+            // the FC and XLoc metadata entries
             if (links != 0 && md.getIndexId() == FILE_INDEX) {
                 
                 update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
