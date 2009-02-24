@@ -17,34 +17,36 @@ import java.util.ArrayList;
 
 public class getGlobalTimeResponse implements Response
 {
-    public getGlobalTimeResponse() {  }
+    public getGlobalTimeResponse() { returnValue = 0; }
+    public getGlobalTimeResponse( long returnValue ) { this.returnValue = returnValue; }
 
-
+    public long getReturnValue() { return returnValue; }
+    public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
     // Object
     public String toString()
     {
-        return "getGlobalTimeResponse()";
+        return "getGlobalTimeResponse( " + Long.toString( returnValue ) + " )";
     }    
 
     // Serializable
     public void serialize(ONCRPCBufferWriter writer) {
-        
+        writer.putLong( returnValue );        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-    
+        returnValue = buf.getLong();    
     }
     
     public int getSize()
     {
         int my_size = 0;
-
+        my_size += ( Long.SIZE / 8 );
         return my_size;
     }
 
-
+    private long returnValue;
     
 
     // Response

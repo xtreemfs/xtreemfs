@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class OSDsByStripingPolicy implements Serializable
+public class OSDsByStripingPolicy implements org.xtreemfs.interfaces.utils.Serializable
 {
     public OSDsByStripingPolicy() { striping_policy = new org.xtreemfs.interfaces.StripingPolicy(); osd_uuids = new org.xtreemfs.interfaces.StringSet(); }
     public OSDsByStripingPolicy( StripingPolicy striping_policy, StringSet osd_uuids ) { this.striping_policy = striping_policy; this.osd_uuids = osd_uuids; }

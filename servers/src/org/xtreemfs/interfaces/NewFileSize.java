@@ -14,13 +14,13 @@ import java.util.ArrayList;
 
          
    
-public class NewFileSize implements Serializable
+public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
 {
     public NewFileSize() { sizeInBytes = 0; epoch = 0; __json = ""; }
     public NewFileSize( long sizeInBytes, long epoch, String __json ) { this.sizeInBytes = sizeInBytes; this.epoch = epoch; this.__json = __json; }
 
-    public long getSizeinbytes() { return sizeInBytes; }
-    public void setSizeinbytes( long sizeInBytes ) { this.sizeInBytes = sizeInBytes; }
+    public long getSizeInBytes() { return sizeInBytes; }
+    public void setSizeInBytes( long sizeInBytes ) { this.sizeInBytes = sizeInBytes; }
     public long getEpoch() { return epoch; }
     public void setEpoch( long epoch ) { this.epoch = epoch; }
     public String get__json() { return __json; }

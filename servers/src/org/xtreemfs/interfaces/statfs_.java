@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class statfs_ implements Serializable
+public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
 {
     public statfs_() { bsize = 0; bfree = 0; fsid = ""; namelen = 0; }
     public statfs_( int bsize, long bfree, String fsid, int namelen ) { this.bsize = bsize; this.bfree = bfree; this.fsid = fsid; this.namelen = namelen; }

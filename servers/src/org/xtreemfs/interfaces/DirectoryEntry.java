@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class DirectoryEntry implements Serializable
+public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializable
 {
     public DirectoryEntry() { path = ""; stbuf = new org.xtreemfs.interfaces.stat_(); }
     public DirectoryEntry( String path, stat_ stbuf ) { this.path = path; this.stbuf = stbuf; }

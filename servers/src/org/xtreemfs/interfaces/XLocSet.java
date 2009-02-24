@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class XLocSet implements Serializable
+public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
 {
     public XLocSet() { osds_by_striping_policy = new org.xtreemfs.interfaces.OSDsByStripingPolicySet(); version = 0; repUpdatePolicy = ""; __json = ""; }
     public XLocSet( OSDsByStripingPolicySet osds_by_striping_policy, long version, String repUpdatePolicy, String __json ) { this.osds_by_striping_policy = osds_by_striping_policy; this.version = version; this.repUpdatePolicy = repUpdatePolicy; this.__json = __json; }
@@ -23,8 +23,8 @@ public class XLocSet implements Serializable
     public void setOsds_by_striping_policy( OSDsByStripingPolicySet osds_by_striping_policy ) { this.osds_by_striping_policy = osds_by_striping_policy; }
     public long getVersion() { return version; }
     public void setVersion( long version ) { this.version = version; }
-    public String getRepupdatepolicy() { return repUpdatePolicy; }
-    public void setRepupdatepolicy( String repUpdatePolicy ) { this.repUpdatePolicy = repUpdatePolicy; }
+    public String getRepUpdatePolicy() { return repUpdatePolicy; }
+    public void setRepUpdatePolicy( String repUpdatePolicy ) { this.repUpdatePolicy = repUpdatePolicy; }
     public String get__json() { return __json; }
     public void set__json( String __json ) { this.__json = __json; }
 

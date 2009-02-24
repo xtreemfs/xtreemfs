@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class stat_ implements Serializable
+public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 {
     public stat_() { mode = 0; nlink = 0; uid = 0; gid = 0; dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; attributes = 0; }
     public stat_( int mode, int nlink, int uid, int gid, int dev, long size, long atime, long mtime, long ctime, int attributes ) { this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.dev = dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.attributes = attributes; }

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class XCap implements Serializable
+public class XCap implements org.xtreemfs.interfaces.utils.Serializable
 {
     public XCap() { file_id = ""; access_mode = 0; expires = 0; clientIdentity = ""; truncateEpoch = 0; serverSignature = ""; __json = ""; }
     public XCap( String file_id, int access_mode, long expires, String clientIdentity, long truncateEpoch, String serverSignature, String __json ) { this.file_id = file_id; this.access_mode = access_mode; this.expires = expires; this.clientIdentity = clientIdentity; this.truncateEpoch = truncateEpoch; this.serverSignature = serverSignature; this.__json = __json; }
@@ -25,12 +25,12 @@ public class XCap implements Serializable
     public void setAccess_mode( int access_mode ) { this.access_mode = access_mode; }
     public long getExpires() { return expires; }
     public void setExpires( long expires ) { this.expires = expires; }
-    public String getClientidentity() { return clientIdentity; }
-    public void setClientidentity( String clientIdentity ) { this.clientIdentity = clientIdentity; }
-    public long getTruncateepoch() { return truncateEpoch; }
-    public void setTruncateepoch( long truncateEpoch ) { this.truncateEpoch = truncateEpoch; }
-    public String getServersignature() { return serverSignature; }
-    public void setServersignature( String serverSignature ) { this.serverSignature = serverSignature; }
+    public String getClientIdentity() { return clientIdentity; }
+    public void setClientIdentity( String clientIdentity ) { this.clientIdentity = clientIdentity; }
+    public long getTruncateEpoch() { return truncateEpoch; }
+    public void setTruncateEpoch( long truncateEpoch ) { this.truncateEpoch = truncateEpoch; }
+    public String getServerSignature() { return serverSignature; }
+    public void setServerSignature( String serverSignature ) { this.serverSignature = serverSignature; }
     public String get__json() { return __json; }
     public void set__json( String __json ) { this.__json = __json; }
 

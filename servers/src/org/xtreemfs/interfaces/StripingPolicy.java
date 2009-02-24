@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class StripingPolicy implements Serializable
+public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializable
 {
     public StripingPolicy() { policy = 0; stripe_size = 0; width = 0; }
     public StripingPolicy( int policy, long stripe_size, long width ) { this.policy = policy; this.stripe_size = stripe_size; this.width = width; }

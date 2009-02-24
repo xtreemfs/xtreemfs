@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
          
    
-public class AddressMapping implements Serializable
+public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializable
 {
     public AddressMapping() { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl = 0; }
     public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl = ttl; }

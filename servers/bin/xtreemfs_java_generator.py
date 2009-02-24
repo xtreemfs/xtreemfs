@@ -216,8 +216,8 @@ class TypeTraits(dict):
     def getBoxedType( self ): return self.getDeclarationType()
     def getConstantValue( self, value ): return value
     def getDeclarationType( self ): return self.type.name
-    def getGetter( self, identifier ): return self.getDeclarationType() + " get" + identifier.capitalize() + "() { return %(identifier)s; }" % locals()
-    def getSetter( self, identifier ): return "void set" + identifier.capitalize() + "( " + self.getDeclarationType() + " %(identifier)s ) { this.%(identifier)s = %(identifier)s; }" % locals()
+    def getGetter( self, identifier ): return self.getDeclarationType() + " get" + identifier[0].capitalize() + identifier[1:] + "() { return %(identifier)s; }" % locals()
+    def getSetter( self, identifier ): return "void set" + identifier[0].capitalize() + identifier[1:] + "( " + self.getDeclarationType() + " %(identifier)s ) { this.%(identifier)s = %(identifier)s; }" % locals()
 
     
 class StringTypeTraits(TypeTraits):
@@ -333,7 +333,7 @@ class StructTypeTraits(CompoundTypeTraits):
         struct_type_def = self.getStructTypeDef()
         return """\
    
-public class %(type_name)s implements Serializable
+public class %(type_name)s implements org.xtreemfs.interfaces.utils.Serializable
 {
 %(struct_type_def)s
 }
@@ -433,7 +433,7 @@ class OperationTypeTraits(StructTypeTraits):
         uid = self.type.uid
         parent_uid = self.type.parent.uid
         if type_name_suffix == "Request":
-            params = [param for param in self.type.params if param.in_]            
+            params = [param for param in self.type.params if param.in_]   
             type_name_specific_type_def = """\
     // Request
     public int getInterfaceVersion() { return %(parent_uid)s; }    
@@ -441,7 +441,9 @@ class OperationTypeTraits(StructTypeTraits):
     public Response createDefaultResponse() { return new %(type_name)sResponse(); }
 """ % locals()
         elif type_name_suffix == "Response":
-            params = [param for param in self.type.params if param.out_]
+            params = [param for param in self.type.params if param.out_]            
+            if self.type.return_type is not None: 
+                params.append( OperationParameter( self.type, self.type.return_type, "returnValue", out_=True ) )
             type_name_specific_type_def = """\
     // Response
     public int getInterfaceVersion() { return %(parent_uid)s; }
@@ -467,10 +469,8 @@ class ExceptionTypeTraits(StructTypeTraits):
         type_name = self.type.name
         struct_type_def= StructTypeTraits.getStructTypeDef( self )
         return """\
-public class %(type_name)s extends Exception implements Serializable
+public class %(type_name)s extends Exception implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public %(type_name)s() { }
-    public %(type_name)s( String msg ) { super( msg ); }        
 %(struct_type_def)s    
 }
 """ % locals()
