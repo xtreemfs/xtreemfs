@@ -6,38 +6,15 @@ import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
 
 
-class Exceptions
+public class Exceptions
 {
     public static int getVersion() { return 1; }
 
-    public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
+    public static Exception createException( String exception_type_name ) throws Exception
     {
-        return createRequest( header.getOperationNumber() );
+        if ( exception_type_name == "ProtocolException" ) return new ProtocolException();
+        else if ( exception_type_name == "errnoException" ) return new errnoException();
+        else if ( exception_type_name == "RedirectException" ) return new RedirectException();
+        else throw new Exception( "unknown exception type " + exception_type_name );
     }
-
-    public static Request createRequest( int uid ) throws Exception
-    {
-        switch( uid )
-        {
-
-            default: throw new Exception( "unknown request number " + Integer.toString( uid ) );
-        }
-    }
-    
-    public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
-    {
-        if ( header.getReplyStat() == ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS )
-            return createResponse( header.getXID() );
-        else
-            throw new Exception( "not implemented" );
-    }
-
-    public static Response createResponse( int uid ) throws Exception
-    {
-        switch( uid )
-        {
-
-            default: throw new Exception( "unknown response number " + Integer.toString( uid ) );
-        }
-    }    
 }

@@ -1,6 +1,5 @@
 package org.xtreemfs.interfaces.utils;
 
-import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 

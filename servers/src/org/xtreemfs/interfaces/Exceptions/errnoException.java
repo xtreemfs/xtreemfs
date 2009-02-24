@@ -42,7 +42,7 @@ public class errnoException extends Exception implements org.xtreemfs.interfaces
         { int stack_trace_new_length = buf.getInt(); byte[] stack_trace_new_bytes = new byte[stack_trace_new_length]; buf.get( stack_trace_new_bytes ); stack_trace = new String( stack_trace_new_bytes ); if (stack_trace_new_length % 4 > 0) {for (int k = 0; k < (4 - (stack_trace_new_length % 4)); k++) { buf.get(); } } }    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
