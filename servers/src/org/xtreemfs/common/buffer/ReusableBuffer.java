@@ -550,6 +550,10 @@ public final class ReusableBuffer {
         int position = parentBuffer.position();
         int limit = parentBuffer.limit();
         
+        // ensure that the subsequent 'position' does not fail
+        if (offset > limit)
+            parentBuffer.limit(offset);
+        
         parentBuffer.position(offset);
         parentBuffer.limit(offset+length);
         this.buffer = parentBuffer.slice();

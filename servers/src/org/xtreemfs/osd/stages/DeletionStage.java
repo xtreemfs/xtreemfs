@@ -256,6 +256,7 @@ public class DeletionStage extends Stage {
 
         public void enqueueFileForDeletion(String fileID) {
             assert(this.isAlive());
+            assert(fileID != null);
             files.add(fileID);
         }
 
