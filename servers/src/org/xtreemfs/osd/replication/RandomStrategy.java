@@ -53,31 +53,51 @@ public class RandomStrategy extends TransferStrategy {
     public void selectNext() {
 	// prepare
 	super.selectNext();
-	
-	NextRequest next = new NextRequest();
+
+	long objectID = -1;
+
 	// first fetch a preferred object
 	if (!this.preferredObjects.isEmpty()) {
-	    next.objectID = this.preferredObjects.remove(getPositiveRandom()
+	    objectID = this.preferredObjects.remove(getPositiveRandom()
 		    % this.preferredObjects.size());
-	    this.requiredObjects.remove(Long.valueOf(next.objectID));
+	    this.requiredObjects.remove(Long.valueOf(objectID));
 	} else { // fetch any object
 	    if (!this.requiredObjects.isEmpty()) {
-		next.objectID = this.requiredObjects.remove(getPositiveRandom()
+		objectID = this.requiredObjects.remove(getPositiveRandom()
 			% this.requiredObjects.size());
-	    } else
-		// nothing to fetch
-		next = null;
+	    }
 	}
-	
-	if(next!=null) {
+
+	// select OSD
+	if(objectID != -1)
+	    next = selectNextOSDhelper(objectID);
+	else
+	    // nothing to fetch
+	    next = null;
+    }
+
+    @Override
+    public void selectNextOSD(long objectID) {
+	// prepare
+	super.selectNext();
+	// select OSD
+	next = selectNextOSDhelper(objectID);
+    }
+
+    private NextRequest selectNextOSDhelper(long objectID) {
+	NextRequest next = new NextRequest();
+	next.objectID = objectID;
+
+	List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
+	if(osds.size() > 0) {
 	    // use random OSD
-	    List<ServiceUUID> osds = this.availableOSDsForObject.get(next.objectID);
 	    next.osd = osds.get(getPositiveRandom() % osds.size());
 
 	    // no object list
 	    next.requestObjectList = false;
-	}
-	this.next = next;
+	} else
+	    next = null;
+	return next;
     }
 
     /**
