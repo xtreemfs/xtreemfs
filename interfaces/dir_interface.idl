@@ -5,12 +5,12 @@ module xtreemfs
     struct AddressMapping
     {
       string uuid;
-      int version;
+      uint64_t version;
       string protocol;
       string address;
-      unsigned short port;
+      uint16_t port;
       string match_network;
-      uint64_t ttl;
+      uint32_t ttl;
     };
 
     typedef sequence<AddressMapping> AddressMappingSet;
