@@ -16,7 +16,11 @@ public class DIRInterface
         switch( header.getOperationNumber() )
         {
             case 1: return new getAddressMappingsRequest();
-            case 2: return new getGlobalTimeRequest();
+            case 2: return new setAddressMappingsRequest();
+            case 3: return new registerServiceRequest();
+            case 4: return new deregisterServiceRequest();
+            case 5: return new getServicesRequest();
+            case 6: return new getGlobalTimeRequest();
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
         }
     }
@@ -26,7 +30,11 @@ public class DIRInterface
         switch( header.getXID() )
         {
             case 1: return new getAddressMappingsResponse();
-            case 2: return new getGlobalTimeResponse();
+            case 2: return new setAddressMappingsResponse();
+            case 3: return new registerServiceResponse();
+            case 4: return new deregisterServiceResponse();
+            case 5: return new getServicesResponse();
+            case 6: return new getGlobalTimeResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    

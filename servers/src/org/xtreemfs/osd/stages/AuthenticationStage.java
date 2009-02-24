@@ -176,7 +176,9 @@ public class AuthenticationStage extends Stage {
         if ((requestedMethod & STAGEOP_AUTHENTICATE) != 0) {
             //for quicker responses
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"STAGEOP AUTH");
-            processAuthenticate(m);
+            final boolean ok = processAuthenticate(m);
+            if (!ok)
+                return;
         }
         
         if ((requestedMethod & STAGEOP_OFT_OPEN) != 0) {
@@ -252,7 +254,7 @@ public class AuthenticationStage extends Stage {
         }
     }
     
-    private void processAuthenticate(StageMethod m) {
+    private boolean processAuthenticate(StageMethod m) {
 
         final OSDRequest rq = m.getRq();
         final RequestDetails rqDetails = rq.getDetails();
@@ -266,6 +268,7 @@ public class AuthenticationStage extends Stage {
             
             Logging.logMessage(Logging.LEVEL_WARN, this,
                 "Request without capability requirements were authenticated.");
+            return true;
             // rq.tAuth = System.currentTimeMillis();
         } else {
             
@@ -298,11 +301,12 @@ public class AuthenticationStage extends Stage {
                 if (isValid) {
                     // rq.tAuth = System.currentTimeMillis();
                     // requestAuthenticated(rq, HTTPUtils.SC_OKAY, null);
-                    return;
+                    return true;
                 } else {
                     // rq.tAuth = System.currentTimeMillis();
                     this.methodExecutionFailed(m, new ErrorRecord(ErrorClass.USER_EXCEPTION,
                         ErrorCodes.AUTH_FAILED, "invalid capability"));
+                    return false;
                 }
                 
             } catch (ClassCastException ex) {
@@ -313,6 +317,7 @@ public class AuthenticationStage extends Stage {
                 this.methodExecutionFailed(m, new ErrorRecord(
                     ErrorRecord.ErrorClass.USER_EXCEPTION, ErrorCodes.INVALID_HEADER,
                     HTTPHeaders.HDR_XCAPABILITY + " is not valid JSON", ex));
+                return false;
             }
         }
         

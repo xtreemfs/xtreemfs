@@ -800,7 +800,7 @@ public class MultiSpeedy extends LifeCycleThread {
             notifyStopped();
 
         } catch (Throwable th) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, th);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, th);
             notifyCrashed(th instanceof Exception ? (Exception) th
                     : new Exception(th));
         }

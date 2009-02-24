@@ -20,6 +20,7 @@ import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.new_dir.operations.DIROperation;
+import org.xtreemfs.new_dir.operations.GetAddressMappingOperation;
 import org.xtreemfs.new_dir.operations.GetGlobalTimeOperation;
 import org.xtreemfs.new_mrc.ErrNo;
 
@@ -67,6 +68,9 @@ public class DIRRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         DIROperation op;
         op = new GetGlobalTimeOperation(this);
+        registry.put(op.getProcedureId(),op);
+
+        op = new GetAddressMappingOperation(this);
         registry.put(op.getProcedureId(),op);
     }
 

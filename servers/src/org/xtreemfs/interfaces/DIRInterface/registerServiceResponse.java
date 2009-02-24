@@ -15,10 +15,10 @@ import java.util.ArrayList;
 
          
 
-public class getGlobalTimeResponse implements Response
+public class registerServiceResponse implements Response
 {
-    public getGlobalTimeResponse() { returnValue = 0; }
-    public getGlobalTimeResponse( long returnValue ) { this.returnValue = returnValue; }
+    public registerServiceResponse() { returnValue = 0; }
+    public registerServiceResponse( long returnValue ) { this.returnValue = returnValue; }
 
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
@@ -26,11 +26,11 @@ public class getGlobalTimeResponse implements Response
     // Object
     public String toString()
     {
-        return "getGlobalTimeResponse( " + Long.toString( returnValue ) + " )";
+        return "registerServiceResponse( " + Long.toString( returnValue ) + " )";
     }    
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getGlobalTimeResponse"; }    
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::registerServiceResponse"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putLong( returnValue );        
@@ -53,7 +53,7 @@ public class getGlobalTimeResponse implements Response
 
     // Response
     public int getInterfaceVersion() { return 1; }
-    public int getOperationNumber() { return 6; }    
+    public int getOperationNumber() { return 3; }    
 
 }
 

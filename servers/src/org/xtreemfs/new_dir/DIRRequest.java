@@ -40,8 +40,8 @@ public class DIRRequest {
     public void sendInternalServerError() {
     }
 
-    public void sendError(ErrorRecord errorMessage) {
-        
+    public void sendException(Serializable exception) {
+        rpcRequest.sendGenericException(exception);
     }
 
 

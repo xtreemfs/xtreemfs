@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.clients.mrc.MRCClient;
@@ -180,9 +179,11 @@ public class MRCPerformance {
 
     public static void main(String[] args) {
         try {
+            int numfiles = Integer.valueOf(args[0]);
             Logging.start(Logging.LEVEL_INFO);
             TimeSync.initialize(null, 10000, 50, "");
-            MRCPerformance p = new MRCPerformance(new InetSocketAddress("localhost",32636), "test3", 100000);
+            System.out.println("benchmarking "+numfiles+"files");
+            MRCPerformance p = new MRCPerformance(new InetSocketAddress("localhost",32636), "test", numfiles);
             p.createFiles();
             p.listFiles();
             p.deleteFiles();

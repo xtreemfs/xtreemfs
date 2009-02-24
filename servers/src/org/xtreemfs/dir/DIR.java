@@ -41,7 +41,7 @@ public class DIR {
      */
     public static void main(String[] args) {
         
-        String configFileName = "../config/dirconfig.properties";
+        String configFileName = "config/dirconfig.properties";
         
         if (args.length != 1) {
             System.out.println("using default config file " + configFileName);

@@ -16,6 +16,7 @@ public class Exceptions
         if ( exception_type_name == "xtreemfs::interfaces::Exceptions::ProtocolException" ) return new ProtocolException();
         else if ( exception_type_name == "xtreemfs::interfaces::Exceptions::errnoException" ) return new errnoException();
         else if ( exception_type_name == "xtreemfs::interfaces::Exceptions::RedirectException" ) return new RedirectException();
+        else if ( exception_type_name == "xtreemfs::interfaces::Exceptions::ConcurrentModificationException" ) return new ConcurrentModificationException();
         else throw new Exception( "unknown exception type " + exception_type_name );
     }
 }

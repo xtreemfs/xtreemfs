@@ -103,7 +103,7 @@ public class OSD {
         
         Thread.currentThread().setName("OSD");
         
-        String cfgFile = (args.length > 0) ? args[0] : "../config/osdconfig.properties";
+        String cfgFile = (args.length > 0) ? args[0] : "config/osdconfig.properties";
         OSDConfig config = new OSDConfig(cfgFile);
         
         Logging.start(config.getDebugLevel());
