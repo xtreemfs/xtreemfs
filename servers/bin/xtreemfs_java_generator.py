@@ -215,6 +215,8 @@ class TypeTraits(dict):
     def getBoxedType( self ): return self.getDeclarationType()
     def getConstantValue( self, value ): return value
     def getDeclarationType( self ): return self.type.name
+    def getGetter( self, identifier ): return self.getDeclarationType() + " get" + identifier.capitalize() + "() { return %(identifier)s; }" % locals()
+    def getSetter( self, identifier ): return "void set" + identifier.capitalize() + "( " + self.getDeclarationType() + " %(identifier)s ) { this.%(identifier)s = %(identifier)s; }" % locals()
 
     
 class StringTypeTraits(TypeTraits):
@@ -340,6 +342,7 @@ public class %(type_name)s implements Serializable
         if members is None: members = self.type.members
         type_name = self.type.name
         constructors = self.getConstructors( type_name_suffix, members )
+        member_accessors = self.getMemberAccessors( members )
         member_tostrings = self.getMemberToStrings( members )
         if len( member_tostrings ) > 0:
             member_tostrings = INDENT_SPACES * 2 + "return \"%(type_name)s%(type_name_suffix)s( \" + " % locals() + member_tostrings + " + \" )\";"
@@ -353,6 +356,7 @@ public class %(type_name)s implements Serializable
         
         return """\
 %(constructors)s
+%(member_accessors)s
 
     // Object
     public String toString()
@@ -394,10 +398,16 @@ public class %(type_name)s implements Serializable
         return """\
     public %(type_name)s%(type_name_suffix)s() { %(member_default_initializers)s }%(constructor)s
 """ % locals()
+
+    def getMemberAccessors( self, members=None ):
+        if members is None: members = self.type.members
+        return "\n".join( [INDENT_SPACES + "public " + getTypeTraits( member.type ).getGetter( member.identifier) + "\n" +\
+                           INDENT_SPACES + "public " + getTypeTraits( member.type ).getSetter( member.identifier )                        
+                           for member in members] )        
         
     def getMemberDeclarations( self, members=None ):
         if members is None: members = self.type.members
-        return "\n".join( [INDENT_SPACES + "public " + getTypeTraits( member.type ).getDeclarationType() + " " + member.identifier + ";" for member in members] )        
+        return "\n".join( [INDENT_SPACES + "private " + getTypeTraits( member.type ).getDeclarationType() + " " + member.identifier + ";" for member in members] )        
 
     def getMemberToStrings( self, members=None ):
         if members is None: members = self.type.members
