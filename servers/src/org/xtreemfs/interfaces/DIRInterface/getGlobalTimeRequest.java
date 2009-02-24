@@ -20,6 +20,7 @@ public class getGlobalTimeRequest implements Request
     public getGlobalTimeRequest() {  }
 
 
+
     // Object
     public String toString()
     {
@@ -47,6 +48,7 @@ public class getGlobalTimeRequest implements Request
     
 
     // Request
+    public int getInterfaceVersion() { return 1; }    
     public int getOperationNumber() { return 2; }
     public Response createDefaultResponse() { return new getGlobalTimeResponse(); }
 

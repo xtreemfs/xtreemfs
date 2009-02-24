@@ -20,6 +20,8 @@ public class getAddressMappingsRequest implements Request
     public getAddressMappingsRequest() { uuid = ""; }
     public getAddressMappingsRequest( String uuid ) { this.uuid = uuid; }
 
+    public String getUuid() { return uuid; }
+    public void setUuid( String uuid ) { this.uuid = uuid; }
 
     // Object
     public String toString()
@@ -44,10 +46,11 @@ public class getAddressMappingsRequest implements Request
         return my_size;
     }
 
-    public String uuid;
+    private String uuid;
     
 
     // Request
+    public int getInterfaceVersion() { return 1; }    
     public int getOperationNumber() { return 1; }
     public Response createDefaultResponse() { return new getAddressMappingsResponse(); }
 

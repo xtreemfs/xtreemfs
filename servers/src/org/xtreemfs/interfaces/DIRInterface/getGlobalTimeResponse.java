@@ -20,6 +20,7 @@ public class getGlobalTimeResponse implements Response
     public getGlobalTimeResponse() {  }
 
 
+
     // Object
     public String toString()
     {
@@ -47,6 +48,7 @@ public class getGlobalTimeResponse implements Response
     
 
     // Response
+    public int getInterfaceVersion() { return 1; }
     public int getOperationNumber() { return 2; }    
 
 }

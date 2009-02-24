@@ -8,6 +8,8 @@ import org.xtreemfs.interfaces.utils.Response;
 
 class DIRInterface
 {
+    public static int getVersion() { return 1; }
+
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         return createRequest( header.getOperationNumber() );

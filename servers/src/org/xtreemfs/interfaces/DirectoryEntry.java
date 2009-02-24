@@ -19,6 +19,10 @@ public class DirectoryEntry implements Serializable
     public DirectoryEntry() { path = ""; stbuf = new org.xtreemfs.interfaces.stat_(); }
     public DirectoryEntry( String path, stat_ stbuf ) { this.path = path; this.stbuf = stbuf; }
 
+    public String getPath() { return path; }
+    public void setPath( String path ) { this.path = path; }
+    public stat_ getStbuf() { return stbuf; }
+    public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
 
     // Object
     public String toString()
@@ -46,8 +50,8 @@ public class DirectoryEntry implements Serializable
         return my_size;
     }
 
-    public String path;
-    public stat_ stbuf;
+    private String path;
+    private stat_ stbuf;
 
 }
 

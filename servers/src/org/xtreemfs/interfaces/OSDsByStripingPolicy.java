@@ -19,6 +19,10 @@ public class OSDsByStripingPolicy implements Serializable
     public OSDsByStripingPolicy() { striping_policy = new org.xtreemfs.interfaces.StripingPolicy(); osd_uuids = new org.xtreemfs.interfaces.StringSet(); }
     public OSDsByStripingPolicy( StripingPolicy striping_policy, StringSet osd_uuids ) { this.striping_policy = striping_policy; this.osd_uuids = osd_uuids; }
 
+    public StripingPolicy getStriping_policy() { return striping_policy; }
+    public void setStriping_policy( StripingPolicy striping_policy ) { this.striping_policy = striping_policy; }
+    public StringSet getOsd_uuids() { return osd_uuids; }
+    public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
     // Object
     public String toString()
@@ -46,8 +50,8 @@ public class OSDsByStripingPolicy implements Serializable
         return my_size;
     }
 
-    public StripingPolicy striping_policy;
-    public StringSet osd_uuids;
+    private StripingPolicy striping_policy;
+    private StringSet osd_uuids;
 
 }
 

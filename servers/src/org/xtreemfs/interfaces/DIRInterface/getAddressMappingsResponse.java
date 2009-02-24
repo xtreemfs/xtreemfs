@@ -20,6 +20,8 @@ public class getAddressMappingsResponse implements Response
     public getAddressMappingsResponse() { address_mappings = new org.xtreemfs.interfaces.AddressMappingSet(); }
     public getAddressMappingsResponse( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
 
+    public AddressMappingSet getAddress_mappings() { return address_mappings; }
+    public void setAddress_mappings( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
 
     // Object
     public String toString()
@@ -44,10 +46,11 @@ public class getAddressMappingsResponse implements Response
         return my_size;
     }
 
-    public AddressMappingSet address_mappings;
+    private AddressMappingSet address_mappings;
     
 
     // Response
+    public int getInterfaceVersion() { return 1; }
     public int getOperationNumber() { return 1; }    
 
 }

@@ -79,7 +79,6 @@ def _generateXtreemFSJavaModule( module ):
             
 def _generateXtreemFSJavaInterface( interface ):
     assert interface.uid > 0, "interface "  + interface.qidentifier + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % interface.uid    
-    interface_identifier= interface.identifier    
     
     package, package_dir_path = _makePackageDir( interface )
 
@@ -88,16 +87,16 @@ def _generateXtreemFSJavaInterface( interface ):
     for exception in interface.exceptions:
         _generateXtreemFSJavaType( exception )
 
+    interface_identifier= interface.identifier    
+    interface_uid = interface.uid
     request_factories = []
     response_factories = []
-    operation_i = 1   
     for operation in interface.operations:
         assert operation.uid > 0, "operation "  + operation.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % operation.uid
         _generateXtreemFSJavaType( operation, "Request" )
-        request_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();" % ( operation_i, operation.name ) )        
+        request_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();" % ( operation.uid, operation.name ) )        
         _generateXtreemFSJavaType( operation, "Response" )
-        response_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( operation_i, operation.name ) )                
-        operation_i += 1
+        response_factories.append( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( operation.uid, operation.name ) )                
     request_factories = "\n".join( request_factories )
     response_factories = "\n".join( response_factories )
         
@@ -112,6 +111,8 @@ import org.xtreemfs.interfaces.utils.Response;
 
 class %(interface_identifier)s
 {
+    public static int getVersion() { return %(interface_uid)s; }
+
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         return createRequest( header.getOperationNumber() );
@@ -430,10 +431,12 @@ class OperationTypeTraits(StructTypeTraits):
     def getTypeDef( self, type_name_suffix="Request" ):
         type_name = self.type.name
         uid = self.type.uid
+        parent_uid = self.type.parent.uid
         if type_name_suffix == "Request":
             params = [param for param in self.type.params if param.in_]            
             type_name_specific_type_def = """\
     // Request
+    public int getInterfaceVersion() { return %(parent_uid)s; }    
     public int getOperationNumber() { return %(uid)s; }
     public Response createDefaultResponse() { return new %(type_name)sResponse(); }
 """ % locals()
@@ -441,6 +444,7 @@ class OperationTypeTraits(StructTypeTraits):
             params = [param for param in self.type.params if param.out_]
             type_name_specific_type_def = """\
     // Response
+    public int getInterfaceVersion() { return %(parent_uid)s; }
     public int getOperationNumber() { return %(uid)s; }    
 """ % locals()
 
