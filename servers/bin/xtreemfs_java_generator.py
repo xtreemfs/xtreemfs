@@ -109,7 +109,7 @@ import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
 
 
-class %(interface_identifier)s
+public class %(interface_identifier)s
 {
     public static int getVersion() { return %(interface_uid)s; }
 
@@ -281,7 +281,7 @@ class CompoundTypeTraits(TypeTraits):
     def getDefaultInitializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s();" % locals()    
     def getDeserializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s(); %(identifier)s.deserialize( buf );" % locals()
     def getSerializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s.serialize( writer );" % locals()
-    def getSize( self, identifier ): return "%(identifier)s.getSize()" % locals()
+    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
     def getToString( self, identifier ): return "%(identifier)s.toString()" % locals()
     
     
@@ -315,7 +315,7 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
         }
     }
     
-    public int getSize() {
+    public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); ) {
             %(value_boxed_type)s next_value = i.next();
@@ -375,7 +375,7 @@ public class %(type_name)s implements org.xtreemfs.interfaces.utils.Serializable
 %(member_deserializers)s    
     }
     
-    public int getSize()
+    public int calculateSize()
     {
         int my_size = 0;
 %(member_sizes)s
