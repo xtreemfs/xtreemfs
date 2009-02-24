@@ -61,6 +61,9 @@ public class ONCRPCResponseHeader implements Serializable {
         //message type is REPLY = 1
         writer.putInt(1);
         writer.putInt(reply_stat);
+        //auth information, unused for xtreemfs
+        writer.putInt(0); // AUTH_NONE
+        writer.putInt(0); // zero opaque auth data
         writer.putInt(accept_stat);
     }
 
@@ -70,6 +73,13 @@ public class ONCRPCResponseHeader implements Serializable {
         assert msgType == 1;
         reply_stat = buf.getInt();
         assert reply_stat == REPLY_STAT_MSG_ACCEPTED;
+
+        final int authType = buf.getInt();
+        assert authType == 0;
+
+        final int opaqueAuthData = buf.getInt();
+        assert opaqueAuthData == 0;
+        
         accept_stat = buf.getInt();
     }
 
