@@ -15,10 +15,34 @@ module xtreemfs
 
     typedef sequence<AddressMapping> AddressMappingSet;
 
+    struct KeyValuePair
+    {
+     string key;
+     string value;
+    };
+
+    typedef sequence<KeyValuePair> KeyValuePairSet;
+
+    struct ServiceRegistry 
+    {
+      string uuid;
+      uint64_t version;
+      uint16_t service_type;
+      KeyValuePairSet data;
+    };
+
+    typedef sequence<ServiceRegistry> ServiceRegistrySet;
+
     interface DIRInterface # 1
     {
       void getAddressMappings( string uuid, out AddressMappingSet address_mappings ) # 1;
-      uint64_t getGlobalTime() # 2;
+      //throws a ConcurrentModificationException if the entry was modified by another process
+      void setAddressMappings( AddressMappingSet address_mappings ) # 2;
+      //throws a ConcurrentModificationException if the entry was modified by another process
+      uint64_t registerService( ServiceRegistry service ) # 3;
+      void     deregisterService( string uuid ) # 4;
+      void     getServices( uint16_t type, out ServiceRegistrySet services) # 5;
+      uint64_t getGlobalTime() # 6;
     };
   };
 };
