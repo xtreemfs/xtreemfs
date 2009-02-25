@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 
          
-public class errnoException extends Exception implements org.xtreemfs.interfaces.utils.Serializable
+public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public errnoException() { error_code = 0; stack_trace = ""; }
     public errnoException( int error_code, String stack_trace ) { this.error_code = error_code; this.stack_trace = stack_trace; }

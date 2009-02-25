@@ -15,45 +15,43 @@ import java.util.ArrayList;
 
          
 
-public class getGlobalTimeResponse implements Response
+public class deleteAddressMappingsResponse implements Response
 {
-    public getGlobalTimeResponse() { returnValue = 0; }
-    public getGlobalTimeResponse( long returnValue ) { this.returnValue = returnValue; }
+    public deleteAddressMappingsResponse() {  }
 
-    public long getReturnValue() { return returnValue; }
-    public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
+
 
     // Object
     public String toString()
     {
-        return "getGlobalTimeResponse( " + Long.toString( returnValue ) + " )";
+        return "deleteAddressMappingsResponse()";
     }    
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getGlobalTimeResponse"; }    
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::deleteAddressMappingsResponse"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        writer.putLong( returnValue );        
+        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        returnValue = buf.getLong();    
+    
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
+
         return my_size;
     }
 
-    private long returnValue;
+
     
 
     // Response
     public int getInterfaceVersion() { return 1; }
-    public int getOperationNumber() { return 8; }    
+    public int getOperationNumber() { return 3; }    
 
 }
 

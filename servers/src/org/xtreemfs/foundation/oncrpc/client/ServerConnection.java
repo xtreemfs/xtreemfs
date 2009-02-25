@@ -1,19 +1,41 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
+    This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+    Grid Operating System, see <http://www.xtreemos.eu> for more details.
+    The XtreemOS project has been developed with the financial support of the
+    European Commission's IST program under contract #FP6-033576.
+
+    XtreemFS is free software: you can redistribute it and/or modify it under
+    the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 2 of the License, or (at your option)
+    any later version.
+
+    XtreemFS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * AUTHORS: Björn Kolbeck (ZIB)
+ */
 package org.xtreemfs.foundation.oncrpc.client;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 
 /**
  *
@@ -29,9 +51,9 @@ public class ServerConnection {
 
     private ChannelIO  channel;
 
-    private final Map<Integer,RPCRequest>  requests;
+    private final Map<Integer,ONCRPCRequest>  requests;
 
-    private final Queue<RPCRequest>        sendQueue;
+    private final Queue<ONCRPCRequest>        sendQueue;
 
     private long lastUsed;
 
@@ -39,13 +61,15 @@ public class ServerConnection {
 
     private int  numConnectAttempts;
 
-    private ReusableBuffer requestHeaders;
-    private ReusableBuffer requestPayload;
+    private final ByteBuffer     requestFragHdr;
 
-    private ReusableBuffer responseHeaders;
-    private ReusableBuffer responsePayload;
+    private final ByteBuffer     responseFragHdr;
 
-    private ONCRPCResponseHeader rpcResponseHeader;
+    private List<ReusableBuffer> responseFragments;
+
+    private boolean              lastResponseFragReceived;
+
+    private ONCRPCRequest   sendRequest;
     
 
     public ServerConnection() {
@@ -54,6 +78,9 @@ public class ServerConnection {
         numConnectAttempts = 0;
         nextReconnectTime = 0;
         sendQueue = new ConcurrentLinkedQueue();
+        requestFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
+        responseFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
+        clearResponseFragments();
     }
 
     boolean isConnected() {
@@ -83,14 +110,6 @@ public class ServerConnection {
         lastUsed = TimeSync.getLocalSystemTime();
     }
 
-    void setRpcResponseHeader(ONCRPCResponseHeader hdr) {
-        rpcResponseHeader = hdr;
-    }
-
-    ONCRPCResponseHeader getRpcResponseHeader() {
-        return rpcResponseHeader;
-    }
-
     void useConnection() {
         lastUsed = TimeSync.getLocalSystemTime();
     }
@@ -103,11 +122,11 @@ public class ServerConnection {
         return channel;
     }
 
-    RPCRequest getRequest(int rqTransId) {
-        return requests.get(rqTransId);
+    ONCRPCRequest getRequest(int rqTransId) {
+        return requests.remove(rqTransId);
     }
 
-    void addRequest(int rqTransId, RPCRequest rq) {
+    void addRequest(int rqTransId, ONCRPCRequest rq) {
         requests.put(rqTransId,rq);
     }
 
@@ -115,68 +134,75 @@ public class ServerConnection {
         requests.remove(rqTransId);
     }
 
-    Map<Integer,RPCRequest> getRequests() {
+    Map<Integer,ONCRPCRequest> getRequests() {
         return this.requests;
     }
 
-    Queue<RPCRequest> getSendQueue() {
+    Queue<ONCRPCRequest> getSendQueue() {
         return sendQueue;
     }
 
+    
     /**
-     * @return the requestHeaders
+     * @return the requestFragHdr
      */
-    ReusableBuffer getRequestHeaders() {
-        return requestHeaders;
+    ByteBuffer getRequestFragHdr() {
+        return requestFragHdr;
     }
 
     /**
-     * @param requestHeaders the requestHeaders to set
+     * @return the responseFragHdr
      */
-    void setRequestHeaders(ReusableBuffer requestHeaders) {
-        this.requestHeaders = requestHeaders;
+    ByteBuffer getResponseFragHdr() {
+        return responseFragHdr;
+    }
+
+
+    /**
+     * @return the sendRequest
+     */
+    ONCRPCRequest getSendRequest() {
+        return sendRequest;
     }
 
     /**
-     * @return the requestPayload
+     * @param sendRequest the sendRequest to set
      */
-    ReusableBuffer getRequestPayload() {
-        return requestPayload;
+    void setSendRequest(ONCRPCRequest sendRequest) {
+        this.sendRequest = sendRequest;
     }
 
     /**
-     * @param requestPayload the requestPayload to set
+     * @return the responseFragments
      */
-    void setRequestPayload(ReusableBuffer requestPayload) {
-        this.requestPayload = requestPayload;
+    List<ReusableBuffer> getResponseFragments() {
+        return responseFragments;
+    }
+
+    void clearResponseFragments() {
+        responseFragments = new ArrayList(RPCNIOSocketServer.MAX_FRAGMENTS);
+    }
+
+    ReusableBuffer getCurrentResponseFragment() {
+        return responseFragments.get(responseFragments.size()-1);
+    }
+
+    void addResponseFragment(ReusableBuffer buf) {
+        responseFragments.add(buf);
     }
 
     /**
-     * @return the responseHeaders
+     * @return the lastResponseFragReceived
      */
-    ReusableBuffer getResponseHeaders() {
-        return responseHeaders;
+    boolean isLastResponseFragReceived() {
+        return lastResponseFragReceived;
     }
 
     /**
-     * @param responseHeaders the responseHeaders to set
+     * @param lastResponseFragReceived the lastResponseFragReceived to set
      */
-    void setResponseHeaders(ReusableBuffer responseHeaders) {
-        this.responseHeaders = responseHeaders;
-    }
-
-    /**
-     * @return the responsePayload
-     */
-    ReusableBuffer getResponsePayload() {
-        return responsePayload;
-    }
-
-    /**
-     * @param responsePayload the responsePayload to set
-     */
-    void setResponsePayload(ReusableBuffer responsePayload) {
-        this.responsePayload = responsePayload;
+    void setLastResponseFragReceived(boolean lastResponseFragReceived) {
+        this.lastResponseFragReceived = lastResponseFragReceived;
     }
 
 }

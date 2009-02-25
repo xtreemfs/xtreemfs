@@ -51,7 +51,7 @@ public class deregisterServiceResponse implements Response
 
     // Response
     public int getInterfaceVersion() { return 1; }
-    public int getOperationNumber() { return 4; }    
+    public int getOperationNumber() { return 5; }    
 
 }
 

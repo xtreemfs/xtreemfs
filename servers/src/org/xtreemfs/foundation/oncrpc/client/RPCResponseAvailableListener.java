@@ -22,50 +22,16 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir;
+package org.xtreemfs.foundation.oncrpc.client;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  *
  * @author bjko
  */
-public class DIRRequest {
+public interface RPCResponseAvailableListener<V extends Serializable> {
 
-    private final ONCRPCRequest rpcRequest;
-
-    private Serializable        requestMessage;
-
-    public DIRRequest(ONCRPCRequest rpcRequest) {
-        this.rpcRequest = rpcRequest;
-    }
-
-    public void deserializeMessage(Serializable message) {
-        final ReusableBuffer payload = rpcRequest.getRequestFragment();
-        message.deserialize(payload);
-        requestMessage = message;
-    }
-
-    public Serializable getRequestMessage() {
-        return requestMessage;
-    }
-
-    public void sendSuccess(Serializable response) {
-        rpcRequest.sendResponse(response);
-    }
-
-    public void sendInternalServerError() {
-    }
-
-    public void sendException(Serializable exception) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending exception return value: "+exception);
-        }
-        rpcRequest.sendGenericException(exception);
-    }
-
+    public void responseAvailable(RPCResponse<V> r);
 
 }

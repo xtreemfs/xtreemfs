@@ -53,7 +53,7 @@ public class registerServiceResponse implements Response
 
     // Response
     public int getInterfaceVersion() { return 1; }
-    public int getOperationNumber() { return 3; }    
+    public int getOperationNumber() { return 4; }    
 
 }
 

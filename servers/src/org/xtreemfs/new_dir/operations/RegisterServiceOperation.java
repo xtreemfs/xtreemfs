@@ -26,11 +26,14 @@ package org.xtreemfs.new_dir.operations;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.DIRInterface.registerServiceRequest;
+import org.xtreemfs.interfaces.DIRInterface.registerServiceResponse;
+import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
+import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.new_dir.DIRRequest;
 import org.xtreemfs.new_dir.DIRRequestDispatcher;
 
@@ -38,15 +41,15 @@ import org.xtreemfs.new_dir.DIRRequestDispatcher;
  *
  * @author bjko
  */
-public class GetAddressMappingOperation extends DIROperation {
+public class RegisterServiceOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public GetAddressMappingOperation(DIRRequestDispatcher master) {
+    public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        getAddressMappingsRequest tmp = new getAddressMappingsRequest();
+        registerServiceRequest tmp = new registerServiceRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -59,18 +62,38 @@ public class GetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final getAddressMappingsRequest request = (getAddressMappingsRequest)rq.getRequestMessage();
+            final registerServiceRequest request = (registerServiceRequest)rq.getRequestMessage();
 
-            byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            if (result == null) {
-                getAddressMappingsResponse response = new getAddressMappingsResponse();
-                rq.sendSuccess(response);
-            } else {
-                AddressMappingSet set = new AddressMappingSet();
-                set.deserialize(ReusableBuffer.wrap(result));
-                getAddressMappingsResponse response = new getAddressMappingsResponse(set);
-                rq.sendSuccess(response);
+            final ServiceRegistry reg = request.getService();
+
+            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
+                    DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes());
+            long currentVersion = 0;
+            if (data != null) {
+                ServiceRegistry dbData = new ServiceRegistry();
+                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                dbData.deserialize(buf);
+                currentVersion = dbData.getVersion();
             }
+
+            if (reg.getVersion() != currentVersion) {
+                rq.sendException(new ConcurrentModificationException());
+                return;
+            }
+
+            currentVersion++;
+
+            reg.setVersion(currentVersion);
+
+            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(reg.calculateSize());
+            reg.serialize(writer);
+            byte[] newData = writer.getBuffers().get(0).array();
+            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
+            ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
+            database.directInsert(ig);
+            
+            registerServiceResponse response = new registerServiceResponse(currentVersion);
+            rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
             rq.sendInternalServerError();
@@ -84,7 +107,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        getAddressMappingsRequest amr = new getAddressMappingsRequest();
+        registerServiceRequest amr = new registerServiceRequest();
         rq.deserializeMessage(amr);
     }
 

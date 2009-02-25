@@ -24,13 +24,17 @@
 
 package org.xtreemfs.new_dir.operations;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
+import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidRequest;
+import org.xtreemfs.interfaces.DIRInterface.getServicesByTypeRequest;
+import org.xtreemfs.interfaces.DIRInterface.getServicesByTypeResponse;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.new_dir.DIRRequest;
 import org.xtreemfs.new_dir.DIRRequestDispatcher;
 
@@ -38,15 +42,15 @@ import org.xtreemfs.new_dir.DIRRequestDispatcher;
  *
  * @author bjko
  */
-public class GetAddressMappingOperation extends DIROperation {
+public class GetServicesByTypeOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public GetAddressMappingOperation(DIRRequestDispatcher master) {
+    public GetServicesByTypeOperation(DIRRequestDispatcher master) {
         super(master);
-        getAddressMappingsRequest tmp = new getAddressMappingsRequest();
+        getServiceByUuidRequest tmp = new getServiceByUuidRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -59,18 +63,24 @@ public class GetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final getAddressMappingsRequest request = (getAddressMappingsRequest)rq.getRequestMessage();
+            final getServicesByTypeRequest request = (getServicesByTypeRequest)rq.getRequestMessage();
 
-            byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            if (result == null) {
-                getAddressMappingsResponse response = new getAddressMappingsResponse();
-                rq.sendSuccess(response);
-            } else {
-                AddressMappingSet set = new AddressMappingSet();
-                set.deserialize(ReusableBuffer.wrap(result));
-                getAddressMappingsResponse response = new getAddressMappingsResponse(set);
-                rq.sendSuccess(response);
+
+            Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+
+            ServiceRegistrySet services = new ServiceRegistrySet();
+
+            while (iter.hasNext()) {
+                final Entry<byte[],byte[]> e = iter.next();
+                final ServiceRegistry servEntry = new ServiceRegistry();
+                ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
+                servEntry.deserialize(buf);
+                if (servEntry.getService_type() == request.getType())
+                    services.add(servEntry);
             }
+
+            getServicesByTypeResponse response = new getServicesByTypeResponse(services);
+            rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
             rq.sendInternalServerError();
@@ -84,7 +94,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        getAddressMappingsRequest amr = new getAddressMappingsRequest();
+        getServicesByTypeRequest amr = new getServicesByTypeRequest();
         rq.deserializeMessage(amr);
     }
 

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 
          
-public class ConcurrentModificationException extends Exception implements org.xtreemfs.interfaces.utils.Serializable
+public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public ConcurrentModificationException() { stack_trace = ""; }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }

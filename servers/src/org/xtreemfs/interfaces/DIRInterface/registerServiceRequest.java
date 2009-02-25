@@ -53,7 +53,7 @@ public class registerServiceRequest implements Request
 
     // Request
     public int getInterfaceVersion() { return 1; }    
-    public int getOperationNumber() { return 3; }
+    public int getOperationNumber() { return 4; }
     public Response createDefaultResponse() { return new registerServiceResponse(); }
 
 }

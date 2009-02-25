@@ -22,50 +22,24 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
-
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+package org.xtreemfs.interfaces.utils;
 
 /**
- * 
+ *
  * @author bjko
  */
-public abstract class DIROperation {
-    
-    protected final DIRRequestDispatcher master;
-    
-    public DIROperation(DIRRequestDispatcher master) {
-        this.master = master;
+public abstract class ONCRPCException extends Exception implements Serializable {
+
+    public ONCRPCException() {
+        super();
     }
 
-    public abstract int getProcedureId();
-    
-    /**
-     * called after request was parsed and operation assigned.
-     * 
-     * @param rq
-     *            the new request
-     */
-    public abstract void startRequest(DIRRequest rq);
-    
-    
-    /**
-     * Method to check if operation needs user authentication.
-     * 
-     * @return true, if the user needs to be authenticated
-     */
-    public abstract boolean isAuthRequired();
-    
+    public ONCRPCException(String message) {
+        super(message);
+    }
 
-    /**
-     * parses the RPC request message. Can throw any exception which
-     * will result in an error message telling the client that the
-     * request message data is garbage.
-     * @param rq
-     * @throws java.lang.Exception
-     */
-    public abstract void parseRPCMessage(DIRRequest rq) throws Exception;
-    
-    
+    public ONCRPCException(String message, Throwable cause) {
+        super(message,cause);
+    }
+
 }

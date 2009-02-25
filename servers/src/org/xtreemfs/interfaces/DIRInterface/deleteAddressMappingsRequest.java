@@ -15,10 +15,10 @@ import java.util.ArrayList;
 
          
 
-public class deregisterServiceRequest implements Request
+public class deleteAddressMappingsRequest implements Request
 {
-    public deregisterServiceRequest() { uuid = ""; }
-    public deregisterServiceRequest( String uuid ) { this.uuid = uuid; }
+    public deleteAddressMappingsRequest() { uuid = ""; }
+    public deleteAddressMappingsRequest( String uuid ) { this.uuid = uuid; }
 
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
@@ -26,11 +26,11 @@ public class deregisterServiceRequest implements Request
     // Object
     public String toString()
     {
-        return "deregisterServiceRequest( " + "\"" + uuid + "\"" + " )";
+        return "deleteAddressMappingsRequest( " + "\"" + uuid + "\"" + " )";
     }    
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::deregisterServiceRequest"; }    
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::deleteAddressMappingsRequest"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
         { final byte[] bytes = uuid.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
@@ -53,8 +53,8 @@ public class deregisterServiceRequest implements Request
 
     // Request
     public int getInterfaceVersion() { return 1; }    
-    public int getOperationNumber() { return 5; }
-    public Response createDefaultResponse() { return new deregisterServiceResponse(); }
+    public int getOperationNumber() { return 3; }
+    public Response createDefaultResponse() { return new deleteAddressMappingsResponse(); }
 
 }
 

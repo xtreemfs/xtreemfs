@@ -28,9 +28,10 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
+import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidRequest;
+import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidResponse;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.new_dir.DIRRequest;
 import org.xtreemfs.new_dir.DIRRequestDispatcher;
 
@@ -38,15 +39,15 @@ import org.xtreemfs.new_dir.DIRRequestDispatcher;
  *
  * @author bjko
  */
-public class GetAddressMappingOperation extends DIROperation {
+public class GetServiceByUuidOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public GetAddressMappingOperation(DIRRequestDispatcher master) {
+    public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
-        getAddressMappingsRequest tmp = new getAddressMappingsRequest();
+        getServiceByUuidRequest tmp = new getServiceByUuidRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -59,18 +60,22 @@ public class GetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final getAddressMappingsRequest request = (getAddressMappingsRequest)rq.getRequestMessage();
+            final getServiceByUuidRequest request = (getServiceByUuidRequest)rq.getRequestMessage();
 
-            byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            if (result == null) {
-                getAddressMappingsResponse response = new getAddressMappingsResponse();
-                rq.sendSuccess(response);
-            } else {
-                AddressMappingSet set = new AddressMappingSet();
-                set.deserialize(ReusableBuffer.wrap(result));
-                getAddressMappingsResponse response = new getAddressMappingsResponse(set);
-                rq.sendSuccess(response);
+            
+            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
+                    DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
+
+            ServiceRegistrySet services = new ServiceRegistrySet();
+            if (data != null) {
+                ServiceRegistry dbData = new ServiceRegistry();
+                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                dbData.deserialize(buf);
+                services.add(dbData);
             }
+            
+            getServiceByUuidResponse response = new getServiceByUuidResponse(services);
+            rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
             rq.sendInternalServerError();
@@ -84,7 +89,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        getAddressMappingsRequest amr = new getAddressMappingsRequest();
+        getServiceByUuidRequest amr = new getServiceByUuidRequest();
         rq.deserializeMessage(amr);
     }
 
