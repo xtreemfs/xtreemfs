@@ -8,6 +8,7 @@ module xtreemfs
       exception errnoException { uint32_t error_code; string stack_trace; };
       exception RedirectException { string to_uuid; };
       exception ConcurrentModificationException { string stack_trace; };
+      exception InvalidArgumentException { string error_message; };
     };
   };
 };

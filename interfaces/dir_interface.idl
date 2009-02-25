@@ -2,6 +2,10 @@ module xtreemfs
 {
   module interfaces
   {
+    const uint16_t SERVICE_TYPE_MRC = 1;
+    const uint16_t SERVICE_TYPE_OSD = 2;
+    const uint16_t SERVICE_TYPE_VOLUME = 3;
+
     struct AddressMapping
     {
       string uuid;
@@ -27,7 +31,8 @@ module xtreemfs
     {
       string uuid;
       uint64_t version;
-      uint16_t service_type;
+      uint16_t service_type
+      string   service_name;
       KeyValuePairSet data;
     };
 
@@ -37,12 +42,14 @@ module xtreemfs
     {
       void getAddressMappings( string uuid, out AddressMappingSet address_mappings ) # 1;
       //throws a ConcurrentModificationException if the entry was modified by another process
-      void setAddressMappings( AddressMappingSet address_mappings ) # 2;
+      uint64_t setAddressMappings( AddressMappingSet address_mappings ) # 2;
+      void deleteAddressMappings( string uuid ) # 3;
       //throws a ConcurrentModificationException if the entry was modified by another process
-      uint64_t registerService( ServiceRegistry service ) # 3;
-      void     deregisterService( string uuid ) # 4;
-      void     getServices( uint16_t type, out ServiceRegistrySet services) # 5;
-      uint64_t getGlobalTime() # 6;
+      uint64_t registerService( ServiceRegistry service ) # 4;
+      void     deregisterService( string uuid ) # 5;
+      void     getServicesByType( uint16_t type, out ServiceRegistrySet services) # 6;
+      void     getServiceByUuid( string uuid, out ServiceRegistrySet services) # 7;
+      uint64_t getGlobalTime() # 8;
     };
   };
 };
