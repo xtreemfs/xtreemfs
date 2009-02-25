@@ -38,7 +38,6 @@ import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -59,14 +58,9 @@ public class RandomAccessFile implements ObjectStore {
     private Capability          capability;
 
     private Locations           locations;
-
-    private Location            selectedReplica;
-
-    private StripingPolicy      selectedReplicaStripingPolicy;
-
-    private List<ServiceUUID>   selectedReplicaOSDs;
-
-    private int                 selectedReplicaStripeSize;
+    
+    // all replicas have the same striping policy at the moment
+    private StripingPolicy      stripingPolicy;
 
     private String              fileId;
 
@@ -117,9 +111,12 @@ public class RandomAccessFile implements ObjectStore {
         locations = new Locations(new JSONString(capAndXLoc.get(HTTPHeaders.HDR_XLOCATIONS)));
         capability = new Capability(capAndXLoc.get(HTTPHeaders.HDR_XCAPABILITY));
 
-        capTime = System.currentTimeMillis();
+        // all replicas have the same striping policy at the moment
+        stripingPolicy = locations.getLocation(0).getStripingPolicy();
+        byteMapper = ByteMapperFactory.createByteMapper(stripingPolicy
+                .getPolicyName(), (int) stripingPolicy.getStripeSize(0), this);
 
-        setReplicaNo(0);
+        capTime = System.currentTimeMillis();
 
         fileId = capability.getFileId();
         newFileSizeHdr = null;
@@ -179,34 +176,45 @@ public class RandomAccessFile implements ObjectStore {
      */
     public int readObject(int objectNo) throws HttpErrorException, IOException, JSONException,
         InterruptedException {
-
         // check whether capability needs to be renewed
         checkCap();
 
         RPCResponse response = null;
 
-        try {
-            int current_osd_index = selectedReplicaStripingPolicy.getOSDByObject(objectNo);
-            InetSocketAddress current_osd_address = selectedReplicaOSDs.get(current_osd_index)
-                    .getAddress();
+        List<ServiceUUID> osds = locations.getOSDsByObject(objectNo);
 
-            response = osdClient.get(current_osd_address, locations, capability, fileId, objectNo);
+        ReusableBuffer data = null;
+        for (ServiceUUID osd : sortOSDs(osds)) {
+            try {
+                response = osdClient.get(osd.getAddress(), locations, capability, fileId, objectNo);
+                String header = response.getHeaders().getHeader(HTTPHeaders.HDR_XINVALIDCHECKSUM);
+                if (header != null && header.equalsIgnoreCase("true"))
+                    throw new IOException("object " + objectNo + " has an invalid checksum");
 
-            String header = response.getHeaders().getHeader(HTTPHeaders.HDR_XINVALIDCHECKSUM);
-            if (header != null && header.equalsIgnoreCase("true"))
-                throw new IOException("object " + objectNo + " has an invalid checksum");
-
-            ReusableBuffer data = response.getBody();
-            if (data == null)
-                return 0;
-
-            data.flip();
-
-            return data.limit();
-        } finally {
-            if (response != null)
-                response.freeBuffers();
+                if (response.getBody() == null)
+                    continue; // try next OSD
+                
+                response.getBody().flip();
+                data = response.getBody();
+                break;
+            } catch (IOException e) {
+                continue; // try next OSD
+            } finally {
+                if (response != null)
+                    response.freeBuffers();
+            }
         }
+        return (data==null) ? 0 : data.limit();
+    }
+
+    /**
+     * Sorts the OSD list after a specific pattern (original, random, ...).
+     * @param osds
+     * @return
+     */
+    private List<ServiceUUID> sortOSDs(List<ServiceUUID> osds) {
+        // TODO Auto-generated method stub
+        return osds;
     }
 
     /**
@@ -222,18 +230,37 @@ public class RandomAccessFile implements ObjectStore {
     public ReusableBuffer readObject(long objectNo, long firstByteInObject, long bytesInObject)
         throws IOException, JSONException, InterruptedException, HttpErrorException {
 
-        int current_osd_index = selectedReplicaStripingPolicy.getOSDByObject(objectNo);
-        InetSocketAddress current_osd_address = selectedReplicaOSDs.get(current_osd_index)
-                .getAddress();
+        // check whether capability needs to be renewed
+        checkCap();
 
-        RPCResponse response = osdClient.get(current_osd_address, locations, capability, fileId,
-            objectNo, firstByteInObject, bytesInObject - 1);
+        RPCResponse response = null;
 
-        ReusableBuffer data = response.getBody();
-        if (data == null) {
-            return null;
+        List<ServiceUUID> osds = locations.getOSDsByObject(objectNo);
+
+        ReusableBuffer data = null;
+        for (ServiceUUID osd : sortOSDs(osds)) {
+            try {
+                response = osdClient.get(osd.getAddress(), locations, capability, fileId, objectNo,
+                        firstByteInObject, bytesInObject - 1);
+                String header = response.getHeaders().getHeader(HTTPHeaders.HDR_XINVALIDCHECKSUM);
+                if (header != null && header.equalsIgnoreCase("true"))
+                    throw new IOException("object " + objectNo + " has an invalid checksum");
+
+                if (response.getBody() == null) {
+                    if (response != null)
+                        response.freeBuffers();
+                    continue; // try next OSD
+                }
+                
+                response.getBody().flip();
+                data = response.getBody();
+                break;
+            } catch (IOException e) {
+                if (response != null)
+                    response.freeBuffers();
+                continue; // try next OSD
+            }
         }
-        data.flip();
         return data;
     }
 
@@ -270,48 +297,65 @@ public class RandomAccessFile implements ObjectStore {
         // check whether capability needs to be renewed
         checkCap();
 
-        int current_osd_index = selectedReplicaStripingPolicy.getOSDByObject(objectNo);
-        InetSocketAddress current_osd_address = selectedReplicaOSDs.get(current_osd_index)
-                .getAddress();
+        // file is marked as read-only
+        if (locations.getNumberOfReplicas() == 1) {
+            ServiceUUID osd = locations.getOSDsByObject(objectNo).get(0);
+            RPCResponse response = osdClient.put(osd.getAddress(), locations, capability, fileId,
+                    objectNo, firstByteInObject, data);
 
-        RPCResponse response = osdClient.put(current_osd_address, locations, capability, fileId,
-            objectNo, firstByteInObject, data);
-
-        response.waitForResponse();
-        final String tmp = response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-        if (tmp != null)
-            newFileSizeHdr = tmp;
+            response.waitForResponse();
+            final String tmp = response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
+            if (tmp != null)
+                newFileSizeHdr = tmp;
+        } else
+            throw new IOException("File is marked as read-only. You cannot write anymore.");
     }
 
-    public String getStripingPolicy() {
-        return selectedReplica.getStripingPolicy().toString();
+    public void flush() throws Exception {
+        if (newFileSizeHdr != null)
+            this.mrcClient.updateFileSize(mrcAddress, capability.toString(), newFileSizeHdr,
+                authString);
     }
 
-    public long getStripeSize() {
-        // the stripe size of a file is constant.
-        return selectedReplicaStripingPolicy.getStripeSize(0);
+    public void delete() throws Exception {
+        checkCap();
+        
+        if (locations.getNumberOfReplicas() == 1) {
+            mrcClient.delete(mrcAddress, pathName, authString);
+            RPCResponse r = osdClient.delete(locations.getLocation(0).getOSDs().get(0).getAddress(),
+                    locations, capability, fileId);
+            r.waitForResponse();
+        } else
+            throw new IOException("There is more than 1 replica existing. Delete all replicas first.");
     }
-
-    public long getStripeSize(long objectNo) {
-        return selectedReplicaStripingPolicy.getStripeSize(objectNo);
-    }
-
-    public List<ServiceUUID> getOSDs() {
-        return selectedReplicaOSDs;
-    }
-
+    
     public long length() throws Exception {
         return (Long) mrcClient.stat(mrcAddress, pathName, false, true, false, authString).get(
             "size");
     }
 
+    public String getStripingPolicy() {
+        return stripingPolicy.toString();
+    }
+
+    public long getStripeSize() {
+        // the stripe size of a file is constant.
+        return stripingPolicy.getStripeSize(0);
+    }
+
+    public List<ServiceUUID> getOSDs() {
+        // FIXME: use more than only the first replica
+        return locations.getLocation(0).getOSDs();
+    }
+
     public long noOfObjects() throws Exception {
-        return (length() / selectedReplicaStripeSize) + 1;
+        // all replicas have the same striping policy at the moment
+        return (length() / locations.getLocation(0).getStripingPolicy().getStripeSize(0)) + 1;
     }
 
     public ServiceUUID getOSDId(long objectNo) {
-        long osd = selectedReplicaStripingPolicy.getOSDByObject(objectNo);
-        return selectedReplicaOSDs.get((int) osd);
+        // FIXME: use more than only the first replica
+        return locations.getOSDsByObject(objectNo).get(0);
     }
 
     public Locations getLocations() {
@@ -338,35 +382,11 @@ public class RandomAccessFile implements ObjectStore {
         return filePos;
     }
 
-    public void flush() throws Exception {
-        if (newFileSizeHdr != null)
-            this.mrcClient.updateFileSize(mrcAddress, capability.toString(), newFileSizeHdr,
-                authString);
-    }
-
-    public void delete() throws Exception {
-        mrcClient.delete(mrcAddress, pathName, authString);
-        RPCResponse r = osdClient.delete(selectedReplicaOSDs.get(0).getAddress(), locations,
-            capability, fileId);
-        r.waitForResponse();
-    }
-
     public void finalize() {
         if (speedy == null) {
             mrcClient.shutdown();
             osdClient.shutdown();
         }
-    }
-
-    private void setReplicaNo(int no) {
-
-        selectedReplica = locations.getLocation(no);
-        selectedReplicaStripingPolicy = selectedReplica.getStripingPolicy();
-        selectedReplicaOSDs = selectedReplica.getOSDs();
-        selectedReplicaStripeSize = (int) selectedReplicaStripingPolicy.getStripeSize(0);
-
-        byteMapper = ByteMapperFactory.createByteMapper(selectedReplicaStripingPolicy
-                .getPolicyName(), selectedReplicaStripeSize, this);
     }
 
     private void checkCap() throws IOException {

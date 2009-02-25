@@ -117,8 +117,8 @@ public class ReplicationStageTest extends TestCase {
     private ReusableBuffer data;
 
     public ReplicationStageTest() {
-	super();
-	// Auto-generated constructor stub
+        super();
+        // Auto-generated constructor stub
     }
 
     /**
@@ -126,24 +126,23 @@ public class ReplicationStageTest extends TestCase {
      */
     @Before
     public void setUp() throws Exception {
-	System.out.println("TEST: " + getClass().getSimpleName() + "."
-		+ getName());
-	Logging.start(Logging.LEVEL_DEBUG);
+        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+        Logging.start(Logging.LEVEL_DEBUG);
 
-	this.stripeSize = 128;
-	this.data = generateData(stripeSize * 1024);
+        this.stripeSize = 128;
+        this.data = generateData(stripeSize * 1024);
 
         DIRConfig dirConfig = SetupUtils.createDIRConfig();
-	dir = new RequestController(dirConfig);
+        dir = new RequestController(dirConfig);
         dir.startup();
-	dispatcher = new TestRequestDispatcher(new InetSocketAddress(dirConfig
-		.getAddress(), dirConfig.getPort()), this.data);
+        dispatcher = new TestRequestDispatcher(new InetSocketAddress(dirConfig.getAddress(), dirConfig
+                .getPort()), this.data);
 
-	file = "1:1";
-	capability = new Capability(file, "read", 0, "IAmTheClient");
-	locationList = new ArrayList<Location>();
+        file = "1:1";
+        capability = new Capability(file, "read", 0, "IAmTheClient");
+        locationList = new ArrayList<Location>();
 
-//	UUIDResolver.addLocalMapping("localhost", 32640, false);
+        // UUIDResolver.addLocalMapping("localhost", 32640, false);
     }
 
     /**
@@ -151,9 +150,9 @@ public class ReplicationStageTest extends TestCase {
      */
     @After
     public void tearDown() throws Exception {
-	dispatcher.shutdown();
-	dir.shutdown();
-//	UUIDResolver.shutdown();
+        dispatcher.shutdown();
+        dir.shutdown();
+        // UUIDResolver.shutdown();
     }
 
     /*
@@ -161,23 +160,21 @@ public class ReplicationStageTest extends TestCase {
      */
     /**
      * this test has no assertions
+     * 
      * @throws JSONException
      */
-    public void testControlFlowOfFetchAndWriteReplicaOperation()
-    	throws JSONException {
+    public void testControlFlowOfFetchAndWriteReplicaOperation() throws JSONException {
         int objectNo = 2;
-        
+
         OSDRequest request = createOSDRequest(objectNo);
-        request.setOperation(dispatcher
-        	.getOperation(Operations.READ));
-        OSDRequest request2 = createOSDRequest(objectNo+1);
-        request.setOperation(dispatcher
-        	.getOperation(Operations.READ));
-       
+        request.setOperation(dispatcher.getOperation(Operations.READ));
+        OSDRequest request2 = createOSDRequest(objectNo + 1);
+        request.setOperation(dispatcher.getOperation(Operations.READ));
+
         // enqueue
         request.getOperation().startRequest(request);
         request.getOperation().startRequest(request2);
-       
+
         try {
             // wait, hopefully the request has finished
             Thread.sleep(5000);
@@ -186,84 +183,78 @@ public class ReplicationStageTest extends TestCase {
             e.printStackTrace();
         }
     }
-    
+
     /*
      * does not work properly at the moment
      */
-    public void testStageMethodsThroughControlFlowOfFetchAndWriteReplicaOperation()
-	    throws JSONException {
-	int objectNo = 2;
-	OSDRequest originalRequest = createOSDRequest(objectNo);
-	originalRequest.setOperation(dispatcher
-		.getOperation(Operations.READ));
-	OSDRequest request = createOSDRequest(objectNo);
-	originalRequest.setCurrentCallback(new StageCallbackInterface() {
-	    public void methodExecutionCompleted(OSDRequest request,
-		    StageResponseCode result) {
-		// assert data has been copied to original request
-		assertEquals(data.getBuffer(), request.getData().getBuffer());
-	    }
-	});
-	request.setOriginalOsdRequest(originalRequest);
-	request.setOperation(dispatcher
-		.getOperation(Operations.FETCH_AND_WRITE_REPLICA));
+    public void testStageMethodsThroughControlFlowOfFetchAndWriteReplicaOperation() throws JSONException {
+        int objectNo = 2;
+        OSDRequest originalRequest = createOSDRequest(objectNo);
+        originalRequest.setOperation(dispatcher.getOperation(Operations.READ));
+        OSDRequest request = createOSDRequest(objectNo);
+        originalRequest.setCurrentCallback(new StageCallbackInterface() {
+            public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                // assert data has been copied to original request
+                assertEquals(data.getBuffer(), request.getData().getBuffer());
+            }
+        });
+        request.setOriginalOsdRequest(originalRequest);
+        request.setOperation(dispatcher.getOperation(Operations.FETCH_AND_WRITE_REPLICA));
 
-	TransferStrategy strategy = new SimpleStrategy(request.getDetails());
-	request.getDetails().setReplicationTransferStrategy(strategy);
-	strategy.addPreferredObject(request.getDetails().getObjectNumber());
+        TransferStrategy strategy = new SimpleStrategy(request.getDetails());
+        request.getDetails().setReplicationTransferStrategy(strategy);
+        strategy.addPreferredObject(request.getDetails().getObjectNumber());
 
-	// enqueue
-	dispatcher.getStage(Stages.REPLICATION).enqueueOperation(request,
-		ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT,
-		new StageCallbackInterface() {
-		    public void methodExecutionCompleted(OSDRequest request,
-			    StageResponseCode result) {
-			// assert object was fetched
-			assertEquals(data.getBuffer(), request.getData().getBuffer());
+        // enqueue
+        dispatcher.getStage(Stages.REPLICATION).enqueueOperation(request,
+                ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT, new StageCallbackInterface() {
+                    public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                        // assert object was fetched
+                        assertEquals(data.getBuffer(), request.getData().getBuffer());
 
-			dispatcher.getStage(Stages.STORAGE).enqueueOperation(
-				request, StorageThread.STAGEOP_WRITE_OBJECT,
-				new StageCallbackInterface() {
-				    public void methodExecutionCompleted(
-					    OSDRequest request,
-					    StageResponseCode result) {
-					// assert object has been written to disk (could not be asserted currently)
+                        dispatcher.getStage(Stages.STORAGE).enqueueOperation(request,
+                                StorageThread.STAGEOP_WRITE_OBJECT, new StageCallbackInterface() {
+                                    public void methodExecutionCompleted(OSDRequest request,
+                                            StageResponseCode result) {
+                                        // assert object has been written to
+                                        // disk (could not be asserted
+                                        // currently)
 
-					// copy to original request
-					OSDRequest originalRq = request.getOriginalOsdRequest();
-					originalRq.setData(request.getData().createViewBuffer(), request
-						.getDataType());
-					// go on with the original request operation-callback
-					originalRq.getCurrentCallback().methodExecutionCompleted(
-						originalRq, result);
+                                        // copy to original request
+                                        OSDRequest originalRq = request.getOriginalOsdRequest();
+                                        originalRq.setData(request.getData().createViewBuffer(), request
+                                                .getDataType());
+                                        // go on with the original request
+                                        // operation-callback
+                                        originalRq.getCurrentCallback().methodExecutionCompleted(originalRq,
+                                                result);
 
-					// initiate next steps for replication
-					dispatcher.getStage(Stages.REPLICATION)
-						.enqueueOperation(
-							request,
-							ReplicationStage.STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS,
-							new StageCallbackInterface() {
-							    public void methodExecutionCompleted(
-								    OSDRequest request,
-								    StageResponseCode result) {
-								// assert nothing currently (request has ended)
-							    }
-							});
+                                        // initiate next steps for replication
+                                        dispatcher.getStage(Stages.REPLICATION).enqueueOperation(request,
+                                                ReplicationStage.STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS,
+                                                new StageCallbackInterface() {
+                                                    public void methodExecutionCompleted(OSDRequest request,
+                                                            StageResponseCode result) {
+                                                        // assert nothing
+                                                        // currently (request
+                                                        // has ended)
+                                                    }
+                                                });
 
-				    }
-				});
+                                    }
+                                });
 
-		    }
-		});
+                    }
+                });
 
-	try {
-	    // wait, hopefully the request has finished
-	    Thread.sleep(3000);
-	} catch (InterruptedException e) {
-	    // Auto-generated catch block
-	    e.printStackTrace();
-	}
-	
+        try {
+            // wait, hopefully the request has finished
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            // Auto-generated catch block
+            e.printStackTrace();
+        }
+
         // caution: maybe the assertions have never been executed
     }
 
@@ -271,31 +262,29 @@ public class ReplicationStageTest extends TestCase {
      * @return
      */
     private OSDRequest createOSDRequest(long objectNo) {
-	OSDRequest request = new OSDRequest(requestID++);
+        OSDRequest request = new OSDRequest(requestID++);
 
-	// add available osds
-	List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
-	osds.add(SetupUtils.getOSD1UUID());
-	osds.add(SetupUtils.getOSD2UUID());
+        // add available osds
+        List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
+        osds.add(SetupUtils.getOSD1UUID());
+        osds.add(SetupUtils.getOSD2UUID());
 
-	List<ServiceUUID> osds2 = new ArrayList<ServiceUUID>();
-	osds2.add(SetupUtils.getOSD3UUID());
-	osds2.add(SetupUtils.getOSD4UUID());
+        List<ServiceUUID> osds2 = new ArrayList<ServiceUUID>();
+        osds2.add(SetupUtils.getOSD3UUID());
+        osds2.add(SetupUtils.getOSD4UUID());
 
-	locationList
-		.add(new Location(new RAID0(stripeSize, osds.size()), osds));
-	locationList.add(new Location(new RAID0(stripeSize, osds2.size()),
-		osds2));
+        locationList.add(new Location(new RAID0(stripeSize, osds.size()), osds));
+        locationList.add(new Location(new RAID0(stripeSize, osds2.size()), osds2));
 
-	Locations locations = new Locations(locationList);
+        Locations locations = new Locations(locationList);
 
-	// fill request
-	request.getDetails().setLocationList(locations);
-	request.getDetails().setCapability(capability);
-	request.getDetails().setFileId(file);
-	request.getDetails().setCurrentReplica(locations.getLocation(0));
-	request.getDetails().setObjectNumber(objectNo);
-	return request;
+        // fill request
+        request.getDetails().setLocationList(locations);
+        request.getDetails().setCapability(capability);
+        request.getDetails().setFileId(file);
+        request.getDetails().setCurrentReplica(locations.getLocation(0));
+        request.getDetails().setObjectNumber(objectNo);
+        return request;
     }
 
     /**
@@ -304,216 +293,216 @@ public class ReplicationStageTest extends TestCase {
      * @return
      */
     private ReusableBuffer generateData(int size) {
-	Random random = new Random();
-	ReusableBuffer data = BufferPool.allocate(size);
-	random.nextBytes(data.getData());
-	return data;
+        Random random = new Random();
+        ReusableBuffer data = BufferPool.allocate(size);
+        random.nextBytes(data.getData());
+        return data;
     }
 
     private class TestRequestDispatcher implements RequestDispatcher {
-	MultiSpeedy speedy;
-	ReplicationStage replication;
-	TestStorageStage storage;
-	DummyStage dummyStage;
-	private OSDClient osdClient;
-	private DIRClient dirClient;
+        MultiSpeedy speedy;
+        ReplicationStage replication;
+        TestStorageStage storage;
+        DummyStage dummyStage;
+        private OSDClient osdClient;
+        private DIRClient dirClient;
 
-	public TestRequestDispatcher(InetSocketAddress dirAddress, ReusableBuffer data) throws IOException {
-	    replication = new ReplicationStage(this);
-	    storage = new TestStorageStage(this);
-	    dummyStage = new DummyStage();
-	    speedy = new TestMultiSpeedy(data);
-	    osdClient = new OSDClient(speedy);
-//	    dirClient = new DIRClient(speedy,dirAddress);
-	    try {
-		dirClient = SetupUtils.initTimeSync();
-	    } catch (JSONException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+        public TestRequestDispatcher(InetSocketAddress dirAddress, ReusableBuffer data) throws IOException {
+            replication = new ReplicationStage(this);
+            storage = new TestStorageStage(this);
+            dummyStage = new DummyStage();
+            speedy = new TestMultiSpeedy(data);
+            osdClient = new OSDClient(speedy);
+            // dirClient = new DIRClient(speedy,dirAddress);
+            try {
+                dirClient = SetupUtils.initTimeSync();
+            } catch (JSONException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
 
-	    replication.start();
-	    storage.start();
-	    dummyStage.start();
+            replication.start();
+            storage.start();
+            dummyStage.start();
 
-//	    // register/update the current address mapping
-//            try {
-//		RPCResponse r3 = dirClient.registerAddressMapping("localhost", NetUtils.getReachableEndpoints(32636, "http"), 1,
-//		    NullAuthProvider.createAuthString("localhost", "localhost"));
-//		r3.waitForResponse();
-//	    } catch (JSONException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	    } catch (InterruptedException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	    }
-	}
+            // // register/update the current address mapping
+            // try {
+            // RPCResponse r3 = dirClient.registerAddressMapping("localhost",
+            // NetUtils.getReachableEndpoints(32636, "http"), 1,
+            // NullAuthProvider.createAuthString("localhost", "localhost"));
+            // r3.waitForResponse();
+            // } catch (JSONException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // } catch (InterruptedException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // }
+        }
 
-	@Override
-	public Operation getOperation(RequestDispatcher.Operations opCode) {
-	    switch (opCode) {
-	    case READ:
-		return new ReadOperation(this);
-	    case FETCH_AND_WRITE_REPLICA:
-		return new FetchAndWriteReplica(this);
-	    }
-	    return null;
-	}
+        @Override
+        public Operation getOperation(RequestDispatcher.Operations opCode) {
+            switch (opCode) {
+            case READ:
+                return new ReadOperation(this);
+            case FETCH_AND_WRITE_REPLICA:
+                return new FetchAndWriteReplica(this);
+            }
+            return null;
+        }
 
-	@Override
-	public Stage getStage(Stages stage) {
-	    switch (stage) {
-	    case REPLICATION:
-		return this.replication;
-	    case STORAGE:
-		return this.storage;
-	    default:
-		return this.dummyStage;
-	    }
-	}
+        @Override
+        public Stage getStage(Stages stage) {
+            switch (stage) {
+            case REPLICATION:
+                return this.replication;
+            case STORAGE:
+                return this.storage;
+            default:
+                return this.dummyStage;
+            }
+        }
 
-	@Override
-	public StageStatistics getStatistics() {
-	    return new StageStatistics();
-	}
+        @Override
+        public StageStatistics getStatistics() {
+            return new StageStatistics();
+        }
 
-	@Override
-	public boolean isHeadOSD(Location xloc) {
-	    return false;
-	}
+        @Override
+        public boolean isHeadOSD(Location xloc) {
+            return false;
+        }
 
-	@Override
-	public void requestFinished(OSDRequest rq) {
-	    // TODO
-	}
+        @Override
+        public void requestFinished(OSDRequest rq) {
+            // TODO
+        }
 
-	@Override
-	public void sendSpeedyRequest(Request originalRequest,
-		SpeedyRequest speedyRq, InetSocketAddress server)
-		throws IOException {
-	    speedyRq.setOriginalRequest(originalRequest);
-	    this.speedy.sendRequest(speedyRq, server);
-	}
+        @Override
+        public void sendSpeedyRequest(Request originalRequest, SpeedyRequest speedyRq,
+                InetSocketAddress server) throws IOException {
+            speedyRq.setOriginalRequest(originalRequest);
+            this.speedy.sendRequest(speedyRq, server);
+        }
 
-	@Override
-	public void sendUDP(ReusableBuffer data, InetSocketAddress receiver) {
-	}
+        @Override
+        public void sendUDP(ReusableBuffer data, InetSocketAddress receiver) {
+        }
 
-	@Override
-	public void shutdown() {
-	    speedy.shutdown();
-	    try {
-		speedy.waitForShutdown();
-	    } catch (Exception e) {
-		// Auto-generated catch block
-		e.printStackTrace();
-	    }
-	    replication.shutdown();
-	    storage.shutdown();
-	    dummyStage.shutdown();
-	}
+        @Override
+        public void shutdown() {
+            speedy.shutdown();
+            try {
+                speedy.waitForShutdown();
+            } catch (Exception e) {
+                // Auto-generated catch block
+                e.printStackTrace();
+            }
+            replication.shutdown();
+            storage.shutdown();
+            dummyStage.shutdown();
+        }
 
-	@Override
-	public OSDConfig getConfig() {
-	    // Auto-generated method stub
-	    return null;
-	}
+        @Override
+        public OSDConfig getConfig() {
+            // Auto-generated method stub
+            return null;
+        }
 
-	@Override
-	public DIRClient getDIRClient() {
-	    return dirClient;
-	}
+        @Override
+        public DIRClient getDIRClient() {
+            return dirClient;
+        }
 
-	@Override
-	public OSDClient getOSDClient() {
-	    // Auto-generated method stub
-	    return osdClient;
-	}
+        @Override
+        public OSDClient getOSDClient() {
+            // Auto-generated method stub
+            return osdClient;
+        }
     }
 
     private class TestMultiSpeedy extends MultiSpeedy {
-//	SpeedyResponseListener listener;
-	ReusableBuffer data;
+        // SpeedyResponseListener listener;
+        ReusableBuffer data;
 
-	public TestMultiSpeedy(ReusableBuffer data) throws IOException {
-	    super();
-	    this.data = data;
-	}
+        public TestMultiSpeedy(ReusableBuffer data) throws IOException {
+            super();
+            this.data = data;
+        }
 
-	@Override
-	public void registerListener(SpeedyResponseListener rl,
-		InetSocketAddress server) {
-	    // Auto-generated method stub
-//	    this.listener = rl;
-	}
+        @Override
+        public void registerListener(SpeedyResponseListener rl, InetSocketAddress server) {
+            // Auto-generated method stub
+            // this.listener = rl;
+        }
 
-	@Override
-	public void sendRequest(SpeedyRequest rq, InetSocketAddress server)
-		throws IOException, IllegalStateException {
-//	    if(rq.getURI().equals("getAddressMapping")) {
-//		
-//		List<Object> endpoints = new ArrayList(1);
-//		Map<String,Object> m = RPCClient.generateMap("address", "127.0.0.1",
-//                        "port", 32636, "protocol", "http", 
-//                        "ttl", 3600, "match_network", "*");
-//                endpoints.add(m);
-//		
-//		Map<String, List<Object>> results = new HashMap<String, List<Object>>();
-//		List<Object> result = new ArrayList<Object>(3);
-//                result.add(1); // version
-//                result.add(endpoints);
-//                results.put("bla", result);
-//                
-//                try {
-//		    ((OSDRequest) rq.getOriginalRequest()).setData(ReusableBuffer.wrap(JSONParser.writeJSON(results).getBytes()),
-//		        DATA_TYPE.JSON);
-//		    rq.listener.receiveRequest(rq);
-//		} catch (JSONException e) {
-//		    // TODO Auto-generated catch block
-//		    e.printStackTrace();
-//		}
-//	    }
-//	    
-//	    else {
-    	    rq.responseHeaders = new HTTPHeaders();
-    	    rq.responseBody = this.data;
-    	    rq.responseHeaders.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, HTTPUtils.DATA_TYPE.BINARY.toString());
-    	    rq.responseHeaders.addHeader(HTTPHeaders.HDR_XNEWFILESIZE, this.data.limit());
-    	    rq.listener.receiveRequest(rq);
-//	    }
-	}
+        @Override
+        public void sendRequest(SpeedyRequest rq, InetSocketAddress server) throws IOException,
+                IllegalStateException {
+            // if(rq.getURI().equals("getAddressMapping")) {
+            //		
+            // List<Object> endpoints = new ArrayList(1);
+            // Map<String,Object> m = RPCClient.generateMap("address",
+            // "127.0.0.1",
+            // "port", 32636, "protocol", "http",
+            // "ttl", 3600, "match_network", "*");
+            // endpoints.add(m);
+            //		
+            // Map<String, List<Object>> results = new HashMap<String,
+            // List<Object>>();
+            // List<Object> result = new ArrayList<Object>(3);
+            // result.add(1); // version
+            // result.add(endpoints);
+            // results.put("bla", result);
+            //                
+            // try {
+            // ((OSDRequest)
+            // rq.getOriginalRequest()).setData(ReusableBuffer.wrap(JSONParser.writeJSON(results).getBytes()),
+            // DATA_TYPE.JSON);
+            // rq.listener.receiveRequest(rq);
+            // } catch (JSONException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // }
+            // }
+            //	    
+            // else {
+            rq.responseHeaders = new HTTPHeaders();
+            rq.responseBody = this.data;
+            rq.responseHeaders.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, HTTPUtils.DATA_TYPE.BINARY.toString());
+            rq.responseHeaders.addHeader(HTTPHeaders.HDR_XNEWFILESIZE, this.data.limit());
+            rq.listener.receiveRequest(rq);
+            // }
+        }
     }
 
     private class DummyStage extends Stage {
-	public DummyStage() {
-	    super("DummyStage");
-	}
+        public DummyStage() {
+            super("DummyStage");
+        }
 
-	@Override
-	protected void processMethod(StageMethod method) {
-	    method.getCallback().methodExecutionCompleted(method.getRq(),
-		    StageResponseCode.OK);
-	}
+        @Override
+        protected void processMethod(StageMethod method) {
+            method.getCallback().methodExecutionCompleted(method.getRq(), StageResponseCode.OK);
+        }
     }
 
     private class TestStorageStage extends StorageThread {
-	ReusableBuffer data;
+        ReusableBuffer data;
 
-	/**
+        /**
 	 * 
 	 */
-	public TestStorageStage(RequestDispatcher dispatcher) {
-	    super(0, dispatcher, null, null, null);
-	    // Auto-generated constructor stub
-	}
+        public TestStorageStage(RequestDispatcher dispatcher) {
+            super(0, dispatcher, null, null, null);
+            // Auto-generated constructor stub
+        }
 
-	@Override
-	protected void processMethod(StageMethod method) {
-	    // Auto-generated method stub
-	    method.getRq().getDetails().setObjectNotExistsOnDisk(true);
-	    method.getCallback().methodExecutionCompleted(method.getRq(),
-		    StageResponseCode.OK);
-	}
+        @Override
+        protected void processMethod(StageMethod method) {
+            // Auto-generated method stub
+            method.getRq().getDetails().setObjectNotExistsOnDisk(true);
+            method.getCallback().methodExecutionCompleted(method.getRq(), StageResponseCode.OK);
+        }
     }
 }

@@ -49,253 +49,210 @@ public class FetchAndWriteReplica extends Operation {
      * @param master
      */
     public FetchAndWriteReplica(RequestDispatcher master) {
-	super(master);
+        super(master);
     }
 
     @Override
     public void startRequest(OSDRequest rq) {
-	if (rq.getOriginalOsdRequest() != null)
-		Logging.logMessage(Logging.LEVEL_TRACE, this,
-			"start FetchAndWriteReplica request (requestID: "
-			    + rq.getRequestId()
-			    + ") with original request piggyback (requestID: "
-			    + rq.getOriginalOsdRequest().getRequestId()
-			    + ") for object: " + rq.getDetails().getFileId() + "-"
-			    + rq.getDetails().getObjectNumber() + ".");
-	master.getStage(Stages.REPLICATION).enqueueOperation(rq,
-		ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT,
-		new StageCallbackInterface() {
-		    public void methodExecutionCompleted(OSDRequest request,
-			    StageResponseCode result) {
-			postFetchObject(request, result);
-		    }
-		});
+        if (rq.getOriginalOsdRequest() != null)
+            Logging.logMessage(Logging.LEVEL_TRACE, this, "start FetchAndWriteReplica request (requestID: "
+                    + rq.getRequestId() + ") with original request piggyback (requestID: "
+                    + rq.getOriginalOsdRequest().getRequestId() + ") for object: "
+                    + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
+        master.getStage(Stages.REPLICATION).enqueueOperation(rq,
+                ReplicationStage.STAGEOP_INTERNAL_FETCH_OBJECT, new StageCallbackInterface() {
+                    public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                        postFetchObject(request, result);
+                    }
+                });
     }
 
     private void postFetchObject(OSDRequest rq, StageResponseCode result) {
-	OSDRequest originalRq = rq.getOriginalOsdRequest();
-	if (result == StageResponseCode.OK) {
-	    Logging.logMessage(Logging.LEVEL_TRACE, this,
-		    "fetched filesize for object : "
-			    + rq.getDetails().getFileId() + "-"
-			    + rq.getDetails().getObjectNumber()
-			    + " is " + rq.getDetails().getKnownFilesize() + ".");
+        OSDRequest originalRq = rq.getOriginalOsdRequest();
+        if (result == StageResponseCode.OK) {
+            Logging.logMessage(Logging.LEVEL_TRACE, this, "fetched filesize for object : "
+                    + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + " is "
+                    + rq.getDetails().getKnownFilesize() + ".");
 
-	    switch(rq.getDetails().replicationFetchingStatus){
-	    case FETCHED: {
-		Logging.logMessage(Logging.LEVEL_TRACE, this, "object found for: "
-					+ rq.getDetails().getFileId() + "-"
-					+ rq.getDetails().getObjectNumber() + ".");
+            switch (rq.getDetails().replicationFetchingStatus) {
+            case FETCHED: {
+                Logging.logMessage(Logging.LEVEL_TRACE, this, "object found for: "
+                        + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		// handle original request
-		if (originalRq != null) {
-		    // data could be fetched from replica
-		    Logging.logMessage(Logging.LEVEL_TRACE, this,
-			    "copy fetched data to original request: "
-				    + rq.getDetails().getFileId() + "-"
-				    + rq.getDetails().getObjectNumber() + ".");
-		    // "copy" fetched data to original request
-		    originalRq.setData(rq.getData().createViewBuffer(), rq
-			    .getDataType());
+                // handle original request
+                if (originalRq != null) {
+                    // data could be fetched from replica
+                    Logging.logMessage(Logging.LEVEL_TRACE, this, "copy fetched data to original request: "
+                            + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
+                    // "copy" fetched data to original request
+                    originalRq.setData(rq.getData().createViewBuffer(), rq.getDataType());
 
-		    // go on with the original request operation-callback
-		    originalRq.getCurrentCallback().methodExecutionCompleted(
-			    originalRq, result);
-		    rq.setOriginalOsdRequest(null);
-		}
+                    // go on with the original request operation-callback
+                    originalRq.getCurrentCallback().methodExecutionCompleted(originalRq, result);
+                    rq.setOriginalOsdRequest(null);
+                }
 
-		// this also writes the known filesize to disk
-		master.getStage(Stages.STORAGE).enqueueOperation(rq,
-			StorageThread.STAGEOP_WRITE_OBJECT,
-			new StageCallbackInterface() {
-			    public void methodExecutionCompleted(
-				    OSDRequest request, StageResponseCode result) {
-				postWrite(request, result);
-			    }
-			});
-		break;
-	    }
-	    case HOLE_WITH_DATA: {
-		Logging.logMessage(Logging.LEVEL_TRACE, this, "data with hole found for: "
-				+ rq.getDetails().getFileId() + "-"
-				+ rq.getDetails().getObjectNumber() + ".");
+                // this also writes the known filesize to disk
+                master.getStage(Stages.STORAGE).enqueueOperation(rq, StorageThread.STAGEOP_WRITE_OBJECT,
+                        new StageCallbackInterface() {
+                            public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                                postWrite(request, result);
+                            }
+                        });
+                break;
+            }
+            case HOLE_WITH_DATA: {
+                Logging.logMessage(Logging.LEVEL_TRACE, this, "data with hole found for: "
+                        + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		// handle original request
-		if (originalRq != null) {
-		    // data could be fetched from replica
-		    Logging.logMessage(Logging.LEVEL_TRACE, this,
-			    "copy fetched and padded data to original request: "
-				    + rq.getDetails().getFileId() + "-"
-				    + rq.getDetails().getObjectNumber() + ".");
+                // handle original request
+                if (originalRq != null) {
+                    // data could be fetched from replica
+                    Logging.logMessage(Logging.LEVEL_TRACE, this,
+                            "copy fetched and padded data to original request: "
+                                    + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber()
+                                    + ".");
 
-		    // padding zeros
-		    StripingPolicy sp = rq.getDetails().getCurrentReplica()
-			    .getStripingPolicy();
-		    long currentObject = rq.getDetails().getObjectNumber();
-		    ReusableBuffer data = padWithZeros(rq.getData(), (int) sp
-			    .getStripeSize(currentObject));
+                    // padding zeros
+                    StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
+                    long currentObject = rq.getDetails().getObjectNumber();
+                    ReusableBuffer data = padWithZeros(rq.getData(), (int) sp.getStripeSize(currentObject));
 
-		    // "copy" padded data to original request
-		    originalRq.setData(data, DATA_TYPE.BINARY);
+                    // "copy" padded data to original request
+                    originalRq.setData(data, DATA_TYPE.BINARY);
 
-		    // go on with the original request operation-callback
-		    originalRq.getCurrentCallback().methodExecutionCompleted(
-			    originalRq, result);
-		    rq.setOriginalOsdRequest(null);
-		}
+                    // go on with the original request operation-callback
+                    originalRq.getCurrentCallback().methodExecutionCompleted(originalRq, result);
+                    rq.setOriginalOsdRequest(null);
+                }
 
-		// this also writes the known filesize to disk
-		master.getStage(Stages.STORAGE).enqueueOperation(rq,
-			StorageThread.STAGEOP_WRITE_OBJECT,
-			new StageCallbackInterface() {
-			    public void methodExecutionCompleted(
-				    OSDRequest request, StageResponseCode result) {
-				postWrite(request, result);
-			    }
-			});
-		break;
-	    }
-	    case EOF: {
-		Logging.logMessage(Logging.LEVEL_TRACE, this, "EOF found for: "
-			+ rq.getDetails().getFileId() + "-"
-			+ rq.getDetails().getObjectNumber() + ".");
+                // this also writes the known filesize to disk
+                master.getStage(Stages.STORAGE).enqueueOperation(rq, StorageThread.STAGEOP_WRITE_OBJECT,
+                        new StageCallbackInterface() {
+                            public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                                postWrite(request, result);
+                            }
+                        });
+                break;
+            }
+            case EOF: {
+                Logging.logMessage(Logging.LEVEL_TRACE, this, "EOF found for: " + rq.getDetails().getFileId()
+                        + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		// handle original request
-		if (originalRq != null) {
-		    // data could be fetched from replica
-		    Logging.logMessage(Logging.LEVEL_TRACE, this,
-			    "copy empty buffer to original request: "
-				    + rq.getDetails().getFileId() + "-"
-				    + rq.getDetails().getObjectNumber() + ".");
+                // handle original request
+                if (originalRq != null) {
+                    // data could be fetched from replica
+                    Logging.logMessage(Logging.LEVEL_TRACE, this, "copy empty buffer to original request: "
+                            + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		    // empty buffer
-		    ReusableBuffer data = BufferPool.allocate(0);
-		    data.position(0);
+                    // empty buffer
+                    ReusableBuffer data = BufferPool.allocate(0);
+                    data.position(0);
 
-		    // "copy" padded data to original request
-		    originalRq.setData(data, DATA_TYPE.BINARY);
+                    // "copy" padded data to original request
+                    originalRq.setData(data, DATA_TYPE.BINARY);
 
-		    // go on with the original request operation-callback
-		    originalRq.getCurrentCallback().methodExecutionCompleted(
-			    originalRq, result);
-		    rq.setOriginalOsdRequest(null);
-		}
-		// write filesize to disk
-		master.getStage(Stages.STORAGE).enqueueOperation(rq,
-			StorageThread.STAGEOP_WRITE_FILESIZE,
-			new StageCallbackInterface() {
-			    public void methodExecutionCompleted(
-				    OSDRequest request, StageResponseCode result) {
-				postWrite(request, result);
-			    }
-			});
-		break;
-	    }
-	    case HOLE: {
-		Logging.logMessage(Logging.LEVEL_TRACE, this,
-			"hole found for: " + rq.getDetails().getFileId() + "-"
-				+ rq.getDetails().getObjectNumber() + ".");
+                    // go on with the original request operation-callback
+                    originalRq.getCurrentCallback().methodExecutionCompleted(originalRq, result);
+                    rq.setOriginalOsdRequest(null);
+                }
+                // write filesize to disk
+                master.getStage(Stages.STORAGE).enqueueOperation(rq, StorageThread.STAGEOP_WRITE_FILESIZE,
+                        new StageCallbackInterface() {
+                            public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                                postWrite(request, result);
+                            }
+                        });
+                break;
+            }
+            case HOLE: {
+                Logging.logMessage(Logging.LEVEL_TRACE, this, "hole found for: "
+                        + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		// handle original request
-		if (originalRq != null) {
-		    // data could be fetched from replica
-		    Logging.logMessage(Logging.LEVEL_TRACE, this,
-			    "copy padded data to original request: "
-				    + rq.getDetails().getFileId() + "-"
-				    + rq.getDetails().getObjectNumber() + ".");
+                // handle original request
+                if (originalRq != null) {
+                    // data could be fetched from replica
+                    Logging.logMessage(Logging.LEVEL_TRACE, this, "copy padded data to original request: "
+                            + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-		    // padding zeros
-		    ReusableBuffer data = BufferPool.allocate(0);
-		    data.position(0);
-		    StripingPolicy sp = rq.getDetails().getCurrentReplica()
-			    .getStripingPolicy();
-		    long currentObject = rq.getDetails().getObjectNumber();
-		    data = padWithZeros(data, (int) sp
-			    .getStripeSize(currentObject));
+                    // padding zeros
+                    ReusableBuffer data = BufferPool.allocate(0);
+                    data.position(0);
+                    StripingPolicy sp = rq.getDetails().getCurrentReplica().getStripingPolicy();
+                    long currentObject = rq.getDetails().getObjectNumber();
+                    data = padWithZeros(data, (int) sp.getStripeSize(currentObject));
 
-		    // "copy" padded data to original request
-		    originalRq.setData(data, DATA_TYPE.BINARY);
+                    // "copy" padded data to original request
+                    originalRq.setData(data, DATA_TYPE.BINARY);
 
-		    // go on with the original request operation-callback
-		    originalRq.getCurrentCallback().methodExecutionCompleted(
-			    originalRq, result);
-		    rq.setOriginalOsdRequest(null);
-		}
-		// write filesize to disk
-		master.getStage(Stages.STORAGE).enqueueOperation(rq,
-			StorageThread.STAGEOP_WRITE_FILESIZE,
-			new StageCallbackInterface() {
-			    public void methodExecutionCompleted(
-				    OSDRequest request, StageResponseCode result) {
-				postWrite(request, result);
-			    }
-			});
-		break;
-	    }
-	    case FAILED: {
-		// TODO: handle it
-		break;
-	    }
-	    default: {
-		// TODO: not allowed
-		break;
-	    }
-	    }
-	} else {
-	    if (Logging.isDebug())
-		Logging.logMessage(Logging.LEVEL_DEBUG, this,
-				"an error occured while fetching object "
-					+ rq.getDetails().getFileId() + ":"
-					+ rq.getDetails().getObjectNumber());
-	    // go on with the original request operation-callback
-	    originalRq.getCurrentCallback().methodExecutionCompleted(
-		    originalRq, result);
-	    // TODO: what should the request respond?
-	    master.requestFinished(rq);
-	}
+                    // go on with the original request operation-callback
+                    originalRq.getCurrentCallback().methodExecutionCompleted(originalRq, result);
+                    rq.setOriginalOsdRequest(null);
+                }
+                // write filesize to disk
+                master.getStage(Stages.STORAGE).enqueueOperation(rq, StorageThread.STAGEOP_WRITE_FILESIZE,
+                        new StageCallbackInterface() {
+                            public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                                postWrite(request, result);
+                            }
+                        });
+                break;
+            }
+            case FAILED: {
+                // TODO: handle it
+                break;
+            }
+            default: {
+                // TODO: not allowed
+                break;
+            }
+            }
+        } else {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "an error occured while fetching object "
+                        + rq.getDetails().getFileId() + ":" + rq.getDetails().getObjectNumber());
+            // go on with the original request operation-callback
+            originalRq.getCurrentCallback().methodExecutionCompleted(originalRq, result);
+            // TODO: what should the request respond?
+            master.requestFinished(rq);
+        }
     }
 
     private void postWrite(OSDRequest rq, StageResponseCode result) {
-	if (result == StageResponseCode.OK) {
-	    Logging.logMessage(Logging.LEVEL_DEBUG, this,
-		    "SUCCESFULLY REPLICATED OBJECT: "
-			    + rq.getDetails().getFileId() + "-"
-			    + rq.getDetails().getObjectNumber() + ".");
+        if (result == StageResponseCode.OK) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "SUCCESFULLY REPLICATED OBJECT: "
+                    + rq.getDetails().getFileId() + "-" + rq.getDetails().getObjectNumber() + ".");
 
-	    // initiate next steps for replication
-	    master.getStage(Stages.REPLICATION).enqueueOperation(rq,
-		    ReplicationStage.STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS,
-		    new StageCallbackInterface() {
-			public void methodExecutionCompleted(
-				OSDRequest request, StageResponseCode result) {
-			    postTriggerNextReplicationSteps(request, result);
-			}
-		    });
-	} else {
-	    if (Logging.isDebug())
-		Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing object "
-			+ rq.getDetails().getFileId() + ":"
-			+ rq.getDetails().getObjectNumber() + " failed");
-	    master.requestFinished(rq);
-	    // TODO: handling for original request
-	}
+            // initiate next steps for replication
+            master.getStage(Stages.REPLICATION).enqueueOperation(rq,
+                    ReplicationStage.STAGEOP_INTERNAL_TRIGGER_FURTHER_REQUESTS, new StageCallbackInterface() {
+                        public void methodExecutionCompleted(OSDRequest request, StageResponseCode result) {
+                            postTriggerNextReplicationSteps(request, result);
+                        }
+                    });
+        } else {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing object " + rq.getDetails().getFileId()
+                        + ":" + rq.getDetails().getObjectNumber() + " failed");
+            master.requestFinished(rq);
+            // TODO: handling for original request
+        }
     }
 
-    private void postTriggerNextReplicationSteps(OSDRequest rq,
-	    StageResponseCode result) {
-	// end request
-	cleanUp(rq);
+    private void postTriggerNextReplicationSteps(OSDRequest rq, StageResponseCode result) {
+        // end request
+        cleanUp(rq);
     }
 
     private void cleanUp(OSDRequest rq) {
-	if (rq.getData() != null)
-	    BufferPool.free(rq.getData());
+        if (rq.getData() != null)
+            BufferPool.free(rq.getData());
     }
-    
+
     /*
      * copied from StorageThread
      */
-     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
+    private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
         int oldSize = data.capacity();
         if (!data.enlarge(stripeSize)) {
             ReusableBuffer tmp = BufferPool.allocate(stripeSize);

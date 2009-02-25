@@ -36,9 +36,8 @@ import org.xtreemfs.osd.RequestDetails;
 
 /**
  * This class provides the basic functionality needed by the different transfer
- * strategies.
- * One TransferStrategy manages a whole file (all objects of this file).
- * warning: this class is NOT thread-safe
+ * strategies. One TransferStrategy manages a whole file (all objects of this
+ * file). warning: this class is NOT thread-safe
  * 
  * 09.09.2008
  * 
@@ -47,8 +46,9 @@ import org.xtreemfs.osd.RequestDetails;
 public abstract class TransferStrategy {
     /**
      * Encapsulates the "returned"/chosen values.
-     *
+     * 
      * 12.02.2009
+     * 
      * @author user
      */
     public class NextRequest {
@@ -62,30 +62,31 @@ public abstract class TransferStrategy {
 
     /**
      * Encapsulates the most important infos.
-     *
+     * 
      * 12.02.2009
+     * 
      * @author user
      */
     protected class ReplicationDetails {
-	String fileId;
-	Capability capability;
-	Location currentReplica;
-	Locations otherReplicas; // do not contain current replica
+        String fileId;
+        Capability capability;
+        Location currentReplica;
+        Locations otherReplicas; // do not contain current replica
 
-	ReplicationDetails(String fileId, Capability capability,
-		Locations locationList, Location currentReplica) {
-	    this.fileId = fileId;
-	    this.capability = capability;
-	    this.currentReplica = currentReplica;
-	    
-	    // get other Replicas without current
-	    ArrayList<Location> locList = new ArrayList<Location>();
-	    for(Location loc : locationList){
-		if(loc != currentReplica)
-		    locList.add(loc);
-	    }
-	    this.otherReplicas = new Locations(locList);
-	}
+        ReplicationDetails(String fileId, Capability capability, Locations locationList,
+                Location currentReplica) {
+            this.fileId = fileId;
+            this.capability = capability;
+            this.currentReplica = currentReplica;
+
+            // get other Replicas without current
+            ArrayList<Location> locList = new ArrayList<Location>();
+            for (Location loc : locationList) {
+                if (loc != currentReplica)
+                    locList.add(loc);
+            }
+            this.otherReplicas = new Locations(locList);
+        }
     }
 
     /**
@@ -99,7 +100,8 @@ public abstract class TransferStrategy {
     protected ReplicationDetails details;
 
     /**
-     * contains all objects which must be replicated (e.g. background-replication)
+     * contains all objects which must be replicated (e.g.
+     * background-replication)
      */
     protected ArrayList<Long> requiredObjects; // maybe additionally current
 
@@ -113,11 +115,11 @@ public abstract class TransferStrategy {
      */
     protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
     /**
-     * contains a list of possible OSDs for each object
-     * used to notice which OSDs were already requested
+     * contains a list of possible OSDs for each object used to notice which
+     * OSDs were already requested
      */
     protected HashMap<Long, List<ServiceUUID>> availableOSDsForObject;
-    
+
     /**
      * known filesize up to now
      */
@@ -127,133 +129,140 @@ public abstract class TransferStrategy {
      * @param rqDetails
      */
     protected TransferStrategy(RequestDetails rqDetails) {
-	super();
-	this.details = new ReplicationDetails(rqDetails.getFileId(), rqDetails
-		.getCapability(), rqDetails.getLocationList(), rqDetails
-		.getCurrentReplica());
-	this.requiredObjects = new ArrayList<Long>();
-	this.preferredObjects = new ArrayList<Long>();
-	this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
-	this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
-	this.knownFilesize = -1;
-	this.next = null;
+        super();
+        this.details = new ReplicationDetails(rqDetails.getFileId(), rqDetails.getCapability(), rqDetails
+                .getLocationList(), rqDetails.getCurrentReplica());
+        this.requiredObjects = new ArrayList<Long>();
+        this.preferredObjects = new ArrayList<Long>();
+        this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
+        this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
+        this.knownFilesize = -1;
+        this.next = null;
     }
 
     /**
      * chooses the next object, which will be replicated
      */
     public void selectNext() {
-	if(next != null) {
-//	    removePreferredObject(next.objectID);
-//	    removeRequiredObject(next.objectID);
-	    next = null;
-	}
+        if (next != null) {
+            // removePreferredObject(next.objectID);
+            // removeRequiredObject(next.objectID);
+            next = null;
+        }
     }
-    
+
     /**
      * 
      */
     public void selectNextOSD(long objectID) {
-	if(next != null) {
-//	    removePreferredObject(next.objectID);
-//	    removeRequiredObject(next.objectID);
-	    next = null;
-	}
+        if (next != null) {
+            // removePreferredObject(next.objectID);
+            // removeRequiredObject(next.objectID);
+            next = null;
+        }
     }
 
     /**
      * Returns the "result" from selectNext().
-     * @return null, if selectNext() has not been executed before or no object to fetch exists
+     * 
+     * @return null, if selectNext() has not been executed before or no object
+     *         to fetch exists
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public NextRequest getNext() {
-	return next;
+        return next;
     }
 
     /**
      * add an object which must be replicated
+     * 
      * @param e
      * @return
      */
     public boolean addRequiredObject(long objectID) {
-	Long object = Long.valueOf(objectID);
-	if(!this.requiredObjects.contains(object)) {
-	    boolean added = this.requiredObjects.add(object);
-	    if(added) {
-		// do more
-		if(!availableOSDsForObject.containsKey(object))
-		    availableOSDsForObject.put(object, details.otherReplicas.getOSDsByObject(objectID));
-	    }
-	    return added;
-	}
-	else return false;
+        Long object = Long.valueOf(objectID);
+        if (!this.requiredObjects.contains(object)) {
+            boolean added = this.requiredObjects.add(object);
+            if (added) {
+                // do more
+                if (!availableOSDsForObject.containsKey(object))
+                    availableOSDsForObject.put(object, details.otherReplicas.getOSDsByObject(objectID));
+            }
+            return added;
+        } else
+            return false;
     }
 
     /**
      * remove an object which need not be replicated anymore
+     * 
      * @param o
      * @see java.util.ArrayList#remove(java.lang.Object)
      */
     public boolean removeRequiredObject(long objectID) {
-	boolean removed = this.requiredObjects.remove(Long.valueOf(objectID));
-	// do more
-//	availableOSDsForObject.remove(Long.valueOf(objectID));
-	return removed;
+        boolean removed = this.requiredObjects.remove(Long.valueOf(objectID));
+        // do more
+        // availableOSDsForObject.remove(Long.valueOf(objectID));
+        return removed;
     }
 
     /**
-     * Add an object which must be replicated first.
-     * Note: Adds the object also to required objects list.
+     * Add an object which must be replicated first. Note: Adds the object also
+     * to required objects list.
+     * 
      * @param e
      * @return
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public boolean addPreferredObject(long objectID) {
-	boolean added = true;
-	Long object = Long.valueOf(objectID);
-	if (!this.preferredObjects.contains(object)) {
-	    if (this.preferredObjects.add(object))
-		if (!addRequiredObject(objectID))
-		    if (!this.requiredObjects.contains(object)) {
-			// rollback
-			this.preferredObjects.remove(object);
-			added = false;
-		    }
-	    return added;
-	} else
-	    return false;
+        boolean added = true;
+        Long object = Long.valueOf(objectID);
+        if (!this.preferredObjects.contains(object)) {
+            if (this.preferredObjects.add(object))
+                if (!addRequiredObject(objectID))
+                    if (!this.requiredObjects.contains(object)) {
+                        // rollback
+                        this.preferredObjects.remove(object);
+                        added = false;
+                    }
+            return added;
+        } else
+            return false;
     }
 
     /**
-     * Remove an object which must be replicated first.
-     * Note: Removes the object also from required objects list.
+     * Remove an object which must be replicated first. Note: Removes the object
+     * also from required objects list.
+     * 
      * @param o
      * @return
      * @see java.util.ArrayList#remove(java.lang.Object)
      */
     public boolean removePreferredObject(long objectID) {
-	boolean removed;
-	removed = this.preferredObjects.remove(Long.valueOf(objectID));
-	removeRequiredObject(objectID);
-	return removed;
+        boolean removed;
+        removed = this.preferredObjects.remove(Long.valueOf(objectID));
+        removeRequiredObject(objectID);
+        return removed;
     }
 
     /**
      * Returns how much objects still must be replicated.
+     * 
      * @return
      * @see java.util.ArrayList#size()
      */
     public int getRequiredObjectsCount() {
-	return this.requiredObjects.size();
+        return this.requiredObjects.size();
     }
 
     /**
      * Returns how much objects will be replicated preferred.
+     * 
      * @return
      * @see java.util.ArrayList#size()
      */
     public int getPreferredObjectsCount() {
-	return this.preferredObjects.size();
+        return this.preferredObjects.size();
     }
 
     /**
@@ -262,15 +271,15 @@ public abstract class TransferStrategy {
      * @param filesize
      */
     public void setKnownFilesize(long filesize) {
-	if (knownFilesize < filesize) 
-	    knownFilesize = filesize;
+        if (knownFilesize < filesize)
+            knownFilesize = filesize;
     }
-    
+
     /**
      * @return the knownFilesize
      */
     public long getKnownFilesize() {
-	return knownFilesize;
+        return knownFilesize;
     }
 
     /**
@@ -280,13 +289,13 @@ public abstract class TransferStrategy {
      * @param objectID
      */
     public void removeOSDForObject(long objectID, ServiceUUID osd) {
-	availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
+        availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
     }
 
     /*
      * FIXME: internal-handling would be better
      */
     public void removeOSDListForObject(long objectID) {
-	availableOSDsForObject.remove(Long.valueOf(objectID));
+        availableOSDsForObject.remove(Long.valueOf(objectID));
     }
 }

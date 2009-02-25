@@ -45,67 +45,66 @@ public class RandomStrategy extends TransferStrategy {
      * @param rqDetails
      */
     public RandomStrategy(RequestDetails rqDetails) {
-	super(rqDetails);
-	this.random = new Random();
+        super(rqDetails);
+        this.random = new Random();
     }
 
     @Override
     public void selectNext() {
-	// prepare
-	super.selectNext();
+        // prepare
+        super.selectNext();
 
-	long objectID = -1;
+        long objectID = -1;
 
-	// first fetch a preferred object
-	if (!this.preferredObjects.isEmpty()) {
-	    objectID = this.preferredObjects.remove(getPositiveRandom()
-		    % this.preferredObjects.size());
-	    this.requiredObjects.remove(Long.valueOf(objectID));
-	} else { // fetch any object
-	    if (!this.requiredObjects.isEmpty()) {
-		objectID = this.requiredObjects.remove(getPositiveRandom()
-			% this.requiredObjects.size());
-	    }
-	}
+        // first fetch a preferred object
+        if (!this.preferredObjects.isEmpty()) {
+            objectID = this.preferredObjects.remove(getPositiveRandom() % this.preferredObjects.size());
+            this.requiredObjects.remove(Long.valueOf(objectID));
+        } else { // fetch any object
+            if (!this.requiredObjects.isEmpty()) {
+                objectID = this.requiredObjects.remove(getPositiveRandom() % this.requiredObjects.size());
+            }
+        }
 
-	// select OSD
-	if(objectID != -1)
-	    next = selectNextOSDhelper(objectID);
-	else
-	    // nothing to fetch
-	    next = null;
+        // select OSD
+        if (objectID != -1)
+            next = selectNextOSDhelper(objectID);
+        else
+            // nothing to fetch
+            next = null;
     }
 
     @Override
     public void selectNextOSD(long objectID) {
-	// prepare
-	super.selectNext();
-	// select OSD
-	next = selectNextOSDhelper(objectID);
+        // prepare
+        super.selectNext();
+        // select OSD
+        next = selectNextOSDhelper(objectID);
     }
 
     private NextRequest selectNextOSDhelper(long objectID) {
-	NextRequest next = new NextRequest();
-	next.objectID = objectID;
+        NextRequest next = new NextRequest();
+        next.objectID = objectID;
 
-	List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
-	if(osds.size() > 0) {
-	    // use random OSD
-	    next.osd = osds.get(getPositiveRandom() % osds.size());
+        List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
+        if (osds.size() > 0) {
+            // use random OSD
+            next.osd = osds.get(getPositiveRandom() % osds.size());
 
-	    // no object list
-	    next.requestObjectList = false;
-	} else
-	    next = null;
-	return next;
+            // no object list
+            next.requestObjectList = false;
+        } else
+            next = null;
+        return next;
     }
 
     /**
      * returns a random positive integer
+     * 
      * @return
      */
-    private int getPositiveRandom(){
-	int result = random.nextInt();
-	return (result > 0) ? result : 0-result; 
+    private int getPositiveRandom() {
+        int result = random.nextInt();
+        return (result > 0) ? result : 0 - result;
     }
 }
