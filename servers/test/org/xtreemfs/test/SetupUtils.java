@@ -39,7 +39,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.new_mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
 /**

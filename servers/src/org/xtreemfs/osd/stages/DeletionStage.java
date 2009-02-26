@@ -36,7 +36,7 @@ import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
-import org.xtreemfs.new_mrc.ErrNo;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.osd.ErrorRecord;
 import org.xtreemfs.osd.OSDException;
 import org.xtreemfs.osd.OSDRequest;

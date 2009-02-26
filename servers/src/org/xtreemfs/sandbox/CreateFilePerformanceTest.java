@@ -16,7 +16,7 @@ import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
-import org.xtreemfs.new_mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCConfig;
 
 /**
  * Simple test to check the performance of the MRC for file

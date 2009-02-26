@@ -35,7 +35,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.new_mrc.MRCRequest;
+import org.xtreemfs.mrc.MRCRequest;
 
 /**
  * An HTTP request

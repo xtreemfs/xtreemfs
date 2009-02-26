@@ -49,7 +49,7 @@ import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.RequestController;
-import org.xtreemfs.new_mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;

@@ -23,7 +23,7 @@ import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.new_mrc.ErrNo;
+import org.xtreemfs.mrc.ErrNo;
 
 /**
  *

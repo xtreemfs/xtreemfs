@@ -50,6 +50,7 @@ import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.new_dir.operations.DIROperation;
 import org.xtreemfs.new_dir.operations.DeleteAddressMappingOperation;
 import org.xtreemfs.new_dir.operations.DeregisterServiceOperation;
@@ -59,7 +60,6 @@ import org.xtreemfs.new_dir.operations.GetServiceByUuidOperation;
 import org.xtreemfs.new_dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.new_dir.operations.RegisterServiceOperation;
 import org.xtreemfs.new_dir.operations.SetAddressMappingOperation;
-import org.xtreemfs.new_mrc.ErrNo;
 
 /**
  *

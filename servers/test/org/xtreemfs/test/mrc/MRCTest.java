@@ -49,12 +49,12 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.new_mrc.MRCConfig;
-import org.xtreemfs.new_mrc.MRCRequestDispatcher;
-import org.xtreemfs.new_mrc.ac.POSIXFileAccessPolicy;
-import org.xtreemfs.new_mrc.ac.VolumeACLFileAccessPolicy;
-import org.xtreemfs.new_mrc.ac.YesToAnyoneFileAccessPolicy;
-import org.xtreemfs.new_mrc.osdselection.RandomSelectionPolicy;
+import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
+import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
+import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
+import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
 import org.xtreemfs.test.SetupUtils;
 
 /**

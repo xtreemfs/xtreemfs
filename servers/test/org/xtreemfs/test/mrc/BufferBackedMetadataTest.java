@@ -32,16 +32,16 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.new_mrc.metadata.BufferBackedACLEntry;
-import org.xtreemfs.new_mrc.metadata.BufferBackedFileMetadata;
-import org.xtreemfs.new_mrc.metadata.BufferBackedStripingPolicy;
-import org.xtreemfs.new_mrc.metadata.BufferBackedXAttr;
-import org.xtreemfs.new_mrc.metadata.BufferBackedXLoc;
-import org.xtreemfs.new_mrc.metadata.BufferBackedXLocList;
-import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.metadata.StripingPolicy;
-import org.xtreemfs.new_mrc.metadata.XLoc;
-import org.xtreemfs.new_mrc.volumes.metadata.BufferBackedVolumeInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
+import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;
+import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
+import org.xtreemfs.mrc.metadata.BufferBackedXLoc;
+import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
+import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.StripingPolicy;
+import org.xtreemfs.mrc.metadata.XLoc;
+import org.xtreemfs.mrc.volumes.metadata.BufferBackedVolumeInfo;
 import org.xtreemfs.test.SetupUtils;
 
 public class BufferBackedMetadataTest extends TestCase {
