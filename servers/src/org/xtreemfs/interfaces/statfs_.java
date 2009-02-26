@@ -40,7 +40,7 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( bsize );
         writer.putLong( bfree );
-        { final byte[] bytes = fsid.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(fsid,writer); }
         writer.putInt( namelen );        
     }
     
@@ -48,7 +48,7 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     {
         bsize = buf.getInt();
         bfree = buf.getLong();
-        { int fsid_new_length = buf.getInt(); byte[] fsid_new_bytes = new byte[fsid_new_length]; buf.get( fsid_new_bytes ); fsid = new String( fsid_new_bytes ); if (fsid_new_length % 4 > 0) {for (int k = 0; k < (4 - (fsid_new_length % 4)); k++) { buf.get(); } } }
+        { fsid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         namelen = buf.getInt();    
     }
     

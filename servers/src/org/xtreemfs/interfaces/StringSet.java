@@ -23,7 +23,7 @@ public class StringSet extends ArrayList<String>
         for ( Iterator<String> i = iterator(); i.hasNext(); )
         {
             String next_value = i.next();        
-            { final byte[] bytes = next_value.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }};
+            { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(next_value,writer); };
         }
     }
 
@@ -31,7 +31,7 @@ public class StringSet extends ArrayList<String>
         int new_size = buf.getInt();
         for ( int i = 0; i < new_size; i++ )
         {
-            String new_value; { int new_value_new_length = buf.getInt(); byte[] new_value_new_bytes = new byte[new_value_new_length]; buf.get( new_value_new_bytes ); new_value = new String( new_value_new_bytes ); if (new_value_new_length % 4 > 0) {for (int k = 0; k < (4 - (new_value_new_length % 4)); k++) { buf.get(); } } };
+            String new_value; { new_value = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); };
             this.add( new_value );
         }
     }

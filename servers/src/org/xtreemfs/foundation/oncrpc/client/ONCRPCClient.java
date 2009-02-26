@@ -33,14 +33,33 @@ import org.xtreemfs.interfaces.utils.Serializable;
  */
 public abstract class ONCRPCClient {
 
+    /**
+     * the rpc client
+     */
     private final RPCNIOSocketClient client;
 
+    /**
+     * default server address
+     */
     private InetSocketAddress        defaultServer;
 
+    /**
+     * fixed program Id
+     */
     private final int programId;
 
+    /**
+     * fixed protocol version number used
+     */
     private final int versionNumber;
 
+    /**
+     * Creates a new ONCRPC client
+     * @param client the RPC client to send the rquests with
+     * @param defaultServer default server address (can be null)
+     * @param programId the program Id
+     * @param versionNumber the version number of the interface
+     */
     public ONCRPCClient(RPCNIOSocketClient client, InetSocketAddress defaultServer,
             int programId, int versionNumber) {
         this.client = client;
@@ -53,8 +72,8 @@ public abstract class ONCRPCClient {
         this(client, null, programId, versionNumber);
     }
 
-    protected RPCResponse sendRequest(InetSocketAddress server, int procId, Serializable request, Serializable response) {
-        RPCResponse rpcresp = new RPCResponse(response);
+    protected RPCResponse sendRequest(InetSocketAddress server, int procId, Serializable request, RPCResponseDecoder decoder) {
+        RPCResponse rpcresp = new RPCResponse(decoder);
         if ((server == null) && (defaultServer == null))
             throw new IllegalArgumentException("must specify a server address if no default server is defined");
         final InetSocketAddress srvAddr = (server == null) ? defaultServer : server;

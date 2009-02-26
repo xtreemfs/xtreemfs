@@ -30,7 +30,7 @@ import org.xtreemfs.interfaces.utils.Serializable;
  *
  * @author bjko
  */
-public interface RPCResponseAvailableListener<V extends Serializable> {
+public interface RPCResponseAvailableListener<V extends Object> {
 
     public void responseAvailable(RPCResponse<V> r);
 

@@ -185,6 +185,10 @@ public class MRCPerformance {
             System.out.println("benchmarking "+numfiles+"files");
             MRCPerformance p = new MRCPerformance(new InetSocketAddress("localhost",32636), "test", numfiles);
             p.createFiles();
+
+            System.out.println("Please press <Enter> after flushing caches...");
+            System.in.read();
+
             p.listFiles();
             p.deleteFiles();
             p.shutdown();

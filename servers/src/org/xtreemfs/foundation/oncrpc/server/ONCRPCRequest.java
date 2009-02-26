@@ -140,5 +140,9 @@ public class ONCRPCRequest {
         return this.requestHeader;
     }
 
+    public String toString() {
+        return this.requestHeader+"/"+this.responseHeader;
+    }
+
 
 }

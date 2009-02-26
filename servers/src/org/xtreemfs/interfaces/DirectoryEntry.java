@@ -34,13 +34,13 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     public String getTypeName() { return "xtreemfs::interfaces::DirectoryEntry"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = path.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(path,writer); }
         stbuf.serialize( writer );        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int path_new_length = buf.getInt(); byte[] path_new_bytes = new byte[path_new_length]; buf.get( path_new_bytes ); path = new String( path_new_bytes ); if (path_new_length % 4 > 0) {for (int k = 0; k < (4 - (path_new_length % 4)); k++) { buf.get(); } } }
+        { path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         stbuf = new org.xtreemfs.interfaces.stat_(); stbuf.deserialize( buf );    
     }
     

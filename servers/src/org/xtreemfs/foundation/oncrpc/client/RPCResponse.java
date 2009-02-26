@@ -33,7 +33,7 @@ import org.xtreemfs.interfaces.utils.Serializable;
  *
  * @author bjko
  */
-public class RPCResponse<V extends Serializable> implements RPCResponseListener {
+public class RPCResponse<V extends Object> implements RPCResponseListener {
 
     private ONCRPCRequest request;
 
@@ -41,12 +41,12 @@ public class RPCResponse<V extends Serializable> implements RPCResponseListener 
 
     private ONCRPCException remoteEx;
 
-    private final V         responseObject;
-
     private RPCResponseAvailableListener<V> listener;
 
-    public RPCResponse(V responseObject) {
-        this.responseObject = responseObject;
+    private final RPCResponseDecoder<V> decoder;
+
+    public RPCResponse(RPCResponseDecoder<V> decoder) {
+        this.decoder = decoder;
     }
 
     public void freeBuffers() {
@@ -66,7 +66,7 @@ public class RPCResponse<V extends Serializable> implements RPCResponseListener 
     public V get() throws ONCRPCException, IOException, InterruptedException {
         waitForResult();
         if ((ioError == null) && (remoteEx == null)) {
-            responseObject.deserialize(request.getResponseFragments().get(0));
+            V responseObject = decoder.getResult(request.getResponseFragments().get(0));
             return responseObject;
         } else {
             if (ioError != null)

@@ -38,14 +38,14 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putLong( sizeInBytes );
         writer.putLong( epoch );
-        { final byte[] bytes = __json.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(__json,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
         sizeInBytes = buf.getLong();
         epoch = buf.getLong();
-        { int __json_new_length = buf.getInt(); byte[] __json_new_bytes = new byte[__json_new_length]; buf.get( __json_new_bytes ); __json = new String( __json_new_bytes ); if (__json_new_length % 4 > 0) {for (int k = 0; k < (4 - (__json_new_length % 4)); k++) { buf.get(); } } }    
+        { __json = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()

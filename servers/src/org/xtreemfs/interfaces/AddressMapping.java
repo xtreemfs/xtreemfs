@@ -44,23 +44,23 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public String getTypeName() { return "xtreemfs::interfaces::AddressMapping"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = uuid.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(uuid,writer); }
         writer.putLong( version );
-        { final byte[] bytes = protocol.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
-        { final byte[] bytes = address.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(protocol,writer); }
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(address,writer); }
         writer.putInt( port );
-        { final byte[] bytes = match_network.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(match_network,writer); }
         writer.putInt( ttl );        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int uuid_new_length = buf.getInt(); byte[] uuid_new_bytes = new byte[uuid_new_length]; buf.get( uuid_new_bytes ); uuid = new String( uuid_new_bytes ); if (uuid_new_length % 4 > 0) {for (int k = 0; k < (4 - (uuid_new_length % 4)); k++) { buf.get(); } } }
+        { uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         version = buf.getLong();
-        { int protocol_new_length = buf.getInt(); byte[] protocol_new_bytes = new byte[protocol_new_length]; buf.get( protocol_new_bytes ); protocol = new String( protocol_new_bytes ); if (protocol_new_length % 4 > 0) {for (int k = 0; k < (4 - (protocol_new_length % 4)); k++) { buf.get(); } } }
-        { int address_new_length = buf.getInt(); byte[] address_new_bytes = new byte[address_new_length]; buf.get( address_new_bytes ); address = new String( address_new_bytes ); if (address_new_length % 4 > 0) {for (int k = 0; k < (4 - (address_new_length % 4)); k++) { buf.get(); } } }
+        { protocol = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        { address = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         port = buf.getInt();
-        { int match_network_new_length = buf.getInt(); byte[] match_network_new_bytes = new byte[match_network_new_length]; buf.get( match_network_new_bytes ); match_network = new String( match_network_new_bytes ); if (match_network_new_length % 4 > 0) {for (int k = 0; k < (4 - (match_network_new_length % 4)); k++) { buf.get(); } } }
+        { match_network = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         ttl = buf.getInt();    
     }
     

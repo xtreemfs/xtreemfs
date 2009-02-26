@@ -39,6 +39,8 @@ public class DIRConfig extends ServiceConfig {
 
     private String authenticationProvider;
 
+    private int    httpPort;
+
     /** Creates a new instance of OSDConfig */
     public DIRConfig(String filename) throws IOException {
         super(filename);
@@ -55,6 +57,8 @@ public class DIRConfig extends ServiceConfig {
 
         this.dbDir = this.readRequiredString("database.dir");
         this.authenticationProvider = readRequiredString("authentication_provider");
+        this.httpPort = this.readRequiredInt("http_port");
+
     }
 
     public String getDbDir() {
@@ -63,6 +67,10 @@ public class DIRConfig extends ServiceConfig {
 
     public String getAuthenticationProvider() {
         return authenticationProvider;
+    }
+
+    public int getHttpPort() {
+        return this.httpPort;
     }
 
 }

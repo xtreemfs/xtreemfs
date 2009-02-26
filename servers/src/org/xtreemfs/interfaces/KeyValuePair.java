@@ -34,14 +34,14 @@ public class KeyValuePair implements org.xtreemfs.interfaces.utils.Serializable
     public String getTypeName() { return "xtreemfs::interfaces::KeyValuePair"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = key.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
-        { final byte[] bytes = value.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(key,writer); }
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(value,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int key_new_length = buf.getInt(); byte[] key_new_bytes = new byte[key_new_length]; buf.get( key_new_bytes ); key = new String( key_new_bytes ); if (key_new_length % 4 > 0) {for (int k = 0; k < (4 - (key_new_length % 4)); k++) { buf.get(); } } }
-        { int value_new_length = buf.getInt(); byte[] value_new_bytes = new byte[value_new_length]; buf.get( value_new_bytes ); value = new String( value_new_bytes ); if (value_new_length % 4 > 0) {for (int k = 0; k < (4 - (value_new_length % 4)); k++) { buf.get(); } } }    
+        { key = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        { value = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()

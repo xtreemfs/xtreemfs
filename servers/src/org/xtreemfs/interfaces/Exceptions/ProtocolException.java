@@ -38,14 +38,14 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public void serialize(ONCRPCBufferWriter writer) {
         writer.putInt( accept_stat );
         writer.putInt( error_code );
-        { final byte[] bytes = stack_trace.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(stack_trace,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
         accept_stat = buf.getInt();
         error_code = buf.getInt();
-        { int stack_trace_new_length = buf.getInt(); byte[] stack_trace_new_bytes = new byte[stack_trace_new_length]; buf.get( stack_trace_new_bytes ); stack_trace = new String( stack_trace_new_bytes ); if (stack_trace_new_length % 4 > 0) {for (int k = 0; k < (4 - (stack_trace_new_length % 4)); k++) { buf.get(); } } }    
+        { stack_trace = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()

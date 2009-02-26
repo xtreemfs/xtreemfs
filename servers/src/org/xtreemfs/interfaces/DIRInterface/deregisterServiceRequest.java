@@ -33,12 +33,12 @@ public class deregisterServiceRequest implements Request
     public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::deregisterServiceRequest"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = uuid.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(uuid,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int uuid_new_length = buf.getInt(); byte[] uuid_new_bytes = new byte[uuid_new_length]; buf.get( uuid_new_bytes ); uuid = new String( uuid_new_bytes ); if (uuid_new_length % 4 > 0) {for (int k = 0; k < (4 - (uuid_new_length % 4)); k++) { buf.get(); } } }    
+        { uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()

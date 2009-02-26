@@ -8,10 +8,15 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.BufferPool;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.AddressMappingSet;
 
 /**
  *
@@ -73,47 +78,53 @@ public class StatusPage {
         }
     }
 
-    public static String getStatusPage(BabuDB database, DIRConfig config) throws BabuDBException {
+    public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException {
+
+        final BabuDB database = master.getDatabase();
 
         assert (statusPageTemplate != null);
 
         long time = System.currentTimeMillis();
 
-        /*Object[] dbDump = getDBDump();
-
-        Map<String, Map<String, String>> entities = (Map<String, Map<String, String>>) dbDump[0];
-        Map<String, Object[]> mappings = (Map<String, Object[]>) dbDump[1];
+        Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
 
         StringBuilder dump = new StringBuilder();
         dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
-        for (String uuid : mappings.keySet()) {
-            Object[] entry = mappings.get(uuid);
-            List<Map<String, Object>> mapping = (List<Map<String, Object>>) entry[1];
+        while (iter.hasNext()) {
+            Entry<byte[],byte[]> e = iter.next();
+            AddressMappingSet ams = new AddressMappingSet();
+            ams.deserialize(ReusableBuffer.wrap(e.getValue()));
+
+            final String uuid = new String(e.getKey());
 
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\"><tr>");
             dump.append("<tr><td><table width=\"100%\">");
-            for (int i = 0; i < mapping.size(); i++) {
+            long version = 0;
+            for (AddressMapping am : ams) {
                 dump.append("<tr><td class=\"mapping\">");
-                Map<String, Object> map = mapping.get(i);
-                String endpoint = map.get("protocol") + "://" + map.get("address") + ":" + map.get("port");
+                String endpoint = am.getProtocol() + "://" + am.getAddress() + ":" + am.getPort();
                 dump.append("<a href=\"" + endpoint + "\">");
                 dump.append(endpoint);
                 dump.append("</a></td><td class=\"mapping\">");
-                dump.append(map.get("match_network"));
+                dump.append(am.getMatch_network());
                 dump.append("</td><td class=\"mapping\">");
-                dump.append(map.get("ttl"));
+                dump.append(am.getTtl());
                 dump.append("</td></tr>");
+                version = am.getVersion();
             }
             dump.append("</table></td></tr>");
             dump.append("<td class=\"version\">version: <b>");
-            dump.append(entry[2]);
+            dump.append(version);
             dump.append("</b></td></tr></table>");
         }
         dump.append("</td></tr></table>");
 
+
+        //iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+        /*
         dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Data Mapping</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         for (String uuid : entities.keySet()) {
@@ -161,11 +172,10 @@ public class StatusPage {
         tmp = tmp.replace(Vars.BPSTATS.toString(), BufferPool.getStatus());
         tmp = tmp.replace(Vars.PORT.toString(), Integer.toString(config.getPort()));
         tmp = tmp.replace(Vars.DEBUG.toString(), Integer.toString(config.getDebugLevel()));
-        tmp = tmp.replace(Vars.NUMCON.toString(), "n/a");
-        tmp = tmp.replace(Vars.PINKYQ.toString(), "n/a");
-        tmp = tmp.replace(Vars.NUMREQS.toString(), "n/a");
+        tmp = tmp.replace(Vars.NUMCON.toString(), Integer.toString(master.getNumConnections()));
+        tmp = tmp.replace(Vars.NUMREQS.toString(), Integer.toString(master.getNumRequests()));
         tmp = tmp.replace(Vars.TIME.toString(), new Date(time).toString() + " (" + time + ")");
-        tmp = tmp.replace(Vars.TABLEDUMP.toString(), "");
+        tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
 
         return tmp;
 

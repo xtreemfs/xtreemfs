@@ -63,7 +63,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * Maximum fragment size to accept. If the size is larger, the
      * connection is closed.
      */
-    public static final int MAX_FRAGMENT_SIZE = 1024*1024*50;
+    public static final int MAX_FRAGMENT_SIZE = 1024*1024*32;
 
     /**
      * the server socket
@@ -99,6 +99,19 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * Port on which the server listens for incomming connections.
      */
     private final int bindPort;
+
+    /**
+     * maximum number of pending client requests to allow
+     */
+    public static int MAX_CLIENT_QUEUE = 20000;
+
+    /**
+     * if the Q was full we need at least
+     * CLIENT_Q_THR spaces before we start
+     * reading from the client again.
+     * This is to prevent it from oscillating
+     */
+    public static int CLIENT_Q_THR = 5000;
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl, SSLOptions sslOptions) throws IOException {
         super("ONCRPCSrv@" + bindPort);
@@ -145,12 +158,10 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 boolean isEmpty = connection.getPendingResponses().isEmpty();
                 connection.addPendingResponse(request);
                 if (isEmpty) {
-                    System.out.println("write enabled");
                     SelectionKey key = connection.getChannel().keyFor(selector);
                     key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
                 }
             }
-            System.out.println("wake-up");
             selector.wakeup();
         } else {
             //ignore and free bufers
@@ -232,6 +243,11 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         final ChannelIO channel = con.getChannel();
 
         try {
+            if (con.getOpenRequests().get() > MAX_CLIENT_QUEUE) {
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                Logging.logMessage(Logging.LEVEL_WARN, this,"client sent too many requests... not accepting new requests: "+con.getChannel().socket().getRemoteSocketAddress());
+                return;
+            }
             while (true) {
                 final ByteBuffer fragmentHeader = con.getReceiveFragHdr();
                 if (fragmentHeader.hasRemaining()) {
@@ -259,8 +275,6 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             closeConnection(key);
                             break;
                         }
-                        System.out.println("fragHdr "+fragmentHeaderInt);
-                        System.out.println("fragment "+fragmentSize);
                         final ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
 
                         ONCRPCRecord rq = con.getReceive();
@@ -269,14 +283,11 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             con.setReceive(rq);
                         }
                         rq.addNewRequestFragment(fragment);
-                        System.out.println("last fragment: "+lastFragment);
                         rq.setAllFragmentsReceived(lastFragment);
                     }
                 } else {
                     final ONCRPCRecord rq = con.getReceive();
                     final ReusableBuffer fragment = rq.getLastRequestFragment();
-
-                    System.out.println("reading fragment: "+fragment.remaining());
 
                     final int numBytesRead = readData(key, channel, fragment.getBuffer());
                     if (numBytesRead == -1) {
@@ -382,8 +393,21 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                     //finished sending fragment
                     if (rq.isLastResoponseBuffer()) {
                         //clean up :-) request finished
+                        if (Logging.tracingEnabled()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent response for "+rq);
+                        }
                         rq.freeBuffers();
                         con.setSend(null);
+                        int numRq = con.getOpenRequests().decrementAndGet();
+
+                        if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
+                            if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
+                                //read from client again
+                                key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                                Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: "+con.getChannel().socket().getRemoteSocketAddress());
+                            }
+                        }
+
                         continue;
                     } else {
                         rq.nextResponseBuffer();
@@ -524,5 +548,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             //close connection if the header cannot be parsed
             closeConnection(key);
         }
+    }
+
+    public int getNumConnections() {
+        return this.numConnections.get();
     }
 }

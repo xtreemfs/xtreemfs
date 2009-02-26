@@ -44,24 +44,24 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public String getTypeName() { return "xtreemfs::interfaces::XCap"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = file_id.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(file_id,writer); }
         writer.putInt( access_mode );
         writer.putLong( expires );
-        { final byte[] bytes = clientIdentity.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(clientIdentity,writer); }
         writer.putLong( truncateEpoch );
-        { final byte[] bytes = serverSignature.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
-        { final byte[] bytes = __json.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(serverSignature,writer); }
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(__json,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int file_id_new_length = buf.getInt(); byte[] file_id_new_bytes = new byte[file_id_new_length]; buf.get( file_id_new_bytes ); file_id = new String( file_id_new_bytes ); if (file_id_new_length % 4 > 0) {for (int k = 0; k < (4 - (file_id_new_length % 4)); k++) { buf.get(); } } }
+        { file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         access_mode = buf.getInt();
         expires = buf.getLong();
-        { int clientIdentity_new_length = buf.getInt(); byte[] clientIdentity_new_bytes = new byte[clientIdentity_new_length]; buf.get( clientIdentity_new_bytes ); clientIdentity = new String( clientIdentity_new_bytes ); if (clientIdentity_new_length % 4 > 0) {for (int k = 0; k < (4 - (clientIdentity_new_length % 4)); k++) { buf.get(); } } }
+        { clientIdentity = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         truncateEpoch = buf.getLong();
-        { int serverSignature_new_length = buf.getInt(); byte[] serverSignature_new_bytes = new byte[serverSignature_new_length]; buf.get( serverSignature_new_bytes ); serverSignature = new String( serverSignature_new_bytes ); if (serverSignature_new_length % 4 > 0) {for (int k = 0; k < (4 - (serverSignature_new_length % 4)); k++) { buf.get(); } } }
-        { int __json_new_length = buf.getInt(); byte[] __json_new_bytes = new byte[__json_new_length]; buf.get( __json_new_bytes ); __json = new String( __json_new_bytes ); if (__json_new_length % 4 > 0) {for (int k = 0; k < (4 - (__json_new_length % 4)); k++) { buf.get(); } } }    
+        { serverSignature = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        { __json = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()

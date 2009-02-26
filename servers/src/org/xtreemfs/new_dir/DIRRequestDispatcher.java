@@ -32,8 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
@@ -85,6 +83,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
 
     private final HttpServer                httpServ;
 
+    private int                       numRequests;
+
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
@@ -113,12 +113,12 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
 
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
 
-        httpServ = HttpServer.create(new InetSocketAddress("localhost", 8080), 0);
+        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
-                    content = StatusPage.getStatusPage(database, config).getBytes("ascii");
+                    content = StatusPage.getStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
                     httpExchange.sendResponseHeaders(200, content.length);
                     httpExchange.getResponseBody().write(content);
                     httpExchange.getResponseBody().close();
@@ -130,6 +130,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             }
         });
         httpServ.start();
+
+        numRequests = 0;
     }
 
     @Override
@@ -232,12 +234,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         DIRRequest dirRq = new DIRRequest(rq);
         try {
             op.parseRPCMessage(dirRq);
+            numRequests++;
+            op.startRequest(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
             rq.sendGarbageArgs(new errnoException(ErrNo.EINVAL, ex.toString()));
             return;
         }
-        op.startRequest(dirRq);
     }
 
     @Override
@@ -256,6 +259,14 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, e);
         }
+    }
+
+    public int getNumRequests() {
+        return this.numRequests;
+    }
+
+    public int getNumConnections() {
+        return server.getNumConnections();
     }
 
 

@@ -28,6 +28,8 @@ public class CLIParser {
         
         public CliOption(OPTIONTYPE oType) {
             this.optType = oType;
+            if (optType == OPTIONTYPE.SWITCH)
+                switchValue = new Boolean(false);
         }
     }
     

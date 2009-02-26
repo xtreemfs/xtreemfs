@@ -40,19 +40,19 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
     public String getTypeName() { return "xtreemfs::interfaces::ServiceRegistry"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = uuid.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(uuid,writer); }
         writer.putLong( version );
         writer.putInt( service_type );
-        { final byte[] bytes = service_name.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(service_name,writer); }
         data.serialize( writer );        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int uuid_new_length = buf.getInt(); byte[] uuid_new_bytes = new byte[uuid_new_length]; buf.get( uuid_new_bytes ); uuid = new String( uuid_new_bytes ); if (uuid_new_length % 4 > 0) {for (int k = 0; k < (4 - (uuid_new_length % 4)); k++) { buf.get(); } } }
+        { uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         version = buf.getLong();
         service_type = buf.getInt();
-        { int service_name_new_length = buf.getInt(); byte[] service_name_new_bytes = new byte[service_name_new_length]; buf.get( service_name_new_bytes ); service_name = new String( service_name_new_bytes ); if (service_name_new_length % 4 > 0) {for (int k = 0; k < (4 - (service_name_new_length % 4)); k++) { buf.get(); } } }
+        { service_name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         data = new org.xtreemfs.interfaces.KeyValuePairSet(); data.deserialize( buf );    
     }
     

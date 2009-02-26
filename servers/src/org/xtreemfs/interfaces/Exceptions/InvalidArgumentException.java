@@ -32,12 +32,12 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public String getTypeName() { return "xtreemfs::interfaces::Exceptions::InvalidArgumentException"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { final byte[] bytes = error_message.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length % 4 > 0) {for (int k = 0; k < (4 - (bytes.length % 4)); k++) { writer.put((byte)0); } }}        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(error_message,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { int error_message_new_length = buf.getInt(); byte[] error_message_new_bytes = new byte[error_message_new_length]; buf.get( error_message_new_bytes ); error_message = new String( error_message_new_bytes ); if (error_message_new_length % 4 > 0) {for (int k = 0; k < (4 - (error_message_new_length % 4)); k++) { buf.get(); } } }    
+        { error_message = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()
