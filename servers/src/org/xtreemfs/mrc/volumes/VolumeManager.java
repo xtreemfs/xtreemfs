@@ -147,6 +147,11 @@ public interface VolumeManager {
     public StorageManager getStorageManager(String volumeId);
     
     /**
+     * Enforces a database checkpoint.
+     */
+    public void checkpointDB() throws DatabaseException;
+    
+    /**
      * Generates a new unique volume ID.
      * 
      * @return a unique volume ID

@@ -345,6 +345,14 @@ public class BabuDBVolumeManager implements VolumeManager {
         return mngrMap.get(volumeId);
     }
     
+    public void checkpointDB() throws DatabaseException {
+        try {
+            database.checkpoint();
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
     // /**
     // *
     // * @param volumeID

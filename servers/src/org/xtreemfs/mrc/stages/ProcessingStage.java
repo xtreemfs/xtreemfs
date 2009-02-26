@@ -46,6 +46,7 @@ import org.xtreemfs.mrc.operations.ChangeAccessModeOperation;
 import org.xtreemfs.mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.mrc.operations.CheckAccessOperation;
 import org.xtreemfs.mrc.operations.CheckFileListOperation;
+import org.xtreemfs.mrc.operations.CheckpointOperation;
 import org.xtreemfs.mrc.operations.CreateDirOperation;
 import org.xtreemfs.mrc.operations.CreateFileOperation;
 import org.xtreemfs.mrc.operations.CreateLinkOperation;
@@ -135,6 +136,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(RestoreDBOperation.RPC_NAME, new RestoreDBOperation(master));
         operations.put(CheckFileListOperation.RPC_NAME, new CheckFileListOperation(master));
         operations.put(RestoreFileOperation.RPC_NAME, new RestoreFileOperation(master));
+        operations.put(CheckpointOperation.RPC_NAME, new CheckpointOperation(master));
     }
     
     @Override
