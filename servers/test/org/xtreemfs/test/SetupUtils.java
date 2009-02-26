@@ -210,6 +210,24 @@ public class SetupUtils {
         return new DIRConfig(props);
     }
 
+    public static org.xtreemfs.new_dir.DIRConfig createNewDIRConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("database.dir", TEST_DIR);
+        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("listen.port", "33638");
+        props.setProperty("http_port", "30638");
+        props.setProperty("ssl.enabled", "" + SSL_ON);
+        props.setProperty("ssl.service_creds", CERT_DIR + "service3.jks");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+        props.setProperty("ssl.trusted_certs.container", "jks");
+        props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
+
+        return new org.xtreemfs.new_dir.DIRConfig(props);
+    }
+
     public static MRCConfig createMRC1Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
