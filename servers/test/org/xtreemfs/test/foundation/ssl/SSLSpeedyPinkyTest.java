@@ -26,8 +26,11 @@ package org.xtreemfs.test.foundation.ssl;
 
 import java.io.File;
 import java.net.InetSocketAddress;
-import junit.framework.*;
 
+import junit.framework.TestCase;
+import junit.textui.TestRunner;
+
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
@@ -51,7 +54,7 @@ public class SSLSpeedyPinkyTest extends TestCase {
 
 	private static final String URL = "https://localhost:"+PORT+"/";
 
-	private String PATH = "config/certs/";
+	private String PATH = "servers/test/";
 
 	PipelinedPinky pinky;
 
@@ -60,6 +63,8 @@ public class SSLSpeedyPinkyTest extends TestCase {
     public SSLSpeedyPinkyTest(String testName) {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
+        
+        TimeSync.initialize(null, 100000, 50, null);
 
         File testfile = new File("testfile");
         if (testfile.getAbsolutePath().endsWith("java/testfile")) {
@@ -165,6 +170,10 @@ public class SSLSpeedyPinkyTest extends TestCase {
         assertEquals(rp3.getStatusCode(), 200);
         rp3.freeBuffers();
 
+    }
+    
+    public static void main(String[] args) {
+        TestRunner.run(SSLSpeedyPinkyTest.class);
     }
 
 /*    public void testErrorCases() throws Exception {

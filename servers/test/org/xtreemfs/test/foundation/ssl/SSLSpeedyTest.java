@@ -37,7 +37,9 @@ import java.net.InetSocketAddress;
 import javax.net.ssl.SSLParameters;
 
 import junit.framework.*;
+import junit.textui.TestRunner;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
@@ -63,12 +65,14 @@ public class SSLSpeedyTest extends TestCase {
 
 	private static final String URL = "https://localhost:"+PORT+"/";
 
-	private String PATH = "config/certs/";
+	private String PATH = "servers/test/";
 
     public SSLSpeedyTest(String testName) {
         super(testName);
         Logging.start(SetupUtils.DEBUG_LEVEL);
 
+        TimeSync.initialize(null, 100000, 50, null);
+        
         File testfile = new File("testfile");
         if (testfile.getAbsolutePath().endsWith("java/testfile")) {
             PATH = "../"+PATH;
@@ -180,4 +184,8 @@ public class SSLSpeedyTest extends TestCase {
         assertEquals(response,"simpleContents");
     }
 
+    public static void main(String[] args) {
+        TestRunner.run(SSLSpeedyTest.class);
+    }
+    
 }

@@ -36,6 +36,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -60,13 +61,15 @@ public class SSLPinkyTest extends TestCase {
 
 	private static final String URL = "https://localhost:"+PORT+"/";
 
-	private String PATH = "config/certs/";
+	private String PATH = "servers/test/";
 
 	HttpClient client;
 
     public SSLPinkyTest(String testName) {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
+        
+        TimeSync.initialize(null, 100000, 50, null);
 
         File testfile = new File("testfile");
         if (testfile.getAbsolutePath().endsWith("java/testfile")) {

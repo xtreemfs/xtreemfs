@@ -66,7 +66,7 @@ import org.xtreemfs.new_mrc.operations.StatusPageOperation.Vars;
 import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.stages.ProcessingStage;
 import org.xtreemfs.new_mrc.utils.Converter;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.volumes.BabuDBVolumeManager;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
@@ -170,7 +170,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 
                 try {
                     for (VolumeInfo vol : volumeManager.getVolumes()) {
-                        Map<String, Object> dsVolumeInfo = MRCOpHelper.createDSVolumeInfo(vol,
+                        Map<String, Object> dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol,
                             osdMonitor, uuid);
                         map.put(vol.getId(), dsVolumeInfo);
                     }

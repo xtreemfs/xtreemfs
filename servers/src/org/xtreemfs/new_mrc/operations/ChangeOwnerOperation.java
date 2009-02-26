@@ -40,7 +40,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -139,7 +139,7 @@ public class ChangeOwnerOperation extends MRCOperation {
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // update POSIX timestamps
-            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
                 update);
             
             // FIXME: this line is needed due to a BUG in the client which

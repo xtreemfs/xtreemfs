@@ -38,7 +38,7 @@ import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -120,7 +120,7 @@ public class GetXAttrOperation extends MRCOperation {
             
             String value = null;
             if (rqArgs.attrKey.startsWith("xtreemfs."))
-                value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
+                value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master
                         .getOSDStatusManager(), volume, res.toString(), file, rqArgs.attrKey
                         .substring(9));
             else {

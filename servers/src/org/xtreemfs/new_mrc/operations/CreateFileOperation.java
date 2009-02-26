@@ -45,10 +45,10 @@ import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.utils.Converter;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper.AccessMode;
+import org.xtreemfs.new_mrc.utils.MRCHelper.AccessMode;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -150,7 +150,7 @@ public class CreateFileOperation extends MRCOperation {
             if (rqArgs.open) {
                 
                 // create a capability for O_CREAT open calls
-                String capability = MRCOpHelper.createCapability(AccessMode.w.toString(),
+                String capability = MRCHelper.createCapability(AccessMode.w.toString(),
                     volume.getId(), file.getId(), 0, master.getConfig().getCapabilitySecret())
                         .toString();
                 
@@ -162,7 +162,7 @@ public class CreateFileOperation extends MRCOperation {
                 // OSD status manager
                 if (xLocList == null || !xLocList.iterator().hasNext()) {
                     
-                    xLocList = MRCOpHelper.createXLocList(Converter.mapToStripingPolicy(sMan,
+                    xLocList = MRCHelper.createXLocList(Converter.mapToStripingPolicy(sMan,
                         rqArgs.stripingPolicy), xLocList, sMan, master.getOSDStatusManager(), res
                             .toString(), file.getId(), res.getParentDirId(), volume, rq
                             .getPinkyRequest().getClientAddress());
@@ -172,15 +172,15 @@ public class CreateFileOperation extends MRCOperation {
                     sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
                 }
                 
-                HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);
+                HTTPHeaders headers = MRCHelper.createXCapHeaders(capability, xLocList);
                 rq.setAdditionalResponseHeaders(headers);
                 
                 // update POSIX timestamps of file
-                MRCOpHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig()
+                MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig()
                         .isNoAtime(), true, true, sMan, update);
                 
                 // update POSIX timestamps of parent directory
-                MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false,
+                MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false,
                     true, true, sMan, update);
                 
             }

@@ -42,7 +42,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -126,7 +126,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
             // if required, update POSIX timestamps
             if (!master.getConfig().isNoAtime()) {
                 update = sMan.createAtomicDBUpdate(master, rq);
-                MRCOpHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan,
+                MRCHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan,
                     update);
             }
             
@@ -137,7 +137,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 
                 FileMetadata child = it.next();
                 
-                Map<String, Object> statInfo = MRCOpHelper.createStatInfo(sMan, faMan, child, sMan
+                Map<String, Object> statInfo = MRCHelper.createStatInfo(sMan, faMan, child, sMan
                         .getSoftlinkTarget(child.getId()), rq.getDetails().userId,
                     rq.getDetails().groupIds, null, null, null);
                 

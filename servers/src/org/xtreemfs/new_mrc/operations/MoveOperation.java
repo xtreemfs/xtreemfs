@@ -42,10 +42,10 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper.FileType;
+import org.xtreemfs.new_mrc.utils.MRCHelper.FileType;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -262,11 +262,11 @@ public class MoveOperation extends MRCOperation {
                     // XLocationsList headers in the response
                     if (target.getLinkCount() == 1) {
                         
-                        String capability = MRCOpHelper.createCapability(aMode, volume.getId(),
+                        String capability = MRCHelper.createCapability(aMode, volume.getId(),
                             target.getId(), Integer.MAX_VALUE,
                             master.getConfig().getCapabilitySecret()).toString();
                         
-                        HTTPHeaders xCapHeaders = MRCOpHelper.createXCapHeaders(capability, target
+                        HTTPHeaders xCapHeaders = MRCHelper.createXCapHeaders(capability, target
                                 .getXLocList());
                         
                         rq.setAdditionalResponseHeaders(xCapHeaders);
@@ -292,9 +292,9 @@ public class MoveOperation extends MRCOperation {
             }
             
             // update POSIX timestamps of source and target parent directories
-            MRCOpHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false,
+            MRCHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false,
                 true, true, sMan, update);
-            MRCOpHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false,
+            MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false,
                 true, true, sMan, update);
             
             // FIXME: this line is needed due to a BUG in the client which

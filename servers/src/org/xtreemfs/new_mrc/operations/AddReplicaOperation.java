@@ -45,7 +45,7 @@ import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
 import org.xtreemfs.new_mrc.utils.Converter;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -160,7 +160,7 @@ public class AddReplicaOperation extends MRCOperation {
             // hasn't been used yet
             XLocList xLocList = file.getXLocList();
             
-            if (!MRCOpHelper.isAddable(xLocList, rqArgs.osdList))
+            if (!MRCHelper.isAddable(xLocList, rqArgs.osdList))
                 throw new UserException(
                     "at least one OSD already used in current X-Locations list '"
                         + JSONParser.writeJSON(Converter.xLocListToList(xLocList)) + "'");

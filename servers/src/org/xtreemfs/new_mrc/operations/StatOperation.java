@@ -43,10 +43,10 @@ import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.XAttr;
 import org.xtreemfs.new_mrc.metadata.XLocList;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper.SysAttrs;
+import org.xtreemfs.new_mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -136,7 +136,7 @@ public class StatOperation extends MRCOperation {
                 // include system attributes
                 for (SysAttrs attr : SysAttrs.values()) {
                     String key = "xtreemfs." + attr.toString();
-                    Object value = MRCOpHelper.getSysAttrValue(master.getConfig(), sMan, master
+                    Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master
                             .getOSDStatusManager(), volume, res.toString(), file, attr.toString());
                     if (!value.equals(""))
                         xAttrs.put(key, value);
@@ -145,7 +145,7 @@ public class StatOperation extends MRCOperation {
             
             Map<String, Object> acl = rqArgs.inclACLs ? faMan.getACLEntries(sMan, file) : null;
             
-            Object statInfo = MRCOpHelper.createStatInfo(sMan, faMan, file, ref,
+            Object statInfo = MRCHelper.createStatInfo(sMan, faMan, file, ref,
                 rq.getDetails().userId, rq.getDetails().groupIds, xLocList, xAttrs, acl);
             
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(statInfo).getBytes()));

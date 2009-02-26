@@ -42,7 +42,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -132,7 +132,7 @@ public class CreateDirOperation extends MRCOperation {
                             .getValue().toString(), update);
             
             // update POSIX timestamps of parent directory
-            MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
             
             // FIXME: this line is needed due to a BUG in the client which

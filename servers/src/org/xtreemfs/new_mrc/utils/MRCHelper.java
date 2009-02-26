@@ -53,7 +53,7 @@ import org.xtreemfs.new_mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
-public class MRCOpHelper {
+public class MRCHelper {
     
     public enum AccessMode {
         r, w, x, a, ga, c, t, sr, d
@@ -375,7 +375,7 @@ public class MRCOpHelper {
                 XLocList newXLoc = Converter.listToXLocList(sMan, (List<Object>) JSONParser
                         .parseJSON(new JSONString(value)));
                 
-                if (!MRCOpHelper.isConsistent(newXLoc))
+                if (!MRCHelper.isConsistent(newXLoc))
                     throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
                         + "at least one OSD occurs more than once");
                 

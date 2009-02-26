@@ -43,10 +43,10 @@ import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XLocList;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper.AccessMode;
+import org.xtreemfs.new_mrc.utils.MRCHelper.AccessMode;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
@@ -155,7 +155,7 @@ public class OpenOperation extends MRCOperation {
             }
             
             // create the capability
-            String capability = MRCOpHelper.createCapability(rqArgs.accessMode, volume.getId(),
+            String capability = MRCHelper.createCapability(rqArgs.accessMode, volume.getId(),
                 file.getId(), file.getIssuedEpoch(), master.getConfig().getCapabilitySecret())
                     .toString();
             
@@ -169,7 +169,7 @@ public class OpenOperation extends MRCOperation {
                 
                 StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
                 
-                xLocList = MRCOpHelper.createXLocList(sp, xLocList, sMan, master
+                xLocList = MRCHelper.createXLocList(sp, xLocList, sMan, master
                         .getOSDStatusManager(), res.toString(), file.getId(), res.getParentDirId(),
                     volume, rq.getPinkyRequest().getClientAddress());
                 
@@ -180,7 +180,7 @@ public class OpenOperation extends MRCOperation {
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             }
             
-            HTTPHeaders headers = MRCOpHelper.createXCapHeaders(capability, xLocList);
+            HTTPHeaders headers = MRCHelper.createXCapHeaders(capability, xLocList);
             rq.setAdditionalResponseHeaders(headers);
             
             // FIXME: this line is needed due to a BUG in the client which
@@ -192,7 +192,7 @@ public class OpenOperation extends MRCOperation {
             
             // update POSIX timestamps of parent directory
             if (!master.getConfig().isNoAtime())
-                MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true,
+                MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true,
                     false, false, sMan, update);
             
             if (update != null)

@@ -41,7 +41,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -121,12 +121,12 @@ public class DeleteOperation extends MRCOperation {
                 // obtain a deletion capability for the file
                 String aMode = faMan.translateAccessMode(volume.getId(),
                     FileAccessManager.DELETE_ACCESS);
-                String capability = MRCOpHelper.createCapability(aMode, volume.getId(),
+                String capability = MRCHelper.createCapability(aMode, volume.getId(),
                     file.getId(), Integer.MAX_VALUE, master.getConfig().getCapabilitySecret())
                         .toString();
                 
                 // set the XCapability and XLocationsList headers
-                xCapHeaders = MRCOpHelper.createXCapHeaders(capability, file.getXLocList());
+                xCapHeaders = MRCHelper.createXCapHeaders(capability, file.getXLocList());
             }
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
@@ -140,11 +140,11 @@ public class DeleteOperation extends MRCOperation {
             rq.setAdditionalResponseHeaders(xCapHeaders);
             
             // update POSIX timestamps of parent directory
-            MRCOpHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
                 true, sMan, update);
             
             if (file.getLinkCount() > 1)
-                MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+                MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
                     update);
             
             // FIXME: this line is needed due to a BUG in the client which

@@ -39,7 +39,7 @@ import org.xtreemfs.new_mrc.ac.FileAccessManager;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
@@ -129,7 +129,7 @@ public class SetW32AttrsOperation extends MRCOperation {
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
             
             // update POSIX timestamps
-            MRCOpHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
                 update);
             
             update.execute();

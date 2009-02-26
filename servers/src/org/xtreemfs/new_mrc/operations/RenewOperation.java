@@ -38,7 +38,7 @@ import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
 import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.MRCHelper;
 
 /**
  * 
@@ -84,7 +84,7 @@ public class RenewOperation extends MRCOperation {
             Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), cap.getEpochNo(), master
                     .getConfig().getCapabilitySecret());
 
-            HTTPHeaders headers = MRCOpHelper.createXCapHeaders(newCap.toString(), null);
+            HTTPHeaders headers = MRCHelper.createXCapHeaders(newCap.toString(), null);
             rq.setAdditionalResponseHeaders(headers);
 
             if (newSizeString != null) {
