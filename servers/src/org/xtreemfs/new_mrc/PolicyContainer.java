@@ -45,9 +45,8 @@ import javax.tools.ToolProvider;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.new_mrc.ac.FileAccessPolicy;
+import org.xtreemfs.new_mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 
 public class PolicyContainer {

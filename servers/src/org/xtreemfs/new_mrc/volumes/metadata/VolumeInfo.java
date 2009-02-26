@@ -31,27 +31,65 @@ package org.xtreemfs.new_mrc.volumes.metadata;
  * its own directory tree. A volume has a globally unique name and id.
  * 
  * A volume holds different policies. The OSD policy determines which OSDs may
- * by default be allocated to files. The access control policy defines the
- * circumstances under which users are allowed to access the volume. The
- * partitioning policy determines how a volume is split up into slices.
+ * by default be allocated to files. The behavior of this policy may depend on
+ * the policy's arguments, which are represented by an opaque string. The access
+ * control policy defines the circumstances under which users are allowed to
+ * access the volume.
  * 
  * @author stender
  * 
  */
 public interface VolumeInfo {
-    
+
+    /**
+     * Returns the volume's ID
+     * 
+     * @return the volume's ID
+     */
     public String getId();
-    
+
+    /**
+     * Returns the volume's name.
+     * 
+     * @return the volume's name
+     */
     public String getName();
-    
+
+    /**
+     * Returns the volume's OSD selection policy ID.
+     * 
+     * @return the volume's OSD selection policy ID.
+     */
     public short getOsdPolicyId();
-    
+
+    /**
+     * Returns the volume's OSD selection policy arguments.
+     * 
+     * @return the volume's OSD selection policy arguments.
+     */
     public String getOsdPolicyArgs();
-    
+
+    /**
+     * Returns the volume's access control policy ID.
+     * 
+     * @return the volume#s access control policy ID.
+     */
     public short getAcPolicyId();
-    
+
+    /**
+     * Sets the volume's OSD selection policy ID.
+     * 
+     * @param osdPolicyId
+     *            the new OSD selection policy ID for the volume
+     */
     public void setOsdPolicyId(short osdPolicyId);
-    
+
+    /**
+     * Sets the volume's OSD selection policy arguments.
+     * 
+     * @param osdPolicyArgs
+     *            the new OSD selection policy ID for the volume
+     */
     public void setOsdPolicyArgs(String osdPolicyArgs);
-    
+
 }

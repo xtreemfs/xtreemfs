@@ -25,17 +25,17 @@
 package org.xtreemfs.foundation.speedy;
 
 import java.net.InetSocketAddress;
-
 import java.security.MessageDigest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.mrc.MRCRequest;
+import org.xtreemfs.new_mrc.MRCRequest;
 
 /**
  * An HTTP request

@@ -25,7 +25,6 @@
 package org.xtreemfs.test;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
@@ -40,7 +39,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.new_mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
 /**
@@ -51,7 +50,7 @@ public class SetupUtils {
 
     public static final String TEST_DIR    = "/tmp/xtreemfs-test";
     
-    public static final String CERT_DIR    = "config/certs/";
+    public static final String CERT_DIR    = "test/";
 
     public static boolean      SSL_ON      = false;
 

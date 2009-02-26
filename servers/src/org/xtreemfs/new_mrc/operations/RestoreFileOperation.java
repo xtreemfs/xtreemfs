@@ -38,14 +38,15 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
+import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.database.DatabaseException;
+import org.xtreemfs.new_mrc.database.StorageManager;
+import org.xtreemfs.new_mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XLoc;
 import org.xtreemfs.new_mrc.metadata.XLocList;
+import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 
 /**

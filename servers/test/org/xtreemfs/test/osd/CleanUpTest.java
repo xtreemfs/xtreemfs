@@ -49,11 +49,11 @@ import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.utils.cleanup_osd;
 
 /**
  * 
@@ -66,7 +66,7 @@ public class CleanUpTest extends TestCase{
     private static String testVolume = "testVolume";
     
     private RequestController                   dir;
-    private org.xtreemfs.mrc.RequestController  mrc;
+    private MRCRequestDispatcher                mrc;
     private MRCClient                           mrcClient;
     private OSD                                 osd;
     private String                              authString;
@@ -99,7 +99,7 @@ public class CleanUpTest extends TestCase{
         osd = new OSD(SetupUtils.createOSD1Config()); 
         
         // startup: MRC
-        mrc = new org.xtreemfs.mrc.RequestController(SetupUtils.createMRC1Config());
+        mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
         mrc.startup(); 
         
         authString = NullAuthProvider.createAuthString("", "");

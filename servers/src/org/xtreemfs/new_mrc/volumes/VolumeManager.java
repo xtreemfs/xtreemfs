@@ -28,12 +28,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
-import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
-import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.DBAccessResultListener;
+import org.xtreemfs.new_mrc.database.DatabaseException;
+import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 
 public interface VolumeManager {

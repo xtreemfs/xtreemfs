@@ -8,14 +8,15 @@
 package org.xtreemfs.sandbox;
 
 import java.net.InetSocketAddress;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
-import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
-import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
+import org.xtreemfs.new_mrc.MRCConfig;
 
 /**
  * Simple test to check the performance of the MRC for file

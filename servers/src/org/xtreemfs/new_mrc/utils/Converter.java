@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
 import org.xtreemfs.new_mrc.UserException;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.StripingPolicy;
 import org.xtreemfs.new_mrc.metadata.XAttr;

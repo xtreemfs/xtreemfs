@@ -37,8 +37,11 @@ import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.new_mrc.ac.FileAccessManager;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.database.StorageManager;
+import org.xtreemfs.new_mrc.utils.MRCOpHelper;
+import org.xtreemfs.new_mrc.utils.Path;
+import org.xtreemfs.new_mrc.utils.PathResolver;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 import org.xtreemfs.new_mrc.volumes.metadata.VolumeInfo;
 

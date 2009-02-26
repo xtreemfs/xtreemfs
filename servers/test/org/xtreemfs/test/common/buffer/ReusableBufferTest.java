@@ -7,6 +7,7 @@ package org.xtreemfs.test.common.buffer;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 
 /**
@@ -31,7 +32,7 @@ public class ReusableBufferTest extends TestCase {
         ReusableBuffer vb = rb.createViewBuffer();
 
         vb.position(0);
-        vb.limit(4);
+        vb.limit(5);
         String result = new String(vb.array());
 
         Assert.assertEquals("Yagga",result);

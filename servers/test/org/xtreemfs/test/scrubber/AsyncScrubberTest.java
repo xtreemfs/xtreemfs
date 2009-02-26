@@ -14,16 +14,15 @@ import org.xtreemfs.common.clients.scrubber.AsyncScrubber;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.foundation.speedy.MultiSpeedy;
-import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.RequestController;
+import org.xtreemfs.new_mrc.MRCConfig;
+import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
 
 public class AsyncScrubberTest extends TestCase {
     
-    private RequestController                  mrc1;
+    private MRCRequestDispatcher                  mrc1;
     
     private org.xtreemfs.dir.RequestController dirService;
     
@@ -84,7 +83,7 @@ public class AsyncScrubberTest extends TestCase {
         osd1 = new OSD(osdConfig1);
         osd2 = new OSD(osdConfig2);
         // start MRC
-        mrc1 = new RequestController(mrcCfg1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
         
         client = SetupUtils.createMRCClient(10000000);

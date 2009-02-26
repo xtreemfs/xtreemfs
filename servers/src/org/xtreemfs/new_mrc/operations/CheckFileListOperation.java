@@ -30,14 +30,13 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.brain.BrainException;
-import org.xtreemfs.mrc.brain.storage.BackendException;
 import org.xtreemfs.new_mrc.ErrorRecord;
+import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.volumes.VolumeManager;
 
 /**
@@ -45,41 +44,41 @@ import org.xtreemfs.new_mrc.volumes.VolumeManager;
  * @author stender
  */
 public class CheckFileListOperation extends MRCOperation {
-    
+
     static class Args {
-        
-        public String       volumeID;
-        
+
+        public String volumeID;
+
         public List<String> fileIDs;
-        
+
     }
-    
+
     public static final String RPC_NAME = "checkFileList";
-    
+
     public CheckFileListOperation(MRCRequestDispatcher master) {
         super(master);
     }
-    
+
     @Override
     public boolean hasArguments() {
         return true;
     }
-    
+
     @Override
     public boolean isAuthRequired() {
         return true;
     }
-    
+
     @Override
     public void startRequest(MRCRequest rq) {
-        
+
         try {
-            
+
             Args rqArgs = (Args) rq.getRequestArgs();
-            
+
             final VolumeManager vMan = master.getVolumeManager();
             StorageManager sMan = vMan.getStorageManager(rqArgs.volumeID);
-            
+
             String response = sMan == null ? "2" : "";
             if (sMan != null)
                 try {
@@ -87,52 +86,50 @@ public class CheckFileListOperation extends MRCOperation {
                         throw new UserException("fileList was empty!");
                     for (String fileId : rqArgs.fileIDs) {
                         if (fileId == null)
-                            throw new BackendException("file ID was null!");
+                            throw new MRCException("file ID was null!");
                         response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
                     }
                 } catch (UserException ue) {
                     response = "2";
-                } catch (BackendException be) {
-                    throw new BrainException("checkFileList caused an Exception: "
-                        + be.getMessage());
+                } catch (MRCException be) {
+                    throw new MRCException("checkFileList caused an Exception: " + be.getMessage());
                 }
-            
+
             rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(response).getBytes()));
             finishRequest(rq);
-            
+
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-    
+
     @Override
     public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
+
         Args args = new Args();
-        
+
         try {
-            
+
             args.volumeID = (String) arguments.get(0);
             args.fileIDs = (List<String>) arguments.get(1);
-            
+
             if (arguments.size() == 2)
                 return null;
-            
+
             throw new Exception();
-            
+
         } catch (Exception exc) {
             try {
                 return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
+                        + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
             } catch (JSONException je) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
                 return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
+                        + getClass().getSimpleName() + "'");
             }
         } finally {
             rq.setRequestArgs(args);
         }
     }
-    
+
 }

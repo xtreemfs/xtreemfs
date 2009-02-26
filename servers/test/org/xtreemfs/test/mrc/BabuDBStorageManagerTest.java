@@ -44,15 +44,15 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.RequestController;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.BabuDBStorageManager;
-import org.xtreemfs.new_mrc.dbaccess.DBAccessResultAdapter;
-import org.xtreemfs.new_mrc.dbaccess.DBAccessResultListener;
-import org.xtreemfs.new_mrc.dbaccess.DatabaseException;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
-import org.xtreemfs.new_mrc.dbaccess.DatabaseException.ExceptionType;
+import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.database.DBAccessResultAdapter;
+import org.xtreemfs.new_mrc.database.DBAccessResultListener;
+import org.xtreemfs.new_mrc.database.DatabaseException;
+import org.xtreemfs.new_mrc.database.StorageManager;
+import org.xtreemfs.new_mrc.database.DatabaseException.ExceptionType;
+import org.xtreemfs.new_mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.operations.Path;
+import org.xtreemfs.new_mrc.utils.Path;
 import org.xtreemfs.test.SetupUtils;
 
 public class BabuDBStorageManagerTest extends TestCase {

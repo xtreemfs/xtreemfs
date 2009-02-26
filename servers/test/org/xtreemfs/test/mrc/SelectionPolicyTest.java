@@ -32,7 +32,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
+import org.xtreemfs.new_mrc.osdselection.ProximitySelectionPolicy;
 
 public class SelectionPolicyTest extends TestCase {
     

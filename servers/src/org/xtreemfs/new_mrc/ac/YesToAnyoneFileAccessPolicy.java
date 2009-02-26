@@ -29,11 +29,11 @@ import java.util.Map;
 
 import org.xtreemfs.new_mrc.MRCException;
 import org.xtreemfs.new_mrc.UserException;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.ACLEntry;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
-import org.xtreemfs.new_mrc.operations.PathResolver;
+import org.xtreemfs.new_mrc.utils.PathResolver;
 
 /**
  * This policy will grant access to anyone. It does not allow changeing access

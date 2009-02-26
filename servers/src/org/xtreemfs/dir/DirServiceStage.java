@@ -39,8 +39,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.mrc.brain.ErrNo;
-import org.xtreemfs.mrc.brain.UserException;
+import org.xtreemfs.new_mrc.ErrNo;
 
 public class DirServiceStage extends LifeCycleThread {
 

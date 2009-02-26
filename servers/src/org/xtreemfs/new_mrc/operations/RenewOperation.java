@@ -35,127 +35,124 @@ import org.xtreemfs.new_mrc.MRCRequest;
 import org.xtreemfs.new_mrc.MRCRequestDispatcher;
 import org.xtreemfs.new_mrc.UserException;
 import org.xtreemfs.new_mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.new_mrc.dbaccess.AtomicDBUpdate;
-import org.xtreemfs.new_mrc.dbaccess.StorageManager;
+import org.xtreemfs.new_mrc.database.AtomicDBUpdate;
+import org.xtreemfs.new_mrc.database.StorageManager;
 import org.xtreemfs.new_mrc.metadata.FileMetadata;
+import org.xtreemfs.new_mrc.utils.MRCOpHelper;
 
 /**
  * 
  * @author stender
  */
 public class RenewOperation extends MRCOperation {
-    
+
     public static final String RPC_NAME = "renew";
-    
+
     public RenewOperation(MRCRequestDispatcher master) {
         super(master);
     }
-    
+
     @Override
     public boolean hasArguments() {
         return false;
     }
-    
+
     @Override
     public boolean isAuthRequired() {
         return true;
     }
-    
+
     @Override
     public void startRequest(MRCRequest rq) {
-        
+
         try {
-            
-            String capString = rq.getPinkyRequest().requestHeaders
-                    .getHeader(HTTPHeaders.HDR_XCAPABILITY);
+
+            String capString = rq.getPinkyRequest().requestHeaders.getHeader(HTTPHeaders.HDR_XCAPABILITY);
             String newSizeString = rq.getPinkyRequest().requestHeaders
                     .getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-            
+
             if (capString == null)
                 throw new UserException("missing " + HTTPHeaders.HDR_XCAPABILITY + " header");
-            
+
             // create a capability object to verify the capability
             Capability cap = new Capability(capString, master.getConfig().getCapabilitySecret());
-            
+
             // check whether the received capability has a valid signature
             if (!cap.isValid())
                 throw new UserException(capString + " is invalid");
-            
-            Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), cap
-                    .getEpochNo(), master.getConfig().getCapabilitySecret());
-            
+
+            Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), cap.getEpochNo(), master
+                    .getConfig().getCapabilitySecret());
+
             HTTPHeaders headers = MRCOpHelper.createXCapHeaders(newCap.toString(), null);
             rq.setAdditionalResponseHeaders(headers);
-            
+
             if (newSizeString != null) {
-                
-                Logging
-                        .logMessage(
-                            Logging.LEVEL_WARN,
-                            this,
-                            "received 'X-New-Filesize' header w/ 'renew' operation. 'updateFileSize' should be used instead of 'renew'");
-                
+                if (Logging.isDebug())
+                    Logging
+                            .logMessage(Logging.LEVEL_DEBUG, this,
+                                    "received 'X-New-Filesize' header w/ 'renew' operation. 'updateFileSize' should be used instead of 'renew'");
+
                 // parse volume and file ID from global file ID
                 String globalFileId = cap.getFileId();
                 int i = globalFileId.indexOf(':');
                 String volumeId = cap.getFileId().substring(0, i);
                 long fileId = Long.parseLong(cap.getFileId().substring(i + 1));
                 StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
-                
+
                 FileMetadata file = sMan.getMetadata(fileId);
                 if (file == null)
                     throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
-                
+
                 int index = newSizeString.indexOf(',');
                 if (index == -1)
                     throw new UserException(ErrNo.EINVAL, "invalid " + HTTPHeaders.HDR_XNEWFILESIZE
-                        + " header");
-                
+                            + " header");
+
                 // parse the file size and epoch number
                 long newFileSize = Long.parseLong(newSizeString.substring(1, index));
-                int epochNo = Integer.parseInt(newSizeString.substring(index + 1, newSizeString
-                        .length() - 1));
-                
+                int epochNo = Integer
+                        .parseInt(newSizeString.substring(index + 1, newSizeString.length() - 1));
+
                 // FIXME: this line is needed due to a BUG in the client which
                 // expects some useless return value
                 rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-                
+
                 // discard outdated file size updates
                 if (epochNo < file.getEpoch()) {
                     finishRequest(rq);
                     return;
                 }
-                
+
                 // accept any file size in a new epoch but only larger file
                 // sizes in the current epoch
                 if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
-                    
+
                     file.setSize(newFileSize);
                     file.setEpoch(epochNo);
-                    
+
                     AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
                     sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
-                    
+
                     // TODO: update POSIX time stamps
                     // // update POSIX timestamps
                     // MRCOpHelper.updateFileTimes(parentId, file,
                     // !master.getConfig().isNoAtime(),
                     // false, true, sMan, update);
-                    
+
                     update.execute();
                 } else
                     finishRequest(rq);
             } else
                 finishRequest(rq);
-            
+
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                    exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-    
+
 }
