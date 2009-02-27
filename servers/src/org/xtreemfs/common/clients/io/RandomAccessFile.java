@@ -19,7 +19,7 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Nele Andersen (ZIB), Björn Kolbeck (ZIB)
+ * AUTHORS: Nele Andersen (ZIB), Björn Kolbeck (ZIB), Christian Lorenz (ZIB)
  */
 
 package org.xtreemfs.common.clients.io;
@@ -27,6 +27,8 @@ package org.xtreemfs.common.clients.io;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -333,6 +335,44 @@ public class RandomAccessFile implements ObjectStore {
         return (Long) mrcClient.stat(mrcAddress, pathName, false, true, false, authString).get(
             "size");
     }
+    
+    public void setReadOnly(boolean mode) throws Exception {
+        Map<String, Object> attrs = new HashMap<String, Object>();
+        attrs.put("read_only", mode ? "true" : "false");
+        mrcClient.setXAttrs(mrcAddress, pathName, attrs, authString);
+    }
+
+    public void addReplica(List<ServiceUUID> osds) throws Exception {
+        List<String> osdList = new ArrayList<String>();
+        for (ServiceUUID osd : osds) {
+            osdList.add(osd.toString());
+        }
+        mrcClient.addReplica(mrcAddress, fileId, stripingPolicy.asMap(), osdList, authString);
+
+        // update Xloc
+        try {
+            capAndXLoc = mrcClient.renew(mrcAddress, capAndXLoc, authString);
+            capTime = System.currentTimeMillis();
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    public void removeReplica(List<ServiceUUID> osds) throws Exception {
+        List<String> osdList = new ArrayList<String>();
+        for (ServiceUUID osd : osds) {
+            osdList.add(osd.toString());
+        }
+        mrcClient.removeReplica(mrcAddress, fileId, stripingPolicy.asMap(), osdList, authString);
+
+        // update Xloc
+        try {
+            capAndXLoc = mrcClient.renew(mrcAddress, capAndXLoc, authString);
+            capTime = System.currentTimeMillis();
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
 
     public String getStripingPolicy() {
         return stripingPolicy.toString();
@@ -343,6 +383,10 @@ public class RandomAccessFile implements ObjectStore {
         return stripingPolicy.getStripeSize(0);
     }
 
+    /**
+     * uses only the OSDs of the first replica
+     * @return
+     */
     public List<ServiceUUID> getOSDs() {
         // FIXME: use more than only the first replica
         return locations.getLocation(0).getOSDs();
@@ -353,6 +397,10 @@ public class RandomAccessFile implements ObjectStore {
         return (length() / locations.getLocation(0).getStripingPolicy().getStripeSize(0)) + 1;
     }
 
+    /**
+     * uses only the OSDs of the first replica
+     * @return
+     */
     public ServiceUUID getOSDId(long objectNo) {
         // FIXME: use more than only the first replica
         return locations.getOSDsByObject(objectNo).get(0);

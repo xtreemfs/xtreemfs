@@ -8,6 +8,9 @@ package org.xtreemfs.test.foundation.oncrpc.server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
+
+import junit.framework.TestCase;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,13 +29,11 @@ import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 
-import static org.junit.Assert.*;
-
 /**
  *
  * @author bjko
  */
-public class SimpleRPCClientTest {
+public class SimpleRPCClientTest extends TestCase {
 
     public static final int TEST_PORT = 12345;
 

@@ -27,9 +27,11 @@ package org.xtreemfs.test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
+import java.util.Random;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
@@ -439,4 +441,17 @@ public class SetupUtils {
             return dirClient;
         }
     }
+    
+    /**
+     * @param size
+     *            in byte
+     */
+    public static ReusableBuffer generateData(int size) {
+        Random random = new Random();
+        byte[] data = new byte[size];
+        random.nextBytes(data);
+        return ReusableBuffer.wrap(data);
+    }
+
+
 }

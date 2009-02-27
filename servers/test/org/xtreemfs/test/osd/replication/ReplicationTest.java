@@ -28,14 +28,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.dir.DIRClient;
@@ -92,7 +90,7 @@ public class ReplicationTest extends TestCase {
         Logging.start(Logging.LEVEL_TRACE);
 
         this.stripeSize = 128;
-        this.data = generateData(stripeSize * 1024);
+        this.data = SetupUtils.generateData(stripeSize * 1024);
 
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
 
@@ -206,7 +204,7 @@ public class ReplicationTest extends TestCase {
         response.waitForResponse();
         response.freeBuffers();
 
-        ReusableBuffer data2 = generateData(1024 * this.stripeSize / 2);
+        ReusableBuffer data2 = SetupUtils.generateData(1024 * this.stripeSize / 2);
         // write half object to replica 1 at quarter position => half object,
         // HOLE
         response = client.put(locations.getOSDsByObject(objectNo + 2).get(0).getAddress(), this.locations,
@@ -509,7 +507,7 @@ public class ReplicationTest extends TestCase {
         response.waitForResponse();
         response.freeBuffers();
 
-        ReusableBuffer data2 = generateData(1024 * this.stripeSize / 2);
+        ReusableBuffer data2 = SetupUtils.generateData(1024 * this.stripeSize / 2);
         // write object to replica 3 : OSD 2
         osd = locations.getOSDsByObject(1).get(2);
         response = client.put(osd.getAddress(), locations, capability, file, 1, data2);
@@ -682,17 +680,5 @@ public class ReplicationTest extends TestCase {
 
         // reuse test
         testObjectLocalNOTAvailable();
-    }
-
-    /**
-     * @param size
-     *            in byte
-     * @return
-     */
-    private ReusableBuffer generateData(int size) {
-        Random random = new Random();
-        byte[] data = new byte[size];
-        random.nextBytes(data);
-        return ReusableBuffer.wrap(data);
     }
 }

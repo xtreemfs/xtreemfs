@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Christian Lorenz (ZIB), Björn Kolbeck (ZIB)
  */
@@ -46,9 +46,10 @@ import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
 import org.xtreemfs.foundation.pinky.PipelinedPinky;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.test.SetupUtils;
 
 /**
- *
+ * 
  * @author clorenz
  */
 public class SSLPinkyTest extends TestCase {
@@ -59,23 +60,23 @@ public class SSLPinkyTest extends TestCase {
 
     public static final int PORT = 12345;
 
-	private static final String URL = "https://localhost:"+PORT+"/";
+    private static final String URL = "https://localhost:" + PORT + "/";
 
-	private String PATH = "servers/test/";
+    private String PATH = SetupUtils.CERT_DIR;
 
-	HttpClient client;
+    HttpClient client;
 
     public SSLPinkyTest(String testName) {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
-        
+
         TimeSync.initialize(null, 100000, 50, null);
 
         File testfile = new File("testfile");
         if (testfile.getAbsolutePath().endsWith("java/testfile")) {
-            PATH = "../"+PATH;
+            PATH = "../" + PATH;
         } else {
-            PATH = "./"+PATH;
+            PATH = "./" + PATH;
         }
     }
 
@@ -84,9 +85,8 @@ public class SSLPinkyTest extends TestCase {
 
         client = new HttpClient();
 
-        SSLOptions sslOptions = new SSLOptions(PATH + "service1.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, PATH + "trust.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, false);
+        SSLOptions sslOptions = new SSLOptions(PATH + "service1.jks", "passphrase", SSLOptions.JKS_CONTAINER,
+                PATH + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER, false);
 
         // create a new Pinky server
         sthr = new PipelinedPinky(PORT, null, null, sslOptions);
@@ -103,19 +103,16 @@ public class SSLPinkyTest extends TestCase {
                         if (theRequest.requestBody.hasArray()) {
                             bdy = theRequest.requestBody.array();
                         } else {
-                            bdy = new byte[theRequest.requestBody
-                                    .capacity()];
+                            bdy = new byte[theRequest.requestBody.capacity()];
                             theRequest.requestBody.position(0);
                             theRequest.requestBody.get(bdy);
                         }
 
                         String body = new String(bdy, "utf-8");
-                        Object o = JSONParser
-                                .parseJSON(new JSONString(body));
+                        Object o = JSONParser.parseJSON(new JSONString(body));
                         String respBdy = JSONParser.writeJSON(o);
-                        theRequest.setResponse(HTTPUtils.SC_OKAY,
-                                ReusableBuffer.wrap(respBdy.getBytes("utf-8")),
-                                HTTPUtils.DATA_TYPE.JSON);
+                        theRequest.setResponse(HTTPUtils.SC_OKAY, ReusableBuffer.wrap(respBdy
+                                .getBytes("utf-8")), HTTPUtils.DATA_TYPE.JSON);
                     } else {
                         theRequest.setResponse(HTTPUtils.SC_OKAY);
                     }
@@ -135,24 +132,22 @@ public class SSLPinkyTest extends TestCase {
         });
 
         // init certs
-        Protocol authhttps = new Protocol("https",
-                new AuthSSLProtocolSocketFactory(
-                    new URL("file:"+PATH+"/service2.jks"), "passphrase",
-                    new URL("file:"+PATH+"/trust.jks"), "passphrase"), 443);
+        Protocol authhttps = new Protocol("https", new AuthSSLProtocolSocketFactory(new URL("file:" + PATH
+                + "/service2.jks"), "passphrase", new URL("file:" + PATH + "/trust.jks"), "passphrase"), 443);
         Protocol.registerProtocol("https", authhttps);
 
         // start the Pinky server in a new thread
-//        test = new Thread(sthr);
-//        test.start();
+        // test = new Thread(sthr);
+        // test.start();
         sthr.start();
     }
 
     protected void tearDown() throws Exception {
         sthr.shutdown();
         sthr.waitForShutdown();
-//        synchronized (this) {
-//            this.wait(2000);
-//        }
+        // synchronized (this) {
+        // this.wait(2000);
+        // }
 
     }
 
@@ -163,11 +158,11 @@ public class SSLPinkyTest extends TestCase {
 
         PostMethod method = new PostMethod(URL);
         String content = "[\"Hallo\"]";
-        method.setRequestEntity(new StringRequestEntity(content,"text/plain","utf-8"));
+        method.setRequestEntity(new StringRequestEntity(content, "text/plain", "utf-8"));
         int rc = client.executeMethod(method);
-        assertEquals(rc,200);
+        assertEquals(rc, 200);
         String response = method.getResponseBodyAsString();
-        assertEquals(response,content);
+        assertEquals(response, content);
 
     }
 
@@ -175,11 +170,11 @@ public class SSLPinkyTest extends TestCase {
 
         PostMethod method = new PostMethod(URL);
         String content = "";
-        method.setRequestEntity(new StringRequestEntity(content,"text/plain","utf-8"));
+        method.setRequestEntity(new StringRequestEntity(content, "text/plain", "utf-8"));
         int rc = client.executeMethod(method);
-        assertEquals(rc,200);
+        assertEquals(rc, 200);
         String response = method.getResponseBodyAsString();
-        assertEquals(response,content);
+        assertEquals(response, content);
 
     }
 
@@ -187,9 +182,9 @@ public class SSLPinkyTest extends TestCase {
 
         PostMethod method = new PostMethod(URL);
         int rc = client.executeMethod(method);
-        assertEquals(rc,200);
+        assertEquals(rc, 200);
         String response = method.getResponseBodyAsString();
-        assertEquals(response.length(),0);
+        assertEquals(response.length(), 0);
 
     }
 
@@ -197,28 +192,28 @@ public class SSLPinkyTest extends TestCase {
 
         GetMethod method = new GetMethod(URL);
         int rc = client.executeMethod(method);
-        assertEquals(rc,200);
+        assertEquals(rc, 200);
         String response = method.getResponseBodyAsString();
-        assertEquals(response.length(),0);
+        assertEquals(response.length(), 0);
 
     }
 
-    public static void main(String[] args){
-    	SSLPinkyTest pinkyTest = new SSLPinkyTest("SSLPinkyTest");
-    	try {
-			pinkyTest.setUp();
+    public static void main(String[] args) {
+        SSLPinkyTest pinkyTest = new SSLPinkyTest("SSLPinkyTest");
+        try {
+            pinkyTest.setUp();
 
-			InputStreamReader in = new InputStreamReader(System.in);
+            InputStreamReader in = new InputStreamReader(System.in);
 
-			System.out.println("Push 'Enter' to close the program!");
-			in.read();
-			in.close();
+            System.out.println("Push 'Enter' to close the program!");
+            in.read();
+            in.close();
 
-			pinkyTest.tearDown();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            pinkyTest.tearDown();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }

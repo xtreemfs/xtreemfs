@@ -26,6 +26,9 @@ package org.xtreemfs.test.new_dir;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+
+import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -38,23 +41,22 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.deleteAddressMappingsResponse;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
-import org.xtreemfs.new_dir.client.DIRClient;
+import org.xtreemfs.interfaces.DIRInterface.deleteAddressMappingsResponse;
+import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.new_dir.DIRConfig;
 import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.new_dir.client.DIRClient;
 import org.xtreemfs.test.SetupUtils;
-import static org.junit.Assert.*;
 
 /**
  *
  * @author bjko
  */
-public class DIRTest {
+public class DIRTest extends TestCase {
 
     DIRRequestDispatcher dir;
 

@@ -6,12 +6,10 @@
 package org.xtreemfs.test.foundation;
 
 import java.net.InetSocketAddress;
+
 import junit.framework.TestCase;
-import org.xtreemfs.common.clients.HttpErrorException;
-import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.RPCResponse;
+
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
 import org.xtreemfs.foundation.pinky.PipelinedPinky;
@@ -67,8 +65,8 @@ public class DigestAuthTest extends TestCase {
         speedy.waitForShutdown();
     }
 
-    /*public void testAuth() throws Exception {
-        RPCClient c = new RPCClient(speedy);
+    public void testAuth() throws Exception {
+/*        RPCClient c = new RPCClient(speedy);
         RPCResponse r = null;
         try {
             r = c.sendRPC(me, "", null, "yagga yagag", null);
@@ -80,7 +78,7 @@ public class DigestAuthTest extends TestCase {
                 r = c.sendRPC(me, "", null, "", addHdr);
                 r.waitForResponse();
             }
-        }
-    }*/
+        }*/
+    }
 
 }

@@ -23,15 +23,10 @@
  */
 package org.xtreemfs.test.osd.replication;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 import junit.framework.TestCase;
 
@@ -39,63 +34,39 @@ import org.junit.After;
 import org.junit.Before;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.Request;
-import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.common.striping.RAID0;
-import org.xtreemfs.common.striping.StripingPolicy;
-import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.dir.DIR;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.foundation.pinky.PinkyRequest;
-import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
-import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.OSDRequest;
-import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.RequestDispatcher;
 import org.xtreemfs.osd.RequestDispatcher.Operations;
 import org.xtreemfs.osd.RequestDispatcher.Stages;
+import org.xtreemfs.osd.ops.FetchAndWriteReplica;
 import org.xtreemfs.osd.ops.Operation;
 import org.xtreemfs.osd.ops.ReadOperation;
-import org.xtreemfs.osd.ops.FetchAndWriteReplica;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
-import org.xtreemfs.osd.stages.AuthenticationStage;
-import org.xtreemfs.osd.stages.ParserStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StageCallbackInterface;
 import org.xtreemfs.osd.stages.StageStatistics;
-import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.stages.StorageThread;
 import org.xtreemfs.osd.stages.Stage.StageResponseCode;
-import org.xtreemfs.osd.storage.MetadataCache;
-import org.xtreemfs.osd.storage.StorageLayout;
-import org.xtreemfs.osd.storage.Striping;
-import org.xtreemfs.osd.storage.Striping.RPCMessage;
 import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.osd.ParserStageTest;
 
 /**
  * 
@@ -130,7 +101,7 @@ public class ReplicationStageTest extends TestCase {
         Logging.start(Logging.LEVEL_DEBUG);
 
         this.stripeSize = 128;
-        this.data = generateData(stripeSize * 1024);
+        this.data = SetupUtils.generateData(stripeSize * 1024);
 
         DIRConfig dirConfig = SetupUtils.createDIRConfig();
         dir = new RequestController(dirConfig);
@@ -285,18 +256,6 @@ public class ReplicationStageTest extends TestCase {
         request.getDetails().setCurrentReplica(locations.getLocation(0));
         request.getDetails().setObjectNumber(objectNo);
         return request;
-    }
-
-    /**
-     * @param size
-     *            in byte
-     * @return
-     */
-    private ReusableBuffer generateData(int size) {
-        Random random = new Random();
-        ReusableBuffer data = BufferPool.allocate(size);
-        random.nextBytes(data.getData());
-        return data;
     }
 
     private class TestRequestDispatcher implements RequestDispatcher {

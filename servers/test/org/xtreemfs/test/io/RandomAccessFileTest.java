@@ -1,7 +1,32 @@
+/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+
+    This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+    Grid Operating System, see <http://www.xtreemos.eu> for more details.
+    The XtreemOS project has been developed with the financial support of the
+    European Commission's IST program under contract #FP6-033576.
+
+    XtreemFS is free software: you can redistribute it and/or modify it under
+    the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 2 of the License, or (at your option)
+    any later version.
+
+    XtreemFS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+ * AUTHORS: Nele Andersen (ZIB), Björn Kolbeck (ZIB), Christian Lorenz (ZIB)
+ */
+
 package org.xtreemfs.test.io;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -11,7 +36,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
@@ -183,4 +210,83 @@ public class RandomAccessFileTest extends TestCase {
         assertEquals(6464, res);
     }
 
+    public void testReplicaCreationAndRemoval() throws Exception {
+        randomAccessFile = new RandomAccessFile("cw", mrc1Address, volumeName + "/myDir/test2.txt", speedy);
+
+        // // set file read-only
+        // randomAccessFile.setReadOnly(true);
+        //        
+        // // add a replica
+        // List<ServiceUUID> replica1 = new ArrayList<ServiceUUID>();
+        // while (true) {
+        // // TODO: get a list of "free" OSDs
+        // try {
+        // randomAccessFile.addReplica(replica1);
+        // break;
+        // } catch (Exception e) {
+        // wait(1000);
+        // }
+        // }
+        // // check
+        // assertEquals(2, randomAccessFile.getLocations().getNumberOfReplicas());
+        // if(!findReplicaInLocations(replica1))
+        // fail("Added OSD-list not found in location-list.");
+        //        
+        // // add a second replica
+        // List<ServiceUUID> replica2 = new ArrayList<ServiceUUID>();
+        // // TODO: get a list of "free" OSDs
+        // randomAccessFile.addReplica(replica2);
+        // // check
+        // assertEquals(3, randomAccessFile.getLocations().getNumberOfReplicas());
+        // if(!findReplicaInLocations(replica1))
+        // fail("Added 'old' OSD-list not found in location-list.");
+        // if(!findReplicaInLocations(replica2))
+        // fail("Added OSD-list not found in location-list.");
+        //
+        // // remove the first replica
+        // randomAccessFile.removeReplica(replica1);
+        // // check
+        // assertEquals(2, randomAccessFile.getLocations().getNumberOfReplicas());
+        // if(findReplicaInLocations(replica1))
+        // fail("Removed OSD-list found in location-list.");
+        // if(!findReplicaInLocations(replica2))
+        // fail("Added OSD-list not found in location-list.");
+        //        
+        // // try to remove read-only flag
+        // try {
+        // randomAccessFile.setReadOnly(false);
+        // fail("File must not marked as read-only, because replicas exists.");
+        // } catch (Exception e) {
+        // // do nothing
+        // }
+        //
+        // // remove the last replica
+        // randomAccessFile.removeReplica(replica2);
+        // // check
+        // assertEquals(1, randomAccessFile.getLocations().getNumberOfReplicas());
+        // if(findReplicaInLocations(replica2))
+        // fail("Removed OSD-list found in location-list.");
+        //        
+        // // try to remove read-only flag
+        // try {
+        // randomAccessFile.setReadOnly(false);
+        // } catch (Exception e) {
+        // fail("File should be able to marked as read-only, because replicas exists.");
+        // }
+    }
+
+    /**
+     * @param osds
+     */
+    private boolean findReplicaInLocations(List<ServiceUUID> osds) {
+        boolean found = false;
+        for (Location loc : randomAccessFile.getLocations()) {
+            if (osds.equals(loc.getOSDs())) {
+                assertEquals(osds, loc.getOSDs());
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
 }

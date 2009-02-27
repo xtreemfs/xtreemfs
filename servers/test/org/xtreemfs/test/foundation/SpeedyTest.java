@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
@@ -39,7 +40,6 @@ import org.xtreemfs.test.SetupUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.TimeSync;
 
 /**
  *

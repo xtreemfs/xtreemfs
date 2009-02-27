@@ -17,18 +17,12 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Christian Lorenz (ZIB), Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.test.foundation.ssl;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,19 +30,25 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLParameters;
 
-import junit.framework.*;
+import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
-import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
+import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
 import org.xtreemfs.test.SetupUtils;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
+
 /**
- *
+ * 
  * @author clorenz
  */
 public class SSLSpeedyTest extends TestCase {
@@ -63,21 +63,21 @@ public class SSLSpeedyTest extends TestCase {
 
     int returncode = 0;
 
-	private static final String URL = "https://localhost:"+PORT+"/";
+    private static final String URL = "https://localhost:" + PORT + "/";
 
-	private String PATH = "servers/test/";
+    private String PATH = SetupUtils.CERT_DIR;
 
     public SSLSpeedyTest(String testName) {
         super(testName);
         Logging.start(SetupUtils.DEBUG_LEVEL);
 
         TimeSync.initialize(null, 100000, 50, null);
-        
+
         File testfile = new File("testfile");
         if (testfile.getAbsolutePath().endsWith("java/testfile")) {
-            PATH = "../"+PATH;
+            PATH = "../" + PATH;
         } else {
-            PATH = "./"+PATH;
+            PATH = "./" + PATH;
         }
     }
 
@@ -85,37 +85,35 @@ public class SSLSpeedyTest extends TestCase {
 
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
 
-        server = HttpsServer.create(new InetSocketAddress("localhost",PORT),0);
-        SSLOptions sslOptions = new SSLOptions(PATH + "service1.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, PATH + "trust.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, false);
-        server.setHttpsConfigurator (new HttpsConfigurator(sslOptions.getSSLContext()) {
-            public void configure (HttpsParameters params) {
+        server = HttpsServer.create(new InetSocketAddress("localhost", PORT), 0);
+        SSLOptions sslOptions = new SSLOptions(PATH + "service1.jks", "passphrase", SSLOptions.JKS_CONTAINER,
+                PATH + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER, false);
+        server.setHttpsConfigurator(new HttpsConfigurator(sslOptions.getSSLContext()) {
+            public void configure(HttpsParameters params) {
                 // get the default parameters
                 SSLParameters sslParams = getSSLContext().getDefaultSSLParameters();
 
                 // set ssl params for speedy
                 sslParams.setProtocols(getSSLContext().getSupportedSSLParameters().getProtocols());
-    			sslParams.setCipherSuites(getSSLContext().getSupportedSSLParameters().getCipherSuites());
-    			sslParams.setNeedClientAuth(true);
+                sslParams.setCipherSuites(getSSLContext().getSupportedSSLParameters().getCipherSuites());
+                sslParams.setNeedClientAuth(true);
 
                 params.setSSLParameters(sslParams);
             }
         });
-//        server.setHttpsConfigurator(new HttpsConfigurator(sslOptions.getSSLContext()));
-        server.createContext("/",new HttpHandler() {
+        // server.setHttpsConfigurator(new HttpsConfigurator(sslOptions.getSSLContext()));
+        server.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content = "simpleContents".getBytes("ascii");
-                httpExchange.sendResponseHeaders(200,content.length);
+                httpExchange.sendResponseHeaders(200, content.length);
                 httpExchange.getResponseBody().write(content);
                 httpExchange.getResponseBody().close();
             }
         });
         server.start();
 
-        SSLOptions sslOptions2 = new SSLOptions(PATH + "service2.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, PATH + "trust.jks",
-				"passphrase", SSLOptions.JKS_CONTAINER, false);
+        SSLOptions sslOptions2 = new SSLOptions(PATH + "service2.jks", "passphrase",
+                SSLOptions.JKS_CONTAINER, PATH + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER, false);
 
         client = new MultiSpeedy(sslOptions2);
     }
@@ -128,8 +126,7 @@ public class SSLSpeedyTest extends TestCase {
 
     public void testSpeedy() throws Exception {
 
-        final InetSocketAddress endpoint = new InetSocketAddress(
-                "localhost", PORT);
+        final InetSocketAddress endpoint = new InetSocketAddress("localhost", PORT);
 
         client.registerListener(new SpeedyResponseListener() {
             int numR = 0;
@@ -141,7 +138,7 @@ public class SSLSpeedyTest extends TestCase {
                     } else {
                         byte bdy[] = null;
                         returncode = resp.statusCode;
-//                        System.out.println("sc="+resp.statusCode+" / "+resp.responseBody);
+                        // System.out.println("sc="+resp.statusCode+" / "+resp.responseBody);
                         if (resp.responseBody == null) {
                             response = null;
                         } else {
@@ -161,7 +158,7 @@ public class SSLSpeedyTest extends TestCase {
                         }
                     }
                 } catch (Exception ex) {
-                    fail("Exception occurred in responseListener: "+ex);
+                    fail("Exception occurred in responseListener: " + ex);
                 } finally {
                     if (resp != null)
                         resp.freeBuffer();
@@ -173,19 +170,19 @@ public class SSLSpeedyTest extends TestCase {
         test.start();
         Thread.currentThread().yield();
 
-        SpeedyRequest sr = new SpeedyRequest("GET","/",null,null);
+        SpeedyRequest sr = new SpeedyRequest("GET", "/", null, null);
 
-        client.sendRequest(sr,endpoint);
+        client.sendRequest(sr, endpoint);
 
         synchronized (sr) {
             sr.wait(5000);
         }
-        assertEquals(returncode,200);
-        assertEquals(response,"simpleContents");
+        assertEquals(returncode, 200);
+        assertEquals(response, "simpleContents");
     }
 
     public static void main(String[] args) {
         TestRunner.run(SSLSpeedyTest.class);
     }
-    
+
 }
