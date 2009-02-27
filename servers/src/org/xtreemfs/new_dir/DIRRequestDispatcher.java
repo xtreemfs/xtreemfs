@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
@@ -26,6 +26,8 @@ package org.xtreemfs.new_dir;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -60,59 +62,59 @@ import org.xtreemfs.new_dir.operations.RegisterServiceOperation;
 import org.xtreemfs.new_dir.operations.SetAddressMappingOperation;
 
 /**
- *
+ * 
  * @author bjko
  */
-public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener, LifeCycleListener {
-
-    private final Map<Integer,DIROperation> registry;
-
-    private final RPCNIOSocketServer        server;
-
-    private final BlockingQueue<ONCRPCRequest>         queue;
-
-    private volatile boolean                quit;
-
-    private final BabuDB                    database;
-
-    public static final String              DB_NAME = "dirdb";
+public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
+    LifeCycleListener {
     
-    public static final int                 INDEX_ID_ADDRMAPS = 0;
-
-    public static final int                 INDEX_ID_SERVREG = 1;
-
-    private final HttpServer                httpServ;
-
-    private int                       numRequests;
-
+    private final Map<Integer, DIROperation>   registry;
+    
+    private final RPCNIOSocketServer           server;
+    
+    private final BlockingQueue<ONCRPCRequest> queue;
+    
+    private volatile boolean                   quit;
+    
+    private final BabuDB                       database;
+    
+    public static final String                 DB_NAME           = "dirdb";
+    
+    public static final int                    INDEX_ID_ADDRMAPS = 0;
+    
+    public static final int                    INDEX_ID_SERVREG  = 1;
+    
+    private final HttpServer                   httpServ;
+    
+    private int                                numRequests;
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
         registry = new HashMap();
-
-        //start up babudb
-        database = BabuDBFactory.getBabuDB(config.getDbDir(), config.getDbDir(),
-                0, 1024*1024*16, 60*5,SyncMode.FSYNC,200,500);
-
+        
+        // start up babudb
+        database = BabuDBFactory.getBabuDB(config.getDbDir(), config.getDbDir(), 0, 1024 * 1024 * 16, 60 * 5,
+            SyncMode.FSYNC, 200, 500);
+        
         initializeDatabase();
-
+        
         registerOperations();
-
-        //start the server
-
+        
+        // start the server
+        
         SSLOptions sslOptions = null;
         if (config.isUsingSSL()) {
-            sslOptions = new SSLOptions(config.getServiceCredsFile(), config
-                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), config
-                    .getTrustedCertsFile(), config.getTrustedCertsPassphrase(), config
+            sslOptions = new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
+                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
+                config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
                     .getTrustedCertsContainer(), false);
         }
-
+        
         queue = new LinkedBlockingQueue();
         quit = false;
-
+        
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
-
+        
         httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
@@ -130,10 +132,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             }
         });
         httpServ.start();
-
+        
         numRequests = 0;
     }
-
+    
     @Override
     public void run() {
         try {
@@ -145,7 +147,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         } catch (InterruptedException ex) {
             quit = true;
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
             notifyCrashed(ex);
         }
         notifyStopped();
@@ -153,84 +155,85 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     public void startup() throws Exception {
         this.start();
-
+        
         server.start();
         server.waitForStartup();
     }
-
+    
     public void shutdown() throws Exception {
         httpServ.stop(0);
         server.shutdown();
         server.waitForShutdown();
-
+        
         this.quit = true;
         this.interrupt();
         this.waitForShutdown();
     }
-
+    
     private void initializeDatabase() {
         try {
             database.createDatabase("dirdb", 3);
         } catch (BabuDBException ex) {
-            //database already created
+            // database already created
         }
-
+        
     }
-
+    
     private void registerOperations() {
-
+        
         DIROperation op;
         op = new GetGlobalTimeOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new GetAddressMappingOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new SetAddressMappingOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new DeleteAddressMappingOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new RegisterServiceOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new DeregisterServiceOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new GetServiceByUuidOperation(this);
-        registry.put(op.getProcedureId(),op);
-
+        registry.put(op.getProcedureId(), op);
+        
         op = new GetServicesByTypeOperation(this);
-        registry.put(op.getProcedureId(),op);
+        registry.put(op.getProcedureId(), op);
     }
-
+    
     public BabuDB getDatabase() {
         return this.database;
     }
-
+    
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received new request");
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "received new request");
         this.queue.add(rq);
     }
     
     public void processRequest(ONCRPCRequest rq) {
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
-
+        
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0, "invalid version requested"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0,
+                "invalid version requested"));
             return;
         }
-
-        //everything ok, find the right operation
+        
+        // everything ok, find the right operation
         DIROperation op = registry.get(hdr.getOperationNumber());
         if (op == null) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, 0, "requested operation is not available on this DIR"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, 0,
+                "requested operation is not available on this DIR"));
             return;
         }
-
-
+        
         DIRRequest dirRq = new DIRRequest(rq);
         try {
             op.parseRPCMessage(dirRq);
@@ -242,32 +245,31 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             return;
         }
     }
-
+    
     @Override
     public void startupPerformed() {
     }
-
+    
     @Override
     public void shutdownPerformed() {
     }
-
+    
     @Override
     public void crashPerformed() {
-        Logging.logMessage(Logging.LEVEL_ERROR, this,"a component ***CRASHED***, shutting down.");
+        Logging.logMessage(Logging.LEVEL_ERROR, this, "a component ***CRASHED***, shutting down.");
         try {
             shutdown();
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, e);
         }
     }
-
+    
     public int getNumRequests() {
         return this.numRequests;
     }
-
+    
     public int getNumConnections() {
         return server.getNumConnections();
     }
-
-
+    
 }

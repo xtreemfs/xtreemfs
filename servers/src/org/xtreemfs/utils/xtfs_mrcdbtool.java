@@ -24,6 +24,7 @@
 
 package org.xtreemfs.utils;
 
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,8 +115,9 @@ public class xtfs_mrcdbtool {
         RPCClient client = null;
         
         try {
-            client = protocol.startsWith("https") ? new RPCClient(0, new SSLOptions(c.stringValue,
-                cp.stringValue, t.stringValue, tp.stringValue)) : new RPCClient(0, null);
+            client = protocol.startsWith("https") ? new RPCClient(0, new SSLOptions(new FileInputStream(
+                c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue))
+                : new RPCClient(0, null);
             client.setTimeout(0);
             
             if (op.equals("dump")) {

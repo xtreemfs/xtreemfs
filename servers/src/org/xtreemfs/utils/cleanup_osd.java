@@ -24,6 +24,7 @@
 package org.xtreemfs.utils;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
@@ -64,8 +65,7 @@ public class cleanup_osd {
     
     private static final String   DEFAULT_RESTORE_PATH = "lost+found";
     
-    private static BufferedReader answers              = new BufferedReader(new InputStreamReader(
-                                                           System.in));
+    private static BufferedReader answers              = new BufferedReader(new InputStreamReader(System.in));
     
     private static DIRClient      dirClient;
     
@@ -77,8 +77,7 @@ public class cleanup_osd {
     private static String         authString;
     static {
         try {
-            authString = NullAuthProvider.createAuthString("root", MRCClient
-                    .generateStringList("root"));
+            authString = NullAuthProvider.createAuthString("root", MRCClient.generateStringList("root"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -129,14 +128,12 @@ public class cleanup_osd {
                 serviceCredsPass = cfg.getServiceCredsPassphrase();
                 trustedCAsFile = cfg.getTrustedCertsFile();
                 trustedCAsPass = cfg.getTrustedCertsPassphrase();
-                sslOptions = useSSL ? new SSLOptions(serviceCredsFile, serviceCredsPass,
-                    trustedCAsFile, trustedCAsPass) : null;
+                sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
+                    new FileInputStream(trustedCAsFile), trustedCAsPass) : null;
                 
-                dirClient = new DIRClient(cfg.getDirectoryService(), sslOptions,
-                    RPCClient.DEFAULT_TIMEOUT);
+                dirClient = new DIRClient(cfg.getDirectoryService(), sslOptions, RPCClient.DEFAULT_TIMEOUT);
             } else
-                dirClient = new DIRClient(
-                    new InetSocketAddress(dirURL.getHost(), dirURL.getPort()), null,
+                dirClient = new DIRClient(new InetSocketAddress(dirURL.getHost(), dirURL.getPort()), null,
                     RPCClient.DEFAULT_TIMEOUT);
             
             // read default settings for the OSD
@@ -199,8 +196,7 @@ public class cleanup_osd {
                 osdClient.shutdown();
                 usage();
             } catch (Exception e) {
-                System.out.println("Checking the OSD was not successful. Cause: "
-                    + e.getLocalizedMessage());
+                System.out.println("Checking the OSD was not successful. Cause: " + e.getLocalizedMessage());
                 e.printStackTrace();
                 osdClient.shutdown();
                 System.exit(1);
@@ -229,9 +225,8 @@ public class cleanup_osd {
                 if (fileList.size() == 1)
                     System.out.println("There is one zombie on that OSD.");
                 else
-                    System.out.println("There are '" + fileList.size()
-                        + "' zombies with a total size of " + totalZombiesSize
-                        + " bytes on that OSD. ");
+                    System.out.println("There are '" + fileList.size() + "' zombies with a total size of "
+                        + totalZombiesSize + " bytes on that OSD. ");
                 question = ("Do you want to list " + (fileList.size() == 1 ? "it" : "them") + "? [y/n]");
                 verbose = (verbose) ? true : !requestUserDecision(question);
                 if (!verbose) {
@@ -240,8 +235,7 @@ public class cleanup_osd {
                 }
                 for (List<String> volume : fileList.keySetList()) {
                     for (String file : fileList.getFileIDSet(volume)) {
-                        Long fileNumber = Long.valueOf(file.substring(file.indexOf(":") + 1, file
-                                .length()));
+                        Long fileNumber = Long.valueOf(file.substring(file.indexOf(":") + 1, file.length()));
                         
                         // get the file details
                         fileSize = fileList.getFileSize(volume, file);
@@ -249,11 +243,9 @@ public class cleanup_osd {
                         
                         if (!verbose) {
                             String f = file + (volume.get(0).equals("unknown") ? "(unknown)" : "");
-                            String out = f
-                                + empty1.substring(f.length(), empty1.length())
-                                + empty.substring(0, empty.length()
-                                    - (fileSize.toString().length() + 2)) + fileSize + " |"
-                                + filePreview;
+                            String out = f + empty1.substring(f.length(), empty1.length())
+                                + empty.substring(0, empty.length() - (fileSize.toString().length() + 2))
+                                + fileSize + " |" + filePreview;
                             
                             System.out.println(out);
                         }
@@ -263,14 +255,12 @@ public class cleanup_osd {
                                 if (mrcClient == null)
                                     mrcClient = new MRCClient();
                                 try {
-                                    mrcClient.restoreFile(new InetSocketAddress(volume.get(1),
-                                        Integer.parseInt(volume.get(2))), DEFAULT_RESTORE_PATH,
-                                        fileNumber, fileList.getFileSize(volume, file), null,
-                                        authString, osdUUID, fileList.getObjectSize(volume, file),
-                                        volume.get(0));
+                                    mrcClient.restoreFile(new InetSocketAddress(volume.get(1), Integer
+                                            .parseInt(volume.get(2))), DEFAULT_RESTORE_PATH, fileNumber,
+                                        fileList.getFileSize(volume, file), null, authString, osdUUID,
+                                        fileList.getObjectSize(volume, file), volume.get(0));
                                 } catch (HttpErrorException he) {
-                                    System.out.println(file
-                                        + " could not be restored properly. Cause: "
+                                    System.out.println(file + " could not be restored properly. Cause: "
                                         + he.getMessage());
                                 }
                             } else {
@@ -280,8 +270,7 @@ public class cleanup_osd {
                                     try {
                                         response.waitForResponse(1000);
                                     } catch (HttpErrorException he) {
-                                        System.out.println(file
-                                            + " could not be deleted properly. Cause: "
+                                        System.out.println(file + " could not be deleted properly. Cause: "
                                             + he.getMessage());
                                     }
                                     if (response != null)
@@ -295,8 +284,7 @@ public class cleanup_osd {
                                 try {
                                     response.waitForResponse(1000);
                                 } catch (HttpErrorException he) {
-                                    System.out.println(file
-                                        + " could not be deleted properly. Cause: "
+                                    System.out.println(file + " could not be deleted properly. Cause: "
                                         + he.getMessage());
                                 }
                                 if (response != null)

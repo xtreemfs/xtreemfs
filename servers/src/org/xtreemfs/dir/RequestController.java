@@ -26,6 +26,7 @@ package org.xtreemfs.dir;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,8 +57,7 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
  * 
  * @author bjko
  */
-public class RequestController implements PinkyRequestListener, DIRRequestListener,
-    LifeCycleListener {
+public class RequestController implements PinkyRequestListener, DIRRequestListener, LifeCycleListener {
     
     private PipelinedPinky  pinkyStage;
     
@@ -109,12 +109,12 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
             dirServiceStage.setRequestListener(this);
             dirServiceStage.setLifeCycleListener(this);
             
-            pinkyStage = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config
-                    .getAddress(), this, new SSLOptions(config.getServiceCredsFile(), config
-                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), config
-                    .getTrustedCertsFile(), config.getTrustedCertsPassphrase(), config
-                    .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(),
-                config.getAddress(), this);
+            pinkyStage = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config.getAddress(),
+                this, new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
+                        .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
+                    config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
+                        .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(), config
+                    .getAddress(), this);
             pinkyStage.setLifeCycleListener(this);
             
             /** load status page template */
@@ -142,8 +142,8 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
                 statusPageTemplate = sb.toString();
             }
             
-            Logging.logMessage(Logging.LEVEL_INFO, this,
-                "[ I | DIR ] operational, listening on port " + config.getPort());
+            Logging.logMessage(Logging.LEVEL_INFO, this, "[ I | DIR ] operational, listening on port "
+                + config.getPort());
             
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
@@ -194,8 +194,7 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
                     // generate status HTTP page
                     String statusPage = getStatusPage();
                     
-                    ReusableBuffer bbuf = ReusableBuffer.wrap(statusPage
-                            .getBytes(HTTPUtils.ENC_ASCII));
+                    ReusableBuffer bbuf = ReusableBuffer.wrap(statusPage.getBytes(HTTPUtils.ENC_ASCII));
                     theRequest.setResponse(HTTPUtils.SC_OKAY, bbuf, HTTPUtils.DATA_TYPE.HTML);
                     pinkyStage.sendResponse(rq.getPinkyRequest());
                     return;
@@ -278,8 +277,7 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
         StringBuilder dump = new StringBuilder();
         dump
                 .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
-        dump
-                .append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
+        dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         for (String uuid : mappings.keySet()) {
             Object[] entry = mappings.get(uuid);
             List<Map<String, Object>> mapping = (List<Map<String, Object>>) entry[1];
@@ -291,8 +289,7 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
             for (int i = 0; i < mapping.size(); i++) {
                 dump.append("<tr><td class=\"mapping\">");
                 Map<String, Object> map = mapping.get(i);
-                String endpoint = map.get("protocol") + "://" + map.get("address") + ":"
-                    + map.get("port");
+                String endpoint = map.get("protocol") + "://" + map.get("address") + ":" + map.get("port");
                 dump.append("<a href=\"" + endpoint + "\">");
                 dump.append(endpoint);
                 dump.append("</a></td><td class=\"mapping\">");
@@ -310,8 +307,7 @@ public class RequestController implements PinkyRequestListener, DIRRequestListen
         
         dump
                 .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Data Mapping</td>");
-        dump
-                .append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
+        dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         for (String uuid : entities.keySet()) {
             Map<String, String> entry = entities.get(uuid);
             dump.append("<tr><td class=\"uuid\">");

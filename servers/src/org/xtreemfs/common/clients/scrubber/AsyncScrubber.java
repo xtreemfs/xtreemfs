@@ -23,6 +23,7 @@
  */
 package org.xtreemfs.common.clients.scrubber;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -64,8 +65,7 @@ public class AsyncScrubber {
     
     static {
         try {
-            authString = NullAuthProvider.createAuthString("root", MRCClient
-                    .generateStringList("root"));
+            authString = NullAuthProvider.createAuthString("root", MRCClient.generateStringList("root"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -124,8 +124,8 @@ public class AsyncScrubber {
      *             thrown when creating a new VolumeWalker
      */
     public AsyncScrubber(final MultiSpeedy sharedSpeedy, InetSocketAddress dirAddress,
-        InetSocketAddress mrcAddress, String volumeName, boolean updateFileSize,
-        int connectionsPerOSD, int noFilesToFetch, SSLOptions ssl) throws Exception {
+        InetSocketAddress mrcAddress, String volumeName, boolean updateFileSize, int connectionsPerOSD,
+        int noFilesToFetch, SSLOptions ssl) throws Exception {
         this.connectionsPerOSD = connectionsPerOSD;
         this.updateFileSize = updateFileSize;
         this.speedy = sharedSpeedy;
@@ -133,13 +133,13 @@ public class AsyncScrubber {
         
         returnCode = new AtomicInteger(0);
         
-        assert(sharedSpeedy != null);
-        //dirClient = new DIRClient(sharedSpeedy, dirAddress);
+        assert (sharedSpeedy != null);
+        // dirClient = new DIRClient(sharedSpeedy, dirAddress);
         TimeSync.initialize(dirClient, 100000, 50, authString);
         
         mrcClient = new MRCClient(sharedSpeedy);
-        //UUIDResolver.shutdown();
-        //UUIDResolver.start(dirClient, 1000, 1000);
+        // UUIDResolver.shutdown();
+        // UUIDResolver.start(dirClient, 1000, 1000);
         
         volumeWalker = new VolumeWalker(volumeName, mrcAddress, noFilesToFetch, authString, ssl);
         
@@ -153,14 +153,14 @@ public class AsyncScrubber {
     
     public void shutdown() {
         speedy.shutdown();
-        //dirClient.shutdown();
+        // dirClient.shutdown();
         mrcClient.shutdown();
         volumeWalker.shutdown();
         for (OSDWorkQueue que : osds.values())
             que.shutDown();
         
-        //UUIDResolver.shutdown();
-        //TimeSync.getInstance().shutdown();
+        // UUIDResolver.shutdown();
+        // TimeSync.getInstance().shutdown();
     }
     
     public void waitForShutdown() {
@@ -183,8 +183,7 @@ public class AsyncScrubber {
             fillOSDs();
         }
         logger.closeFileWriter();
-        System.out.println("Done. Total time: " + (System.currentTimeMillis() - startTime) / 1000
-            + " secs.");
+        System.out.println("Done. Total time: " + (System.currentTimeMillis() - startTime) / 1000 + " secs.");
     }
     
     /**
@@ -210,8 +209,8 @@ public class AsyncScrubber {
                 osdDetails += osd.getOSDId()
                     + ": "
                     + OutputUtils.formatBytes((osdBytes - lastOSDBytes) * 1000
-                        / (currentStatusPrint - lastStatusPrint)) + "/s, "
-                    + osd.getNumberOfIdleConnections() + " idle; ";
+                        / (currentStatusPrint - lastStatusPrint)) + "/s, " + osd.getNumberOfIdleConnections()
+                    + " idle; ";
                 bytes += osdBytes;
                 osdBytesMap.put(osd, osdBytes);
             }
@@ -221,8 +220,9 @@ public class AsyncScrubber {
                 + " ("
                 + OutputUtils.formatBytes(bytes)
                 + "), avrg. throughput: "
-                + OutputUtils.formatBytes((bytes - lastBytes) * 1000
-                    / (currentStatusPrint - lastStatusPrint)) + "/s, ";
+                + OutputUtils
+                        .formatBytes((bytes - lastBytes) * 1000 / (currentStatusPrint - lastStatusPrint))
+                + "/s, ";
             
             System.out.println(msg + osdDetails + "\u001b[100D\u001b[A");
             
@@ -247,13 +247,12 @@ public class AsyncScrubber {
         if (volumeWalker.hasNext()) {
             String path = volumeWalker.removeNextFile();
             try {
-                RandomAccessFile file = new RandomAccessFile("r", mrcAddress, path, speedy,
-                    authString);
+                RandomAccessFile file = new RandomAccessFile("r", mrcAddress, path, speedy, authString);
                 for (ServiceUUID osdId : file.getOSDs()) {
                     // add new OSD to the scrubbing process
                     if (!osds.containsKey(osdId)) {
                         System.out.println("Adding OSD: " + osdId);
-                        osds.put(osdId, new OSDWorkQueue(osdId, connectionsPerOSD,sslOptions));
+                        osds.put(osdId, new OSDWorkQueue(osdId, connectionsPerOSD, sslOptions));
                     }
                 }
                 synchronized (currentFiles) {
@@ -341,7 +340,6 @@ public class AsyncScrubber {
         // called before all updates are finished.
         boolean firstCall = currentFiles.contains(file);
         
-        
         if (!firstCall) // do not output messages twice
             return;
         
@@ -355,8 +353,7 @@ public class AsyncScrubber {
             if (updateFileSize == true) {
                 try {
                     updateFileSize(file.getPath(), result);
-                    logger.logError(file.getPath()
-                        + ": file size in MRC is outdated, updated from "
+                    logger.logError(file.getPath() + ": file size in MRC is outdated, updated from "
                         + file.getExpectedFileSize() + " to " + result);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -500,9 +497,9 @@ public class AsyncScrubber {
             isVolUUID = true;
         }
         
-        SSLOptions sslOptions = useSSL ? new SSLOptions(serviceCredsFile, serviceCredsPass,
-                SSLOptions.PKCS12_CONTAINER,
-            trustedCAsFile, trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
+        SSLOptions sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile),
+            serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
+            trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
         
         // resolve volume MRC
         Map<String, Object> query = RPCClient.generateMap(isVolUUID ? "uuid" : "name", volume);
@@ -514,17 +511,16 @@ public class AsyncScrubber {
         Map<String, Map<String, Object>> result = resp.get();
         resp.freeBuffers();
         
-        
         if (result.isEmpty()) {
-            System.err.println("volume '" + arguments.get(0)
-                + "' could not be found at Directory Service '" + dirURL + "'");
+            System.err.println("volume '" + arguments.get(0) + "' could not be found at Directory Service '"
+                + dirURL + "'");
             System.exit(3);
         }
         Map<String, Object> volMap = result.values().iterator().next();
         String mrc = (String) volMap.get("mrc");
         volume = (String) volMap.get("name");
         
-        UUIDResolver.start(dirClient, 60*60, 10*60*60);
+        UUIDResolver.start(dirClient, 60 * 60, 10 * 60 * 60);
         
         ServiceUUID mrcUUID = new ServiceUUID(mrc);
         InetSocketAddress mrcAddress = mrcUUID.getAddress();
@@ -533,8 +529,8 @@ public class AsyncScrubber {
             
             MultiSpeedy speedy = new MultiSpeedy(sslOptions);
             speedy.start();
-            AsyncScrubber scrubber = new AsyncScrubber(speedy, dirAddr, mrcAddress, volume,
-                !checkOnly, noConnectionsPerOSD, noFilesToFetch,sslOptions);
+            AsyncScrubber scrubber = new AsyncScrubber(speedy, dirAddr, mrcAddress, volume, !checkOnly,
+                noConnectionsPerOSD, noFilesToFetch, sslOptions);
             
             scrubber.start();
             scrubber.shutdown();
@@ -546,15 +542,14 @@ public class AsyncScrubber {
         TimeSync.close();
         UUIDResolver.shutdown();
         dirClient.shutdown();
-       
+        
     }
     
     private static void usage() {
         System.out.println("usage: xtfs_scrub [options] <volume_name> | uuid:<volume_uuid>");
         System.out.println("  -dir uri  directory service to use (e.g. 'http://localhost:32638')");
-        System.out
-                .println("            If no URI is specified, URI and security settings are taken from '"
-                    + DEFAULT_DIR_CONFIG + "'");
+        System.out.println("            If no URI is specified, URI and security settings are taken from '"
+            + DEFAULT_DIR_CONFIG + "'");
         System.out
                 .println("            In case of a secured URI ('https://...'), it is necessary to also specify SSL credentials:");
         System.out
@@ -567,8 +562,7 @@ public class AsyncScrubber {
                 .println("              -tp <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
         System.out
                 .println("  -chk      check only (do not update file sizes on the MRC in case of inconsistencies)");
-        System.out.println("  -cons  n  number of connections per OSD (default=" + DEFAULT_NUM_CONS
-            + ")");
+        System.out.println("  -cons  n  number of connections per OSD (default=" + DEFAULT_NUM_CONS + ")");
         System.out.println("  -files n  number of files to fetch at once from MRC (default="
             + DEFAULT_NUM_FILES + ")");
         System.out.println("  -h        show usage info");

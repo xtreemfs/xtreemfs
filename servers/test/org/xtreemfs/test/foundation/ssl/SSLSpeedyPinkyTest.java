@@ -24,7 +24,9 @@
 
 package org.xtreemfs.test.foundation.ssl;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 
 import junit.framework.TestCase;
@@ -42,48 +44,38 @@ import org.xtreemfs.foundation.pinky.PinkyRequest;
 import org.xtreemfs.foundation.pinky.PinkyRequestListener;
 import org.xtreemfs.foundation.pinky.PipelinedPinky;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.test.SetupUtils;
 
 /**
  * 
  * @author clorenz
  */
 public class SSLSpeedyPinkyTest extends TestCase {
-
-    public static final int PORT = 12345;
-
-    private static final String URL = "https://localhost:" + PORT + "/";
-
-    private String PATH = SetupUtils.CERT_DIR;
-
-    PipelinedPinky pinky;
-
-    RPCClient speedy;
-
+    
+    public static final int     PORT = 12345;
+    
+    private static final String URL  = "https://localhost:" + PORT + "/";
+    
+    PipelinedPinky              pinky;
+    
+    RPCClient                   speedy;
+    
     public SSLSpeedyPinkyTest(String testName) {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
-
+        
         TimeSync.initialize(null, 100000, 50, null);
-
-        File testfile = new File("testfile");
-        if (testfile.getAbsolutePath().endsWith("java/testfile")) {
-            PATH = "../" + PATH;
-        } else {
-            PATH = "./" + PATH;
-        }
     }
-
+    
     protected void setUp() throws Exception {
-
+        
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
-        SSLOptions pinkySslOptions = new SSLOptions(PATH + "service1.jks", "passphrase",
-                SSLOptions.JKS_CONTAINER, PATH + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER, false);
-
+        
+        SSLOptions pinkySslOptions = createSSLOptions("service1.jks", "passphrase", SSLOptions.JKS_CONTAINER,
+            "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        
         pinky = new PipelinedPinky(PORT, null, null, pinkySslOptions);
         // pinky = new PipelinedPinky(PORT, null);
-
+        
         // register a request listener that is called by pinky when
         // receiving a request
         pinky.registerListener(new PinkyRequestListener() {
@@ -100,7 +92,7 @@ public class SSLSpeedyPinkyTest extends TestCase {
                             theRequest.requestBody.position(0);
                             theRequest.requestBody.get(bdy);
                         }
-
+                        
                         String body = new String(bdy, "utf-8");
                         Object o = JSONParser.parseJSON(new JSONString(body));
                         String respBdy = JSONParser.writeJSON(o);
@@ -124,95 +116,124 @@ public class SSLSpeedyPinkyTest extends TestCase {
             }
         });
         pinky.start();
-
-        SSLOptions speedySslOptions = new SSLOptions(PATH + "client1.p12", "passphrase",
-                SSLOptions.PKCS12_CONTAINER, PATH + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER,
-                false);
+        
+        SSLOptions speedySslOptions = createSSLOptions("client1.p12", "passphrase",
+            SSLOptions.PKCS12_CONTAINER, "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        
         speedy = new RPCClient(500000000, speedySslOptions);
         // speedy = new RPCClient(null, 5000);
-
+        
     }
-
+    
     protected void tearDown() throws Exception {
         pinky.shutdown();
         speedy.shutdown();
         pinky.waitForShutdown();
         speedy.waitForShutdown();
     }
-
+    
     // TODO add test methods here. The name must begin with 'test'. For example:
     // public void testHello() {}
-
+    
     public void testSimple() throws Exception {
-
+        
         RPCResponse rp = null;
-
+        
         InetSocketAddress local = new InetSocketAddress("localhost", PORT);
         rp = speedy.sendRPC(local, "/bla", null, "bla", null);
         assertEquals(rp.getStatusCode(), 200);
         rp.freeBuffers();
-
+        
         RPCResponse rp2 = null;
-
+        
         rp2 = speedy.sendRPC(local, "/bla", null, "bla", null);
         assertEquals(rp2.getStatusCode(), 200);
         rp2.freeBuffers();
-
+        
         RPCResponse rp3 = null;
-
+        
         rp3 = speedy.sendRPC(local, "/bla", null, "bla", null);
         assertEquals(rp3.getStatusCode(), 200);
         rp3.freeBuffers();
-
+        
     }
-
+    
     public static void main(String[] args) {
         TestRunner.run(SSLSpeedyPinkyTest.class);
     }
-
+    
+    public static SSLOptions createSSLOptions(String keyStoreName, String ksPassphrase,
+        String ksContainerType, String trustStoreName, String tsPassphrase, String tsContainerType)
+        throws IOException {
+        
+        ClassLoader cl = SSLSpeedyPinkyTest.class.getClassLoader();
+        
+        InputStream ks = cl.getResourceAsStream(keyStoreName);
+        if (ks == null)
+            ks = new FileInputStream("test/" + keyStoreName);
+        
+        InputStream ts = cl.getResourceAsStream(trustStoreName);
+        if (ts == null)
+            ts = new FileInputStream("test/" + trustStoreName);
+        
+        return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false);
+    }
+    
     /*
      * public void testErrorCases() throws Exception {
      * 
-     * RPCResponse rp = null; try { InetSocketAddress nonexiting = new InetSocketAddress(
-     * "yabba-brabbel.zib.de", 80); rp = speedy.sendRPC(nonexiting, "bla", null, "bla", null);
-     * rp.waitForResponse(); fail("IOException should have been thrown."); } catch (UnresolvedAddressException
-     * ex) { } finally { if (rp != null) rp.freeBuffers(); }
-     * 
-     * InetSocketAddress local = new InetSocketAddress("localhost", PORT); rp = speedy.sendRPC(local, "/bla",
-     * null, "bla", null); assertEquals(rp.getStatusCode(), 200); rp.freeBuffers();
-     * 
-     * InetSocketAddress local500 = null; try { local500 = new InetSocketAddress("localhost",PORT); rp =
-     * speedy.sendRPC(local500,"/bla",null,"bla",null); rp.waitForResponse();
-     * fail("HttpErrorException should have been thrown."); } catch (HttpErrorException ex) {
-     * assertEquals(ex.getStatusCode(), 500); } finally { if (rp != null) rp.freeBuffers(); }
-     * 
-     * InetSocketAddress localWait = null; try { localWait = new InetSocketAddress("localhost",PORT); rp =
-     * speedy.sendRPC(localWait,"/bla",null,"bla",null); rp.waitForResponse();
-     * fail("IOException should have been thrown."); } catch (IOException ex) { } finally { if (rp != null)
+     * RPCResponse rp = null; try { InetSocketAddress nonexiting = new
+     * InetSocketAddress( "yabba-brabbel.zib.de", 80); rp =
+     * speedy.sendRPC(nonexiting, "bla", null, "bla", null);
+     * rp.waitForResponse(); fail("IOException should have been thrown."); }
+     * catch (UnresolvedAddressException ex) { } finally { if (rp != null)
      * rp.freeBuffers(); }
      * 
-     * rp = speedy.sendRPC(local,"/bla",null,"bla",null); final AtomicBoolean hasResponse = new
-     * AtomicBoolean(false); final Object me = this; rp.setResponseListener(new RPCResponseListener() {
+     * InetSocketAddress local = new InetSocketAddress("localhost", PORT); rp =
+     * speedy.sendRPC(local, "/bla", null, "bla", null);
+     * assertEquals(rp.getStatusCode(), 200); rp.freeBuffers();
      * 
-     * @Override public void responseAvailable(RPCResponse response) { hasResponse.set(true); synchronized
-     * (me) { me.notify(); } } }); synchronized (this) { try { this.wait(1000);
+     * InetSocketAddress local500 = null; try { local500 = new
+     * InetSocketAddress("localhost",PORT); rp =
+     * speedy.sendRPC(local500,"/bla",null,"bla",null); rp.waitForResponse();
+     * fail("HttpErrorException should have been thrown."); } catch
+     * (HttpErrorException ex) { assertEquals(ex.getStatusCode(), 500); }
+     * finally { if (rp != null) rp.freeBuffers(); }
+     * 
+     * InetSocketAddress localWait = null; try { localWait = new
+     * InetSocketAddress("localhost",PORT); rp =
+     * speedy.sendRPC(localWait,"/bla",null,"bla",null); rp.waitForResponse();
+     * fail("IOException should have been thrown."); } catch (IOException ex) {
+     * } finally { if (rp != null) rp.freeBuffers(); }
+     * 
+     * rp = speedy.sendRPC(local,"/bla",null,"bla",null); final AtomicBoolean
+     * hasResponse = new AtomicBoolean(false); final Object me = this;
+     * rp.setResponseListener(new RPCResponseListener() {
+     * 
+     * @Override public void responseAvailable(RPCResponse response) {
+     * hasResponse.set(true); synchronized (me) { me.notify(); } } });
+     * synchronized (this) { try { this.wait(1000);
      * 
      * } catch (InterruptedException interruptedException) { }
      * 
      * } assertTrue(hasResponse.get());
      * 
-     * rp = speedy.sendRPC(localWait,"/bla",null,"bla",null); final AtomicBoolean hasNoResponse = new
-     * AtomicBoolean(true); rp.setResponseListener(new RPCResponseListener() {
+     * rp = speedy.sendRPC(localWait,"/bla",null,"bla",null); final
+     * AtomicBoolean hasNoResponse = new AtomicBoolean(true);
+     * rp.setResponseListener(new RPCResponseListener() {
      * 
-     * @Override public void responseAvailable(RPCResponse response) { hasNoResponse.set(false); synchronized
-     * (me) { me.notify(); } } }); synchronized (this) { try { this.wait(500);
+     * @Override public void responseAvailable(RPCResponse response) {
+     * hasNoResponse.set(false); synchronized (me) { me.notify(); } } });
+     * synchronized (this) { try { this.wait(500);
      * 
      * } catch (InterruptedException interruptedException) { }
      * 
-     * } rp.freeBuffers(); assertTrue(hasNoResponse.get()); System.out.println("wait for response!");
-     * synchronized (this) { try { this.wait(10000);
+     * } rp.freeBuffers(); assertTrue(hasNoResponse.get());
+     * System.out.println("wait for response!"); synchronized (this) { try {
+     * this.wait(10000);
      * 
-     * } catch (InterruptedException interruptedException) { interruptedException.printStackTrace(); }
+     * } catch (InterruptedException interruptedException) {
+     * interruptedException.printStackTrace(); }
      * 
      * } System.out.println("waiting done");
      * 

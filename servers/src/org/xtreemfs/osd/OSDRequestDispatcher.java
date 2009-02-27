@@ -26,6 +26,7 @@ package org.xtreemfs.osd;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -99,8 +100,8 @@ import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.storage.Striping;
 
-public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestListener,
-    LifeCycleListener, UDPReceiverInterface {
+public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestListener, LifeCycleListener,
+    UDPReceiverInterface {
     
     protected final Stage[]         stages;
     
@@ -119,9 +120,9 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
     protected final StageStatistics statistics;
     
     protected final DIRClient       dirClient;
-
+    
     protected final OSDClient       osdClient;
-
+    
     protected long                  requestId;
     
     protected String                authString;
@@ -136,8 +137,8 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         }
         
         // generate an authorization string for Directory Service operations
-        authString = NullAuthProvider.createAuthString(config.getUUID().toString(), config
-                .getUUID().toString());
+        authString = NullAuthProvider.createAuthString(config.getUUID().toString(), config.getUUID()
+                .toString());
         
         // initialize the checksum factory
         ChecksumFactory.getInstance().addProvider(new JavaChecksumProvider());
@@ -151,28 +152,27 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         operations = new Operation[] { new ReadOperation(this), new WriteOperation(this),
             new StatusPageOperation(this), new FetchGmaxRPC(this), new TruncateRPC(this),
             new TruncateLocalRPC(this), new DeleteOperation(this), new DeleteOFTRPC(this),
-            new DeleteLocalRPC(this), new GetProtocolVersionOperation(this),
-            new ShutdownOperation(this), new CheckObjectRPC(this), new GmaxEvent(this),
-            new CloseFileEvent(this), new GetStatistics(this), new StatisticsConfig(this),
-            new AcquireLease(this), new ReturnLease(this), new CleanUpOperation(this),
-            new FetchAndWriteReplica(this), new ReadLocalRPC(this) };
+            new DeleteLocalRPC(this), new GetProtocolVersionOperation(this), new ShutdownOperation(this),
+            new CheckObjectRPC(this), new GmaxEvent(this), new CloseFileEvent(this), new GetStatistics(this),
+            new StatisticsConfig(this), new AcquireLease(this), new ReturnLease(this),
+            new CleanUpOperation(this), new FetchAndWriteReplica(this), new ReadLocalRPC(this) };
         
         // -------------------------------
         // initialize communication stages
         // -------------------------------
         
-        pinky = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config.getAddress(),
-            this, new SSLOptions(config.getServiceCredsFile(), config.getServiceCredsPassphrase(),
-                config.getServiceCredsContainer(), config.getTrustedCertsFile(), config
-                        .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false))
-            : new PipelinedPinky(config.getPort(), config.getAddress(), this);
+        pinky = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config.getAddress(), this,
+            new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
+                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
+                config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
+                    .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(), config
+                .getAddress(), this);
         pinky.setLifeCycleListener(this);
-
-        speedy = config.isUsingSSL() ? new MultiSpeedy(new SSLOptions(config
-                    .getServiceCredsFile(), config.getServiceCredsPassphrase(), config
-                    .getServiceCredsContainer(), config.getTrustedCertsFile(), config
-                    .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false))
-                : new MultiSpeedy();
+        
+        speedy = config.isUsingSSL() ? new MultiSpeedy(new SSLOptions(new FileInputStream(config
+                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
+                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false)) : new MultiSpeedy();
         speedy.setLifeCycleListener(this);
         
         udpCom = new UDPCommunicator(config.getPort(), this);
@@ -207,8 +207,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         dirClient = new DIRClient(speedy, config.getDirectoryService());
         osdClient = new OSDClient(speedy);
         
-        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(),
-            authString);
+        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(), authString);
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
@@ -235,24 +234,21 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                         .getAvailableProcessors()));
                 
                 long totalRAM = Runtime.getRuntime().maxMemory();
-                long usedRAM = Runtime.getRuntime().totalMemory()
-                    - Runtime.getRuntime().freeMemory();
+                long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
                 Map<String, Map<String, Object>> data = new HashMap<String, Map<String, Object>>();
-                data.put(config.getUUID().toString(), RPCClient.generateMap("type", "OSD", "free",
-                    freeSpace, "total", totalSpace, "load", load, "prot_versions",
-                    VersionManagement.getSupportedProtVersAsString(), "totalRAM", Long
-                            .toString(totalRAM), "usedRAM", Long.toString(usedRAM),
-                    "geoCoordinates", config.getGeoCoordinates()));
+                data.put(config.getUUID().toString(), RPCClient.generateMap("type", "OSD", "free", freeSpace,
+                    "total", totalSpace, "load", load, "prot_versions", VersionManagement
+                            .getSupportedProtVersAsString(), "totalRAM", Long.toString(totalRAM), "usedRAM",
+                    Long.toString(usedRAM), "geoCoordinates", config.getGeoCoordinates()));
                 return data;
             }
         };
-        heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen,
-            authString,config);
+        heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, authString,
+            config);
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID()
-                + " ready");
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID() + " ready");
     }
     
     public void start() {
@@ -267,8 +263,8 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
             speedy.waitForStartup();
             udpCom.waitForStartup();
             
-            TimeSync.initialize(new DIRClient(speedy, new InetSocketAddress("localhost", 32638)),
-                60000, 50, authString);
+            TimeSync.initialize(new DIRClient(speedy, new InetSocketAddress("localhost", 32638)), 60000, 50,
+                authString);
             
             for (Stage stage : stages)
                 stage.start();
@@ -279,8 +275,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
             
-            Logging.logMessage(Logging.LEVEL_INFO, this,
-                "RequestController and all services operational");
+            Logging.logMessage(Logging.LEVEL_INFO, this, "RequestController and all services operational");
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "startup failed");
@@ -336,8 +331,8 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
          * requestId);
          */
         if (Tracer.COLLECT_TRACES) {
-            Tracer.trace(theRequest.requestHeaders.getHeader(HTTPHeaders.HDR_XREQUESTID),
-                requestId, Tracer.TraceEvent.RECEIVED, null, null);
+            Tracer.trace(theRequest.requestHeaders.getHeader(HTTPHeaders.HDR_XREQUESTID), requestId,
+                Tracer.TraceEvent.RECEIVED, null, null);
         }
         
         OSDRequest rq = new OSDRequest(requestId++);
@@ -346,12 +341,12 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         if (Logging.tracingEnabled())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "proessing " + rq);
         
-        stages[RequestDispatcher.Stages.PARSER.ordinal()].enqueueOperation(rq,
-            ParserStage.STAGEOP_PARSE, null);
+        stages[RequestDispatcher.Stages.PARSER.ordinal()].enqueueOperation(rq, ParserStage.STAGEOP_PARSE,
+            null);
     }
     
-    public void sendSpeedyRequest(Request originalRequest, SpeedyRequest speedyRq,
-        InetSocketAddress server) throws IOException {
+    public void sendSpeedyRequest(Request originalRequest, SpeedyRequest speedyRq, InetSocketAddress server)
+        throws IOException {
         
         speedyRq.setOriginalRequest(originalRequest);
         speedy.sendRequest(speedyRq, server);
@@ -385,36 +380,36 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                     headers.addHeader(HTTPHeaders.HDR_XREQUESTID, rqId);
                 
                 // add additional headers, if exist
-                if(rq.getAdditionalResponseHTTPHeaders()!=null)
-                    for(HeaderEntry header : rq.getAdditionalResponseHTTPHeaders()){
+                if (rq.getAdditionalResponseHTTPHeaders() != null)
+                    for (HeaderEntry header : rq.getAdditionalResponseHTTPHeaders()) {
                         headers.addHeader(header.name, header.value);
                     }
                 
-//                String mimeType = null;
-//                if (rq.getData() != null) {
-//                    
-//                    String mimeType = null;
-//                    
-//                    switch (rq.getDataType()) {
-//                    case BINARY:
-//                        mimeType = HTTPUtils.BIN_TYPE;
-//                        break;
-//                    case JSON:
-//                        mimeType = HTTPUtils.JSON_TYPE;
-//                        break;
-//                    case HTML:
-//                        mimeType = HTTPUtils.HTML_TYPE;
-//                        break;
-//                    }
-//                    
-//                    headers.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, mimeType);
-//                }
+                // String mimeType = null;
+                // if (rq.getData() != null) {
+                //                    
+                // String mimeType = null;
+                //                    
+                // switch (rq.getDataType()) {
+                // case BINARY:
+                // mimeType = HTTPUtils.BIN_TYPE;
+                // break;
+                // case JSON:
+                // mimeType = HTTPUtils.JSON_TYPE;
+                // break;
+                // case HTML:
+                // mimeType = HTTPUtils.HTML_TYPE;
+                // break;
+                // }
+                //                    
+                // headers.addHeader(HTTPHeaders.HDR_CONTENT_TYPE, mimeType);
+                // }
                 
                 if (Tracer.COLLECT_TRACES)
-                    Tracer.trace(rqId, rq.getRequestId(), Tracer.TraceEvent.RESPONSE_SENT, null,
-                        null);
+                    Tracer.trace(rqId, rq.getRequestId(), Tracer.TraceEvent.RESPONSE_SENT, null, null);
                 
-                pr.setResponse(HTTPUtils.SC_OKAY, rq.getData(), rq.getDataType() == null ? HTTPUtils.DATA_TYPE.JSON : rq.getDataType(), headers);
+                pr.setResponse(HTTPUtils.SC_OKAY, rq.getData(),
+                    rq.getDataType() == null ? HTTPUtils.DATA_TYPE.JSON : rq.getDataType(), headers);
                 
             } else {
                 
@@ -433,8 +428,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                     break;
                 }
                 default: {
-                    pr.setResponse(HTTPUtils.SC_SERVER_ERROR,
-                        "an unknown error type was returned: " + error);
+                    pr.setResponse(HTTPUtils.SC_SERVER_ERROR, "an unknown error type was returned: " + error);
                     break;
                 }
                 }
@@ -492,8 +486,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
     }
     
     public void crashPerformed() {
-        Logging.logMessage(Logging.LEVEL_ERROR, this,
-            "a component crashed... shutting down system!");
+        Logging.logMessage(Logging.LEVEL_ERROR, this, "a component crashed... shutting down system!");
         this.shutdown();
     }
     
