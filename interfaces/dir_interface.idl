@@ -31,7 +31,7 @@ module xtreemfs
     {
       string uuid;
       uint64_t version;
-      uint16_t service_type
+      uint16_t service_type;
       string   service_name;
       KeyValuePairSet data;
     };
