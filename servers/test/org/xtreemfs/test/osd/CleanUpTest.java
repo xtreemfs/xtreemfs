@@ -102,7 +102,7 @@ public class CleanUpTest extends TestCase{
         mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
         mrc.startup(); 
         
-        authString = NullAuthProvider.createAuthString("", "");
+        authString = NullAuthProvider.createAuthString("root", "root");
         zombieNames = new HashSet<String>();
         zombieNames.add("666"); zombieNames.add("667");
         
