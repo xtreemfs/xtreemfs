@@ -40,6 +40,7 @@ module xtreemfs
 
     interface DIRInterface # 1
     {
+      //returns the address mappings for uuid or all mappings stored in the DB for uuid="*"
       void getAddressMappings( string uuid, out AddressMappingSet address_mappings ) # 1;
       //throws a ConcurrentModificationException if the entry was modified by another process
       uint64_t setAddressMappings( AddressMappingSet address_mappings ) # 2;
@@ -50,6 +51,9 @@ module xtreemfs
       void     getServicesByType( uint16_t type, out ServiceRegistrySet services) # 6;
       void     getServiceByUuid( string uuid, out ServiceRegistrySet services) # 7;
       uint64_t getGlobalTime() # 8;
+
+      void     admin_shutdown( string password ) #20;
+      void     admin_checkpoint( string password ) #21;
     };
   };
 };

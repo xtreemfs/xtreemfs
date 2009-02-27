@@ -7,42 +7,65 @@ module xtreemfs
 {
   module interfaces
   {
-    interface MRCInterface
+    UserIdentity
     {
-      boolean access( string path, uint32_t mode );
-      void chmod( string path, uint32_t mode );
-      void chown( string path, string userId, string groupId );
-      void create( string path, uint32_t mode, StripingPolicy striping_policy, boolean open_, out XCap xcap, out XLocSet xlocs );      
-      void getattr( string path, out stat_ stbuf );
-      string getxattr( string path, string name );
-      void mkdir( string path, uint32_t mode );      
-      void mkvol( string volume_name, uint8_t osd_selection_policy, StripingPolicy default_striping_policy, uint8_t access_control_policy, uint8_t partitioning_policy ); 
-      void move( string source_path, string target_path, out XCap xcap, out XLocSet xlocs );
-      //void query( string path, string link_path, out StringSet matching_paths );
-      void link( string target_path, string link_path );
-      void listxattr( string path, out StringSet names );
-      // void lsvol( out VolumeMap local_volumes );
-      void open( string path, uint32_t mode, out XCap xcap, out XLocSet xlocs );            
-      void readdir( string path, out DirectoryEntrySet directory_entries );
-      string readlink( string path );
-      void removexattr( string path, string name );
-      void rmdir( string path );
-      void rmvol( string volume_name );
-      void setattr( string path, stat_ stbuf );
-      void symlink( string target_path, string link_path );      
-      void unlink( string path, out XCap xcap, out XLocSet xlocs );
-      void setxattr( string path, string name, string value, int flags );
-      void statfs( string volume_name, out statfs_ statfsbuf );
-      void updateFileSize( XCap xcap, NewFileSize new_file_size );
-      void utime( string path, uint64_t ctime, uint64_t atime, uint64_t mtime );
+        string user_id;
+        StringSet group_ids;
+    };
 
-      // void getDefaultStripingPolicy( string path, out StripingPolicy policy );
-      //void setACLEntries( string path, ACLEntries entries );
-      //void removeACLEntities( string path, StringSet entities );
-      //uint64_t removeReplica( string fileId, StripingPolicy stripingPolicy, StringSet osdList );      
-      //void renew();
-      //void setDefaultStripingPolicy( string path, StripingPolicy policy );
-      //void setReplicas( string fileId, OSDsByStripingPolicy replicas );
+    FileCredentials
+    {
+        XLocSet xlocs;
+        XCap    xcap;
+    };
+    typedef sequence<FileCredentials> FileCredentialsSet;
+    typedef sequence<StripingPolicy>  StripingPolicySet;
+
+    interface MRCInterface #2
+    {
+      boolean access( UserIdentity user, string path, uint32_t mode );
+      void chmod( UserIdentity user, string path, uint32_t mode );
+      void chown( UserIdentity user, string path, string userId, string groupId );
+      void create( UserIdentity user, string path, uint32_t mode, boolean open_, out FileCredentialsSet credentials );
+      void getattr( UserIdentity user, string path, out stat_ stbuf );
+      string getxattr( UserIdentity user, string path, string name );
+      void mkdir( UserIdentity user, string path, uint32_t mode );
+      void rename( UserIdentity user, string source_path, string target_path, out FileCredentialsSet credentials );
+      //void query( string path, string link_path, out StringSet matching_paths );
+      void link( UserIdentity user, string target_path, string link_path );
+      void listxattr( UserIdentity user, string path, out StringSet names );
+      // void lsvol( out VolumeMap local_volumes );
+      void open( UserIdentity user, string path, uint32_t mode, out FileCredentials credentials );
+      void readdir( UserIdentity user, string path, out DirectoryEntrySet directory_entries );
+      
+
+      //string readlink( string path ); -- use getattr instead
+      void removexattr( UserIdentity user, string path, string name );
+      void rmdir( UserIdentity user, string path );
+      //void setattr( string path, stat_ stbuf ); --what is that???
+      void symlink( UserIdentity user, string target_path, string link_path );
+      void unlink( UserIdentity user, string path, out FileCredentialsSet credentials );
+      void setxattr( UserIdentity user, string path, string name, string value, int flags );
+      void statfs( UserIdentity user, string volume_name, out statfs_ statfsbuf );
+      void utime( UserIdentity user, string path, uint64_t ctime, uint64_t atime, uint64_t mtime );
+
+      void updateFileSize( XCap xcap, OSDWriteResponse new_file_size );
+      void renew( XCap xcap, out XCap xcap );
+
+      void mkvol( UserIdentity user, string password, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy );
+      void rmvol( UserIdentity user, string password, string volume_name );
+
+      void addReplica( string fileId, Replica new_replica );
+      void removeReplica( string fileId, string osd_uuid );
+      void getSuitableOSDs( string fileId, out StringSet osd_uuids );
+
+      void restoreFile(string file_path, string fileId, uint64_t file_size, string osd_uuid, int32_t stripe_size);
+      void checkFilesExist( string volumeId, StringSet fileIDs, out string bitmap );
+
+      void admin_shutdown( string password );
+      void admin_checkpoint( string password );
+      void admin_dump_database( string password, string dump_file );
+      void admin_restore_database( string password, string dump_file );
     };
   };
 };
