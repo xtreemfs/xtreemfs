@@ -38,7 +38,6 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
-//import org.xtreemfs.test.SetupUtils;
 
 /**
  * 
@@ -47,16 +46,16 @@ import org.xtreemfs.foundation.speedy.MultiSpeedy;
  * @author clorenz
  */
 public class ReplicationStressTest implements Runnable {
-    /*private final static String volumeName = "replicationTestVolume";
+    private final static String volumeName = "replicationTestVolume";
     private final static String filePath = "/replicationTest/";
     private static InetSocketAddress mrcAddress;
-    private static String authString;*/
+    private static String authString;
 
     /**
      * @param args
      *            the command line arguments
      */
-    /*public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         // parse arguments
         mrcAddress = new InetSocketAddress(args[0], Integer.parseInt(args[1]));
         // "client" reading threads
@@ -65,7 +64,7 @@ public class ReplicationStressTest implements Runnable {
         int osdNumber = Integer.parseInt(args[3]);
 
         // prepare volume, ...
-        MRCClient client = SetupUtils.createMRCClient(10000);
+        MRCClient client = new MRCClient();
         authString = NullAuthProvider.createAuthString("userXY", MRCClient.generateStringList("groupZ"));
         // create a volume (no access control)
         client.createVolume(mrcAddress, volumeName, authString);
@@ -99,12 +98,12 @@ public class ReplicationStressTest implements Runnable {
         speedy.shutdown();
         client.waitForShutdown();
         speedy.waitForShutdown();
-    }*/
+    }
 
     /**
      * fill files with data (different sizes)
      */
-    /*public static void writeFiles(MultiSpeedy speedy, List<String> fileList) throws Exception {
+    public static void writeFiles(MultiSpeedy speedy, List<String> fileList) throws Exception {
         // adjust this
         int filesize = 128 * 1024;
         int partsize = 8192 * 1024 * 1024;
@@ -120,11 +119,11 @@ public class ReplicationStressTest implements Runnable {
             ReusableBuffer data;
             while (part < filesize) {
                 if (filesize < part + partsize) { // only one part or last part of file
-                    data = SetupUtils.generateData(filesize - part);
+                    data = generateData(filesize - part);
                     raf.write(data.array(), part, data.limit());
                 } else { // any part of file
                     if (random.nextInt(100) > 10) { // 90% chance
-                        data = SetupUtils.generateData(partsize);
+                        data = generateData(partsize);
                         raf.write(data.array(), part, data.limit());
                     }
                     // else: skip writing => hole
@@ -135,12 +134,12 @@ public class ReplicationStressTest implements Runnable {
             // increase filesize
             filesize = filesize * 2;
         }
-    }*/
+    }
 
     /**
      * set file read only and add replicas
      */
-    /*public static void prepareReplication(MultiSpeedy speedy, List<String> fileList) throws Exception {
+    public static void prepareReplication(MultiSpeedy speedy, List<String> fileList) throws Exception {
         for (String fileName : fileList) {
             RandomAccessFile raf = new RandomAccessFile("w", mrcAddress, volumeName + filePath + fileName,
                     speedy);
@@ -150,18 +149,18 @@ public class ReplicationStressTest implements Runnable {
             // add some replicas
         }
 
-    }*/
+    }
 
     /*
      * thread
      */
     private MRCClient client;
     private MultiSpeedy speedy;
-    //private final List<String> fileList;
+    private final List<String> fileList;
     private Random random;
 
-    /*public ReplicationStressTest(InetSocketAddress mrcAddress, List<String> fileList) throws Exception {
-        client = SetupUtils.createMRCClient(10000);
+    public ReplicationStressTest(InetSocketAddress mrcAddress, List<String> fileList) throws Exception {
+        client = new MRCClient();
         speedy = new MultiSpeedy();
         speedy.start();
 
@@ -170,7 +169,7 @@ public class ReplicationStressTest implements Runnable {
 
         this.fileList = fileList;
         random = new Random(10);
-    }*/
+    }
 
     public void shutdown() throws Exception {
         client.shutdown();
@@ -179,7 +178,7 @@ public class ReplicationStressTest implements Runnable {
         speedy.waitForShutdown();
     }
 
-    /*@Override
+    @Override
     public void run() {
         try {
             for (String fileName : fileList) {
@@ -192,15 +191,12 @@ public class ReplicationStressTest implements Runnable {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }*/
-
-    public void run() {
     }
 
     /**
      * read/replicate files
      */
-    /*public void replicateFile(String fileName) throws Exception {
+    public void replicateFile(String fileName) throws Exception {
         RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, volumeName + filePath + fileName, speedy);
 
         long filesize = raf.length();
@@ -231,5 +227,20 @@ public class ReplicationStressTest implements Runnable {
 
             // TODO: do something with the result
         }
-    }*/
+    }
+    
+    /*
+     * copied from test...SetupUtils
+     */
+    /**
+     * @param size
+     *            in byte
+     */
+    private static ReusableBuffer generateData(int size) {
+        Random random = new Random();
+        byte[] data = new byte[size];
+        random.nextBytes(data);
+        return ReusableBuffer.wrap(data);
+    }
+
 }
