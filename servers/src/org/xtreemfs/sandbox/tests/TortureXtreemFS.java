@@ -25,6 +25,7 @@
 
 package org.xtreemfs.sandbox.tests;
 
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
@@ -96,9 +97,9 @@ public class TortureXtreemFS {
                 trustedCAsFile = options.get("t").stringValue;
                 trustedCAsPass = options.get("tp").stringValue;
 
-                sslOptions = new SSLOptions(serviceCredsFile, serviceCredsPass,
-                SSLOptions.PKCS12_CONTAINER,
-                trustedCAsFile, trustedCAsPass, SSLOptions.JKS_CONTAINER, false);
+                sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile), trustedCAsPass,
+                        SSLOptions.JKS_CONTAINER, false);
             } else {
                 sslOptions = null;
             }

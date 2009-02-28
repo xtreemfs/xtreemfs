@@ -24,6 +24,7 @@
 
 package org.xtreemfs.test;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -360,21 +361,21 @@ public class SetupUtils {
 
 
     public static MRCClient createMRCClient(int timeout) throws IOException {
-        return SSL_ON ? new MRCClient(timeout, new SSLOptions(CERT_DIR + "client1.p12",
-            "passphrase", SSLOptions.PKCS12_CONTAINER, CERT_DIR + "trust.jks", "passphrase",
+        return SSL_ON ? new MRCClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
             SSLOptions.JKS_CONTAINER, false)) : new MRCClient();
     }
 
     public static OSDClient createOSDClient(int timeout) throws IOException {
-        return SSL_ON ? new OSDClient(timeout, new SSLOptions(CERT_DIR + "client1.p12",
-            "passphrase", SSLOptions.PKCS12_CONTAINER, CERT_DIR + "trust.jks", "passphrase",
+        return SSL_ON ? new OSDClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
             SSLOptions.JKS_CONTAINER, false)) : new OSDClient(null);
     }
 
     public static DIRClient createDIRClient(int timeout) throws IOException {
         return SSL_ON ? new DIRClient(new InetSocketAddress("localhost", 33638), new SSLOptions(
-            CERT_DIR + "client1.p12", "passphrase", SSLOptions.PKCS12_CONTAINER, CERT_DIR
-                + "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER, false), timeout)
+                new FileInputStream(CERT_DIR + "client1.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR
+                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false), timeout)
             : new DIRClient(null, new InetSocketAddress("localhost", 33638));
     }
 
