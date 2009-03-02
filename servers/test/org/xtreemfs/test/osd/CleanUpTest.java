@@ -48,12 +48,12 @@ import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * 
@@ -65,7 +65,6 @@ public class CleanUpTest extends TestCase{
 
     private static String testVolume = "testVolume";
     
-    private RequestController                   dir;
     private MRCRequestDispatcher                mrc;
     private MRCClient                           mrcClient;
     private OSD                                 osd;
@@ -75,9 +74,11 @@ public class CleanUpTest extends TestCase{
     private OSDClient                           client;
     private String                              volumeID;
     private Set<String>                         zombieNames;
-    
+
+    private TestEnvironment                     testEnv;
+
     public CleanUpTest() {
-        Logging.start(Logging.LEVEL_WARN);
+        Logging.start(Logging.LEVEL_DEBUG);
     }    
     
     @Before
@@ -92,8 +93,11 @@ public class CleanUpTest extends TestCase{
                 + getName());
         
         // startup: DIR
-        dir = new RequestController(SetupUtils.createDIRConfig());
-        dir.startup();
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
         
         // startup: OSD
         osd = new OSD(SetupUtils.createOSD1Config()); 
@@ -108,21 +112,19 @@ public class CleanUpTest extends TestCase{
         
         layout = new HashStorageLayout(SetupUtils.createOSD1Config(),new MetadataCache());
         
-        client = SetupUtils.createOSDClient(OSDClient.DEFAULT_TIMEOUT);
+        client = testEnv.getOsdClient();
         
-        mrcClient = SetupUtils.createMRCClient(MRCClient.DEFAULT_TIMEOUT);
+        mrcClient = testEnv.getMrcClient();
     }
     
     @After
     public void tearDown() throws Exception {
-        mrcClient.shutdown();
-        client.shutdown();
+        
         mrc.shutdown();
         osd.shutdown();
-        dir.shutdown();
-        client.waitForShutdown();  
-        mrcClient.waitForShutdown();
-        
+
+        testEnv.shutdown();
+
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
     

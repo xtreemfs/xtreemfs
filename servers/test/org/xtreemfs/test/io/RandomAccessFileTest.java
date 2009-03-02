@@ -40,20 +40,21 @@ import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class RandomAccessFileTest extends TestCase {
     RandomAccessFile randomAccessFile;
 
     private MRCRequestDispatcher mrc1;
 
-    private RequestController dirService;
+    private DIRRequestDispatcher dirService;
 
     private MRCConfig mrcCfg1;
 
@@ -65,13 +66,11 @@ public class RandomAccessFileTest extends TestCase {
 
     private InetSocketAddress mrc1Address;
 
-    private MRCClient client;
-
-    private MultiSpeedy speedy;
-
     private String authString;
 
     private String volumeName;
+
+    private TestEnvironment testEnv;
 
     public RandomAccessFileTest() {
         Logging.start(Logging.LEVEL_TRACE);
@@ -95,7 +94,7 @@ public class RandomAccessFileTest extends TestCase {
         testDir.mkdirs();
 
         // start the Directory Service
-        dirService = new org.xtreemfs.dir.RequestController(dsCfg);
+        dirService = new org.xtreemfs.dir.DIRRequestDispatcher(dsCfg);
         dirService.startup();
 
         // start the OSDs
@@ -106,10 +105,10 @@ public class RandomAccessFileTest extends TestCase {
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
 
-        client = SetupUtils.createMRCClient(10000);
-
-        speedy = new MultiSpeedy();
-        speedy.start();
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+        TestEnvironment.Services.MRC_CLIENT,TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER
+        });
+        testEnv.start();
 
         String authString = NullAuthProvider.createAuthString("userXY", MRCClient
                 .generateStringList("groupZ"));
@@ -117,32 +116,30 @@ public class RandomAccessFileTest extends TestCase {
         volumeName = "testVolume";
 
         // create a volume (no access control)
-        client.createVolume(mrc1Address, volumeName, authString);
+        testEnv.getMrcClient().createVolume(mrc1Address, volumeName, authString);
 
         // create some files and directories
-        client.createDir(mrc1Address, volumeName + "/myDir", authString);
+        testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
 
         for (int i = 0; i < 10; i++)
-            client.createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);
+            testEnv.getMrcClient().createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);
 
     }
 
     public void tearDown() throws Exception {
         mrc1.shutdown();
-        client.shutdown();
         osd1.shutdown();
         osd2.shutdown();
         dirService.shutdown();
-        speedy.shutdown();
 
-        client.waitForShutdown();
-        speedy.waitForShutdown();
+
+        testEnv.shutdown();
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
 
     public void testReadAndWrite() throws Exception {
-        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", speedy);
+        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getSpeedy());
 
         byte[] bytesIn = new byte[(int) (3 * randomAccessFile.getStripeSize() + 2)];
         for (int i = 0; i < 3 * randomAccessFile.getStripeSize() + 2; i++) {
@@ -182,7 +179,7 @@ public class RandomAccessFileTest extends TestCase {
     }
 
     public void testReadAndWriteObject() throws Exception {
-        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", speedy);
+        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getSpeedy());
 
         byte[] bytesIn = new String("Hallo").getBytes();
         int length = bytesIn.length;
@@ -211,7 +208,7 @@ public class RandomAccessFileTest extends TestCase {
     }
 
     public void testReplicaCreationAndRemoval() throws Exception {
-        randomAccessFile = new RandomAccessFile("cw", mrc1Address, volumeName + "/myDir/test2.txt", speedy);
+        randomAccessFile = new RandomAccessFile("cw", mrc1Address, volumeName + "/myDir/test2.txt", testEnv.getSpeedy());
 
         // // set file read-only
         // randomAccessFile.setReadOnly(true);

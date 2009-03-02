@@ -27,16 +27,21 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -85,6 +90,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     private final AtomicInteger transactionId;
 
+    private final ConcurrentLinkedQueue<ServerConnection> toBeEstablished;
+
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout) throws IOException {
         super("RPC Client");
         if (requestTimeout >= connectionTimeout-TIMEOUT_GRANULARITY*2) {
@@ -97,6 +104,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         this.sslOptions = sslOptions;
         quit = false;
         transactionId = new AtomicInteger(1);
+        toBeEstablished = new ConcurrentLinkedQueue<ServerConnection>();
     }
 
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
@@ -111,7 +119,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
 
     private void sendRequest(InetSocketAddress server, ONCRPCRequest request) {
-
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"send request "+request+" no "+transactionId.get());
         //get connection
         ServerConnection con = null;
         synchronized (connections) {
@@ -128,6 +136,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             con.getSendQueue().add(request);
             if (!con.isConnected()) {
                 establishConnection(server, con);
+                
             } else {
                 if (isEmpty) {
                     final SelectionKey key = con.getChannel().keyFor(selector);
@@ -156,6 +165,21 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 Logging.logMessage(Logging.LEVEL_WARN, this, "Exception while selecting: " + ex);
                 continue;
             }
+
+            if (!toBeEstablished.isEmpty()) {
+                while (true) {
+                    ServerConnection con = toBeEstablished.poll();
+                    if (con == null)
+                        break;
+                    try {
+                        con.getChannel().register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
+                    } catch (ClosedChannelException ex) {
+                        closeConnection(con.getChannel().keyFor(selector), ex);
+                    }
+                }
+                toBeEstablished.clear();
+            }
+
 
             if (numKeys > 0) {
                 // fetch events
@@ -209,7 +233,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 channel.socket().setReceiveBufferSize(256 * 1024);
                 channel.connect(server);
                 con.setChannel(channel);
-                channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
+                toBeEstablished.add(con);
+                selector.wakeup();
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"established");
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"cannot contact server "+con.getEndpoint());
@@ -421,6 +447,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         }
                         con.addRequest(send.getXID(), send);
                         con.setSendRequest(null);
+
                         //otherwise the request is complete
                     }
                 }
@@ -448,6 +475,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
             }
             con.connected();
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"connected from "+con.getChannel().socket().getLocalSocketAddress()+" to "+con.getEndpoint());
         } catch (IOException ex) {
             con.connectFailed();
             closeConnection(key, new IOException("server not reachable",ex));
@@ -486,7 +515,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     private void checkForTimers() {
         //poor man's timer
-        long now = TimeSync.getLocalSystemTime();
+        long now = System.currentTimeMillis();
         if (now >= lastCheck + TIMEOUT_GRANULARITY) {
             //check for timed out requests
             synchronized (connections) {
@@ -494,7 +523,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 while (conIter.hasNext()) {
                     final ServerConnection con = conIter.next();
 
-                    if (con.getLastUsed() < (TimeSync.getLocalSystemTime() - connectionTimeout)) {
+                    if (con.getLastUsed() < (now - connectionTimeout)) {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this, "removing idle connection");
                         }
@@ -510,7 +539,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             Iterator<ONCRPCRequest> iter = con.getRequests().values().iterator();
                             while (iter.hasNext()) {
                                 final ONCRPCRequest rq = iter.next();
-                                if (rq.getTimeQueued() + requestTimeout < TimeSync.getLocalSystemTime()) {
+                                if (rq.getTimeQueued() + requestTimeout < now) {
                                     cancelRq.add(rq);
                                     iter.remove();
                                 }
@@ -518,7 +547,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             iter = con.getSendQueue().iterator();
                             while (iter.hasNext()) {
                                 final ONCRPCRequest rq = iter.next();
-                                if (rq.getTimeQueued() + requestTimeout < TimeSync.getLocalSystemTime()) {
+                                if (rq.getTimeQueued() + requestTimeout < now) {
                                     cancelRq.add(rq);
                                     iter.remove();
                                 } else {

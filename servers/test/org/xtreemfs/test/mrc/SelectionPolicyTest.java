@@ -32,6 +32,11 @@ import java.util.Map;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
 
 public class SelectionPolicyTest extends TestCase {
@@ -40,7 +45,7 @@ public class SelectionPolicyTest extends TestCase {
     
     private ProximitySelectionPolicy         policy;
     
-    private Map<String, Map<String, Object>> osdMap;
+    private ServiceRegistrySet osdMap;
     
     private InetAddress                      clientAddress;
     
@@ -52,32 +57,38 @@ public class SelectionPolicyTest extends TestCase {
         
         clientAddress = InetAddress.getByName(URI.create("http://01.xtreemfs.com").getHost());
         
-        osdMap = new HashMap<String, Map<String, Object>>();
-        
-        Map<String, Object> attr1 = new HashMap<String, Object>();
-        attr1.put("free", Long.toString(MIN_FREE_CAPACITY + 1));
-        attr1.put("uri", "http://itu.dk");
-        osdMap.put("1", attr1);
-        
-        Map<String, Object> attr2 = new HashMap<String, Object>();
-        attr2.put("free", Long.toString(MIN_FREE_CAPACITY + 1));
-        attr2.put("uri", "http://wiut.uz");
-        osdMap.put("2", attr2);
-        
-        Map<String, Object> attr3 = new HashMap<String, Object>();
-        attr3.put("free", Long.toString(MIN_FREE_CAPACITY + 1));
-        attr3.put("uri", "http://pku.edu.cn");
-        osdMap.put("3", attr3);
-        
-        Map<String, Object> attr4 = new HashMap<String, Object>();
-        attr4.put("free", Long.toString(MIN_FREE_CAPACITY + 1));
-        attr4.put("uri", "http://xtreemfs2.zib.de");
-        osdMap.put("4", attr4);
-        
-        Map<String, Object> attr5 = new HashMap<String, Object>();
-        attr5.put("free", Long.toString(MIN_FREE_CAPACITY + 1));
-        attr5.put("uri", "http://xtreemfs2.zib.de");
-        osdMap.put("5", attr5);
+        osdMap = new ServiceRegistrySet();
+
+        KeyValuePairSet kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
+        kvset.add(new KeyValuePair("uri", "http://itu.dk"));
+        ServiceRegistry attr1 = new ServiceRegistry("attr1",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        osdMap.add(attr1);
+
+        kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
+        kvset.add(new KeyValuePair("uri", "http://wiut.uz"));
+        ServiceRegistry attr2 = new ServiceRegistry("attr2",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        osdMap.add(attr2);
+         
+        kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
+        kvset.add(new KeyValuePair("uri", "http://pku.edu.cn"));
+        ServiceRegistry attr3 = new ServiceRegistry("attr3",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        osdMap.add(attr3);
+
+        kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
+        kvset.add(new KeyValuePair("uri", "http://xtreemfs2.zib.de"));
+        ServiceRegistry attr4 = new ServiceRegistry("attr4",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        osdMap.add(attr4);
+
+
+        kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
+        kvset.add(new KeyValuePair("uri", "http://xtreemfs2.zib.de"));
+        ServiceRegistry attr5 = new ServiceRegistry("attr5",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        osdMap.add(attr5);
         
     }
     
@@ -98,19 +109,19 @@ public class SelectionPolicyTest extends TestCase {
         
         String[] osds = policy.getOSDsForNewFile(osdMap, clientAddress, 4, null);
         assertEquals(osds.length, 4);
-        assertTrue(contains(osds, "1"));
-        assertTrue(contains(osds, "3"));
-        assertTrue(contains(osds, "4"));
-        assertTrue(contains(osds, "5"));
+        assertTrue(contains(osds, "attr1"));
+        assertTrue(contains(osds, "attr3"));
+        assertTrue(contains(osds, "attr4"));
+        assertTrue(contains(osds, "attr5"));
         
         osds = policy.getOSDsForNewFile(osdMap, clientAddress, 2, null);
         assertEquals(osds.length, 2);
-        assertTrue(contains(osds, "4"));
-        assertTrue(contains(osds, "5"));
+        assertTrue(contains(osds, "attr4"));
+        assertTrue(contains(osds, "attr5"));
         
         osds = policy.getOSDsForNewFile(osdMap, clientAddress, 1, null);
         assertEquals(osds.length, 1);
-        assertTrue(contains(osds, "4") || contains(osds, "5"));
+        assertTrue(contains(osds, "attr4") || contains(osds, "attr5"));
         
         osds = policy.getOSDsForNewFile(osdMap, clientAddress, 6, null);
         assertEquals(osds.length, 6);

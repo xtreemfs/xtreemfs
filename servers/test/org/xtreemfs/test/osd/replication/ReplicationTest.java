@@ -36,7 +36,6 @@ import org.junit.Before;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -44,7 +43,6 @@ import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.common.striping.RAID0;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
@@ -52,6 +50,7 @@ import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * 
@@ -60,8 +59,6 @@ import org.xtreemfs.test.SetupUtils;
  * @author clorenz
  */
 public class ReplicationTest extends TestCase {
-    RequestController dir;
-    DIRClient dirClient;
     OSD[] osds;
     OSDConfig[] configs;
     OSDClient client;
@@ -75,6 +72,7 @@ public class ReplicationTest extends TestCase {
     private ReusableBuffer data;
 
     private long objectNo;
+    private TestEnvironment testEnv;
 
     public ReplicationTest() {
         super();
@@ -100,10 +98,12 @@ public class ReplicationTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
 
-        dir = new RequestController(SetupUtils.createDIRConfig());
-        dir.startup();
-
-        dirClient = SetupUtils.initTimeSync();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
 
         osds = new OSD[12];
         configs = SetupUtils.createMultipleOSDConfigs(12);
@@ -111,7 +111,7 @@ public class ReplicationTest extends TestCase {
             osds[i] = new OSD(configs[i]);
         }
 
-        client = SetupUtils.createOSDClient(10000);
+        client = testEnv.getOsdClient();
 
         file = "1:1";
         objectNo = 0;
@@ -146,15 +146,8 @@ public class ReplicationTest extends TestCase {
     public void tearDown() throws Exception {
         for (OSD osd : this.osds)
             osd.shutdown();
-        dir.shutdown();
-
-        client.shutdown();
-        client.waitForShutdown();
-
-        if (dirClient != null) {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
-        }
+       
+        testEnv.shutdown();
     }
 
     public void testStriped() throws Exception {

@@ -38,7 +38,6 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -47,12 +46,11 @@ import org.xtreemfs.common.striping.RAID0;
 import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class OSDDataIntegrityTest extends TestCase {
     
@@ -66,22 +64,18 @@ public class OSDDataIntegrityTest extends TestCase {
     
     private final OSDConfig   osdConfig;
     
-    private final DIRConfig   dirConfig;
     
     private OSDClient         osdClient;
     
-    private DIRClient         dirClient;
-    
-    private RequestController dir;
     
     private OSD               osdServer;
+    private TestEnvironment testEnv;
     
     public OSDDataIntegrityTest(String testName) throws Exception {
         super(testName);
         
         Logging.start(Logging.LEVEL_DEBUG);
         
-        dirConfig = SetupUtils.createDIRConfig();
         osdConfig = SetupUtils.createOSD1Config();
         serverID = SetupUtils.getOSD1UUID();
         
@@ -107,10 +101,12 @@ public class OSDDataIntegrityTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
         
-        dir = new org.xtreemfs.dir.RequestController(dirConfig);
-        dir.startup();
-        
-        dirClient = SetupUtils.initTimeSync();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
         
         osdServer = new OSD(osdConfig);
         
@@ -122,22 +118,15 @@ public class OSDDataIntegrityTest extends TestCase {
             }
         }
         
-        osdClient = SetupUtils.createOSDClient(10000);
-        
-        SetupUtils.setupLocalResolver();
+        osdClient = testEnv.getOsdClient();
     }
     
     protected void tearDown() throws Exception {
+        System.out.println("teardown");
         osdServer.shutdown();
         
-        if (dirClient != null) {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
-        }
-        
-        dir.shutdown();
-        osdClient.shutdown();
-        osdClient.waitForShutdown();
+        testEnv.shutdown();
+        System.out.println("shutdown complete");
     }
     
     public void testWriteRanges() throws Exception {

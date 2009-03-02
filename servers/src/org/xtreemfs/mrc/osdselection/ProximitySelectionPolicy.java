@@ -31,6 +31,7 @@ import java.util.PriorityQueue;
 import java.util.Map;
 import java.net.URI;
 import java.net.UnknownHostException;
+import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 
@@ -75,8 +76,19 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     private long distance(ServiceRegistry osd) throws UnknownHostException {
 
-        /*byte[] osdAddress = InetAddress.getByName(
-                (URI.create((String) osd.get("uri")).getHost())).getAddress();
+        String osduri = null;
+        for (KeyValuePair kv : osd.getData()) {
+            if (kv.getKey().equals("uri")) {
+                osduri = kv.getValue();
+                break;
+            }
+        }
+
+        if (osduri == null)
+            return 10000000;
+
+        byte[] osdAddress = InetAddress.getByName(
+                (URI.create(osduri).getHost())).getAddress();
 
         // if osd in same subnet as client
         if (osdAddress[0] == clientAddress[0]
@@ -84,8 +96,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
                 && osdAddress[2] == clientAddress[2])
             return 0;
 
-        return Math.abs(inetAddressToLong(osdAddress) - clientAddressLong);*/
-        return 1;
+        return Math.abs(inetAddressToLong(osdAddress) - clientAddressLong);
     }
 
     public long inetAddressToLong(byte[] address) {

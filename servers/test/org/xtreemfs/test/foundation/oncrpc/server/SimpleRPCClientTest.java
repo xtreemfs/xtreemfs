@@ -23,10 +23,11 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  *
@@ -38,10 +39,21 @@ public class SimpleRPCClientTest extends TestCase {
 
     RPCNIOSocketServer server;
     RPCNIOSocketClient client;
+    private TestEnvironment testEnv;
 
     public SimpleRPCClientTest() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG);
-        TimeSync.initialize(null, 100000, 50, "");
+    }
+
+    public void setUp() throws Exception {
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+        TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER
+        });
+        testEnv.start();
+    }
+
+    public void tearDown() throws Exception {
+        testEnv.shutdown();
     }
 
     @Test
@@ -54,10 +66,10 @@ public class SimpleRPCClientTest extends TestCase {
                     System.out.println("request received");
                     ReusableBuffer buf = rq.getRequestFragment();
 
-                    getAddressMappingsRequest rpcRequest = new getAddressMappingsRequest();
+                    address_mappings_getRequest rpcRequest = new address_mappings_getRequest();
                     rpcRequest.deserialize(buf);
 
-                    getAddressMappingsResponse rpcResponse = new getAddressMappingsResponse();
+                    address_mappings_getResponse rpcResponse = new address_mappings_getResponse();
 
                     if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                         rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
@@ -107,7 +119,7 @@ public class SimpleRPCClientTest extends TestCase {
 
         };
         
-        getAddressMappingsRequest amr = new getAddressMappingsRequest("Yagga");
+        address_mappings_getRequest amr = new address_mappings_getRequest("Yagga");
         
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
                 amr.getOperationNumber(),amr);
@@ -117,7 +129,7 @@ public class SimpleRPCClientTest extends TestCase {
                 result.wait();
         }
 
-        getAddressMappingsResponse amresp = new getAddressMappingsResponse();
+        address_mappings_getResponse amresp = new address_mappings_getResponse();
         ONCRPCRequest resp = result.get();
         resp.deserializeResponse(amresp);
         resp.freeBuffers();
@@ -189,7 +201,7 @@ public class SimpleRPCClientTest extends TestCase {
 
         };
 
-        getAddressMappingsRequest amr = new getAddressMappingsRequest("Yagga");
+        address_mappings_getRequest amr = new address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
                 amr.getOperationNumber(),amr);
@@ -199,7 +211,7 @@ public class SimpleRPCClientTest extends TestCase {
                 result.wait();
         }
 
-        getAddressMappingsResponse amresp = new getAddressMappingsResponse();
+        address_mappings_getResponse amresp = new address_mappings_getResponse();
         ONCRPCException ex = result.get();
 
         assertTrue(ex instanceof ConcurrentModificationException);
@@ -266,7 +278,7 @@ public class SimpleRPCClientTest extends TestCase {
             }
         };
 
-        getAddressMappingsRequest amr = new getAddressMappingsRequest("Yagga");
+        address_mappings_getRequest amr = new address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
                 amr.getOperationNumber(),amr);

@@ -24,6 +24,8 @@
 
 package org.xtreemfs.foundation.oncrpc.server;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -55,6 +57,8 @@ public class ClientConnection {
 
     private boolean               sendingFragmentHeader;
 
+    private SocketAddress         clientAddress;
+
     public ClientConnection(ChannelIO channel) {
         this.channel = channel;
         this.openRequests = new AtomicInteger(0);
@@ -64,6 +68,10 @@ public class ClientConnection {
         this.sendFragHdr = ByteBuffer.allocate(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
         this.sendFragHdr.position(sendFragHdr.capacity());
         this.sendingFragmentHeader = true;
+        try {
+            this.clientAddress = channel.socket().getRemoteSocketAddress();
+        } catch (Exception ex) {
+        }
     }
 
     public void freeBuffers() {
@@ -167,6 +175,13 @@ public class ClientConnection {
      */
     void setSendingFragmentHeader(boolean sendingFragmentHeader) {
         this.sendingFragmentHeader = sendingFragmentHeader;
+    }
+
+    /**
+     * @return the clientAddress
+     */
+    public SocketAddress getClientAddress() {
+        return clientAddress;
     }
     
 

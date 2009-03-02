@@ -12,8 +12,6 @@ import java.util.Map;
 import junit.framework.TestCase;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
@@ -21,9 +19,15 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  *
@@ -31,20 +35,20 @@ import org.xtreemfs.test.SetupUtils;
  */
 public class UUIDResolverTest extends TestCase {
 
-    private final String      nullAuth;
 
-    private RequestController dirCtrl = null;
-
-    private DIRClient         dc;
+    private DIRRequestDispatcher dirCtrl = null;
 
     private InetSocketAddress localhost;
 
+    private RPCNIOSocketClient rpcClient;
+
     private final int         TIMEOUT = 10000;
+
+    private TestEnvironment   testEnv;
 
 
     public UUIDResolverTest(String testName) throws JSONException {
         super(testName);
-        nullAuth = NullAuthProvider.createAuthString("bla", "blub");
     }
 
     @Override
@@ -62,30 +66,30 @@ public class UUIDResolverTest extends TestCase {
         DIRConfig conf = SetupUtils.createDIRConfig();
 
         localhost = new InetSocketAddress("localhost", conf.getPort());
-        dc = SetupUtils.createDIRClient(60000);
 
-        dirCtrl = new RequestController(conf);
+        dirCtrl = new DIRRequestDispatcher(conf);
         dirCtrl.startup();
-
-        TimeSync.initialize(dc, 1000000, 50, nullAuth);
-
-        UUIDResolver.shutdown();
-        UUIDResolver.start(dc,100,100);
+        
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+                    TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER});
+        testEnv.start();
         UUIDResolver.addLocalMapping("localhost", 32636, false);
+
+        
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
         dirCtrl.shutdown();
-        dc.shutdown();
-        UUIDResolver.shutdown();
+        testEnv.shutdown();
     }
 
     public void testSimpleMapping() throws Exception {
-        List<Map<String,Object>> mpgs = NetUtils.getReachableEndpoints(32636, "http");
-        RPCResponse r = dc.registerAddressMapping("MY_TEST_UUID", mpgs, 1l , nullAuth);
-        r.waitForResponse();
+        AddressMappingSet mpgs = NetUtils.getReachableEndpoints(32636, "http");
+        mpgs.get(0).setUuid("MY_TEST_UUID");
+        RPCResponse<Long> r = testEnv.getDirClient().address_mappings_set(null,mpgs);
+        r.get();
         ServiceUUID uuid = new ServiceUUID("MY_TEST_UUID");
         uuid.resolve();
         System.out.println(uuid);

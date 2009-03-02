@@ -129,10 +129,10 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
 
-        SSLOptions sslOptions = new SSLOptions(new FileInputStream(config
+        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false);
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
 
         speedyStage = config.isUsingSSL() ? new MultiSpeedy(sslOptions) : new MultiSpeedy();
         speedyStage.setLifeCycleListener(this);
@@ -240,9 +240,12 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     public void shutdown() throws Exception {
         pinkyStage.shutdown();
         pinkyStage.waitForShutdown();
-        
+
+        rpcClient.shutdown();
+        rpcClient.waitForShutdown();
+
         heartbeatThread.shutdown();
-        
+
         osdMonitor.shutdown();
         osdMonitor.waitForShutdown();
         
@@ -256,9 +259,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         volumeManager.shutdown();
         
         TimeSync.getInstance().shutdown();
-
-        rpcClient.shutdown();
-        rpcClient.waitForShutdown();
     }
     
     public void requestFinished(MRCRequest request) {

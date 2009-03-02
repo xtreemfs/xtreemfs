@@ -39,11 +39,10 @@ import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultAdapter;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
@@ -54,6 +53,7 @@ import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class BabuDBStorageManagerTest extends TestCase {
     
@@ -61,9 +61,7 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     private StorageManager         mngr;
     
-    private RequestController      dir;
-    
-    private DIRClient              dirClient;
+    private DIRRequestDispatcher      dir;
     
     private BabuDB                 database;
     
@@ -72,6 +70,8 @@ public class BabuDBStorageManagerTest extends TestCase {
     private Object                 lock         = "";
     
     private boolean                cont;
+
+    private TestEnvironment        testEnv;
     
     private DBAccessResultListener listener     = new DBAccessResultAdapter() {
                                                     
@@ -103,10 +103,14 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // initialize Directory Service (for synchronized clocks...)
         DIRConfig config = SetupUtils.createDIRConfig();
-        dir = new RequestController(config);
+        dir = new DIRRequestDispatcher(config);
         dir.startup();
-        dirClient = SetupUtils.createDIRClient(60000);
-        TimeSync.initialize(dirClient, 60000, 50, NullAuthProvider.createAuthString("bla", "bla"));
+
+
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+                    TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER
+        });
+        testEnv.start();
         
         // reset database
         File dbDir = new File(DB_DIRECTORY);
@@ -127,10 +131,9 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     protected void tearDown() throws Exception {
         database.shutdown();
-        dirClient.shutdown();
         dir.shutdown();
         
-        dirClient.waitForShutdown();
+        testEnv.shutdown();
     }
     
     public void testCreateDelete() throws Exception {

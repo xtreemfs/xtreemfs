@@ -27,7 +27,6 @@ package org.xtreemfs.foundation.oncrpc.client;
 import java.io.IOException;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  *
@@ -50,7 +49,8 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
     }
 
     public void freeBuffers() {
-        request.freeBuffers();
+        if (request != null)
+            request.freeBuffers();
     }
 
     public void registerListener(RPCResponseAvailableListener<V> listener) {

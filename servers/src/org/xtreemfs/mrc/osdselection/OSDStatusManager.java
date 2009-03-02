@@ -198,6 +198,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     public void shutdown() {
         synchronized (this) {
             quit = true;
+            this.interrupt();
             this.notifyAll();
         }
     }
@@ -238,7 +239,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
 
                     evaluateResponse(knownOSDs);
                     
-
+                } catch (InterruptedException ex) {
+                    break;
                 } catch (Exception exc) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
                 } finally {
@@ -252,6 +254,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                     try {
                         this.wait(checkIntervalMillis);
                     } catch (InterruptedException ex) {
+                        break;
                     }
                 }
         }

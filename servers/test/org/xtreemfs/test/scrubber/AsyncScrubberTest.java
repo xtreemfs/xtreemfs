@@ -42,12 +42,12 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class AsyncScrubberTest extends TestCase {
     
     private MRCRequestDispatcher                  mrc1;
     
-    private org.xtreemfs.dir.RequestController dirService;
     
     private MRCConfig                          mrcCfg1;
     
@@ -70,9 +70,10 @@ public class AsyncScrubberTest extends TestCase {
     private String                             volumeName;
     
     private AsyncScrubber                      scrubber;
+    private TestEnvironment testEnv;
     
     public AsyncScrubberTest() {
-        Logging.start(Logging.LEVEL_WARN);
+        Logging.start(Logging.LEVEL_DEBUG);
     }
     
     public void setUp() throws Exception {
@@ -98,9 +99,12 @@ public class AsyncScrubberTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
         
-        // start the Directory Service
-        dirService = new org.xtreemfs.dir.RequestController(dsCfg);
-        dirService.startup();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
         
         // start the OSD
         osd1 = new OSD(osdConfig1);
@@ -109,7 +113,7 @@ public class AsyncScrubberTest extends TestCase {
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
         
-        client = SetupUtils.createMRCClient(10000000);
+        client = testEnv.getMrcClient();
         
         volumeName = "testVolume";
         
@@ -120,7 +124,9 @@ public class AsyncScrubberTest extends TestCase {
         client.createDir(mrc1Address, volumeName + "/myDir", authString);
         client.createDir(mrc1Address, volumeName + "/anotherDir", authString);
         client.createDir(mrc1Address, volumeName + "/yetAnotherDir", authString);
-        
+
+        Thread.sleep(500);
+
         for (int i = 0; i < 2; i++)
             client.createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", null, null,
                 accessMode, authString);
@@ -150,13 +156,12 @@ public class AsyncScrubberTest extends TestCase {
     
     public void tearDown() throws Exception {
         mrc1.shutdown();
-        client.shutdown();
         osd1.shutdown();
         osd2.shutdown();
         scrubber.shutdown();
-        dirService.shutdown();
         scrubber.waitForShutdown();
-        client.waitForShutdown();
+
+        testEnv.shutdown();
         
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }

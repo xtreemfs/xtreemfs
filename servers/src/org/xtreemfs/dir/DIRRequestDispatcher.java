@@ -146,6 +146,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     public void run() {
         try {
             notifyStarted();
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"DIR running");
             while (!quit) {
                 final ONCRPCRequest rq = queue.take();
                 processRequest(rq);

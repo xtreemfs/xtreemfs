@@ -36,6 +36,7 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.DIRInterface.service_registerRequest;
 import org.xtreemfs.interfaces.DIRInterface.service_registerResponse;
+import org.xtreemfs.interfaces.KeyValuePair;
 
 /**
  *
@@ -84,6 +85,7 @@ public class RegisterServiceOperation extends DIROperation {
             currentVersion++;
 
             reg.setVersion(currentVersion);
+            reg.getData().add(new KeyValuePair("lastUpdated",Long.toString(System.currentTimeMillis()/1000l)));
 
             ONCRPCBufferWriter writer = new ONCRPCBufferWriter(reg.calculateSize());
             reg.serialize(writer);
@@ -96,6 +98,9 @@ public class RegisterServiceOperation extends DIROperation {
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            rq.sendInternalServerError();
+        } catch (Throwable th) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this,th);
             rq.sendInternalServerError();
         }
     }

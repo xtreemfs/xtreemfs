@@ -25,6 +25,7 @@
 package org.xtreemfs.test;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -33,15 +34,17 @@ import java.util.Random;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
@@ -195,25 +198,8 @@ public class SetupUtils {
 	}
         return configs; 
     }
-    
-    public static DIRConfig createDIRConfig() throws IOException {
-        Properties props = new Properties();
-        props.setProperty("database.dir", TEST_DIR);
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
-        props.setProperty("listen.port", "33638");
-        props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "service3.jks");
-        props.setProperty("ssl.service_creds.pw", "passphrase");
-        props.setProperty("ssl.service_creds.container", "jks");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
-        props.setProperty("ssl.trusted_certs.pw", "passphrase");
-        props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
 
-        return new DIRConfig(props);
-    }
-
-    public static org.xtreemfs.new_dir.DIRConfig createNewDIRConfig() throws IOException {
+    public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("database.dir", TEST_DIR);
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
@@ -228,7 +214,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
 
-        return new org.xtreemfs.new_dir.DIRConfig(props);
+        return new org.xtreemfs.dir.DIRConfig(props);
     }
 
     public static MRCConfig createMRC1Config() throws IOException {
@@ -343,6 +329,14 @@ public class SetupUtils {
         return new ServiceUUID("UUID:localhost:33642");
     }
 
+    static void localResolver() {
+        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON);
+        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON);
+        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON);
+        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON);
+        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON);
+    }
+
     private static ServiceUUID getOSDUUID(String listenAddress, int port) {
         return new ServiceUUID("UUID:"+listenAddress+":"+port);
     }
@@ -352,13 +346,15 @@ public class SetupUtils {
         UUIDResolver.shutdown();
 
         UUIDResolver.start(null, 1000, 1000);
-        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON);
-        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON);
+        localResolver();
     }
 
+
+    public static SSLOptions getClientSSLOptions() throws FileNotFoundException, IOException {
+        return SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
+            SSLOptions.JKS_CONTAINER, false) : null;
+    }
 
     public static MRCClient createMRCClient(int timeout) throws IOException {
         return SSL_ON ? new MRCClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
@@ -372,11 +368,22 @@ public class SetupUtils {
             SSLOptions.JKS_CONTAINER, false)) : new OSDClient(null);
     }
 
-    public static DIRClient createDIRClient(int timeout) throws IOException {
-        return SSL_ON ? new DIRClient(new InetSocketAddress("localhost", 33638), new SSLOptions(
+    public static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
+        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(
                 new FileInputStream(CERT_DIR + "client1.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR
-                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false), timeout)
-            : new DIRClient(null, new InetSocketAddress("localhost", 33638));
+                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
+        return new RPCNIOSocketClient(sslOptions, timeout, 5*60*1000);
+    }
+
+    public static MultiSpeedy createMultiSpeedy(int timeout) throws IOException {
+        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(
+                new FileInputStream(CERT_DIR + "client1.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR
+                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
+        return SSL_ON ? new MultiSpeedy() : new MultiSpeedy(sslOptions);
+    }
+
+    public static DIRClient createDIRClient(RPCNIOSocketClient client) throws IOException {
+        return new DIRClient(client,new InetSocketAddress("localhost", 33638));
     }
 
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {
@@ -425,22 +432,6 @@ public class SetupUtils {
         DIRConfig config = createDIRConfig();
         SSL_ON = tmp;
         return config;
-    }
-
-    public static DIRClient initTimeSync() throws IOException, JSONException {
-
-        try {
-            TimeSync.getInstance();
-            return null;
-
-        } catch (RuntimeException ex) {
-            // no time sync there, start one
-            DIRClient dirClient = SetupUtils.createDIRClient(10000);
-            TimeSync.initialize(dirClient, 60000, 50, NullAuthProvider.createAuthString("bla",
-                "bla"));
-
-            return dirClient;
-        }
     }
     
     /**

@@ -23,6 +23,7 @@
  */
 package org.xtreemfs.foundation.oncrpc.server;
 
+import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
@@ -142,6 +143,10 @@ public class ONCRPCRequest {
 
     public String toString() {
         return this.requestHeader+"/"+this.responseHeader;
+    }
+    
+    public SocketAddress getClientIdentity() {
+        return record.getConnection().getClientAddress();
     }
 
 

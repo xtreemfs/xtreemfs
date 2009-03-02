@@ -35,7 +35,6 @@ import org.junit.Before;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -43,7 +42,7 @@ import org.xtreemfs.common.striping.Locations;
 import org.xtreemfs.common.striping.RAID0;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
@@ -67,6 +66,7 @@ import org.xtreemfs.osd.stages.StageStatistics;
 import org.xtreemfs.osd.stages.StorageThread;
 import org.xtreemfs.osd.stages.Stage.StageResponseCode;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * 
@@ -76,7 +76,6 @@ import org.xtreemfs.test.SetupUtils;
  */
 public class ReplicationStageTest extends TestCase {
     RequestDispatcher dispatcher;
-    RequestController dir;
     int requestID = 0;
 
     private Capability capability;
@@ -86,6 +85,7 @@ public class ReplicationStageTest extends TestCase {
     // needed for dummy classes
     private int stripeSize;
     private ReusableBuffer data;
+    private TestEnvironment testEnv;
 
     public ReplicationStageTest() {
         super();
@@ -103,11 +103,17 @@ public class ReplicationStageTest extends TestCase {
         this.stripeSize = 128;
         this.data = SetupUtils.generateData(stripeSize * 1024);
 
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
+
         DIRConfig dirConfig = SetupUtils.createDIRConfig();
-        dir = new RequestController(dirConfig);
-        dir.startup();
+
         dispatcher = new TestRequestDispatcher(new InetSocketAddress(dirConfig.getAddress(), dirConfig
-                .getPort()), this.data);
+                .getPort()), this.data, testEnv.getDirClient());
 
         file = "1:1";
         capability = new Capability(file, "read", 0, "IAmTheClient");
@@ -122,7 +128,7 @@ public class ReplicationStageTest extends TestCase {
     @After
     public void tearDown() throws Exception {
         dispatcher.shutdown();
-        dir.shutdown();
+        testEnv.shutdown();
         // UUIDResolver.shutdown();
     }
 
@@ -266,19 +272,15 @@ public class ReplicationStageTest extends TestCase {
         private OSDClient osdClient;
         private DIRClient dirClient;
 
-        public TestRequestDispatcher(InetSocketAddress dirAddress, ReusableBuffer data) throws IOException {
+        public TestRequestDispatcher(InetSocketAddress dirAddress, ReusableBuffer data, DIRClient client) throws IOException {
             replication = new ReplicationStage(this);
             storage = new TestStorageStage(this);
             dummyStage = new DummyStage();
             speedy = new TestMultiSpeedy(data);
             osdClient = new OSDClient(speedy);
+            dirClient = client;
             // dirClient = new DIRClient(speedy,dirAddress);
-            try {
-                dirClient = SetupUtils.initTimeSync();
-            } catch (JSONException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            
 
             replication.start();
             storage.start();
@@ -377,6 +379,11 @@ public class ReplicationStageTest extends TestCase {
         public OSDClient getOSDClient() {
             // Auto-generated method stub
             return osdClient;
+        }
+
+        @Override
+        public MultiSpeedy getSpeedy() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

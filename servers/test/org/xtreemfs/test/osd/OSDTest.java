@@ -38,7 +38,6 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -48,12 +47,12 @@ import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * Class for testing the NewOSD It uses the old OSDTest tests. It checks if the
@@ -77,15 +76,14 @@ public class OSDTest extends TestCase {
 
     private final OSDConfig   osdConfig;
 
-    private DIRClient         dirClient;
 
     private OSDClient         client;
 
-    private RequestController dir;
 
     private OSD               osd;
 
     private Capability        cap;
+    private TestEnvironment testEnv;
 
     public OSDTest(String testName) throws Exception {
         super(testName);
@@ -122,26 +120,21 @@ public class OSDTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
 
-        dir = new RequestController(dirConfig);
-        dir.startup();
-
-        dirClient = SetupUtils.initTimeSync();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
 
         osd = new OSD(osdConfig);
-        client = SetupUtils.createOSDClient(10000);
+        client = testEnv.getOsdClient();
     }
 
     protected void tearDown() throws Exception {
         osd.shutdown();
-        dir.shutdown();
 
-        client.shutdown();
-        client.waitForShutdown();
-
-        if (dirClient != null) {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
-        }
+        testEnv.shutdown();
     }
 
     /**

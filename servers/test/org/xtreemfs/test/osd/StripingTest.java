@@ -38,7 +38,6 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -48,14 +47,15 @@ import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class StripingTest extends TestCase {
+    private TestEnvironment testEnv;
     
     static class MRCDummy implements RPCResponseListener {
         
@@ -144,9 +144,6 @@ public class StripingTest extends TestCase {
     
     private StripingPolicy      sp;
     
-    private RequestController   dir;
-    
-    private DIRClient           dirClient;
     
     /** Creates a new instance of StripingTest */
     public StripingTest(String testName) throws IOException {
@@ -170,10 +167,12 @@ public class StripingTest extends TestCase {
         
         FSUtils.delTree(new File(SetupUtils.TEST_DIR));
         
-        dir = new RequestController(dirConfig);
-        dir.startup();
-        
-        dirClient = SetupUtils.initTimeSync();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
         
         osdIDs = new ArrayList<ServiceUUID>(3);
         osdIDs.add(SetupUtils.getOSD1UUID());
@@ -185,7 +184,7 @@ public class StripingTest extends TestCase {
         osdServer.add(new OSD(osdCfg2));
         osdServer.add(new OSD(osdCfg3));
         
-        client = SetupUtils.createOSDClient(10000);
+        client = testEnv.getOsdClient();
         
         List<Location> locations = new ArrayList<Location>(1);
         
@@ -195,7 +194,6 @@ public class StripingTest extends TestCase {
         locations.add(new Location(sp, osd));
         loc = new Locations(locations);
         
-        SetupUtils.setupLocalResolver();
     }
     
     protected void tearDown() throws Exception {
@@ -203,15 +201,11 @@ public class StripingTest extends TestCase {
         client.shutdown();
         client.waitForShutdown();
         
-        if (dirClient != null) {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
-        }
-        
+        testEnv.shutdown();
+
         osdServer.get(0).shutdown();
         osdServer.get(1).shutdown();
         osdServer.get(2).shutdown();
-        dir.shutdown();
     }
     
     /* TODO: test delete/truncate epochs! */

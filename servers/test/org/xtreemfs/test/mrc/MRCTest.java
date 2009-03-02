@@ -41,14 +41,20 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
@@ -56,6 +62,7 @@ import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * XtreemFS integration test case.
@@ -66,15 +73,17 @@ public class MRCTest extends TestCase {
 
     private MRCRequestDispatcher mrc1;
 
-    private org.xtreemfs.dir.RequestController dirService;
-
-    private MRCClient client;
+    private DIRRequestDispatcher dirService;
 
     private MRCConfig mrcCfg1;
 
     private DIRConfig dsCfg;
 
+    private MRCClient client;
+
     private InetSocketAddress mrc1Address;
+
+    private TestEnvironment testEnv;
 
     public MRCTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL);
@@ -95,47 +104,61 @@ public class MRCTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
 
+        System.out.println("starting dir");
+
         // start the Directory Service
-        dirService = new org.xtreemfs.dir.RequestController(dsCfg);
+        dirService = new DIRRequestDispatcher(dsCfg);
         dirService.startup();
+        dirService.waitForStartup();
+
+        System.out.println("dir started");
 
         // register an OSD at the directory service (needed in order to assign
         // it to a new file on 'open')
-        DIRClient dirClient = SetupUtils.createDIRClient(1000);
+
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+                    TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER,TestEnvironment.Services.MRC_CLIENT
+        });
+        testEnv.start();
+
+        client = testEnv.getMrcClient();
+
         String authString = NullAuthProvider.createAuthString("mockUpOSD", "mockUpOSD");
         Map<String, Object> data = RPCClient.generateMap("type", "OSD", "free", "1000000000", "total",
                 "1000000000", "load", "0", "prot_versions", VersionManagement.getSupportedProtVersAsString(),
                 "totalRAM", "1000000000", "usedRAM", "0");
-        TimeSync
-                .initialize(dirClient, mrcCfg1.getRemoteTimeSync(), mrcCfg1.getLocalClockRenew(),
-                        NullAuthProvider.createAuthString(mrcCfg1.getUUID().toString(), mrcCfg1.getUUID()
-                                .toString()));
+
         try {
-            RPCResponse response = dirClient.registerEntity("mockUpOSD", data, 1, authString);
-            response.waitForResponse();
+            KeyValuePairSet kvset = new KeyValuePairSet();
+            kvset.add(new KeyValuePair("free", "1000000000"));
+            kvset.add(new KeyValuePair("total", "1000000000"));
+            kvset.add(new KeyValuePair("load", "0"));
+            kvset.add(new KeyValuePair("totalRAM", "1000000000"));
+            kvset.add(new KeyValuePair("usedRAM", "0"));
+            kvset.add(new KeyValuePair("proto_version", ""+OSDInterface.getVersion()));
+            ServiceRegistry reg = new ServiceRegistry("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD, "mockUpOSD", kvset);
+            org.xtreemfs.foundation.oncrpc.client.RPCResponse<Long> response = testEnv.getDirClient().service_register(null,reg);
+            response.get();
             response.freeBuffers();
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-        } finally {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
         }
+
+        System.out.println("starting MRC...");
 
         // start two MRCs
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
-
-        client = SetupUtils.createMRCClient(10000);
     }
 
     protected void tearDown() throws Exception {
 
         // shut down all services
         mrc1.shutdown();
-        client.shutdown();
+        
         dirService.shutdown();
 
-        client.waitForShutdown();
+        testEnv.shutdown();
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
 

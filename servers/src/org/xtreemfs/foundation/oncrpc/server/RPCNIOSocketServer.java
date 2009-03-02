@@ -152,6 +152,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      */
     public void sendResponse(ONCRPCRecord request) {
         assert(request.getResponseBuffers() != null);
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"response sent");
         final ClientConnection connection = request.getConnection();
         if (!connection.isConnectionClosed()) {
             synchronized (connection) {
@@ -309,6 +310,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this,rq.toString());
                             }
                             con.getOpenRequests().incrementAndGet();
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"request received");
                             receiveRequest(key,rq);
                         }
                     }

@@ -39,7 +39,6 @@ import org.xtreemfs.common.ClientLease;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -49,10 +48,11 @@ import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.RequestController;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * Class for testing the NewOSD It uses the old OSDTest tests. It checks if the
@@ -78,18 +78,15 @@ public class ClientLeaseTest extends TestCase {
 
     private OSDClient         client;
 
-    private final DIRConfig   dirConfig;
-
     private final OSDConfig   osdConfig;
 
-    private RequestController dir;
+    private TestEnvironment testEnv;
 
     public ClientLeaseTest(String testName) throws Exception {
         super(testName);
 
         Logging.start(Logging.LEVEL_TRACE);
 
-        dirConfig = SetupUtils.createDIRConfig();
         osdConfig = SetupUtils.createOSD1Config();
 
         // It sets the loc attribute
@@ -115,33 +112,27 @@ public class ClientLeaseTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
 
-        dir = new RequestController(dirConfig);
-        dir.startup();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
+        });
+        testEnv.start();
 
-        SetupUtils.initTimeSync();
-        
-        dirClient = SetupUtils.createDIRClient(10000);
+        dirClient = testEnv.getDirClient();
+        client = testEnv.getOsdClient();
 
         osd = new OSD(osdConfig);
-        client = SetupUtils.createOSDClient(10000);
     }
 
     protected void tearDown() throws Exception {
         osd.shutdown();
-        dir.shutdown();
-
-        client.shutdown();
-        client.waitForShutdown();
-
-        if (dirClient != null) {
-            dirClient.shutdown();
-            dirClient.waitForShutdown();
-        }
+        testEnv.shutdown();
     }
 
     public void testAcquireLease() throws Exception {
 
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");
@@ -160,8 +151,7 @@ public class ClientLeaseTest extends TestCase {
     
     public void testConflictingLeases() throws Exception {
 
-        assertNotNull(dirClient);
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");
@@ -189,8 +179,7 @@ public class ClientLeaseTest extends TestCase {
    
     public void testMultipleLeases() throws Exception {
 
-        assertNotNull(dirClient);
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");
@@ -225,8 +214,7 @@ public class ClientLeaseTest extends TestCase {
     
     public void testReturnLease() throws Exception {
 
-        assertNotNull(dirClient);
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");
@@ -264,8 +252,7 @@ public class ClientLeaseTest extends TestCase {
     
     public void testRenewLease() throws Exception {
 
-        assertNotNull(dirClient);
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");
@@ -293,8 +280,7 @@ public class ClientLeaseTest extends TestCase {
     
     public void testTimeout() throws Exception {
         
-        assertNotNull(dirClient);
-        OSDClient c = new OSDClient(dirClient.getSpeedy());
+        OSDClient c = testEnv.getOsdClient();
         
         ClientLease lease = new ClientLease(file);
         lease.setClientId("ABCDEF");

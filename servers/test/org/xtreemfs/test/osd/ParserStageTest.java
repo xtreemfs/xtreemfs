@@ -38,7 +38,6 @@ import junit.textui.TestRunner;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -47,11 +46,12 @@ import org.xtreemfs.common.striping.RAID0;
 import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
+import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDConfig;
@@ -63,6 +63,7 @@ import org.xtreemfs.osd.stages.ParserStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StageStatistics;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  * This class implements the tests for the ParserStage
@@ -90,6 +91,7 @@ public class ParserStageTest extends TestCase {
     TestRequestDispatcher master;
 
     boolean               finished;
+    private TestEnvironment testEnv;
 
     /** Creates a new instance of ParserStageTest */
     public ParserStageTest(String testName) throws Exception {
@@ -134,13 +136,20 @@ public class ParserStageTest extends TestCase {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
         stage.start();
 
-        SetupUtils.setupLocalResolver();
+        // startup: DIR
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
+                    TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.DIR_SERVICE
+        });
+        testEnv.start();
         UUIDResolver.addLocalMapping("osdX-uuid", 45454, SetupUtils.SSL_ON);
     }
 
     protected void tearDown() throws Exception {
         stage.shutdown();
         stage.waitForShutdown();
+
+        testEnv.shutdown();
     }
 
     public void testParseGetRequest() throws Exception {
@@ -885,6 +894,21 @@ public class ParserStageTest extends TestCase {
 
     private class TestRequestDispatcher implements RequestDispatcher {
 
+        @Override
+        public MultiSpeedy getSpeedy() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public DIRClient getDIRClient() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public OSDClient getOSDClient() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
         private class TestOp extends Operation {
 
             public TestOp(RequestDispatcher master) {
@@ -945,17 +969,6 @@ public class ParserStageTest extends TestCase {
         public void shutdown() {
         }
 
-        @Override
-        public DIRClient getDIRClient() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-        
-        @Override
-        public OSDClient getOSDClient() {
-            // TODO Auto-generated method stub
-            return null;
-        }
     }
 
 }

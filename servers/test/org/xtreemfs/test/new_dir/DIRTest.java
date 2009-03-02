@@ -43,12 +43,12 @@ import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
-import org.xtreemfs.interfaces.DIRInterface.deleteAddressMappingsResponse;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
-import org.xtreemfs.new_dir.DIRConfig;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
-import org.xtreemfs.new_dir.client.DIRClient;
+import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 /**
  *
@@ -58,42 +58,44 @@ public class DIRTest extends TestCase {
 
     DIRRequestDispatcher dir;
 
-    RPCNIOSocketClient   rpcClient;
-
     DIRConfig            config;
 
+    TestEnvironment      testEnv;
+
     public DIRTest() throws IOException {
-        config = SetupUtils.createNewDIRConfig();
+        config = SetupUtils.createDIRConfig();
         Logging.start(Logging.LEVEL_DEBUG);
-        TimeSync.initialize(null, 100000, 50, "");
     }
 
     @Before
     public void setUp() throws Exception {
+
         dir = new DIRRequestDispatcher(config);
         dir.startup();
         dir.waitForStartup();
 
-        rpcClient = new RPCNIOSocketClient(null, 5*1000, 15*1000);
-        rpcClient.start();
-        rpcClient.waitForStartup();
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+                    TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT
+        });
+        testEnv.start();
+
+        
     }
 
     @After
     public void tearDown() throws Exception {
-        rpcClient.shutdown();
         dir.shutdown();
 
         dir.waitForShutdown();
-        rpcClient.waitForShutdown();
+
+        testEnv.shutdown();
+        
     }
 
     //@Test
     public void testGlobalTime() throws Exception {
 
-        DIRClient client = new DIRClient(rpcClient, new InetSocketAddress("localhost",config.getPort()));
-
-        RPCResponse<Long> r = client.getGlobalTime(null);
+        RPCResponse<Long> r = testEnv.getDirClient().global_time_get(null);
         Long response = r.get();
 
     }
@@ -101,17 +103,17 @@ public class DIRTest extends TestCase {
     @Test
     public void testAddressMapping() throws Exception {
 
-        DIRClient client = new DIRClient(rpcClient, new InetSocketAddress("localhost",config.getPort()));
+        DIRClient client = testEnv.getDirClient();
 
         AddressMappingSet set = new AddressMappingSet();
         AddressMapping mapping = new AddressMapping("uuid1", 0, "oncrpc", "localhost", 12345, "*", 3600);
         set.add(mapping);
 
-        RPCResponse<Long> r1 = client.setAddressMapping(null, set);
+        RPCResponse<Long> r1 = client.address_mappings_set(null, set);
         r1.get();
         r1.freeBuffers();
 
-        r1 = client.setAddressMapping(null, set);
+        r1 = client.address_mappings_set(null, set);
         try {
             r1.get();
             fail();
@@ -119,7 +121,7 @@ public class DIRTest extends TestCase {
             //expected exception because of version mismatch
         }
 
-        RPCResponse<AddressMappingSet> r2 = client.getAddressMapping(null, "uuid1");
+        RPCResponse<AddressMappingSet> r2 = client.address_mappings_get(null, "uuid1");
         AddressMappingSet response = r2.get();
         assertEquals(response.size(),1);
         assertEquals(response.get(0).getUuid(),"uuid1");
@@ -127,7 +129,7 @@ public class DIRTest extends TestCase {
         assertEquals(response.get(0).getAddress(),"localhost");
         assertEquals(response.get(0).getVersion(),1);
 
-        RPCResponse<deleteAddressMappingsResponse> r3 = client.deleteAddressMapping(null, "uuid1");
+        RPCResponse r3 = client.address_mappings_delete(null, "uuid1");
         r3.get();
 
     }
@@ -135,17 +137,17 @@ public class DIRTest extends TestCase {
     @Test
     public void testRegistry() throws Exception {
 
-        DIRClient client = new DIRClient(rpcClient, new InetSocketAddress("localhost",config.getPort()));
+        DIRClient client = testEnv.getDirClient();
 
         KeyValuePairSet kvset = new KeyValuePairSet();
         kvset.add(new KeyValuePair("bla", "yagga"));
         ServiceRegistry sr = new ServiceRegistry("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", kvset);
 
-        RPCResponse<Long> r1 = client.registerService(null, sr);
+        RPCResponse<Long> r1 = client.service_register(null, sr);
         r1.get();
         r1.freeBuffers();
 
-        r1 = client.registerService(null, sr);
+        r1 = client.service_register(null, sr);
         try {
             r1.get();
             fail();
@@ -153,11 +155,11 @@ public class DIRTest extends TestCase {
             //expected exception because of version mismatch
         }
 
-        RPCResponse<ServiceRegistrySet> r2 = client.getServiceByUuid(null, "uuid1");
+        RPCResponse<ServiceRegistrySet> r2 = client.service_get_by_uuid(null, "uuid1");
         ServiceRegistrySet response = r2.get();
         
 
-        RPCResponse r3 = client.deregisterService(null, "uuid1");
+        RPCResponse r3 = client.service_deregister(null, "uuid1");
         r3.get();
 
     }

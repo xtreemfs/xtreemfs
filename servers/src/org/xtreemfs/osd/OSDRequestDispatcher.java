@@ -172,10 +172,10 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                 .getAddress(), this);
         pinky.setLifeCycleListener(this);
 
-        final SSLOptions clientSSLopts = new SSLOptions(new FileInputStream(config
+        final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false);
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
 
         speedy = config.isUsingSSL() ? new MultiSpeedy(clientSSLopts) : new MultiSpeedy();
         speedy.setLifeCycleListener(this);
