@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.xtreemfs.new_dir;
+package org.xtreemfs.dir;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

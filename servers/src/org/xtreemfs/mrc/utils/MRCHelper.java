@@ -37,6 +37,11 @@ import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
@@ -78,18 +83,17 @@ public class MRCHelper {
         nexists, dir, file
     }
     
-    public static Map<String, Object> createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan,
+    public static ServiceRegistry createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan,
         String mrcUUID) {
         
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
+
+        KeyValuePairSet kvset = new KeyValuePairSet();
+        kvset.add(new KeyValuePair("mrc", mrcUUID));
+        kvset.add(new KeyValuePair("free", free));
+        ServiceRegistry sreg = new ServiceRegistry(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol.getName(), kvset);
         
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("name", vol.getName());
-        map.put("mrc", mrcUUID);
-        map.put("type", "volume");
-        map.put("free", free);
-        
-        return map;
+        return sreg;
     }
     
     public static void updateFileTimes(long parentId, FileMetadata file, boolean setATime,
@@ -219,8 +223,7 @@ public class MRCHelper {
             throw new MRCException("could not open file " + path
                 + ": no default striping policy available");
         
-        Map<String, Map<String, Object>> osdMaps = (Map<String, Map<String, Object>>) osdMan
-                .getUsableOSDs(volume.getId());
+        ServiceRegistrySet osdMaps = osdMan.getUsableOSDs(volume.getId());
         
         if (osdMaps == null || osdMaps.size() == 0)
             throw new MRCException("could not open file " + path + ": no feasible OSDs available");

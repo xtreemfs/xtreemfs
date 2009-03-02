@@ -29,9 +29,10 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.striping.Location;
+import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.osd.ops.Operation;
 import org.xtreemfs.osd.stages.Stage;
@@ -51,6 +52,8 @@ public interface RequestDispatcher {
     }
 
     public Operation getOperation(Operations opCode);
+
+    public MultiSpeedy getSpeedy();
 
     public Stage getStage(Stages stage);
 

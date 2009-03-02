@@ -22,32 +22,30 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidRequest;
-import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidResponse;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.service_deregisterRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_deregisterResponse;
 
 /**
  *
  * @author bjko
  */
-public class GetServiceByUuidOperation extends DIROperation {
+public class DeregisterServiceOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public GetServiceByUuidOperation(DIRRequestDispatcher master) {
+    public DeregisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        getServiceByUuidRequest tmp = new getServiceByUuidRequest();
+        service_deregisterRequest tmp = new service_deregisterRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -60,21 +58,13 @@ public class GetServiceByUuidOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final getServiceByUuidRequest request = (getServiceByUuidRequest)rq.getRequestMessage();
+            final service_deregisterRequest request = (service_deregisterRequest)rq.getRequestMessage();
 
+            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
+            ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
+            database.directInsert(ig);
             
-            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
-                    DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-
-            ServiceRegistrySet services = new ServiceRegistrySet();
-            if (data != null) {
-                ServiceRegistry dbData = new ServiceRegistry();
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                dbData.deserialize(buf);
-                services.add(dbData);
-            }
-            
-            getServiceByUuidResponse response = new getServiceByUuidResponse(services);
+            service_deregisterResponse response = new service_deregisterResponse();
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -89,7 +79,7 @@ public class GetServiceByUuidOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        getServiceByUuidRequest amr = new getServiceByUuidRequest();
+        service_deregisterRequest amr = new service_deregisterRequest();
         rq.deserializeMessage(amr);
     }
 

@@ -39,14 +39,15 @@ import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -72,6 +73,8 @@ public class cleanup_osd {
     private static MRCClient      mrcClient;
     
     private static OSDClient      osdClient;
+
+    private static RPCNIOSocketClient rpcClient;
     
     // generate authString
     private static String         authString;
@@ -116,7 +119,9 @@ public class cleanup_osd {
             boolean verbose = options.get("v").switchValue != null;
             boolean erase = options.get("e").switchValue != null;
             boolean restore = options.get("r").switchValue != null;
-            
+
+
+
             // read default settings for the DIR
             if (dirURL == null) {
                 DefaultDirConfig cfg = new DefaultDirConfig(DEFAULT_DIR_CONFIG);
@@ -130,11 +135,17 @@ public class cleanup_osd {
                 trustedCAsPass = cfg.getTrustedCertsPassphrase();
                 sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
                     new FileInputStream(trustedCAsFile), trustedCAsPass) : null;
-                
-                dirClient = new DIRClient(cfg.getDirectoryService(), sslOptions, RPCClient.DEFAULT_TIMEOUT);
-            } else
-                dirClient = new DIRClient(new InetSocketAddress(dirURL.getHost(), dirURL.getPort()), null,
-                    RPCClient.DEFAULT_TIMEOUT);
+
+                rpcClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
+
+                dirClient = new DIRClient(rpcClient,cfg.getDirectoryService());
+            } else {
+                rpcClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
+                dirClient = new DIRClient(rpcClient,new InetSocketAddress(dirURL.getHost(), dirURL.getPort()));
+            }
+
+            rpcClient.start();
+            rpcClient.waitForStartup();
             
             // read default settings for the OSD
             String osdUUID = null;
@@ -155,7 +166,6 @@ public class cleanup_osd {
                  * InetSocketAddress(osdURL.getHost(), osdURL.getPort());
                  */
 
-                dirClient.shutdown();
                 usage();
             } else {
                 TimeSync.initialize(dirClient, 60000, 60000, authString);
@@ -297,6 +307,8 @@ public class cleanup_osd {
                 System.out.println("\n There are no zombies on that OSD.");
             
         } finally {
+            if (rpcClient != null)
+                rpcClient.shutdown();
             if (osdClient != null)
                 osdClient.shutdown();
             if (mrcClient != null)

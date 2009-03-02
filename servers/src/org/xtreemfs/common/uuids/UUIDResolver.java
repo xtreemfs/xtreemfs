@@ -34,11 +34,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.NetUtils;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.AddressMappingSet;
 
 /**
  * Resolves UUID to InetSocketAddress+Protocol mappings.
@@ -83,10 +85,10 @@ public final class UUIDResolver extends Thread {
             theInstance = this;
         }
         authString = NullAuthProvider.createAuthString("services", "xtreemfs");
-        List<Map<String,Object>> ntwrks = NetUtils.getReachableEndpoints(0, "http");
+        AddressMappingSet ntwrks = NetUtils.getReachableEndpoints(0, "http");
         myNetworks = new ArrayList(ntwrks.size());
-        for (Map<String,Object> network : ntwrks) {
-            myNetworks.add((String)network.get("match_network"));
+        for (AddressMapping network : ntwrks) {
+            myNetworks.add(network.getMatch_network());
         }
     }
 
@@ -146,28 +148,25 @@ public final class UUIDResolver extends Thread {
     UUIDCacheEntry fetchUUID(String uuid) throws UnknownUUIDException {
         if (dir == null)
             throw new UnknownUUIDException("there is no mapping for "+uuid+". Attention: local mode enabled, no remote lookup possible.");
-        RPCResponse<Map<String,List<Map<String,Object>>>> r = null;
+        RPCResponse<AddressMappingSet> r = null;
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"loading uuid mapping for "+uuid);
         try {
-            r = dir.getAddressMapping(uuid, authString);
+            r = dir.address_mappings_get(null,uuid);
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent request to DIR");
-            r.waitForResponse(2000);
-            List<Map<String,Object>> l = r.get().get(uuid);
+            AddressMappingSet ams = r.get();
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"received response for "+uuid);
-            if ((l == null) || (l.size() == 1)) {
+            if (ams.size() == 0) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"NO UUID MAPPING FOR: "+uuid);
                 throw new UnknownUUIDException("uuid "+uuid+" is not registered at directory server");
             }
-            List<Map<String,Object>> mappings = (List<Map<String, Object>>) l.get(1);
-            for (int i = 0; i < mappings.size(); i++) {
-                Map<String,Object> addrMapping = mappings.get(i);
-                final String network = (String)addrMapping.get("match_network");
+            for (AddressMapping addrMapping : ams) {
+                final String network = addrMapping.getMatch_network();
                 if (myNetworks.contains(network) || (network.equals("*"))) {
-                    final String address = (String)addrMapping.get("address");
-                    final String protocol = (String)addrMapping.get("protocol");
-                    final int port = (int) ((Long)addrMapping.get("port")).intValue();
-                    final long validUntil = TimeSync.getLocalSystemTime() + ((Long)addrMapping.get("ttl"))*1000;
+                    final String address = addrMapping.getAddress();
+                    final String protocol = addrMapping.getProtocol();
+                    final int port = addrMapping.getPort();
+                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl()*1000;
                     final InetSocketAddress endpoint = new InetSocketAddress(address,port);
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, this,"matching uuid record found for uuid "+uuid+" with network "+network);

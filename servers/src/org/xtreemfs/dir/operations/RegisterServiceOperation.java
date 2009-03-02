@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
@@ -30,28 +30,26 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.DIRInterface.setAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.setAddressMappingsResponse;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
-import org.xtreemfs.interfaces.Exceptions.InvalidArgumentException;
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.service_registerRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_registerResponse;
 
 /**
  *
  * @author bjko
  */
-public class SetAddressMappingOperation extends DIROperation {
+public class RegisterServiceOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public SetAddressMappingOperation(DIRRequestDispatcher master) {
+    public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        setAddressMappingsRequest tmp = new setAddressMappingsRequest();
+        service_registerRequest tmp = new service_registerRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -64,54 +62,37 @@ public class SetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final setAddressMappingsRequest request = (setAddressMappingsRequest)rq.getRequestMessage();
+            final service_registerRequest request = (service_registerRequest)rq.getRequestMessage();
 
-            final AddressMappingSet mappings = request.getAddress_mappings();
-            String uuid = null;
-            if (mappings.size() == 0) {
-                rq.sendException(new InvalidArgumentException("must send at least one mapping"));
-                return;
-            }
-            for (AddressMapping am : mappings) {
-                if (uuid == null)
-                    uuid = am.getUuid();
-                if (!am.getUuid().equals(uuid)) {
-                    rq.sendException(new InvalidArgumentException("all mappings must have the same UUID"));
-                    return;
-                }
-            }
+            final ServiceRegistry reg = request.getService();
 
-            assert(uuid != null);
-            assert(database != null);
-
-            AddressMappingSet dbData = new AddressMappingSet();
-            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes());
+            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
+                    DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes());
             long currentVersion = 0;
             if (data != null) {
+                ServiceRegistry dbData = new ServiceRegistry();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 dbData.deserialize(buf);
-                if (dbData.size() > 0) {
-                    currentVersion = dbData.get(0).getVersion();
-                }
+                currentVersion = dbData.getVersion();
             }
 
-            if (mappings.get(0).getVersion() != currentVersion) {
+            if (reg.getVersion() != currentVersion) {
                 rq.sendException(new ConcurrentModificationException());
                 return;
             }
 
             currentVersion++;
 
-            mappings.get(0).setVersion(currentVersion);
+            reg.setVersion(currentVersion);
 
-            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(mappings.calculateSize());
-            mappings.serialize(writer);
+            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(reg.calculateSize());
+            reg.serialize(writer);
             byte[] newData = writer.getBuffers().get(0).array();
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
-            ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newData);
+            ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
             database.directInsert(ig);
             
-            setAddressMappingsResponse response = new setAddressMappingsResponse(currentVersion);
+            service_registerResponse response = new service_registerResponse(currentVersion);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -121,12 +102,12 @@ public class SetAddressMappingOperation extends DIROperation {
 
     @Override
     public boolean isAuthRequired() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        setAddressMappingsRequest amr = new setAddressMappingsRequest();
+        service_registerRequest amr = new service_registerRequest();
         rq.deserializeMessage(amr);
     }
 

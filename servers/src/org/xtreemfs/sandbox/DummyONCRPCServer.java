@@ -16,14 +16,11 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.getAddressMappingsResponse;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
-import org.xtreemfs.interfaces.Exceptions.errnoException;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.mrc.ErrNo;
 
 /**
  *
@@ -44,10 +41,10 @@ public class DummyONCRPCServer {
                             System.out.println("request received");
                             ReusableBuffer buf = rq.getRequestFragment();
 
-                            getAddressMappingsRequest rpcRequest = new getAddressMappingsRequest();
+                            address_mappings_getRequest rpcRequest = new address_mappings_getRequest();
                             rpcRequest.deserialize(buf);
 
-                            getAddressMappingsResponse rpcResponse = new getAddressMappingsResponse();
+                            address_mappings_getResponse rpcResponse = new address_mappings_getResponse();
 
                             if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                                 rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
@@ -76,7 +73,7 @@ public class DummyONCRPCServer {
 
                 ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
 
-                getAddressMappingsRequest rq = new getAddressMappingsRequest("Yagga");
+                address_mappings_getRequest rq = new address_mappings_getRequest("Yagga");
 
                 final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.calculateSize() + rq.calculateSize(), true);
                 System.out.println("fragment size is " + fragHdr + "/" + (rqHdr.calculateSize() + rq.calculateSize()));
@@ -126,7 +123,7 @@ public class DummyONCRPCServer {
                 System.out.println("bytes left: " + buf.remaining());
 
 
-                getAddressMappingsResponse resp = new getAddressMappingsResponse();
+                address_mappings_getResponse resp = new address_mappings_getResponse();
                 resp.deserialize(buf);
 
                 System.out.println("everything ok!");

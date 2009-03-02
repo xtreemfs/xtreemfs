@@ -43,7 +43,6 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.clients.RPCResponseListener;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.logging.Logging;
@@ -52,11 +51,17 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
 import org.xtreemfs.foundation.speedy.SpeedyResponseListener;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.ErrorRecord;
 import org.xtreemfs.osd.OSDException;
 import org.xtreemfs.osd.OSDRequest;
@@ -922,7 +927,7 @@ public class StorageThread extends Stage {
         String authString = NullAuthProvider.createAuthString(master.getConfig().getUUID().toString(), master.getConfig().getUUID().toString());
 
         // get the volume-locations from the directory service (DIR)        
-        RPCResponse<Map<String, Map<String, Object>>> dirResponse = null;     
+        org.xtreemfs.foundation.oncrpc.client.RPCResponse<ServiceRegistrySet> dirResponse = null;
         
         // for counting the answers
         Set<String> volumeIDs = fileList.unresolvedVolumeIDSet();
@@ -935,70 +940,82 @@ public class StorageThread extends Stage {
         }
         
         for(final String volumeID: volumeIDs){
-            try{
-                // ask the DIR for the UUID
-                dirResponse = master.getDIRClient().getEntities(RPCClient.generateMap("uuid", volumeID), 
-                                                                DIRClient.generateStringList("mrc"), 
-                                                                authString);   
-             
-                // get the responses asynchronous
-                dirResponse.setResponseListener(new RPCResponseListener() {                  
-                    @Override
-                    public void responseAvailable(RPCResponse response) {
-                        try{
-                            long count = (Long) req.getRq().getAttachment();
-                            count++;
-                            req.getRq().setAttachment(count);
-                        
-                            ServiceUUID uuidService;
-                            
-                            Map<String, Map<String, Object>> answer = (Map<String, Map<String, Object>>) response.get();                           
-                            if (answer==null) throw new IOException("Answer of the request was 'null'");
-                            
-                            // volume is not registered at the DIR
-                            if (answer.get(volumeID) == null || answer.get(volumeID).get("mrc") == null){
-                                
-                                // mark all files of that volume as zombies 
-                                fileList.saveAddress(volumeID, null);                           
-                            }else{
-                                InetSocketAddress address = null;
-                                // parse answer
-                                try{
-                                    URL url = new URL(((String) answer.get(volumeID).get("mrc")));
-                                    address = new InetSocketAddress(url.getHost(),url.getPort());
-                                }catch (MalformedURLException mf){
-                                    // resolve the UUID
-                                    uuidService = new ServiceUUID(((String) answer.get(volumeID).get("mrc")));       
-                                    uuidService.resolve();
-                                    address = uuidService.getAddress();
-                                }
-                                
-                                // save the address
-                                fileList.saveAddress(volumeID,address);
-                            }  
-    
-                            // check if all responses have been received
-                            if (volumesToRequest == count){
-                                Logging.logMessage(Logging.LEVEL_TRACE, this, "CleanUp: all volumes identified!");
-                                req.getRq().setAttachment(fileList);
-                                thisStage.enqueueOperation(req.getRq(), STAGEOP_CLEAN_UP2, req.getCallback());
+            // ask the DIR for the UUID
+            dirResponse = master.getDIRClient().service_get_by_type(null, Constants.SERVICE_TYPE_VOLUME);
+
+            // get the responses asynchronous
+            dirResponse.registerListener(new RPCResponseAvailableListener<ServiceRegistrySet>() {
+
+                @Override
+                public void responseAvailable(org.xtreemfs.foundation.oncrpc.client.RPCResponse<ServiceRegistrySet> r) {
+                    try{
+                        r.get();
+                        long count = (Long) req.getRq().getAttachment();
+                        count++;
+                        req.getRq().setAttachment(count);
+
+                        ServiceUUID uuidService;
+
+                        ServiceRegistrySet answer = r.get();
+                        if (answer==null) throw new IOException("Answer of the request was 'null'");
+
+                        // volume is not registered at the DIR
+                        ServiceRegistry vol = null;
+                        for (ServiceRegistry reg : answer) {
+                            if (reg.getUuid().equals(volumeID)) {
+                                vol = reg;
+                                break;
                             }
-                        }catch(UnknownUUIDException ue){
-                            Logging.logMessage(Logging.LEVEL_ERROR, this, "UUID could not be resolved for: '"+volumeID+"': "+ue.getMessage());
-                        }catch(JSONException je){
-                            Logging.logMessage(Logging.LEVEL_ERROR, this, "JSON Parser could not get response: "+je.getMessage());
-                        }catch (IOException io) {
-                            Logging.logMessage(Logging.LEVEL_ERROR, this, "Parser could not get response: "+io.getMessage());
-                        }catch (InterruptedException ie){
-                            Logging.logMessage(Logging.LEVEL_WARN, this, "CleanUp was interrupted: "+ie.getMessage());
-                        }finally{
-                            response.freeBuffers();
-                        } 
+                        }
+
+                        String mrc = null;
+                        if (vol != null) {
+                            for (KeyValuePair kv : vol.getData()) {
+                                if (kv.getKey().equals("mrc")) {
+                                    mrc = kv.getValue();
+                                    break;
+                                }
+                            }
+                        }
+
+
+                        if ( (vol == null) || (mrc == null) ){
+
+                            // mark all files of that volume as zombies
+                            fileList.saveAddress(volumeID, null);
+                        }else{
+                            InetSocketAddress address = null;
+                            // parse answer
+
+                            // resolve the UUID
+                            uuidService = new ServiceUUID(mrc);
+                            uuidService.resolve();
+                            address = uuidService.getAddress();
+
+                            // save the address
+                            fileList.saveAddress(volumeID,address);
+                        }
+
+                        // check if all responses have been received
+                        if (volumesToRequest == count){
+                            Logging.logMessage(Logging.LEVEL_TRACE, this, "CleanUp: all volumes identified!");
+                            req.getRq().setAttachment(fileList);
+                            thisStage.enqueueOperation(req.getRq(), STAGEOP_CLEAN_UP2, req.getCallback());
+                        }
+                    } catch (ONCRPCException ex) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "UUID could not be resolved for: '"+volumeID+"': "+ex);
+                    }catch(UnknownUUIDException ue){
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "UUID could not be resolved for: '"+volumeID+"': "+ue.getMessage());
+                    }catch (IOException io) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "Parser could not get response: "+io.getMessage());
+                    }catch (InterruptedException ie){
+                        Logging.logMessage(Logging.LEVEL_WARN, this, "CleanUp was interrupted: "+ie.getMessage());
+                    }finally{
+                        r.freeBuffers();
                     }
-                });
-            }catch (InterruptedException ie) {
-                throw new IOException("DIRClient was interrupted while working on a CleanUp request.");
-            }   
+                }
+            });
+             
         }
     }
     
@@ -1030,7 +1047,7 @@ public class StorageThread extends Stage {
             fileIDs = fileList.getFileNumbers(volumeID);
             
             // ask the MRC whether the files in the list exist, or not
-            mrcResponse = new MRCClient(master.getDIRClient().getSpeedy(),60000)
+            mrcResponse = new MRCClient(master.getSpeedy(),60000)
                                         .checkFileList(fileList.getAddress(volumeID), 
                                                        volumeID,
                                                        fileIDs,

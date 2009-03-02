@@ -21,7 +21,7 @@
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
-package org.xtreemfs.new_dir;
+package org.xtreemfs.dir;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -51,15 +51,15 @@ import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ErrNo;
-import org.xtreemfs.new_dir.operations.DIROperation;
-import org.xtreemfs.new_dir.operations.DeleteAddressMappingOperation;
-import org.xtreemfs.new_dir.operations.DeregisterServiceOperation;
-import org.xtreemfs.new_dir.operations.GetAddressMappingOperation;
-import org.xtreemfs.new_dir.operations.GetGlobalTimeOperation;
-import org.xtreemfs.new_dir.operations.GetServiceByUuidOperation;
-import org.xtreemfs.new_dir.operations.GetServicesByTypeOperation;
-import org.xtreemfs.new_dir.operations.RegisterServiceOperation;
-import org.xtreemfs.new_dir.operations.SetAddressMappingOperation;
+import org.xtreemfs.dir.operations.DIROperation;
+import org.xtreemfs.dir.operations.DeleteAddressMappingOperation;
+import org.xtreemfs.dir.operations.DeregisterServiceOperation;
+import org.xtreemfs.dir.operations.GetAddressMappingOperation;
+import org.xtreemfs.dir.operations.GetGlobalTimeOperation;
+import org.xtreemfs.dir.operations.GetServiceByUuidOperation;
+import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
+import org.xtreemfs.dir.operations.RegisterServiceOperation;
+import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 
 /**
  * 

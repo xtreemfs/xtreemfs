@@ -22,10 +22,10 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
 
 /**
  * 

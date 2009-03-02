@@ -18,7 +18,6 @@ import java.util.HashMap;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 

@@ -15,46 +15,44 @@ import java.util.ArrayList;
 
          
 
-public class getServicesRequest implements Request
+public class global_time_getRequest implements Request
 {
-    public getServicesRequest() { type = 0; }
-    public getServicesRequest( int type ) { this.type = type; }
+    public global_time_getRequest() {  }
 
-    public int getType() { return type; }
-    public void setType( int type ) { this.type = type; }
+
 
     // Object
     public String toString()
     {
-        return "getServicesRequest( " + Integer.toString( type ) + " )";
+        return "global_time_getRequest()";
     }    
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::getServicesRequest"; }    
+    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::global_time_getRequest"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        writer.putInt( type );        
+        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        type = buf.getInt();    
+    
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += ( Integer.SIZE / 8 );
+
         return my_size;
     }
 
-    private int type;
+
     
 
     // Request
     public int getInterfaceVersion() { return 1; }    
-    public int getOperationNumber() { return 5; }
-    public Response createDefaultResponse() { return new getServicesResponse(); }
+    public int getOperationNumber() { return 8; }
+    public Response createDefaultResponse() { return new global_time_getResponse(); }
 
 }
 

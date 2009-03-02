@@ -24,29 +24,22 @@
 
 package org.xtreemfs.osd;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.Request;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.checksums.ChecksumFactory;
 import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
-import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.striping.Location;
@@ -54,8 +47,10 @@ import org.xtreemfs.common.trace.Tracer;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
@@ -65,6 +60,12 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.HTTPHeaders.HeaderEntry;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.foundation.speedy.SpeedyRequest;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.osd.ops.AcquireLease;
 import org.xtreemfs.osd.ops.CheckObjectRPC;
 import org.xtreemfs.osd.ops.CleanUpOperation;
@@ -122,6 +123,8 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
     protected final DIRClient       dirClient;
     
     protected final OSDClient       osdClient;
+
+    protected final RPCNIOSocketClient rpcClient;
     
     protected long                  requestId;
     
@@ -168,12 +171,17 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                     .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(), config
                 .getAddress(), this);
         pinky.setLifeCycleListener(this);
-        
-        speedy = config.isUsingSSL() ? new MultiSpeedy(new SSLOptions(new FileInputStream(config
+
+        final SSLOptions clientSSLopts = new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false)) : new MultiSpeedy();
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false);
+
+        speedy = config.isUsingSSL() ? new MultiSpeedy(clientSSLopts) : new MultiSpeedy();
         speedy.setLifeCycleListener(this);
+
+        rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5*60*1000);
+        rpcClient.setLifeCycleListener(this);
         
         udpCom = new UDPCommunicator(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
@@ -204,7 +212,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
         
-        dirClient = new DIRClient(speedy, config.getDirectoryService());
+        dirClient = new DIRClient(rpcClient, config.getDirectoryService());
         osdClient = new OSDClient(speedy);
         
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(), authString);
@@ -212,7 +220,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
-            public Map<String, Map<String, Object>> getServiceData() {
+            public ServiceRegistrySet getServiceData() {
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
                 String freeSpace = "0";
@@ -236,11 +244,19 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
-                Map<String, Map<String, Object>> data = new HashMap<String, Map<String, Object>>();
-                data.put(config.getUUID().toString(), RPCClient.generateMap("type", "OSD", "free", freeSpace,
-                    "total", totalSpace, "load", load, "prot_versions", VersionManagement
-                            .getSupportedProtVersAsString(), "totalRAM", Long.toString(totalRAM), "usedRAM",
-                    Long.toString(usedRAM), "geoCoordinates", config.getGeoCoordinates()));
+                ServiceRegistrySet data = new ServiceRegistrySet();
+
+                KeyValuePairSet kvset = new KeyValuePairSet();
+                kvset.add(new KeyValuePair("total", totalSpace));
+                kvset.add(new KeyValuePair("free", freeSpace));
+                kvset.add(new KeyValuePair("totalRAM", Long.toString(totalRAM)));
+                kvset.add(new KeyValuePair("usedRAM", Long.toString(usedRAM)));
+                kvset.add(new KeyValuePair("geoCoordinates", config.getGeoCoordinates()));
+                kvset.add(new KeyValuePair("proto_version", Integer.toString(OSDInterface.getVersion())));
+                ServiceRegistry me = new ServiceRegistry(config.getUUID().toString(), 0
+                        , Constants.SERVICE_TYPE_OSD, "OSD @ "+config.getUUID(), kvset);
+                data.add(me);
+
                 return data;
             }
         };
@@ -258,13 +274,15 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
             pinky.start();
             speedy.start();
             udpCom.start();
+            rpcClient.start();
             
             pinky.waitForStartup();
             speedy.waitForStartup();
             udpCom.waitForStartup();
+            rpcClient.waitForStartup();
             
-            TimeSync.initialize(new DIRClient(speedy, new InetSocketAddress("localhost", 32638)), 60000, 50,
-                authString);
+            /*TimeSync.initialize(new DIRClient(rpcClient, new InetSocketAddress("localhost", 32638)), 60000, 50,
+                authString);*/
             
             for (Stage stage : stages)
                 stage.start();
@@ -297,6 +315,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
             pinky.shutdown();
             speedy.shutdown();
             udpCom.shutdown();
+            rpcClient.shutdown();
             
             for (Stage stage : stages)
                 stage.shutdown();
@@ -311,6 +330,7 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
                 Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
             }
             udpCom.waitForShutdown();
+            rpcClient.waitForShutdown();
             
             for (Stage stage : stages)
                 stage.waitForShutdown();
@@ -536,6 +556,11 @@ public class OSDRequestDispatcher implements RequestDispatcher, PinkyRequestList
         File f = new File(config.getObjDir());
         long s = f.getTotalSpace();
         return s;
+    }
+
+    @Override
+    public MultiSpeedy getSpeedy() {
+        return this.speedy;
     }
     
 }

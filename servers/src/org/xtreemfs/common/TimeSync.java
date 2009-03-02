@@ -28,9 +28,11 @@ package org.xtreemfs.common;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 
 /**
  * A class that offers a local time w/ adjustable granularity and a global time
@@ -193,7 +195,7 @@ public final class TimeSync extends Thread {
             long tStart = localSysTime;
 
             long oldDrift = currentDrift;
-            RPCResponse<Long> r = dir.getGlobalTime(authStr);
+            RPCResponse<Long> r = dir.global_time_get(null);
             Long globalTime = r.get();
             r.freeBuffers();
             long tEnd = System.currentTimeMillis();
@@ -227,9 +229,12 @@ public final class TimeSync extends Thread {
     public static void main(String[] args) {
         try {
             // simple test
-            Logging.start(Logging.LEVEL_INFO);
+            Logging.start(Logging.LEVEL_DEBUG);
 
-            DIRClient dir = new DIRClient(null, new InetSocketAddress(
+            RPCNIOSocketClient c = new RPCNIOSocketClient(null, 5000, 60000);
+            c.start();
+            c.waitForStartup();
+            DIRClient dir = new DIRClient(c, new InetSocketAddress(
                 "xtreem.zib.de", 32638));
             TimeSync ts = new TimeSync(dir, 1000, 50, NullAuthProvider.createAuthString("me", "me"));
             ts.start();

@@ -38,17 +38,22 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -135,7 +140,7 @@ public class AsyncScrubber {
         
         assert (sharedSpeedy != null);
         // dirClient = new DIRClient(sharedSpeedy, dirAddress);
-        TimeSync.initialize(dirClient, 100000, 50, authString);
+        TimeSync.initialize(null, 100000, 50, authString);
         
         mrcClient = new MRCClient(sharedSpeedy);
         // UUIDResolver.shutdown();
@@ -503,22 +508,46 @@ public class AsyncScrubber {
         
         // resolve volume MRC
         Map<String, Object> query = RPCClient.generateMap(isVolUUID ? "uuid" : "name", volume);
-        DIRClient dirClient = new DIRClient(dirAddr, sslOptions, RPCClient.DEFAULT_TIMEOUT);
+        RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 5000, 5*60000);
+        rpcClient.start();
+        rpcClient.waitForStartup();
+        DIRClient dirClient = new DIRClient(rpcClient,dirAddr);
         TimeSync.initialize(dirClient, 100000, 50, authString);
         
-        RPCResponse<Map<String, Map<String, Object>>> resp = dirClient.getEntities(query, RPCClient
-                .generateStringList("mrc", "name"), authString);
-        Map<String, Map<String, Object>> result = resp.get();
+        org.xtreemfs.foundation.oncrpc.client.RPCResponse<ServiceRegistrySet> resp = dirClient.service_get_by_type(null,Constants.SERVICE_TYPE_VOLUME);
+        ServiceRegistrySet result = resp.get();
         resp.freeBuffers();
         
-        if (result.isEmpty()) {
+        ServiceRegistry volReg = null;
+        
+        if (isVolUUID) {
+            for (ServiceRegistry reg : result) {
+                if (reg.getUuid().equals(volume))
+                    volReg = reg;
+            }
+        } else {
+            for (ServiceRegistry reg : result) {
+                if (reg.getService_name().equals(volume))
+                    volReg = reg;
+            }
+        }
+
+        if (volReg == null) {
             System.err.println("volume '" + arguments.get(0) + "' could not be found at Directory Service '"
                 + dirURL + "'");
             System.exit(3);
         }
-        Map<String, Object> volMap = result.values().iterator().next();
-        String mrc = (String) volMap.get("mrc");
-        volume = (String) volMap.get("name");
+        volume = volReg.getService_name();
+
+        String mrc = null;
+        for (KeyValuePair kv : volReg.getData()) {
+            if (kv.getKey().equals("mrc"))
+                mrc = kv.getValue();
+        }
+        if (mrc == null) {
+            System.err.println("volume '" + arguments.get(0) + "' has no valid ");
+            System.exit(3);
+        }
         
         UUIDResolver.start(dirClient, 60 * 60, 10 * 60 * 60);
         
@@ -541,7 +570,7 @@ public class AsyncScrubber {
         
         TimeSync.close();
         UUIDResolver.shutdown();
-        dirClient.shutdown();
+        rpcClient.shutdown();
         
     }
     

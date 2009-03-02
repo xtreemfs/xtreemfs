@@ -62,6 +62,8 @@ public abstract class ONCRPCClient {
      */
     public ONCRPCClient(RPCNIOSocketClient client, InetSocketAddress defaultServer,
             int programId, int versionNumber) {
+        if (client == null)
+            throw new IllegalArgumentException("A valid client is required, null is not allowed.");
         this.client = client;
         this.defaultServer = defaultServer;
         this.versionNumber = versionNumber;

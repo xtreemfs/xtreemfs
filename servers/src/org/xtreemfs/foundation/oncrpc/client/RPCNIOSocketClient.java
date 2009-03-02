@@ -117,7 +117,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         synchronized (connections) {
             con = connections.get(server);
             if (con == null) {
-                con = new ServerConnection();
+                con = new ServerConnection(server);
                 connections.put(server, con);
             }
         }
@@ -212,7 +212,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"cannot contact server "+con.getChannel().socket().getInetAddress());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"cannot contact server "+con.getEndpoint());
                 }
                 con.connectFailed();
                 for (ONCRPCRequest rq : con.getSendQueue()) {
@@ -222,7 +222,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             }
         } else {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"reconnect to server still blocked "+con.getChannel().socket().getInetAddress());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"reconnect to server still blocked "+con.getEndpoint());
             }
             synchronized (con) {
                 for (ONCRPCRequest rq : con.getSendQueue()) {
@@ -471,6 +471,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             cancelRq.addAll(con.getSendQueue());
             con.getRequests().clear();
             con.getSendQueue().clear();
+            con.setChannel(null);
         }
 
         //notify listeners
@@ -479,7 +480,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "closing connection to " + channel.socket().getRemoteSocketAddress());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "closing connection to " + con.getEndpoint());
         }
     }
 

@@ -23,6 +23,7 @@
  */
 package org.xtreemfs.foundation.oncrpc.client;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,9 +71,11 @@ public class ServerConnection {
     private boolean              lastResponseFragReceived;
 
     private ONCRPCRequest   sendRequest;
+
+    private final InetSocketAddress    endpoint;
     
 
-    public ServerConnection() {
+    public ServerConnection(InetSocketAddress endpoint) {
         requests = new HashMap();
         lastUsed = TimeSync.getLocalSystemTime();
         numConnectAttempts = 0;
@@ -81,6 +84,7 @@ public class ServerConnection {
         requestFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
         responseFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
         clearResponseFragments();
+        this.endpoint = endpoint;
     }
 
     boolean isConnected() {
@@ -203,6 +207,13 @@ public class ServerConnection {
      */
     void setLastResponseFragReceived(boolean lastResponseFragReceived) {
         this.lastResponseFragReceived = lastResponseFragReceived;
+    }
+
+    /**
+     * @return the endpoint
+     */
+    public InetSocketAddress getEndpoint() {
+        return endpoint;
     }
 
 }

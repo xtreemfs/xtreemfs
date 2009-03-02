@@ -23,7 +23,7 @@ public class DIRInterface
             case 5: return new service_deregisterRequest();
             case 6: return new service_get_by_typeRequest();
             case 7: return new service_get_by_uuidRequest();
-            case 8: return new globa_time_getRequest();
+            case 8: return new global_time_getRequest();
             case 50: return new admin_checkpointRequest();
             case 51: return new admin_shutdownRequest();
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
@@ -41,7 +41,7 @@ public class DIRInterface
             case 5: return new service_deregisterResponse();
             case 6: return new service_get_by_typeResponse();
             case 7: return new service_get_by_uuidResponse();
-            case 8: return new globa_time_getResponse();
+            case 8: return new global_time_getResponse();
             case 50: return new admin_checkpointResponse();
             case 51: return new admin_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );

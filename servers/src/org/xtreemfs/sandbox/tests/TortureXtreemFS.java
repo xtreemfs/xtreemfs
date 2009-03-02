@@ -33,10 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.utils.CLIParser;
@@ -111,7 +112,11 @@ public class TortureXtreemFS {
 
             speedy.start();
 
-            DIRClient dir = new DIRClient(speedy,new InetSocketAddress(dirURL.getHost(),dirURL.getPort()));
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
+            rpcClient.start();
+            rpcClient.waitForStartup();
+
+            DIRClient dir = new DIRClient(rpcClient,new InetSocketAddress(dirURL.getHost(),dirURL.getPort()));
             UUIDResolver.start(dir, 10000, 9999999);
             System.out.println("file size from 64k to 512MB with record length from 4k to 1M");
             
@@ -185,7 +190,7 @@ public class TortureXtreemFS {
             
             System.out.println("finished");
             speedy.shutdown();
-            dir.shutdown();
+            rpcClient.shutdown();
             UUIDResolver.shutdown();
         } catch (Exception ex) {
             ex.printStackTrace();

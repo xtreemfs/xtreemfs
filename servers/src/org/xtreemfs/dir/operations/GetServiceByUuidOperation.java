@@ -22,30 +22,32 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.DIRInterface.deleteAddressMappingsRequest;
-import org.xtreemfs.interfaces.DIRInterface.deleteAddressMappingsResponse;
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidResponse;
 
 /**
  *
  * @author bjko
  */
-public class DeleteAddressMappingOperation extends DIROperation {
+public class GetServiceByUuidOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public DeleteAddressMappingOperation(DIRRequestDispatcher master) {
+    public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
-        deleteAddressMappingsRequest tmp = new deleteAddressMappingsRequest();
+        service_get_by_uuidRequest tmp = new service_get_by_uuidRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -58,13 +60,21 @@ public class DeleteAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final deleteAddressMappingsRequest request = (deleteAddressMappingsRequest)rq.getRequestMessage();
+            final service_get_by_uuidRequest request = (service_get_by_uuidRequest)rq.getRequestMessage();
 
-            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
-            ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            database.directInsert(ig);
             
-            deleteAddressMappingsResponse response = new deleteAddressMappingsResponse();
+            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
+                    DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
+
+            ServiceRegistrySet services = new ServiceRegistrySet();
+            if (data != null) {
+                ServiceRegistry dbData = new ServiceRegistry();
+                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                dbData.deserialize(buf);
+                services.add(dbData);
+            }
+            
+            service_get_by_uuidResponse response = new service_get_by_uuidResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -74,12 +84,12 @@ public class DeleteAddressMappingOperation extends DIROperation {
 
     @Override
     public boolean isAuthRequired() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        deleteAddressMappingsRequest amr = new deleteAddressMappingsRequest();
+        service_get_by_uuidRequest amr = new service_get_by_uuidRequest();
         rq.deserializeMessage(amr);
     }
 

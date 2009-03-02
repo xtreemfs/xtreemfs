@@ -39,6 +39,9 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 
 public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     
@@ -46,7 +49,8 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
                                                             
     static final long MIN_FREE_CAPACITY = 32 * 1024 * 1024; // 32 mb
                                                             
-    public Map<String, Map<String, Object>> getUsableOSDs(Map<String, Map<String, Object>> osds,
+    @Override
+    public ServiceRegistrySet getUsableOSDs(ServiceRegistrySet osds,
         String args) {
         
         Set<String> rules = null;
@@ -61,14 +65,12 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
             }
         }
         
-        Map<String, Map<String, Object>> suitable = new HashMap<String, Map<String, Object>>();
-        for (String uuid : osds.keySet()) {
-            
+        ServiceRegistrySet suitable = new ServiceRegistrySet();
+        for (ServiceRegistry osd : osds) {
             try {
-                Map<String, Object> osd = osds.get(uuid);
-                if ((rules == null || follows(uuid, rules))
+                if ((rules == null || follows(osd.getUuid(), rules))
                     && (hasFreeCapacity(osd) && !hasTimedOut(osd)))
-                    suitable.put(uuid, osd);
+                    suitable.add(osd);
                 
             } catch (NullPointerException e) {
                 continue;
@@ -77,8 +79,14 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         return suitable;
     }
     
-    static boolean hasFreeCapacity(Map<String, Object> osd) {
-        long free = Long.parseLong((String) osd.get("free"));
+    static boolean hasFreeCapacity(ServiceRegistry osd) {
+        String freeStr = null;
+        for (KeyValuePair kv : osd.getData()) {
+            if (kv.getKey().equals("free"))
+                freeStr = kv.getValue();
+        }
+
+        long free = Long.parseLong(freeStr);
         return free > MIN_FREE_CAPACITY;
     }
     
@@ -87,12 +95,18 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
      * (String) osd.get("location"); return location; }
      */
 
-    static boolean hasTimedOut(Map<String, Object> osd) {
-        
+    static boolean hasTimedOut(ServiceRegistry osd) {
+
+        String lastUpdated = null;
+        for (KeyValuePair kv : osd.getData()) {
+            if (kv.getKey().equals("lastUpdated"))
+                lastUpdated = kv.getValue();
+        }
+
         // if the OSD has contacted the DS within the last 10 minutes,
         // assume that it is still running
-        if (osd.containsKey("lastUpdated")) {
-            long updateTimestamp = Long.parseLong((String) osd.get("lastUpdated"));
+        if (lastUpdated != null) {
+            long updateTimestamp = Long.parseLong(lastUpdated);
             long currentTime = TimeSync.getGlobalTime() / 1000;
             return currentTime - updateTimestamp > OSD_TIMEOUT_SPAN;
         } else

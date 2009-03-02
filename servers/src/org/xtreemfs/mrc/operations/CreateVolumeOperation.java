@@ -30,11 +30,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -111,11 +116,13 @@ public class CreateVolumeOperation extends MRCOperation {
             List<String> attrs = new LinkedList<String>();
             attrs.add("version");
             
-            RPCResponse<Map<String, Map<String, Object>>> response = master.getDirClient()
-                    .getEntities(queryMap, attrs, master.getAuthString());
-            response.setResponseListener(new RPCResponseListener() {
-                public void responseAvailable(RPCResponse response) {
-                    processStep2(rqArgs, volumeId, rq, response);
+            RPCResponse<ServiceRegistrySet> response = master.getDirClient()
+                    .service_get_by_type(null,Constants.SERVICE_TYPE_VOLUME);
+            response.registerListener(new RPCResponseAvailableListener<ServiceRegistrySet>() {
+
+                @Override
+                public void responseAvailable(RPCResponse<ServiceRegistrySet> r) {
+                    processStep2(rqArgs, volumeId, rq, r);
                 }
             });
             
@@ -130,36 +137,36 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     private void processStep2(final Args rqArgs, final String volumeId, final MRCRequest rq,
-        RPCResponse<Map<String, Map<String, Object>>> rpcResponse) {
+        RPCResponse<ServiceRegistrySet> rpcResponse) {
         
         try {
             
             // check the response; if a volume with the same name has already
             // been registered, return an error
             
-            Map<String, Map<String, Object>> response = rpcResponse.get();
+            ServiceRegistrySet response = rpcResponse.get();
             
             // check if the volume already exists
             if (!response.isEmpty()) {
                 
-                String uuid = response.keySet().iterator().next();
+                String uuid = response.get(0).getUuid();
                 throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.volumeName
                     + "' already exists in Directory Service, id='" + uuid + "'");
             }
             
             // otherwise, register the volume at the Directory Service
+
+            KeyValuePairSet kvset = new KeyValuePairSet();
+            kvset.add(new KeyValuePair("mrc", master.getConfig().getUUID().toString()));
+            kvset.add(new KeyValuePair("free", "0"));
+            ServiceRegistry vol = new ServiceRegistry(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, rqArgs.volumeName, kvset);
             
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("name", rqArgs.volumeName);
-            map.put("mrc", master.getConfig().getUUID().toString());
-            map.put("type", "volume");
-            map.put("free", "0");
-            
-            RPCResponse rpcResponse2 = master.getDirClient().registerEntity(volumeId, map, 0L,
-                master.getAuthString());
-            rpcResponse2.setResponseListener(new RPCResponseListener() {
-                public void responseAvailable(RPCResponse response) {
-                    processStep3(rqArgs, volumeId, rq, response);
+            RPCResponse<Long> rpcResponse2 = master.getDirClient().service_register(null, vol);
+            rpcResponse2.registerListener(new RPCResponseAvailableListener<Long>() {
+
+                @Override
+                public void responseAvailable(RPCResponse<Long> r) {
+                    processStep3(rqArgs, volumeId, rq, r);
                 }
             });
             
@@ -174,14 +181,14 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     public void processStep3(final Args rqArgs, final String volumeId, final MRCRequest rq,
-        RPCResponse rpcResponse) {
+        RPCResponse<Long> rpcResponse) {
         
         try {
             
             // check whether an exception has occured; if so, an exception is
             // thrown when trying to parse the response
             
-            rpcResponse.waitForResponse();
+            rpcResponse.get();
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value

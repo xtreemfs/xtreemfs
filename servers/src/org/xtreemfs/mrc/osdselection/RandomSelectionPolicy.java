@@ -27,7 +27,8 @@ package org.xtreemfs.mrc.osdselection;
 import java.net.InetAddress;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 
 /**
  * A very simple policy that accepts all osds!
@@ -42,15 +43,15 @@ public class RandomSelectionPolicy extends AbstractSelectionPolicy{
     public RandomSelectionPolicy() {
     }
 
-    public String[] getOSDsForNewFile(Map<String, Map<String, Object>> osdMap,
+    public String[] getOSDsForNewFile(ServiceRegistrySet osdMap,
         InetAddress clientAddress, int amount, String args) {
 
         // first, sort out all OSDs with insufficient free capacity
         String[] osds = new String[amount];
         List<String> list = new LinkedList<String>();
-        for (String osd : osdMap.keySet()) {
-            if (hasFreeCapacity(osdMap.get(osd)))
-                list.add(osd);
+        for (ServiceRegistry osd : osdMap) {
+            if (hasFreeCapacity(osd))
+                list.add(osd.getUuid());
         }
 
         // from the remaining set, take a random subset of OSDs

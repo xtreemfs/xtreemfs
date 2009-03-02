@@ -22,50 +22,48 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir;
+package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.global_time_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.global_time_getResponse;
 
 /**
  *
  * @author bjko
  */
-public class DIRRequest {
+public class GetGlobalTimeOperation extends DIROperation {
 
-    private final ONCRPCRequest rpcRequest;
+    private final int operationNumber;
 
-    private Serializable        requestMessage;
-
-    public DIRRequest(ONCRPCRequest rpcRequest) {
-        this.rpcRequest = rpcRequest;
+    public GetGlobalTimeOperation(DIRRequestDispatcher master) {
+        super(master);
+        global_time_getRequest tmp = new global_time_getRequest();
+        operationNumber = tmp.getOperationNumber();
     }
 
-    public void deserializeMessage(Serializable message) {
-        final ReusableBuffer payload = rpcRequest.getRequestFragment();
-        message.deserialize(payload);
-        requestMessage = message;
+    @Override
+    public int getProcedureId() {
+        return operationNumber;
     }
 
-    public Serializable getRequestMessage() {
-        return requestMessage;
+    @Override
+    public void startRequest(DIRRequest rq) {
+        global_time_getResponse gtr = new global_time_getResponse();
+        gtr.setReturnValue(System.currentTimeMillis()/1000);
+        rq.sendSuccess(gtr);
     }
 
-    public void sendSuccess(Serializable response) {
-        rpcRequest.sendResponse(response);
+    @Override
+    public boolean isAuthRequired() {
+        return false;
     }
 
-    public void sendInternalServerError() {
+    @Override
+    public void parseRPCMessage(DIRRequest rq) throws Exception {
+        global_time_getRequest gtr = new global_time_getRequest();
+        rq.deserializeMessage(gtr);
     }
-
-    public void sendException(Serializable exception) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending exception return value: "+exception);
-        }
-        rpcRequest.sendGenericException(exception);
-    }
-
 
 }

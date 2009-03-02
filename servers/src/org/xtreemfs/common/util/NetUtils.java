@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.clients.RPCClient;
+import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.AddressMappingSet;
 
 public class NetUtils {
     
@@ -46,10 +48,10 @@ public class NetUtils {
      * @return a list of mappings
      * @throws IOException
      */
-    public static List<Map<String, Object>> getReachableEndpoints(int port, String protocol)
+    public static AddressMappingSet getReachableEndpoints(int port, String protocol)
         throws IOException {
         
-        List<Map<String, Object>> endpoints = new LinkedList<Map<String, Object>>();
+        AddressMappingSet endpoints = new AddressMappingSet();
         
         // first, try to find a globally reachable endpoint
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
@@ -75,8 +77,7 @@ public class NetUtils {
                     continue;
                 
                 if (!(inetAddr.isLinkLocalAddress() || inetAddr.isSiteLocalAddress())) {
-                    endpoints.add(RPCClient.generateMap("address", inetAddr.getHostAddress(),
-                        "port", port, "protocol", protocol, "ttl", 3600, "match_network", "*"));
+                    endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*", 3600));
                     break;
                 }
                 
@@ -114,8 +115,7 @@ public class NetUtils {
                     InetAddress inetAddr = addr.getAddress();
                     
                     if (inetAddr.isSiteLocalAddress()) {
-                        endpoints.add(RPCClient.generateMap("address", inetAddr.getHostAddress(),
-                            "port", port, "protocol", protocol, "ttl", 3600, "match_network", "*"));
+                        endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*", 3600));
                         break;
                     }
                 }
@@ -156,7 +156,7 @@ public class NetUtils {
         }
         
         System.out.println("\nsuitable network interfaces: ");
-        for (Map<String, Object> endpoint : NetUtils.getReachableEndpoints(32640, "http"))
+        for (AddressMapping endpoint : NetUtils.getReachableEndpoints(32640, "http"))
             System.out.println(endpoint);
     }
     

@@ -31,6 +31,8 @@ import java.util.PriorityQueue;
 import java.util.Map;
 import java.net.URI;
 import java.net.UnknownHostException;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 
 public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
@@ -39,7 +41,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
     private byte[] clientAddress;
     private long clientAddressLong;
 
-    public String[] getOSDsForNewFile(Map<String, Map<String, Object>> osdMap,
+    public String[] getOSDsForNewFile(ServiceRegistrySet osdSet,
             InetAddress clientAddress, int amount, String args) {
 
         this.clientAddress = clientAddress.getAddress();
@@ -51,10 +53,10 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
         PriorityQueue<Pair> queue = new PriorityQueue<Pair>();
         LinkedList<String> list = new LinkedList<String>();
 
-        for (String osd : osdMap.keySet()) {
-            if (hasFreeCapacity(osdMap.get(osd))) {
+        for (ServiceRegistry osd : osdSet) {
+            if (hasFreeCapacity(osd)) {
                 try {
-                    queue.add(new Pair(osd, distance(osdMap.get(osd))));
+                    queue.add(new Pair(osd, distance(osd)));
                 } catch (UnknownHostException e) {
                 }
             }
@@ -62,7 +64,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
         for (int i = 0; !queue.isEmpty()
                 && (queue.peek().getDistance() == 0 || i < amount); i++)
-            list.add(queue.poll().getOsd());
+            list.add(queue.poll().getOsd().getUuid());
 
         for (int i = 0; !list.isEmpty() && i < amount; i++)
             osds[i] = list.remove((int) (Math.random() * list.size()));
@@ -71,9 +73,9 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     }
 
-    private long distance(Map<String, Object> osd) throws UnknownHostException {
+    private long distance(ServiceRegistry osd) throws UnknownHostException {
 
-        byte[] osdAddress = InetAddress.getByName(
+        /*byte[] osdAddress = InetAddress.getByName(
                 (URI.create((String) osd.get("uri")).getHost())).getAddress();
 
         // if osd in same subnet as client
@@ -82,7 +84,8 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
                 && osdAddress[2] == clientAddress[2])
             return 0;
 
-        return Math.abs(inetAddressToLong(osdAddress) - clientAddressLong);
+        return Math.abs(inetAddressToLong(osdAddress) - clientAddressLong);*/
+        return 1;
     }
 
     public long inetAddressToLong(byte[] address) {
@@ -105,10 +108,10 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     class Pair implements Comparable<Pair> {
 
-        private String osd;
+        private ServiceRegistry osd;
         private long distance;
 
-        Pair(String osd, long distance) {
+        Pair(ServiceRegistry osd, long distance) {
             this.osd = osd;
             this.distance = distance;
         }
@@ -121,7 +124,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
             return distance;
         }
 
-        public String getOsd() {
+        public ServiceRegistry getOsd() {
             return osd;
         }
 

@@ -22,30 +22,31 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.DIRInterface.deregisterServiceRequest;
-import org.xtreemfs.interfaces.DIRInterface.deregisterServiceResponse;
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
 
 /**
  *
  * @author bjko
  */
-public class DeregisterServiceOperation extends DIROperation {
+public class GetAddressMappingOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public DeregisterServiceOperation(DIRRequestDispatcher master) {
+    public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        deregisterServiceRequest tmp = new deregisterServiceRequest();
+        address_mappings_getRequest tmp = new address_mappings_getRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -58,14 +59,18 @@ public class DeregisterServiceOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final deregisterServiceRequest request = (deregisterServiceRequest)rq.getRequestMessage();
+            final address_mappings_getRequest request = (address_mappings_getRequest)rq.getRequestMessage();
 
-            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
-            ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-            database.directInsert(ig);
-            
-            deregisterServiceResponse response = new deregisterServiceResponse();
-            rq.sendSuccess(response);
+            byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
+            if (result == null) {
+                address_mappings_getResponse response = new address_mappings_getResponse();
+                rq.sendSuccess(response);
+            } else {
+                AddressMappingSet set = new AddressMappingSet();
+                set.deserialize(ReusableBuffer.wrap(result));
+                address_mappings_getResponse response = new address_mappings_getResponse(set);
+                rq.sendSuccess(response);
+            }
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
             rq.sendInternalServerError();
@@ -79,7 +84,7 @@ public class DeregisterServiceOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        deregisterServiceRequest amr = new deregisterServiceRequest();
+        address_mappings_getRequest amr = new address_mappings_getRequest();
         rq.deserializeMessage(amr);
     }
 

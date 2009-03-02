@@ -28,11 +28,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.RPCResponseListener;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -87,11 +87,13 @@ public class DeleteVolumeOperation extends MRCOperation {
                 rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // deregister the volume from the Directory Service
-            RPCResponse<Map<String, Map<String, Object>>> response = master.getDirClient()
-                    .deregisterEntity(volume.getId(), master.getAuthString());
-            response.setResponseListener(new RPCResponseListener() {
-                public void responseAvailable(RPCResponse response) {
-                    processStep2(rqArgs, volume.getId(), rq, response);
+            RPCResponse response = master.getDirClient()
+                    .service_deregister(null,volume.getId());
+            response.registerListener(new RPCResponseAvailableListener() {
+
+                @Override
+                public void responseAvailable(RPCResponse r) {
+                    processStep2(rqArgs, volume.getId(), rq, r);
                 }
             });
             
@@ -112,7 +114,7 @@ public class DeleteVolumeOperation extends MRCOperation {
             
             // check whether an exception has occured; if so, an exception is
             // thrown when trying to parse the response
-            rpcResponse.waitForResponse();
+            rpcResponse.get();
             
             // FIXME: this line is needed due to a BUG in the client which
             // expects some useless return value

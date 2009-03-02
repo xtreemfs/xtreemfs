@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package org.xtreemfs.new_dir.client;
+package org.xtreemfs.dir.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -59,7 +59,7 @@ public class uuidmappings {
             final DIRClient client = new DIRClient(rpcClient, new InetSocketAddress(hostname,port.intValue()));
             if ( options.get("g").switchValue &&
                     (options.get("uuid").stringValue != null)) {
-                RPCResponse<AddressMappingSet> response = client.getAddressMapping(null, options.get("uuid").stringValue);
+                RPCResponse<AddressMappingSet> response = client.address_mappings_get(null, options.get("uuid").stringValue);
                 AddressMappingSet ams = response.get();
                 printAddressMappings(ams);
             }
@@ -70,7 +70,7 @@ public class uuidmappings {
                 Matcher m = p.matcher(options.get("mapping").stringValue);
                 if (m.matches()) {
 
-                    RPCResponse<AddressMappingSet> response = client.getAddressMapping(null, options.get("uuid").stringValue);
+                    RPCResponse<AddressMappingSet> response = client.address_mappings_get(null, options.get("uuid").stringValue);
                     AddressMappingSet ams = response.get();
                     long version = 0;
                     if (ams.size() > 0) {
@@ -81,7 +81,7 @@ public class uuidmappings {
                             m.group(2),m.group(3),Integer.valueOf(m.group(4)),m.group(1),3600);
                     ams.clear();
                     ams.add(am);
-                    RPCResponse<Long> r =client.setAddressMapping(null, ams);
+                    RPCResponse<Long> r =client.address_mappings_set(null, ams);
                     r.get();
                 } else
                     System.out.println("not a valid mapping: "+options.get("mapping").stringValue);

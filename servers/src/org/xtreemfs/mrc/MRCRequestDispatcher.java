@@ -43,13 +43,14 @@ import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.dir.DIRClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.HTTPHeaders;
 import org.xtreemfs.foundation.pinky.HTTPUtils;
 import org.xtreemfs.foundation.pinky.PinkyRequest;
@@ -58,6 +59,12 @@ import org.xtreemfs.foundation.pinky.PipelinedPinky;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -77,13 +84,19 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author bjko
  */
 public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleListener, DBAccessResultListener {
-    
+
+    private static final int             RPC_TIMEOUT = 10000;
+
+    private static final int             CONNECTION_TIMEOUT = 5*60*1000;
+
     private final PipelinedPinky         pinkyStage;
     
     private final MultiSpeedy            speedyStage;
     
     private final DIRClient              dirClient;
-    
+
+    private final RPCNIOSocketClient     rpcClient;
+
     private final ProcessingStage        procStage;
     
     /**
@@ -115,11 +128,13 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 .toString());
         
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
-        
-        speedyStage = config.isUsingSSL() ? new MultiSpeedy(new SSLOptions(new FileInputStream(config
+
+        SSLOptions sslOptions = new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false)) : new MultiSpeedy();
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false);
+
+        speedyStage = config.isUsingSSL() ? new MultiSpeedy(sslOptions) : new MultiSpeedy();
         speedyStage.setLifeCycleListener(this);
         
         pinkyStage = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config.getAddress(), this,
@@ -129,8 +144,9 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                     .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(), config
                 .getAddress(), this);
         pinkyStage.setLifeCycleListener(this);
-        
-        dirClient = new DIRClient(speedyStage, config.getDirectoryService());
+
+        rpcClient = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+        dirClient = new DIRClient(rpcClient, config.getDirectoryService());
         
         policyContainer = new PolicyContainer(config);
         authProvider = policyContainer.getAuthenticationProvider();
@@ -148,7 +164,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
-            public Map<String, Map<String, Object>> getServiceData() {
+            public ServiceRegistrySet getServiceData() {
                 
                 String uuid = config.getUUID().toString();
                 
@@ -160,22 +176,28 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
                 // get service data
-                Map<String, Map<String, Object>> map = new HashMap<String, Map<String, Object>>();
-                map.put(uuid, RPCClient.generateMap("type", "MRC", "load", load, "prot_versions",
-                    VersionManagement.getSupportedProtVersAsString(), "totalRAM", Long.toString(totalRAM),
-                    "usedRAM", Long.toString(usedRAM), "geoCoordinates", config.getGeoCoordinates()));
+                ServiceRegistrySet sregs = new ServiceRegistrySet();
+                KeyValuePairSet kvset = new KeyValuePairSet();
+                kvset.add(new KeyValuePair("proto_version", Integer.toString(MRCInterface.getVersion())));
+                kvset.add(new KeyValuePair("totalRAM", Long.toString(totalRAM)));
+                kvset.add(new KeyValuePair("usedRAM", Long.toString(usedRAM)));
+                kvset.add(new KeyValuePair("geoCoordinated", config.getGeoCoordinates()));
+
+
+                ServiceRegistry mrcReg = new ServiceRegistry(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "+uuid, kvset);
+                sregs.add(mrcReg);
                 
                 try {
                     for (VolumeInfo vol : volumeManager.getVolumes()) {
-                        Map<String, Object> dsVolumeInfo = MRCHelper
+                        ServiceRegistry dsVolumeInfo = MRCHelper
                                 .createDSVolumeInfo(vol, osdMonitor, uuid);
-                        map.put(vol.getId(), dsVolumeInfo);
+                        sregs.add(dsVolumeInfo);
                     }
                 } catch (DatabaseException exc) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
                 }
                 
-                return map;
+                return sregs;
             }
             
         };
@@ -185,7 +207,10 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     }
     
     public void startup() throws Exception {
-        
+
+        rpcClient.start();
+        rpcClient.waitForStartup();
+
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(), authString);
         
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
@@ -231,6 +256,9 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         volumeManager.shutdown();
         
         TimeSync.getInstance().shutdown();
+
+        rpcClient.shutdown();
+        rpcClient.waitForShutdown();
     }
     
     public void requestFinished(MRCRequest request) {
@@ -338,15 +366,16 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             Collection<VolumeInfo> vols = volumeManager.getVolumes();
             for (VolumeInfo v : vols) {
                 
-                Map<String, Map<String, Object>> osdList = osdMonitor.getUsableOSDs(v.getId());
+                ServiceRegistrySet osdList = osdMonitor.getUsableOSDs(v.getId());
                 
                 volTableBuf.append("<tr><td align=\"left\">");
                 volTableBuf.append(v.getName());
                 volTableBuf
                         .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
-                Iterator<String> it = osdList.keySet().iterator();
+                Iterator<ServiceRegistry> it = osdList.iterator();
                 while (it.hasNext()) {
-                    final ServiceUUID osdUUID = new ServiceUUID(it.next());
+                    ServiceRegistry osd = it.next();
+                    final ServiceUUID osdUUID = new ServiceUUID(osd.getUuid());
                     volTableBuf.append("<a href=\"");
                     volTableBuf.append(osdUUID.toURL());
                     volTableBuf.append("\">");

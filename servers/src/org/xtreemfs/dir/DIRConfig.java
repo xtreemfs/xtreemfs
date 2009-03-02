@@ -22,7 +22,7 @@
  * AUTHORS: Jan Stender (ZIB)
  */
 
-package org.xtreemfs.new_dir;
+package org.xtreemfs.dir;
 
 import java.io.IOException;
 import java.util.Properties;

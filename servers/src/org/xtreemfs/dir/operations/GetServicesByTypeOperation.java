@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_dir.operations;
+package org.xtreemfs.dir.operations;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -30,13 +30,12 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.DIRInterface.getServiceByUuidRequest;
-import org.xtreemfs.interfaces.DIRInterface.getServicesByTypeRequest;
-import org.xtreemfs.interfaces.DIRInterface.getServicesByTypeResponse;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
-import org.xtreemfs.new_dir.DIRRequest;
-import org.xtreemfs.new_dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.DIRRequest;
+import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_typeRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_typeResponse;
 
 /**
  *
@@ -50,7 +49,7 @@ public class GetServicesByTypeOperation extends DIROperation {
 
     public GetServicesByTypeOperation(DIRRequestDispatcher master) {
         super(master);
-        getServiceByUuidRequest tmp = new getServiceByUuidRequest();
+        service_get_by_typeRequest tmp = new service_get_by_typeRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -63,7 +62,7 @@ public class GetServicesByTypeOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final getServicesByTypeRequest request = (getServicesByTypeRequest)rq.getRequestMessage();
+            final service_get_by_typeRequest request = (service_get_by_typeRequest)rq.getRequestMessage();
 
 
             Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
@@ -79,7 +78,7 @@ public class GetServicesByTypeOperation extends DIROperation {
                     services.add(servEntry);
             }
 
-            getServicesByTypeResponse response = new getServicesByTypeResponse(services);
+            service_get_by_typeResponse response = new service_get_by_typeResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -94,7 +93,7 @@ public class GetServicesByTypeOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        getServicesByTypeRequest amr = new getServicesByTypeRequest();
+        service_get_by_typeRequest amr = new service_get_by_typeRequest();
         rq.deserializeMessage(amr);
     }
 
