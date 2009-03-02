@@ -15,8 +15,11 @@ import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.ServiceRegistry;
 
 /**
  *
@@ -123,44 +126,56 @@ public class StatusPage {
         dump.append("</td></tr></table>");
 
 
-        //iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
-        /*
-        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Data Mapping</td>");
+        iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+        
+        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
-        for (String uuid : entities.keySet()) {
-            Map<String, String> entry = entities.get(uuid);
+        while (iter.hasNext()) {
+            Entry<byte[],byte[]> e = iter.next();
+            final String uuid = new String(e.getKey());
+            final ServiceRegistry sreg = new ServiceRegistry();
+            sreg.deserialize(ReusableBuffer.wrap(e.getValue()));
+
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\">");
-            List<String> keys = new LinkedList<String>(entry.keySet());
-            Collections.sort(keys);
-            for (String key : keys) {
-                if (key.equals("version")) {
-                    continue;
-                }
+
+            dump.append("<tr><td width=\"30%\">");
+            dump.append("type");
+            dump.append("</td><td><b>");
+            dump.append(sreg.getService_type());
+            dump.append("</b></td></tr>");
+
+            dump.append("<tr><td width=\"30%\">");
+            dump.append("name");
+            dump.append("</td><td><b>");
+            dump.append(sreg.getService_name());
+            dump.append("</b></td></tr>");
+
+            for (KeyValuePair kv : sreg.getData()) {
                 dump.append("<tr><td width=\"30%\">");
-                dump.append(key);
+                dump.append(kv.getKey());
                 dump.append("</td><td><b>");
-                dump.append(entry.get(key));
-                if (key.equals("lastUpdated")) {
+                dump.append(kv.getValue());
+                if (kv.getKey().equals("lastUpdated")) {
                     dump.append(" (");
-                    dump.append(new Date(Long.parseLong(entry.get(key)) * 1000));
+                    dump.append(new Date(Long.parseLong(kv.getValue()) * 1000));
                     dump.append(")");
-                } else if (key.equals("free") || key.equals("total") || key.endsWith("RAM")) {
+                } else if (kv.getKey().equals("free") || kv.getKey().equals("total") || kv.getKey().endsWith("RAM")) {
                     dump.append(" bytes (");
-                    dump.append(OutputUtils.formatBytes(Long.parseLong(entry.get(key))));
+                    dump.append(OutputUtils.formatBytes(Long.parseLong(kv.getValue())));
                     dump.append(")");
-                } else if (key.equals("load")) {
+                } else if (kv.getKey().equals("load")) {
                     dump.append("%");
                 }
                 dump.append("</b></td></tr>");
             }
             dump.append("<td></td><td class=\"version\">version: <b>");
-            dump.append(entry.get("version"));
+            dump.append(sreg.getVersion());
             dump.append("</b></td></table></td></tr>");
         }
         dump.append("</table>");
-        */
+        
         String tmp = null;
         try {
             tmp = statusPageTemplate.replace(Vars.AVAILPROCS.toString(), Runtime.getRuntime().availableProcessors() + " bytes");

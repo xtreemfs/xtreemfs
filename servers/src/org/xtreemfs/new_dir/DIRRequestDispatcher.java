@@ -67,7 +67,21 @@ import org.xtreemfs.new_dir.operations.SetAddressMappingOperation;
  */
 public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
     LifeCycleListener {
-    
+
+    /**
+     * index for address mappings, stores uuid -> AddressMappingSet
+     */
+    public static final int                    INDEX_ID_ADDRMAPS = 0;
+
+    /**
+     * index for service registries, stores uuid -> ServiceRegistry
+     */
+    public static final int                    INDEX_ID_SERVREG = 1;
+
+    private final HttpServer                   httpServ;
+
+    private int                                numRequests;
+
     private final Map<Integer, DIROperation>   registry;
     
     private final RPCNIOSocketServer           server;
@@ -79,14 +93,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private final BabuDB                       database;
     
     public static final String                 DB_NAME           = "dirdb";
-    
-    public static final int                    INDEX_ID_ADDRMAPS = 0;
-    
-    public static final int                    INDEX_ID_SERVREG  = 1;
-    
-    private final HttpServer                   httpServ;
-    
-    private int                                numRequests;
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
@@ -241,7 +247,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             op.startRequest(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendGarbageArgs(new errnoException(ErrNo.EINVAL, ex.toString()));
+            rq.sendGarbageArgs(new errnoException(ErrNo.EINVAL, ex.toString(), ""));
             return;
         }
     }

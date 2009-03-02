@@ -81,4 +81,8 @@ public abstract class ONCRPCClient {
         return rpcresp;
     }
 
+    public boolean clientIsAlive() {
+        return client.isAlive();
+    }
+
 }

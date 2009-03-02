@@ -5,12 +5,11 @@
 
 package org.xtreemfs.test.foundation.oncrpc.server;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
-
 import junit.framework.TestCase;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,15 +39,9 @@ public class SimpleRPCClientTest extends TestCase {
     RPCNIOSocketServer server;
     RPCNIOSocketClient client;
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    public SimpleRPCClientTest() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG);
         TimeSync.initialize(null, 100000, 50, "");
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        TimeSync.close();
     }
 
     @Test

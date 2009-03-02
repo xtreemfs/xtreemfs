@@ -43,17 +43,8 @@ public class SimpleRPCServerTest extends TestCase {
     RPCNIOSocketServer server;
 
     public SimpleRPCServerTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG);
         TimeSync.initialize(null, 100000, 50, "");
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        TimeSync.close();
     }
 
     @Before

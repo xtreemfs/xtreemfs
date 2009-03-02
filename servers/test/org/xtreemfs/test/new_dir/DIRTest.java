@@ -26,9 +26,7 @@ package org.xtreemfs.test.new_dir;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-
 import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -66,17 +64,8 @@ public class DIRTest extends TestCase {
 
     public DIRTest() throws IOException {
         config = SetupUtils.createNewDIRConfig();
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG);
         TimeSync.initialize(null, 100000, 50, "");
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        TimeSync.close();
     }
 
     @Before

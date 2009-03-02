@@ -185,6 +185,7 @@ public class RandomAccessFile implements ObjectStore {
 
         List<ServiceUUID> osds = locations.getOSDsByObject(objectNo);
 
+        int size = 0;
         ReusableBuffer data = null;
         for (ServiceUUID osd : sortOSDs(osds)) {
             try {
@@ -198,6 +199,8 @@ public class RandomAccessFile implements ObjectStore {
                 
                 response.getBody().flip();
                 data = response.getBody();
+                if (data != null)
+                    size = data.limit();
                 break;
             } catch (IOException e) {
                 continue; // try next OSD
@@ -206,7 +209,7 @@ public class RandomAccessFile implements ObjectStore {
                     response.freeBuffers();
             }
         }
-        return (data==null) ? 0 : data.limit();
+        return size;
     }
 
     /**
