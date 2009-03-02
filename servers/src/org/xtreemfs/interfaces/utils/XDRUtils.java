@@ -45,6 +45,35 @@ public class XDRUtils {
     public static final int MAX_ARRAY_ELEMS = 8*1024;
 
 
+    public static ReusableBuffer deserializeSerializableBuffer(ReusableBuffer data) {
+        final int dataSize = data.getInt();
+        final ReusableBuffer viewbuf = data.createViewBuffer();
+        viewbuf.range(viewbuf.position(), dataSize);
+        if (dataSize % 4 > 0) {
+            for (int k = 0; k < (4 - (dataSize % 4)); k++) {
+                data.get();
+            }
+        }
+        return viewbuf;
+    }
+
+    public static void serializeSerializableBuffer(ReusableBuffer data, ONCRPCBufferWriter writer) {
+        final int len = data.remaining();
+        writer.put(data);
+        if (len % 4 > 0) {
+            for (int k = 0; k < (4 - (len % 4)); k++) {
+                writer.put((byte)0);
+            }
+        }
+    }
+
+    public static int serializableBufferLength(ReusableBuffer data) {
+        int len = data.capacity();
+        if (len % 4 > 0)
+            len += 4 - (len % 4);
+        return len;
+    }
+
     public static String deserializeString(ReusableBuffer buf) {
         final int strlen = buf.getInt();
         if (strlen > MAX_STRLEN)

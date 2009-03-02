@@ -16,44 +16,50 @@ import java.util.ArrayList;
    
 public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public DirectoryEntry() { path = ""; stbuf = new org.xtreemfs.interfaces.stat_(); }
-    public DirectoryEntry( String path, stat_ stbuf ) { this.path = path; this.stbuf = stbuf; }
+    public DirectoryEntry() { entry_name = ""; stbuf = new org.xtreemfs.interfaces.stat_(); link_target = ""; }
+    public DirectoryEntry( String entry_name, stat_ stbuf, String link_target ) { this.entry_name = entry_name; this.stbuf = stbuf; this.link_target = link_target; }
 
-    public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
+    public String getEntry_name() { return entry_name; }
+    public void setEntry_name( String entry_name ) { this.entry_name = entry_name; }
     public stat_ getStbuf() { return stbuf; }
     public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
+    public String getLink_target() { return link_target; }
+    public void setLink_target( String link_target ) { this.link_target = link_target; }
 
     // Object
     public String toString()
     {
-        return "DirectoryEntry( " + "\"" + path + "\"" + ", " + stbuf.toString() + " )";
+        return "DirectoryEntry( " + "\"" + entry_name + "\"" + ", " + stbuf.toString() + ", " + "\"" + link_target + "\"" + " )";
     }    
 
     // Serializable
     public String getTypeName() { return "xtreemfs::interfaces::DirectoryEntry"; }    
     
     public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(path,writer); }
-        stbuf.serialize( writer );        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(entry_name,writer); }
+        stbuf.serialize( writer );
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(link_target,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
     {
-        { path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        stbuf = new org.xtreemfs.interfaces.stat_(); stbuf.deserialize( buf );    
+        { entry_name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        stbuf = new org.xtreemfs.interfaces.stat_(); stbuf.deserialize( buf );
+        { link_target = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
+        my_size += 4 + ( entry_name.length() + 4 - ( entry_name.length() % 4 ) );
         my_size += stbuf.calculateSize();
+        my_size += 4 + ( link_target.length() + 4 - ( link_target.length() % 4 ) );
         return my_size;
     }
 
-    private String path;
+    private String entry_name;
     private stat_ stbuf;
+    private String link_target;
 
 }
 

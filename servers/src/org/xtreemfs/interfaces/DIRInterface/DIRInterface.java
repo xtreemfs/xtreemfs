@@ -16,14 +16,16 @@ public class DIRInterface
     {
         switch( header.getOperationNumber() )
         {
-            case 1: return new getAddressMappingsRequest();
-            case 2: return new setAddressMappingsRequest();
-            case 3: return new deleteAddressMappingsRequest();
-            case 4: return new registerServiceRequest();
-            case 5: return new deregisterServiceRequest();
-            case 6: return new getServicesByTypeRequest();
-            case 7: return new getServiceByUuidRequest();
-            case 8: return new getGlobalTimeRequest();
+            case 1: return new address_mappings_getRequest();
+            case 2: return new address_mappings_setRequest();
+            case 3: return new address_mappings_deleteRequest();
+            case 4: return new service_registerRequest();
+            case 5: return new service_deregisterRequest();
+            case 6: return new service_get_by_typeRequest();
+            case 7: return new service_get_by_uuidRequest();
+            case 8: return new globa_time_getRequest();
+            case 50: return new admin_checkpointRequest();
+            case 51: return new admin_shutdownRequest();
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
         }
     }
@@ -32,14 +34,16 @@ public class DIRInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new getAddressMappingsResponse();
-            case 2: return new setAddressMappingsResponse();
-            case 3: return new deleteAddressMappingsResponse();
-            case 4: return new registerServiceResponse();
-            case 5: return new deregisterServiceResponse();
-            case 6: return new getServicesByTypeResponse();
-            case 7: return new getServiceByUuidResponse();
-            case 8: return new getGlobalTimeResponse();
+            case 1: return new address_mappings_getResponse();
+            case 2: return new address_mappings_setResponse();
+            case 3: return new address_mappings_deleteResponse();
+            case 4: return new service_registerResponse();
+            case 5: return new service_deregisterResponse();
+            case 6: return new service_get_by_typeResponse();
+            case 7: return new service_get_by_uuidResponse();
+            case 8: return new globa_time_getResponse();
+            case 50: return new admin_checkpointResponse();
+            case 51: return new admin_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    

@@ -19,6 +19,8 @@ public class AddressMappingSet extends ArrayList<AddressMapping>
     public String getTypeName() { return "xtreemfs::interfaces::AddressMappingSet"; }
     
     public void serialize(ONCRPCBufferWriter writer) {
+        if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
+	    throw new IllegalArgumentException("array is too large ("+this.size()+")");
         writer.putInt( size() );
         for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); )
         {
@@ -29,6 +31,8 @@ public class AddressMappingSet extends ArrayList<AddressMapping>
 
     public void deserialize( ReusableBuffer buf ) {
         int new_size = buf.getInt();
+	if (new_size > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
+	    throw new IllegalArgumentException("array is too large ("+this.size()+")");
         for ( int i = 0; i < new_size; i++ )
         {
             AddressMapping new_value; new_value = new org.xtreemfs.interfaces.AddressMapping(); new_value.deserialize( buf );;

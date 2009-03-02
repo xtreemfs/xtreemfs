@@ -16,8 +16,8 @@ import java.util.ArrayList;
    
 public class XCap implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public XCap() { file_id = ""; access_mode = 0; expires = 0; clientIdentity = ""; truncateEpoch = 0; serverSignature = ""; __json = ""; }
-    public XCap( String file_id, int access_mode, long expires, String clientIdentity, long truncateEpoch, String serverSignature, String __json ) { this.file_id = file_id; this.access_mode = access_mode; this.expires = expires; this.clientIdentity = clientIdentity; this.truncateEpoch = truncateEpoch; this.serverSignature = serverSignature; this.__json = __json; }
+    public XCap() { file_id = ""; access_mode = 0; expires = 0; client_identity = ""; truncate_epoch = 0; server_signature = ""; }
+    public XCap( String file_id, int access_mode, long expires, String client_identity, int truncate_epoch, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires = expires; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.server_signature = server_signature; }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
@@ -25,19 +25,17 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public void setAccess_mode( int access_mode ) { this.access_mode = access_mode; }
     public long getExpires() { return expires; }
     public void setExpires( long expires ) { this.expires = expires; }
-    public String getClientIdentity() { return clientIdentity; }
-    public void setClientIdentity( String clientIdentity ) { this.clientIdentity = clientIdentity; }
-    public long getTruncateEpoch() { return truncateEpoch; }
-    public void setTruncateEpoch( long truncateEpoch ) { this.truncateEpoch = truncateEpoch; }
-    public String getServerSignature() { return serverSignature; }
-    public void setServerSignature( String serverSignature ) { this.serverSignature = serverSignature; }
-    public String get__json() { return __json; }
-    public void set__json( String __json ) { this.__json = __json; }
+    public String getClient_identity() { return client_identity; }
+    public void setClient_identity( String client_identity ) { this.client_identity = client_identity; }
+    public int getTruncate_epoch() { return truncate_epoch; }
+    public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
+    public String getServer_signature() { return server_signature; }
+    public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
     // Object
     public String toString()
     {
-        return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires ) + ", " + "\"" + clientIdentity + "\"" + ", " + Long.toString( truncateEpoch ) + ", " + "\"" + serverSignature + "\"" + ", " + "\"" + __json + "\"" + " )";
+        return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires ) + ", " + "\"" + client_identity + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + "\"" + server_signature + "\"" + " )";
     }    
 
     // Serializable
@@ -47,10 +45,9 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(file_id,writer); }
         writer.putInt( access_mode );
         writer.putLong( expires );
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(clientIdentity,writer); }
-        writer.putLong( truncateEpoch );
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(serverSignature,writer); }
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(__json,writer); }        
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(client_identity,writer); }
+        writer.putInt( truncate_epoch );
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(server_signature,writer); }        
     }
     
     public void deserialize( ReusableBuffer buf )
@@ -58,10 +55,9 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         { file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         access_mode = buf.getInt();
         expires = buf.getLong();
-        { clientIdentity = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        truncateEpoch = buf.getLong();
-        { serverSignature = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        { __json = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
+        { client_identity = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        truncate_epoch = buf.getInt();
+        { server_signature = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
     }
     
     public int calculateSize()
@@ -70,20 +66,18 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += 4 + ( clientIdentity.length() + 4 - ( clientIdentity.length() % 4 ) );
-        my_size += ( Long.SIZE / 8 );
-        my_size += 4 + ( serverSignature.length() + 4 - ( serverSignature.length() % 4 ) );
-        my_size += 4 + ( __json.length() + 4 - ( __json.length() % 4 ) );
+        my_size += 4 + ( client_identity.length() + 4 - ( client_identity.length() % 4 ) );
+        my_size += ( Integer.SIZE / 8 );
+        my_size += 4 + ( server_signature.length() + 4 - ( server_signature.length() % 4 ) );
         return my_size;
     }
 
     private String file_id;
     private int access_mode;
     private long expires;
-    private String clientIdentity;
-    private long truncateEpoch;
-    private String serverSignature;
-    private String __json;
+    private String client_identity;
+    private int truncate_epoch;
+    private String server_signature;
 
 }
 
