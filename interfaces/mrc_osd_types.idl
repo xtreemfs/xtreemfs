@@ -11,7 +11,9 @@ module xtreemfs
 
     const uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
 
-    const uint8_t PARTITIONING_POLICY_ONE_SLICE_PER_VOLUME = 1;
+    const uint16_t SERVICE_TYPE_MRC = 1;
+    const uint16_t SERVICE_TYPE_OSD = 2;
+    const uint16_t SERVICE_TYPE_VOLUME = 3;
 
 
     typedef sequence<string> StringSet;
@@ -56,8 +58,8 @@ module xtreemfs
     {
       uint32_t mode;
       uint32_t nlink;
-      uint32_t uid; // always 0
-      uint32_t gid; // always 0
+      uint32_t uid;
+      uint32_t gid;
       int16_t dev;
       uint64_t size;
       uint64_t atime;
@@ -81,7 +83,6 @@ module xtreemfs
       string        entry_name;
       stat_         stbuf;
       string        link_target;
-      // TODO: put link_target here? and cache it for readlink
     };
 
     typedef sequence<DirectoryEntry> DirectoryEntrySet;
@@ -105,23 +106,15 @@ module xtreemfs
     struct OSDtoMRCData
     {
       uint8_t caching_policy;
-      opaque data;
+      string data;
     };
 
     typedef sequence<OSDtoMRCData> OSDtoMRCDataSet;
 
-    struct OSDWriteResponse
+    struct FileCredentials
     {
-       NewFileSizeSet new_filesize;
-       OSDtoMRCDataSet optional_data;
+        XLocSet xlocs;
+        XCap    xcap;
     };
-
-    struct ObjectData
-    {
-      string   checksum;
-      uint32_t zero_padding;
-      Serializable data;
-    };
-      
   };
 };

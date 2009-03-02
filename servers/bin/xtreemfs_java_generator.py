@@ -94,6 +94,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.Exceptions.*;
 
 
@@ -143,13 +144,13 @@ public class %(interface_identifier)s
         for exception in interface.exceptions:
 #            assert operation.uid > 0, "operation "  + operation.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % operation.uid
             _generateXtreemFSJavaType( exception )
-            exception_factories.append( "if ( exception_type_name == \"%s\" ) return new %s();" % ( exception.qname, exception.name ) )
+            exception_factories.append( "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( exception.qname, exception.name ) )
         exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
         out += """
-    public static Exception createException( String exception_type_name ) throws Exception
+    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
     {
         %(exception_factories)s
-        else throw new Exception( "unknown exception type " + exception_type_name );
+        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
     }
 """ % locals()
 
@@ -218,6 +219,7 @@ def getTypeTraits( type ):
         
     if type.name == "string" or type.name == "wstring": return StringTypeTraits( type )
     elif type.name == "bool": return BoolTypeTraits( type )
+    elif type.name == "Serializable": return SerializableTypeTraits( type )
     elif isNumericType( type.name ): return NumericTypeTraits( type )
     else: return StructTypeTraits( type )
     
@@ -237,10 +239,18 @@ class StringTypeTraits(TypeTraits):
     def getConstantValue( self, value ): return "\"%(value)s\""
     def getDeclarationType( self ): return "String"
     def getDefaultInitializer( self, identifier ): return "%(identifier)s = \"\";" % locals()
-    def getDeserializer( self, identifier ): return "{ int %(identifier)s_new_length = buf.getInt(); byte[] %(identifier)s_new_bytes = new byte[%(identifier)s_new_length]; buf.get( %(identifier)s_new_bytes ); %(identifier)s = new String( %(identifier)s_new_bytes ); if (%(identifier)s_new_length %% 4 > 0) {for (int k = 0; k < (4 - (%(identifier)s_new_length %% 4)); k++) { buf.get(); } } }" % locals()
-    #def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s.length() ); writer.put( %(identifier)s.getBytes() );" % locals()
-    def getSerializer( self, identifier ): return "{ final byte[] bytes = %(identifier)s.getBytes(); writer.putInt( bytes.length ); writer.put( bytes );  if (bytes.length %% 4 > 0) {for (int k = 0; k < (4 - (bytes.length %% 4)); k++) { writer.put((byte)0); } }}" % locals()
+    def getDeserializer( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }" % locals()
+    def getSerializer( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeString(%(identifier)s,writer); }" % locals()
     def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
+    def getToString( self, identifier ): return '"\\"" + %(identifier)s + "\\""' % locals()
+    
+class SerializableTypeTraits(TypeTraits):
+    def getConstantValue( self, value ): return "\"%(value)s\""
+    def getDeclarationType( self ): return "ReusableBuffer"
+    def getDefaultInitializer( self, identifier ): return "%(identifier)s = null;" % locals()
+    def getDeserializer( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer(buf); }" % locals()
+    def getSerializer( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer(%(identifier)s,writer); }" % locals()
+    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength(%(identifier)s)" % locals()
     def getToString( self, identifier ): return '"\\"" + %(identifier)s + "\\""' % locals()
 
     
@@ -250,8 +260,8 @@ class PrimitiveTypeTraits(TypeTraits): pass
 class BoolTypeTraits(PrimitiveTypeTraits):
     def getBoxedType( self ): return "Boolean"
     def getDeclarationType( self ): return "boolean"
-    def getDefaultInitializer( self, identifier ): return "%(identifier)s = false;" % locals(0)
-    def getDeserializer( self, identifier ): return "%(identifier)s = buf.getInt() != 0;"
+    def getDefaultInitializer( self, identifier ): return "%(identifier)s = false;" % locals()
+    def getDeserializer( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
     def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
     def getSize( self, identifier ): return "4"
     def getToString( self, identifier ): return "Boolean.toString( %(identifier)s )" % locals()
@@ -315,6 +325,8 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
     public String getTypeName() { return "%(type_qname)s"; }
     
     public void serialize(ONCRPCBufferWriter writer) {
+        if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
+	    throw new IllegalArgumentException("array is too large ("+this.size()+")");
         writer.putInt( size() );
         for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
         {
@@ -325,6 +337,8 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
 
     public void deserialize( ReusableBuffer buf ) {
         int new_size = buf.getInt();
+	if (new_size > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
+	    throw new IllegalArgumentException("array is too large ("+this.size()+")");
         for ( int i = 0; i < new_size; i++ )
         {
             %(value_declaration_type)s new_value; %(value_deserializer)s;
@@ -489,7 +503,7 @@ class ExceptionTypeTraits(StructTypeTraits):
         type_name = self.type.name
         struct_type_def= StructTypeTraits.getStructTypeDef( self )
         return """\
-public class %(type_name)s extends Exception implements org.xtreemfs.interfaces.utils.Serializable
+public class %(type_name)s extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
 %(struct_type_def)s    
 }

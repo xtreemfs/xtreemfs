@@ -2,9 +2,6 @@ module xtreemfs
 {
   module interfaces
   {
-    const uint16_t SERVICE_TYPE_MRC = 1;
-    const uint16_t SERVICE_TYPE_OSD = 2;
-    const uint16_t SERVICE_TYPE_VOLUME = 3;
 
     struct AddressMapping
     {
@@ -41,19 +38,27 @@ module xtreemfs
     interface DIRInterface # 1
     {
       //returns the address mappings for uuid or all mappings stored in the DB for uuid="*"
-      void getAddressMappings( string uuid, out AddressMappingSet address_mappings ) # 1;
-      //throws a ConcurrentModificationException if the entry was modified by another process
-      uint64_t setAddressMappings( AddressMappingSet address_mappings ) # 2;
-      void deleteAddressMappings( string uuid ) # 3;
-      //throws a ConcurrentModificationException if the entry was modified by another process
-      uint64_t registerService( ServiceRegistry service ) # 4;
-      void     deregisterService( string uuid ) # 5;
-      void     getServicesByType( uint16_t type, out ServiceRegistrySet services) # 6;
-      void     getServiceByUuid( string uuid, out ServiceRegistrySet services) # 7;
-      uint64_t getGlobalTime() # 8;
+      void address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
 
-      void     admin_shutdown( string password ) #20;
-      void     admin_checkpoint( string password ) #21;
+      //throws a ConcurrentModificationException if the entry was modified by another process
+      uint64_t address_mappings_set( AddressMappingSet address_mappings ) # 2;
+
+      void     address_mappings_delete( string uuid ) # 3;
+
+      //throws a ConcurrentModificationException if the entry was modified by another process
+      uint64_t service_register( ServiceRegistry service ) # 4;
+
+      void     service_deregister( string uuid ) # 5;
+
+      void     service_get_by_type( uint16_t type, out ServiceRegistrySet services) # 6;
+
+      void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
+
+      uint64_t globa_time_get() # 8;
+
+      //admin operations
+      void     admin_checkpoint( string password ) # 50;
+      void     admin_shutdown( string password ) # 51;
     };
   };
 };
