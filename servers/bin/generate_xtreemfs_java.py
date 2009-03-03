@@ -23,14 +23,13 @@ class XtreemFSJavaGenerator(JavaGenerator):
     # Generator
     def generateType( self, type, type_name_suffix="" ):        
         package_name = self._getModulePackageName( type.parent )    
-        imports = self._getTypeImports( type )    
+        imports = self._getTypeImports( type, exclude_package_names=( "org.xtreemfs" ) )    
         type_def = len( type_name_suffix ) == 0 and self._getTypeTraits( type ).getTypeDef() or self._getTypeTraits( type ).getTypeDef( type_name_suffix )    
     
         writeGeneratedFile( os.path.join( self._getModulePackageDirPath( type.parent ), type.name + type_name_suffix + ".java" ),"""\
 package %(package_name)s;
 
 %(imports)s
-
 import org.xtreemfs.interfaces.utils.*;
 
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -166,7 +165,7 @@ class XtreemFSJavaSequenceTypeTraits(JavaSequenceTypeTraits):
         value_deserializer = value_type_traits.getDeserializer( "new_value" )
         next_value_size = value_type_traits.getSize( "next_value" )
         return """\
-public class XtreemFSJava%(type_name)s extends ArrayList<%(value_boxed_type)s>
+public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
 {    
     // Serializable
     public String getTypeName() { return "%(type_qname)s"; }

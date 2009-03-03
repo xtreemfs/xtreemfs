@@ -2,7 +2,6 @@ package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.OSDInterface.*;
-
 import org.xtreemfs.interfaces.utils.*;
 
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;

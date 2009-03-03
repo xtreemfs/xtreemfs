@@ -2,7 +2,6 @@ package org.xtreemfs.interfaces.Exceptions;
 
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.Exceptions.*;
-
 import org.xtreemfs.interfaces.utils.*;
 
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -14,7 +13,8 @@ import java.util.ArrayList;
 
 
          
-public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException 
+   
+public class ConcurrentModificationException implements org.xtreemfs.interfaces.utils.Serializable
 {
     public ConcurrentModificationException() { stack_trace = ""; }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }
@@ -48,6 +48,6 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     }
 
     private String stack_trace;
-    
+
 }
 

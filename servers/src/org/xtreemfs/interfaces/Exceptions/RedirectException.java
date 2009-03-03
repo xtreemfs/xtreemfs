@@ -2,7 +2,6 @@ package org.xtreemfs.interfaces.Exceptions;
 
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.Exceptions.*;
-
 import org.xtreemfs.interfaces.utils.*;
 
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -14,7 +13,8 @@ import java.util.ArrayList;
 
 
          
-public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException 
+   
+public class RedirectException implements org.xtreemfs.interfaces.utils.Serializable
 {
     public RedirectException() { to_uuid = ""; }
     public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
@@ -48,6 +48,6 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     }
 
     private String to_uuid;
-    
+
 }
 

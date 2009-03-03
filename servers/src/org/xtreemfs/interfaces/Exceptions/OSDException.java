@@ -2,7 +2,6 @@ package org.xtreemfs.interfaces.Exceptions;
 
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.Exceptions.*;
-
 import org.xtreemfs.interfaces.utils.*;
 
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -14,7 +13,8 @@ import java.util.ArrayList;
 
 
          
-public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException 
+   
+public class OSDException implements org.xtreemfs.interfaces.utils.Serializable
 {
     public OSDException() { error_code = 0; errro_message = ""; stack_trace = ""; }
     public OSDException( int error_code, String errro_message, String stack_trace ) { this.error_code = error_code; this.errro_message = errro_message; this.stack_trace = stack_trace; }
@@ -60,6 +60,6 @@ public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
     private int error_code;
     private String errro_message;
     private String stack_trace;
-    
+
 }
 
