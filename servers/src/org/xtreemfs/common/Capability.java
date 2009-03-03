@@ -1,5 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin and
-    Barcelona Supercomputing Center - Centro Nacional de Supercomputacion.
+/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -20,20 +19,17 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB), Jesús Malo (BSC)
+ * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.common;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.interfaces.XCap;
 
 /**
  * This class implements a Java representation of a capability.
@@ -63,45 +59,11 @@ public class Capability {
      * default validity for capabilities in seconds
      */
     public static final long DEFAULT_VALIDITY = 10 * 60;
-    
-    private final String     fileId;
-    
-    private final String     accessMode;
-    
-    private final long       expires;
-    
+
+    private XCap             xcap;
+
     private final String     sharedSecret;
     
-    private final String     signature;
-    
-    private long             epochNo;
-    
-    /**
-     * Creates a capability from a given set of data. The expiration time stamp
-     * will be generated automatically by means of the local system time, and a
-     * signature will be added. This constructor is meant to initially create a
-     * capability at the MRC.
-     * 
-     * @param fileId
-     *            the file ID
-     * @param accessMode
-     *            the access mode
-     * @param epochNo
-     *            the epoch number associated with the capability; epoch numbers
-     *            are incremented each time the file is truncated or deleted
-     * @param sharedSecret
-     *            the shared secret to be used to sign the capability
-     */
-    public Capability(String fileId, String accessMode, long epochNo, String sharedSecret) {
-        
-        this.fileId = fileId;
-        this.accessMode = accessMode;
-        this.epochNo = epochNo;
-        this.sharedSecret = sharedSecret;
-        
-        this.expires = System.currentTimeMillis() / 1000 + DEFAULT_VALIDITY;
-        this.signature = calcSignature();
-    }
     
     /**
      * Creates a capability from a given set of data. A signature will be added
@@ -120,92 +82,54 @@ public class Capability {
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
-    public Capability(String fileId, String accessMode, long expires, long epochNo,
-        String sharedSecret) {
-        this.fileId = fileId;
-        this.accessMode = accessMode;
-        this.expires = expires;
-        this.epochNo = epochNo;
+    public Capability(String fileId, int accessMode, long expires,
+            String clientIdentity, int epochNo, String sharedSecret) {
+
         this.sharedSecret = sharedSecret;
+
+        xcap = new XCap(fileId, accessMode, expires, clientIdentity, epochNo, null);
         
-        this.signature = calcSignature();
+        final String sig = calcSignature();
+        xcap.setServer_signature(sig);
+    }
+
+    /**
+     * Wrapper for XCap objects.
+     * @param xcap the parsed XCap object
+     * @param sharedSecret the shared secret (from configuration file)
+     */
+    public Capability(XCap xcap, String sharedSecret) {
+        this.xcap = xcap;
+        this.sharedSecret = sharedSecret;
+    }
+
+    public XCap getXCap() {
+        return this.xcap;
     }
     
-    /**
-     * Creates a capability from a string representation. This constructor is
-     * meant to be used to verify the validity of a capability string received
-     * from a remote host.
-     * 
-     * @param capability
-     *            the capability string
-     * @param sharedSecret
-     *            the shared secret to be used to verify the capability
-     * @throws JSONException
-     *             if parsing the capability failed
-     */
-    public Capability(String capability, String sharedSecret) throws JSONException {
-        
-        List<Object> cap = (List<Object>) JSONParser.parseJSON(new JSONString(capability));
-        assert (cap.size() == 6 || cap.size() == 5);
-        
-        this.sharedSecret = sharedSecret;
-        this.fileId = (String) cap.get(0);
-        this.accessMode = (String) cap.get(1);
-        this.expires = (Long) cap.get(2);
-        // ignore the client identity; it cannot be used because OSDs can act as
-        // client proxies
-        this.epochNo = (Long) cap.get(4);
-        this.signature = (String) cap.get(5);
-    }
-    
-    /**
-     * Creates a capability from a string representation. This constructor is
-     * meant to be used to parse and forward a received capability. <br>
-     * <b>It cannot be used to verify capabilities!</b> For this purpose, please
-     * use <code>Capability(String capability, String sharedSecret)</code>.
-     * 
-     * @param capability
-     *            the capability string
-     * @throws JSONException
-     *             if parsing the capability failed
-     */
-    public Capability(String capability) throws JSONException {
-        
-        List<Object> cap = (List<Object>) JSONParser.parseJSON(new JSONString(capability));
-        assert (cap.size() == 6);
-        
-        this.sharedSecret = null;
-        this.fileId = (String) cap.get(0);
-        this.accessMode = (String) cap.get(1);
-        this.expires = (Long) cap.get(2);
-        // ignore the client identity; it cannot be used because OSDs can act as
-        // client proxies
-        this.epochNo = (Long) cap.get(4);
-        this.signature = (String) cap.get(5);
-    }
     
     public String getFileId() {
-        return fileId;
+        return xcap.getFile_id();
     }
     
-    public String getAccessMode() {
-        return accessMode;
+    public int getAccessMode() {
+        return xcap.getAccess_mode();
     }
     
     public long getExpires() {
-        return expires;
+        return xcap.getExpires();
     }
     
     public String getClientIdentity() {
-        return "*";
+        return xcap.getClient_identity();
     }
     
-    public long getEpochNo() {
-        return epochNo;
+    public int getEpochNo() {
+        return xcap.getTruncate_epoch();
     }
     
     public String getSignature() {
-        return signature;
+        return xcap.getServer_signature();
     }
     
     /**
@@ -225,7 +149,7 @@ public class Capability {
      *         expiration time stamp <code>false</code>, otherwise
      */
     public boolean hasExpired() {
-        return System.currentTimeMillis() / 1000 > expires;
+        return System.currentTimeMillis() / 1000 > xcap.getExpires();
     }
     
     /**
@@ -235,7 +159,7 @@ public class Capability {
      *         otherwise
      */
     public boolean hasValidSignature() {
-        return signature.equals(calcSignature());
+        return xcap.getServer_signature().equals(calcSignature());
     }
     
     /**
@@ -244,8 +168,7 @@ public class Capability {
      * @return a JSON-formatted string representing the capability.
      */
     public String toString() {
-        return "[\"" + fileId + "\",\"" + accessMode + "\"," + expires + ",\""
-            + getClientIdentity() + "\"," + epochNo + ",\"" + signature + "\"]";
+        return xcap.toString();
     }
     
     protected String calcSignature() {
@@ -255,7 +178,9 @@ public class Capability {
         // will be generated and checked by means of asymmetric encryption
         // techniques
         
-        String plainText = fileId + accessMode + expires + epochNo + sharedSecret;
+        String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode()) +
+                Long.toString(xcap.getExpires()) + Long.toString(xcap.getTruncate_epoch()) +
+                sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
