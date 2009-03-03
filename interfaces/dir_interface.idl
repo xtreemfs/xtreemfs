@@ -54,7 +54,7 @@ module xtreemfs
 
       void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
 
-      uint64_t globa_time_get() # 8;
+      uint64_t global_time_get() # 8;
 
       //admin operations
       void     admin_checkpoint( string password ) # 50;

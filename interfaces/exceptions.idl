@@ -7,6 +7,8 @@ module xtreemfs
       exception ProtocolException { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
       exception errnoException { uint32_t error_code; string errro_message; string stack_trace; };
       exception RedirectException { string to_uuid; };
+      exception MRCException { uint32_t error_code; string errro_message; string stack_trace; };
+      exception OSDException { uint32_t error_code; string errro_message; string stack_trace; };
       exception ConcurrentModificationException { string stack_trace; };
       exception InvalidArgumentException { string error_message; };
     };
