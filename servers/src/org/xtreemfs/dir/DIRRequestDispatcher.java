@@ -244,11 +244,18 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         DIRRequest dirRq = new DIRRequest(rq);
         try {
             op.parseRPCMessage(dirRq);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+            rq.sendGarbageArgs(ex.toString());
+            return;
+        }
+        try {
+            op.parseRPCMessage(dirRq);
             numRequests++;
             op.startRequest(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendGarbageArgs(new errnoException(ErrNo.EINVAL, ex.toString(), ""));
+            rq.sendInternalServerError(ex);
             return;
         }
     }

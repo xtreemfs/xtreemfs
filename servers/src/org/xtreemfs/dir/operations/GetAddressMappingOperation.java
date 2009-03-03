@@ -73,7 +73,7 @@ public class GetAddressMappingOperation extends DIROperation {
             }
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
-            rq.sendInternalServerError();
+            rq.sendInternalServerError(ex);
         }
     }
 

@@ -107,6 +107,7 @@ public class SetAddressMappingOperation extends DIROperation {
             ONCRPCBufferWriter writer = new ONCRPCBufferWriter(mappings.calculateSize());
             mappings.serialize(writer);
             byte[] newData = writer.getBuffers().get(0).array();
+            writer.freeBuffers();
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newData);
             database.directInsert(ig);
@@ -115,7 +116,7 @@ public class SetAddressMappingOperation extends DIROperation {
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
-            rq.sendInternalServerError();
+            rq.sendInternalServerError(ex);
         }
     }
 

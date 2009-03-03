@@ -25,12 +25,15 @@ package org.xtreemfs.foundation.oncrpc.server;
 
 import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.Exceptions.errnoException;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.mrc.ErrNo;
 
 /**
  *
@@ -65,18 +68,19 @@ public class ONCRPCRequest {
         serializeAndSendRespondse(response);
     }
 
-    public void sendGarbageArgs(errnoException exception) {
+    public void sendGarbageArgs(String message) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        sendException(exception);
+        sendException(new errnoException(ErrNo.EINVAL, message, ""));
     }
     
-    public void sendInternalServerError(errnoException exception) {
+    public void sendInternalServerError(Throwable rootCause) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
-        sendException(exception);
+        final String strace = OutputUtils.stackTraceToString(rootCause);
+        sendException(new errnoException(0, "internal server error caused by: "+rootCause, strace));
     }
 
     public void sendProtocolException(ProtocolException exception) {
@@ -86,7 +90,7 @@ public class ONCRPCRequest {
         sendException(exception);
     }
 
-    public void sendGenericException(Serializable exception) {
+    public void sendGenericException(ONCRPCException exception) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);

@@ -17,6 +17,8 @@ public class Exceptions
         if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::ProtocolException") ) return new ProtocolException();
         else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::errnoException") ) return new errnoException();
         else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::RedirectException") ) return new RedirectException();
+        else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::MRCException") ) return new MRCException();
+        else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::OSDException") ) return new OSDException();
         else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::ConcurrentModificationException") ) return new ConcurrentModificationException();
         else if ( exception_type_name.equals("xtreemfs::interfaces::Exceptions::InvalidArgumentException") ) return new InvalidArgumentException();
         else throw new java.io.IOException( "unknown exception type " + exception_type_name );

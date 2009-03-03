@@ -68,7 +68,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
-            rq.sendInternalServerError();
+            rq.sendInternalServerError(ex);
         }
     }
 

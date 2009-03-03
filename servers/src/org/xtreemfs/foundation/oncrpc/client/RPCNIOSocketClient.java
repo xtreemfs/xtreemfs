@@ -210,6 +210,18 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             }
             checkForTimers();
         }
+
+        synchronized (connections) {
+            for (ServerConnection con : connections.values()) {
+                for (ONCRPCRequest rq : con.getSendQueue()) {
+                    rq.getListener().requestFailed(rq, new IOException("client was shut down"));
+                }
+                for (ONCRPCRequest rq : con.getRequests().values()) {
+                    rq.getListener().requestFailed(rq, new IOException("client was shut down"));
+                }
+            }
+        }
+
         Logging.logMessage(Logging.LEVEL_INFO, this,"ONCRPC Client stopped");
 
         notifyStopped();

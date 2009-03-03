@@ -90,6 +90,7 @@ public class RegisterServiceOperation extends DIROperation {
             ONCRPCBufferWriter writer = new ONCRPCBufferWriter(reg.calculateSize());
             reg.serialize(writer);
             byte[] newData = writer.getBuffers().get(0).array();
+            writer.freeBuffers();
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
             database.directInsert(ig);
@@ -98,10 +99,10 @@ public class RegisterServiceOperation extends DIROperation {
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
-            rq.sendInternalServerError();
+            rq.sendInternalServerError(ex);
         } catch (Throwable th) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,th);
-            rq.sendInternalServerError();
+            rq.sendInternalServerError(th);
         }
     }
 

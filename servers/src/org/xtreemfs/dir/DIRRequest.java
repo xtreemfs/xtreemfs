@@ -27,6 +27,7 @@ package org.xtreemfs.dir;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
@@ -57,10 +58,11 @@ public class DIRRequest {
         rpcRequest.sendResponse(response);
     }
 
-    public void sendInternalServerError() {
+    public void sendInternalServerError(Throwable rootCause) {
+        rpcRequest.sendInternalServerError(rootCause);
     }
 
-    public void sendException(Serializable exception) {
+    public void sendException(ONCRPCException exception) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending exception return value: "+exception);
         }
