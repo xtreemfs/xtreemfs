@@ -23,7 +23,7 @@ class XtreemFSJavaGenerator(JavaGenerator):
     # Generator
     def generateType( self, type, type_name_suffix="" ):        
         package_name = self._getModulePackageName( type.parent )    
-        imports = self._getTypeImports( type, exclude_package_names=( "org.xtreemfs" ) )    
+        imports = self._getTypeImports( type, exclude_package_names=( "org.xtreemfs", ) )    
         type_def = len( type_name_suffix ) == 0 and self._getTypeTraits( type ).getTypeDef() or self._getTypeTraits( type ).getTypeDef( type_name_suffix )    
     
         writeGeneratedFile( os.path.join( self._getModulePackageDirPath( type.parent ), type.name + type_name_suffix + ".java" ),"""\
@@ -218,10 +218,13 @@ class XtreemFSJavaStringTypeTraits(JavaStringTypeTraits):
 
 
 class XtreemFSJavaStructTypeTraits(JavaStructTypeTraits):    
-    def getDeserializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s(); %(identifier)s.deserialize( buf );" % locals()
+    def getDeserializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s = new %(type_qname)s(); %(identifier)s.deserialize( buf );" % locals()    
+    def getMemberDeserializers( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + member_type_traits.getDeserializer( member.identifier ) for member, member_type_traits in self._getMemberTypeTraits( members )] )        
+    def getMemberSerializers( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + member_type_traits.getSerializer( member.identifier ) for member, member_type_traits in self._getMemberTypeTraits( members )] )        
+    def getMemberSizes( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + "my_size += " + member_type_traits.getSize( member.identifier ) + ";" for member, member_type_traits in self._getMemberTypeTraits( members )] )        
     def getSerializer( self, identifier ): type_qname = self.type_qname; return "%(identifier)s.serialize( writer );" % locals()
     def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()    
-    
+
     def getTypeDef( self ):
         type_name = self.type.name
         struct_type_def = self._getTypeDef()
@@ -282,23 +285,10 @@ public class %(type_name)s implements org.xtreemfs.interfaces.utils.Serializable
 %(member_declarations)s
 """ % locals()
 
-    def getMemberDeserializers( self, members=None ):
-        if members is None: members = self.type.members
-        return "\n".join( [INDENT_SPACES * 2 + self.generator._getTypeTraits( member.type ).getDeserializer( member.identifier ) for member in members] )        
-
-    def getMemberSerializers( self, members=None ):
-        if members is None: members = self.type.members
-        return "\n".join( [INDENT_SPACES * 2 + self.generator._getTypeTraits( member.type ).getSerializer( member.identifier ) for member in members] )        
-
-    def getMemberSizes( self, members=None ):
-        if members is None: members = self.type.members
-        return "\n".join( [INDENT_SPACES * 2 + "my_size += " + self.generator._getTypeTraits( member.type ).getSize( member.identifier ) + ";" for member in members] )        
-
-
 class XtreemFSJavaExceptionTypeTraits(XtreemFSJavaStructTypeTraits):
     def getTypeDef( self ):
         type_name = self.type.name
-        struct_type_def= XtreemFSJavaStructTypeTraits.getStructTypeDef( self )
+        struct_type_def= XtreemFSJavaStructTypeTraits._getTypeDef( self )
         return """\
 public class %(type_name)s extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {

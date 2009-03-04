@@ -13,8 +13,7 @@ import java.util.ArrayList;
 
 
          
-   
-public class MRCException implements org.xtreemfs.interfaces.utils.Serializable
+public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public MRCException() { error_code = 0; errro_message = ""; stack_trace = ""; }
     public MRCException( int error_code, String errro_message, String stack_trace ) { this.error_code = error_code; this.errro_message = errro_message; this.stack_trace = stack_trace; }
@@ -60,6 +59,6 @@ public class MRCException implements org.xtreemfs.interfaces.utils.Serializable
     private int error_code;
     private String errro_message;
     private String stack_trace;
-
+    
 }
 

@@ -13,8 +13,7 @@ import java.util.ArrayList;
 
 
          
-   
-public class ProtocolException implements org.xtreemfs.interfaces.utils.Serializable
+public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public ProtocolException() { accept_stat = 0; error_code = 0; stack_trace = ""; }
     public ProtocolException( int accept_stat, int error_code, String stack_trace ) { this.accept_stat = accept_stat; this.error_code = error_code; this.stack_trace = stack_trace; }
@@ -60,6 +59,6 @@ public class ProtocolException implements org.xtreemfs.interfaces.utils.Serializ
     private int accept_stat;
     private int error_code;
     private String stack_trace;
-
+    
 }
 

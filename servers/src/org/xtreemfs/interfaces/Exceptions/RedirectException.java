@@ -13,8 +13,7 @@ import java.util.ArrayList;
 
 
          
-   
-public class RedirectException implements org.xtreemfs.interfaces.utils.Serializable
+public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public RedirectException() { to_uuid = ""; }
     public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
@@ -48,6 +47,6 @@ public class RedirectException implements org.xtreemfs.interfaces.utils.Serializ
     }
 
     private String to_uuid;
-
+    
 }
 

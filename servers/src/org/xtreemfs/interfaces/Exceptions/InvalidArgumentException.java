@@ -13,8 +13,7 @@ import java.util.ArrayList;
 
 
          
-   
-public class InvalidArgumentException implements org.xtreemfs.interfaces.utils.Serializable
+public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException 
 {
     public InvalidArgumentException() { error_message = ""; }
     public InvalidArgumentException( String error_message ) { this.error_message = error_message; }
@@ -48,6 +47,6 @@ public class InvalidArgumentException implements org.xtreemfs.interfaces.utils.S
     }
 
     private String error_message;
-
+    
 }
 
