@@ -23,30 +23,25 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.mrc.utils;
 
-import java.net.InetSocketAddress;
-import java.util.HashMap;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
+import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -59,10 +54,6 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public class MRCHelper {
-    
-    public enum AccessMode {
-        r, w, x, a, ga, c, t, sr, d
-    }
     
     public enum SysAttrs {
             locations,
@@ -83,22 +74,21 @@ public class MRCHelper {
         nexists, dir, file
     }
     
-    public static ServiceRegistry createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan,
-        String mrcUUID) {
+    public static ServiceRegistry createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan, String mrcUUID) {
         
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
-
+        
         KeyValuePairSet kvset = new KeyValuePairSet();
         kvset.add(new KeyValuePair("mrc", mrcUUID));
         kvset.add(new KeyValuePair("free", free));
-        ServiceRegistry sreg = new ServiceRegistry(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol.getName(), kvset);
+        ServiceRegistry sreg = new ServiceRegistry(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol
+                .getName(), kvset);
         
         return sreg;
     }
     
-    public static void updateFileTimes(long parentId, FileMetadata file, boolean setATime,
-        boolean setCTime, boolean setMTime, StorageManager sMan, AtomicDBUpdate update)
-        throws DatabaseException {
+    public static void updateFileTimes(long parentId, FileMetadata file, boolean setATime, boolean setCTime,
+        boolean setMTime, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
         
         if (parentId == -1)
             return;
@@ -115,99 +105,9 @@ public class MRCHelper {
         sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
     }
     
-    public static Map<String, Object> createStatInfo(StorageManager sMan, FileAccessManager faMan,
-        FileMetadata file, String ref, String userId, List<String> groupIds, XLocList xLocList,
-        Map<String, Object> xAttrs, Map<String, Object> acl) throws UserException, MRCException {
-        
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("fileId", sMan.getVolumeId() + ":" + file.getId());
-        map.put("objType", ref != null ? 3 : file.isDirectory() ? 2 : 1);
-        map.put("ownerId", file.getOwnerId());
-        map.put("groupId", file.getOwningGroupId());
-        map.put("size", ref != null ? ref.length() : file.isDirectory() ? 0 : file.getSize());
-        map.put("epoch", file.isDirectory() ? 0 : file.getEpoch());
-        map.put("atime", file.getAtime());
-        map.put("ctime", file.getCtime());
-        map.put("mtime", file.getMtime());
-        map.put("linkCount", file.isDirectory() ? 1 : (long) file.getLinkCount());
-        
-        if (ref != null)
-            map.put("linkTarget", ref);
-        if (xLocList != null)
-            map.put("replicas", Converter.xLocListToList(xLocList));
-        if (xAttrs != null)
-            map.put("xAttrs", xAttrs);
-        if (acl != null)
-            map.put("acl", acl);
-        
-        int mode = faMan.getPosixAccessMode(sMan, file, userId, groupIds);
-        map.put("posixAccessMode", mode);
-        
-        return map;
-    }
-    
-    /**
-     * Creates a capability for accessing a file.
-     * 
-     * @param accessMode
-     * @param volumeId
-     * @param fileId
-     * @param epochNo
-     * @param sharedSecret
-     */
-    public static Capability createCapability(String accessMode, String volumeId, long fileId,
-        long epochNo, String sharedSecret) {
-        
-        return new Capability(volumeId + ":" + fileId, accessMode, epochNo, sharedSecret);
-    }
-    
-    /**
-     * Creates an HTTP headers object containing an X-Capability and X-Locations
-     * list entry.
-     * 
-     * @param capability
-     * @param xLocList
-     * @return
-     * @throws JSONException
-     */
-    public static HTTPHeaders createXCapHeaders(String capability, XLocList xLocList)
-        throws JSONException {
-        
-        HTTPHeaders headers = new HTTPHeaders();
-        if (capability != null)
-            headers.addHeader(HTTPHeaders.HDR_XCAPABILITY, capability);
-        if (xLocList != null)
-            headers.addHeader(HTTPHeaders.HDR_XLOCATIONS, JSONParser.writeJSON(Converter
-                    .xLocListToList(xLocList)));
-        
-        return headers;
-    }
-    
-    /**
-     * Creates a new X-Locations list
-     * 
-     * @param xLocList
-     *            an existing X-Locations list containing a version number (may
-     *            be <tt>null</tt>)
-     * @param sMan
-     *            the Storage Manager responsible for the file
-     * @param osdMan
-     *            the OSD Status Manager that periodically reports a list of
-     *            usable OSDs
-     * @param res
-     *            the path resolver the ID of the parent directory
-     * @param volume
-     *            information about the volume of the file
-     * @return an X-Locations list
-     * @throws UserException
-     * @throws BackendException
-     * @throws BrainException
-     */
-    public static XLocList createXLocList(StripingPolicy stripingPolicy, XLocList xLocList,
-        StorageManager sMan, OSDStatusManager osdMan, String path, long fileId, long parentDirId,
-        VolumeInfo volume, InetSocketAddress clientAddress) throws DatabaseException, MRCException {
-        
-        assert (xLocList == null || xLocList.getReplicaCount() == 0);
+    public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
+        OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress)
+        throws DatabaseException, MRCException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -220,8 +120,13 @@ public class MRCHelper {
             stripingPolicy = sMan.getDefaultStripingPolicy(1);
         
         if (stripingPolicy == null)
-            throw new MRCException("could not open file " + path
-                + ": no default striping policy available");
+            throw new MRCException("could not open file " + path + ": no default striping policy available");
+        
+        org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(Converter
+                .policyNameToInt(stripingPolicy.getPattern()), stripingPolicy.getStripeSize(), stripingPolicy
+                .getWidth());
+        
+        StringSet osds = new StringSet();
         
         ServiceRegistrySet osdMaps = osdMan.getUsableOSDs(volume.getId());
         
@@ -229,22 +134,18 @@ public class MRCHelper {
             throw new MRCException("could not open file " + path + ": no feasible OSDs available");
         
         // determine the actual striping width; if not enough OSDs are
-        // available, the width will be limited to the amount of
-        // available OSDs
+        // available, the width will be limited to the amount of available OSDs
         int width = Math.min((int) stripingPolicy.getWidth(), osdMaps.size());
         stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy
                 .getStripeSize(), width);
         
-        // add the OSDs to the X-Locations list, according to the OSD
-        // selection policy
-        String[] osds = osdMan.getOSDSelectionPolicy(volume.getOsdPolicyId()).getOSDsForNewFile(
-            osdMaps, clientAddress.getAddress(), width, volume.getOsdPolicyArgs());
+        // add the OSDs to the X-Locations list, according to the OSD selection
+        // policy
+        for (String osd : osdMan.getOSDSelectionPolicy(volume.getOsdPolicyId()).getOSDsForNewFile(osdMaps,
+            clientAddress, width, volume.getOsdPolicyArgs()))
+            osds.add(osd);
         
-        XLoc[] replicas = new XLoc[] { sMan.createXLoc(stripingPolicy, osds) };
-        xLocList = sMan
-                .createXLocList(replicas, xLocList == null ? 1 : (xLocList.getVersion() + 1));
-        
-        return xLocList;
+        return new Replica(sp, 0, osds);
     }
     
     /**
@@ -258,12 +159,12 @@ public class MRCHelper {
      * @return <tt>true</tt>, if adding the OSD list is possible, <tt>false</tt>
      *         , otherwise
      */
-    public static boolean isAddable(XLocList xLocList, List<Object> newOSDs) {
+    public static boolean isAddable(XLocList xLocList, List<String> newOSDs) {
         if (xLocList != null)
             for (int i = 0; i < xLocList.getReplicaCount(); i++) {
                 XLoc replica = xLocList.getReplica(i);
                 for (int j = 0; j < replica.getOSDCount(); j++)
-                    for (Object newOsd : newOSDs)
+                    for (String newOsd : newOSDs)
                         if (replica.getOSD(j).equals(newOsd))
                             return false;
             }
@@ -297,9 +198,9 @@ public class MRCHelper {
         return true;
     }
     
-    public static String getSysAttrValue(MRCConfig config, StorageManager sMan,
-        OSDStatusManager osdMan, VolumeInfo volume, String path, FileMetadata file, String keyString)
-        throws DatabaseException, JSONException, UnknownUUIDException {
+    public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
+        VolumeInfo volume, String path, FileMetadata file, String keyString) throws DatabaseException,
+        JSONException, UnknownUUIDException {
         
         SysAttrs key = null;
         try {
@@ -312,8 +213,7 @@ public class MRCHelper {
         
         case locations:
             XLocList xLocList = file.getXLocList();
-            return file.isDirectory() ? "" : xLocList == null ? "" : JSONParser.writeJSON(Converter
-                    .xLocListToList(xLocList));
+            return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToString(xLocList);
         case file_id:
             return volume.getId() + ":" + file.getId();
         case object_type:
@@ -337,8 +237,8 @@ public class MRCHelper {
         case osdsel_policy_id:
             return file.getId() == 1 ? volume.getOsdPolicyId() + "" : "";
         case osdsel_policy_args:
-            return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume
-                    .getOsdPolicyArgs()) : "";
+            return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume.getOsdPolicyArgs())
+                : "";
         case read_only:
             if (file.isDirectory())
                 return "";
@@ -364,32 +264,32 @@ public class MRCHelper {
         
         switch (key) {
         
-        case locations:
-
-            // explicitly setting X-Locations lists is only permitted for files
-            // that haven't yet been assigned an X-Locations list!
-            if (file.getXLocList() != null)
-                throw new UserException(ErrNo.EPERM,
-                    "cannot set X-Locations: OSDs have been assigned already");
-            
-            try {
-                // parse the X-Locations list, ensure that it is correctly
-                // formatted and consistent
-                XLocList newXLoc = Converter.listToXLocList(sMan, (List<Object>) JSONParser
-                        .parseJSON(new JSONString(value)));
-                
-                if (!MRCHelper.isConsistent(newXLoc))
-                    throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
-                        + "at least one OSD occurs more than once");
-                
-                file.setXLocList(newXLoc);
-                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-                
-            } catch (JSONException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " + value);
-            }
-            
-            break;
+//        case locations:
+//
+//            // explicitly setting X-Locations lists is only permitted for files
+//            // that haven't yet been assigned an X-Locations list!
+//            if (file.getXLocList() != null)
+//                throw new UserException(ErrNo.EPERM,
+//                    "cannot set X-Locations: OSDs have been assigned already");
+//            
+//            try {
+//                // parse the X-Locations list, ensure that it is correctly
+//                // formatted and consistent
+//                
+//                XLocList newXLoc = Converter.stringToXLocList(sMan, value);
+//                
+//                if (!MRCHelper.isConsistent(newXLoc))
+//                    throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
+//                        + "at least one OSD occurs more than once");
+//                
+//                file.setXLocList(newXLoc);
+//                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+//                
+//            } catch (MRCException exc) {
+//                throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " + value);
+//            }
+//            
+//            break;
         
         case default_sp:
 
@@ -399,13 +299,12 @@ public class MRCHelper {
             
             try {
                 
-                StripingPolicy sp = null;
+                org.xtreemfs.interfaces.StripingPolicy sp = null;
                 if (!value.equals("null"))
-                    sp = Converter.stringToStripingPolicy(sMan, value);
+                    sp = Converter.stringToStripingPolicy(value);
                 
                 if (file.getId() == 1 && sp == null)
-                    throw new UserException(ErrNo.EPERM,
-                        "cannot remove the volume's default striping policy");
+                    throw new UserException(ErrNo.EPERM, "cannot remove the volume's default striping policy");
                 
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
                 
@@ -418,8 +317,7 @@ public class MRCHelper {
         case osdsel_policy_id:
 
             if (file.getId() != 1)
-                throw new UserException(ErrNo.EINVAL,
-                    "OSD selection policies can only be set on volumes");
+                throw new UserException(ErrNo.EINVAL, "OSD selection policies can only be set on volumes");
             
             try {
                 short newPol = Short.parseShort(value);
@@ -461,8 +359,7 @@ public class MRCHelper {
             break;
         
         default:
-            throw new UserException(ErrNo.EINVAL, "system attribute '" + key
-                + "' unknown or immutable");
+            throw new UserException(ErrNo.EINVAL, "system attribute '" + key + "' unknown or immutable");
         }
     }
 }

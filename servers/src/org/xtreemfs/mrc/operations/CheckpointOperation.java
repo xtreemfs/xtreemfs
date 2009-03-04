@@ -25,6 +25,8 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.DIRInterface.admin_checkpointResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -34,31 +36,31 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  */
 public class CheckpointOperation extends MRCOperation {
     
-    public static final String RPC_NAME = ".checkpoint";
+    public static final int OP_ID = 51;
     
     public CheckpointOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
     @Override
-    public boolean hasArguments() {
-        return false;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false; // TODO: auth
-    }
-    
-    @Override
     public void startRequest(MRCRequest rq) {
+        
         try {
+            
             master.getVolumeManager().checkpointDB();
-            master.requestFinished(rq);
+            
+            // set the response
+            rq.setResponse(new admin_checkpointResponse());
+            finishRequest(rq);
+            
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
             master.requestFailed(rq, ex);
         }
+    }
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

@@ -24,14 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -55,38 +52,10 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  */
 public class RestoreFileOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String              filePath;
-        
-        public long                fileId;
-        
-        public long                fileSize;
-        
-        public Map<String, Object> xAttrs;
-        
-        public String              osd;
-        
-        public int                 stripeSize;
-        
-        public String              volumeId;
-        
-    }
-    
-    public static final String RPC_NAME = "restoreFile";
+    public static final int OP_ID = 28;
     
     public RestoreFileOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -97,12 +66,25 @@ public class RestoreFileOperation extends MRCOperation {
             if (!rq.getDetails().superUser)
                 throw new UserException(ErrNo.EACCES, "operation is restricted to superusers");
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final xtreemfs_restore_fileRequest rqArgs = (xtreemfs_restore_fileRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
-            final Path p = new Path(vMan.getVolumeById(rqArgs.volumeId).getName() + "/"
-                + rqArgs.filePath);
-            final StorageManager sMan = vMan.getStorageManager(rqArgs.volumeId);
+            
+            // parse volume and file ID from global file ID
+            long fileId = 0;
+            String volumeId = null;
+            try {
+                String globalFileId = rqArgs.getFile_id();
+                int i = globalFileId.indexOf(':');
+                volumeId = rqArgs.getFile_id().substring(0, i);
+                fileId = Long.parseLong(rqArgs.getFile_id().substring(i + 1));
+            } catch (Exception exc) {
+                throw new UserException("invalid global file ID: " + rqArgs.getFile_id()
+                    + "; expected pattern: <volume_ID>:<local_file_ID>");
+            }
+            
+            final Path p = new Path(vMan.getVolumeById(volumeId).getName() + "/" + rqArgs.getFile_path());
+            final StorageManager sMan = vMan.getStorageManager(volumeId);
             
             // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
@@ -119,9 +101,8 @@ public class RestoreFileOperation extends MRCOperation {
                         parentId = path[i].getId();
                     
                     else {
-                        sMan.createDir(nextFileId, parentId, p.getComp(i), time, time, time, rq
-                                .getDetails().userId, rq.getDetails().groupIds.get(0), 509, 0,
-                            update);
+                        sMan.createDir(nextFileId, parentId, p.getComp(i), time, time, time,
+                            rq.getDetails().userId, rq.getDetails().groupIds.get(0), 509, 0, update);
                         parentId = nextFileId;
                         nextFileId++;
                         
@@ -134,72 +115,37 @@ public class RestoreFileOperation extends MRCOperation {
                 }
             
             // create the metadata object
-            FileMetadata file = sMan.createFile(rqArgs.fileId, parentId, rqArgs.volumeId + ":"
-                + rqArgs.fileId, time, time, time, rq.getDetails().userId, rq.getDetails().groupIds
-                    .get(0), 511, 0, rqArgs.fileSize, false, 0, 0, update);
+            FileMetadata file = sMan.createFile(fileId, parentId, rqArgs.getFile_id(), time, time, time, rq
+                    .getDetails().userId, rq.getDetails().groupIds.get(0), 511, 0, rqArgs.getFile_size(),
+                false, 0, 0, update);
             
-            int size = (rqArgs.stripeSize < 1024 ? 1
-                : (rqArgs.stripeSize % 1024 != 0) ? rqArgs.stripeSize / 1024 + 1
-                    : rqArgs.stripeSize / 1024);
+            int size = (rqArgs.getStripe_size() < 1024 ? 1 : (rqArgs.getStripe_size() % 1024 != 0) ? rqArgs
+                    .getStripe_size() / 1024 + 1 : rqArgs.getStripe_size() / 1024);
             
             // create and assign the new XLocList
             StripingPolicy sp = sMan.createStripingPolicy("RAID0", size, 1);
-            XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.osd });
+            XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() });
             XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, 0);
             
             file.setXLocList(xLocList);
             sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             
-            // create the user attributes
-            if (rqArgs.xAttrs != null) {
-                for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr
-                            .getValue().toString(), update);
-            }
+            // set the response
+            rq.setResponse(new xtreemfs_restore_fileResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.filePath = (String) arguments.get(0);
-            args.fileId = (Long) arguments.get(1);
-            args.fileSize = (Long) arguments.get(2);
-            args.xAttrs = (Map<String, Object>) arguments.get(3);
-            args.osd = (String) arguments.get(4);
-            args.stripeSize = ((Long) arguments.get(5)).intValue();
-            args.volumeId = (String) arguments.get(6);
-            if (arguments.size() == 7)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

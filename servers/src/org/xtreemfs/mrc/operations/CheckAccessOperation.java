@@ -24,12 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.accessRequest;
+import org.xtreemfs.interfaces.MRCInterface.accessResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -49,28 +47,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class CheckAccessOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public String mode;
-        
-    }
-    
-    public static final String RPC_NAME = "checkAccess";
+    public static final int OP_ID = 1;
     
     public CheckAccessOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -78,20 +58,20 @@ public class CheckAccessOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final accessRequest rqArgs = (accessRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.path);
+            final Path p = new Path(rqArgs.getPath());
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -100,55 +80,28 @@ public class CheckAccessOperation extends MRCOperation {
             FileMetadata file = res.getFile();
             boolean success = false;
             try {
-                for (int i = 0; i < rqArgs.mode.length(); i++)
-                    faMan.checkPermission(rqArgs.mode.substring(i, i + 1), sMan, file, res
-                            .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
-                        rq.getDetails().groupIds);
+                faMan.checkPermission(rqArgs.getMode(), sMan, file, res.getParentDirId(),
+                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
                 success = true;
             } catch (UserException exc) {
                 // permission denied
             }
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(success).getBytes()));
+            // set the response
+            rq.setResponse(new accessResponse(success));
             finishRequest(rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.mode = (String) arguments.get(1);
-            
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((accessRequest) rq.getRequestArgs()).getContext();
     }
     
 }

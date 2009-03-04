@@ -24,15 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -41,7 +37,6 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
@@ -54,30 +49,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class CreateDirOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String              filePath;
-        
-        public Map<String, Object> xAttrs;
-        
-        public int                 mode;
-        
-    }
-    
-    public static final String RPC_NAME = "createDir";
+    public static final int OP_ID = 9;
     
     public CreateDirOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -85,25 +60,25 @@ public class CreateDirOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final mkdirRequest rqArgs = (mkdirRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.filePath);
+            final Path p = new Path(rqArgs.getPath());
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), res
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
+                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
             // check whether the file/directory exists already
             res.checkIfFileExistsAlready();
@@ -118,71 +93,32 @@ public class CreateDirOperation extends MRCOperation {
             int time = (int) (TimeSync.getGlobalTime() / 1000);
             
             // create the metadata object
-            FileMetadata file = sMan.createDir(fileId, res.getParentDirId(), res.getFileName(),
-                time, time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0),
-                rqArgs.mode, 0, update);
+            sMan.createDir(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
+                rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, update);
             
             // set the file ID as the last one
             sMan.setLastFileId(fileId, update);
             
-            // create the user attributes
-            if (rqArgs.xAttrs != null)
-                for (Entry<String, Object> attr : rqArgs.xAttrs.entrySet())
-                    sMan.setXAttr(file.getId(), rq.getDetails().userId, attr.getKey(), attr
-                            .getValue().toString(), update);
-            
             // update POSIX timestamps of parent directory
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
-                true, sMan, update);
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
+                update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new mkdirResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.filePath = (String) arguments.get(0);
-            if (arguments.size() == 1) {
-                args.mode = 511;
-                return null;
-            }
-            
-            args.xAttrs = (Map<String, Object>) arguments.get(1);
-            args.mode = ((Long) arguments.get(2)).intValue();
-            if (arguments.size() == 3)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((mkdirRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -28,15 +28,11 @@
 package org.xtreemfs.common;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.NetUtils;
@@ -44,7 +40,6 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
@@ -75,21 +70,18 @@ public class HeartbeatThread extends LifeCycleThread {
     
     private DIRClient            client;
     
-    private String               authString;
-    
     private volatile boolean     quit;
     
     private final ServiceConfig  config;
     
     public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
-        ServiceDataGenerator serviceDataGen, String authString, ServiceConfig config) {
+        ServiceDataGenerator serviceDataGen, ServiceConfig config) {
         
         super(name);
         
         this.client = client;
         this.uuid = uuid;
         this.serviceDataGen = serviceDataGen;
-        this.authString = authString;
         this.config = config;
     }
     
@@ -98,7 +90,7 @@ public class HeartbeatThread extends LifeCycleThread {
         this.interrupt();
         try {
             if (client.clientIsAlive()) {
-                RPCResponse<String> r = client.service_deregister(null,uuid.toString());
+                RPCResponse<String> r = client.service_deregister(null, uuid.toString());
                 r.get();
                 Logging.logMessage(Logging.LEVEL_INFO, this, uuid + " dergistered");
             }
@@ -125,7 +117,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 if (olset.size() > 0) {
                     currentVersion = olset.get(0).getVersion();
                 }
-
+                
                 reg.setVersion(currentVersion);
                 RPCResponse<Long> r2 = client.service_register(null, reg);
                 r2.get();
@@ -139,32 +131,31 @@ public class HeartbeatThread extends LifeCycleThread {
             
             AddressMappingSet endpoints = new AddressMappingSet();
             
-            //check if a listen.address is set
+            // check if a listen.address is set
             if (config.getAddress() == null) {
-                endpoints = NetUtils.getReachableEndpoints(uuid.getAddress()
-                    .getPort(), uuid.getProtocol());
+                endpoints = NetUtils.getReachableEndpoints(uuid.getAddress().getPort(), uuid.getProtocol());
                 if (endpoints.size() > 0) {
                     endpoints.get(0).setUuid(uuid.toString());
                 }
             } else {
-                //if it is set, we should use that for UUID mapping!
+                // if it is set, we should use that for UUID mapping!
                 endpoints = new AddressMappingSet();
                 
                 // remove the leading '/' if necessary
                 String dottedQuad = config.getAddress().toString();
-                if(dottedQuad.startsWith("/"))
+                if (dottedQuad.startsWith("/"))
                     dottedQuad = dottedQuad.substring(1);
-
+                
                 AddressMapping m = new AddressMapping(uuid.toString(), 0, uuid.getProtocol(), dottedQuad,
-                        uuid.getAddress().getPort(),"*", 3600);
-
+                    uuid.getAddress().getPort(), "*", 3600);
+                
                 endpoints.add(m);
             }
             
             // fetch the latest address mapping version from the Directory
             // Serivce
             long version = 0;
-            RPCResponse<AddressMappingSet> r2 = client.address_mappings_get(null,uuid.toString());
+            RPCResponse<AddressMappingSet> r2 = client.address_mappings_get(null, uuid.toString());
             try {
                 AddressMappingSet ams = r2.get();
                 
@@ -175,7 +166,7 @@ public class HeartbeatThread extends LifeCycleThread {
             } finally {
                 responses.add(r2);
             }
-
+            
             if (endpoints.size() > 0)
                 endpoints.get(0).setVersion(version);
             
@@ -208,26 +199,25 @@ public class HeartbeatThread extends LifeCycleThread {
                 
                 // ... for each UUID, ...
                 for (ServiceRegistry reg : serviceDataGen.getServiceData()) {
-
-                // ... remove old DS entry if necessary
-                RPCResponse<ServiceRegistrySet> r1 = client.service_get_by_uuid(null, reg.getUuid());
-                long currentVersion = 0;
-                responses.add(r1);
-                ServiceRegistrySet olset = r1.get();
-                if (olset.size() > 0) {
-                    currentVersion = olset.get(0).getVersion();
+                    
+                    // ... remove old DS entry if necessary
+                    RPCResponse<ServiceRegistrySet> r1 = client.service_get_by_uuid(null, reg.getUuid());
+                    long currentVersion = 0;
+                    responses.add(r1);
+                    ServiceRegistrySet olset = r1.get();
+                    if (olset.size() > 0) {
+                        currentVersion = olset.get(0).getVersion();
+                    }
+                    
+                    reg.setVersion(currentVersion);
+                    RPCResponse<Long> r2 = client.service_register(null, reg);
+                    responses.add(r2);
+                    r2.get();
+                    
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
+                            + " successfully updated at Directory Service");
                 }
-
-                reg.setVersion(currentVersion);
-                RPCResponse<Long> r2 = client.service_register(null, reg);
-                responses.add(r2);
-                r2.get();
-
-
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
-                        + " successfully updated at Directory Service");
-            }
                 
             } catch (IOException ex) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, ex);

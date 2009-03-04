@@ -24,12 +24,9 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
@@ -44,47 +41,30 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  * @author stender
  */
 public class CheckFileListOperation extends MRCOperation {
-
-    static class Args {
-
-        public String volumeID;
-
-        public List<String> fileIDs;
-
-    }
-
-    public static final String RPC_NAME = "checkFileList";
-
+    
+    public static final int OP_ID = 23;
+    
     public CheckFileListOperation(MRCRequestDispatcher master) {
         super(master);
     }
-
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-
-    @Override
-    public boolean isAuthRequired() {
-        return true;
-    }
-
+    
     @Override
     public void startRequest(MRCRequest rq) {
-
+        
         try {
-
-            Args rqArgs = (Args) rq.getRequestArgs();
-
+            
+            final xtreemfs_check_file_existsRequest rqArgs = (xtreemfs_check_file_existsRequest) rq
+                    .getRequestArgs();
+            
             final VolumeManager vMan = master.getVolumeManager();
-            StorageManager sMan = vMan.getStorageManager(rqArgs.volumeID);
-
+            StorageManager sMan = vMan.getStorageManager(rqArgs.getVolume_id());
+            
             String response = sMan == null ? "2" : "";
             if (sMan != null)
                 try {
-                    if (rqArgs.fileIDs == null || rqArgs.fileIDs.size() == 0)
+                    if (rqArgs.getFile_ids().size() == 0)
                         throw new UserException("fileList was empty!");
-                    for (String fileId : rqArgs.fileIDs) {
+                    for (String fileId : rqArgs.getFile_ids()) {
                         if (fileId == null)
                             throw new MRCException("file ID was null!");
                         response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
@@ -94,42 +74,18 @@ public class CheckFileListOperation extends MRCOperation {
                 } catch (MRCException be) {
                     throw new MRCException("checkFileList caused an Exception: " + be.getMessage());
                 }
-
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(response).getBytes()));
+            
+            // set the response
+            rq.setResponse(new xtreemfs_check_file_existsResponse(response));
             finishRequest(rq);
-
+            
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-
-        Args args = new Args();
-
-        try {
-
-            args.volumeID = (String) arguments.get(0);
-            args.fileIDs = (List<String>) arguments.get(1);
-
-            if (arguments.size() == 2)
-                return null;
-
-            throw new Exception();
-
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                        + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                        + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
-
+    
 }

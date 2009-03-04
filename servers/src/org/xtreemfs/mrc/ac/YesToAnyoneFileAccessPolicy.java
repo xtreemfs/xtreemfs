@@ -45,26 +45,9 @@ import org.xtreemfs.mrc.utils.PathResolver;
 public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     
     public static final short   POLICY_ID = 1;
-    
-    private static final String AM_WRITE  = "w";
-    
-    private static final String AM_READ   = "r";
-    
-    private static final String AM_DELETE = "d";
-    
-    @Override
-    public String translateAccessMode(int accessMode) {
-        switch (accessMode) {
-        case FileAccessManager.READ_ACCESS:
-            return AM_READ;
-        case FileAccessManager.WRITE_ACCESS:
-            return AM_WRITE;
-        case FileAccessManager.SEARCH_ACCESS:
-            return AM_READ;
-        case FileAccessManager.DELETE_ACCESS:
-            return AM_DELETE;
-        }
         
+    @Override
+    public String translateAccessFlags(int accessMode) {
         return null;
     }
     

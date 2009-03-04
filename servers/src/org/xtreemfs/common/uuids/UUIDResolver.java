@@ -32,29 +32,27 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 
 /**
  * Resolves UUID to InetSocketAddress+Protocol mappings.
+ * 
  * @author bjko
  */
 public final class UUIDResolver extends Thread {
-
+    
     Map<String, UUIDCacheEntry>   cache;
     
     protected transient boolean   quit;
     
     protected final DIRClient     dir;
-    
-    protected final String        authString;
     
     protected final List<String>  myNetworks;
     
@@ -66,10 +64,9 @@ public final class UUIDResolver extends Thread {
     public final int              maxUnusedEntry;
     
     protected static UUIDResolver theInstance;
-
-
-    protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry,
-                           boolean singleton) throws JSONException,IOException {
+    
+    protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry, boolean singleton)
+        throws IOException {
         
         super("UUID Resolver");
         setDaemon(true);
@@ -79,54 +76,60 @@ public final class UUIDResolver extends Thread {
         this.dir = client;
         this.maxUnusedEntry = maxUnusedEntry;
         this.cacheCleanInterval = cacheCleanInterval;
-
+        
         if (singleton) {
-            assert(theInstance == null);
+            assert (theInstance == null);
             theInstance = this;
         }
-        authString = NullAuthProvider.createAuthString("services", "xtreemfs");
+        
         AddressMappingSet ntwrks = NetUtils.getReachableEndpoints(0, "http");
         myNetworks = new ArrayList(ntwrks.size());
         for (AddressMapping network : ntwrks) {
             myNetworks.add(network.getMatch_network());
         }
     }
-
+    
     /**
      * Starts the UUIDResolver thread.
-     * @param client a DIRClient used to resolve non-cached and non-local mappings
-     * @param cacheCleanInterval the interval between two cleanup/renewals of cache entries (in ms)
-     * @param maxUnusedEntry the duration for which to keep an unused entry (in ms, should be set to several tens of minutes)
+     * 
+     * @param client
+     *            a DIRClient used to resolve non-cached and non-local mappings
+     * @param cacheCleanInterval
+     *            the interval between two cleanup/renewals of cache entries (in
+     *            ms)
+     * @param maxUnusedEntry
+     *            the duration for which to keep an unused entry (in ms, should
+     *            be set to several tens of minutes)
      * @throws org.xtreemfs.foundation.json.JSONException
      * @throws java.io.IOException
      */
-    public static synchronized void start(DIRClient client,
-            int cacheCleanInterval, int maxUnusedEntry) throws JSONException,IOException {
+    public static synchronized void start(DIRClient client, int cacheCleanInterval, int maxUnusedEntry)
+        throws IOException {
         if (theInstance == null) {
-            new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry,true);
+            new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
             theInstance.start();
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,"started UUIDResolver");
+            Logging.logMessage(Logging.LEVEL_DEBUG, null, "started UUIDResolver");
         } else {
-            Logging.logMessage(Logging.LEVEL_INFO, null,"UUIDResolver already running!");
+            Logging.logMessage(Logging.LEVEL_INFO, null, "UUIDResolver already running!");
         }
     }
     
-    public static synchronized UUIDResolver startNonSingelton(DIRClient client,
-            int cacheCleanInterval, int maxUnusedEntry) throws JSONException,IOException {
-            UUIDResolver tmp = new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry,false);
-            tmp.start();
-            return tmp;
+    public static synchronized UUIDResolver startNonSingelton(DIRClient client, int cacheCleanInterval,
+        int maxUnusedEntry) throws IOException {
+        UUIDResolver tmp = new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, false);
+        tmp.start();
+        return tmp;
     }
-
+    
     public static boolean isRunning() {
         return theInstance != null;
     }
-
+    
     static UUIDCacheEntry resolve(String uuid) throws UnknownUUIDException {
         assert (theInstance != null);
-
+        
         UUIDCacheEntry entry = theInstance.cache.get(uuid);
-        //check if it is still valid
+        // check if it is still valid
         if ((entry != null) && (entry.getValidUntil() > TimeSync.getLocalSystemTime())) {
             entry.setLastAccess(TimeSync.getLocalSystemTime());
             return entry;
@@ -137,28 +140,29 @@ public final class UUIDResolver extends Thread {
     static UUIDCacheEntry resolve(String uuid, UUIDResolver nonSingleton) throws UnknownUUIDException {
         
         UUIDCacheEntry entry = nonSingleton.cache.get(uuid);
-        //check if it is still valid
+        // check if it is still valid
         if ((entry != null) && (entry.getValidUntil() > TimeSync.getLocalSystemTime())) {
             entry.setLastAccess(TimeSync.getLocalSystemTime());
             return entry;
         }
         return nonSingleton.fetchUUID(uuid);
     }
-
+    
     UUIDCacheEntry fetchUUID(String uuid) throws UnknownUUIDException {
         if (dir == null)
-            throw new UnknownUUIDException("there is no mapping for "+uuid+". Attention: local mode enabled, no remote lookup possible.");
+            throw new UnknownUUIDException("there is no mapping for " + uuid
+                + ". Attention: local mode enabled, no remote lookup possible.");
         RPCResponse<AddressMappingSet> r = null;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"loading uuid mapping for "+uuid);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "loading uuid mapping for " + uuid);
         try {
-            r = dir.address_mappings_get(null,uuid);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent request to DIR");
+            r = dir.address_mappings_get(null, uuid);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent request to DIR");
             AddressMappingSet ams = r.get();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received response for "+uuid);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "received response for " + uuid);
             if (ams.size() == 0) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"NO UUID MAPPING FOR: "+uuid);
-                throw new UnknownUUIDException("uuid "+uuid+" is not registered at directory server");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "NO UUID MAPPING FOR: " + uuid);
+                throw new UnknownUUIDException("uuid " + uuid + " is not registered at directory server");
             }
             for (AddressMapping addrMapping : ams) {
                 final String network = addrMapping.getMatch_network();
@@ -166,31 +170,35 @@ public final class UUIDResolver extends Thread {
                     final String address = addrMapping.getAddress();
                     final String protocol = addrMapping.getProtocol();
                     final int port = addrMapping.getPort();
-                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl()*1000;
-                    final InetSocketAddress endpoint = new InetSocketAddress(address,port);
+                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl() * 1000;
+                    final InetSocketAddress endpoint = new InetSocketAddress(address, port);
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"matching uuid record found for uuid "+uuid+" with network "+network);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "matching uuid record found for uuid "
+                            + uuid + " with network " + network);
                     UUIDCacheEntry e = new UUIDCacheEntry(uuid, protocol, endpoint, validUntil);
                     cache.put(uuid, e);
                     return e;
                 }
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"NO UUID MAPPING FOR: "+uuid);
-            throw new UnknownUUIDException("there is no matching entry for my network in the uuid address mapping. The service at "+uuid+
-                    " is either not reachable from this machine or the mapping entry is misconfigured.");
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "NO UUID MAPPING FOR: " + uuid);
+            throw new UnknownUUIDException(
+                "there is no matching entry for my network in the uuid address mapping. The service at "
+                    + uuid
+                    + " is either not reachable from this machine or the mapping entry is misconfigured.");
         } catch (InterruptedException ex) {
-            throw new UnknownUUIDException("cannot retrieve mapping from server due to IO error: "+ex);
+            throw new UnknownUUIDException("cannot retrieve mapping from server due to IO error: " + ex);
         } catch (IOException ex) {
-            throw new UnknownUUIDException("cannot retrieve mapping from server due to IO error: "+ex);
+            throw new UnknownUUIDException("cannot retrieve mapping from server due to IO error: " + ex);
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new UnknownUUIDException("cannot retrieve mapping from server due to invalid data sent by the server: "+ex);
+            throw new UnknownUUIDException(
+                "cannot retrieve mapping from server due to invalid data sent by the server: " + ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
     }
-
+    
     @Override
     public void run() {
         List<UUIDCacheEntry> updates = new LinkedList();
@@ -201,22 +209,25 @@ public final class UUIDResolver extends Thread {
                 if (entry.isSticky())
                     continue;
                 if (entry.getLastAccess() + maxUnusedEntry < TimeSync.getLocalSystemTime()) {
-                    //dump entry!
+                    // dump entry!
                     iter.remove();
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"removed entry from UUID cache: "+entry.getUuid());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "removed entry from UUID cache: "
+                        + entry.getUuid());
                 } else {
-                    //check if update is necessary
-                    if (entry.getValidUntil() < TimeSync.getLocalSystemTime()+cacheCleanInterval) {
-                        //renew entry...
+                    // check if update is necessary
+                    if (entry.getValidUntil() < TimeSync.getLocalSystemTime() + cacheCleanInterval) {
+                        // renew entry...
                         try {
                             updates.add(fetchUUID(entry.getUuid()));
                         } catch (Exception ex) {
-                            Logging.logMessage(Logging.LEVEL_WARN, this,"cannot refresh UIID mapping: "+ex);
+                            Logging
+                                    .logMessage(Logging.LEVEL_WARN, this, "cannot refresh UIID mapping: "
+                                        + ex);
                             iter.remove();
                         }
                     }
                 }
-
+                
             }
             try {
                 sleep(cacheCleanInterval);
@@ -224,30 +235,32 @@ public final class UUIDResolver extends Thread {
             }
         } while (!quit);
     }
-
+    
     /**
      * Add a UUID which is mapped on localhost
-     * @param localUUID the UUID to map
-     * @param port the port to map the UUID to
-     * @param useSSL defines the protocol
+     * 
+     * @param localUUID
+     *            the UUID to map
+     * @param port
+     *            the port to map the UUID to
+     * @param useSSL
+     *            defines the protocol
      */
     public static void addLocalMapping(String localUUID, int port, boolean useSSL) {
-        assert(theInstance != null);
-
-        UUIDCacheEntry e = new UUIDCacheEntry(localUUID,
-                (useSSL ? "https" : "http"),
-                new InetSocketAddress("localhost",port),
-                Long.MAX_VALUE);
-
+        assert (theInstance != null);
+        
+        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "https" : "http"), new InetSocketAddress(
+            "localhost", port), Long.MAX_VALUE);
+        
         e.setSticky(true);
         theInstance.cache.put(localUUID, e);
     }
-
+    
     public static void addLocalMapping(ServiceUUID uuid, int port, boolean useSSL) {
         addLocalMapping(uuid.toString(), port, useSSL);
     }
-
-    public static void shutdown(UUIDResolver nonSingleton) {   
+    
+    public static void shutdown(UUIDResolver nonSingleton) {
         nonSingleton.quit = true;
         nonSingleton.interrupt();
     }
@@ -257,12 +270,13 @@ public final class UUIDResolver extends Thread {
             theInstance.quit = true;
             theInstance.interrupt();
             theInstance = null;
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,"UUIDREsolver shut down");
+            Logging.logMessage(Logging.LEVEL_DEBUG, null, "UUIDREsolver shut down");
         } else {
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,"UUIDREsolver was already shut down or is not running");
+            Logging.logMessage(Logging.LEVEL_DEBUG, null,
+                "UUIDREsolver was already shut down or is not running");
         }
     }
-
+    
     public static String getCache() {
         StringBuilder sb = new StringBuilder();
         for (UUIDCacheEntry e : theInstance.cache.values()) {
@@ -275,12 +289,12 @@ public final class UUIDResolver extends Thread {
                 sb.append(" - STICKY");
             } else {
                 sb.append(" - valid for ");
-                sb.append((e.getValidUntil() - TimeSync.getLocalSystemTime())/1000l);
+                sb.append((e.getValidUntil() - TimeSync.getLocalSystemTime()) / 1000l);
                 sb.append("s");
             }
             sb.append("\n");
         }
         return sb.toString();
     }
-
+    
 }

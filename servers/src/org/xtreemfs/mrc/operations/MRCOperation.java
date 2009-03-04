@@ -24,11 +24,13 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 /**
  * 
@@ -51,33 +53,34 @@ public abstract class MRCOperation {
     public abstract void startRequest(MRCRequest rq);
     
     /**
-     * Method to check if operation needs to parse arguments.
-     * 
-     * @return true, if the operation needs arguments
-     */
-    public abstract boolean hasArguments();
-    
-    /**
-     * Method to check if operation needs user authentication.
-     * 
-     * @return true, if the user needs to be authenticated
-     */
-    public abstract boolean isAuthRequired();
-    
-    /**
-     * Parses and inspects the JSON RPC arguments. This method should be
-     * overwritten if <code>hasArguments()</code> evaluates to <code>true</code>
-     * ; the parsed arguments have to be attached to the given MRC request.
+     * Parses the request arguments.
      * 
      * @param rq
      *            the request
-     * @param arguments
-     *            the JSON RPC arguments
+     * 
      * @return null if successful, error message otherwise
      */
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        return null;
+    public ErrorRecord parseRequestArgs(MRCRequest rq) {
+        try {
+            Request req = MRCInterface.createRequest(rq.getRPCRequest().getRequestHeader());
+            req.deserialize(rq.getRPCRequest().getRequestFragment());
+            rq.setRequestArgs(req);
+            return null;
+            
+        } catch (Throwable exc) {
+            return new ErrorRecord(ErrorClass.INVALID_ARGS, exc.getMessage(), exc);
+        }
     }
+    
+    /**
+     * Returns the context associated with a request. If the request is not
+     * bound to a context, <code>null</code> is returned.
+     * 
+     * @param rq
+     *            the MRC request
+     * @return the context, or <code>null</code>, if not available
+     */
+    public abstract Context getContext(MRCRequest rq);
     
     /**
      * Completes a request. This method should be used if no error has occurred.

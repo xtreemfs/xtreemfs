@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import junit.framework.TestCase;
+import junit.textui.TestRunner;
 
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -285,5 +286,9 @@ public class RandomAccessFileTest extends TestCase {
             }
         }
         return found;
+    }
+    
+    public static void main(String[] args) {
+        TestRunner.run(RandomAccessFileTest.class);
     }
 }

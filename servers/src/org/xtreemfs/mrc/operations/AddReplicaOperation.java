@@ -24,13 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -57,30 +56,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class AddReplicaOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String              fileId;
-        
-        public Map<String, Object> stripingPolicy;
-        
-        public List<Object>        osdList;
-        
-    }
-    
-    public static final String RPC_NAME = "addReplica";
+    public static final int OP_ID = 26;
     
     public AddReplicaOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -88,7 +67,7 @@ public class AddReplicaOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final xtreemfs_replica_addRequest rqArgs = (xtreemfs_replica_addRequest) rq.getRequestArgs();
             
             final FileAccessManager faMan = master.getFileAccessManager();
             final VolumeManager vMan = master.getVolumeManager();
@@ -97,12 +76,12 @@ public class AddReplicaOperation extends MRCOperation {
             long fileId = 0;
             String volumeId = null;
             try {
-                String globalFileId = rqArgs.fileId;
+                String globalFileId = rqArgs.getFile_id();
                 int i = globalFileId.indexOf(':');
-                volumeId = rqArgs.fileId.substring(0, i);
-                fileId = Long.parseLong(rqArgs.fileId.substring(i + 1));
+                volumeId = rqArgs.getFile_id().substring(0, i);
+                fileId = Long.parseLong(rqArgs.getFile_id().substring(i + 1));
             } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + rqArgs.fileId
+                throw new UserException("invalid global file ID: " + rqArgs.getFile_id()
                     + "; expected pattern: <volume_ID>:<local_file_ID>");
             }
             
@@ -136,21 +115,15 @@ public class AddReplicaOperation extends MRCOperation {
             
             // check whether privileged permissions are granted for adding
             // replicas
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
-            // check whether a striping policy is explicitly assigned to the
-            // replica; if not, use the one from the file; if none is assigned
-            // to the file either, use the one from the volume; if the volume
-            // does not have a default striping policy, throw an exception
-            StripingPolicy sPol = Converter.mapToStripingPolicy(sMan, rqArgs.stripingPolicy);
-            if (sPol == null)
-                sPol = sMan.getDefaultStripingPolicy(file.getId());
-            if (sPol == null)
-                sPol = sMan.getDefaultStripingPolicy(1);
-            if (sPol == null)
-                throw new UserException(ErrNo.EPERM,
-                    "either the replica, the file or the volume need a striping policy");
+            Replica newRepl = rqArgs.getNew_replica();
+            org.xtreemfs.interfaces.StripingPolicy sp = newRepl.getStriping_policy();
+            StringSet osds = newRepl.getOsd_uuids();
+            
+            StripingPolicy sPol = sMan.createStripingPolicy(Converter.intToPolicyName(sp.getPolicy()), sp
+                    .getStripe_size(), sp.getWidth());
             
             if (!file.isReadOnly())
                 throw new UserException(ErrNo.EPERM,
@@ -160,15 +133,13 @@ public class AddReplicaOperation extends MRCOperation {
             // hasn't been used yet
             XLocList xLocList = file.getXLocList();
             
-            if (!MRCHelper.isAddable(xLocList, rqArgs.osdList))
-                throw new UserException(
-                    "at least one OSD already used in current X-Locations list '"
-                        + JSONParser.writeJSON(Converter.xLocListToList(xLocList)) + "'");
+            if (!MRCHelper.isAddable(xLocList, newRepl.getOsd_uuids()))
+                throw new UserException("at least one OSD already used in current X-Locations list '"
+                    + Converter.xLocListToXLocSet(xLocList).toString() + "'");
             
             // create a new replica and add it to the client's X-Locations list
             // (this will automatically increment the X-Locations list version)
-            XLoc replica = sMan.createXLoc(sPol, rqArgs.osdList.toArray(new String[rqArgs.osdList
-                    .size()]));
+            XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]));
             if (xLocList == null)
                 xLocList = sMan.createXLocList(new XLoc[] { replica }, 1);
             else {
@@ -187,50 +158,22 @@ public class AddReplicaOperation extends MRCOperation {
             // update the X-Locations list
             sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new xtreemfs_replica_addResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.fileId = (String) arguments.get(0);
-            args.stripingPolicy = (Map<String, Object>) arguments.get(1);
-            args.osdList = (List<Object>) arguments.get(2);
-            
-            if (arguments.size() == 3)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((xtreemfs_replica_addRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -37,10 +37,6 @@ public final class ErrorRecord {
          */
         INTERNAL_SERVER_ERROR,
         /**
-         * indicates a malformed request
-         */
-        BAD_REQUEST,
-        /**
          * a user exception for which a defined error code exists in the
          * protocol
          */
@@ -48,7 +44,15 @@ public final class ErrorRecord {
         /**
          * the local MRC is not responsible
          */
-        REDIRECT
+        REDIRECT,
+        /**
+         * the operation is unknown
+         */
+        UNKNOWN_OPERATION,
+        /**
+         * invalid argument list
+         */
+        INVALID_ARGS
     }
     
     /**
@@ -83,8 +87,7 @@ public final class ErrorRecord {
         this(errorClass, posixErrorCode, errorMessage, null);
     }
     
-    public ErrorRecord(ErrorClass errorClass, int posixErrorCode, String errorMessage,
-        Throwable throwable) {
+    public ErrorRecord(ErrorClass errorClass, int posixErrorCode, String errorMessage, Throwable throwable) {
         this.posixErrorCode = posixErrorCode;
         this.errorMessage = errorMessage;
         this.errorClass = errorClass;
@@ -102,9 +105,13 @@ public final class ErrorRecord {
     public ErrorClass getErrorClass() {
         return errorClass;
     }
-
+    
     public Throwable getThrowable() {
-        return this.throwable;
+        return throwable;
+    }
+    
+    public String getStackTrace() {
+        return OutputUtils.stackTraceToString(throwable);
     }
     
     public String toString() {
@@ -113,7 +120,7 @@ public final class ErrorRecord {
         return this.errorClass + "." + this.posixErrorCode + ":" + this.errorMessage
             + (stackTrace == null ? "" : ", caused by: " + stackTrace);
     }
-
+    
     public String toJSON() {
         return "{ \"errno\": " + this.posixErrorCode + ", \"errorMessage\" : \""
             + (this.errorMessage.replace("\"", "\\\"")) + "\" }";

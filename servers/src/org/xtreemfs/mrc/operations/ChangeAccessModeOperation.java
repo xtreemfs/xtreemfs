@@ -24,12 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
+import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -51,28 +49,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class ChangeAccessModeOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public short  mode;
-        
-    }
-    
-    public static final String RPC_NAME = "changeAccessMode";
+    public static final int OP_ID = 2;
     
     public ChangeAccessModeOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -80,20 +60,20 @@ public class ChangeAccessModeOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final chmodRequest rqArgs = (chmodRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -103,8 +83,8 @@ public class ChangeAccessModeOperation extends MRCOperation {
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+                rqArgs.setPath(target);
+                p = new Path(rqArgs.getPath());
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
@@ -119,62 +99,34 @@ public class ChangeAccessModeOperation extends MRCOperation {
             }
             
             // check whether the access mode may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // change the access mode
             faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().groupIds, rqArgs.mode, update);
+                    .getDetails().groupIds, rqArgs.getMode(), update);
             
             // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
-                update);
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new chmodResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.mode = ((Long) arguments.get(1)).shortValue();
-            
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((chmodRequest) rq.getRequestArgs()).getContext();
     }
     
 }

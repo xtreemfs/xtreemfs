@@ -21,7 +21,7 @@
 /*
  * AUTHORS: Jan Stender (ZIB)
  */
-package org.xtreemfs.mrc.database;
+package org.xtreemfs.mrc.utils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -34,11 +34,13 @@ import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -46,11 +48,10 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
-import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
-public class DBAdminTool {
+public class DBAdminHelper {
     
     public static class DBRestoreState {
         
@@ -95,8 +96,8 @@ public class DBAdminTool {
      * @throws DatabaseException
      *             if an error occurs while accessing the database
      */
-    public static void dumpVolume(BufferedWriter xmlWriter, BabuDBStorageManager sMan)
-        throws IOException, DatabaseException {
+    public static void dumpVolume(BufferedWriter xmlWriter, BabuDBStorageManager sMan) throws IOException,
+        DatabaseException {
         try {
             dumpDir(xmlWriter, sMan, 1);
         } catch (JSONException exc) {
@@ -105,8 +106,7 @@ public class DBAdminTool {
     }
     
     public static void restoreDir(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException,
-        UserException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
         if (openTag) {
             
@@ -128,10 +128,9 @@ public class DBAdminTool {
             
             // if the directory is the root directory, restore the volume
             if (id == 1) {
-                vMan.createVolume(faMan, state.currentVolume.getId(),
-                    state.currentVolume.getName(), state.currentVolume.getAcPolicyId(),
-                    state.currentVolume.getOsdPolicyId(), state.currentVolume.getOsdPolicyArgs(),
-                    owner, owningGroup, null);
+                vMan.createVolume(faMan, state.currentVolume.getId(), state.currentVolume.getName(),
+                    state.currentVolume.getAcPolicyId(), state.currentVolume.getOsdPolicyId(),
+                    state.currentVolume.getOsdPolicyArgs(), owner, owningGroup, null);
                 
                 StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
                 state.currentEntity = sMan.getMetadata(1);
@@ -145,8 +144,8 @@ public class DBAdminTool {
                 
                 StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
                 AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime,
-                    mtime, owner, owningGroup, rights, w32Attrs, update);
+                FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime, mtime,
+                    owner, owningGroup, rights, w32Attrs, update);
                 update.execute();
                 state.currentEntity = dir;
             }
@@ -207,8 +206,8 @@ public class DBAdminTool {
                 readOnly = Boolean.getBoolean(attrs.getValue(attrs.getIndex("readOnly")));
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-            file = sMan.createFile(id, state.parentIds.get(0), name, atime, ctime, mtime, owner,
-                owningGroup, rights, w32Attrs, size, readOnly, epoch, issuedEpoch, update);
+            file = sMan.createFile(id, state.parentIds.get(0), name, atime, ctime, mtime, owner, owningGroup,
+                rights, w32Attrs, size, readOnly, epoch, issuedEpoch, update);
             update.execute();
         }
 
@@ -225,9 +224,8 @@ public class DBAdminTool {
             state.largestFileId = state.currentEntity.getId();
     }
     
-    public static void restoreXLocList(VolumeManager vMan, FileAccessManager faMan,
-        Attributes attrs, DBRestoreState state, int dbVersion, boolean openTag)
-        throws DatabaseException {
+    public static void restoreXLocList(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
         
         StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
         
@@ -283,8 +281,8 @@ public class DBAdminTool {
             StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
             try {
-                faMan.setACLEntries(sMan, state.currentEntity, state.parentIds.get(0), owner,
-                    groups, state.currentACL, update);
+                faMan.setACLEntries(sMan, state.currentEntity, state.parentIds.get(0), owner, groups,
+                    state.currentACL, update);
             } catch (MRCException e) {
                 throw new DatabaseException(e);
             } catch (UserException e) {
@@ -351,11 +349,10 @@ public class DBAdminTool {
         
         // serialize the parent directory
         xmlWriter.write("<dir id=\"" + parent.getId() + "\" name=\""
-            + OutputUtils.escapeToXML(parent.getFileName()) + "\" uid=\"" + parent.getOwnerId()
-            + "\" gid=\"" + parent.getOwningGroupId() + "\" atime=\"" + parent.getAtime()
-            + "\" ctime=\"" + parent.getCtime() + "\" mtime=\"" + parent.getMtime()
-            + "\" rights=\"" + parent.getPerms() + "\" w32Attrs=\"" + parent.getW32Attrs()
-            + "\">\n");
+            + OutputUtils.escapeToXML(parent.getFileName()) + "\" uid=\"" + parent.getOwnerId() + "\" gid=\""
+            + parent.getOwningGroupId() + "\" atime=\"" + parent.getAtime() + "\" ctime=\""
+            + parent.getCtime() + "\" mtime=\"" + parent.getMtime() + "\" rights=\"" + parent.getPerms()
+            + "\" w32Attrs=\"" + parent.getW32Attrs() + "\">\n");
         
         // serialize the root directory's ACL
         dumpACL(xmlWriter, sMan.getACL(parentId));
@@ -383,12 +380,11 @@ public class DBAdminTool {
         
         // serialize the file
         xmlWriter.write("<file id=\"" + file.getId() + "\" name=\""
-            + OutputUtils.escapeToXML(file.getFileName()) + "\" size=\"" + file.getSize()
-            + "\" epoch=\"" + file.getEpoch() + "\" issuedEpoch=\"" + file.getIssuedEpoch()
-            + "\" uid=\"" + file.getOwnerId() + "\" gid=\"" + file.getOwningGroupId()
-            + "\" atime=\"" + file.getAtime() + "\" ctime=\"" + file.getCtime() + "\" mtime=\""
-            + file.getMtime() + "\" rights=\"" + file.getPerms() + "\" w32Attrs=\""
-            + file.getW32Attrs() + "\" readOnly=\"" + file.isReadOnly() + "\">\n");
+            + OutputUtils.escapeToXML(file.getFileName()) + "\" size=\"" + file.getSize() + "\" epoch=\""
+            + file.getEpoch() + "\" issuedEpoch=\"" + file.getIssuedEpoch() + "\" uid=\"" + file.getOwnerId()
+            + "\" gid=\"" + file.getOwningGroupId() + "\" atime=\"" + file.getAtime() + "\" ctime=\""
+            + file.getCtime() + "\" mtime=\"" + file.getMtime() + "\" rights=\"" + file.getPerms()
+            + "\" w32Attrs=\"" + file.getW32Attrs() + "\" readOnly=\"" + file.isReadOnly() + "\">\n");
         
         // serialize the file's xLoc list
         XLocList xloc = file.getXLocList();
@@ -397,8 +393,8 @@ public class DBAdminTool {
             for (int i = 0; i < xloc.getReplicaCount(); i++) {
                 XLoc repl = xloc.getReplica(i);
                 xmlWriter.write("<xloc pattern=\""
-                    + OutputUtils.escapeToXML(JSONParser.writeJSON(Converter
-                            .stripingPolicyToMap(repl.getStripingPolicy()))) + "\">\n");
+                    + OutputUtils.escapeToXML(Converter.stripingPolicyToString(repl.getStripingPolicy()))
+                    + "\">\n");
                 for (int j = 0; j < repl.getOSDCount(); j++)
                     xmlWriter.write("<osd location=\"" + repl.getOSD(j) + "\"/>\n");
                 xmlWriter.write("</xloc>\n");
@@ -415,30 +411,27 @@ public class DBAdminTool {
         xmlWriter.write("</file>\n");
     }
     
-    private static void dumpAttrs(BufferedWriter xmlWriter, Iterator<XAttr> attrs)
-        throws IOException {
+    private static void dumpAttrs(BufferedWriter xmlWriter, Iterator<XAttr> attrs) throws IOException {
         
         if (attrs.hasNext()) {
             xmlWriter.write("<attrs>\n");
             while (attrs.hasNext()) {
                 XAttr attr = attrs.next();
-                xmlWriter.write("<attr key=\"" + OutputUtils.escapeToXML(attr.getKey())
-                    + "\" value=\"" + OutputUtils.escapeToXML(attr.getValue()) + "\" owner=\""
-                    + attr.getOwner() + "\"/>\n");
+                xmlWriter.write("<attr key=\"" + OutputUtils.escapeToXML(attr.getKey()) + "\" value=\""
+                    + OutputUtils.escapeToXML(attr.getValue()) + "\" owner=\"" + attr.getOwner() + "\"/>\n");
             }
             xmlWriter.write("</attrs>\n");
         }
     }
     
-    private static void dumpACL(BufferedWriter xmlWriter, Iterator<ACLEntry> acl)
-        throws IOException {
+    private static void dumpACL(BufferedWriter xmlWriter, Iterator<ACLEntry> acl) throws IOException {
         
         if (acl.hasNext()) {
             xmlWriter.write("<acl>\n");
             while (acl.hasNext()) {
                 ACLEntry entry = acl.next();
-                xmlWriter.write("<entry entity=\"" + entry.getEntity() + "\" rights=\""
-                    + entry.getRights() + "\"/>\n");
+                xmlWriter.write("<entry entity=\"" + entry.getEntity() + "\" rights=\"" + entry.getRights()
+                    + "\"/>\n");
             }
             xmlWriter.write("</acl>\n");
         }

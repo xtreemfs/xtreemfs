@@ -25,134 +25,66 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.mrc.ErrNo;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.utils.MRCHelper;
 
 /**
  * 
  * @author stender
  */
 public class RenewOperation extends MRCOperation {
-
-    public static final String RPC_NAME = "renew";
-
+    
+    public static final int OP_ID = 25;
+    
     public RenewOperation(MRCRequestDispatcher master) {
         super(master);
     }
-
-    @Override
-    public boolean hasArguments() {
-        return false;
-    }
-
-    @Override
-    public boolean isAuthRequired() {
-        return true;
-    }
-
+    
     @Override
     public void startRequest(MRCRequest rq) {
-
+        
         try {
-
-            String capString = rq.getPinkyRequest().requestHeaders.getHeader(HTTPHeaders.HDR_XCAPABILITY);
-            String newSizeString = rq.getPinkyRequest().requestHeaders
-                    .getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-
-            if (capString == null)
-                throw new UserException("missing " + HTTPHeaders.HDR_XCAPABILITY + " header");
-
+            
+            final xtreemfs_renew_capabilityRequest rqArgs = (xtreemfs_renew_capabilityRequest) rq
+                    .getRequestArgs();
+            
             // create a capability object to verify the capability
-            Capability cap = new Capability(capString, master.getConfig().getCapabilitySecret());
-
-            // check whether the received capability has a valid signature
-            if (!cap.isValid())
-                throw new UserException(capString + " is invalid");
-
-            Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), cap.getEpochNo(), master
+            Capability cap = new Capability(rqArgs.getXcap(), master.getConfig().getCapabilitySecret());
+            
+            // check whether the capability has a valid signature
+            if (!cap.hasValidSignature())
+                throw new UserException(cap + " does not have a valid signature");
+            
+            // check whether the capability has expired
+            if (cap.hasExpired())
+                throw new UserException(cap + " has expired");
+            
+            Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
+                / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), master
                     .getConfig().getCapabilitySecret());
-
-            HTTPHeaders headers = MRCHelper.createXCapHeaders(newCap.toString(), null);
-            rq.setAdditionalResponseHeaders(headers);
-
-            if (newSizeString != null) {
-                if (Logging.isDebug())
-                    Logging
-                            .logMessage(Logging.LEVEL_DEBUG, this,
-                                    "received 'X-New-Filesize' header w/ 'renew' operation. 'updateFileSize' should be used instead of 'renew'");
-
-                // parse volume and file ID from global file ID
-                String globalFileId = cap.getFileId();
-                int i = globalFileId.indexOf(':');
-                String volumeId = cap.getFileId().substring(0, i);
-                long fileId = Long.parseLong(cap.getFileId().substring(i + 1));
-                StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
-
-                FileMetadata file = sMan.getMetadata(fileId);
-                if (file == null)
-                    throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
-
-                int index = newSizeString.indexOf(',');
-                if (index == -1)
-                    throw new UserException(ErrNo.EINVAL, "invalid " + HTTPHeaders.HDR_XNEWFILESIZE
-                            + " header");
-
-                // parse the file size and epoch number
-                long newFileSize = Long.parseLong(newSizeString.substring(1, index));
-                int epochNo = Integer
-                        .parseInt(newSizeString.substring(index + 1, newSizeString.length() - 1));
-
-                // FIXME: this line is needed due to a BUG in the client which
-                // expects some useless return value
-                rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-
-                // discard outdated file size updates
-                if (epochNo < file.getEpoch()) {
-                    finishRequest(rq);
-                    return;
-                }
-
-                // accept any file size in a new epoch but only larger file
-                // sizes in the current epoch
-                if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
-
-                    file.setSize(newFileSize);
-                    file.setEpoch(epochNo);
-
-                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-                    sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
-
-                    // TODO: update POSIX time stamps
-                    // // update POSIX timestamps
-                    // MRCOpHelper.updateFileTimes(parentId, file,
-                    // !master.getConfig().isNoAtime(),
-                    // false, true, sMan, update);
-
-                    update.execute();
-                } else
-                    finishRequest(rq);
-            } else
-                finishRequest(rq);
-
+            
+            // set the response
+            rq.setResponse(new xtreemfs_renew_capabilityResponse(newCap.getXCap()));
+            finishRequest(rq);
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                    exc));
+                exc));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
+    }
 }

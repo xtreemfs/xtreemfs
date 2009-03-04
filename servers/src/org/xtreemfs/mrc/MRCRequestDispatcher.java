@@ -37,34 +37,32 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.foundation.pinky.PinkyRequest;
-import org.xtreemfs.foundation.pinky.PinkyRequestListener;
-import org.xtreemfs.foundation.pinky.PipelinedPinky;
+import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
+import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
-import org.xtreemfs.foundation.speedy.MultiSpeedy;
+import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.Exceptions.errnoException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -83,26 +81,20 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * 
  * @author bjko
  */
-public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleListener, DBAccessResultListener {
-
-    private static final int             RPC_TIMEOUT = 10000;
-
-    private static final int             CONNECTION_TIMEOUT = 5*60*1000;
-
-    private final PipelinedPinky         pinkyStage;
+public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
+    DBAccessResultListener {
     
-    private final MultiSpeedy            speedyStage;
+    private static final int             RPC_TIMEOUT        = 10000;
+    
+    private static final int             CONNECTION_TIMEOUT = 5 * 60 * 1000;
+    
+    private final RPCNIOSocketServer     serverStage;
+    
+    private final RPCNIOSocketClient     clientStage;
     
     private final DIRClient              dirClient;
-
-    private final RPCNIOSocketClient     rpcClient;
-
-    private final ProcessingStage        procStage;
     
-    /**
-     * auth string used for talking to the directory service
-     */
-    private final String                 authString;
+    private final ProcessingStage        procStage;
     
     private final OSDStatusManager       osdMonitor;
     
@@ -123,30 +115,20 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         this.config = config;
         
-        // generate an authorization string for Directory Service operations
-        authString = NullAuthProvider.createAuthString(config.getUUID().toString(), config.getUUID()
-                .toString());
-        
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
-
+        
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
-
-        speedyStage = config.isUsingSSL() ? new MultiSpeedy(sslOptions) : new MultiSpeedy();
-        speedyStage.setLifeCycleListener(this);
         
-        pinkyStage = config.isUsingSSL() ? new PipelinedPinky(config.getPort(), config.getAddress(), this,
-            new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
-                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
-                config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
-                    .getTrustedCertsContainer(), false)) : new PipelinedPinky(config.getPort(), config
-                .getAddress(), this);
-        pinkyStage.setLifeCycleListener(this);
-
-        rpcClient = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
-        dirClient = new DIRClient(rpcClient, config.getDirectoryService());
+        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+        clientStage.setLifeCycleListener(this);
+        
+        serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
+        serverStage.setLifeCycleListener(this);
+        
+        dirClient = new DIRClient(clientStage, config.getDirectoryService());
         
         policyContainer = new PolicyContainer(config);
         authProvider = policyContainer.getAuthenticationProvider();
@@ -155,7 +137,7 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
             Logging.logMessage(Logging.LEVEL_INFO, this, "using authentication provider '"
                 + authProvider.getClass().getName() + "'");
         
-        osdMonitor = new OSDStatusManager(config, dirClient, policyContainer, authString);
+        osdMonitor = new OSDStatusManager(config, dirClient, policyContainer);
         osdMonitor.setLifeCycleListener(this);
         
         procStage = new ProcessingStage(this);
@@ -182,15 +164,14 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 kvset.add(new KeyValuePair("totalRAM", Long.toString(totalRAM)));
                 kvset.add(new KeyValuePair("usedRAM", Long.toString(usedRAM)));
                 kvset.add(new KeyValuePair("geoCoordinated", config.getGeoCoordinates()));
-
-
-                ServiceRegistry mrcReg = new ServiceRegistry(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "+uuid, kvset);
+                
+                ServiceRegistry mrcReg = new ServiceRegistry(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "
+                    + uuid, kvset);
                 sregs.add(mrcReg);
                 
                 try {
                     for (VolumeInfo vol : volumeManager.getVolumes()) {
-                        ServiceRegistry dsVolumeInfo = MRCHelper
-                                .createDSVolumeInfo(vol, osdMonitor, uuid);
+                        ServiceRegistry dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, uuid);
                         sregs.add(dsVolumeInfo);
                     }
                 } catch (DatabaseException exc) {
@@ -203,21 +184,18 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         };
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
-            authString, config);
+            config);
     }
     
     public void startup() throws Exception {
-
-        rpcClient.start();
-        rpcClient.waitForStartup();
-
-        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew(), authString);
+        
+        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
-        speedyStage.start();
-        speedyStage.waitForStartup();
+        clientStage.start();
+        clientStage.waitForStartup();
         osdMonitor.start();
         osdMonitor.waitForStartup();
         
@@ -229,8 +207,8 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         
         heartbeatThread.start();
         
-        pinkyStage.start();
-        pinkyStage.waitForStartup();
+        serverStage.start();
+        serverStage.waitForStartup();
         
         Logging
                 .logMessage(Logging.LEVEL_INFO, this, "MRC operational, listening on port "
@@ -238,14 +216,14 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     }
     
     public void shutdown() throws Exception {
-        pinkyStage.shutdown();
-        pinkyStage.waitForShutdown();
-
-        rpcClient.shutdown();
-        rpcClient.waitForShutdown();
-
+        serverStage.shutdown();
+        serverStage.waitForShutdown();
+        
+        clientStage.shutdown();
+        clientStage.waitForShutdown();
+        
         heartbeatThread.shutdown();
-
+        
         osdMonitor.shutdown();
         osdMonitor.waitForShutdown();
         
@@ -253,8 +231,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         procStage.waitForShutdown();
         
         UUIDResolver.shutdown();
-        speedyStage.shutdown();
-        speedyStage.waitForShutdown();
         
         volumeManager.shutdown();
         
@@ -265,8 +241,8 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         // send response back to client, if a pinky request is present
         assert (request != null);
         
-        final PinkyRequest pr = request.getPinkyRequest();
-        assert (pr != null);
+        final ONCRPCRequest rpcRequest = request.getRPCRequest();
+        assert (rpcRequest != null);
         
         if (request.getError() != null) {
             final ErrorRecord error = request.getError();
@@ -275,42 +251,45 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage() + " / request: "
                     + request);
                 
-                HTTPHeaders headers = new HTTPHeaders();
-                headers.addHeader(HTTPHeaders.HDR_LOCATION + ":" + error.getErrorMessage());
-                pr.setResponse(HTTPUtils.SC_SEE_OTHER, null, DATA_TYPE.JSON, headers);
+                // rpcRequest.sendRedirectException(error.getErrorMessage());
+                // TODO: send redirect
                 break;
             }
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage() + " / request: "
                     + request);
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getThrowable());
-                pr.setResponse(HTTPUtils.SC_SERVER_ERROR, error.getErrorMessage() + "\n\n");
+                rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
             case USER_EXCEPTION: {
-                pr.setResponse(HTTPUtils.SC_USER_EXCEPTION, error.toJSON());
+                // TODO: send user exception
+                rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
-            case BAD_REQUEST: {
-                pr.setResponse(HTTPUtils.SC_BAD_REQUEST, error.getErrorMessage());
+            case INVALID_ARGS: {
+                rpcRequest.sendGarbageArgs(error.getErrorMessage());
                 break;
             }
+            case UNKNOWN_OPERATION: {
+                rpcRequest.sendProtocolException(new ProtocolException(
+                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, error.getErrorCode(), error
+                            .getStackTrace()));
+                break;
+            }
+                
             default: {
-                pr.setResponse(HTTPUtils.SC_SERVER_ERROR, "an unknown error type was returned: " + error);
+                rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
             }
-            // we don't need that any more
-            if (request.getData() != null)
-                BufferPool.free(request.getData());
-        } else {
-            if (request.getDataType() == null)
-                request.setDataType(DATA_TYPE.JSON);
-            
-            pr.setResponse(HTTPUtils.SC_OKAY, request.getData(), request.getDataType(), request
-                    .getAdditionalResponseHeaders());
         }
-        pinkyStage.sendResponse(pr);
+
+        else {
+            assert (request.getResponse() != null);
+            rpcRequest.sendResponse(request.getResponse());
+        }
+        
     }
     
     public Map<StatusPageOperation.Vars, String> getStatusInformation() {
@@ -407,12 +386,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
         return data;
     }
     
-    public void receiveRequest(PinkyRequest theRequest) {
-        // no callback, special stage which executes the operatios
-        procStage.enqueueOperation(new MRCRequest(theRequest), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE,
-            null);
-    }
-    
     public VolumeManager getVolumeManager() {
         return volumeManager;
     }
@@ -431,10 +404,6 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     
     public DIRClient getDirClient() {
         return dirClient;
-    }
-    
-    public String getAuthString() {
-        return authString;
     }
     
     public MRCConfig getConfig() {
@@ -481,6 +450,22 @@ public class MRCRequestDispatcher implements PinkyRequestListener, LifeCycleList
     @Override
     public void requestFailed(Object context, Throwable error) {
         
+    }
+    
+    @Override
+    public void receiveRecord(ONCRPCRequest rq) {
+        Logging.logMessage(Logging.LEVEL_TRACE, this, "received new request");
+        
+        final ONCRPCRequestHeader hdr = rq.getRequestHeader();
+        
+        if (hdr.getInterfaceVersion() != MRCInterface.getVersion()) {
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0,
+                "invalid version requested"));
+            return;
+        }
+        
+        // no callback, special stage which executes the operatios
+        procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
     }
     
 }

@@ -51,7 +51,7 @@ public interface FileAccessPolicy {
      *            the POSIX access mode, see {@link FileAccessManager} constants
      * @return a policy-specific string describing the access mode
      */
-    public String translateAccessMode(int accessMode);
+    public String translateAccessFlags(int accessMode);
     
     /**
      * Checks whether the user with the given ID is allowed to perform

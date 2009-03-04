@@ -27,6 +27,7 @@ import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.Exceptions.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -153,5 +154,8 @@ public class ONCRPCRequest {
         return record.getConnection().getClientAddress();
     }
 
-
+    public ChannelIO getChannel() {
+        return record.getConnection().getChannel();
+    }
+    
 }

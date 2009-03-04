@@ -25,9 +25,8 @@
 package org.xtreemfs.mrc;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.foundation.pinky.PinkyRequest;
+import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  * 
@@ -35,33 +34,27 @@ import org.xtreemfs.foundation.pinky.PinkyRequest;
  */
 public class MRCRequest {
     
-    private final PinkyRequest  pinkyRequest;
+    private final ONCRPCRequest rpcRequest;
     
     private ErrorRecord         error;
     
-    private ReusableBuffer      data;
-    
-    private HTTPUtils.DATA_TYPE dataType;
+    private Serializable        response;
     
     private Object              requestArgs;
     
-    private String              requestId;
-    
     private RequestDetails      details;
-    
-    private HTTPHeaders         additionalResponseHeaders;
     
     public MRCRequest() {
         this(null);
     }
     
-    public MRCRequest(PinkyRequest request) {
-        pinkyRequest = request;
+    public MRCRequest(ONCRPCRequest rpcRequest) {
+        this.rpcRequest = rpcRequest;
         details = new RequestDetails();
     }
     
-    public PinkyRequest getPinkyRequest() {
-        return pinkyRequest;
+    public ONCRPCRequest getRPCRequest() {
+        return rpcRequest;
     }
     
     public ErrorRecord getError() {
@@ -72,20 +65,12 @@ public class MRCRequest {
         this.error = error;
     }
     
-    public ReusableBuffer getData() {
-        return data;
+    public Serializable getResponse() {
+        return response;
     }
     
-    public void setData(ReusableBuffer data) {
-        this.data = data;
-    }
-    
-    public HTTPUtils.DATA_TYPE getDataType() {
-        return dataType;
-    }
-    
-    public void setDataType(HTTPUtils.DATA_TYPE dataType) {
-        this.dataType = dataType;
+    public void setResponse(Serializable response) {
+        this.response = response;
     }
     
     public Object getRequestArgs() {
@@ -96,14 +81,6 @@ public class MRCRequest {
         this.requestArgs = requestArgs;
     }
     
-    public String getRequestId() {
-        return requestId;
-    }
-    
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-    
     public RequestDetails getDetails() {
         return details;
     }
@@ -112,23 +89,11 @@ public class MRCRequest {
         this.details = details;
     }
     
-    public HTTPHeaders getAdditionalResponseHeaders() {
-        return additionalResponseHeaders;
-    }
-    
-    public void setAdditionalResponseHeaders(HTTPHeaders additionalResponseHeaders) {
-        this.additionalResponseHeaders = additionalResponseHeaders;
-    }
-    
     public String toString() {
         
-        if (pinkyRequest == null)
+        if (rpcRequest == null)
             return null;
         
-        StringBuilder sb = new StringBuilder(pinkyRequest.requestURI);
-        if (pinkyRequest.requestBody != null)
-            sb.append(" ").append(new String(pinkyRequest.requestBody.array()));
-        
-        return sb.toString();
+        return rpcRequest.toString();
     }
 }

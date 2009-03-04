@@ -61,15 +61,17 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     private static final String DEFAULT_ENTRY_NAME = "default";
     
     @Override
-    public String translateAccessMode(int accessMode) {
+    public String translateAccessFlags(int accessMode) {
         switch (accessMode) {
-        case FileAccessManager.READ_ACCESS:
+        case FileAccessManager.O_RDONLY:
+        case FileAccessManager.NON_POSIX_SEARCH:
             return AM_READ;
-        case FileAccessManager.WRITE_ACCESS:
+        case FileAccessManager.O_RDWR:
+        case FileAccessManager.O_WRONLY:
+        case FileAccessManager.O_APPEND:
             return AM_WRITE;
-        case FileAccessManager.SEARCH_ACCESS:
-            return AM_READ;
-        case FileAccessManager.DELETE_ACCESS:
+        case FileAccessManager.NON_POSIX_DELETE:
+        case FileAccessManager.NON_POSIX_RM_MV_IN_DIR:
             return AM_DELETE;
         }
         
@@ -77,8 +79,8 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, String accessMode) throws UserException, MRCException {
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, String accessMode) throws UserException, MRCException {
         
         try {
             
@@ -181,9 +183,8 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
-        throws MRCException {
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) throws MRCException {
         
         try {
             sMan.setACLEntry(1, DEFAULT_ENTRY_NAME, (short) posixAccessRights, update);
@@ -193,8 +194,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
-        throws MRCException {
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException {
         
         try {
             Iterator<ACLEntry> acl = sMan.getACL(1);
@@ -206,8 +206,8 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
     @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
-        throws MRCException, UserException {
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
+        UserException {
         
         try {
             for (Entry<String, Object> entry : entries.entrySet())
@@ -219,9 +219,9 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
-        throws MRCException, UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
+        UserException {
         
         Map<String, Object> entries = new HashMap<String, Object>();
         for (Object entity : entities)

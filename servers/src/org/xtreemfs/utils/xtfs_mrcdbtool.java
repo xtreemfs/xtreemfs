@@ -32,12 +32,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.auth.NullAuthProvider;
-import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.RPCResponse;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
 public class xtfs_mrcdbtool {
@@ -48,16 +47,7 @@ public class xtfs_mrcdbtool {
     public static void main(String[] args) {
         
         Logging.start(Logging.LEVEL_ERROR);
-        TimeSync.initialize(null, 60000, 50, null);
-        
-        String authString = null;
-        try {
-            authString = NullAuthProvider.createAuthString(System.getProperty("user.name"), System
-                    .getProperty("user.name"));
-        } catch (JSONException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+        TimeSync.initialize(null, 60000, 50);
         
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);
@@ -112,20 +102,20 @@ public class xtfs_mrcdbtool {
         int port = mrc.urlValue.getPort();
         String protocol = mrc.urlValue.getProtocol();
         
-        RPCClient client = null;
+        RPCNIOSocketClient rpcClient = null;
         
         try {
-            client = protocol.startsWith("https") ? new RPCClient(0, new SSLOptions(new FileInputStream(
-                c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue))
-                : new RPCClient(0, null);
-            client.setTimeout(0);
+            
+            SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
+                c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
+            rpcClient = new RPCNIOSocketClient(sslOptions, 0, 0);
+            MRCClient client = new MRCClient(rpcClient, new InetSocketAddress(host, port));
             
             if (op.equals("dump")) {
-                RPCResponse r = null;
+                RPCResponse<Object> r = null;
                 try {
-                    r = client.sendRPC(new InetSocketAddress(host, port), ".dumpdb", RPCClient
-                            .generateList(dumpFile), authString, null);
-                    r.waitForResponse();
+                    r = client.admin_dump_database(null, "", dumpFile);
+                    r.waitForResult();
                 } finally {
                     if (r != null)
                         r.freeBuffers();
@@ -133,11 +123,10 @@ public class xtfs_mrcdbtool {
             }
 
             else if (op.equals("restore")) {
-                RPCResponse r = null;
+                RPCResponse<Object> r = null;
                 try {
-                    r = client.sendRPC(new InetSocketAddress(host, port), ".restoredb", RPCClient
-                            .generateList(dumpFile), authString, null);
-                    r.waitForResponse();
+                    r = client.admin_restore_database(null, "", dumpFile);
+                    r.waitForResult();
                 } finally {
                     if (r != null)
                         r.freeBuffers();
@@ -150,8 +139,8 @@ public class xtfs_mrcdbtool {
         } catch (Exception exc) {
             exc.printStackTrace();
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (rpcClient != null)
+                rpcClient.shutdown();
         }
     }
     

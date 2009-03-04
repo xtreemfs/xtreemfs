@@ -25,29 +25,20 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class ShutdownOperation extends MRCOperation {
-
-    public static final String RPC_NAME = ".shutdown";
+    
+    public static final int OP_ID = 0;
     
     public ShutdownOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return false;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false; // TODO: auth
     }
     
     @Override
@@ -55,8 +46,12 @@ public class ShutdownOperation extends MRCOperation {
         try {
             master.shutdown();
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
         }
+    }
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

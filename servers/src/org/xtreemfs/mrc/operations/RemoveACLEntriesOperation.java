@@ -24,27 +24,9 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.utils.MRCHelper;
-import org.xtreemfs.mrc.utils.Path;
-import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -52,131 +34,95 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class RemoveACLEntriesOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String       path;
-        
-        public List<Object> entries;
-        
-    }
-    
-    public static final String RPC_NAME = "removeACLEntries";
+    public static final int OP_ID = -1;
     
     public RemoveACLEntriesOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
     @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
-    }
-    
-    @Override
     public void startRequest(MRCRequest rq) {
         
-        try {
-            
-            Args rqArgs = (Args) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-            
-            Path p = new Path(rqArgs.path);
-            
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
-                    return;
-                }
-                
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
-            }
-            
-            // check whether the access mode may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // change the ACL
-            faMan.removeACLEntries(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().groupIds, rqArgs.entries, update);
-            
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
-                update);
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
-        } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
-        }
+        // TODO
+        
+        // try {
+        //            
+        // Args rqArgs = (Args) rq.getRequestArgs();
+        //            
+        // final VolumeManager vMan = master.getVolumeManager();
+        // final FileAccessManager faMan = master.getFileAccessManager();
+        //            
+        // Path p = new Path(rqArgs.path);
+        //            
+        // VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        // StorageManager sMan = vMan.getStorageManager(volume.getId());
+        // PathResolver res = new PathResolver(sMan, p);
+        //            
+        // // check whether the path prefix is searchable
+        // faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
+        // rq.getDetails().superUser, rq.getDetails().groupIds);
+        //            
+        // // check whether file exists
+        // res.checkIfFileDoesNotExist();
+        //            
+        // // retrieve and prepare the metadata to return
+        // FileMetadata file = res.getFile();
+        //            
+        // // if the file refers to a symbolic link, resolve the link
+        // String target = sMan.getSoftlinkTarget(file.getId());
+        // if (target != null) {
+        // rqArgs.path = target;
+        // p = new Path(rqArgs.path);
+        //                
+        // // if the local MRC is not responsible, send a redirect
+        // if (!vMan.hasVolume(p.getComp(0))) {
+        // finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
+        // return;
+        // }
+        //                
+        // volume = vMan.getVolumeByName(p.getComp(0));
+        // sMan = vMan.getStorageManager(volume.getId());
+        // res = new PathResolver(sMan, p);
+        // file = res.getFile();
+        // }
+        //            
+        // // check whether the access mode may be changed
+        // faMan.checkPrivilegedPermissions(sMan, file,
+        // rq.getDetails().userId,
+        // rq.getDetails().superUser, rq.getDetails().groupIds);
+        //            
+        // AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        //            
+        // // change the ACL
+        // faMan.removeACLEntries(sMan, file, res.getParentDirId(),
+        // rq.getDetails().userId, rq
+        // .getDetails().groupIds, rqArgs.entries, update);
+        //            
+        // // FIXME: this line is needed due to a BUG in the client which
+        // // expects some useless return value
+        // rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes
+        // ()));
+        //            
+        // // update POSIX timestamps
+        // MRCHelper.updateFileTimes(res.getParentDirId(), file, false,
+        // true, false, sMan,
+        // update);
+        //            
+        // update.execute();
+        //            
+        // } catch (UserException exc) {
+        // Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
+        // finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION,
+        // exc.getErrno(), exc.getMessage(),
+        // exc));
+        // } catch (Exception exc) {
+        // finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
+        // "an error has occurred", exc));
+        // }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.entries = (List<Object>) arguments.get(1);
-            
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return null; // TODO
     }
     
 }

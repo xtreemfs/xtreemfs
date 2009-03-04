@@ -46,15 +46,23 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  */
 public class FileAccessManager {
     
-    public static final int                    READ_ACCESS         = 1;
+    public static final int                    O_RDONLY               = 0;
     
-    public static final int                    SEARCH_ACCESS       = 2;
+    public static final int                    O_WRONLY               = 1;
     
-    public static final int                    WRITE_ACCESS        = 3;
+    public static final int                    O_RDWR                 = 2;
     
-    public static final int                    DELETE_ACCESS       = 4;
+    public static final int                    O_CREAT                = 0100;
     
-    public static final int                    RM_MV_IN_DIR_ACCESS = 5;
+    public static final int                    O_TRUNC                = 01000;
+    
+    public static final int                    O_APPEND               = 02000;
+    
+    public static final int                    NON_POSIX_SEARCH       = 04000000;
+    
+    public static final int                    NON_POSIX_DELETE       = 010000000;
+    
+    public static final int                    NON_POSIX_RM_MV_IN_DIR = 020000000;
     
     private final VolumeManager                volMan;
     
@@ -79,8 +87,7 @@ public class FileAccessManager {
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkSearchPermission(sMan, path, userId,
-            groupIds);
+        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkSearchPermission(sMan, path, userId, groupIds);
     }
     
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
@@ -89,63 +96,59 @@ public class FileAccessManager {
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkPrivilegedPermissions(sMan, file,
-            userId, groupIds);
+        getVolumeFileAccessPolicy(sMan.getVolumeId())
+                .checkPrivilegedPermissions(sMan, file, userId, groupIds);
     }
     
-    public void checkPermission(int accessMode, StorageManager sMan, FileMetadata file,
-        long parentDirId, String userId, boolean superUser, List<String> groupIds)
-        throws UserException, MRCException {
+    public void checkPermission(int flags, StorageManager sMan, FileMetadata file, long parentDirId,
+        String userId, boolean superUser, List<String> groupIds) throws UserException, MRCException {
         
-        checkPermission(translateAccessMode(sMan.getVolumeId(), accessMode), sMan, file,
-            parentDirId, userId, superUser, groupIds);
+        checkPermission(translateAccessFlags(sMan.getVolumeId(), flags), sMan, file, parentDirId, userId,
+            superUser, groupIds);
     }
     
-    public void checkPermission(String accessMode, StorageManager sMan, FileMetadata file,
-        long parentDirId, String userId, boolean superUser, List<String> groupIds)
-        throws UserException, MRCException {
+    public void checkPermission(String accessMode, StorageManager sMan, FileMetadata file, long parentDirId,
+        String userId, boolean superUser, List<String> groupIds) throws UserException, MRCException {
         
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkPermission(sMan, file, parentDirId,
-            userId, groupIds, accessMode);
+        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkPermission(sMan, file, parentDirId, userId,
+            groupIds, accessMode);
     }
     
-    public String translateAccessMode(String volumeId, int accessMode) throws MRCException {
-        return getVolumeFileAccessPolicy(volumeId).translateAccessMode(accessMode);
+    public String translateAccessFlags(String volumeId, int accessMode) throws MRCException {
+        return getVolumeFileAccessPolicy(volumeId).translateAccessFlags(accessMode);
     }
     
-    public int getPosixAccessMode(StorageManager sMan, FileMetadata file, String userId,
-        List<String> groupIds) throws MRCException {
-        return getVolumeFileAccessPolicy(sMan.getVolumeId()).getPosixAccessRights(sMan, file,
-            userId, groupIds);
-    }
-    
-    public void setPosixAccessMode(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, short posixRights, AtomicDBUpdate update)
-        throws MRCException, UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).setPosixAccessRights(sMan, file, parentId,
-            userId, groupIds, posixRights, update);
-    }
-    
-    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
+    public int getPosixAccessMode(StorageManager sMan, FileMetadata file, String userId, List<String> groupIds)
         throws MRCException {
+        return getVolumeFileAccessPolicy(sMan.getVolumeId()).getPosixAccessRights(sMan, file, userId,
+            groupIds);
+    }
+    
+    public void setPosixAccessMode(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, int posixRights, AtomicDBUpdate update) throws MRCException, UserException {
+        getVolumeFileAccessPolicy(sMan.getVolumeId()).setPosixAccessRights(sMan, file, parentId, userId,
+            groupIds, posixRights, update);
+    }
+    
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException {
         return getVolumeFileAccessPolicy(sMan.getVolumeId()).getACLEntries(sMan, file);
     }
     
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
-        throws MRCException, UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).setACLEntries(sMan, file, parentId, userId,
-            groupIds, entries, update);
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
+        UserException {
+        getVolumeFileAccessPolicy(sMan.getVolumeId()).setACLEntries(sMan, file, parentId, userId, groupIds,
+            entries, update);
     }
     
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
-        throws MRCException, UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).removeACLEntries(sMan, file, parentId,
-            userId, groupIds, entities, update);
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
+        UserException {
+        getVolumeFileAccessPolicy(sMan.getVolumeId()).removeACLEntries(sMan, file, parentId, userId,
+            groupIds, entities, update);
     }
     
     public FileAccessPolicy getFileAccessPolicy(short policyId) {
@@ -159,8 +162,8 @@ public class FileAccessManager {
                 policy = policyContainer.getFileAccessPolicy(policyId, volMan);
                 policies.put(policyId, policy);
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this,
-                    "could not load FileAccessPolicy with ID " + policyId);
+                Logging.logMessage(Logging.LEVEL_WARN, this, "could not load FileAccessPolicy with ID "
+                    + policyId);
                 Logging.logMessage(Logging.LEVEL_WARN, this, exc);
             }
         }
@@ -176,8 +179,7 @@ public class FileAccessManager {
             FileAccessPolicy policy = getFileAccessPolicy(policyId);
             
             if (policy == null)
-                throw new MRCException("unknown file access policy for volume " + volumeId + ": "
-                    + policyId);
+                throw new MRCException("unknown file access policy for volume " + volumeId + ": " + policyId);
             
             return policy;
             

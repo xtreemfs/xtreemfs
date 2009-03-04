@@ -34,7 +34,7 @@ module xtreemfs
 
       void chown( Context context, string path, string userId, string groupId ) # 3;
 
-      void create( Context context, string path, uint32_t mode, boolean open_, out FileCredentialsSet credentials ) # 4;
+      void create( Context context, string path, uint32_t mode ) # 4;
 
       void getattr( Context context, string path, out stat_ stbuf ) # 5;
 
@@ -48,7 +48,7 @@ module xtreemfs
 
       void mkvol( Context context, string password, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
 
-      void open( Context context, string path, uint32_t mode, out FileCredentials credentials ) # 11;
+      void open( Context context, string path, uint32_t flags, uint32_t mode, out FileCredentials credentials ) # 11;
 
       void readdir( Context context, string path, out DirectoryEntrySet directory_entries ) # 12;
 
@@ -80,9 +80,9 @@ module xtreemfs
 
       void xtreemfs_renew_capability( XCap xcap, out XCap xcap ) # 25;
 
-      void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
+      void xtreemfs_replica_add( Context context, string file_id, Replica new_replica ) # 26;
 
-      void xtreemfs_replica_remove( string file_id, string osd_uuid ) # 27;
+      void xtreemfs_replica_remove( Context context, string file_id, string osd_uuid ) # 27;
 
       void xtreemfs_restore_file(string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
 

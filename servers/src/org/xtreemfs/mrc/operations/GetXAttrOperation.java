@@ -24,12 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.getxattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.getxattrResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -50,28 +48,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class GetXAttrOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public String attrKey;
-        
-    }
-    
-    public static final String RPC_NAME = "getXAttr";
+    public static final int OP_ID = 6;
     
     public GetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -79,20 +59,20 @@ public class GetXAttrOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final getxattrRequest rqArgs = (getxattrRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -103,8 +83,8 @@ public class GetXAttrOperation extends MRCOperation {
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+                rqArgs.setPath(target);
+                p = new Path(rqArgs.getPath());
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
@@ -119,63 +99,37 @@ public class GetXAttrOperation extends MRCOperation {
             }
             
             String value = null;
-            if (rqArgs.attrKey.startsWith("xtreemfs."))
-                value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master
-                        .getOSDStatusManager(), volume, res.toString(), file, rqArgs.attrKey
-                        .substring(9));
+            if (rqArgs.getName().startsWith("xtreemfs."))
+                value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
+                    volume, res.toString(), file, rqArgs.getName().substring(9));
             else {
                 
                 // first, try to fetch an individual user attribute
-                value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.attrKey);
+                value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.getName());
                 
                 // if no such attribute exists, try to fetch a global attribute
                 if (value == null)
-                    value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.attrKey);
+                    value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.getName());
                 
                 if (value == null)
                     value = "";
             }
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(value).getBytes()));
+            // set the response
+            rq.setResponse(new getxattrResponse(value));
             finishRequest(rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.attrKey = (String) arguments.get(1);
-            
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((getxattrRequest) rq.getRequestArgs()).getContext();
     }
     
 }

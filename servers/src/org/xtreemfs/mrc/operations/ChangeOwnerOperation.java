@@ -24,12 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.chownRequest;
+import org.xtreemfs.interfaces.MRCInterface.chownResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -52,30 +50,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class ChangeOwnerOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public String userId;
-        
-        public String groupId;
-        
-    }
-    
-    public static final String RPC_NAME = "changeOwner";
+    public static final int OP_ID = 3;
     
     public ChangeOwnerOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -83,20 +61,20 @@ public class ChangeOwnerOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final chownRequest rqArgs = (chownRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -106,8 +84,8 @@ public class ChangeOwnerOperation extends MRCOperation {
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+                rqArgs.setPath(target);
+                p = new Path(rqArgs.getPath());
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
@@ -122,70 +100,40 @@ public class ChangeOwnerOperation extends MRCOperation {
             }
             
             // check whether the owner may be changed
-            if (rqArgs.userId != null) {
+            if (rqArgs.getUserId() != null) {
                 if (!rq.getDetails().superUser)
-                    throw new UserException(ErrNo.EACCES,
-                        "changing owners is restricted to superusers");
+                    throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
                 
             } else
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq
-                        .getDetails().superUser, rq.getDetails().groupIds);
+                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                    rq.getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // change owner and owning group
-            file.setOwnerAndGroup(rqArgs.userId == null ? file.getOwnerId() : rqArgs.userId,
-                rqArgs.groupId == null ? file.getOwningGroupId() : rqArgs.groupId);
+            file.setOwnerAndGroup(rqArgs.getUserId() == null ? file.getOwnerId() : rqArgs.getUserId(), rqArgs
+                    .getGroupId() == null ? file.getOwningGroupId() : rqArgs.getGroupId());
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan,
-                update);
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new chownResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.userId = (String) arguments.get(1);
-            args.groupId = (String) arguments.get(2);
-            
-            if (arguments.size() == 3)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((chownRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -26,8 +26,8 @@ package org.xtreemfs.mrc.volumes;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 
+import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
@@ -76,7 +76,7 @@ public interface VolumeManager {
      */
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, Map<String, Object> defaultStripingPolicy) throws UserException,
+        String owningGroupId, StripingPolicy defaultStripingPolicy) throws UserException,
         DatabaseException;
     
     /**

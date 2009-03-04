@@ -26,11 +26,9 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -43,24 +41,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class GetLocalVolumesOperation extends MRCOperation {
     
-    static class Args {
-        public List<Long> proposedVersions;
-    }
-    
-    public static final String RPC_NAME = "getLocalVolumes";
+    public static final int OP_ID = -1;
     
     public GetLocalVolumesOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return false;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false;
     }
     
     @Override
@@ -73,13 +57,16 @@ public class GetLocalVolumesOperation extends MRCOperation {
             for (VolumeInfo data : volumes)
                 map.put(data.getId(), data.getName());
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(map).getBytes()));
+            // TODO
             finishRequest(rq);
             
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
+    }
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

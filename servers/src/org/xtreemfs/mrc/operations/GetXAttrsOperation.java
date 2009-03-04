@@ -24,11 +24,14 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.util.HashSet;
+import java.util.Iterator;
+
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.stat_;
-import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
-import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.listxattrResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -37,8 +40,11 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XAttr;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
+import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -46,11 +52,11 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class StatOperation extends MRCOperation {
+public class GetXAttrsOperation extends MRCOperation {
     
-    public static final int OP_ID = 5;
+    public static final int OP_ID = 8;
     
-    public StatOperation(MRCRequestDispatcher master) {
+    public GetXAttrsOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -59,7 +65,7 @@ public class StatOperation extends MRCOperation {
         
         try {
             
-            final getattrRequest rqArgs = (getattrRequest) rq.getRequestArgs();
+            final listxattrRequest rqArgs = (listxattrRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
@@ -80,17 +86,35 @@ public class StatOperation extends MRCOperation {
             // retrieve and prepare the metadata to return
             FileMetadata file = res.getFile();
             
-            String linkTarget = sMan.getSoftlinkTarget(file.getId());
-            int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-            long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-            int type = linkTarget != null ? 3 : file.isDirectory() ? 2 : 1;
-            stat_ stat = new stat_(mode, file.getLinkCount(), 1, 1, 0, size, file.getAtime(),
-                file.getMtime(), file.getCtime(), file.getOwnerId(), file.getOwningGroupId(), volume.getId()
-                    + ":" + file.getId(), type, file.getEpoch(), (int) file.getW32Attrs());
-            // TODO: check whether Win32 attrs are 32 or 64 bits long
+            HashSet<String> attrNames = new HashSet<String>();
+            
+            Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
+            Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
+            
+            // include global attributes
+            while (globalAttrs.hasNext())
+                attrNames.add(globalAttrs.next().getKey());
+            
+            // include individual user attributes
+            while (myAttrs.hasNext())
+                attrNames.add(myAttrs.next().getKey());
+            
+            // include system attributes
+            for (SysAttrs attr : SysAttrs.values()) {
+                String key = "xtreemfs." + attr.toString();
+                Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master
+                        .getOSDStatusManager(), volume, res.toString(), file, attr.toString());
+                if (!value.equals(""))
+                    attrNames.add(key);
+            }
+            
+            StringSet names = new StringSet();
+            Iterator<String> it = attrNames.iterator();
+            while (it.hasNext())
+                names.add(it.next());
             
             // set the response
-            rq.setResponse(new getattrResponse(stat));
+            rq.setResponse(new listxattrResponse(names));
             finishRequest(rq);
             
         } catch (UserException exc) {
@@ -103,7 +127,6 @@ public class StatOperation extends MRCOperation {
     }
     
     public Context getContext(MRCRequest rq) {
-        return ((getattrRequest) rq.getRequestArgs()).getContext();
+        return ((listxattrRequest) rq.getRequestArgs()).getContext();
     }
-    
 }

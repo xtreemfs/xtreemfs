@@ -40,6 +40,7 @@ import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -141,7 +142,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, Map<String, Object> defaultStripingPolicy) throws UserException,
+        String owningGroupId, StripingPolicy defaultStripingPolicy) throws UserException,
         DatabaseException {
         
         if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)

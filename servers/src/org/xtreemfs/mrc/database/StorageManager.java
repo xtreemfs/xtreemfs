@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.database;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -55,7 +54,7 @@ public interface StorageManager {
     // initialization
     
     public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
-        Map<String, Object> rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
+        org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
     
     // file ID counter operations
     
@@ -102,29 +101,26 @@ public interface StorageManager {
     
     // creating, linking, modifying and deleting files/directories
     
-    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs,
-        AtomicDBUpdate update) throws DatabaseException;
-    
-    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, int perms, long w32Attrs, long size,
-        boolean readOnly, int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException;
-    
-    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime,
-        int ctime, int mtime, String userId, String groupId, String ref, AtomicDBUpdate update)
+    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime,
+        int mtime, String userId, String groupId, int perms, long w32Attrs, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public void link(FileMetadata metadata, long newParentId, String newFileName,
-        AtomicDBUpdate update) throws DatabaseException;
+    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime, int ctime,
+        int mtime, String userId, String groupId, int perms, long w32Attrs, long size, boolean readOnly,
+        int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException;
     
-    public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update)
+    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime, int ctime,
+        int mtime, String userId, String groupId, String ref, AtomicDBUpdate update) throws DatabaseException;
+    
+    public void link(FileMetadata metadata, long newParentId, String newFileName, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public void setDefaultStripingPolicy(long fileId, StripingPolicy defaultSp,
+    public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException;
+    
+    public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
-    public short delete(long parentId, String fileName, AtomicDBUpdate update)
-        throws DatabaseException;
+    public short delete(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
     
     // getting metadata
     

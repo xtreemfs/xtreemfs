@@ -35,9 +35,16 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
-import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
+import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;
+import org.xtreemfs.mrc.metadata.BufferBackedXLoc;
+import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -90,8 +97,7 @@ public class Converter {
         for (int i = 0; i < acl.length; i++) {
             assert (entries.hasNext());
             Entry<String, Object> entry = entries.next();
-            acl[i] = sMan.createACLEntry(fileId, entry.getKey(), ((Long) entry.getValue())
-                    .shortValue());
+            acl[i] = sMan.createACLEntry(fileId, entry.getKey(), ((Long) entry.getValue()).shortValue());
         }
         
         Arrays.sort(acl, new Comparator<ACLEntry>() {
@@ -104,70 +110,101 @@ public class Converter {
     }
     
     /**
-     * Converts an <code>XLocationsList</code> object to a list containing
-     * X-Locations data.
+     * Converts an XLocList to a String
      * 
      * @param xLocList
-     * @return
+     *            the XLocList
+     * @return the string representation of the XLocList
      */
-    public static List<Object> xLocListToList(XLocList xLocList) {
+    public static String xLocListToString(XLocList xLocList) {
         
-        if (xLocList == null)
-            return null;
-        
-        List<Object> replicaList = new LinkedList<Object>();
-        List<Object> list = new LinkedList<Object>();
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
         for (int i = 0; i < xLocList.getReplicaCount(); i++) {
+            sb.append("[<");
+            XLoc repl = xLocList.getReplica(i);
+            StripingPolicy sp = repl.getStripingPolicy();
             
-            XLoc replica = xLocList.getReplica(i);
-            
-            List<Object> replicaAsList = new ArrayList<Object>(2);
-            Map<String, Object> policyMap = stripingPolicyToMap(replica.getStripingPolicy());
-            List<String> osdList = new ArrayList<String>(replica.getOSDCount());
-            for (int j = 0; j < replica.getOSDCount(); j++)
-                osdList.add(replica.getOSD(j));
-            
-            replicaAsList.add(policyMap);
-            replicaAsList.add(osdList);
-            
-            replicaList.add(replicaAsList);
+            sb.append(stripingPolicyToString(sp)).append(">, (");
+            for (int j = 0; j < repl.getOSDCount(); j++)
+                sb.append(repl.getOSD(j)).append(j == repl.getOSDCount() - 1 ? "" : ", ");
+            sb.append(")]").append(i == xLocList.getReplicaCount() - 1 ? "" : ", ");
         }
+        sb.append(", ").append(xLocList.getVersion()).append("]");
         
-        list.add(replicaList);
-        list.add(xLocList.getVersion());
+        return sb.toString();
+    }
+    
+    public static void main(String[] args) {
+        BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 256, 2);
+        BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1", "osd2" });
+        BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4" });
+        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, 3);
         
-        return list;
+        System.out.println(xLocListToString(xLocList));
     }
     
     /**
-     * Converts a list containing X-Locations data to an
-     * <code>XLocationsList</code> object.
+     * Converts an XLocSet to an XLocList
      * 
-     * @param xLocs
-     * @return
+     * @param sMan
+     *            the storage manager
+     * @param xLocSet
+     *            the XLocSet
+     * @return the XLocList
      */
-    public static XLocList listToXLocList(StorageManager sMan, List<Object> list)
-        throws UserException {
+    public static XLocList xLocSetToXLocList(StorageManager sMan, XLocSet xLocSet) {
         
-        if (list == null)
-            return null;
-        
-        List<Object> xLocs = (List<Object>) list.get(0);
-        
-        XLoc[] xLocations = new XLoc[xLocs.size()];
-        for (int i = 0; i < xLocs.size(); i++) {
+        XLoc[] replicas = new XLoc[xLocSet.getReplicas().size()];
+        for (int i = 0; i < xLocSet.getReplicas().size(); i++) {
             
-            List<Object> replicaAsList = (List<Object>) xLocs.get(i);
-            Map<String, Object> policyMap = (Map<String, Object>) replicaAsList.get(0);
-            List<String> osdList = (List<String>) replicaAsList.get(1);
+            Replica repl = xLocSet.getReplicas().get(i);
+            org.xtreemfs.interfaces.StripingPolicy sp = repl.getStriping_policy();
             
-            xLocations[i] = sMan.createXLoc(mapToStripingPolicy(sMan, policyMap), osdList
-                    .toArray(new String[osdList.size()]));
+            replicas[i] = sMan.createXLoc(sMan.createStripingPolicy(intToPolicyName(sp.getPolicy()), sp
+                    .getStripe_size(), sp.getWidth()), repl.getOsd_uuids().toArray(
+                new String[repl.getOsd_uuids().size()]));
         }
         
-        long version = (Long) list.get(1);
+        return sMan.createXLocList(replicas, xLocSet.getVersion());
+    }
+    
+    /**
+     * Converts an XLocList to an XLocSet
+     * 
+     * @param xLocList
+     *            the XLocList
+     * @return the xLocSet
+     */
+    public static XLocSet xLocListToXLocSet(XLocList xLocList) {
         
-        return sMan.createXLocList(xLocations, (int) version);
+        ReplicaSet replicas = new ReplicaSet();
+        
+        if (xLocList == null)
+            return new XLocSet();
+        
+        for (int i = 0; i < xLocList.getReplicaCount(); i++) {
+            
+            XLoc xRepl = xLocList.getReplica(i);
+            StripingPolicy xSP = xRepl.getStripingPolicy();
+            
+            StringSet osds = new StringSet();
+            for (int j = 0; j < xRepl.getOSDCount(); j++)
+                osds.add(xRepl.getOSD(j));
+            
+            org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
+                policyNameToInt(xSP.getPattern()), xSP.getStripeSize(), xSP.getWidth());
+            
+            Replica repl = new Replica(sp, 0, osds); // TODO: replication flags
+            replicas.add(repl);
+        }
+        
+        XLocSet xLocSet = new XLocSet();
+        xLocSet.setReplicas(replicas);
+        xLocSet.setRepUpdatePolicy(""); // TODO
+        xLocSet.setVersion(xLocList.getVersion());
+        
+        return xLocSet;
     }
     
     /**
@@ -191,9 +228,53 @@ public class Converter {
     }
     
     /**
+     * Converts a string containing striping policy information to a
+     * <code>StripingPolicy</code> object.
+     * 
+     * @param sMan
+     *            the storage manager
+     * @param spString
+     *            the striping policy string
+     * @return the striping policy
+     */
+    public static org.xtreemfs.interfaces.StripingPolicy stringToStripingPolicy(String spString) {
+        
+        StringTokenizer st = new StringTokenizer(spString, " ,\t");
+        String policy = st.nextToken();
+        int size = Integer.parseInt(st.nextToken());
+        int width = Integer.parseInt(st.nextToken());
+        
+        return new org.xtreemfs.interfaces.StripingPolicy(Converter.policyNameToInt(policy), size, width);
+    }
+    
+    /**
+     * Converts an integer to a striping policy name.
+     * 
+     * @param policy
+     *            the integer for the policy
+     * @return the name of the policy
+     */
+    public static String intToPolicyName(int policy) {
+        switch (policy) {
+        case Constants.STRIPING_POLICY_DEFAULT:
+        case Constants.STRIPING_POLICY_RAID0:
+            return "RAID0";
+        default:
+            return "";
+        }
+    }
+    
+    public static int policyNameToInt(String policyName) {
+        if (policyName.equals("RAID0"))
+            return Constants.STRIPING_POLICY_RAID0;
+        return Constants.STRIPING_POLICY_DEFAULT;
+    }
+    
+    /**
      * Converts a striping policy object to a string.
      * 
-     * @param sp the striping policy object
+     * @param sp
+     *            the striping policy object
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(StripingPolicy sp) {
@@ -201,59 +282,14 @@ public class Converter {
     }
     
     /**
-     * Converts a map containing striping policy information to a
-     * <code>StripingPolicy</code> object.
+     * Converts a striping policy object to a string.
      * 
-     * @param policyMap
-     * @return
+     * @param sp
+     *            the striping policy object
+     * @return a string containing the striping policy information
      */
-    public static StripingPolicy mapToStripingPolicy(StorageManager sMan,
-        Map<String, Object> policyMap) throws UserException {
-        
-        if (policyMap == null || policyMap.isEmpty()
-            || ((String) policyMap.get("policy")).isEmpty())
-            return null;
-        
-        try {
-            
-            String pattern = (String) policyMap.get("policy");
-            int stripeSize = ((Long) policyMap.get("stripe-size")).intValue();
-            int width = ((Long) policyMap.get("width")).intValue();
-            
-            if ("RAID0".equals(pattern)) {
-                
-                if (stripeSize == 0 || width == 0)
-                    throw new Exception();
-                
-                return sMan.createStripingPolicy(pattern, stripeSize, width);
-            }
-
-            else
-                throw new Exception();
-            
-        } catch (Exception exc) {
-            throw new UserException("invalid striping policy: " + policyMap);
-        }
-    }
-    
-    /**
-     * Converts a <code>StripingPolicy</code> object to a map containing
-     * striping policy information.
-     * 
-     * @param policy
-     * @return
-     */
-    public static Map<String, Object> stripingPolicyToMap(StripingPolicy policy) {
-        
-        if (policy == null)
-            return null;
-        
-        Map<String, Object> policyMap = new HashMap<String, Object>();
-        policyMap.put("policy", policy.getPattern());
-        policyMap.put("stripe-size", policy.getStripeSize());
-        policyMap.put("width", policy.getWidth());
-        
-        return policyMap;
+    public static String stripingPolicyToString(org.xtreemfs.interfaces.StripingPolicy sp) {
+        return Converter.intToPolicyName(sp.getPolicy()) + ", " + sp.getStripe_size() + ", " + sp.getWidth();
     }
     
     /**
@@ -287,8 +323,8 @@ public class Converter {
         
         List<XAttr> list = new LinkedList<XAttr>();
         for (Map<String, Object> attr : mappedData)
-            list.add(sMan.createXAttr(fileId, (String) attr.get("userId"),
-                (String) attr.get("key"), (String) attr.get("value")));
+            list.add(sMan.createXAttr(fileId, (String) attr.get("userId"), (String) attr.get("key"),
+                (String) attr.get("value")));
         
         return list;
     }

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
@@ -65,7 +66,7 @@ public class TortureXtreemFS {
             CLIParser.parseCLI(args, options, arguments);
 
             Logging.start(Logging.LEVEL_WARN);
-            TimeSync.initialize(null, 10000, 50, "");
+            TimeSync.initialize(null, 10000, 50);
 
             if (arguments.size() != 2) {
                 usage();

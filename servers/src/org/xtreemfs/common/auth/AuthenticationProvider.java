@@ -25,28 +25,38 @@
 package org.xtreemfs.common.auth;
 
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
+import org.xtreemfs.interfaces.Context;
 
 /**
- * Authentication Providers extract the credentials (UID/GIDs/SuperUser)
- * from the authentication header and the certificates.
+ * Authentication Providers extract the credentials (UID/GIDs/SuperUser) from
+ * the authentication header and the certificates.
+ * 
  * @author bjko
  */
 public interface AuthenticationProvider {
-
-    /** initializes the provider class
+    
+    /**
+     * initializes the provider class
      * 
-     * @param useSSL true, if SSL is enabled.
-     * @throws java.lang.RuntimeException if the provider cannot be initialized.
+     * @param useSSL
+     *            true, if SSL is enabled.
+     * @throws java.lang.RuntimeException
+     *             if the provider cannot be initialized.
      */
-    void            initialize(boolean useSSL) throws RuntimeException;
+    void initialize(boolean useSSL) throws RuntimeException;
     
     /**
      * Get the effective credentials for an operation.
-     * @param authHeader content of the Authentication header sent by the client
-     * @param channel the channel used, can be used to store attachments and to get certificates
+     * 
+     * @param authHeader
+     *            content of the Authentication header sent by the client
+     * @param channel
+     *            the channel used, can be used to store attachments and to get
+     *            certificates
      * @return the effective user credentials
-     * @throws org.xtreemfs.common.auth.AuthenticationException if authentication is not possible
+     * @throws org.xtreemfs.common.auth.AuthenticationException
+     *             if authentication is not possible
      */
-    UserCredentials getEffectiveCredentials(String authHeader, ChannelIO channel) throws AuthenticationException;
+    UserCredentials getEffectiveCredentials(Context ctx, ChannelIO channel) throws AuthenticationException;
     
 }

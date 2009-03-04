@@ -24,13 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.symlinkRequest;
+import org.xtreemfs.interfaces.MRCInterface.symlinkResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -51,28 +49,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class CreateSymLinkOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String linkPath;
-        
-        public String targetPath;
-        
-    }
-    
-    public static final String RPC_NAME = "createSymbolicLink";
+    public static final int OP_ID = 20;
     
     public CreateSymLinkOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -80,24 +60,24 @@ public class CreateSymLinkOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final symlinkRequest rqArgs = (symlinkRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.linkPath);
+            final Path p = new Path(rqArgs.getLink_path());
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
             final PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, res.getParentDir(), 0, rq
-                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), 0,
+                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the file/directory exists already
             res.checkIfFileExistsAlready();
@@ -112,58 +92,32 @@ public class CreateSymLinkOperation extends MRCOperation {
             long fileId = sMan.getNextFileId();
             
             // create the metadata object
-            sMan.createSymLink(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
-                rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.targetPath, update);
+            sMan.createSymLink(fileId, res.getParentDirId(), res.getFileName(), time, time, time, rq
+                    .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getTarget_path(), update);
             
             // set the file ID as the last one
             sMan.setLastFileId(fileId, update);
             
             // update POSIX timestamps of parent directory
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true,
-                true, sMan, update);
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
+                update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new symlinkResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.linkPath = (String) arguments.get(0);
-            args.targetPath = (String) arguments.get(1);
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((symlinkRequest) rq.getRequestArgs()).getContext();
     }
     
 }

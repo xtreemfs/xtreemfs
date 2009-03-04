@@ -30,55 +30,59 @@ import java.util.List;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
+import org.xtreemfs.interfaces.Context;
 
 /**
  * authentication provider for XOS certificates.
+ * 
  * @author bjko
  */
 public class SimpleX509AuthProvider implements AuthenticationProvider {
-
+    
     private NullAuthProvider nullAuth;
     
-    public UserCredentials getEffectiveCredentials(String authHeader, ChannelIO channel) throws AuthenticationException {
-        //use cached info!
-        assert(nullAuth != null);
+    public UserCredentials getEffectiveCredentials(Context ctx, ChannelIO channel)
+        throws AuthenticationException {
+        // use cached info!
+        assert (nullAuth != null);
         if (channel.getAttachment() != null) {
-            Logging.logMessage(Logging.LEVEL_DEBUG,this,"using attachment...");
-            final Object[] cache = (Object[])channel.getAttachment();
-            final Boolean serviceCert = (Boolean)cache[0];
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "using attachment...");
+            final Object[] cache = (Object[]) channel.getAttachment();
+            final Boolean serviceCert = (Boolean) cache[0];
             if (serviceCert) {
-                Logging.logMessage(Logging.LEVEL_DEBUG,this,"service cert...");
-                return nullAuth.getEffectiveCredentials(authHeader, channel);
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "service cert...");
+                return nullAuth.getEffectiveCredentials(ctx, channel);
             } else {
-                Logging.logMessage(Logging.LEVEL_DEBUG,this,"using cached creds: "+cache[1]);
-                return (UserCredentials)cache[1];
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "using cached creds: " + cache[1]);
+                return (UserCredentials) cache[1];
             }
         }
-        //parse cert if no cached info is present
+        // parse cert if no cached info is present
         try {
             final Certificate[] certs = channel.getCerts();
             if (certs.length > 0) {
                 final X509Certificate cert = ((X509Certificate) certs[0]);
                 String fullDN = cert.getSubjectX500Principal().getName();
-                String commonName = getNameElement(cert.getSubjectX500Principal().getName(),"CN");
+                String commonName = getNameElement(cert.getSubjectX500Principal().getName(), "CN");
                 
                 if (commonName.startsWith("host/") || commonName.startsWith("xtreemfs-service/")) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "X.509-host cert present");
-                    channel.setAttachment(new Object[]{new Boolean(true)});
-                    //use NullAuth in this case to parse JSON header
-                    return nullAuth.getEffectiveCredentials(authHeader, null);
+                    channel.setAttachment(new Object[] { new Boolean(true) });
+                    // use NullAuth in this case to parse JSON header
+                    return nullAuth.getEffectiveCredentials(ctx, null);
                 } else {
                     
                     final String globalUID = fullDN;
-                    final String globalGID = getNameElement(cert.getSubjectX500Principal().getName(),"OU");
-                    List<String> gids = new ArrayList(1);
+                    final String globalGID = getNameElement(cert.getSubjectX500Principal().getName(), "OU");
+                    List<String> gids = new ArrayList<String>(1);
                     gids.add(globalGID);
                     
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "X.509-User cert present: " + globalUID + "," + globalGID);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "X.509-User cert present: " + globalUID
+                        + "," + globalGID);
                     
                     boolean isSuperUser = gids.contains("xtreemfs-admin");
                     final UserCredentials creds = new UserCredentials(globalUID, gids, isSuperUser);
-                    channel.setAttachment(new Object[]{new Boolean(false),creds});
+                    channel.setAttachment(new Object[] { new Boolean(false), creds });
                     return creds;
                 }
             } else {
@@ -86,14 +90,14 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
-            throw new AuthenticationException("invalid credentials "+ex);
+            throw new AuthenticationException("invalid credentials " + ex);
         }
         
     }
     
     private String getNameElement(String principal, String element) {
         String[] elems = principal.split(",");
-        for (String elem: elems) {
+        for (String elem : elems) {
             String[] kv = elem.split("=");
             if (kv.length != 2)
                 continue;
@@ -102,10 +106,10 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         }
         return null;
     }
-
+    
     public void initialize(boolean useSSL) throws RuntimeException {
         if (!useSSL) {
-            throw new RuntimeException(this.getClass().getName() + " can only be used if use_ssl is enabled!");
+            throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }
         nullAuth = new NullAuthProvider();
         nullAuth.initialize(useSSL);

@@ -26,12 +26,11 @@ package org.xtreemfs.mrc.operations;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.List;
 
 import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -46,24 +45,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class DumpDBOperation extends MRCOperation {
     
-    static class Args {
-        public String dumpFile;
-    }
-    
-    public static final String RPC_NAME = ".dumpdb";
+    public static final int OP_ID = 52;
     
     public DumpDBOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -71,13 +56,12 @@ public class DumpDBOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final admin_dump_databaseRequest rqArgs = (admin_dump_databaseRequest) rq.getRequestArgs();
             final VolumeManager vMan = master.getVolumeManager();
             
-            BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.dumpFile));
+            BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.getDump_file()));
             xmlWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            xmlWriter.write("<filesystem dbversion=\"" + VersionManagement.getMrcDataVersion()
-                + "\">\n");
+            xmlWriter.write("<filesystem dbversion=\"" + VersionManagement.getMrcDataVersion() + "\">\n");
             
             for (VolumeInfo volume : vMan.getVolumes()) {
                 xmlWriter.write("<volume id=\""
@@ -88,8 +72,8 @@ public class DumpDBOperation extends MRCOperation {
                     + volume.getAcPolicyId()
                     + "\" osdPolicy=\""
                     + volume.getOsdPolicyId()
-                    + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\""
-                        + volume.getOsdPolicyArgs() : "") + "\">\n");
+                    + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\"" + volume.getOsdPolicyArgs()
+                        : "") + "\">\n");
                 
                 StorageManager sMan = vMan.getStorageManager(volume.getId());
                 sMan.dumpDB(xmlWriter);
@@ -100,40 +84,16 @@ public class DumpDBOperation extends MRCOperation {
             xmlWriter.write("</filesystem>\n");
             xmlWriter.close();
             
+            // set the response
+            rq.setResponse(new admin_dump_databaseResponse());
             finishRequest(rq);
             
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.dumpFile = (String) arguments.get(0);
-            
-            if (arguments.size() == 1)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
-    
 }

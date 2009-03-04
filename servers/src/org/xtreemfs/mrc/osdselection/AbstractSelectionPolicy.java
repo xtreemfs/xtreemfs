@@ -27,18 +27,14 @@ package org.xtreemfs.mrc.osdselection;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
@@ -56,9 +52,14 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         Set<String> rules = null;
         if (args != null) {
             try {
-                final List<String> argList = args.length() == 0 ? null : (List<String>) JSONParser
-                        .parseJSON(new JSONString(args));
-                rules = argList == null ? null : new HashSet<String>(argList);
+                
+                rules = new HashSet<String>();
+                
+                // parse the JSON formatted argument list
+                StringTokenizer st = new StringTokenizer(args, "[, \t");
+                while(st.hasMoreTokens())
+                    rules.add(st.nextToken());
+                 
             } catch (Exception exc) {
                 Logging.logMessage(Logging.LEVEL_WARN, this, "invalid set of suitable OSDs: '"
                     + args + "'");

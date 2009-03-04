@@ -24,15 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.rmvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.rmvolResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -48,24 +45,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class DeleteVolumeOperation extends MRCOperation {
     
-    static class Args {
-        public String volumeName;
-    }
-    
-    public static final String RPC_NAME = "deleteVolume";
+    public static final int OP_ID = 16;
     
     public DeleteVolumeOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -73,9 +56,9 @@ public class DeleteVolumeOperation extends MRCOperation {
         
         try {
             
-            final Args rqArgs = (Args) rq.getRequestArgs();
+            final rmvolRequest rqArgs = (rmvolRequest) rq.getRequestArgs();
             
-            final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.volumeName);
+            final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
             final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
             
             // get the volume's root directory
@@ -83,14 +66,13 @@ public class DeleteVolumeOperation extends MRCOperation {
             
             // check whether privileged permissions are granted for deleting the
             // volume
-            master.getFileAccessManager().checkPrivilegedPermissions(sMan, file,
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // deregister the volume from the Directory Service
-            RPCResponse response = master.getDirClient()
-                    .service_deregister(null,volume.getId());
+            RPCResponse response = master.getDirClient().service_deregister(null, volume.getId());
             response.registerListener(new RPCResponseAvailableListener() {
-
+                
                 @Override
                 public void responseAvailable(RPCResponse r) {
                     processStep2(rqArgs, volume.getId(), rq, r);
@@ -99,15 +81,14 @@ public class DeleteVolumeOperation extends MRCOperation {
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    private void processStep2(final Args rqArgs, final String volumeId, final MRCRequest rq,
+    private void processStep2(rmvolRequest rqArgs, final String volumeId, final MRCRequest rq,
         final RPCResponse rpcResponse) {
         
         try {
@@ -116,48 +97,24 @@ public class DeleteVolumeOperation extends MRCOperation {
             // thrown when trying to parse the response
             rpcResponse.get();
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
-            
             // delete the volume from the local database
             master.getVolumeManager().deleteVolume(volumeId, master, rq);
             
+            // set the response
+            rq.setResponse(new rmvolResponse());
+            finishRequest(rq);
+            
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.volumeName = (String) arguments.get(0);
-            if (arguments.size() == 1)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((rmvolRequest) rq.getRequestArgs()).getContext();
     }
     
 }

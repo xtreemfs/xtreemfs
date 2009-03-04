@@ -24,21 +24,16 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.statfs_;
+import org.xtreemfs.interfaces.MRCInterface.statfsRequest;
+import org.xtreemfs.interfaces.MRCInterface.statfsResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -48,26 +43,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class StatFSOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String  volumeName;
-        
-    }
-    
-    public static final String RPC_NAME = "statfs";
+    public static final int OP_ID = 19;
     
     public StatFSOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -75,61 +54,29 @@ public class StatFSOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final statfsRequest rqArgs = (statfsRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
+            final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
             
-            final VolumeInfo volume = vMan.getVolumeByName(rqArgs.volumeName);
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
+            long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
+            statfs_ statfs = new statfs_(1024, blocks, volume.getId(), 1024);
             
-            Map<String,Object> statInfo = new HashMap();
-            statInfo.put("bsize",1024l);
-            long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId())/1024l;
-            statInfo.put("bfree", blocks);
-            statInfo.put("fsid", volume.getId());
-            statInfo.put("namelen", 1024l);
-
-            
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(statInfo).getBytes()));
+            // set the response
+            rq.setResponse(new statfsResponse(statfs));
             finishRequest(rq);
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.volumeName = (String) arguments.get(0);
-            
-            if (arguments.size() == 1)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((statfsRequest) rq.getRequestArgs()).getContext();
     }
     
 }

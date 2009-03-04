@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import java.io.File;
-import java.util.List;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -34,18 +33,19 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.DBAdminTool;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.DBAdminTool.DBRestoreState;
+import org.xtreemfs.mrc.utils.DBAdminHelper;
+import org.xtreemfs.mrc.utils.DBAdminHelper.DBRestoreState;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -55,24 +55,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class RestoreDBOperation extends MRCOperation {
     
-    static class Args {
-        public String dumpFile;
-    }
-    
-    public static final String RPC_NAME = ".restoredb";
+    public static final int OP_ID = 53;
     
     public RestoreDBOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -80,7 +66,7 @@ public class RestoreDBOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final admin_restore_databaseRequest rqArgs = (admin_restore_databaseRequest) rq.getRequestArgs();
             final VolumeManager vMan = master.getVolumeManager();
             
             // First, check if any volume exists already. If so, deny the
@@ -91,14 +77,14 @@ public class RestoreDBOperation extends MRCOperation {
             
             SAXParserFactory spf = SAXParserFactory.newInstance();
             SAXParser sp = spf.newSAXParser();
-            sp.parse(new File(rqArgs.dumpFile), new DefaultHandler() {
+            sp.parse(new File(rqArgs.getDump_file()), new DefaultHandler() {
                 
                 private DBRestoreState state;
                 
                 private int            dbVersion = 1;
                 
-                public void startElement(String uri, String localName, String qName,
-                    Attributes attributes) throws SAXException {
+                public void startElement(String uri, String localName, String qName, Attributes attributes)
+                    throws SAXException {
                     
                     try {
                         
@@ -159,15 +145,13 @@ public class RestoreDBOperation extends MRCOperation {
                             handleNestedElement(qName, attributes, true);
                         
                     } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this,
-                            "could not restore DB from XML dump");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "could not restore DB from XML dump");
                         Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
                         throw new SAXException(exc);
                     }
                 }
                 
-                public void endElement(String uri, String localName, String qName)
-                    throws SAXException {
+                public void endElement(String uri, String localName, String qName) throws SAXException {
                     
                     try {
                         if (qName.equals("slice") || qName.equals("filesystem"))
@@ -176,15 +160,14 @@ public class RestoreDBOperation extends MRCOperation {
                         handleNestedElement(qName, null, false);
                         
                     } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this,
-                            "could not restore DB from XML dump");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "could not restore DB from XML dump");
                         Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
                         throw new SAXException(exc);
                     }
                 }
                 
-                private void handleNestedElement(String qName, Attributes attributes,
-                    boolean openTag) throws UserException, DatabaseException {
+                private void handleNestedElement(String qName, Attributes attributes, boolean openTag)
+                    throws UserException, DatabaseException {
                     
                     if (qName.equals("volume")) {
                         
@@ -196,73 +179,51 @@ public class RestoreDBOperation extends MRCOperation {
                         state.largestFileId = 0;
                         
                     } else if (qName.equals("dir"))
-                        DBAdminTool.restoreDir(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreDir(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("file"))
-                        DBAdminTool.restoreFile(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreFile(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("xLocList"))
-                        DBAdminTool.restoreXLocList(vMan, master.getFileAccessManager(),
-                            attributes, state, dbVersion, openTag);
+                        DBAdminHelper.restoreXLocList(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("xLoc"))
-                        DBAdminTool.restoreXLoc(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreXLoc(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("osd"))
-                        DBAdminTool.restoreOSD(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreOSD(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("acl"))
-                        DBAdminTool.restoreACL(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreACL(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("entry"))
-                        DBAdminTool.restoreEntry(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreEntry(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                     else if (qName.equals("attr"))
-                        DBAdminTool.restoreAttr(vMan, master.getFileAccessManager(), attributes,
-                            state, dbVersion, openTag);
+                        DBAdminHelper.restoreAttr(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
                 }
                 
             });
             
+            // set the response
+            rq.setResponse(new admin_restore_databaseResponse());
             finishRequest(rq);
             
         } catch (UserException exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getMessage(), exc));
         } catch (SAXException exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getException()
-                    .getMessage() == null ? "an error has occured" : exc.getException()
-                    .getMessage(), exc.getException()));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION,
+                exc.getException().getMessage() == null ? "an error has occured" : exc.getException()
+                        .getMessage(), exc.getException()));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
                 exc.getMessage() == null ? "an error has occurred" : exc.getMessage(), exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.dumpFile = (String) arguments.get(0);
-            
-            if (arguments.size() == 1)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

@@ -24,13 +24,19 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
+import java.net.InetSocketAddress;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.interfaces.MRCInterface.createResponse;
+import org.xtreemfs.interfaces.MRCInterface.openRequest;
+import org.xtreemfs.interfaces.MRCInterface.openResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -41,12 +47,11 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.utils.MRCHelper.AccessMode;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -56,28 +61,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class OpenOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public String accessMode;
-        
-    }
-    
-    public static final String RPC_NAME = "open";
+    public static final int OP_ID = 11;
     
     public OpenOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -85,157 +72,162 @@ public class OpenOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final openRequest rqArgs = (openRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
+            
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            FileMetadata file = null;
             
             // check whether the file/directory exists
-            res.checkIfFileDoesNotExist();
-            
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+            try {
                 
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
-                    return;
+                res.checkIfFileDoesNotExist();
+                
+                file = res.getFile();
+                
+                // if the file refers to a symbolic link, resolve the link
+                String target = sMan.getSoftlinkTarget(file.getId());
+                if (target != null) {
+                    rqArgs.setPath(target);
+                    p = new Path(rqArgs.getPath());
+                    
+                    // if the local MRC is not responsible, send a redirect
+                    if (!vMan.hasVolume(p.getComp(0))) {
+                        finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
+                        return;
+                    }
+                    
+                    volume = vMan.getVolumeByName(p.getComp(0));
+                    sMan = vMan.getStorageManager(volume.getId());
+                    res = new PathResolver(sMan, p);
+                    file = res.getFile();
                 }
                 
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
+                if (file.isDirectory())
+                    throw new UserException(ErrNo.EISDIR, "open is restricted to files");
+                
+                // check whether the file is marked as 'read-only'; in this
+                // case, throw an exception if write access is requested
+                if (file.isReadOnly()
+                    && ((rqArgs.getFlags() & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY
+                        | FileAccessManager.O_TRUNC | FileAccessManager.O_APPEND)) != 0))
+                    throw new UserException(ErrNo.EPERM, "read-only files cannot be written");
+                
+                // check whether the permission is granted
+                faMan.checkPermission(rqArgs.getFlags(), sMan, file, res.getParentDirId(),
+                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+                
+            } catch (UserException exc) {
+                
+                // if the file does not exist, check whether the O_CREAT flag
+                // has been provided
+                if ((rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
+                    
+                    // prepare file creation in database
+                    
+                    // get the next free file ID
+                    long fileId = sMan.getNextFileId();
+                    
+                    // atime, ctime, mtime
+                    int time = (int) (TimeSync.getGlobalTime() / 1000);
+                    
+                    // create the metadata object
+                    file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
+                        rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, 0,
+                        false, 0, 0, update);
+                    
+                    // set the file ID as the last one
+                    sMan.setLastFileId(fileId, update);
+                    
+                    // set the response
+                    rq.setResponse(new createResponse());
+                }
+
+                else
+                    throw exc;
             }
-            
-            if (file.isDirectory())
-                throw new UserException(ErrNo.EISDIR, "open is restricted to files");
-            
-            AccessMode mode = null;
-            try {
-                mode = AccessMode.valueOf(rqArgs.accessMode);
-            } catch (IllegalArgumentException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid access mode for 'open': "
-                    + rqArgs.accessMode);
-            }
-            
-            // check whether the file is marked as 'read-only'; in this
-            // case, throw an exception if write access is requested
-            if ((mode == AccessMode.w || mode == AccessMode.a || mode == AccessMode.ga || mode == AccessMode.t)
-                && file.isReadOnly())
-                throw new UserException(ErrNo.EPERM, "read-only files cannot be written");
-            
-            // check whether the permission is granted
-            faMan.checkPermission(rqArgs.accessMode, sMan, file, res.getParentDirId(), rq
-                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = null;
             
             // get the current epoch, use (and increase) the truncate number if
             // the open mode is truncate
-            if (mode == AccessMode.t) {
+            if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
                 update = sMan.createAtomicDBUpdate(master, rq);
                 file.setIssuedEpoch(file.getIssuedEpoch() + 1);
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
             
-            // create the capability
-            String capability = MRCHelper.createCapability(rqArgs.accessMode, volume.getId(),
-                file.getId(), file.getIssuedEpoch(), master.getConfig().getCapabilitySecret())
-                    .toString();
-            
-            // get the list of replicas associated with the file
             XLocList xLocList = file.getXLocList();
+            XLocSet xLocSet = null;
             
-            // if no replica exists yet, create one using the default striping
-            // policy together with a set of feasible OSDs from the OSD status
-            // manager
-            if (xLocList == null || !xLocList.iterator().hasNext()) {
+            // if no replicas have been assigned yet, assign a new replica
+            if (xLocList == null || xLocList.getReplicaCount() == 0) {
                 
-                StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
+                // create a replica with the default striping policy together
+                // with a set of feasible OSDs from the OSD status manager
+                Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume,
+                    res.getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
+                            .getClientIdentity()).getAddress());
                 
-                xLocList = MRCHelper.createXLocList(sp, xLocList, sMan, master
-                        .getOSDStatusManager(), res.toString(), file.getId(), res.getParentDirId(),
-                    volume, rq.getPinkyRequest().getClientAddress());
+                ReplicaSet replicas = new ReplicaSet();
+                replicas.add(replica);
                 
-                file.setXLocList(xLocList);
+                // TODO: include proper replica update policy in MRC
+                // database design
+                xLocSet = new XLocSet(replicas, 0, "");
                 
-                if (update == null)
-                    update = sMan.createAtomicDBUpdate(master, rq);
+                file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             }
+
+            else
+                xLocSet = Converter.xLocListToXLocSet(xLocList);
             
-            HTTPHeaders headers = MRCHelper.createXCapHeaders(capability, xLocList);
-            rq.setAdditionalResponseHeaders(headers);
+            Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
+                    .getGlobalTime()
+                / 1000 + Capability.DEFAULT_VALIDITY, ((InetSocketAddress) rq.getRPCRequest()
+                    .getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(), master.getConfig()
+                    .getCapabilitySecret());
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // update POSIX timestamps of file
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,
+                true, sMan, update);
             
-            if (update == null)
-                update = sMan.createAtomicDBUpdate(master, rq);
+            // update POSIX timestamps of parent directory
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
+                update);
             
             // update POSIX timestamps of parent directory
             if (!master.getConfig().isNoAtime())
-                MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true,
-                    false, false, sMan, update);
+                MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true, false, false,
+                    sMan, update);
             
-            if (update != null)
-                update.execute();
-            else
-                finishRequest(rq);
+            // set the response
+            rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
+            
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.accessMode = (String) arguments.get(1);
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((openRequest) rq.getRequestArgs()).getContext();
     }
     
 }

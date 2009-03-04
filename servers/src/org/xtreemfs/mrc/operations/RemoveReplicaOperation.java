@@ -24,13 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-import java.util.Map;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -54,30 +51,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class RemoveReplicaOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String              fileId;
-        
-        public Map<String, Object> stripingPolicy;
-        
-        public List<Object>        osdList;
-        
-    }
-    
-    public static final String RPC_NAME = "removeReplica";
+    public static final int OP_ID = 27;
     
     public RemoveReplicaOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -85,7 +62,8 @@ public class RemoveReplicaOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final xtreemfs_replica_removeRequest rqArgs = (xtreemfs_replica_removeRequest) rq
+                    .getRequestArgs();
             
             final FileAccessManager faMan = master.getFileAccessManager();
             final VolumeManager vMan = master.getVolumeManager();
@@ -94,17 +72,17 @@ public class RemoveReplicaOperation extends MRCOperation {
             long fileId = 0;
             String volumeId = null;
             try {
-                String globalFileId = rqArgs.fileId;
+                String globalFileId = rqArgs.getFile_id();
                 int i = globalFileId.indexOf(':');
-                volumeId = rqArgs.fileId.substring(0, i);
-                fileId = Long.parseLong(rqArgs.fileId.substring(i + 1));
+                volumeId = rqArgs.getFile_id().substring(0, i);
+                fileId = Long.parseLong(rqArgs.getFile_id().substring(i + 1));
             } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + rqArgs.fileId
+                throw new UserException("invalid global file ID: " + rqArgs.getFile_id()
                     + "; expected pattern: <volume_ID>:<local_file_ID>");
             }
             
             StorageManager sMan = vMan.getStorageManager(volumeId);
-                        
+            
             // retrieve the file metadata
             FileMetadata file = sMan.getMetadata(fileId);
             if (file == null)
@@ -133,12 +111,8 @@ public class RemoveReplicaOperation extends MRCOperation {
             
             // check whether privileged permissions are granted for removing
             // replicas
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            if (!file.isReadOnly())
-                throw new UserException(ErrNo.EPERM,
-                    "the file has to be made read-only before adding replicas");
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
             XLocList xLocList = file.getXLocList();
             
@@ -151,7 +125,7 @@ public class RemoveReplicaOperation extends MRCOperation {
                 // compare the first elements from the lists; since an OSD may
                 // only occur once in each X-Locations list, it is not necessary
                 // to go through the entire list
-                if (replica.getOSD(0).equals(rqArgs.osdList.get(0)))
+                if (replica.getOSD(0).equals(rqArgs.getOsd_uuid()))
                     break;
             }
             
@@ -169,50 +143,22 @@ public class RemoveReplicaOperation extends MRCOperation {
             // update the X-Locations list
             sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new xtreemfs_replica_removeResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.fileId = (String) arguments.get(0);
-            args.stripingPolicy = (Map<String, Object>) arguments.get(1);
-            args.osdList = (List<Object>) arguments.get(2);
-            
-            if (arguments.size() == 3)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((xtreemfs_replica_removeRequest) rq.getRequestArgs()).getContext();
     }
     
 }

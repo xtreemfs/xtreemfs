@@ -24,15 +24,15 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.DirectoryEntry;
+import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.stat_;
+import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -54,24 +54,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class ReadDirAndStatOperation extends MRCOperation {
     
-    static class Args {
-        public String path;
-    }
-    
-    public static final String RPC_NAME = "readDirAndStat";
+    public static final int OP_ID = 12;
     
     public ReadDirAndStatOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -79,20 +65,20 @@ public class ReadDirAndStatOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final readdirRequest rqArgs = (readdirRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -102,8 +88,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+                rqArgs.setPath(target);
+                p = new Path(rqArgs.getPath());
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
@@ -118,75 +104,52 @@ public class ReadDirAndStatOperation extends MRCOperation {
             }
             
             // check whether the directory grants read access
-            faMan.checkPermission(FileAccessManager.READ_ACCESS, sMan, file, res.getParentDirId(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.O_RDONLY, sMan, file, res.getParentDirId(), rq
+                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
-            AtomicDBUpdate update = null;
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // if required, update POSIX timestamps
-            if (!master.getConfig().isNoAtime()) {
-                update = sMan.createAtomicDBUpdate(master, rq);
-                MRCHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan,
-                    update);
-            }
+            if (!master.getConfig().isNoAtime())
+                MRCHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan, update);
             
-            Map<String, Map<String, Object>> result = new HashMap<String, Map<String, Object>>();
+            DirectoryEntrySet dirContent = new DirectoryEntrySet();
             
             Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
             while (it.hasNext()) {
                 
                 FileMetadata child = it.next();
                 
-                Map<String, Object> statInfo = MRCHelper.createStatInfo(sMan, faMan, child, sMan
-                        .getSoftlinkTarget(child.getId()), rq.getDetails().userId,
-                    rq.getDetails().groupIds, null, null, null);
+                String linkTarget = sMan.getSoftlinkTarget(child.getId());
+                int mode = faMan.getPosixAccessMode(sMan, child, rq.getDetails().userId,
+                    rq.getDetails().groupIds);
+                long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : child
+                        .getSize();
+                int type = linkTarget != null ? 3 : child.isDirectory() ? 2 : 1;
+                stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
+                        .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
+                        .getId()
+                    + ":" + child.getId(), type, child.getEpoch(), (int) child.getW32Attrs());
+                // TODO: check whether Win32 attrs are 32 or 64 bits long
                 
-                result.put(child.getFileName(), statInfo);
+                dirContent.add(new DirectoryEntry(child.getFileName(), stat, linkTarget));
             }
             
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(result).getBytes()));
+            // set the response
+            rq.setResponse(new readdirResponse(dirContent));
             
-            if (update != null)
-                update.execute();
-            else
-                finishRequest(rq);
+            update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            
-            if (arguments.size() == 1)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((readdirRequest) rq.getRequestArgs()).getContext();
     }
-    
 }

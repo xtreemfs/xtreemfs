@@ -29,9 +29,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.pinky.HTTPUtils.DATA_TYPE;
+import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -41,7 +40,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  */
 public class StatusPageOperation extends MRCOperation {
     
-    public static final String RPC_NAME = "";
+    public static final int OP_ID = -1;
     
     public enum Vars {
             LASTRQDATE("<!-- $LASTRQDATE -->"),
@@ -110,23 +109,16 @@ public class StatusPageOperation extends MRCOperation {
     }
     
     @Override
-    public boolean hasArguments() {
-        return false;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false;
-    }
-    
-    @Override
     public void startRequest(MRCRequest rq) {
-        rq.setData(ReusableBuffer.wrap(getStatusPage().getBytes()));
-        rq.setDataType(DATA_TYPE.HTML);
-        finishRequest(rq);
+        
+        // TODO
+        
+        // rq.setData(ReusableBuffer.wrap(getStatusPage().getBytes()));
+        // rq.setDataType(DATA_TYPE.HTML);
+        // finishRequest(rq);
     }
     
-    public String getStatusPage() {
+    protected String getStatusPage() {
         
         Map<Vars, String> vars = master.getStatusInformation();
         String tmp = statusPageTemplate;
@@ -134,7 +126,10 @@ public class StatusPageOperation extends MRCOperation {
             tmp = tmp.replace(key.toString(), vars.get(key));
         }
         return tmp;
-        
+    }
+    
+    public Context getContext(MRCRequest rq) {
+        return null;
     }
     
 }

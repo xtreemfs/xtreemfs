@@ -24,14 +24,16 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
+import java.net.InetSocketAddress;
 
+import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.FileCredentialsSet;
+import org.xtreemfs.interfaces.MRCInterface.renameRequest;
+import org.xtreemfs.interfaces.MRCInterface.renameResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -42,6 +44,7 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
@@ -55,28 +58,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class MoveOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String sourcePath;
-        
-        public String targetPath;
-        
-    }
-    
-    public static final String RPC_NAME = "move";
+    public static final int OP_ID = 14;
     
     public MoveOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -84,27 +69,27 @@ public class MoveOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final renameRequest rqArgs = (renameRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path sp = new Path(rqArgs.sourcePath);
+            final Path sp = new Path(rqArgs.getSource_path());
             
             final VolumeInfo volume = vMan.getVolumeByName(sp.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
             final PathResolver sRes = new PathResolver(sMan, sp);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, sRes.getParentDir(), sRes
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
+            faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
-            final Path tp = new Path(rqArgs.targetPath);
+            // check whether the parent directory grants write access
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, sRes.getParentDir(), sRes
+                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
+            
+            final Path tp = new Path(rqArgs.getTarget_path());
             
             // check arguments
             if (sp.getCompCount() == 1)
@@ -118,9 +103,9 @@ public class MoveOperation extends MRCOperation {
             
             // check whether the entry itself can be moved (this is e.g.
             // important w/ POSIX access control if the sticky bit is set)
-            faMan.checkPermission(FileAccessManager.RM_MV_IN_DIR_ACCESS, sMan, sRes.getFile(), sRes
-                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, sRes.getFile(), sRes
+                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
             FileMetadata source = sRes.getFile();
             
@@ -138,9 +123,8 @@ public class MoveOperation extends MRCOperation {
             
             // find out what the target path refers to (0 = does not exist, 1 =
             // directory, 2 = file)
-            FileType targetType = tp.getCompCount() == 1 ? FileType.dir
-                : target == null ? FileType.nexists : target.isDirectory() ? FileType.dir
-                    : FileType.file;
+            FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
+                : target.isDirectory() ? FileType.dir : FileType.file;
             
             // if both the old and the new directory point to the same
             // entity, do nothing
@@ -151,16 +135,17 @@ public class MoveOperation extends MRCOperation {
             
             // check whether the path prefix of the target file is
             // searchable
-            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether the parent directory of the target file grants
             // write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, tRes.getParentDir(), tRes
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
+                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            FileCredentialsSet creds = new FileCredentialsSet();
             
             switch (sourceType) {
             
@@ -179,8 +164,7 @@ public class MoveOperation extends MRCOperation {
                 {
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
-                        update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -193,9 +177,9 @@ public class MoveOperation extends MRCOperation {
                     
                     // check whether the target directory may be overwritten; if
                     // so, delete it
-                    faMan.checkPermission(FileAccessManager.DELETE_ACCESS, sMan, target, tRes
-                            .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
-                        rq.getDetails().groupIds);
+                    faMan.checkPermission(FileAccessManager.NON_POSIX_DELETE, sMan, target, tRes
+                            .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
+                            .getDetails().groupIds);
                     
                     if (sMan.getChildren(target.getId()).hasNext())
                         throw new UserException(ErrNo.ENOTEMPTY, "target directory '" + tRes
@@ -205,8 +189,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
-                        update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -215,8 +198,8 @@ public class MoveOperation extends MRCOperation {
                 }
                     
                 case file: // target is a file
-                    throw new UserException(ErrNo.ENOTDIR, "cannot rename directory '" + sRes
-                        + "' to file '" + tRes + "'");
+                    throw new UserException(ErrNo.ENOTDIR, "cannot rename directory '" + sRes + "' to file '"
+                        + tRes + "'");
                     
                 }
                 
@@ -234,8 +217,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
-                        update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -245,16 +227,12 @@ public class MoveOperation extends MRCOperation {
                     
                 case dir: // target is a directory
                 {
-                    throw new UserException(ErrNo.EISDIR, "cannot rename file '" + sRes
-                        + "' to directory '" + tRes + "'");
+                    throw new UserException(ErrNo.EISDIR, "cannot rename file '" + sRes + "' to directory '"
+                        + tRes + "'");
                 }
                     
                 case file: // target is a file
                 {
-                    
-                    // obtain a deletion capability for the file
-                    String aMode = faMan.translateAccessMode(volume.getId(),
-                        FileAccessManager.DELETE_ACCESS);
                     
                     // unless there is still another link to the target file,
                     // i.e. the target file must not be deleted yet, create a
@@ -262,14 +240,14 @@ public class MoveOperation extends MRCOperation {
                     // XLocationsList headers in the response
                     if (target.getLinkCount() == 1) {
                         
-                        String capability = MRCHelper.createCapability(aMode, volume.getId(),
-                            target.getId(), Integer.MAX_VALUE,
-                            master.getConfig().getCapabilitySecret()).toString();
+                        // create a deletion capability for the file
+                        Capability cap = new Capability(volume.getId() + ":" + target.getId(),
+                            FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
+                                    .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
+                            target.getEpoch(), master.getConfig().getCapabilitySecret());
                         
-                        HTTPHeaders xCapHeaders = MRCHelper.createXCapHeaders(capability, target
-                                .getXLocList());
-                        
-                        rq.setAdditionalResponseHeaders(xCapHeaders);
+                        creds.add(new FileCredentials(Converter.xLocListToXLocSet(target.getXLocList()), cap
+                                .getXCap()));
                     }
                     
                     // delete the target
@@ -277,8 +255,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(),
-                        update);
+                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -292,53 +269,27 @@ public class MoveOperation extends MRCOperation {
             }
             
             // update POSIX timestamps of source and target parent directories
-            MRCHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false,
-                true, true, sMan, update);
-            MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false,
-                true, true, sMan, update);
+            MRCHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false, true, true,
+                sMan, update);
+            MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false, true, true,
+                sMan, update);
             
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // set the response
+            rq.setResponse(new renameResponse(creds));
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.sourcePath = (String) arguments.get(0);
-            args.targetPath = (String) arguments.get(1);
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((renameRequest) rq.getRequestArgs()).getContext();
     }
     
 }

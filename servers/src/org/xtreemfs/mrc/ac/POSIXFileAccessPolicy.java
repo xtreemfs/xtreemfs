@@ -171,8 +171,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     private static final short  READ_MASK          = PERM_READ | PERM_STRICT_READ;
     
-    private static final short  WRITE_MASK         = PERM_WRITE | PERM_APPEND | PERM_GFS_APPEND
-                                                       | PERM_CREATE | PERM_TRUNCATE | PERM_DELETE;
+    private static final short  WRITE_MASK         = PERM_WRITE | PERM_APPEND | PERM_GFS_APPEND | PERM_CREATE
+                                                       | PERM_TRUNCATE | PERM_DELETE;
     
     private static final short  EXEC_MASK          = PERM_EXECUTE;
     
@@ -180,17 +180,19 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public String translateAccessMode(int accessMode) {
+    public String translateAccessFlags(int accessMode) {
         switch (accessMode) {
-        case FileAccessManager.READ_ACCESS:
+        case FileAccessManager.O_RDONLY:
             return AM_READ;
-        case FileAccessManager.WRITE_ACCESS:
+        case FileAccessManager.O_RDWR:
+        case FileAccessManager.O_WRONLY:
+        case FileAccessManager.O_APPEND:
             return AM_WRITE;
-        case FileAccessManager.SEARCH_ACCESS:
+        case FileAccessManager.NON_POSIX_SEARCH:
             return AM_EXECUTE;
-        case FileAccessManager.DELETE_ACCESS:
+        case FileAccessManager.NON_POSIX_DELETE:
             return AM_DELETE;
-        case FileAccessManager.RM_MV_IN_DIR_ACCESS:
+        case FileAccessManager.NON_POSIX_RM_MV_IN_DIR:
             return AM_MV_RM_IN_DIR;
         }
         
@@ -198,8 +200,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, String accessMode) throws UserException, MRCException {
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, String accessMode) throws UserException, MRCException {
         
         assert (file != null);
         
@@ -211,8 +213,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 
                 // retrieve the relevant ACL entry for evaluating the access
                 // rights
-                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds,
-                    accessMode);
+                ACLEntry entry = getRelevantACLEntry(sMan, file, parentId, userId, groupIds, accessMode);
                 assert (entry != null);
                 
                 // if the ACL entry is 'owner' or 'others', evaluate the access
@@ -230,8 +231,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 // grant access
                 ACLEntry maskEntry = sMan.getACLEntry(file.getId(), MASK);
                 if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)
-                    && (maskEntry == null || checkIfAllowed(sMan, accessMode,
-                        maskEntry.getRights(), file, parentId, userId)))
+                    && (maskEntry == null || checkIfAllowed(sMan, accessMode, maskEntry.getRights(), file,
+                        parentId, userId)))
                     return;
                 else
                     accessDenied(sMan.getVolumeId(), file, accessMode);
@@ -240,8 +241,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
 
             // if not, use the file permissions for the access check ...
             else {
-                if (checkIfAllowed(sMan, accessMode, toRelativeACLRights(file.getPerms(), file,
-                    parentId, userId, groupIds), file, parentId, userId))
+                if (checkIfAllowed(sMan, accessMode, toRelativeACLRights(file.getPerms(), file, parentId,
+                    userId, groupIds), file, parentId, userId))
                     return;
                 else
                     accessDenied(sMan.getVolumeId(), file, accessMode);
@@ -265,8 +266,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             // path
             FileMetadata[] rp = res.getResolvedPath();
             for (int i = 0; i < rp.length - 1; i++)
-                checkPermission(sMan, rp[i], i == 0 ? 0 : rp[i - 1].getId(), userId, groupIds,
-                    AM_EXECUTE);
+                checkPermission(sMan, rp[i], i == 0 ? 0 : rp[i - 1].getId(), userId, groupIds, AM_EXECUTE);
             
         } catch (UserException exc) {
             throw exc;
@@ -293,8 +293,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
-        throws MRCException, UserException {
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
+        UserException {
         
         try {
             
@@ -319,21 +319,19 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             // add the ACL entries
             for (Entry<String, Object> entry : aclMap.entrySet()) {
                 Number rights = (Number) entry.getValue();
-                sMan.setACLEntry(file.getId(), entry.getKey(), rights == null ? null : rights
-                        .shortValue(), update);
+                sMan.setACLEntry(file.getId(), entry.getKey(), rights == null ? null : rights.shortValue(),
+                    update);
             }
             
             // modify the POSIX access value
             int owner = ((Number) aclMap.get(OWNER)).intValue();
-            Integer group = aclMap.get(MASK) != null ? ((Number) aclMap.get(MASK)).intValue()
-                : null;
+            Integer group = aclMap.get(MASK) != null ? ((Number) aclMap.get(MASK)).intValue() : null;
             if (group == null)
                 group = ((Number) aclMap.get(OWNER_GROUP)).intValue();
             int other = ((Number) aclMap.get(OTHER)).intValue();
             
             int posixRights = ((owner & PERM_SUID_SGID) > 0 ? POSIX_SUID : 0)
-                | ((group & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0)
-                | (file.getPerms() & POSIX_STICKY)
+                | ((group & PERM_SUID_SGID) > 0 ? POSIX_SGID : 0) | (file.getPerms() & POSIX_STICKY)
                 | ((owner & PERM_READ) > 0 ? POSIX_OWNER_READ : 0)
                 | ((owner & PERM_WRITE) > 0 ? POSIX_OWNER_WRITE : 0)
                 | ((owner & PERM_EXECUTE) > 0 ? POSIX_OWNER_EXEC : 0)
@@ -355,8 +353,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
-        throws MRCException {
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException {
         
         try {
             Iterator<ACLEntry> acl = sMan.getACL(file.getId());
@@ -367,9 +364,9 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
-        throws MRCException, UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
+        UserException {
         
         Map<String, Object> entries = new HashMap<String, Object>();
         for (Object entity : entities)
@@ -379,9 +376,9 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
-        throws MRCException, UserException {
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) throws MRCException,
+        UserException {
         
         try {
             
@@ -531,9 +528,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         
     }
     
-    private static ACLEntry getRelevantACLEntry(StorageManager sMan, FileMetadata file,
-        long parentId, String userId, List<String> groupIds, String accessMode)
-        throws UserException, DatabaseException {
+    private static ACLEntry getRelevantACLEntry(StorageManager sMan, FileMetadata file, long parentId,
+        String userId, List<String> groupIds, String accessMode) throws UserException, DatabaseException {
         
         // if the user ID is the owner, check access according to the rights
         // associated with the owner entry

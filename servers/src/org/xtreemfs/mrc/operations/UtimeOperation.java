@@ -24,13 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -52,32 +50,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class UtimeOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String path;
-        
-        public Long   atime;
-        
-        public Long   ctime;
-        
-        public Long   mtime;
-        
-    }
-    
-    public static final String RPC_NAME = "utime";
+    public static final int OP_ID = 22;
     
     public UtimeOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -85,20 +61,20 @@ public class UtimeOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final utimeRequest rqArgs = (utimeRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            Path p = new Path(rqArgs.path);
+            Path p = new Path(rqArgs.getPath());
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());
             PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                    .getDetails().groupIds);
             
             // check whether file exists
             res.checkIfFileDoesNotExist();
@@ -109,8 +85,8 @@ public class UtimeOperation extends MRCOperation {
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
-                rqArgs.path = target;
-                p = new Path(rqArgs.path);
+                rqArgs.setPath(target);
+                p = new Path(rqArgs.getPath());
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
@@ -124,79 +100,52 @@ public class UtimeOperation extends MRCOperation {
                 file = res.getFile();
             }
             
-            if ((rqArgs.atime != null) || (rqArgs.ctime != null) || (rqArgs.mtime != null)) {
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq
-                        .getDetails().superUser, rq.getDetails().groupIds);
-            } else {
-                faMan.checkPermission("w", sMan, file, res.getParentDirId(),
-                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            }
+            // check whether write permissions are granted to the parent
+            // directory
+            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // set all system attributes included in the map
-            
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+            // in case of empty args, check whether privileged permissions are
+            // granted to the file
+            // if (rqArgs.getTimes().isEmtpy()) {
+            if (false) {
+                // TODO: change the interface
+                
+                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                    rq.getDetails().superUser, rq.getDetails().groupIds);
+                
+                file.setAtime((int) (TimeSync.getGlobalTime() / 1000L));
+                file.setCtime((int) (TimeSync.getGlobalTime() / 1000L));
+                file.setMtime((int) (TimeSync.getGlobalTime() / 1000L));
+            }
+
+            else {
+                file.setAtime((int) rqArgs.getAtime());
+                file.setCtime((int) rqArgs.getCtime());
+                file.setMtime((int) rqArgs.getMtime());
+            }
             
             // update POSIX timestamps
-            if (rqArgs.atime != null)
-                file.setAtime(rqArgs.atime.intValue());
-            else
-                file.setAtime((int) (TimeSync.getGlobalTime() / 1000l));
-            if (rqArgs.ctime != null)
-                file.setCtime(rqArgs.ctime.intValue());
-            else
-                file.setCtime((int) (TimeSync.getGlobalTime() / 1000l));
-            if (rqArgs.mtime != null)
-                file.setMtime(rqArgs.mtime.intValue());
-            else
-                file.setMtime((int) (TimeSync.getGlobalTime() / 1000l));
-            
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
+            
+            // set the response
+            rq.setResponse(new utimeResponse());
             
             update.execute();
             
         } catch (UserException exc) {
             Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
         } catch (Exception exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.path = (String) arguments.get(0);
-            args.atime = (Long) arguments.get(1);
-            args.ctime = (Long) arguments.get(2);
-            args.mtime = (Long) arguments.get(3);
-            
-            if (arguments.size() == 4)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((utimeRequest) rq.getRequestArgs()).getContext();
     }
     
 }

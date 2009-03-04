@@ -24,12 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.List;
-
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.MRCInterface.linkRequest;
+import org.xtreemfs.interfaces.MRCInterface.linkResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -52,28 +50,10 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class CreateLinkOperation extends MRCOperation {
     
-    static class Args {
-        
-        public String linkPath;
-        
-        public String targetPath;
-        
-    }
-    
-    public static final String RPC_NAME = "createLink";
+    public static final int OP_ID = 7;
     
     public CreateLinkOperation(MRCRequestDispatcher master) {
         super(master);
-    }
-    
-    @Override
-    public boolean hasArguments() {
-        return true;
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return true;
     }
     
     @Override
@@ -81,13 +61,13 @@ public class CreateLinkOperation extends MRCOperation {
         
         try {
             
-            Args rqArgs = (Args) rq.getRequestArgs();
+            final linkRequest rqArgs = (linkRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path lp = new Path(rqArgs.linkPath);
-            final Path tp = new Path(rqArgs.targetPath);
+            final Path lp = new Path(rqArgs.getLink_path());
+            final Path tp = new Path(rqArgs.getTarget_path());
             
             if (!lp.getComp(0).equals(tp.getComp(0)))
                 throw new UserException(ErrNo.EXDEV,
@@ -103,7 +83,7 @@ public class CreateLinkOperation extends MRCOperation {
                     .getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the link's parent directory grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, lRes.getParentDir(), 0, rq
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, lRes.getParentDir(), 0, rq
                     .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // check whether the link exists already
@@ -122,7 +102,7 @@ public class CreateLinkOperation extends MRCOperation {
                 throw new UserException(ErrNo.EPERM, "no support for links to directories");
             
             // check whether the target file grants write access
-            faMan.checkPermission(FileAccessManager.WRITE_ACCESS, sMan, target, tRes
+            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, target, tRes
                     .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
@@ -137,10 +117,9 @@ public class CreateLinkOperation extends MRCOperation {
                 true, true, sMan, update);
             MRCHelper.updateFileTimes(tRes.getParentDirId(), target, false, true, false, sMan,
                 update);
-            
-            // FIXME: this line is needed due to a BUG in the client which
-            // expects some useless return value
-            rq.setData(ReusableBuffer.wrap(JSONParser.writeJSON(null).getBytes()));
+
+            // set the response
+            rq.setResponse(new linkResponse());
             
             update.execute();
             
@@ -154,32 +133,8 @@ public class CreateLinkOperation extends MRCOperation {
         }
     }
     
-    @Override
-    public ErrorRecord parseRPCBody(MRCRequest rq, List<Object> arguments) {
-        
-        Args args = new Args();
-        
-        try {
-            
-            args.linkPath = (String) arguments.get(0);
-            args.targetPath = (String) arguments.get(1);
-            if (arguments.size() == 2)
-                return null;
-            
-            throw new Exception();
-            
-        } catch (Exception exc) {
-            try {
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "': " + JSONParser.writeJSON(arguments));
-            } catch (JSONException je) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-                return new ErrorRecord(ErrorClass.BAD_REQUEST, "invalid arguments for operation '"
-                    + getClass().getSimpleName() + "'");
-            }
-        } finally {
-            rq.setRequestArgs(args);
-        }
+    public Context getContext(MRCRequest rq) {
+        return ((linkRequest) rq.getRequestArgs()).getContext();
     }
     
 }
