@@ -43,7 +43,7 @@ public class StringSet extends ArrayList<String>
         int my_size = Integer.SIZE/8;
         for ( Iterator<String> i = iterator(); i.hasNext(); ) {
             String next_value = i.next();
-            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(next_value);
+            my_size += 4 + ( next_value.length() + 4 - ( next_value.length() % 4 ) );
         }
         return my_size;
     }

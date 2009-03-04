@@ -66,12 +66,12 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uuid);
+        my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );
         my_size += ( Long.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(protocol);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(address);
+        my_size += 4 + ( protocol.length() + 4 - ( protocol.length() % 4 ) );
+        my_size += 4 + ( address.length() + 4 - ( address.length() % 4 ) );
         my_size += ( Integer.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(match_network);
+        my_size += 4 + ( match_network.length() + 4 - ( match_network.length() % 4 ) );
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }

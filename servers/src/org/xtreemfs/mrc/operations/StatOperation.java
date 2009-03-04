@@ -86,7 +86,7 @@ public class StatOperation extends MRCOperation {
             int type = linkTarget != null ? 3 : file.isDirectory() ? 2 : 1;
             stat_ stat = new stat_(mode, file.getLinkCount(), 1, 1, 0, size, file.getAtime(),
                 file.getMtime(), file.getCtime(), file.getOwnerId(), file.getOwningGroupId(), volume.getId()
-                    + ":" + file.getId(), type, file.getEpoch(), (int) file.getW32Attrs());
+                    + ":" + file.getId(), linkTarget, type, file.getEpoch(), (int) file.getW32Attrs());
             // TODO: check whether Win32 attrs are 32 or 64 bits long
             
             // set the response

@@ -42,7 +42,7 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(error_message);
+        my_size += 4 + ( error_message.length() + 4 - ( error_message.length() % 4 ) );
         return my_size;
     }
 

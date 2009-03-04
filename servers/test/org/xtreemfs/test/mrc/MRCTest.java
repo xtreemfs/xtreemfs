@@ -25,42 +25,48 @@
 package org.xtreemfs.test.mrc;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.clients.HttpErrorException;
-import org.xtreemfs.common.clients.RPCClient;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.NewFileSize;
+import org.xtreemfs.interfaces.NewFileSizeSet;
+import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.XCap;
+import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.interfaces.stat_;
+import org.xtreemfs.interfaces.Exceptions.MRCException;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
+import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -70,64 +76,59 @@ import org.xtreemfs.test.TestEnvironment;
  * @author stender
  */
 public class MRCTest extends TestCase {
-
+    
     private MRCRequestDispatcher mrc1;
-
+    
     private DIRRequestDispatcher dirService;
-
-    private MRCConfig mrcCfg1;
-
-    private DIRConfig dsCfg;
-
-    private MRCClient client;
-
-    private InetSocketAddress mrc1Address;
-
-    private TestEnvironment testEnv;
-
+    
+    private MRCConfig            mrcCfg1;
+    
+    private DIRConfig            dsCfg;
+    
+    private MRCClient            client;
+    
+    private InetSocketAddress    mrc1Address;
+    
+    private TestEnvironment      testEnv;
+    
     public MRCTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
-
+    
     protected void setUp() throws Exception {
-
+        
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
+        
         dsCfg = SetupUtils.createDIRConfig();
-
+        
         mrcCfg1 = SetupUtils.createMRC1Config();
         mrc1Address = SetupUtils.getMRC1Addr();
-
+        
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
-
+        
         FSUtils.delTree(testDir);
         testDir.mkdirs();
-
+        
         System.out.println("starting dir");
-
+        
         // start the Directory Service
         dirService = new DIRRequestDispatcher(dsCfg);
         dirService.startup();
         dirService.waitForStartup();
-
+        
         System.out.println("dir started");
-
+        
         // register an OSD at the directory service (needed in order to assign
         // it to a new file on 'open')
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
-                    TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER,TestEnvironment.Services.MRC_CLIENT
-        });
+        
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
+            TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+            TestEnvironment.Services.MRC_CLIENT });
         testEnv.start();
-
+        
         client = testEnv.getMrcClient();
-
-        String authString = NullAuthProvider.createAuthString("mockUpOSD", "mockUpOSD");
-        Map<String, Object> data = RPCClient.generateMap("type", "OSD", "free", "1000000000", "total",
-                "1000000000", "load", "0", "prot_versions", VersionManagement.getSupportedProtVersAsString(),
-                "totalRAM", "1000000000", "usedRAM", "0");
-
+        
         try {
             KeyValuePairSet kvset = new KeyValuePairSet();
             kvset.add(new KeyValuePair("free", "1000000000"));
@@ -135,807 +136,768 @@ public class MRCTest extends TestCase {
             kvset.add(new KeyValuePair("load", "0"));
             kvset.add(new KeyValuePair("totalRAM", "1000000000"));
             kvset.add(new KeyValuePair("usedRAM", "0"));
-            kvset.add(new KeyValuePair("proto_version", ""+OSDInterface.getVersion()));
-            ServiceRegistry reg = new ServiceRegistry("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD, "mockUpOSD", kvset);
-            org.xtreemfs.foundation.oncrpc.client.RPCResponse<Long> response = testEnv.getDirClient().service_register(null,reg);
+            kvset.add(new KeyValuePair("proto_version", "" + OSDInterface.getVersion()));
+            ServiceRegistry reg = new ServiceRegistry("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD,
+                "mockUpOSD", kvset);
+            RPCResponse<Long> response = testEnv.getDirClient().service_register(null, reg);
             response.get();
             response.freeBuffers();
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
         }
-
+        
         System.out.println("starting MRC...");
-
+        
         // start two MRCs
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
     }
-
+    
     protected void tearDown() throws Exception {
-
+        
         // shut down all services
         mrc1.shutdown();
         
         dirService.shutdown();
-
+        
         testEnv.shutdown();
-
+        
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
-
+        
     }
-
+    
     public void testCreateDelete() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
-        final String rootAuthString = NullAuthProvider.createAuthString("root", MRCClient
-                .generateStringList("root"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-
+        
         // create and delete a volume
-        client.createVolume(mrc1Address, volumeName, authString);
-        Map<String, String> localVols = client.getLocalVolumes(mrc1Address, authString);
-        assertEquals(1, localVols.size());
-        assertEquals(volumeName, localVols.values().iterator().next());
-        client.deleteVolume(mrc1Address, volumeName, authString);
-        localVols = client.getLocalVolumes(mrc1Address, authString);
-        assertEquals(0, localVols.size());
-
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
+        // Map<String, String> localVols = client.getLocalVolumes(mrc1Address);
+        // assertEquals(1, localVols.size());
+        // assertEquals(volumeName, localVols.values().iterator().next());
+        invokeSync(client.rmvol(mrc1Address, uid, gids, "", volumeName));
+        // localVols = client.getLocalVolumes(mrc1Address, authString);
+        // assertEquals(0, localVols.size());
+        
         // create a volume (no access control)
-        client.createVolume(mrc1Address, volumeName, authString);
-
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
         // create some files and directories
-        client.createDir(mrc1Address, volumeName + "/myDir", authString);
-        client.createDir(mrc1Address, volumeName + "/anotherDir", authString);
-
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/myDir", 0));
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/anotherDir", 0));
+        
         for (int i = 0; i < 10; i++)
-            client.createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);
-
+            invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/myDir/test" + i + ".txt", 0));
+        
+        // try to create a file w/o a name
         try {
-            client.createFile(mrc1Address, volumeName, authString);
+            invokeSync(client.create(mrc1Address, uid, gids, volumeName, 0));
             fail("missing filename");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
+        
         try {
-            client.createFile(mrc1Address, volumeName + "/myDir/test0.txt", authString);
+            invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/myDir/test0.txt", 0));
             fail("duplicate file creation");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
+        
         try {
-            client.createFile(mrc1Address, volumeName + "/myDir/test0.txt/bla.txt", authString);
+            invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/myDir/test0.txt/bla.txt", 0));
             fail("file in file creation");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
+        
         // test 'readDir' and 'stat'
-
-        List<String> list = client.readDir(mrc1Address, volumeName, authString);
-        assertEquals(2, list.size());
-        list = client.readDir(mrc1Address, volumeName + "/myDir", authString);
-        assertEquals(10, list.size());
-
-        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/myDir/test2.txt", true, true,
-                true, authString);
-        assertNotNull(statInfo.get("fileId"));
-        assertEquals("userXY", statInfo.get("ownerId"));
-        assertEquals("1", statInfo.get("objType").toString());
-        assertEquals("0", statInfo.get("size").toString());
-        assertTrue(((Long) statInfo.get("ctime")) > 0);
-        assertEquals("511", statInfo.get("posixAccessMode").toString());
-        assertNull(statInfo.get("linkTarget"));
-
+        
+        DirectoryEntrySet entrySet = invokeSync(client.readdir(mrc1Address, uid, gids, volumeName));
+        assertEquals(2, entrySet.size());
+        
+        entrySet = invokeSync(client.readdir(mrc1Address, uid, gids, volumeName + "/myDir"));
+        assertEquals(10, entrySet.size());
+        
+        stat_ stat = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/myDir/test2.txt"));
+        assertEquals(uid, stat.getUser_id());
+        assertEquals(1, stat.getObject_type());
+        assertEquals(0, stat.getSize());
+        assertTrue(stat.getAtime() > 0);
+        assertTrue(stat.getCtime() > 0);
+        assertTrue(stat.getMtime() > 0);
+        assertTrue((stat.getMode() & 511) > 0);
+        assertEquals(1, stat.getNlink());
+        
         // test 'delete'
-
-        client.delete(mrc1Address, volumeName + "/myDir/test3.txt", authString);
-        client.delete(mrc1Address, volumeName + "/anotherDir", authString);
+        
+        invokeSync(client.unlink(mrc1Address, uid, gids, volumeName + "/myDir/test3.txt"));
+        
+        entrySet = invokeSync(client.readdir(mrc1Address, uid, gids, volumeName + "/myDir"));
+        assertEquals(9, entrySet.size());
+        
+        invokeSync(client.rmdir(mrc1Address, uid, gids, volumeName + "/anotherDir"));
+        
+        entrySet = invokeSync(client.readdir(mrc1Address, uid, gids, volumeName + "/anotherDir"));
+        assertEquals(9, entrySet.size());
     }
-
+    
     public void testUserAttributes() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
         final long accessMode = 511; // rwxrwxrwx
-
-        client.createVolume(mrc1Address, volumeName, authString);
-
-        // add some user attributes
-        Map<String, Object> attrs = new HashMap<String, Object>();
-        attrs.put("key1", "quark");
-        attrs.put("key2", "quatsch");
-        client.createFile(mrc1Address, volumeName + "/test.txt", attrs, null, accessMode, authString);
-
-        Map<String, Object> attrs2 = new HashMap<String, Object>();
-        attrs2.put("myAttr", "171");
-        attrs2.put("key1", "blub");
-        client.setXAttrs(mrc1Address, volumeName + "/test.txt", attrs2, authString);
-
-        Map<String, Object> attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test.txt",
-                false, true, false, authString).get("xAttrs");
-        assertEquals("171", attrs3.get("myAttr"));
-
-        String val = client.getXAttr(mrc1Address, volumeName + "/test.txt", "key1", authString);
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
+        // create a file and add some user attributes
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test.txt", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "key1", "quark", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "key2", "quatsch", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "myAttr", "171", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "key1", "blub", 0));
+        
+        StringSet keys = invokeSync(client.listxattr(mrc1Address, uid, gids, volumeName + "/test.txt"));
+        assertEquals(3, keys.size());
+        String val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "key1"));
         assertEquals("blub", val);
-
-        client.createFile(mrc1Address, volumeName + "/test2.txt", authString);
-        client.setXAttrs(mrc1Address, volumeName + "/test2.txt", attrs, authString);
-
-        // delete some user attributes
-        Map<String, Object> keys = new HashMap<String, Object>();
-        keys.put("key2", null);
-        client.setXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
-        attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test2.txt", false, true,
-                false, authString).get("xAttrs");
-        assertEquals("quark", attrs3.get("key1"));
-
-        keys.put("key1", null);
-        client.setXAttrs(mrc1Address, volumeName + "/test2.txt", keys, authString);
-        attrs3 = (Map<String, Object>) client.stat(mrc1Address, volumeName + "/test2.txt", false, true,
-                false, authString).get("xAttrs");
-        assertNull(attrs3.get("key1"));
-
+        val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "key2"));
+        assertEquals("quatsch", val);
+        val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "myAttr"));
+        assertEquals("171", val);
+        
+        // create a new file, add some attrs and delete some attrs
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test2.txt", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key1", "quark", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key2", "quatsch", 0));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key3", "171", 0));
+        
+        invokeSync(client.removexattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key1"));
+        keys = invokeSync(client.listxattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        assertEquals(2, keys.size());
+        val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key1"));
+        assertEquals("", val);
+        
+        invokeSync(client.removexattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key3"));
+        keys = invokeSync(client.listxattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        assertEquals(1, keys.size());
+        val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test2.txt", "key3"));
+        assertEquals("", val);
+        
         // retrieve a system attribute
-        String sysAttr = client.getXAttr(mrc1Address, volumeName + "/test.txt", "xtreemfs.object_type",
-                authString);
-        assertEquals("1", sysAttr);
+        val = invokeSync(client.getxattr(mrc1Address, uid, gids, volumeName + "/test.txt",
+            "xtreemfs.object_type"));
+        assertEquals("1", val);
     }
-
+    
     public void testSymlink() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-
-        client.createVolume(mrc1Address, volumeName, authString);
-        client.createFile(mrc1Address, volumeName + "/test.txt", authString);
-
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test.txt", 0));
+        
         // create and test a symbolic link
-
-        client.createSymbolicLink(mrc1Address, volumeName + "/testAlias.txt", volumeName + "/test.txt",
-                authString);
-        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/testAlias.txt", false, false,
-                false, authString);
-        assertEquals(3L, statInfo.get("objType"));
-        assertEquals(volumeName + "/test.txt", statInfo.get("linkTarget"));
+        invokeSync(client.symlink(mrc1Address, uid, gids, volumeName + "/test.txt", volumeName
+            + "/testAlias.txt"));
+        stat_ stat = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/myDir/testAlias.txt"));
+        assertEquals(volumeName + "/test.txt", stat.getLink_target());
+        assertEquals(3, stat.getObject_type());
     }
-
+    
     public void testHardLink() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-
-        client.createVolume(mrc1Address, volumeName, authString);
-
-        // create a new file
-        client.createFile(mrc1Address, volumeName + "/test1.txt", authString);
-
-        // create a new link to the file
-        client.createLink(mrc1Address, volumeName + "/test2.txt", volumeName + "/test1.txt", authString);
-
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test1.txt", 0));
+        
+        // create a new link
+        invokeSync(client.link(mrc1Address, uid, gids, volumeName + "/test1.txt", volumeName + "/test2.txt"));
+        
         // check whether both links refer to the same file
-        Map<String, Object> statInfo1 = client.stat(mrc1Address, volumeName + "/test1.txt", false, false,
-                false, authString);
-        Map<String, Object> statInfo2 = client.stat(mrc1Address, volumeName + "/test2.txt", false, false,
-                false, authString);
-        assertEquals(statInfo1.get("fileId"), statInfo2.get("fileId"));
-        assertEquals(2l, statInfo1.get("linkCount"));
-
-        // delete both files
-        client.delete(mrc1Address, volumeName + "/test1.txt", authString);
-        assertEquals(1l, client.stat(mrc1Address, volumeName + "/test2.txt", false, false, false, authString)
-                .get("linkCount"));
-        client.delete(mrc1Address, volumeName + "/test2.txt", authString);
-
+        stat_ stat1 = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test1.txt"));
+        stat_ stat2 = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        
+        assertEquals(stat1.getFile_id(), stat2.getFile_id());
+        assertEquals(2, stat1.getNlink());
+        
+        // delete both files and check link count
+        invokeSync(client.unlink(mrc1Address, uid, gids, volumeName + "/test1.txt"));
+        stat_ stat = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        assertEquals(1, stat1.getNlink());
+        invokeSync(client.unlink(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        
         try {
-            client.stat(mrc1Address, volumeName + "/test1.txt", false, false, false, authString);
+            stat = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test1.txt"));
             fail("file should not exist anymore");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
+        
         try {
-            client.stat(mrc1Address, volumeName + "/test2.txt", false, false, false, authString);
+            stat = invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
             fail("file should not exist anymore");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
+        
         // create two links to a directory
-        client.createDir(mrc1Address, volumeName + "/testDir1", authString);
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/testDir1", 0));
         try {
-            client.createLink(mrc1Address, volumeName + "/testDir1/testDir2", volumeName + "/testDir1",
-                    authString);
+            invokeSync(client.link(mrc1Address, uid, gids, volumeName + "/testDir1", volumeName
+                + "/testDir1/testDir2"));
             fail("links to directories should not be allowed");
         } catch (Exception exc) {
         }
     }
-
+    
     public void testReplicas() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
         final long accessMode = 511; // rwxrwxrwx
-
-        client.createVolume(mrc1Address, volumeName, RandomSelectionPolicy.POLICY_ID,
-                getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0, null, authString);
-        client.createFile(mrc1Address, volumeName + "/test.txt", authString);
-        Map<String, Object> attrs = RPCClient.generateMap("xtreemfs.read_only", true);
-        client.setXAttrs(mrc1Address, volumeName + "/test.txt", attrs, authString);
-
-        // test adding and retrieval of replicas
-        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/test.txt", true, false, false,
-                authString);
-        String globalFileId = (String) statInfo.get("fileId");
-        assertNotNull(globalFileId);
-        assertNull(statInfo.get("replicas"));
-
-        List<String> osdList = new ArrayList<String>();
-        osdList.add("177.127.77.90:7477");
-        client.addReplica(mrc1Address, globalFileId, null, osdList, authString);
-        statInfo = client.stat(mrc1Address, volumeName + "/test.txt", true, false, true, authString);
-
-        assertEquals(2, ((List<Object>) ((List<Object>) ((List<Object>) statInfo.get("replicas")).get(0))
-                .get(0)).size());
-        assertEquals("177.127.77.90:7477",
-                ((List<Object>) ((List<Object>) ((List<Object>) ((List<Object>) statInfo.get("replicas"))
-                        .get(0)).get(0)).get(1)).get(0));
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+        
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test.txt", 0774));
+        invokeSync(client.setxattr(mrc1Address, uid, gids, volumeName + "/test.txt", "xtreemfs.read_only",
+            "true", 0));
+        
+        // TODO: test addition and removal of replicas
     }
-
+    
     public void testOpen() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-
-        client.createVolume(mrc1Address, volumeName, RandomSelectionPolicy.POLICY_ID,
-                getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0, null, authString);
-        client.createFile(mrc1Address, volumeName + "/test.txt", authString);
-
-        // test capabilities
-        Map<String, String> capability = client.open(mrc1Address, volumeName + "/test.txt", "c", authString);
-        assertNotNull(capability.get("X-Locations"));
-        assertNotNull(capability.get("X-Capability"));
-
-        capability = client.open(mrc1Address, volumeName + "/test.txt", "w", authString);
-        assertNotNull(capability.get("X-Capability"));
-        assertNotNull(capability.get("X-Locations"));
-
-        Map<String, Object> acl = new HashMap<String, Object>();
-        acl.put("user:", 128); // sr
-        client.createFile(mrc1Address, volumeName + "/test2.txt", null, getDefaultStripingPolicy(), 0,
-                authString);
-        client.setACLEntries(mrc1Address, volumeName + "/test2.txt", acl, authString);
-
-        Map<String, Object> statInfo = client.stat(mrc1Address, volumeName + "/test2.txt", true, false, true,
-                authString);
-        acl = (Map<String, Object>) statInfo.get("acl");
-        assertTrue(acl.containsKey("user:"));
-        assertTrue(acl.containsKey("group:") || acl.containsKey("mask:"));
-        assertTrue(acl.containsKey("other:"));
-
-        capability = client.open(mrc1Address, volumeName + "/test2.txt", "sr", authString);
-        assertNotNull(capability.get("X-Locations"));
-        assertNotNull(capability.get("X-Capability"));
-
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test.txt", 0774));
+        
+        // open w/ O_RDONLY; should not fail
+        invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/test.txt", FileAccessManager.O_RDONLY,
+            0));
+        
+        // open w/ O_RDWR; should not fail
+        invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0));
+        
+        // create a new file w/ O_CREAT; should implicitly create a new file
+        invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/test2.txt", FileAccessManager.O_CREAT,
+            256));
+        invokeSync(client.getattr(mrc1Address, uid, gids, volumeName + "/test2.txt"));
+        
+        // open w/ O_WRONLY; should fail
         try {
-            capability = client.open(mrc1Address, volumeName + "/test2.txt", "r", authString);
+            invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/test2.txt",
+                FileAccessManager.O_WRONLY, 256));
             fail();
-        } catch (HttpErrorException exc) {
-            assertEquals(420, exc.getStatusCode());
+        } catch (MRCException exc) {
+            assertEquals(ErrNo.EACCES, exc.getError_code());
         }
-
-        // symlinks and directories ...
-        client.createDir(mrc1Address, volumeName + "/dir", authString);
-        client.createSymbolicLink(mrc1Address, volumeName + "/link", volumeName + "/test2.txt", authString);
-        client.createSymbolicLink(mrc1Address, volumeName + "/link2", "somewhere", authString);
-
+        
+        // open a directory; should fail
         try {
-            client.open(mrc1Address, volumeName + "/dir", "sr", authString);
+            invokeSync(client
+                    .open(mrc1Address, uid, gids, volumeName + "/dir", FileAccessManager.O_RDONLY, 0));
             fail("opened directory");
-        } catch (HttpErrorException exc) {
-            assertEquals(420, exc.getStatusCode());
+        } catch (MRCException exc) {
         }
-
-        capability = client.open(mrc1Address, volumeName + "/link", "sr", authString);
-        assertNotNull(capability.get(HTTPHeaders.HDR_XLOCATIONS));
-
-        String xCapStr = (String) capability.get(HTTPHeaders.HDR_XCAPABILITY);
-        assertNotNull(xCapStr);
-        List<Object> xCap = (List<Object>) JSONParser.parseJSON(new JSONString(xCapStr));
-
+        
+        // create some symlinks
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/dir", 0));
+        invokeSync(client.symlink(mrc1Address, uid, gids, volumeName + "/test2.txt", volumeName + "/link"));
+        invokeSync(client.symlink(mrc1Address, uid, gids, "somewhere", volumeName + "/link2"));
+        
+        // open a symlink
+        FileCredentials creds = invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/link",
+            FileAccessManager.O_RDONLY, 0));
+        
         // wait one second before renewing the capability
         Thread.sleep(1000);
-
+        
         // test renewing a capability
-        Map<String, String> newCapability = client.renew(mrc1Address, capability, authString);
-
-        String newXCapStr = (String) newCapability.get(HTTPHeaders.HDR_XCAPABILITY);
-        assertNotNull(newXCapStr);
-        List<Object> newXCap = (List<Object>) JSONParser.parseJSON(new JSONString(newXCapStr));
-
-        assertEquals(xCap.get(0), newXCap.get(0));
-        assertEquals(xCap.get(1), newXCap.get(1));
-        assertTrue((Long) xCap.get(2) < (Long) newXCap.get(2));
-        assertEquals(xCap.get(3), newXCap.get(3));
-        assertEquals(xCap.get(4), newXCap.get(4));
-        assertFalse(xCap.get(5).equals(newXCap.get(5)));
-
+        XCap newCap = invokeSync(client.xtreemfs_renew_capability(mrc1Address, creds.getXcap()));
+        assertTrue(creds.getXcap().getExpires() < newCap.getExpires());
+        
+        // test redirect
         try {
-            capability = client.open(mrc1Address, volumeName + "/link2", "r", authString);
+            invokeSync(client.open(mrc1Address, uid, gids, volumeName + "/link2", FileAccessManager.O_RDONLY,
+                0));
             fail("should have been redirected");
         } catch (Exception exc) {
         }
-
+        
+        // TODO: check open w/ ACLs set
+        
     }
-
-    public void testMove() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+    
+    public void testRename() throws Exception {
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-
-        client.createVolume(mrc1Address, volumeName, authString);
-
-        client.createFile(mrc1Address, volumeName + "/test.txt", authString);
-        client.createFile(mrc1Address, volumeName + "/blub.txt", authString);
-        client.createDir(mrc1Address, volumeName + "/mainDir", authString);
-        client.createDir(mrc1Address, volumeName + "/mainDir/subDir", authString);
-        client.createDir(mrc1Address, volumeName + "/mainDir/subDir/newDir", authString);
-
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/test.txt", volumeName + "/blub.txt",
-                volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
-                        + "/mainDir/subDir/newDir");
-
+        
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
+        // create some files and directories
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/test.txt", 0));
+        invokeSync(client.create(mrc1Address, uid, gids, volumeName + "/blub.txt", 0));
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/mainDir", 0));
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/mainDir/subDir", 0));
+        invokeSync(client.mkdir(mrc1Address, uid, gids, volumeName + "/mainDir/subDir/newDir", 0));
+        
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/test.txt", volumeName + "/blub.txt",
+            volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        
         // move some files and directories
-
+        
         // file -> none (create w/ different name)
-        client.move(mrc1Address, volumeName + "/test.txt", volumeName + "/mainDir/bla.txt", authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/bla.txt", volumeName
-                + "/blub.txt", volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
-                + "/mainDir/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/test.txt", volumeName
+            + "/mainDir/bla.txt"));
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir/bla.txt", volumeName
+            + "/blub.txt", volumeName + "/mainDir", volumeName + "/mainDir/subDir", volumeName
+            + "/mainDir/subDir/newDir");
+        
         // file -> file (overwrite)
-        client.move(mrc1Address, volumeName + "/mainDir/bla.txt", volumeName + "/blub.txt", authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/blub.txt", volumeName + "/mainDir",
-                volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/bla.txt", volumeName
+            + "/blub.txt"));
+        
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/blub.txt", volumeName + "/mainDir",
+            volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        
         // file -> none (create w/ same name)
-        client.move(mrc1Address, volumeName + "/blub.txt", volumeName + "/mainDir/blub.txt", authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub.txt", volumeName
-                + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/blub.txt", volumeName
+            + "/mainDir/blub.txt"));
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir/blub.txt", volumeName
+            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        
         // file -> dir (invalid operation)
         try {
-            client.move(mrc1Address, volumeName + "/mainDir/blub.txt", volumeName + "/mainDir/subDir",
-                    authString);
+            invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/blub.txt", volumeName
+                + "/mainDir/subDir"));
             fail("move file -> directory should not be possible");
         } catch (Exception exc) {
         }
-
+        
         // file -> file (same path, should have no effect)
-        client.move(mrc1Address, volumeName + "/mainDir/blub.txt", volumeName + "/mainDir/blub.txt",
-                authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub.txt", volumeName
-                + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/blub.txt", volumeName
+            + "/mainDir/blub.txt"));
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir/blub.txt", volumeName
+            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        
         // file -> file (same directory)
-        client.move(mrc1Address, volumeName + "/mainDir/blub.txt", volumeName + "/mainDir/blub2.txt",
-                authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub2.txt", volumeName
-                + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/blub.txt", volumeName
+            + "/mainDir/blub2.txt"));
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir/blub2.txt", volumeName
+            + "/mainDir", volumeName + "/mainDir/subDir", volumeName + "/mainDir/subDir/newDir");
+        
         // dir -> none (create w/ same name)
-        client.move(mrc1Address, volumeName + "/mainDir/subDir", volumeName + "/subDir", authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir/blub2.txt", volumeName
-                + "/mainDir", volumeName + "/subDir", volumeName + "/subDir/newDir");
-
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/subDir", volumeName
+            + "/subDir"));
+        
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir/blub2.txt", volumeName
+            + "/mainDir", volumeName + "/subDir", volumeName + "/subDir/newDir");
+        
         // dir -> dir (overwrite, should fail because of non-empty subdirectory)
         try {
-            client.move(mrc1Address, volumeName + "/subDir", volumeName + "/mainDir", authString);
+            invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/subDir", volumeName + "/subDir"));
             fail("moved directory to non-empty directory");
         } catch (Exception exc) {
         }
-
+        
         // dir -> dir (overwrite)
-        client.delete(mrc1Address, volumeName + "/mainDir/blub2.txt", authString);
-        client.move(mrc1Address, volumeName + "/subDir", volumeName + "/mainDir", authString);
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir", volumeName
-                + "/mainDir/newDir");
-
+        invokeSync(client.unlink(mrc1Address, uid, gids, volumeName + "/mainDir/blub2.txt"));
+        invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/subDir", volumeName + "/mainDir"));
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir", volumeName
+            + "/mainDir/newDir");
+        
         // dir -> volume (should fail because volume can't be overwritten)
         try {
-            client.move(mrc1Address, volumeName + "/mainDir/newDir", volumeName, authString);
-            fail("move overwrote volume");
+            invokeSync(client.rename(mrc1Address, uid, gids, volumeName + "/mainDir/newDir", volumeName));
+            fail("move overwrote volume root");
         } catch (Exception exc) {
         }
-
+        
         // dir -> invalid volume (should fail)
         try {
-            client.move(mrc1Address, volumeName, "somewhere", authString);
+            invokeSync(client.rename(mrc1Address, uid, gids, volumeName, "somewhere"));
             fail("moved to invalid volume");
         } catch (Exception exc) {
         }
-
-        assertTree(mrc1Address, authString, volumeName, volumeName + "/mainDir", volumeName
-                + "/mainDir/newDir");
+        
+        assertTree(mrc1Address, uid, gids, volumeName, volumeName + "/mainDir", volumeName
+            + "/mainDir/newDir");
     }
-
+    
     public void testAccessControl() throws Exception {
-
-        final String authString1 = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
-        final String authString2 = NullAuthProvider.createAuthString("userAB", MRCClient
-                .generateStringList("groupA"));
-        final String authString3 = NullAuthProvider.createAuthString("userZZ", MRCClient
-                .generateStringList("groupY"));
-        final String authString4 = NullAuthProvider.createAuthString("root", "root");
+        
+        final String uid1 = "userXY";
+        final List<String> gids1 = createGIDs("groupZ");
+        final String uid2 = "userAB";
+        final List<String> gids2 = createGIDs("groupA");
+        final String uid3 = "userZZ";
+        final List<String> gids3 = createGIDs("groupY");
+        final String uid4 = "root";
+        final List<String> gids4 = createGIDs("root");
+        
         final String noACVolumeName = "noACVol";
         final String volACVolumeName = "volACVol";
         final String posixVolName = "acVol";
-
-        Map<String, Object> acl = new HashMap<String, Object>();
-        acl.put("default", 0);
-        acl.put("userXY", (1 << 0) | (1 << 1)); // read, write
-        acl.put("userAB", 1); // read
-
+        
         // NO ACCESS CONTROL
-
+        
         // create a volume
-        client.createVolume(mrc1Address, noACVolumeName, RandomSelectionPolicy.POLICY_ID, null,
-                YesToAnyoneFileAccessPolicy.POLICY_ID, 0, null, authString1);
-
+        invokeSync(client.mkvol(mrc1Address, uid1, gids1, "", noACVolumeName,
+            RandomSelectionPolicy.POLICY_ID, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
         // test chown
-        client.createFile(mrc1Address, noACVolumeName + "/chownTestFile", authString1);
-        client
-                .changeOwner(mrc1Address, noACVolumeName + "/chownTestFile", "newUser", "newGroup",
-                        authString4);
-
-        Map<String, Object> stat = client.stat(mrc1Address, noACVolumeName + "/chownTestFile", false, false,
-                false, authString3);
-        assertEquals("newUser", stat.get("ownerId"));
-        assertEquals("newGroup", stat.get("groupId"));
-        client.delete(mrc1Address, noACVolumeName + "/chownTestFile", authString3);
-
-        // create a new directory: should succeed
-        client.createDir(mrc1Address, noACVolumeName + "/newDir", null, 0, authString1);
-
+        invokeSync(client.create(mrc1Address, uid1, gids1, noACVolumeName + "/chownTestFile", 0));
+        invokeSync(client.chown(mrc1Address, uid1, gids1, noACVolumeName + "/chownTestFile", "newUser",
+            "newGroup"));
+        
+        stat_ stat = invokeSync(client.getattr(mrc1Address, uid3, gids3, noACVolumeName + "/chownTestFile"));
+        assertEquals("newUser", stat.getUser_id());
+        assertEquals("newGroup", stat.getGroup_id());
+        
+        invokeSync(client.unlink(mrc1Address, uid3, gids3, noACVolumeName + "/chownTestFile"));
+        
+        // create a new directory; should succeed
+        invokeSync(client.mkdir(mrc1Address, uid1, gids1, noACVolumeName + "/newDir", 0));
+        
         // create a new file inside the dir: should succeed (in spite of
-        // having set an empty ACL on the parent directory)
-        client.createFile(mrc1Address, noACVolumeName + "/newDir/newFile", authString2);
-
-        final String someone = NullAuthProvider.createAuthString("someone", MRCClient
-                .generateStringList("somegroup"));
-
-        assertTrue(client.checkAccess(mrc1Address, noACVolumeName + "/newDir/newFile", "rwx", someone));
-
+        // not having explicitly set any rights on the parent directory)
+        invokeSync(client.mkdir(mrc1Address, uid2, gids2, noACVolumeName + "/newDir/newFile", 0));
+        
+        invokeSync(client.access(mrc1Address, "someone", createGIDs("somegroup"), noACVolumeName
+            + "/newDir/newFile", FileAccessManager.O_RDWR | FileAccessManager.NON_POSIX_SEARCH));
+        
         // VOLUME ACLs
-
+        
         // create a volume
-        client.createVolume(mrc1Address, volACVolumeName, RandomSelectionPolicy.POLICY_ID, null,
-                VolumeACLFileAccessPolicy.POLICY_ID, 0, null, authString1);
-        client.setACLEntries(mrc1Address, volACVolumeName, acl, authString1);
-
-        // create a new directory: should succeed for 'authString1', fail
-        // for 'authString2'
-        client.createDir(mrc1Address, volACVolumeName + "/newDir", null, 0, authString1);
-
+        invokeSync(client.mkvol(mrc1Address, uid1, gids1, "", volACVolumeName,
+            RandomSelectionPolicy.POLICY_ID, getDefaultStripingPolicy(), VolumeACLFileAccessPolicy.POLICY_ID));
+        
+        // create a new directory: should succeed for user1, fail
+        // for user2
+        invokeSync(client.mkdir(mrc1Address, uid1, gids1, volACVolumeName + "/newDir", 0));
+        
         try {
-            client.createDir(mrc1Address, volACVolumeName + "/newDir2", authString2);
+            invokeSync(client.mkdir(mrc1Address, uid2, gids2, volACVolumeName + "/newDir2", 0));
             fail("access should have been denied");
-        } catch (Exception exc) {
+        } catch (MRCException exc) {
         }
-
-        // readdir: should succeed for both 'authString1' and 'authString2'
-        // and fail for 'authString3'
-        assertEquals(0, client.readDir(mrc1Address, volACVolumeName + "/newDir", authString1).size());
-        assertEquals(0, client.readDir(mrc1Address, volACVolumeName + "/newDir", authString2).size());
-
-        try {
-            client.readDir(mrc1Address, volACVolumeName + "/newDir", authString3);
-            fail("access should have been denied");
-        } catch (HttpErrorException exc) {
-        }
-
-        // create a new file inside the dir: should succeed (in spite of
-        // having set an empty ACL on the parent directory)
-        client.createFile(mrc1Address, volACVolumeName + "/newDir/newFile", authString1);
-
-        // POSIX ACLs
-
+        
+        // POSIX policy
+        
         // create a volume
-        client.createVolume(mrc1Address, posixVolName, RandomSelectionPolicy.POLICY_ID, null,
-                POSIXFileAccessPolicy.POLICY_ID, 0, null, authString1);
-
-        client.changeAccessMode(mrc1Address, posixVolName, 0700, authString1);
-
-        // create a new directory: should succeed for 'authString1', fail
-        // for 'authString2'
-        client.createDir(mrc1Address, posixVolName + "/newDir", authString1);
-
-        assertTrue(client.checkAccess(mrc1Address, posixVolName + "/newDir", "rwx", authString1));
-
+        invokeSync(client.mkvol(mrc1Address, uid1, gids1, "", posixVolName, POSIXFileAccessPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+        
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName, 0700));
+        
+        // create a new directory: should succeed for user1, fail for user2
+        invokeSync(client.mkdir(mrc1Address, uid1, gids1, posixVolName + "/newDir", 0700));
+        
+        assertTrue(invokeSync(client.access(mrc1Address, uid1, gids1, posixVolName + "/newDir",
+            FileAccessManager.O_RDWR | FileAccessManager.O_RDONLY)));
+        
         try {
-            client.createDir(mrc1Address, posixVolName + "/newDir2", authString2);
+            invokeSync(client.mkdir(mrc1Address, uid2, gids2, posixVolName + "/newDir2", 0700));
             fail("access should have been denied");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
-
-        // retrieve the ACL
-        Map<String, Object> statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false, false, true,
-                authString1);
-        acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(0, acl.size());
-
-        // try to change an ACL entry: should fail for 'authString2',
-        // succeed for 'authString1'
-        Map<String, Object> newEntries = new HashMap<String, Object>();
-        newEntries.put("group:", 5);
-        try {
-            client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString2);
-            fail("attempt to modify ACl as non-owner should have failed");
-        } catch (HttpErrorException exc) {
-        }
-
-        newEntries.clear();
-        newEntries.put("group:", 2);
-        newEntries.put("mask:", 3);
-        client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString1);
-
-        statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false, false, true, authString1);
-        acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(4, acl.size());
-        assertEquals(511L, acl.get("user:"));
-        assertEquals(2L, acl.get("group:"));
-        assertEquals(511L, acl.get("other:"));
-        assertEquals(3L, acl.get("mask:"));
-
+        
+        // TODO: test getting/setting ACL entries
+        
         // change the access mode
-        client.changeAccessMode(mrc1Address, posixVolName + "/newDir", 0, authString1);
-        statInfo = client.stat(mrc1Address, posixVolName + "/newDir", false, false, true, authString1);
-        acl = (Map<String, Object>) statInfo.get("acl");
-        assertEquals(4, acl.size());
-        assertEquals(0L, acl.get("user:"));
-        assertEquals(0L, acl.get("group:"));
-        assertEquals(0L, acl.get("other:"));
-        assertEquals(0L, acl.get("mask:"));
-
-        // readdir on "/newDir": should fail for any user now
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName + "/newDir", 0));
+        
+        // readdir on "/newDir"; should fail for any user now
         try {
-            client.readDir(mrc1Address, posixVolName + "/newDir", authString1);
+            invokeSync(client.readdir(mrc1Address, uid1, gids1, posixVolName + "/newDir"));
             fail("access should have been denied");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
-
+        
         try {
-            client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
+            invokeSync(client.readdir(mrc1Address, uid2, gids2, posixVolName + "/newDir"));
             fail("access should have been denied");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
-
-        // add an entry (and mask) for 'authString2' to 'newDir'
-        newEntries.clear();
-        newEntries.put("user:userAB", 511);
-        newEntries.put("mask:", 511);
-        client.setACLEntries(mrc1Address, posixVolName + "/newDir", newEntries, authString1);
-
+        
+        // set access rights to anyone (except for the owner)
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName + "/newDir", 0007));
+        
         try {
-            client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
-            fail("access should have been denied due to insufficient search permissions");
-        } catch (HttpErrorException exc) {
+            invokeSync(client.readdir(mrc1Address, uid1, gids1, posixVolName + "/newDir"));
+            fail("access should have been denied due to insufficient permissions");
+        } catch (MRCException exc) {
         }
-
-        // add an entry (and mask) for 'authString2' to volume
-        client.setACLEntries(mrc1Address, posixVolName, newEntries, authString1);
-
-        assertTrue(client.checkAccess(mrc1Address, posixVolName + "/newDir", "w", authString2));
-
-        assertEquals(0, client.readDir(mrc1Address, posixVolName + "/newDir", authString2).size());
-
-        client.removeACLEntries(mrc1Address, posixVolName + "/newDir", new ArrayList<Object>(newEntries
-                .keySet()), authString1);
-
+        
         try {
-            client.readDir(mrc1Address, posixVolName + "/newDir", authString2);
+            invokeSync(client.readdir(mrc1Address, uid3, gids3, posixVolName + "/newDir"));
             fail("access should have been denied due to insufficient search permissions");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
-
-        client.changeAccessMode(mrc1Address, posixVolName, 0005, authString1); // others
-        // = rx
-        assertEquals(1, client.readDir(mrc1Address, posixVolName, authString3).size());
-        assertFalse(client.checkAccess(mrc1Address, posixVolName, "w", authString3));
-
+        
+        // set search rights on the root directory to 'others'
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName, 0001));
+        
+        // access should be granted to others now
+        invokeSync(client.readdir(mrc1Address, uid3, gids3, posixVolName + "/newDir"));
+        
+        assertTrue(invokeSync(client.access(mrc1Address, uid2, gids2, posixVolName + "/newDir",
+            FileAccessManager.NON_POSIX_SEARCH)));
+        
+        assertFalse(invokeSync(client.access(mrc1Address, uid1, gids3, posixVolName,
+            FileAccessManager.NON_POSIX_SEARCH)));
+        
+        // grant any rights to the volume to anyone
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName, 0777));
+        
+        // owner of 'newDir' should still not have access rights
+        try {
+            invokeSync(client.readdir(mrc1Address, uid1, gids1, posixVolName + "/newDir"));
+            fail("access should have been denied due to insufficient permissions");
+        } catch (MRCException exc) {
+        }
+        
+        // others should still have no write permissions
+        assertFalse(invokeSync(client.access(mrc1Address, uid1, gids1, posixVolName + "/newDir",
+            FileAccessManager.O_WRONLY)));
+        
         // create a POSIX ACL new volume and test "chmod"
-        client.deleteVolume(mrc1Address, posixVolName, authString1);
-        client.createVolume(mrc1Address, posixVolName, RandomSelectionPolicy.POLICY_ID, null,
-                POSIXFileAccessPolicy.POLICY_ID, 0, null, authString1);
-
-        client.createFile(mrc1Address, posixVolName + "/someFile.txt", null, null, 224, authString1);
-        statInfo = client.stat(mrc1Address, posixVolName + "/someFile.txt", false, false, false, authString1);
-        long accessMode = (Long) statInfo.get("posixAccessMode");
-        assertEquals(224, accessMode);
-        client.changeAccessMode(mrc1Address, posixVolName + "/someFile.txt", accessMode & 192, authString1);
-        statInfo = client.stat(mrc1Address, posixVolName + "/someFile.txt", false, false, false, authString1);
-        accessMode = (Long) statInfo.get("posixAccessMode");
-        assertEquals(192, accessMode);
-
-        // make root directory accessible for anyone
-        client.changeAccessMode(mrc1Address, posixVolName, 511, authString1);
-
+        invokeSync(client.rmvol(mrc1Address, uid1, gids1, "", posixVolName));
+        invokeSync(client.mkvol(mrc1Address, uid1, gids1, "", posixVolName, POSIXFileAccessPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+        
+        invokeSync(client.create(mrc1Address, uid1, gids1, posixVolName + "/someFile.txt", 224));
+        stat = invokeSync(client.getattr(mrc1Address, uid1, gids1, posixVolName + "/someFile.txt"));
+        assertEquals(224, stat.getMode());
+        
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName + "/someFile.txt", 192));
+        stat = invokeSync(client.getattr(mrc1Address, uid1, gids1, posixVolName + "/someFile.txt"));
+        assertEquals(192, stat.getMode());
+        
         // create a new directory w/ search access for anyone
-        client.createDir(mrc1Address, posixVolName + "/stickyDir", null, 511, authString1);
-
+        invokeSync(client.mkdir(mrc1Address, uid1, gids1, posixVolName + "/stickyDir", 0777));
+        
+        // grant access rights to anyone on the volume
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName, 0777));
+        
         // create and delete/rename a file w/ different user IDs: this should
         // work
-        client.createFile(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString2);
-        client.delete(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString1);
-        client.createFile(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString2);
-        client.move(mrc1Address, posixVolName + "/stickyDir/newfile.txt", posixVolName
-                + "/stickyDir/newfile2.txt", authString1);
-
-        // set sticky bit; now, only the owner should be allowed to
-        // delete/rename the
-        // nested file
-        client.createFile(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString2);
-        client.changeAccessMode(mrc1Address, posixVolName + "/stickyDir", 512 | 511, authString1);
+        invokeSync(client.mkdir(mrc1Address, uid1, gids1, posixVolName + "/stickyDir", 0777));
+        invokeSync(client.create(mrc1Address, uid2, gids2, posixVolName + "/stickyDir/newfile.txt", 0));
+        invokeSync(client.unlink(mrc1Address, uid1, gids1, posixVolName + "/stickyDir/newfile.txt"));
+        invokeSync(client.create(mrc1Address, uid3, gids3, posixVolName + "/stickyDir/newfile.txt", 0));
+        invokeSync(client.rename(mrc1Address, uid1, gids1, posixVolName + "/stickyDir/newfile.txt",
+            posixVolName + "/stickyDir/newfile2.txt"));
+        
+        // create a file and set sticky bit on the directory; now, only the
+        // owner should be allowed to delete/rename the nested file
+        invokeSync(client.create(mrc1Address, uid2, gids2, posixVolName + "/stickyDir/newfile.txt", 0));
+        invokeSync(client.chmod(mrc1Address, uid1, gids1, posixVolName + "/stickyDir", 01777));
+        
         try {
-            client.delete(mrc1Address, posixVolName + "/stickyDir/newfile.txt", authString1);
+            invokeSync(client.unlink(mrc1Address, uid1, gids1, posixVolName + "/stickyDir/newfile.txt"));
             fail("access should have been denied due to insufficient delete permissions (sticky bit)");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
         try {
-            client.move(mrc1Address, posixVolName + "/stickyDir/newfile.txt", posixVolName
-                    + "/stickyDir/newfile2.txt", authString1);
+            invokeSync(client.rename(mrc1Address, uid1, gids1, posixVolName + "/stickyDir/newfile.txt",
+                posixVolName + "/stickyDir/newfile3.txt"));
             fail("access should have been denied due to insufficient renaming permissions (sticky bit)");
-        } catch (HttpErrorException exc) {
+        } catch (MRCException exc) {
         }
-
-        client.move(mrc1Address, posixVolName + "/stickyDir/newfile.txt", posixVolName
-                + "/stickyDir/newfile2.txt", authString2);
-        client.delete(mrc1Address, posixVolName + "/stickyDir/newfile2.txt", authString2);
+        
+        invokeSync(client.rename(mrc1Address, uid2, gids2, posixVolName + "/stickyDir/newfile.txt",
+            posixVolName + "/stickyDir/newfile3.txt"));
+        invokeSync(client.unlink(mrc1Address, uid2, gids2, posixVolName + "/stickyDir/newfile3.txt"));
     }
-
+    
     public void testFileSizeUpdate() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
         final String fileName = volumeName + "/testFile";
-
+        
         // create a new file in a new volume
-        client.createVolume(mrc1Address, volumeName, authString);
-        client.createFile(mrc1Address, fileName, authString);
-
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID));
+        invokeSync(client.create(mrc1Address, uid, gids, fileName, 0));
+        
         // check and update file sizes repeatedly
-        Map<String, String> headers = client.open(mrc1Address, fileName, "r", authString);
-        Map<String, Object> statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(0l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[27,0]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(27l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[12,0]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(27l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[34,0]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(34l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[10,1]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(10l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[34,1]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(34l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[10,1]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(34l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[0,2]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(0l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[12,0]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(0l, statInfo.get("size"));
-
-        client.updateFileSize(mrc1Address, headers.get(HTTPHeaders.HDR_XCAPABILITY), "[32,4]", authString);
-        statInfo = client.stat(mrc1Address, fileName, false, false, false, authString);
-        assertEquals(32l, statInfo.get("size"));
+        XCap cap = invokeSync(client.open(mrc1Address, uid, gids, fileName, FileAccessManager.O_RDONLY, 0))
+                .getXcap();
+        stat_ stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(0L, stat.getSize());
+        
+        NewFileSizeSet newFSSet = new NewFileSizeSet();
+        OSDWriteResponse resp = new OSDWriteResponse(newFSSet, new OSDtoMRCDataSet());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(27, 0));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(27L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(12, 0));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(27L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(34, 0));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(34L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(10, 1));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(10L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(34, 1));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(34L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(10, 1));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(34L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(0, 2));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(0L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(12, 0));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(0L, stat.getSize());
+        
+        newFSSet.clear();
+        newFSSet.add(new NewFileSize(32, 4));
+        invokeSync(client.xtreemfs_update_file_size(mrc1Address, cap, resp));
+        stat = invokeSync(client.getattr(mrc1Address, uid, gids, fileName));
+        assertEquals(32L, stat.getSize());
     }
-
+    
     public void testDefaultStripingPolicies() throws Exception {
-
-        final String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        
         final String volumeName = "testVolume";
         final String dirName = volumeName + "/dir";
         final String fileName1 = dirName + "/testFile";
         final String fileName2 = dirName + "/testFile2";
-        final String fileName3 = dirName + "/testFile3";
-
-        Map<String, Object> sp1 = RPCClient.generateMap("width", 1L, "policy", "RAID0", "stripe-size", 64L);
-        Map<String, Object> sp2 = RPCClient.generateMap("width", 1L, "policy", "RAID0", "stripe-size", 256L);
-        Map<String, Object> sp3 = RPCClient.generateMap("width", 1L, "policy", "RAID0", "stripe-size", 128L);
-        String sp2String = sp2.get("policy") + ", " + sp2.get("stripe-size") + ", " + sp2.get("width");
-
+        
+        StripingPolicy sp1 = new StripingPolicy(Constants.STRIPING_POLICY_DEFAULT, 64, 1);
+        StripingPolicy sp2 = new StripingPolicy(Constants.STRIPING_POLICY_DEFAULT, 256, 1);
+        
         // create a new file in a directory in a new volume
-        client.createVolume(mrc1Address, volumeName, 1, sp1, 1, 1, null, authString);
-        client.createDir(mrc1Address, dirName, authString);
-        client.createFile(mrc1Address, fileName1, authString);
-        client.createFile(mrc1Address, fileName2, authString);
-        client.createFile(mrc1Address, fileName3, null, sp3, 0, authString);
-
-        String xLocHeader = client.open(mrc1Address, fileName1, "c", authString).get(
-                HTTPHeaders.HDR_XLOCATIONS);
-        List header = (List) JSONParser.parseJSON(new JSONString(xLocHeader));
-        Map<String, Object> spol = (Map<String, Object>) ((List) ((List) header.get(0)).get(0)).get(0);
-        assertEquals(sp1, spol);
-
+        invokeSync(client.mkvol(mrc1Address, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID, sp1,
+            YesToAnyoneFileAccessPolicy.POLICY_ID));
+        
+        invokeSync(client.mkdir(mrc1Address, uid, gids, dirName, 0));
+        invokeSync(client.create(mrc1Address, uid, gids, fileName1, 0));
+        invokeSync(client.create(mrc1Address, uid, gids, fileName2, 0));
+        
+        // check if the striping policy assigned to the file matches the default
+        // striping policy
+        XLocSet xLoc = invokeSync(
+            client.open(mrc1Address, uid, gids, fileName1, FileAccessManager.O_RDONLY, 0)).getXlocs();
+        assertEquals(sp1.toString(), xLoc.getReplicas().get(0).getStriping_policy().toString());
+        
         // set the default striping policy via an extended attribute
-        Map<String, Object> defaultSP = new HashMap<String, Object>();
-        defaultSP.put("xtreemfs.default_sp", sp2String);
-        client.setXAttrs(mrc1Address, dirName, defaultSP, authString);
-
-        xLocHeader = client.open(mrc1Address, fileName2, "c", authString).get(HTTPHeaders.HDR_XLOCATIONS);
-        header = (List) JSONParser.parseJSON(new JSONString(xLocHeader));
-        spol = (Map<String, Object>) ((List) ((List) header.get(0)).get(0)).get(0);
-        assertEquals(sp2, spol);
-
-        xLocHeader = client.open(mrc1Address, fileName3, "c", authString).get(HTTPHeaders.HDR_XLOCATIONS);
-        header = (List) JSONParser.parseJSON(new JSONString(xLocHeader));
-        spol = (Map<String, Object>) ((List) ((List) header.get(0)).get(0)).get(0);
-        assertEquals(sp3, spol);
-
+        invokeSync(client.setxattr(mrc1Address, uid, gids, fileName2, "xtreemfs.default_sp", Converter
+                .stripingPolicyToString(sp2), 0));
+        xLoc = invokeSync(client.open(mrc1Address, uid, gids, fileName2, FileAccessManager.O_RDONLY, 0))
+                .getXlocs();
+        assertEquals(sp2.toString(), xLoc.getReplicas().get(0).getStriping_policy().toString());
+        
     }
-
-    private void assertTree(InetSocketAddress server, String authString, String... paths) throws Exception {
-
+    
+    private void assertTree(InetSocketAddress server, String uid, List<String> gids, String... paths)
+        throws Exception {
+        
         // check whether all paths exist exactly once
         for (String path : paths) {
-
+            
             try {
-                Map<String, Object> statInfo = client.stat(server, path, false, false, false, authString);
-
+                stat_ stat = invokeSync(client.getattr(mrc1Address, uid, gids, path));
+                
                 // continue if the path does not point to a directory
-                if (!statInfo.get("objType").equals(2L))
+                if (stat.getObject_type() != 2)
                     continue;
-
-            } catch (Exception exc) {
+                
+            } catch (MRCException exc) {
                 throw new Exception("path '" + path + "' does not exist");
             }
-
+            
             // if the path points to a directory, check whether the number of
             // subdirectories is correct
-            int size = client.readDir(server, path, authString).size();
+            int size = invokeSync(client.readdir(mrc1Address, uid, gids, path)).size();
+            
             int count = 0;
             for (String otherPath : paths) {
                 if (!otherPath.startsWith(path + "/"))
                     continue;
-
+                
                 if (otherPath.substring(path.length() + 1).indexOf('/') == -1)
                     count++;
             }
-
+            
             assertEquals(count, size);
         }
     }
-
+    
     public static void main(String[] args) {
         TestRunner.run(MRCTest.class);
     }
-
-    private static Map<String, Object> getDefaultStripingPolicy() {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("policy", "RAID0");
-        map.put("stripe-size", 1000L);
-        map.put("width", 1L);
-        return map;
+    
+    private static StripingPolicy getDefaultStripingPolicy() {
+        return new StripingPolicy(Constants.STRIPING_POLICY_DEFAULT, 1000, 1);
+    }
+    
+    private static List<String> createGIDs(String gid) {
+        List<String> list = new LinkedList<String>();
+        list.add(gid);
+        return list;
+    }
+    
+    private static <T> T invokeSync(RPCResponse<T> response) throws ONCRPCException, IOException,
+        InterruptedException {
+        
+        try {
+            return response.get();
+        } finally {
+            response.freeBuffers();
+        }
     }
 }

@@ -43,7 +43,7 @@ public class xtreemfs_get_suitable_osdsRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
         return my_size;
     }
 

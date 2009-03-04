@@ -129,7 +129,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
                         .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
                         .getId()
-                    + ":" + child.getId(), type, child.getEpoch(), (int) child.getW32Attrs());
+                    + ":" + child.getId(), linkTarget, type, child.getEpoch(), (int) child.getW32Attrs());
                 // TODO: check whether Win32 attrs are 32 or 64 bits long
                 
                 dirContent.add(new DirectoryEntry(child.getFileName(), stat, linkTarget));

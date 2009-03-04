@@ -47,7 +47,7 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(data);
+        my_size += 4 + ( data.length() + 4 - ( data.length() % 4 ) );
         return my_size;
     }
 

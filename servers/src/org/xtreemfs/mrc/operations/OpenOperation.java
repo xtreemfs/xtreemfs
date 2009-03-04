@@ -133,7 +133,7 @@ public class OpenOperation extends MRCOperation {
                 
                 // if the file does not exist, check whether the O_CREAT flag
                 // has been provided
-                if ((rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
+                if (exc.getErrno() == ErrNo.ENOENT && (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
                     
                     // prepare file creation in database
                     

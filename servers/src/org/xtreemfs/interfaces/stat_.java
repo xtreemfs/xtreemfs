@@ -15,8 +15,8 @@ import java.util.ArrayList;
    
 public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public stat_() { mode = 0; nlink = 0; uid = 0; gid = 0; dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; object_type = 0; truncate_epoch = 0; attributes = 0; }
-    public stat_( int mode, int nlink, int uid, int gid, int dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, int object_type, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.dev = dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.object_type = object_type; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
+    public stat_() { mode = 0; nlink = 0; uid = 0; gid = 0; dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; object_type = 0; truncate_epoch = 0; attributes = 0; }
+    public stat_( int mode, int nlink, int uid, int gid, int dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, String link_target, int object_type, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.dev = dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.object_type = object_type; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
 
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
@@ -42,6 +42,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     public void setGroup_id( String group_id ) { this.group_id = group_id; }
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public String getLink_target() { return link_target; }
+    public void setLink_target( String link_target ) { this.link_target = link_target; }
     public int getObject_type() { return object_type; }
     public void setObject_type( int object_type ) { this.object_type = object_type; }
     public int getTruncate_epoch() { return truncate_epoch; }
@@ -52,7 +54,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     // Object
     public String toString()
     {
-        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( uid ) + ", " + Integer.toString( gid ) + ", " + Integer.toString( dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + Integer.toString( object_type ) + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
+        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( uid ) + ", " + Integer.toString( gid ) + ", " + Integer.toString( dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( object_type ) + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
     }    
 
     // Serializable
@@ -71,6 +73,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(user_id,writer); }
         { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(group_id,writer); }
         { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(file_id,writer); }
+        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(link_target,writer); }
         writer.putInt( object_type );
         writer.putInt( truncate_epoch );
         writer.putInt( attributes );        
@@ -90,6 +93,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         { user_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         { group_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         { file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
+        { link_target = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
         object_type = buf.getInt();
         truncate_epoch = buf.getInt();
         attributes = buf.getInt();    
@@ -107,9 +111,10 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(user_id);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(group_id);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += 4 + ( user_id.length() + 4 - ( user_id.length() % 4 ) );
+        my_size += 4 + ( group_id.length() + 4 - ( group_id.length() % 4 ) );
+        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += 4 + ( link_target.length() + 4 - ( link_target.length() % 4 ) );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
@@ -128,6 +133,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     private String user_id;
     private String group_id;
     private String file_id;
+    private String link_target;
     private int object_type;
     private int truncate_epoch;
     private int attributes;

@@ -52,8 +52,8 @@ public class renameRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(source_path);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(target_path);
+        my_size += 4 + ( source_path.length() + 4 - ( source_path.length() % 4 ) );
+        my_size += 4 + ( target_path.length() + 4 - ( target_path.length() % 4 ) );
         return my_size;
     }
 

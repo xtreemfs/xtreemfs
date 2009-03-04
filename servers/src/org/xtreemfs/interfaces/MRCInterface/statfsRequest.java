@@ -48,7 +48,7 @@ public class statfsRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(volume_name);
+        my_size += 4 + ( volume_name.length() + 4 - ( volume_name.length() % 4 ) );
         return my_size;
     }
 

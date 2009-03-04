@@ -43,7 +43,7 @@ public class getxattrResponse implements Response
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(returnValue);
+        my_size += 4 + ( returnValue.length() + 4 - ( returnValue.length() % 4 ) );
         return my_size;
     }
 

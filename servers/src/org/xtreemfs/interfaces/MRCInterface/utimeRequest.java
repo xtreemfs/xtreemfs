@@ -60,7 +60,7 @@ public class utimeRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
+        my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );

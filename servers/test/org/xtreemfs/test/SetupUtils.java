@@ -32,16 +32,13 @@ import java.util.Properties;
 import java.util.Random;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
@@ -49,17 +46,17 @@ import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class SetupUtils {
-
+    
     public static final String TEST_DIR    = "/tmp/xtreemfs-test";
     
     public static final String CERT_DIR    = "test/";
-
+    
     public static boolean      SSL_ON      = false;
-
+    
     public static final int    DEBUG_LEVEL = Logging.LEVEL_DEBUG;
     
     public static OSDConfig createOSD1Config() throws IOException {
@@ -69,7 +66,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd0");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33637");
-        //props.setProperty("listen.address", "localhost");
+        // props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -84,10 +81,10 @@ public class SetupUtils {
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD1UUID().toString());
-
+        
         return new OSDConfig(props);
     }
-
+    
     public static OSDConfig createOSD2Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -95,7 +92,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd1");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33640");
-        //props.setProperty("listen.address", "localhost");
+        // props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -110,10 +107,10 @@ public class SetupUtils {
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD2UUID().toString());
-
+        
         return new OSDConfig(props);
     }
-
+    
     public static OSDConfig createOSD3Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -136,7 +133,7 @@ public class SetupUtils {
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD3UUID().toString());
-
+        
         return new OSDConfig(props);
     }
     
@@ -162,43 +159,43 @@ public class SetupUtils {
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD4UUID().toString());
-
+        
         return new OSDConfig(props);
     }
-
+    
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
-	OSDConfig[] configs = new OSDConfig[number];
-	int startPort = 33643;
-
-	for(int i=0; i<configs.length; i++) {
-		Properties props = new Properties();
-	        props.setProperty("dir_service.host", "localhost");
-	        props.setProperty("dir_service.port", "33638");
-	        props.setProperty("object_dir", TEST_DIR + "/osd"+i);
-	        props.setProperty("debug_level", "" + DEBUG_LEVEL);
-	        props.setProperty("listen.port", ""+startPort);
-	        props.setProperty("listen.address", "localhost");
-	        props.setProperty("local_clock_renewal", "50");
-	        props.setProperty("remote_time_sync", "60000");
-	        props.setProperty("ssl.enabled", "" + SSL_ON);
-	        props.setProperty("ssl.service_creds", CERT_DIR + "service2.jks");
-	        props.setProperty("ssl.service_creds_pw", "passphrase");
-	        props.setProperty("ssl.service_creds_container", "jks");
-	        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
-	        props.setProperty("ssl.trusted_certs.pw", "passphrase");
-	        props.setProperty("ssl.trusted_certs.container", "jks");
-	        props.setProperty("report_free_space", "true");
-	        props.setProperty("checksums.enabled", "true");
-	        props.setProperty("checksums.algorithm", "Adler32");
-	        props.setProperty("capability_secret", "secretPassphrase");
-	        props.setProperty("uuid", getOSDUUID("localhost",startPort).toString());
-	        configs[i] = new OSDConfig(props);
-	        
-	        startPort++;
-	}
-        return configs; 
+        OSDConfig[] configs = new OSDConfig[number];
+        int startPort = 33643;
+        
+        for (int i = 0; i < configs.length; i++) {
+            Properties props = new Properties();
+            props.setProperty("dir_service.host", "localhost");
+            props.setProperty("dir_service.port", "33638");
+            props.setProperty("object_dir", TEST_DIR + "/osd" + i);
+            props.setProperty("debug_level", "" + DEBUG_LEVEL);
+            props.setProperty("listen.port", "" + startPort);
+            props.setProperty("listen.address", "localhost");
+            props.setProperty("local_clock_renewal", "50");
+            props.setProperty("remote_time_sync", "60000");
+            props.setProperty("ssl.enabled", "" + SSL_ON);
+            props.setProperty("ssl.service_creds", CERT_DIR + "service2.jks");
+            props.setProperty("ssl.service_creds_pw", "passphrase");
+            props.setProperty("ssl.service_creds_container", "jks");
+            props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+            props.setProperty("ssl.trusted_certs.pw", "passphrase");
+            props.setProperty("ssl.trusted_certs.container", "jks");
+            props.setProperty("report_free_space", "true");
+            props.setProperty("checksums.enabled", "true");
+            props.setProperty("checksums.algorithm", "Adler32");
+            props.setProperty("capability_secret", "secretPassphrase");
+            props.setProperty("uuid", getOSDUUID("localhost", startPort).toString());
+            configs[i] = new OSDConfig(props);
+            
+            startPort++;
+        }
+        return configs;
     }
-
+    
     public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("database.dir", TEST_DIR);
@@ -213,10 +210,10 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
-
+        
         return new org.xtreemfs.dir.DIRConfig(props);
     }
-
+    
     public static MRCConfig createMRC1Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -243,10 +240,10 @@ public class SetupUtils {
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC1UUID().toString());
-
+        
         return new MRCConfig(props);
     }
-
+    
     public static MRCConfig createMRC2Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -273,62 +270,62 @@ public class SetupUtils {
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC2UUID().toString());
-
+        
         return new MRCConfig(props);
     }
-
+    
     public static InetSocketAddress getMRC1Addr() {
         return new InetSocketAddress("localhost", 33636);
     }
-
+    
     public static InetSocketAddress getMRC2Addr() {
         return new InetSocketAddress("localhost", 33639);
     }
-
+    
     public static InetSocketAddress getOSD1Addr() {
         return new InetSocketAddress("localhost", 33637);
     }
-
+    
     public static InetSocketAddress getOSD2Addr() {
         return new InetSocketAddress("localhost", 33640);
     }
-
+    
     public static InetSocketAddress getOSD3Addr() {
         return new InetSocketAddress("localhost", 33641);
     }
-
+    
     public static InetSocketAddress getOSD4Addr() {
         return new InetSocketAddress("localhost", 33642);
     }
-
+    
     public static InetSocketAddress getDIRAddr() {
         return new InetSocketAddress("localhost", 33638);
     }
-
+    
     public static ServiceUUID getMRC1UUID() {
         return new ServiceUUID("UUID:localhost:33636");
     }
-
+    
     public static ServiceUUID getMRC2UUID() {
         return new ServiceUUID("UUID:localhost:33639");
     }
-
+    
     public static ServiceUUID getOSD1UUID() {
         return new ServiceUUID("UUID:localhost:33637");
     }
-
+    
     public static ServiceUUID getOSD2UUID() {
         return new ServiceUUID("UUID:localhost:33640");
     }
-
+    
     public static ServiceUUID getOSD3UUID() {
         return new ServiceUUID("UUID:localhost:33641");
     }
-
+    
     public static ServiceUUID getOSD4UUID() {
         return new ServiceUUID("UUID:localhost:33642");
     }
-
+    
     static void localResolver() {
         UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON);
         UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON);
@@ -336,56 +333,49 @@ public class SetupUtils {
         UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON);
         UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON);
     }
-
+    
     private static ServiceUUID getOSDUUID(String listenAddress, int port) {
-        return new ServiceUUID("UUID:"+listenAddress+":"+port);
+        return new ServiceUUID("UUID:" + listenAddress + ":" + port);
     }
-
-    public static void setupLocalResolver() throws IOException, JSONException {
-        TimeSync.initialize(null, 100000, 50, "");
+    
+    public static void setupLocalResolver() throws IOException {
+        TimeSync.initialize(null, 100000, 50);
         UUIDResolver.shutdown();
-
+        
         UUIDResolver.start(null, 1000, 1000);
         localResolver();
     }
-
-
+    
     public static SSLOptions getClientSSLOptions() throws FileNotFoundException, IOException {
-        return SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
+        return SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"), "passphrase",
+            SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
             SSLOptions.JKS_CONTAINER, false) : null;
     }
-
-    public static MRCClient createMRCClient(int timeout) throws IOException {
-        return SSL_ON ? new MRCClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
-            SSLOptions.JKS_CONTAINER, false)) : new MRCClient();
-    }
-
+    
     public static OSDClient createOSDClient(int timeout) throws IOException {
         return SSL_ON ? new OSDClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
-            SSLOptions.JKS_CONTAINER, false)) : new OSDClient(null);
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
+            "passphrase", SSLOptions.JKS_CONTAINER, false)) : new OSDClient(null);
     }
-
+    
     public static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
-        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(
-                new FileInputStream(CERT_DIR + "client1.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR
-                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
-        return new RPCNIOSocketClient(sslOptions, timeout, 5*60*1000);
+        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
+            "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
+        return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
     }
-
+    
     public static MultiSpeedy createMultiSpeedy(int timeout) throws IOException {
-        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(
-                new FileInputStream(CERT_DIR + "client1.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR
-                + "trust.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
+        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
+            "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
         return SSL_ON ? new MultiSpeedy() : new MultiSpeedy(sslOptions);
     }
-
+    
     public static DIRClient createDIRClient(RPCNIOSocketClient client) throws IOException {
-        return new DIRClient(client,new InetSocketAddress("localhost", 33638));
+        return new DIRClient(client, new InetSocketAddress("localhost", 33638));
     }
-
+    
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -393,7 +383,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-
+    
     public static OSDConfig createOSD2ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -401,7 +391,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-
+    
     public static OSDConfig createOSD3ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -409,7 +399,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-
+    
     public static MRCConfig createMRC1ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -417,7 +407,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-
+    
     public static MRCConfig createMRC2ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -425,7 +415,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-
+    
     public static DIRConfig createDIRConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -444,6 +434,5 @@ public class SetupUtils {
         random.nextBytes(data);
         return ReusableBuffer.wrap(data);
     }
-
-
+    
 }

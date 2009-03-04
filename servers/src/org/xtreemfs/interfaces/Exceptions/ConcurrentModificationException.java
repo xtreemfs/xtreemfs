@@ -42,7 +42,7 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(stack_trace);
+        my_size += 4 + ( stack_trace.length() + 4 - ( stack_trace.length() % 4 ) );
         return my_size;
     }
 

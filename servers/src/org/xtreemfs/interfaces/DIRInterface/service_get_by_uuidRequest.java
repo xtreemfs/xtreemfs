@@ -43,7 +43,7 @@ public class service_get_by_uuidRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uuid);
+        my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );
         return my_size;
     }
 

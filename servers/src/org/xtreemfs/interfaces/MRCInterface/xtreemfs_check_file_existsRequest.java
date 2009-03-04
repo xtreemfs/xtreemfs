@@ -47,7 +47,7 @@ public class xtreemfs_check_file_existsRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(volume_id);
+        my_size += 4 + ( volume_id.length() + 4 - ( volume_id.length() % 4 ) );
         my_size += file_ids.calculateSize();
         return my_size;
     }
