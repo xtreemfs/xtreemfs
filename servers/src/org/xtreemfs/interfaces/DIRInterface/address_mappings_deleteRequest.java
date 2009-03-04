@@ -43,7 +43,7 @@ public class address_mappings_deleteRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uuid);
         return my_size;
     }
 

@@ -52,8 +52,8 @@ public class xtreemfs_replica_removeRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
-        my_size += 4 + ( osd_uuid.length() + 4 - ( osd_uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(osd_uuid);
         return my_size;
     }
 

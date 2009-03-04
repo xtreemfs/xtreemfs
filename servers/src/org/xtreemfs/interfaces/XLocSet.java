@@ -52,7 +52,7 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
         int my_size = 0;
         my_size += replicas.calculateSize();
         my_size += ( Integer.SIZE / 8 );
-        my_size += 4 + ( repUpdatePolicy.length() + 4 - ( repUpdatePolicy.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(repUpdatePolicy);
         return my_size;
     }
 

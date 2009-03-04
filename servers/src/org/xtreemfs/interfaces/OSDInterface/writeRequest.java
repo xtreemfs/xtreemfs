@@ -16,8 +16,8 @@ import java.util.ArrayList;
 
 public class writeRequest implements Request
 {
-    public writeRequest() { file_id = ""; credentials = new org.xtreemfs.interfaces.FileCredentials(); object_number = 0; object_version = 0; offset = 0; length = 0; lease_timeout = 0; data = new org.xtreemfs.interfaces.ObjectData(); }
-    public writeRequest( String file_id, FileCredentials credentials, long object_number, long object_version, long offset, long length, long lease_timeout, ObjectData data ) { this.file_id = file_id; this.credentials = credentials; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.lease_timeout = lease_timeout; this.data = data; }
+    public writeRequest() { file_id = ""; credentials = new org.xtreemfs.interfaces.FileCredentials(); object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; data = new org.xtreemfs.interfaces.ObjectData(); }
+    public writeRequest( String file_id, FileCredentials credentials, long object_number, long object_version, int offset, long lease_timeout, ObjectData data ) { this.file_id = file_id; this.credentials = credentials; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.lease_timeout = lease_timeout; this.data = data; }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
@@ -27,10 +27,8 @@ public class writeRequest implements Request
     public void setObject_number( long object_number ) { this.object_number = object_number; }
     public long getObject_version() { return object_version; }
     public void setObject_version( long object_version ) { this.object_version = object_version; }
-    public long getOffset() { return offset; }
-    public void setOffset( long offset ) { this.offset = offset; }
-    public long getLength() { return length; }
-    public void setLength( long length ) { this.length = length; }
+    public int getOffset() { return offset; }
+    public void setOffset( int offset ) { this.offset = offset; }
     public long getLease_timeout() { return lease_timeout; }
     public void setLease_timeout( long lease_timeout ) { this.lease_timeout = lease_timeout; }
     public ObjectData getData() { return data; }
@@ -39,7 +37,7 @@ public class writeRequest implements Request
     // Object
     public String toString()
     {
-        return "writeRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + ", " + Long.toString( lease_timeout ) + ", " + data.toString() + " )";
+        return "writeRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Long.toString( lease_timeout ) + ", " + data.toString() + " )";
     }    
 
     // Serializable
@@ -50,8 +48,7 @@ public class writeRequest implements Request
         credentials.serialize( writer );
         writer.putLong( object_number );
         writer.putLong( object_version );
-        writer.putLong( offset );
-        writer.putLong( length );
+        writer.putInt( offset );
         writer.putLong( lease_timeout );
         data.serialize( writer );        
     }
@@ -62,8 +59,7 @@ public class writeRequest implements Request
         credentials = new org.xtreemfs.interfaces.FileCredentials(); credentials.deserialize( buf );
         object_number = buf.getLong();
         object_version = buf.getLong();
-        offset = buf.getLong();
-        length = buf.getLong();
+        offset = buf.getInt();
         lease_timeout = buf.getLong();
         data = new org.xtreemfs.interfaces.ObjectData(); data.deserialize( buf );    
     }
@@ -71,12 +67,11 @@ public class writeRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
         my_size += credentials.calculateSize();
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
+        my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += data.calculateSize();
         return my_size;
@@ -86,8 +81,7 @@ public class writeRequest implements Request
     private FileCredentials credentials;
     private long object_number;
     private long object_version;
-    private long offset;
-    private long length;
+    private int offset;
     private long lease_timeout;
     private ObjectData data;
     

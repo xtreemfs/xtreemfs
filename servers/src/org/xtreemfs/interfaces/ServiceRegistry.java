@@ -58,10 +58,10 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uuid);
         my_size += ( Long.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
-        my_size += 4 + ( service_name.length() + 4 - ( service_name.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(service_name);
         my_size += data.calculateSize();
         return my_size;
     }

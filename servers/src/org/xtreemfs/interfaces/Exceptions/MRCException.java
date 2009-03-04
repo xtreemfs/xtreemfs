@@ -51,8 +51,8 @@ public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
-        my_size += 4 + ( errro_message.length() + 4 - ( errro_message.length() % 4 ) );
-        my_size += 4 + ( stack_trace.length() + 4 - ( stack_trace.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(errro_message);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(stack_trace);
         return my_size;
     }
 

@@ -46,8 +46,8 @@ public class KeyValuePair implements org.xtreemfs.interfaces.utils.Serializable
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( key.length() + 4 - ( key.length() % 4 ) );
-        my_size += 4 + ( value.length() + 4 - ( value.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(key);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
         return my_size;
     }
 

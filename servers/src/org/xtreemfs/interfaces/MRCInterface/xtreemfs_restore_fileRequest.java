@@ -59,10 +59,10 @@ public class xtreemfs_restore_fileRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( file_path.length() + 4 - ( file_path.length() % 4 ) );
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_path);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
         my_size += ( Long.SIZE / 8 );
-        my_size += 4 + ( osd_uuid.length() + 4 - ( osd_uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(osd_uuid);
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }

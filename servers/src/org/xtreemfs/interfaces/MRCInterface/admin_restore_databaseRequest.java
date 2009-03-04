@@ -47,8 +47,8 @@ public class admin_restore_databaseRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( password.length() + 4 - ( password.length() % 4 ) );
-        my_size += 4 + ( dump_file.length() + 4 - ( dump_file.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(password);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(dump_file);
         return my_size;
     }
 

@@ -52,7 +52,7 @@ public class xtreemfs_replica_addRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
         my_size += new_replica.calculateSize();
         return my_size;
     }

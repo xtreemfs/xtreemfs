@@ -46,7 +46,7 @@ public class Context implements org.xtreemfs.interfaces.utils.Serializable
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( user_id.length() + 4 - ( user_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(user_id);
         my_size += group_ids.calculateSize();
         return my_size;
     }

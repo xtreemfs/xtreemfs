@@ -47,7 +47,7 @@ public class internal_get_gmaxRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
         my_size += credentials.calculateSize();
         return my_size;
     }

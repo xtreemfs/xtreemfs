@@ -26,6 +26,7 @@ package org.xtreemfs.interfaces.utils;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.common.buffer.BufferPool;
 
 /**
  *
@@ -47,6 +48,8 @@ public class XDRUtils {
 
     public static ReusableBuffer deserializeSerializableBuffer(ReusableBuffer data) {
         final int dataSize = data.getInt();
+        if (dataSize == 0)
+            return BufferPool.allocate(0);
         final ReusableBuffer viewbuf = data.createViewBuffer();
         viewbuf.range(viewbuf.position(), dataSize);
         if (dataSize % 4 > 0) {
@@ -58,17 +61,29 @@ public class XDRUtils {
     }
 
     public static void serializeSerializableBuffer(ReusableBuffer data, ONCRPCBufferWriter writer) {
-        final int len = data.remaining();
-        writer.put(data);
-        if (len % 4 > 0) {
-            for (int k = 0; k < (4 - (len % 4)); k++) {
-                writer.put((byte)0);
+        if (data == null) {
+            writer.putInt(0);
+        } else {
+            final int len = data.remaining();
+            writer.putInt(len);
+            writer.put(data);
+            if (len % 4 > 0) {
+                for (int k = 0; k < (4 - (len % 4)); k++) {
+                    writer.put((byte)0);
+                }
             }
         }
     }
 
     public static int serializableBufferLength(ReusableBuffer data) {
-        int len = data.capacity();
+        int len = data.capacity()+Integer.SIZE/8;
+        if (len % 4 > 0)
+            len += 4 - (len % 4);
+        return len;
+    }
+
+    public static int stringLengthPadded(String str) {
+        int len = str.getBytes().length+Integer.SIZE/8;
         if (len % 4 > 0)
             len += 4 - (len % 4);
         return len;
@@ -90,10 +105,14 @@ public class XDRUtils {
     }
 
     public static void serializeString(String str, ONCRPCBufferWriter writer) {
-        final int strlen = str.length();
+        if (str == null) {
+            writer.putInt(0);
+            return;
+        }
+        final byte[] bytes = str.getBytes();
+        final int strlen = bytes.length;
         if (strlen > MAX_STRLEN)
             throw new IllegalArgumentException("string is too large ("+strlen+"), maximum allowed is "+MAX_STRLEN+" bytes");
-        final byte[] bytes = str.getBytes();
         writer.putInt(strlen);
         writer.put(bytes);
         if (strlen% 4 > 0) {

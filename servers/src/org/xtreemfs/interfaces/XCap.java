@@ -62,12 +62,12 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += 4 + ( client_identity.length() + 4 - ( client_identity.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(client_identity);
         my_size += ( Integer.SIZE / 8 );
-        my_size += 4 + ( server_signature.length() + 4 - ( server_signature.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(server_signature);
         return my_size;
     }
 
