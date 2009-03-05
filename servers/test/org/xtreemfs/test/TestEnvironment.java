@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.new_osd.client.OSDClient;
 
 /**
  * 
@@ -66,6 +66,8 @@ public class TestEnvironment {
     
     private final List<Services> enabledServs;
     
+    private TimeSync            tsInstance;
+
     public TestEnvironment(Services[] servs) {
         enabledServs = new ArrayList(servs.length);
         for (Services serv : servs)
@@ -79,7 +81,7 @@ public class TestEnvironment {
         getRpcClient().waitForStartup();
         
         dirClient = SetupUtils.createDIRClient(getRpcClient());
-        
+
         if (enabledServs.contains(Services.DIR_SERVICE)) {
             dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig());
             dirService.startup();
@@ -88,9 +90,11 @@ public class TestEnvironment {
         }
         
         if (enabledServs.contains(Services.TIME_SYNC)) {
-            TimeSync.initialize(dirClient, 60 * 1000, 50);
+            tsInstance = TimeSync.initialize(null, 60*1000, 50);
+            tsInstance.waitForStartup();
         }
         
+
         if (enabledServs.contains(Services.UUID_RESOLVER)) {
             UUIDResolver.start(getDirClient(), 1000, 10 * 10 * 1000);
             SetupUtils.localResolver();
@@ -101,8 +105,7 @@ public class TestEnvironment {
         }
         
         if (enabledServs.contains(Services.OSD_CLIENT)) {
-            // osdClient = new OSDClient(rpcClient, null);
-            // TODO
+            osdClient = new OSDClient(rpcClient);
         }
         
     }
@@ -134,7 +137,9 @@ public class TestEnvironment {
         
         if (enabledServs.contains(Services.TIME_SYNC)) {
             try {
-                TimeSync.getInstance().shutdown();
+                tsInstance = TimeSync.getInstance();
+                tsInstance.shutdown();
+                tsInstance.waitForShutdown();
             } catch (Throwable th) {
             }
         }

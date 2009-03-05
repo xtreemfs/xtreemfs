@@ -33,7 +33,6 @@ import java.util.Random;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -43,7 +42,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.new_osd.OSDConfig;
 
 /**
  * 
@@ -346,33 +345,15 @@ public class SetupUtils {
         localResolver();
     }
     
-    public static SSLOptions getClientSSLOptions() throws FileNotFoundException, IOException {
-        return SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"), "passphrase",
-            SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"), "passphrase",
-            SSLOptions.JKS_CONTAINER, false) : null;
-    }
     
-    public static OSDClient createOSDClient(int timeout) throws IOException {
-        return SSL_ON ? new OSDClient(timeout, new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
-            "passphrase", SSLOptions.JKS_CONTAINER, false)) : new OSDClient(null);
-    }
-    
-    public static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
+    static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
             "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
             "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
     }
     
-    public static MultiSpeedy createMultiSpeedy(int timeout) throws IOException {
-        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
-            "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
-        return SSL_ON ? new MultiSpeedy() : new MultiSpeedy(sslOptions);
-    }
-    
-    public static DIRClient createDIRClient(RPCNIOSocketClient client) throws IOException {
+    static DIRClient createDIRClient(RPCNIOSocketClient client) throws IOException {
         return new DIRClient(client, new InetSocketAddress("localhost", 33638));
     }
     
