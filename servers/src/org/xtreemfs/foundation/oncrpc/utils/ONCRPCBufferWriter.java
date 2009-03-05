@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 
 /**
  *
@@ -97,9 +98,11 @@ public class ONCRPCBufferWriter {
 
     public void put(ReusableBuffer otherBuffer) {
         currentBuffer++;
-        final ReusableBuffer vb = otherBuffer.createViewBuffer();
+        /*final ReusableBuffer vb = otherBuffer.createViewBuffer();
         vb.position(otherBuffer.limit());
-        buffers.add(vb);
+        buffers.add(vb);*/
+        otherBuffer.position(otherBuffer.limit());
+        buffers.add(otherBuffer);
     }
 
     public List<ReusableBuffer> getBuffers() {

@@ -25,6 +25,7 @@ package org.xtreemfs.foundation.oncrpc.server;
 
 import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
@@ -106,7 +107,6 @@ public class ONCRPCRequest {
         responseHeader.serialize(writer);
         writer.put(serializedResponse);
         writer.flip();
-        System.out.println(writer);
         record.setResponseBuffers(writer.getBuffers());
         record.sendResponse();
     }

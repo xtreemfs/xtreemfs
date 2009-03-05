@@ -250,7 +250,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             return;
         }
         try {
-            op.parseRPCMessage(dirRq);
             numRequests++;
             op.startRequest(dirRq);
         } catch (Throwable ex) {

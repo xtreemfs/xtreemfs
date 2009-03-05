@@ -45,7 +45,7 @@ public class ONCRPCResponseHeader implements Serializable {
 
     public static final int ACCEPT_STAT_PROC_UNAVAIL = 3;
 
-    public static final int ACCEPT_STAT_GARBAGE_ARGS = 0;
+    public static final int ACCEPT_STAT_GARBAGE_ARGS = 4;
 
     public static final int ACCEPT_STAT_SYSTEM_ERR = 5;
 

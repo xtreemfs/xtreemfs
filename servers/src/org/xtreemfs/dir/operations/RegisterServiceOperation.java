@@ -87,8 +87,11 @@ public class RegisterServiceOperation extends DIROperation {
             reg.setVersion(currentVersion);
             reg.getData().add(new KeyValuePair("lastUpdated",Long.toString(System.currentTimeMillis()/1000l)));
 
-            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(reg.calculateSize());
+            final int dataSize = reg.calculateSize();
+            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);
             reg.serialize(writer);
+            writer.flip();
+            assert(writer.getBuffers().size() == 1);
             byte[] newData = writer.getBuffers().get(0).array();
             writer.freeBuffers();
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);

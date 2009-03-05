@@ -51,7 +51,7 @@ public class XDRUtils {
         if (dataSize == 0)
             return BufferPool.allocate(0);
         final ReusableBuffer viewbuf = data.createViewBuffer();
-        viewbuf.range(viewbuf.position(), dataSize);
+        viewbuf.range(data.position(), dataSize);
         if (dataSize % 4 > 0) {
             for (int k = 0; k < (4 - (dataSize % 4)); k++) {
                 data.get();
@@ -76,7 +76,7 @@ public class XDRUtils {
     }
 
     public static int serializableBufferLength(ReusableBuffer data) {
-        int len = data.capacity()+Integer.SIZE/8;
+        int len = data.remaining()+Integer.SIZE/8;
         if (len % 4 > 0)
             len += 4 - (len % 4);
         return len;

@@ -31,7 +31,7 @@ public class uuidmappings {
     public static void main(String[] args) {
         try {
             Logging.start(Logging.LEVEL_ERROR);
-            TimeSync.initialize(null, 60000, 50, "");
+            TimeSync.initialize(null, 60000, 50);
 
             Map<String,CLIParser.CliOption> options = new HashMap();
             options.put("g",new CliOption(CliOption.OPTIONTYPE.SWITCH));

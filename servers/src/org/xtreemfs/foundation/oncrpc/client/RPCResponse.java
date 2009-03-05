@@ -44,6 +44,8 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
 
     private final RPCResponseDecoder<V> decoder;
 
+    private Object         attachment;
+
     public RPCResponse(RPCResponseDecoder<V> decoder) {
         this.decoder = decoder;
     }
@@ -69,17 +71,21 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
             V responseObject = decoder.getResult(request.getResponseFragments().get(0));
             return responseObject;
         } else {
-            if (ioError != null)
+            if (ioError != null) {
+                ioError.fillInStackTrace();
                 throw ioError;
+            }
+            remoteEx.fillInStackTrace();
             throw remoteEx;
         }
     }
-    
-    public Object getAttachment() throws InterruptedException {
-        if (request != null)
-            return request.getAttachment();
-        else
-            return null;
+
+    public void setAttachment(Object attachment) {
+        this.attachment = attachment;
+    }
+
+    public Object getAttachment() {
+        return this.attachment;
     }
 
     public void waitForResult() throws InterruptedException {

@@ -456,10 +456,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     } else {
                         if (!send.isLastRequestBuffer()) {
                             send.nextRequestBuffer();
+                        } else {
+                            con.addRequest(send.getXID(), send);
+                            con.setSendRequest(null);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent request to "+con.getEndpoint());
                         }
-                        con.addRequest(send.getXID(), send);
-                        con.setSendRequest(null);
-
                         //otherwise the request is complete
                     }
                 }
