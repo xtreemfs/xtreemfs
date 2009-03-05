@@ -28,26 +28,29 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
-import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
-import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
-import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.InternalGmax;
+import org.xtreemfs.interfaces.OSDInterface.internal_get_gmaxRequest;
+import org.xtreemfs.interfaces.OSDInterface.internal_get_gmaxResponse;
+import org.xtreemfs.interfaces.OSDInterface.readRequest;
+import org.xtreemfs.interfaces.OSDInterface.readResponse;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
-import org.xtreemfs.new_osd.stages.StorageStage.TruncateCallback;
+import org.xtreemfs.new_osd.stages.StorageStage.InternalGetGmaxCallback;
+import org.xtreemfs.new_osd.stages.StorageStage.ReadObjectCallback;
+import org.xtreemfs.new_osd.storage.ObjectInformation;
 
-public final class TruncateOperation extends OSDOperation {
+public final class InternalGetGmaxOperation extends OSDOperation {
 
     final int procId;
     final String sharedSecret;
     final ServiceUUID localUUID;
 
-    public TruncateOperation(OSDRequestDispatcher master) {
+    public InternalGetGmaxOperation(OSDRequestDispatcher master) {
         super(master);
-        truncateRequest rq = new truncateRequest();
+        internal_get_gmaxRequest rq = new internal_get_gmaxRequest();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -60,46 +63,33 @@ public final class TruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final truncateRequest args = (truncateRequest)rq.getRequestArgs();
-
-        if (args.getNew_file_size() < 0) {
-            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "new_file_size for truncate must be >= 0", ""));
-            return;
-        }
-
-        master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
+        final internal_get_gmaxRequest args = (internal_get_gmaxRequest)rq.getRequestArgs();
+        master.getStorageStage().internalGetGmax(args.getFile_id(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(),
-                rq, new TruncateCallback() {
+                rq, new InternalGetGmaxCallback() {
 
             @Override
-            public void truncateComplete(OSDWriteResponse result, Exception error) {
-                step2(rq, result, error);
+            public void gmaxComplete(InternalGmax result, Exception error) {
+                if (error != null) {
+                    if (error instanceof ONCRPCException)
+                        rq.sendException((ONCRPCException)error);
+                    else
+                        rq.sendInternalServerError(error);
+                } else
+                    sendResponse(rq, result);
             }
         });
     }
 
-    public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {
 
-        if (error != null) {
-            if (error instanceof ONCRPCException)
-                rq.sendException((ONCRPCException)error);
-            else
-                rq.sendInternalServerError(error);
-        } else {
-            sendResponse(rq, result);
-        }
-
-    }
-
-    public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        truncateResponse response = new truncateResponse(result);
+    public void sendResponse(OSDRequest rq, InternalGmax result) {
+        internal_get_gmaxResponse response = new internal_get_gmaxResponse(result);
         rq.sendSuccess(response);
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        truncateRequest rpcrq = new truncateRequest();
+        internal_get_gmaxRequest rpcrq = new internal_get_gmaxRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());

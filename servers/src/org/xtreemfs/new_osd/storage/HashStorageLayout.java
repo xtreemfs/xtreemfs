@@ -288,6 +288,8 @@ public class HashStorageLayout extends StorageLayout {
     public String createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version,
         long size) throws IOException {
 
+        assert(size >= 0) : "size is "+size;
+
         String relPath = generateRelativeFilePath(fileId);
         new File(this.storageDir + relPath).mkdirs();
 
@@ -301,14 +303,9 @@ public class HashStorageLayout extends StorageLayout {
 
         // write file
         String filename = generateAbsoluteObjectPath(relPath, objNo, version, checksum);
-        if (size == sp.getStripeSizeForObject(objNo)) {
-            File f = new File(filename);
-            f.createNewFile();
-        } else {
-            RandomAccessFile raf = new RandomAccessFile(filename, "rw");
-            raf.setLength(size);
-            raf.close();
-        }
+        RandomAccessFile raf = new RandomAccessFile(filename, "rw");
+        raf.setLength(size);
+        raf.close();
 
         return checksum;
 
@@ -457,7 +454,7 @@ public class HashStorageLayout extends StorageLayout {
             info.setFilesize(0);
             info.setLastObjectNumber(-1);
         }
-
+        info.setGlobalLastObjectNumber(-1);
         return info;
     }
 

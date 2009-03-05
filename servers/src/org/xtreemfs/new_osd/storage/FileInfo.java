@@ -42,6 +42,8 @@ public class FileInfo {
 
     private long               lastObjectNumber;
 
+    private long               globalLastObjectNumber;
+
     private boolean            incVersionOnWrite;
 
     private long               truncateEpoch;
@@ -110,5 +112,19 @@ public class FileInfo {
 
     public void setTruncateEpoch(long truncateEpoch) {
         this.truncateEpoch = truncateEpoch;
+    }
+
+    /**
+     * @return the globalLastObjectNumber
+     */
+    public long getGlobalLastObjectNumber() {
+        return globalLastObjectNumber;
+    }
+
+    /**
+     * @param globalLastObjectNumber the globalLastObjectNumber to set
+     */
+    public void setGlobalLastObjectNumber(long globalLastObjectNumber) {
+        this.globalLastObjectNumber = globalLastObjectNumber;
     }
 }

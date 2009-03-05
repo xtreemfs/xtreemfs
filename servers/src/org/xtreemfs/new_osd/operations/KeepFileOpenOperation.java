@@ -26,27 +26,32 @@ package org.xtreemfs.new_osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.OSDInterface.writeRequest;
-import org.xtreemfs.interfaces.OSDInterface.writeResponse;
-import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.OSDInterface.keep_file_openRequest;
+import org.xtreemfs.interfaces.OSDInterface.keep_file_openResponse;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
-import org.xtreemfs.new_osd.stages.StorageStage.WriteObjectCallback;
 
-public final class WriteOperation extends OSDOperation {
+/**
+ *
+ * @author bjko
+ */
+public class KeepFileOpenOperation extends OSDOperation {
 
-    final int procId;
-    final String sharedSecret;
-    final ServiceUUID localUUID;
+    private final int procId;
 
-    public WriteOperation(OSDRequestDispatcher master) {
+    private final String sharedSecret;
+
+    private final ServiceUUID localUUID;
+
+    private final keep_file_openResponse response;
+
+    public KeepFileOpenOperation(OSDRequestDispatcher master) {
         super(master);
-        writeRequest rq = new writeRequest();
+        keep_file_openRequest rq = new keep_file_openRequest();
+        response = new keep_file_openResponse();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -58,44 +63,19 @@ public final class WriteOperation extends OSDOperation {
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
-        final writeRequest args = (writeRequest)rq.getRequestArgs();
-        master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), 
-                rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                args.getOffset(), args.getData().getData(), rq.getCowPolicy(),
-                rq.getLocationList(), rq,
-                new WriteObjectCallback() {
-
-            @Override
-            public void writeComplete(OSDWriteResponse result, Exception error) {
-                step2(rq,result,error);
-            }
-        } );
-    }
-
-    public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"write done!");
-        if (error != null) {
-            if (error instanceof ONCRPCException)
-                rq.sendException((ONCRPCException)error);
-            else
-                rq.sendInternalServerError(error);
-        } else {
-            sendResponse(rq, result);
-        }
-
-    }
-
-    public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        writeResponse response = new writeResponse(result);
+    public void startRequest(OSDRequest rq) {
+        //don't need to do anything, all done in proc stage!
         rq.sendSuccess(response);
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent response");
+    }
+
+    @Override
+    public void startInternalEvent(Object[] args) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        writeRequest rpcrq = new writeRequest();
+        keep_file_openRequest rpcrq = new keep_file_openRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
@@ -109,12 +89,5 @@ public final class WriteOperation extends OSDOperation {
     public boolean requiresCapability() {
         return true;
     }
-
-    @Override
-    public void startInternalEvent(Object[] args) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    
 
 }

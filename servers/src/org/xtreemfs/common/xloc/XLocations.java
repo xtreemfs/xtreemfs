@@ -33,9 +33,7 @@ public class XLocations {
 
     public XLocations(XLocSet xloc, ServiceUUID localOSD) {
         this(xloc);
-        System.out.println("me: "+localOSD);
         for (Replica r : replicas) {
-            System.out.println("list: "+r.getOSDs());
             if (r.getOSDs().contains(localOSD)) {
                 localReplica = r;
                 break;

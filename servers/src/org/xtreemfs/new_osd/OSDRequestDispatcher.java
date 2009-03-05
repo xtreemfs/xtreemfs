@@ -66,11 +66,18 @@ import org.xtreemfs.new_osd.storage.StorageLayout;
 import org.xtreemfs.new_osd.storage.Striping;
 import org.xtreemfs.new_osd.client.OSDClient;
 import org.xtreemfs.new_osd.operations.DeleteOperation;
+import org.xtreemfs.new_osd.operations.EventCloseFile;
+import org.xtreemfs.new_osd.operations.InternalGetGmaxOperation;
+import org.xtreemfs.new_osd.operations.KeepFileOpenOperation;
 import org.xtreemfs.new_osd.operations.ReadOperation;
 import org.xtreemfs.new_osd.operations.TruncateOperation;
 import org.xtreemfs.new_osd.operations.WriteOperation;
+import org.xtreemfs.new_osd.striping.GMAXMessage;
+import org.xtreemfs.new_osd.striping.UDPCommunicator;
+import org.xtreemfs.new_osd.striping.UDPMessage;
+import org.xtreemfs.new_osd.striping.UDPReceiverInterface;
 
-public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
+public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
     
     protected final Map<Integer,OSDOperation>     operations;
 
@@ -97,6 +104,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final StorageStage    stStage;
 
     protected final DeletionStage   delStage;
+
+    protected final UDPCommunicator udpCom;
     
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
         
@@ -144,14 +153,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         MetadataCache metadataCache = new MetadataCache();
         StorageLayout storageLayout = new HashStorageLayout(config, metadataCache);
-        
-        // TODO: use UUID resolution instead
-        Striping striping = new Striping(config.getUUID(), metadataCache);
+
+        udpCom = new UDPCommunicator(config.getPort(), this);
+        udpCom.setLifeCycleListener(this);
 
         preprocStage = new PreprocStage(this);
         preprocStage.setLifeCycleListener(this);
 
-        stStage = new StorageStage(this, striping, metadataCache, storageLayout, 1);
+        stStage = new StorageStage(this, metadataCache, storageLayout, 1);
         stStage.setLifeCycleListener(this);
 
         delStage = new DeletionStage(this, metadataCache, storageLayout);
@@ -225,11 +234,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             rpcServer.waitForStartup();
             rpcClient.waitForStartup();
-            
+
+            udpCom.start();
             preprocStage.start();
             delStage.start();
             stStage.start();
 
+            udpCom.waitForStartup();
             preprocStage.waitForStartup();
             delStage.waitForStartup();
             stStage.waitForStartup();
@@ -262,11 +273,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             rpcServer.waitForShutdown();
             
             rpcClient.waitForShutdown();
-            
+
+            udpCom.shutdown();
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
 
+            udpCom.waitForStartup();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
@@ -373,6 +386,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         op = new TruncateOperation(this);
         operations.put(op.getProcedureId(),op);
+
+        op = new KeepFileOpenOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new InternalGetGmaxOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        //--internal events here--
+
+        op = new EventCloseFile(this);
+        internalEvents.put(EventCloseFile.class,op);
     }
 
     public StorageStage getStorageStage() {
@@ -385,6 +409,24 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public PreprocStage getPreprocStage() {
         return preprocStage;
+    }
+
+    public UDPCommunicator getUdpComStage() {
+        return udpCom;
+    }
+
+    @Override
+    public void receiveUDP(UDPMessage msg) {
+        if (msg.getMsgType() == UDPMessage.Type.GMAX) {
+            //send gmax to storage stage
+            try {
+                GMAXMessage gmax = new GMAXMessage(msg);
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"received GMAX packet for : "+gmax.getFileId());
+                stStage.receivedGMAX_ASYNC(gmax.getFileId(), gmax.getTruncateEpoch(), gmax.getLastObject());
+            } catch (Exception ex) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
+            }
+        }
     }
 
     

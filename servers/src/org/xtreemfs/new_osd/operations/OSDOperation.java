@@ -51,6 +51,8 @@ public abstract class OSDOperation {
      */
     public abstract void startRequest(OSDRequest rq);
 
+    public abstract void startInternalEvent(Object[] args);
+
     /**
      * Parses the request. Should also set XLocs, XCap and fileID.
      * @param rq the request

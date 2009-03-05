@@ -162,7 +162,12 @@ public abstract class Stage extends LifeCycleThread {
         }
 
         public void sendInternalServerError(Throwable cause) {
-            request.sendInternalServerError(cause);
+            if (request != null) {
+                request.sendInternalServerError(cause);
+            } else {
+                Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error in internal event: "+cause);
+                Logging.logMessage(Logging.LEVEL_ERROR, this,cause);
+            }
         }
     }
 

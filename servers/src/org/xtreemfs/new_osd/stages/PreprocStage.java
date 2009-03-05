@@ -45,6 +45,7 @@ import org.xtreemfs.new_osd.LocationsCache;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.OpenFileTable;
+import org.xtreemfs.new_osd.operations.EventCloseFile;
 import org.xtreemfs.new_osd.operations.OSDOperation;
 import org.xtreemfs.new_osd.storage.CowPolicy;
 
@@ -208,12 +209,10 @@ public class PreprocStage extends Stage {
 
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "send internal close event for " + entry.getFileId() + ", deleteOnClose=" + entry.isDeleteOnClose());
                 capCache.remove(entry.getFileId());
-                OSDRequest closeEvent = new OSDRequest(null);
-                closeEvent.setFileId(entry.getFileId());
-                //closeEvent.setOperation(closeOp);
-                //FIXME: set operation!
-                closeEvent.setAttachment(Boolean.valueOf(entry.isDeleteOnClose()));
-                closeOp.startRequest(closeEvent);
+
+                //send close event
+                OSDOperation closeEvent = master.getInternalEvent(EventCloseFile.class);
+                closeEvent.startInternalEvent(new Object[]{entry.isDeleteOnClose()});
             }
             timeToNextOFTclean = OFT_CLEAN_INTERVAL;
         }

@@ -26,21 +26,28 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.new_osd.storage;
 
 import java.io.IOException;
+import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.Stage;
+import org.xtreemfs.new_osd.stages.StorageStage.CachesFlushedCallback;
+import org.xtreemfs.new_osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.new_osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.new_osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.new_osd.stages.StorageStage.WriteObjectCallback;
+import org.xtreemfs.new_osd.striping.GMAXMessage;
 
 public class StorageThread extends Stage {
 
@@ -50,15 +57,19 @@ public class StorageThread extends Stage {
 
     public static final int STAGEOP_TRUNCATE = 3;
 
+    public static final int STAGEOP_FLUSH_CACHES = 4;
+
+    public static final int STAGEOP_GMAX_RECEIVED = 5;
+
+    public static final int STAGEOP_GET_GMAX = 6;
+
     private MetadataCache cache;
 
     private StorageLayout layout;
 
-    private Striping striping;
-
     private OSDRequestDispatcher master;
 
-    public StorageThread(int id, OSDRequestDispatcher dispatcher, Striping striping,
+    public StorageThread(int id, OSDRequestDispatcher dispatcher,
             MetadataCache cache, StorageLayout layout) {
 
         super("OSD Storage Thread " + id);
@@ -66,7 +77,6 @@ public class StorageThread extends Stage {
         this.cache = cache;
         this.layout = layout;
         this.master = dispatcher;
-        this.striping = striping;
     }
 
     @Override
@@ -84,6 +94,15 @@ public class StorageThread extends Stage {
                 case STAGEOP_TRUNCATE:
                     processTruncate(method);
                     break;
+                case STAGEOP_FLUSH_CACHES:
+                    processFlushCaches(method);
+                    break;
+                case STAGEOP_GMAX_RECEIVED:
+                    processGmax(method);
+                    break;
+                case STAGEOP_GET_GMAX:
+                    processGetGmax(method);
+                    break;
             }
 
         } catch (Throwable th) {
@@ -91,17 +110,94 @@ public class StorageThread extends Stage {
         }
     }
 
+    private void processGmax(StageRequest rq) {
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            final long epoch = (Long)rq.getArgs()[1];
+            final long lastObject = (Long)rq.getArgs()[2];
+
+            FileInfo fi = cache.getFileInfo(fileId);
+
+            if (fi == null) {
+                // file is not open, discard GMAX
+                return;
+            }
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "received new GMAX: " + lastObject
+                     + "/" + epoch + " for " + fileId);
+
+            if ((epoch == fi.getTruncateEpoch() && fi.getLastObjectNumber() < lastObject)
+                || epoch > fi.getTruncateEpoch()) {
+
+                // valid file size update
+                fi.setGlobalLastObjectNumber(lastObject);
+
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "received GMAX is valid; for "
+                        + fileId + ", current (fs, epoch) = (" + fi.getFilesize() + ", "
+                        + fi.getTruncateEpoch() + ")");
+
+            } else {
+
+                // outdated file size udpate
+
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "received GMAX is outdated; for "
+                        + fileId + ", current (fs, epoch) = (" + fi.getFilesize() + ", "
+                        + fi.getTruncateEpoch() + ")");
+            }
+
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
+            return;
+        }
+    }
+
+    private void processFlushCaches(StageRequest rq) {
+        final CachesFlushedCallback cback = (CachesFlushedCallback) rq.getCallback();
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            cache.removeFileInfo(fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"removed file info from cache for file "+fileId);
+        } catch (Exception ex) {
+            rq.sendInternalServerError(ex);
+            return;
+        }
+    }
+
+    private void processGetGmax(StageRequest rq) {
+        final InternalGetGmaxCallback cback = (InternalGetGmaxCallback) rq.getCallback();
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+
+            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            //final boolean rangeRequested = (offset > 0) || (length < stripeSize);
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "GET GMAX: " + fileId);
+            }
+
+            InternalGmax gmax = new InternalGmax(fi.getTruncateEpoch(), fi.getLastObjectNumber(), fi.getFilesize());
+
+            cback.gmaxComplete(gmax, null);
+        } catch (IOException ex) {
+            cback.gmaxComplete(null, ex);
+        }
+
+    }
+
+    /**
+     * Reads an object from disk and checks the checksum
+     * @param rq
+     */
     private void processRead(StageRequest rq) {
         final ReadObjectCallback cback = (ReadObjectCallback) rq.getCallback();
         try {
             final String fileId = (String) rq.getArgs()[0];
             final long objNo = (Long) rq.getArgs()[1];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            final int offset = (Integer) rq.getArgs()[3];
-            final int length = (Integer) rq.getArgs()[4];
 
-
-            final long stripeSize = sp.getStripeSizeForObject(objNo);
             final FileInfo fi = layout.getFileInfo(sp, fileId);
             //final boolean rangeRequested = (offset > 0) || (length < stripeSize);
 
@@ -122,64 +218,20 @@ public class StorageThread extends Stage {
             
             ObjectInformation obj = layout.readObject(fileId, objNo, objVer, objChksm, sp);
             obj.setLastLocalObjectNo(fi.getLastObjectNumber());
-            cback.readComplete(obj, null);
-            /*
-            ObjectData data = readLocalObject(fileId, objNo, objVer, objChksm, sp);
-            if (rangeRequested) {
-                if (data.getData() != null) {
-                    /*ReusableBuffer newData = BufferPool.allocate((int)length);
-                    data.getData().range( offset,  length);
-                    newData.put(data.getData());
-                    newData.flip();
-                    BufferPool.free(data.getData());
-                    data.setData(newData);* /
-                    data.getData().range(offset, length);
-                } else {
-                    if (data.getZero_padding() > length) {
-                        data.setZero_padding(length);
-                    }
-                }
+            obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
+
+            if (obj.getData() != null) {
+                obj.setChecksumInvalidOnOSD(!layout.checkObject(obj.getData(), objChksm));
+                obj.getData().position(0);
             }
-            */
-            
+
+            cback.readComplete(obj, null);
         } catch (IOException ex) {
             cback.readComplete(null, ex);
         }
 
     }
 
-    /*private ObjectData readLocalObject(String fileId, long objNo, int objVer, String objChksm, StripingPolicyImpl sp) throws IOException {
-        final int stripeSize = sp.getStripeSizeForObject(objNo);
-        final FileInfo fi = layout.getFileInfo(sp, fileId);
-
-        final long lastObjectNo = fi.getLastObjectNumber();
-
-        // retrieve the object from the storage layout
-        ReusableBuffer data = layout.readObject(fileId, objNo, objVer, objChksm, sp);
-
-        ObjectData result;
-
-        if (data == null) {
-            //object does not exists on disk
-            //check if it must be padded with zeros, or if we have an eof situation
-            if (objNo < lastObjectNo) {
-                result = new ObjectData("", stripeSize, false, null);
-            } else {
-                //EOF
-                result = new ObjectData("", 0, false, null);
-            }
-        } else {
-            //regular read
-            boolean checksum_invalid = !layout.checkObject(data, objChksm);
-            if ((data.capacity() < stripeSize) && (objNo < lastObjectNo)) {
-                result = new ObjectData("", stripeSize - data.capacity(), checksum_invalid, data);
-            } else {
-                result = new ObjectData("", 0, checksum_invalid, data);
-            }
-        }
-        return result;
-
-    }*/
 
     private void processWrite(StageRequest rq) {
         final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
@@ -190,6 +242,7 @@ public class StorageThread extends Stage {
             int offset = (Integer) rq.getArgs()[3];
             final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[4];
             final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
+            final XLocations xloc = (XLocations) rq.getArgs()[6];
 
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -328,18 +381,17 @@ public class StorageThread extends Stage {
 
                     fi.setLastObjectNumber(objNo);
 
-                //FIXME: send GMAX!
-
-                /*List<UDPMessage> msgs = striping.createGmaxMessages(new ASCIIString(fileId),
-                newFS, objNo, fi.getTruncateEpoch(), details.getCurrentReplica());
-
-                for (UDPMessage msg : msgs) {
-                master.sendUDP(msg.buf.createViewBuffer(), msg.addr);
-                }
-
-                // one buffer has been allocated, which will not be freed
-                // automatically; this has to be done here
-                BufferPool.free(msgs.get(0).buf);*/
+                    //send UDP packets...
+                    final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
+                    final ServiceUUID localUUID = master.getConfig().getUUID();
+                    if (osds.size() > 1) {
+                        for (ServiceUUID osd : osds) {
+                            if (!osd.equals(localUUID)) {
+                                final GMAXMessage m = new GMAXMessage(fileId, fi.getTruncateEpoch(), objNo);
+                                master.getUdpComStage().send(m.getMessage(osd.getAddress()));
+                            }
+                        }
+                    }
                 }
             }
 
@@ -359,8 +411,8 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final long newFileSize = (Long) rq.getArgs()[1];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            final long epochNumber = (Long) rq.getArgs()[3];
-            final Replica currentReplica = (Replica) rq.getArgs()[4];
+            final Replica currentReplica = (Replica) rq.getArgs()[3];
+            final long epochNumber = (Long) rq.getArgs()[4];
             
             final FileInfo fi = layout.getFileInfo(sp, fileId);
 
@@ -450,7 +502,7 @@ public class StorageThread extends Stage {
         final long lastRow = sp.getRow(newLastObject);
 
         for (long r = oldRow; r >= lastRow; r--) {
-            final long rowObj = r * sp.getWidth() + relOsdId - 1;
+            final long rowObj = r * sp.getWidth() + relOsdId;
             if (rowObj == newLastObject) {
                 // is local and needs to be shrunk
                 final long newObjSize = fileSize - sp.getObjectStartOffset(newLastObject);
@@ -480,7 +532,7 @@ public class StorageThread extends Stage {
     private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
             FileInfo fi, int relOsdId) throws IOException, OSDException {
         // first find out which is the new "last object"
-        final long newLastObject = sp.getObjectEndOffset(fileSize - 1);
+        final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
         assert (newLastObject >= oldLastObject);
 
@@ -523,6 +575,8 @@ public class StorageThread extends Stage {
         assert (newSize <= sp.getStripeSizeForObject(objNo));
         assert (objNo >= 0) : "objNo is " + objNo;
         assert (sp.getOSDforObject(objNo) == relOsdId);
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"truncate object to "+newSize);
 
         final FileInfo fi = layout.getFileInfo(sp, fileId);
         final int version = fi.getObjectVersion(objNo);

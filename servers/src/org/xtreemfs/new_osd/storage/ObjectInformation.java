@@ -41,6 +41,20 @@ public class ObjectInformation {
         return stripeSize;
     }
 
+    /**
+     * @return the checksumInvalidOnOSD
+     */
+    public boolean isChecksumInvalidOnOSD() {
+        return checksumInvalidOnOSD;
+    }
+
+    /**
+     * @param checksumInvalidOnOSD the checksumInvalidOnOSD to set
+     */
+    public void setChecksumInvalidOnOSD(boolean checksumInvalidOnOSD) {
+        this.checksumInvalidOnOSD = checksumInvalidOnOSD;
+    }
+
     public static enum ObjectStatus {
         /**
          * object exists on disk, data is available
@@ -65,6 +79,10 @@ public class ObjectInformation {
 
     private long                 lastLocalObjectNo;
 
+    private long                 globalLastObjectNo;
+
+    private boolean              checksumInvalidOnOSD;
+
     public ObjectInformation(ObjectStatus status, ReusableBuffer data, int stripeSize) {
         this.data = data;
         this.status = status;
@@ -74,19 +92,19 @@ public class ObjectInformation {
     public ObjectData getObjectData(boolean isLastObject) {
         if (isLastObject) {
             switch (status) {
-                case EXISTS: return new ObjectData("", 0, false, data);
-                case DOES_NOT_EXIST: return new ObjectData("", 0, false, null);
+                case EXISTS: return new ObjectData("", 0, checksumInvalidOnOSD, data);
+                case DOES_NOT_EXIST: return new ObjectData("", 0, checksumInvalidOnOSD, null);
                 case PADDING_OBJECT: throw new RuntimeException("padding object must not be last object!");
             }
         } else {
             switch (status) {
                 case EXISTS: {
                     final int paddingZeros = getStripeSize()-data.capacity();
-                    return new ObjectData("", paddingZeros, false, data);
+                    return new ObjectData("", paddingZeros, checksumInvalidOnOSD, data);
                 }
                 case DOES_NOT_EXIST:
                 case PADDING_OBJECT: {
-                    return new ObjectData("",getStripeSize(), false, null);
+                    return new ObjectData("",getStripeSize(), checksumInvalidOnOSD, null);
                 }
             }
         }
@@ -138,7 +156,7 @@ public class ObjectInformation {
                         tmp.getData().range(offset,length);
                     }
                     //fill up the rest with zeros
-                    tmp.setZero_padding(stripeSize-offset-tmp.getData().remaining());
+                    tmp.setZero_padding(length-tmp.getData().remaining());
                 }
             }
         }
@@ -174,6 +192,20 @@ public class ObjectInformation {
      */
     public void setLastLocalObjectNo(long lastLocalObjectNo) {
         this.lastLocalObjectNo = lastLocalObjectNo;
+    }
+
+    /**
+     * @return the globalLastObjectNo
+     */
+    public long getGlobalLastObjectNo() {
+        return globalLastObjectNo;
+    }
+
+    /**
+     * @param globalLastObjectNo the globalLastObjectNo to set
+     */
+    public void setGlobalLastObjectNo(long globalLastObjectNo) {
+        this.globalLastObjectNo = globalLastObjectNo;
     }
 
 }
