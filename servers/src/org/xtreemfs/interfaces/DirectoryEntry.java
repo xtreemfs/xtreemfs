@@ -50,9 +50,9 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( entry_name.length() + 4 - ( entry_name.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(entry_name);
         my_size += stbuf.calculateSize();
-        my_size += 4 + ( link_target.length() + 4 - ( link_target.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(link_target);
         return my_size;
     }
 

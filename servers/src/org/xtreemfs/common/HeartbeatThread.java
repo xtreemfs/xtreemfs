@@ -92,6 +92,7 @@ public class HeartbeatThread extends LifeCycleThread {
             if (client.clientIsAlive()) {
                 RPCResponse<String> r = client.service_deregister(null, uuid.toString());
                 r.get();
+                r.freeBuffers();
                 Logging.logMessage(Logging.LEVEL_INFO, this, uuid + " dergistered");
             }
         } catch (Exception ex) {
@@ -112,15 +113,19 @@ public class HeartbeatThread extends LifeCycleThread {
                 
                 // ... remove old DS entry if necessary
                 RPCResponse<ServiceRegistrySet> r1 = client.service_get_by_uuid(null, reg.getUuid());
+                responses.add(r1);
                 long currentVersion = 0;
                 ServiceRegistrySet olset = r1.get();
                 if (olset.size() > 0) {
                     currentVersion = olset.get(0).getVersion();
                 }
+
                 
                 reg.setVersion(currentVersion);
                 RPCResponse<Long> r2 = client.service_register(null, reg);
+                responses.add(r2);
                 r2.get();
+
                 
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
@@ -177,7 +182,7 @@ public class HeartbeatThread extends LifeCycleThread {
             } finally {
                 responses.add(r3);
             }
-            
+        } catch (InterruptedException ex) {
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,
                 "an error occurred while initially contacting the Directory Service: "
@@ -242,6 +247,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
         
         notifyStopped();
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"shutdown complete");
     }
     
 }

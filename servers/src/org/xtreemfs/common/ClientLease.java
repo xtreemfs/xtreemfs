@@ -8,10 +8,6 @@ package org.xtreemfs.common;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
-
 /**
  *
  * @author bjko
@@ -74,89 +70,6 @@ public final class ClientLease implements Cloneable {
         this.fileId = fileId;
     }
     
-    public static ClientLease parseFromJSON(String json) throws JSONException {
-        try {
-            Map<String,Object> m = (Map<String, Object>) JSONParser.parseJSON(new JSONString(json));
-            return parseFromMap(m);
-        } catch (ClassCastException e) {
-            throw new JSONException("expected a Lease (see the XtreemFS protocol spec) object");
-        }
-    }
-    
-    public static ClientLease parseFromList(List<Object> arguments) throws JSONException {
-        try {
-            final Map<String,Object> m = (Map<String,Object>)arguments.get(0);
-            return parseFromMap(m);
-        } catch (IndexOutOfBoundsException ex) {
-            throw new JSONException("expected lease object");
-        } catch (ClassCastException ex) {
-            throw new JSONException("expected lease object: "+ex);
-        }
-    }
-    
-    public static ClientLease parseFromMap(Map<String,Object> m) throws JSONException {
-        try {
-            final String fileId = (String) m.get("fileId");
-            if (fileId == null)
-                throw new JSONException("Lease object must have a fileId field");
-            ClientLease l = new ClientLease(fileId);
-            
-            
-            if (!m.containsKey("clientId"))
-                throw new JSONException("Lease object must have a clientId field");
-            
-            String tmp = (String) m.get("clientId");
-            l.setClientId(tmp);
-            
-            tmp = (String) m.get("leaseId");
-            if (tmp == null)
-                l.setSequenceNo(0);
-            else
-                l.setSequenceNo(Long.valueOf(tmp));
-            
-            Long tmp2 = (Long) m.get("firstObject");
-            if (tmp2 == null)
-                throw new JSONException("Lease object must have a firstObject field");
-            l.setFirstObject(tmp2);
-            
-            tmp2 = (Long) m.get("lastObject");
-            if (tmp2 == null)
-                throw new JSONException("Lease object must have a lastObject field");
-            l.setLastObject(tmp2);
-            
-            tmp2 = (Long) m.get("expires");
-            if (tmp2 == null)
-                l.setExpires(0);
-            else
-                l.setExpires(tmp2);
-            
-            tmp = (String) m.get("operation");
-            if (tmp == null)
-                throw new JSONException("Lease object must have an operation field");
-            l.setOperation(tmp);
-            
-            
-            return l;
-        } catch (ClassCastException e) {
-            throw new JSONException("expected a Lease (see the XtreemFS protocol spec) object");
-        }
-    }
-    
-    public Map<String,Object> encodeAsMap() throws JSONException {
-        Map<String,Object> m = new HashMap();
-        m.put("clientId",clientId);
-        m.put("leaseId",Long.toString(sequenceNo));
-        m.put("fileId",fileId);
-        m.put("firstObject",firstObject);
-        m.put("lastObject",lastObject);
-        m.put("expires",expires);
-        m.put("operation", operation);
-        return m;
-    }
-    
-    public String encodeAsJSON() throws JSONException {
-        return JSONParser.writeJSON(encodeAsMap());
-    }
     
     /**
      * Checks if two leases have conflicting (i.e. overlapping ranges)

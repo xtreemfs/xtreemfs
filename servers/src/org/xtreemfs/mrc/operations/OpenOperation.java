@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008,2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
  This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
  Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -19,7 +19,7 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Jan Stender (ZIB)
+ * AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB)
  */
 
 package org.xtreemfs.mrc.operations;
@@ -184,7 +184,7 @@ public class OpenOperation extends MRCOperation {
                 
                 // TODO: include proper replica update policy in MRC
                 // database design
-                xLocSet = new XLocSet(replicas, 0, "");
+                xLocSet = new XLocSet(replicas, 0, "", 0);
                 
                 file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);

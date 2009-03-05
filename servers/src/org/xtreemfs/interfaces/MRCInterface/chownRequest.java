@@ -56,9 +56,9 @@ public class chownRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
-        my_size += 4 + ( userId.length() + 4 - ( userId.length() % 4 ) );
-        my_size += 4 + ( groupId.length() + 4 - ( groupId.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(userId);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(groupId);
         return my_size;
     }
 

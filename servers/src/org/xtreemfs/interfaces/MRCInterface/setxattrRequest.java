@@ -60,9 +60,9 @@ public class setxattrRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
-        my_size += 4 + ( name.length() + 4 - ( name.length() % 4 ) );
-        my_size += 4 + ( value.length() + 4 - ( value.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(name);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }

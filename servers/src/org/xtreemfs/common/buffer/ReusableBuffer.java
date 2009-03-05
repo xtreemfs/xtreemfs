@@ -604,4 +604,8 @@ public final class ReusableBuffer {
             
         }
     }
+
+    public String toString() {
+        return "ReusableBuffer( capacity="+this.capacity()+" limit="+this.limit()+" position="+this.position()+")";
+    }
 }

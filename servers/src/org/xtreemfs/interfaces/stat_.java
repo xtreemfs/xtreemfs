@@ -111,10 +111,10 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += 4 + ( user_id.length() + 4 - ( user_id.length() % 4 ) );
-        my_size += 4 + ( group_id.length() + 4 - ( group_id.length() % 4 ) );
-        my_size += 4 + ( file_id.length() + 4 - ( file_id.length() % 4 ) );
-        my_size += 4 + ( link_target.length() + 4 - ( link_target.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(user_id);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(group_id);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(link_target);
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );

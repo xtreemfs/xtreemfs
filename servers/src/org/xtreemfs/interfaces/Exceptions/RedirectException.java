@@ -42,7 +42,7 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( to_uuid.length() + 4 - ( to_uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(to_uuid);
         return my_size;
     }
 

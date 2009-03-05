@@ -24,7 +24,7 @@
 package org.xtreemfs.common;
 
 import org.xtreemfs.foundation.pinky.PinkyRequest;
-import org.xtreemfs.osd.ErrorRecord;
+import org.xtreemfs.mrc.ErrorRecord;
 
 /**
  *

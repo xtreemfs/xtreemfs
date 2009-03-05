@@ -33,7 +33,7 @@ import org.xtreemfs.common.buffer.ASCIIString;
  * Encapsules the UUID and InetSocketAddress for a service.
  * @author bjko
  */
-public final class ServiceUUID implements Serializable {
+public final class ServiceUUID implements Serializable, Comparable {
 
     private final String uuid;
     
@@ -171,5 +171,10 @@ public final class ServiceUUID implements Serializable {
         this.address = cacheEntry.getResolvedAddr();
         this.validUntil = cacheEntry.getValidUntil();
         this.protocol = cacheEntry.getProtocol();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return uuid.compareTo((String)o);
     }
 }

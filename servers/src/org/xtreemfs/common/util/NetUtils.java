@@ -32,7 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.clients.RPCClient;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 

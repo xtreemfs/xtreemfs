@@ -56,7 +56,7 @@ public class openRequest implements Request
     {
         int my_size = 0;
         my_size += context.calculateSize();
-        my_size += 4 + ( path.length() + 4 - ( path.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         return my_size;

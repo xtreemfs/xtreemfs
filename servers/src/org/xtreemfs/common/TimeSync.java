@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 
@@ -41,7 +42,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
  * 
  * @author bjko
  */
-public final class TimeSync extends Thread {
+public final class TimeSync extends LifeCycleThread {
     
     /**
      * A dir client used to synchronize clocks
@@ -92,7 +93,6 @@ public final class TimeSync extends Thread {
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
         this.dir = dir;
-        TimeSync.theInstance = this;
     }
     
     /**
@@ -100,17 +100,25 @@ public final class TimeSync extends Thread {
      */
     @Override
     public void run() {
+        TimeSync.theInstance = this;
+        notifyStarted();
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"running");
         while (!quit) {
             localSysTime = System.currentTimeMillis();
             if (localSysTime - lastSync > timeSyncInterval) {
                 resync();
             }
-            try {
-                TimeSync.sleep(localTimeRenew);
-            } catch (InterruptedException ex) {
+            if (! quit) {
+                try {
+                    TimeSync.sleep(localTimeRenew);
+                } catch (InterruptedException ex) {
+                    break;
+                }
             }
             
         }
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"shutdown complete");
+        notifyStopped();
         theInstance = null;
     }
     
@@ -123,13 +131,16 @@ public final class TimeSync extends Thread {
      * @param localTimeRenew
      * @param dirAuthStr
      */
-    public static void initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
+    public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
         
-        if (theInstance != null)
-            return;
+        if (theInstance != null) {
+            Logging.logMessage(Logging.LEVEL_ERROR, null,"time sync already running");
+            return theInstance;
+        }
         
         TimeSync s = new TimeSync(dir, timeSyncInterval, localTimeRenew);
         s.start();
+        return s;
     }
     
     public static void close() {

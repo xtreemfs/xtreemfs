@@ -43,7 +43,7 @@ public class admin_shutdownRequest implements Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( password.length() + 4 - ( password.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(password);
         return my_size;
     }
 
