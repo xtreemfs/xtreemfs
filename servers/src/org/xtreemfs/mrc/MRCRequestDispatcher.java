@@ -39,7 +39,6 @@ import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
@@ -58,8 +57,9 @@ import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
-import org.xtreemfs.interfaces.Exceptions.errnoException;
+import org.xtreemfs.interfaces.Exceptions.RedirectException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -216,13 +216,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void shutdown() throws Exception {
+        
+        heartbeatThread.shutdown();
+        heartbeatThread.waitForShutdown();
+        
         serverStage.shutdown();
         serverStage.waitForShutdown();
         
         clientStage.shutdown();
         clientStage.waitForShutdown();
-        
-        heartbeatThread.shutdown();
         
         osdMonitor.shutdown();
         osdMonitor.waitForShutdown();
@@ -245,16 +247,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         assert (rpcRequest != null);
         
         if (request.getError() != null) {
+            
             final ErrorRecord error = request.getError();
             switch (error.getErrorClass()) {
-            case REDIRECT: {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage() + " / request: "
-                    + request);
-                
-                // rpcRequest.sendRedirectException(error.getErrorMessage());
-                // TODO: send redirect
-                break;
-            }
+            
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage() + " / request: "
                     + request);
@@ -263,8 +259,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case USER_EXCEPTION: {
-                // TODO: send user exception
-                rpcRequest.sendInternalServerError(error.getThrowable());
+                rpcRequest.sendGenericException(new MRCException(error.getErrorCode(), error
+                        .getErrorMessage(), error.getStackTrace()));
                 break;
             }
             case INVALID_ARGS: {

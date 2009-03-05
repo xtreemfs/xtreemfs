@@ -60,6 +60,7 @@ import org.xtreemfs.mrc.operations.OpenOperation;
 import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.mrc.operations.RemoveACLEntriesOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
+import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
@@ -104,10 +105,12 @@ public class ProcessingStage extends MRCStage {
         operations.put(CreateFileOperation.OP_ID, new CreateFileOperation(master));
         operations.put(CreateDirOperation.OP_ID, new CreateDirOperation(master));
         operations.put(CreateSymLinkOperation.OP_ID, new CreateSymLinkOperation(master));
-        operations.put(DeleteOperation.OP_ID, new DeleteOperation(master));
+        operations.put(DeleteOperation.OP_ID_FILE, new DeleteOperation(master));
+        operations.put(DeleteOperation.OP_ID_DIR, new DeleteOperation(master));
         operations.put(GetXAttrOperation.OP_ID, new GetXAttrOperation(master));
         operations.put(GetXAttrsOperation.OP_ID, new GetXAttrsOperation(master));
         operations.put(SetXAttrOperation.OP_ID, new SetXAttrOperation(master));
+        operations.put(RemoveXAttrOperation.OP_ID, new RemoveXAttrOperation(master));
         operations.put(OpenOperation.OP_ID, new OpenOperation(master));
         operations.put(UpdateFileSizeOperation.OP_ID, new UpdateFileSizeOperation(master));
         operations.put(RenewOperation.OP_ID, new RenewOperation(master));
@@ -170,18 +173,19 @@ public class ProcessingStage extends MRCStage {
         
         try {
             
-            // parse the user Id from the "AUTHORIZATION" header
+            // get the context
             Context ctx = op.getContext(rq);
             
-            UserCredentials cred = null;
-            try {
-                cred = master.getAuthProvider().getEffectiveCredentials(ctx, rpcRequest.getChannel());
-                rq.getDetails().superUser = cred.isSuperUser();
-                rq.getDetails().groupIds = cred.getGroupIDs();
-                rq.getDetails().userId = cred.getUserID();
-            } catch (AuthenticationException ex) {
-                throw new UserException(ErrNo.EPERM, ex.getMessage());
-            }
+            if (ctx != null)
+                try {
+                    UserCredentials cred = master.getAuthProvider().getEffectiveCredentials(ctx,
+                        rpcRequest.getChannel());
+                    rq.getDetails().superUser = cred.isSuperUser();
+                    rq.getDetails().groupIds = cred.getGroupIDs();
+                    rq.getDetails().userId = cred.getUserID();
+                } catch (AuthenticationException ex) {
+                    throw new UserException(ErrNo.EPERM, ex.getMessage());
+                }
             
         } catch (Exception exc) {
             

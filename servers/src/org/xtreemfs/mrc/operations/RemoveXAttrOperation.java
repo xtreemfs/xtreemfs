@@ -24,15 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.Iterator;
-
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.DirectoryEntry;
-import org.xtreemfs.interfaces.DirectoryEntrySet;
-import org.xtreemfs.interfaces.stat_;
-import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
-import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
+import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.removexattrResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -53,11 +48,11 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * 
  * @author stender
  */
-public class ReadDirAndStatOperation extends MRCOperation {
+public class RemoveXAttrOperation extends MRCOperation {
     
-    public static final int OP_ID = 12;
+    public static final int OP_ID = 13;
     
-    public ReadDirAndStatOperation(MRCRequestDispatcher master) {
+    public RemoveXAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -66,7 +61,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
         
         try {
             
-            final readdirRequest rqArgs = (readdirRequest) rq.getRequestArgs();
+            final removexattrRequest rqArgs = (removexattrRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
@@ -84,6 +79,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
             // check whether file exists
             res.checkIfFileDoesNotExist();
             
+            // retrieve and prepare the metadata to return
             FileMetadata file = res.getFile();
             
             // if the file refers to a symbolic link, resolve the link
@@ -105,40 +101,35 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 file = res.getFile();
             }
             
-            // check whether the directory grants read access
-            faMan.checkPermission(FileAccessManager.O_RDONLY, sMan, file, res.getParentDirId(), rq
-                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // if required, update POSIX timestamps
-            if (!master.getConfig().isNoAtime())
-                MRCHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan, update);
+            // if the attribute is a system attribute, set it
             
-            DirectoryEntrySet dirContent = new DirectoryEntrySet();
+            final String attrKey = rqArgs.getName();
             
-            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
-            while (it.hasNext()) {
+            // set a system attribute
+            if (attrKey.startsWith("xtreemfs.")) {
                 
-                FileMetadata child = it.next();
+                // check whether the user has privileged permissions to set
+                // system attributes
+                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+                    rq.getDetails().superUser, rq.getDetails().groupIds);
                 
-                String linkTarget = sMan.getSoftlinkTarget(child.getId());
-                int mode = faMan.getPosixAccessMode(sMan, child, rq.getDetails().userId,
-                    rq.getDetails().groupIds);
-                long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : child
-                        .getSize();
-                int type = linkTarget != null ? 3 : child.isDirectory() ? 2 : 1;
-                stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
-                        .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
-                        .getId()
-                    + ":" + child.getId(), linkTarget, type, child.getEpoch(), (int) child.getW32Attrs());
-                // TODO: check whether Win32 attrs are 32 or 64 bits long
+                MRCHelper.setSysAttrValue(sMan, vMan, volume, res.getParentDirId(), file, attrKey
+                        .substring(9), "", update);
+            }
+
+            // set a user attribute
+            else {
                 
-                dirContent.add(new DirectoryEntry(child.getFileName(), stat, linkTarget));
+                sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey, null, update);
             }
             
+            // update POSIX timestamps
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
+            
             // set the response
-            rq.setResponse(new readdirResponse(dirContent));
+            rq.setResponse(new removexattrResponse());
             
             update.execute();
             
@@ -152,6 +143,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
     }
     
     public Context getContext(MRCRequest rq) {
-        return ((readdirRequest) rq.getRequestArgs()).getContext();
+        return ((removexattrRequest) rq.getRequestArgs()).getContext();
     }
+    
 }

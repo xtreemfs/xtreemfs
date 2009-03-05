@@ -42,10 +42,6 @@ public final class ErrorRecord {
          */
         USER_EXCEPTION,
         /**
-         * the local MRC is not responsible
-         */
-        REDIRECT,
-        /**
          * the operation is unknown
          */
         UNKNOWN_OPERATION,

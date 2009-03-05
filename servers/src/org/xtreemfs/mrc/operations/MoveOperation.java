@@ -126,9 +126,12 @@ public class MoveOperation extends MRCOperation {
             FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
                 : target.isDirectory() ? FileType.dir : FileType.file;
             
+            FileCredentialsSet creds = new FileCredentialsSet();
+            
             // if both the old and the new directory point to the same
             // entity, do nothing
             if (sp.equals(tp)) {
+                rq.setResponse(new renameResponse(creds));
                 finishRequest(rq);
                 return;
             }
@@ -145,8 +148,7 @@ public class MoveOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            FileCredentialsSet creds = new FileCredentialsSet();
-            
+                        
             switch (sourceType) {
             
             // source is a directory

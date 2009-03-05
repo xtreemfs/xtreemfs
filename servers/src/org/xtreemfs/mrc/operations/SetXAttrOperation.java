@@ -28,6 +28,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.setxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -85,11 +86,12 @@ public class SetXAttrOperation extends MRCOperation {
             String target = sMan.getSoftlinkTarget(file.getId());
             if (target != null) {
                 rqArgs.setPath(target);
-                p = new Path(rqArgs.getPath());
+                p = new Path(target);
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
+                        "link target " + target + " does not exist"));
                     return;
                 }
                 

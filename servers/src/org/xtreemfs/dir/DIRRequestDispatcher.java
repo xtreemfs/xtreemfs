@@ -171,6 +171,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         httpServ.stop(0);
         server.shutdown();
         server.waitForShutdown();
+        database.shutdown();
         
         this.quit = true;
         this.interrupt();

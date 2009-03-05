@@ -5,14 +5,18 @@
 
 package org.xtreemfs.test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.include.common.logging.Logging;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.new_osd.client.OSDClient;
 
@@ -46,12 +50,11 @@ public class TestEnvironment {
     /**
      * @return the osdClient
      */
-    public OSDClient getOsdClient() {
-        return osdClient;
-    }
-    
+    // public OSDClient getOsdClient() {
+    // return osdClient;
+    // }
     public enum Services {
-        TIME_SYNC, UUID_RESOLVER, RPC_CLIENT, DIR_CLIENT, MRC_CLIENT, OSD_CLIENT, DIR_SERVICE
+        TIME_SYNC, UUID_RESOLVER, RPC_CLIENT, DIR_CLIENT, MRC_CLIENT, OSD_CLIENT, DIR_SERVICE, MRC
     };
     
     private RPCNIOSocketClient   rpcClient;
@@ -60,21 +63,28 @@ public class TestEnvironment {
     
     private MRCClient            mrcClient;
     
-    private OSDClient            osdClient;
+    private OSDClient osdClient;
     
     private DIRRequestDispatcher dirService;
+    
+    private MRCRequestDispatcher mrc;
     
     private final List<Services> enabledServs;
     
     private TimeSync            tsInstance;
-
-    public TestEnvironment(Services[] servs) {
+    
+    public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
         for (Services serv : servs)
             enabledServs.add(serv);
     }
     
     public void start() throws Exception {
+        
+        // ensure that TEST_DIR is empty
+        File testDir = new File(SetupUtils.TEST_DIR);
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
         
         rpcClient = SetupUtils.createRPCClient(10000);
         getRpcClient().start();
@@ -86,7 +96,13 @@ public class TestEnvironment {
             dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig());
             dirService.startup();
             dirService.waitForStartup();
-            System.out.println("dir running");
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");
+        }
+        
+        if (enabledServs.contains(Services.MRC)) {
+            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
+            mrc.startup();
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
         }
         
         if (enabledServs.contains(Services.TIME_SYNC)) {
@@ -118,6 +134,14 @@ public class TestEnvironment {
             } catch (Throwable th) {
             }
         }
+
+        if (enabledServs.contains(Services.MRC)) {
+            try {
+                mrc.shutdown();
+            } catch (Throwable th) {
+                th.printStackTrace();
+            }
+        }
         
         if (enabledServs.contains(Services.DIR_SERVICE)) {
             try {
@@ -144,6 +168,9 @@ public class TestEnvironment {
             }
         }
         
+        // cleanup
+        File testDir = new File(SetupUtils.TEST_DIR);
+        FSUtils.delTree(testDir);
     }
     
 }

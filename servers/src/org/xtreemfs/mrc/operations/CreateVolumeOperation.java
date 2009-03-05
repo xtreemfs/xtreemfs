@@ -53,7 +53,7 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
  */
 public class CreateVolumeOperation extends MRCOperation {
     
-    public static final int OP_ID = 16;
+    public static final int OP_ID = 10;
     
     public CreateVolumeOperation(MRCRequestDispatcher master) {
         super(master);
@@ -123,12 +123,12 @@ public class CreateVolumeOperation extends MRCOperation {
             ServiceRegistrySet response = rpcResponse.get();
             
             // check if the volume already exists
-            if (!response.isEmpty()) {
-                
-                String uuid = response.get(0).getUuid();
-                throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.getVolume_name()
-                    + "' already exists in Directory Service, id='" + uuid + "'");
-            }
+            for (ServiceRegistry reg : response)
+                if (rqArgs.getVolume_name().equals(reg.getService_name())) {
+                    String uuid = reg.getUuid();
+                    throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.getVolume_name()
+                        + "' already exists in Directory Service, id='" + uuid + "'");
+                }
             
             // otherwise, register the volume at the Directory Service
             
@@ -153,6 +153,8 @@ public class CreateVolumeOperation extends MRCOperation {
                 exc));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+        } finally {
+            rpcResponse.freeBuffers();
         }
     }
     
@@ -174,7 +176,6 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // set the response
             rq.setResponse(new mkvolResponse());
-            
             finishRequest(rq);
             
         } catch (UserException exc) {
@@ -183,6 +184,8 @@ public class CreateVolumeOperation extends MRCOperation {
                 exc));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+        } finally {
+            rpcResponse.freeBuffers();
         }
     }
     

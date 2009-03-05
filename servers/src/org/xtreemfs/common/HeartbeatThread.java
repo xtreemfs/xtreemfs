@@ -85,19 +85,23 @@ public class HeartbeatThread extends LifeCycleThread {
         this.config = config;
     }
     
-    public void shutdown() {
-        this.quit = true;
-        this.interrupt();
+    public synchronized void shutdown() {
+        RPCResponse<String> r = null;
         try {
             if (client.clientIsAlive()) {
-                RPCResponse<String> r = client.service_deregister(null, uuid.toString());
+                r = client.service_deregister(null, uuid.toString());
                 r.get();
-                r.freeBuffers();
                 Logging.logMessage(Logging.LEVEL_INFO, this, uuid + " dergistered");
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "cannot deregister at DIR: " + ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
         }
+        
+        this.quit = true;
+        this.interrupt();
     }
     
     public void run() {
@@ -119,13 +123,11 @@ public class HeartbeatThread extends LifeCycleThread {
                 if (olset.size() > 0) {
                     currentVersion = olset.get(0).getVersion();
                 }
-
                 
                 reg.setVersion(currentVersion);
                 RPCResponse<Long> r2 = client.service_register(null, reg);
                 responses.add(r2);
                 r2.get();
-
                 
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
@@ -198,46 +200,50 @@ public class HeartbeatThread extends LifeCycleThread {
         // periodically, ...
         while (!quit) {
             
-            responses.clear();
-            
-            try {
+            synchronized (this) {
                 
-                // ... for each UUID, ...
-                for (ServiceRegistry reg : serviceDataGen.getServiceData()) {
+                responses.clear();
+                
+                try {
                     
-                    // ... remove old DS entry if necessary
-                    RPCResponse<ServiceRegistrySet> r1 = client.service_get_by_uuid(null, reg.getUuid());
-                    long currentVersion = 0;
-                    responses.add(r1);
-                    ServiceRegistrySet olset = r1.get();
-                    if (olset.size() > 0) {
-                        currentVersion = olset.get(0).getVersion();
+                    // ... for each UUID, ...
+                    for (ServiceRegistry reg : serviceDataGen.getServiceData()) {
+                        
+                        // ... remove old DS entry if necessary
+                        RPCResponse<ServiceRegistrySet> r1 = client.service_get_by_uuid(null, reg.getUuid());
+                        long currentVersion = 0;
+                        responses.add(r1);
+                        ServiceRegistrySet olset = r1.get();
+                        if (olset.size() > 0) {
+                            currentVersion = olset.get(0).getVersion();
+                        }
+                        
+                        reg.setVersion(currentVersion);
+                        RPCResponse<Long> r2 = client.service_register(null, reg);
+                        responses.add(r2);
+                        r2.get();
+                        
+                        if (Logging.isDebug())
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
+                                + " successfully updated at Directory Service");
                     }
                     
-                    reg.setVersion(currentVersion);
-                    RPCResponse<Long> r2 = client.service_register(null, reg);
-                    responses.add(r2);
-                    r2.get();
-                    
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
-                            + " successfully updated at Directory Service");
+                } catch (IOException ex) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+                } catch (ONCRPCException ex) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+                } catch (InterruptedException ex) {
+                    quit = true;
+                    break;
+                } finally {
+                    for (RPCResponse resp : responses)
+                        resp.freeBuffers();
                 }
                 
-            } catch (IOException ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
-            } catch (ONCRPCException ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
-            } catch (InterruptedException ex) {
-                quit = true;
-                break;
-            } finally {
-                for (RPCResponse resp : responses)
-                    resp.freeBuffers();
+                if (quit)
+                    break;
+                
             }
-            
-            if (quit)
-                break;
             
             try {
                 Thread.sleep(UPDATE_INTERVAL);
@@ -247,7 +253,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
         
         notifyStopped();
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"shutdown complete");
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutdown complete");
     }
     
 }

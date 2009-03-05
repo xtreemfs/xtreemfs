@@ -134,7 +134,7 @@ public final class TimeSync extends LifeCycleThread {
     public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
         
         if (theInstance != null) {
-            Logging.logMessage(Logging.LEVEL_ERROR, null,"time sync already running");
+            Logging.logMessage(Logging.LEVEL_WARN, null,"time sync already running");
             return theInstance;
         }
         
@@ -208,7 +208,7 @@ public final class TimeSync extends LifeCycleThread {
             currentDrift = globalTime - tEnd;
             lastSync = tEnd;
             
-            if (Math.abs(oldDrift - currentDrift) > 5000) {
+            if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "STRANGE DRIFT CHANGE from " + oldDrift
                     + " to " + currentDrift);
             }

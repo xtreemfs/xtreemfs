@@ -149,7 +149,7 @@ public class Capability {
      *         expiration time stamp <code>false</code>, otherwise
      */
     public boolean hasExpired() {
-        return System.currentTimeMillis() / 1000 > xcap.getExpires();
+        return TimeSync.getGlobalTime() / 1000 > xcap.getExpires();
     }
     
     /**

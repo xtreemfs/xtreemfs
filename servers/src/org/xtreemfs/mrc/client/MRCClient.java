@@ -43,11 +43,11 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.statfs_;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.admin_checkpointRequest;
 import org.xtreemfs.interfaces.DIRInterface.admin_checkpointResponse;
 import org.xtreemfs.interfaces.DIRInterface.admin_shutdownRequest;
 import org.xtreemfs.interfaces.DIRInterface.admin_shutdownResponse;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessResponse;
 import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseRequest;
@@ -117,7 +117,7 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
 public class MRCClient extends ONCRPCClient {
     
     public MRCClient(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
-        super(client, defaultServer, 1, DIRInterface.getVersion());
+        super(client, defaultServer, 1, MRCInterface.getVersion());
     }
     
     /* admin calls */

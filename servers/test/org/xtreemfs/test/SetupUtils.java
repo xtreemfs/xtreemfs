@@ -56,7 +56,7 @@ public class SetupUtils {
     
     public static boolean      SSL_ON      = false;
     
-    public static final int    DEBUG_LEVEL = Logging.LEVEL_DEBUG;
+    public static final int    DEBUG_LEVEL = Logging.LEVEL_ERROR;
     
     public static OSDConfig createOSD1Config() throws IOException {
         Properties props = new Properties();

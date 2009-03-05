@@ -96,7 +96,8 @@ public class RemoveReplicaOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.REDIRECT, target));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
+                        "link target " + target + " does not exist"));
                     return;
                 }
                 

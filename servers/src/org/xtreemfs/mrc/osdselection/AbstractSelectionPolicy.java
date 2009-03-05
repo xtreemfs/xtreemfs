@@ -69,7 +69,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         ServiceRegistrySet suitable = new ServiceRegistrySet();
         for (ServiceRegistry osd : osds) {
             try {
-                if ((rules == null || follows(osd.getUuid(), rules))
+                if ((rules.isEmpty() || follows(osd.getUuid(), rules))
                     && (hasFreeCapacity(osd) && !hasTimedOut(osd)))
                     suitable.add(osd);
                 

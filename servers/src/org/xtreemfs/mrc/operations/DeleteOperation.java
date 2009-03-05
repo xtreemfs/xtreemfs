@@ -31,6 +31,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
+import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -57,7 +58,9 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class DeleteOperation extends MRCOperation {
     
-    public static final int OP_ID = 21;
+    public static final int OP_ID_DIR  = 15;
+    
+    public static final int OP_ID_FILE = 21;
     
     public DeleteOperation(MRCRequestDispatcher master) {
         super(master);
@@ -68,12 +71,11 @@ public class DeleteOperation extends MRCOperation {
         
         try {
             
-            final unlinkRequest rqArgs = (unlinkRequest) rq.getRequestArgs();
-            
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
             
-            final Path p = new Path(rqArgs.getPath());
+            final Path p = new Path(rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq
+                    .getRequestArgs()).getPath() : ((rmdirRequest) rq.getRequestArgs()).getPath());
             
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
@@ -149,7 +151,8 @@ public class DeleteOperation extends MRCOperation {
     }
     
     public Context getContext(MRCRequest rq) {
-        return ((unlinkRequest) rq.getRequestArgs()).getContext();
+        return rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq.getRequestArgs())
+                .getContext() : ((rmdirRequest) rq.getRequestArgs()).getContext();
     }
     
 }

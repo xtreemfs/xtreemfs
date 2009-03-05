@@ -99,27 +99,26 @@ public class UpdateFileSizeOperation extends MRCOperation {
             long newFileSize = newFS.getSize_in_bytes();
             int epochNo = newFS.getTruncate_epoch();
             
-            // discard outdated file size updates
-            if (epochNo < file.getEpoch()) {
-                finishRequest(rq);
-                return;
-            }
-            
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // accept any file size in a new epoch but only larger file sizes in
-            // the current epoch
-            if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
+            // only accept valid file size updates
+            if (epochNo >= file.getEpoch()) {
                 
-                int time = (int) (TimeSync.getGlobalTime() / 1000);
-                
-                file.setSize(newFileSize);
-                file.setEpoch(epochNo);
-                file.setCtime(time);
-                file.setMtime(time);
-                
-                sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
-                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+                // accept any file size in a new epoch but only larger file
+                // sizes in
+                // the current epoch
+                if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
+                    
+                    int time = (int) (TimeSync.getGlobalTime() / 1000);
+                    
+                    file.setSize(newFileSize);
+                    file.setEpoch(epochNo);
+                    file.setCtime(time);
+                    file.setMtime(time);
+                    
+                    sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
+                    sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+                }
             }
             
             // set the response

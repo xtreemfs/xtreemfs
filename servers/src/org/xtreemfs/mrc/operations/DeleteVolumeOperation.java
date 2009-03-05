@@ -110,6 +110,8 @@ public class DeleteVolumeOperation extends MRCOperation {
                 exc));
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+        } finally {
+            rpcResponse.freeBuffers();
         }
     }
     
