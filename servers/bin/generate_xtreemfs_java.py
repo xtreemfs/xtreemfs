@@ -17,39 +17,31 @@ from yidl.generator import *
 __all__ = []
 
 
-class XtreemFSJavaTypeFactory(JavaTypeFactory):
-    def createInterfaceType( self, *args, **kwds ): return XtreemFSJavaInterfaceType( self.base_package_name, *args, **kwds )
-    
-
-class XtreemFSJavaTypeCommon:
-    def getImports( self ):        
-        return "\n".join( JavaCompoundTypeCommon._getImports( self, exclude_package_names=( "org.xtreemfs", ) ) + 
-                          [
-                            "",
+# Constants
+XTREEMFS_COMMON_IMPORTS = [
                             "import org.xtreemfs.interfaces.utils.*;",
-                            "import org.xtreemfs.interfaces.Exceptions.*;",                            
-                            "import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;",                            
+                            "import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;",
                             "import org.xtreemfs.common.buffer.ReusableBuffer;",
-                            "import org.xtreemfs.common.buffer.BufferPool;",
-                            "import java.util.List;",
-                            "import java.util.Iterator;",
-                            "import java.util.ArrayList;",
-                            ] )            
+#                            "import org.xtreemfs.common.buffer.BufferPool;"
+                          ]
 
+
+class XtreemFSJavaTypeFactory(JavaTypeFactory): pass
     
-class XtreemFSJavaBoolType(JavaBoolType, XtreemFSJavaTypeCommon):
-    def getDeserializer( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
-    def getSerializer( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
+    
+class XtreemFSJavaBoolType(JavaBoolType):
+    def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
+    def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
     def getSize( self, identifier ): return "4"
 
 
-class XtreemFSJavaNumericType(JavaNumericType, XtreemFSJavaTypeCommon):
-    def getDeserializer( self, identifier ):
+class XtreemFSJavaNumericType(JavaNumericType):
+    def getBufferDeserializeCall( self, identifier ):
         boxed_type= self.getBoxedType()
         if boxed_type == "Integer": boxed_type = "Int"
         return "%(identifier)s = buf.get%(boxed_type)s();" % locals()
 
-    def getSerializer( self, identifier ):
+    def getBufferSerializeCall( self, identifier ):
         boxed_type= self.getBoxedType()
         if boxed_type == "Integer": boxed_type = "Int"
         return "writer.put%(boxed_type)s( %(identifier)s );" % locals()
@@ -57,28 +49,21 @@ class XtreemFSJavaNumericType(JavaNumericType, XtreemFSJavaTypeCommon):
     def getSize( self, identifier ): return "( " + self.getBoxedType() + ".SIZE / 8 )"
 
 
-class XtreemFSJavaInterfaceType(JavaInterfaceType, XtreemFSJavaTypeCommon):
+class XtreemFSJavaInterfaceType(JavaInterfaceType):
     def generate( self ):        
-        assert self.uid > 0, "interface "  + self.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.uid    
+        assert self.getUID() > 0, "interface "  + self.getQualifiedName() + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()    
         
         JavaInterfaceType.generate( self )
 
-        package_name = self.getPackageName()
-        imports = self.getImports()
-        name = self.name    
-        uid = self.uid        
+        class_header = self.getClassHeader()
+        uid = self.getUID()        
     
         out = """\
-package %(package_name)s;
-
-%(imports)s
-
-public class %(name)s
-{
+%(class_header)s        
     public static int getVersion() { return %(uid)s; }
 """ % locals()
                             
-        request_factories = "".join( [operation_type.getRequestFactory() for operation_type in self.child_types if isinstance( operation_type, XtreemFSJavaOperationType )] )
+        request_factories = "".join( [operation_type.getRequestFactory() for operation_type in self.getChildOperationTypes()] )
         if len( request_factories ) > 0:                
             out += """
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
@@ -91,7 +76,7 @@ public class %(name)s
     }
 """ % locals()
 
-        response_factories = "".join( [operation_type.getResponseFactory() for operation_type in self.child_types if isinstance( operation_type, XtreemFSJavaOperationType )] )
+        response_factories = "".join( [operation_type.getResponseFactory() for operation_type in self.getChildOperationTypes()] )
         if len( response_factories ) > 0:    
                 out += """            
     public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
@@ -104,8 +89,7 @@ public class %(name)s
     }    
 """ % locals()
 
-        
-        exception_factories = [operation_type.getExceptionFactory() for exception_type in self.child_types if isinstance( exception_type, XtreemFSJavaExceptionType )]
+        exception_factories = [exception_type.getExceptionFactory() for exception_type in self.getChildExceptionTypes()]
         if len( exception_factories ) > 0:
             exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
             out += """
@@ -116,46 +100,21 @@ public class %(name)s
     }
 """ % locals()
 
-        out += """\
-}
-"""
+        out += self.getClassFooter()
                 
         writeGeneratedFile( self.getFilePath(), out ) 
+
+    def getImports( self ): return JavaInterfaceType.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
     
                     
-class XtreemFSJavaSequenceType(JavaSequenceType, XtreemFSJavaTypeCommon):
-    def generate( self ):
-        package_name = self.getPackageName()
-        imports = self.getImports()
-        type_name = self.name
-        type_qname = self.qname
-        value_declaration_type = self.value_type.getDeclarationType()
-        value_boxed_type = self.value_type.getBoxedType()
-        value_serializer = self.value_type.getSerializer( "next_value" )
-        value_deserializer = self.value_type.getDeserializer( "new_value" )
-        next_value_size = self.value_type.getSize( "next_value" )
-        writeGeneratedFile( self.getFilePath(), """\
-package %(package_name)s;        
+class XtreemFSJavaSequenceType(JavaSequenceType):
+    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()
+    def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
 
-%(imports)s
-        
-        
-public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
-{    
-    // Serializable
-    public String getTypeName() { return "%(type_qname)s"; }
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
-        throw new IllegalArgumentException("array is too large ("+this.size()+")");
-        writer.putInt( size() );
-        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
-        {
-            %(value_boxed_type)s next_value = i.next();        
-            %(value_serializer)s;
-        }
-    }
-
+    def getDeserializeMethods( self ):
+        value_declaration_type = self.getValueType().getDeclarationTypeName()
+        value_deserializer = self.getValueType().getBufferDeserializeCall( "new_value" )        
+        return JavaSequenceType.getDeserializeMethods( self ) + """
     public void deserialize( ReusableBuffer buf ) {
         int new_size = buf.getInt();
     if (new_size > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
@@ -165,8 +124,16 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
             %(value_declaration_type)s new_value; %(value_deserializer)s;
             this.add( new_value );
         }
-    }
+    } 
+""" % locals()
+
+    def getImports( self ): 
+        return JavaSequenceType.getImports( self ) + XTREEMFS_COMMON_IMPORTS
     
+    def getOtherMethods( self ):
+        value_boxed_type = self.getValueType().getBoxedType()
+        next_value_size = self.getValueType().getSize( "next_value" )        
+        return JavaSequenceType.getOtherMethods( self ) + """
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); ) {
@@ -175,142 +142,139 @@ public class %(type_name)s extends ArrayList<%(value_boxed_type)s>
         }
         return my_size;
     }
-}
-""" % locals() )    
-    
-    def getDeserializer( self, identifier ): type_name = self.name; return "%(identifier)s = new %(type_name)s(); %(identifier)s.deserialize( buf );" % locals()
-    def getSerializer( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
-    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
-    
+""" % locals()        
+               
+    def getSize( self, identifier ): 
+        return "%(identifier)s.calculateSize()" % locals()
 
-class XtreemFSJavaSerializableType(JavaSerializableType, XtreemFSJavaTypeCommon):
-    def getDeclarationType( self ): return "ReusableBuffer"
-    def getDeserializer( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer(buf); }" % locals()
-    def getSerializer( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer(%(identifier)s,writer); }" % locals()
-    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength(%(identifier)s)" % locals()
+    def getSerializeMethods( self ):
+        value_boxed_type = self.getValueType().getBoxedType()
+        value_serializer = self.getValueType().getBufferSerializeCall( "next_value" )        
+        return JavaSequenceType.getSerializeMethods( self ) + """
+    public void serialize(ONCRPCBufferWriter writer) {
+        if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
+        throw new IllegalArgumentException("array is too large ("+this.size()+")");
+        writer.putInt( size() );
+        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
+        {
+            %(value_boxed_type)s next_value = i.next();        
+            %(value_serializer)s;
+        }
+    }        
+""" % locals()    
+
+class XtreemFSJavaSerializableType(JavaSerializableType):
+    def getDeclarationTypeName( self ): return "ReusableBuffer"
+    def getBufferDeserializeCall( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer( buf ); }" % locals()
+    def getBufferSerializeCall( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer( %(identifier)s, writer ); }" % locals()
+    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength( %(identifier)s )" % locals()
         
 
-class XtreemFSJavaStringType(JavaStringType, XtreemFSJavaTypeCommon):
-    def getDeserializer( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }" % locals()
-    def getSerializer( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeString(%(identifier)s,writer); }" % locals()
+class XtreemFSJavaStringType(JavaStringType):
+    def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );" % locals()
+    def getBufferSerializeCall( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializeString( %(identifier)s, writer );" % locals()
     def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
 
 
-class XtreemFSJavaStructTypeCommon(XtreemFSJavaTypeCommon):
-    def getStructBody( self, type_name_suffix="", members=None ):        
-        if members is None: members = self.members
-        type_name = self.name
-        type_qname = self.qname
-        constructors = self.getConstructors( type_name_suffix, members )
-        member_accessors = self.getMemberAccessors( members )
-        member_tostrings = self.getMemberToStrings( members )
-        if len( member_tostrings ) > 0:
-            member_tostrings = INDENT_SPACES * 2 + "return \"%(type_name)s%(type_name_suffix)s( \" + " % locals() + member_tostrings + " + \" )\";"
-        else:
-            member_tostrings = INDENT_SPACES * 2 + "return \"%(type_name)s%(type_name_suffix)s()\";" % locals()
-        
-        member_declarations = self.getMemberDeclarations( members )
-        member_serializers = self.getMemberSerializers( members )        
-        member_deserializers = self.getMemberDeserializers( members )        
-        member_sizes = self.getMemberSizes( members )
-        
-        return """\
-%(constructors)s
-%(member_accessors)s
-
-    // Object
-    public String toString()
-    {
-%(member_tostrings)s
-    }    
-
-    // Serializable
-    public String getTypeName() { return "%(type_qname)s%(type_name_suffix)s"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-%(member_serializers)s        
-    }
-    
-    public void deserialize( ReusableBuffer buf )
-    {
-%(member_deserializers)s    
-    }
-    
-    public int calculateSize()
-    {
-        int my_size = 0;
-%(member_sizes)s
-        return my_size;
-    }
-
-%(member_declarations)s
-""" % locals()
-
-
-class XtreemFSJavaStructType(JavaStructType, XtreemFSJavaStructTypeCommon):
+class XtreemFSJavaStructType(JavaStructType):
     def generate( self, parents=" implements org.xtreemfs.interfaces.utils.Serializable" ):
         JavaStructType.generate( self, parents  )    
         
-    def getDeserializer( self, identifier ): type_name = self.name; return "%(identifier)s = new %(type_name)s(); %(identifier)s.deserialize( buf );" % locals()    
-    def getMemberDeserializers( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + member.type.getDeserializer( member.identifier ) for member in self.members] )        
-    def getMemberSerializers( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + member.type.getSerializer( member.identifier ) for member in self.members] )        
-    def getMemberSizes( self, members=None ): return "\n".join( [INDENT_SPACES * 2 + "my_size += " + member.type.getSize( member.identifier ) + ";" for member in self.members] )        
-    def getSerializer( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
-    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()    
+    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()    
+    def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
+    
+    def getDeserializeMethods( self ):
+        buffer_deserialize_calls = "\n".join( [INDENT_SPACES * 2 + member.getType().getBufferDeserializeCall( member.getIdentifier() ) for member in self.getMembers()] )
+        return JavaStructType.getDeserializeMethods( self ) + """
+    public void deserialize( ReusableBuffer buf )
+    {
+%(buffer_deserialize_calls)s
+    }
+""" % locals()      
+     
+    def getImports( self ):
+        return JavaStructType.getImports( self ) + XTREEMFS_COMMON_IMPORTS    
+    
+    def getOtherMethods( self ): return JavaStructType.getOtherMethods( self ) + """\
+    public int calculateSize()
+    {
+        int my_size = 0;
+%s
+        return my_size;
+    }
+"""  % "\n".join( [INDENT_SPACES * 2 + "my_size += " + member.getType().getSize( member.getIdentifier() ) + ";" for member in self.getMembers()] )            
+
+    def getSerializeMethods( self ): 
+        buffer_serialize_calls = "\n".join( [INDENT_SPACES * 2 + member.getType().getBufferSerializeCall( member.getIdentifier() ) for member in self.getMembers()] )
+        return JavaStructType.getSerializeMethods( self ) + """
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+%(buffer_serialize_calls)s
+    }
+    """ % locals() 
+                     
+    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
 
 
-
-class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaStructTypeCommon):
-    def generate( self ):
-        XtreemFSJavaStructType.generate( self, " extends org.xtreemfs.interfaces.utils.ONCRPCException" )
-
-    def getExceptionFactory( self ):
-        return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( exception.qname, exception.name )
+class XtreemFSJavaExceptionType(JavaExceptionType):
+    def generate( self ): XtreemFSJavaStructType( self.getQualifiedName(), self.getMembers() ).generate( " extends org.xtreemfs.interfaces.utils.ONCRPCException" )
+    def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
     
-class XtreemFSJavaOperationType(JavaOperationType, XtreemFSJavaStructTypeCommon):
+class XtreemFSJavaOperationType(JavaOperationType):    
+    def __init__( self, *args, **kwds ):
+        JavaOperationType.__init__( self, *args, **kwds )
+                
+        assert self.getUID() > 0, "operation "  + self.getQualifiedName( "." ) + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()        
+        qname = self.getQualifiedName( None )
+        assert len( qname ) > 1           
+        self.request_type = XtreemFSJavaRequestType( qname[:-1] + [qname[-1] + "Request"], [param for param in self.getParameters() if param.isInbound()], self.getUID() )
+        if self.isOneway():
+            self.response_type = None
+        else:
+            params = [param for param in self.getParameters() if param.isOutbound()]
+            if self.getReturnType() is not None: 
+                params.append( JavaOperationParameter( self.getReturnType(), "returnValue", out_=True ) )
+            self.response_type = XtreemFSJavaResponseType( qname[:-1] + [qname[-1] + "Response"], params, self.getUID() )
+    
     def generate( self ):
-        assert self.uid > 0, "operation "  + self.qname + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.uid
-        for type_name_suffix in ( self.oneway and ( "Request", ) or ( "Request", "Response" ) ):
-            type_name = self.name
-            uid = self.uid
-            parent_type_uid = self.parent_type.uid
-            if type_name_suffix == "Request":
-                params = [param for param in self.params if param.in_]   
-                type_name_specific_type_def = """\
+        self.request_type.generate()
+        if self.response_type is not None:
+            self.response_type.generate()
+                
+    def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
+    def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
+
+
+class XtreemFSJavaRequestType(XtreemFSJavaStructType):
+    def generate( self ): 
+        XtreemFSJavaStructType.generate( self, " implements org.xtreemfs.interfaces.utils.Request" )        
+    
+    def getOtherMethods( self ):
+        uid = self.getUID()     
+        response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
+        return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Request
-    public int getInterfaceVersion() { return %(parent_type_uid)s; }    
     public int getOperationNumber() { return %(uid)s; }
-    public Response createDefaultResponse() { return new %(type_name)sResponse(); }
+    public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
-            elif type_name_suffix == "Response":
-                params = [param for param in self.params if param.out_]            
-                if self.return_type is not None: 
-                    params.append( JavaOperationParameter( self.return_type, "returnValue", out_=True ) )
-                type_name_specific_type_def = """\
+
+
+class XtreemFSJavaResponseType(XtreemFSJavaStructType):
+    def generate( self ): 
+        XtreemFSJavaStructType.generate( self, " implements org.xtreemfs.interfaces.utils.Response" )        
+    
+    def getOtherMethods( self ):
+        uid = self.getUID()
+        return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Response
-    public int getInterfaceVersion() { return %(parent_type_uid)s; }
-    public int getOperationNumber() { return %(uid)s; }    
+    public int getOperationNumber() { return %(uid)s; }
 """ % locals()
-
-            struct_body = self.getStructBody( type_name_suffix, params )
-                                     
-            writeGeneratedFile( self.getFilePath( type_name_suffix ), """
-public class %(type_name)s%(type_name_suffix)s implements %(type_name_suffix)s
-{
-%(struct_body)s    
-
-%(type_name_specific_type_def)s
-}
-""" % locals() )
-        
-    def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.uid, self.name )                    
-    def getResponseFactory( self ): return not self.oneway and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.uid, self.name ) ) or ""                
-        
+                    
            
 if __name__ == "__main__":     
     if len( sys.argv ) == 1:
         sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) ), 
                            "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src" ) ) ) )
         
-    generator_main( XtreemFSJavaTypeFactory( "org" ) )
+    generator_main( XtreemFSJavaTypeFactory() )
