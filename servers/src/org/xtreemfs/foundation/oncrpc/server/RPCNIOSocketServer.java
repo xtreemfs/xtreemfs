@@ -47,6 +47,7 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.new_osd.operations.RequestTimeHelper;
 
 /**
  *
@@ -160,7 +161,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 connection.addPendingResponse(request);
                 if (isEmpty) {
                     SelectionKey key = connection.getChannel().keyFor(selector);
-                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    if (key != null)
+                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
                 }
             }
             selector.wakeup();
@@ -227,9 +229,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             notifyStopped();
         } catch (Exception thr) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,"ONRPC Server "+bindPort+" CRASHED!");
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,thr);
-            }
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,thr);
             notifyCrashed(thr);
         }
 
@@ -311,7 +311,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             }
                             con.getOpenRequests().incrementAndGet();
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,"request received");
-                            receiveRequest(key,rq);
+                            receiveRequest(key,rq,con);
                         }
                     }
                 }
@@ -542,7 +542,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         }
     }
 
-    private void receiveRequest(SelectionKey key, ONCRPCRecord record) {
+    private void receiveRequest(SelectionKey key, ONCRPCRecord record, ClientConnection con) {
         try {
             ONCRPCRequest rq = new ONCRPCRequest(record);
             receiver.receiveRecord(rq);

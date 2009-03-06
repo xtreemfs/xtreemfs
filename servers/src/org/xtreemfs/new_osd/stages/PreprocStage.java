@@ -33,11 +33,11 @@ import java.util.concurrent.TimeUnit;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.new_osd.ErrorCodes;
@@ -75,7 +75,7 @@ public class PreprocStage extends Stage {
     // last check of the OFT
     private long lastOFTcheck;
 
-    private final OSDOperation closeOp;
+    private volatile long numRequests;
 
     /**
      * X-Location cache
@@ -91,7 +91,6 @@ public class PreprocStage extends Stage {
 
         capCache = new HashMap<String, Set<String>>();
         oft = new OpenFileTable();
-        closeOp = null;
         xLocCache = new LocationsCache(10000);
         this.master = master;
     }
@@ -108,6 +107,8 @@ public class PreprocStage extends Stage {
     private void doPrepareRequest(StageRequest rq) {
         final OSDRequest request = (OSDRequest) rq.getArgs()[0];
         final ParseCompleteCallback callback = (ParseCompleteCallback) rq.getCallback();
+
+        numRequests++;
 
         if (parseRequest(request) == false)
             return;
@@ -212,7 +213,7 @@ public class PreprocStage extends Stage {
 
                 //send close event
                 OSDOperation closeEvent = master.getInternalEvent(EventCloseFile.class);
-                closeEvent.startInternalEvent(new Object[]{entry.isDeleteOnClose()});
+                closeEvent.startInternalEvent(new Object[]{entry.getFileId(),entry.isDeleteOnClose()});
             }
             timeToNextOFTclean = OFT_CLEAN_INTERVAL;
         }
@@ -255,6 +256,10 @@ public class PreprocStage extends Stage {
 
         try {
             rq.setRequestArgs(op.parseRPCMessage(rpcRq.getRequestFragment(), rq));
+        } catch (InvalidXLocationsException ex) {
+            OSDException osdex = new OSDException(ErrorCodes.NOT_IN_XLOC, ex.getMessage(), "");
+            rpcRq.sendGenericException(osdex);
+            return false;
         } catch (Throwable ex) {
             ex.printStackTrace();
             rpcRq.sendGarbageArgs(ex.toString());
@@ -269,6 +274,10 @@ public class PreprocStage extends Stage {
     private void processAuthenticate(OSDRequest rq) throws OSDException {
 
         final Capability rqCap = rq.getCapability();
+
+        if (!rqCap.getFileId().equals(rq.getFileId())) {
+            throw new OSDException(ErrorCodes.AUTH_FAILED, "capability was issued for another file than the one requested", "");
+        }
 
         boolean isValid = false;
         // look in capCache
@@ -303,5 +312,8 @@ public class PreprocStage extends Stage {
         return oft.getNumOpenFiles();
     }
 
+    public long getNumRequests() {
+        return numRequests;
+    }
     
 }

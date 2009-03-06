@@ -28,12 +28,14 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.writeResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.WriteObjectCallback;
@@ -60,8 +62,16 @@ public final class WriteOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         final writeRequest args = (writeRequest)rq.getRequestArgs();
+
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+
+        if (args.getOffset() >= sp.getStripeSizeForObject(args.getObject_number())) {
+            rq.sendOSDException(ErrorCodes.INVALID_PARAMS, "offset must be < stripe size");
+            return;
+        }
+
         master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), 
-                rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                sp,
                 args.getOffset(), args.getData().getData(), rq.getCowPolicy(),
                 rq.getLocationList(), rq,
                 new WriteObjectCallback() {
@@ -74,8 +84,6 @@ public final class WriteOperation extends OSDOperation {
     }
 
     public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"write done!");
         if (error != null) {
             if (error instanceof ONCRPCException)
                 rq.sendException((ONCRPCException)error);

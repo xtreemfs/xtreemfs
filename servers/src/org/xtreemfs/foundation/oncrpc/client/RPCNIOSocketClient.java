@@ -119,7 +119,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
 
     private void sendRequest(InetSocketAddress server, ONCRPCRequest request) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"send request "+request+" no "+transactionId.get());
+        if (Logging.tracingEnabled())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"send request "+request+" no "+transactionId.get());
         //get connection
         ServerConnection con = null;
         synchronized (connections) {
@@ -142,6 +143,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     final SelectionKey key = con.getChannel().keyFor(selector);
                     key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
                 }
+                selector.wakeup();
             }
         }
     }
@@ -456,10 +458,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     } else {
                         if (!send.isLastRequestBuffer()) {
                             send.nextRequestBuffer();
+                            continue;
                         } else {
                             con.addRequest(send.getXID(), send);
                             con.setSendRequest(null);
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent request to "+con.getEndpoint());
+                            if (Logging.tracingEnabled())
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent request to "+con.getEndpoint());
                         }
                         //otherwise the request is complete
                     }

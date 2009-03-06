@@ -79,7 +79,6 @@ public final class ReadOperation extends OSDOperation {
     }
 
     public void step2(final OSDRequest rq, readRequest args, ObjectInformation result, Exception error) {
-
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);

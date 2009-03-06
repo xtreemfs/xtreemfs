@@ -362,7 +362,8 @@ public class StorageThread extends Stage {
 
                 // check whether the file size might have changed; in this case,
                 // ensure that the X-New-Filesize header will be set
-                if (newFS > fi.getFilesize() && objNo >= fi.getLastObjectNumber()) {
+                if (newFS > fi.getFilesize() && objNo >= fi.getLastObjectNumber() &&
+                        objNo >= fi.getGlobalLastObjectNumber()) {
                     // Metadata meta = info.getMetadata();
                     // meta.putKnownSize(newFS);
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "new filesize: " + newFS);
@@ -377,7 +378,7 @@ public class StorageThread extends Stage {
                 // if the written object has a larger ID than the largest
                 // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
-                if (objNo > fi.getLastObjectNumber()) {
+                if (objNo > fi.getLastObjectNumber() && objNo > fi.getGlobalLastObjectNumber()) {
 
                     fi.setLastObjectNumber(objNo);
 
@@ -394,7 +395,7 @@ public class StorageThread extends Stage {
                     }
                 }
             }
-
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"new last object = "+fi.getLastObjectNumber()+" gmax="+fi.getGlobalLastObjectNumber());
             BufferPool.free(writeData);
             cback.writeComplete(response, null);
 
@@ -429,6 +430,7 @@ public class StorageThread extends Stage {
             final int relativeOSDNumber = currentReplica.getOSDs().indexOf(master.getConfig().getUUID());
 
             long newLastObject = -1;
+            long newGlobalLastObject = -1;
 
             if (newFileSize == 0) {
                 // truncate to zero: remove all objects
@@ -441,18 +443,23 @@ public class StorageThread extends Stage {
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file
                 newLastObject = truncateShrink(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber);
+                newGlobalLastObject = sp.getObjectNoForOffset(newFileSize-1);
             } else if (fi.getFilesize() < newFileSize) {
                 // extend file
                 newLastObject = truncateExtend(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber);
+                newGlobalLastObject = sp.getObjectNoForOffset(newFileSize-1);
             } else if (fi.getFilesize() == newFileSize) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "truncate to local size: " + newFileSize);
                 newLastObject = fi.getLastObjectNumber();
+                newGlobalLastObject = fi.getGlobalLastObjectNumber();
             }
 
             // set the new file size and last object number
             fi.setFilesize(newFileSize);
             fi.setLastObjectNumber(newLastObject);
             fi.setTruncateEpoch(epochNumber);
+
+            fi.setGlobalLastObjectNumber(newGlobalLastObject);
 
             // store the truncate epoch persistently
             layout.setTruncateEpoch(fileId, epochNumber);

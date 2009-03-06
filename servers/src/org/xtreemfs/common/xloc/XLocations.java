@@ -31,7 +31,7 @@ public class XLocations {
         }
     }
 
-    public XLocations(XLocSet xloc, ServiceUUID localOSD) {
+    public XLocations(XLocSet xloc, ServiceUUID localOSD) throws InvalidXLocationsException {
         this(xloc);
         for (Replica r : replicas) {
             if (r.getOSDs().contains(localOSD)) {
@@ -40,7 +40,7 @@ public class XLocations {
             }
         }
         if (localReplica == null)
-            throw new IllegalArgumentException("local OSD is not in any replica in XLocations list");
+            throw new InvalidXLocationsException("local OSD is not in any replica in XLocations list");
     }
 
     public XLocSet getXLocSet() {

@@ -25,7 +25,6 @@ package org.xtreemfs.foundation.oncrpc.server;
 
 import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
@@ -36,6 +35,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.mrc.ErrNo;
+import org.xtreemfs.new_osd.operations.RequestTimeHelper;
 
 /**
  *

@@ -102,8 +102,7 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
             this.request = request;
             if (listener != null)
                 listener.responseAvailable(this);
-            else
-                this.notify();
+            this.notify();
         }
     }
 
@@ -115,8 +114,7 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
             this.remoteEx = exception;
             if (listener != null)
                 listener.responseAvailable(this);
-            else
-                this.notify();
+            this.notify();
         }
     }
 
@@ -128,8 +126,7 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
             this.ioError = reason;
             if (listener != null)
                 listener.responseAvailable(this);
-            else
-                this.notify();
+            this.notify();
         }
     }
 

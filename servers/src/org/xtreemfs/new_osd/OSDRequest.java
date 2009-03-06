@@ -34,6 +34,7 @@ import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.new_osd.operations.OSDOperation;
+import org.xtreemfs.new_osd.operations.RequestTimeHelper;
 import org.xtreemfs.new_osd.storage.CowPolicy;
 
 /**
@@ -89,9 +90,9 @@ public final class OSDRequest {
     }
 
     public void sendInternalServerError(Throwable cause) {
-        if (getRpcRequest() != null)
+        if (getRpcRequest() != null) {
             getRpcRequest().sendInternalServerError(cause);
-        else {
+        } else {
             Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error on internal request: "+cause);
             Logging.logMessage(Logging.LEVEL_DEBUG, this,cause);
         }

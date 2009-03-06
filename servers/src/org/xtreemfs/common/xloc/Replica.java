@@ -46,6 +46,14 @@ public class Replica {
         return replica.getReplication_flags();
     }
 
+    public boolean isStriped() {
+        return this.osds.size() > 1;
+    }
+
+    public boolean isHeadOsd(ServiceUUID localOSD) {
+        return this.osds.get(0).equals(localOSD);
+    }
+
     public String toString() {
         return "Replica "+stripingPolicy+", "+replica+" "+
                 "OSD: "+osds;

@@ -32,6 +32,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.internal_truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
@@ -42,15 +43,15 @@ import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.TruncateCallback;
 
-public final class TruncateOperation extends OSDOperation {
+public final class InternalTruncateOperation extends OSDOperation {
 
     final int procId;
     final String sharedSecret;
     final ServiceUUID localUUID;
 
-    public TruncateOperation(OSDRequestDispatcher master) {
+    public InternalTruncateOperation(OSDRequestDispatcher master) {
         super(master);
-        truncateRequest rq = new truncateRequest();
+        internal_truncateRequest rq = new internal_truncateRequest();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -63,15 +64,10 @@ public final class TruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final truncateRequest args = (truncateRequest)rq.getRequestArgs();
+        final internal_truncateRequest args = (internal_truncateRequest)rq.getRequestArgs();
 
         if (args.getNew_file_size() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "new_file_size for truncate must be >= 0", ""));
-            return;
-        }
-
-        if (!rq.getLocationList().getLocalReplica().isHeadOsd(localUUID)) {
-            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "truncate must be executed at the head OSD (first OSD in replica)", ""));
             return;
         }
 
@@ -82,12 +78,12 @@ public final class TruncateOperation extends OSDOperation {
 
             @Override
             public void truncateComplete(OSDWriteResponse result, Exception error) {
-                step2(rq, args, result, error);
+                step2(rq, result, error);
             }
         });
     }
 
-    public void step2(final OSDRequest rq, final truncateRequest args, OSDWriteResponse result, Exception error) {
+    public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {
 
         if (error != null) {
             if (error instanceof ONCRPCException)
@@ -95,57 +91,12 @@ public final class TruncateOperation extends OSDOperation {
             else
                 rq.sendInternalServerError(error);
         } else {
-            //check for striping
-            if (rq.getLocationList().getLocalReplica().isStriped()) {
-                //disseminate internal truncate to all other OSDs
-                disseminateTruncates(rq,args,result);
-            } else {
-                //non-striped
-                sendResponse(rq, result);
-            }
-        }
-    }
-
-    private void disseminateTruncates(final OSDRequest rq, final truncateRequest args, final OSDWriteResponse result) {
-        try {
-            final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
-            final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
-            int cnt = 0;
-            for (ServiceUUID osd : osds) {
-                if (!osd.equals(localUUID)) {
-                    gmaxRPCs[cnt++] = master.getOSDClient().internal_truncate(osd.getAddress(),
-                            args.getFile_id(), args.getCredentials(),args.getNew_file_size());
-                }
-            }
-            this.waitForResponses(gmaxRPCs, new ResponsesListener() {
-
-                @Override
-                public void responsesAvailable() {
-                    analyzeTruncateResponses(rq,result,gmaxRPCs);
-                }
-
-            });
-        } catch (UnknownUUIDException ex) {
-            rq.sendInternalServerError(ex);
-            return;
-        }
-    }
-
-    private void analyzeTruncateResponses(OSDRequest rq, OSDWriteResponse result, RPCResponse[] gmaxRPCs) {
-        //analyze results
-        try {
-            for (int i = 0; i < gmaxRPCs.length; i++) {
-                gmaxRPCs[i].get();
-            }
+            //only locally
             sendResponse(rq, result);
-        } catch (Exception ex) {
-            rq.sendInternalServerError(ex);
-        } finally {
-            for (RPCResponse r : gmaxRPCs)
-                r.freeBuffers();
         }
     }
 
+    
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
         truncateResponse response = new truncateResponse(result);
         rq.sendSuccess(response);
@@ -153,7 +104,7 @@ public final class TruncateOperation extends OSDOperation {
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        truncateRequest rpcrq = new truncateRequest();
+        internal_truncateRequest rpcrq = new internal_truncateRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
