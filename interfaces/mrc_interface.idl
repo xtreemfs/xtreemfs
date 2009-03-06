@@ -1,92 +1,95 @@
 #include "mrc_osd_types.idl"
 
 
-module xtreemfs
+module org
 {
-  module interfaces
+  module xtreemfs
   {
-    struct Context
+    module interfaces
     {
-        string user_id;
-        StringSet group_ids;
-    };
+      struct Context
+      {
+          string user_id;
+          StringSet group_ids;
+      };
 
-    typedef sequence<FileCredentials> FileCredentialsSet;
-    typedef sequence<StripingPolicy>  StripingPolicySet;
+      typedef sequence<FileCredentials> FileCredentialsSet;
+      typedef sequence<StripingPolicy>  StripingPolicySet;
 
-    interface MRCInterface #2
-    {
-      // admin operations
+      interface MRCInterface #2
+      {
+        // admin operations
 
-      void admin_shutdown( string password ) # 50;
+        void admin_shutdown( string password ) # 50;
 
-      void admin_checkpoint( string password ) # 51;
+        void admin_checkpoint( string password ) # 51;
 
-      void admin_dump_database( string password, string dump_file ) # 52;
+        void admin_dump_database( string password, string dump_file ) # 52;
 
-      void admin_restore_database( string password, string dump_file ) #53;
+        void admin_restore_database( string password, string dump_file ) #53;
 
-      // POSIX metadata calls
+        // POSIX metadata calls
 
-      boolean access( Context context, string path, uint32_t mode ) # 1;
+        boolean access( Context context, string path, uint32_t mode ) # 1;
 
-      void chmod( Context context, string path, uint32_t mode ) # 2;
+        void chmod( Context context, string path, uint32_t mode ) # 2;
 
-      void chown( Context context, string path, string userId, string groupId ) # 3;
+        void chown( Context context, string path, string userId, string groupId ) # 3;
 
-      void create( Context context, string path, uint32_t mode ) # 4;
+        void create( Context context, string path, uint32_t mode ) # 4;
 
-      void getattr( Context context, string path, out stat_ stbuf ) # 5;
+        void getattr( Context context, string path, out stat_ stbuf ) # 5;
 
-      string getxattr( Context context, string path, string name ) # 6;
+        string getxattr( Context context, string path, string name ) # 6;
 
-      void link( Context context, string target_path, string link_path ) # 7;
+        void link( Context context, string target_path, string link_path ) # 7;
 
-      void listxattr( Context context, string path, out StringSet names ) # 8;
+        void listxattr( Context context, string path, out StringSet names ) # 8;
 
-      void mkdir( Context context, string path, uint32_t mode ) # 9;
+        void mkdir( Context context, string path, uint32_t mode ) # 9;
 
-      void mkvol( Context context, string password, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
+        void mkvol( Context context, string password, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
 
-      void open( Context context, string path, uint32_t flags, uint32_t mode, out FileCredentials credentials ) # 11;
+        void open( Context context, string path, uint32_t flags, uint32_t mode, out FileCredentials credentials ) # 11;
 
-      void readdir( Context context, string path, out DirectoryEntrySet directory_entries ) # 12;
+        void readdir( Context context, string path, out DirectoryEntrySet directory_entries ) # 12;
 
-      void removexattr( Context context, string path, string name ) # 13;
+        void removexattr( Context context, string path, string name ) # 13;
 
-      void rename( Context context, string source_path, string target_path, out FileCredentialsSet credentials ) # 14;
-      
-      void rmdir( Context context, string path ) # 15;
+        void rename( Context context, string source_path, string target_path, out FileCredentialsSet credentials ) # 14;
+        
+        void rmdir( Context context, string path ) # 15;
 
-      void rmvol( Context context, string password, string volume_name ) # 16;
+        void rmvol( Context context, string password, string volume_name ) # 16;
 
-      void setattr( Context context, string path, stat_ stbuf ) # 17;
+        void setattr( Context context, string path, stat_ stbuf ) # 17;
 
-      void setxattr( Context context, string path, string name, string value, int flags ) # 18;
+        void setxattr( Context context, string path, string name, string value, int flags ) # 18;
 
-      void statfs( Context context, string volume_name, out statfs_ statfsbuf ) # 19;
+        void statfs( Context context, string volume_name, out statfs_ statfsbuf ) # 19;
 
-      void symlink( Context context, string target_path, string link_path ) # 20;
+        void symlink( Context context, string target_path, string link_path ) # 20;
 
-      void unlink( Context context, string path, out FileCredentialsSet credentials ) # 21;
+        void unlink( Context context, string path, out FileCredentialsSet credentials ) # 21;
 
-      void utime( Context context, string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
+        void utime( Context context, string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
 
-      //xtreemfs specific metadata operations
+        //xtreemfs specific metadata operations
 
-      void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
+        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
 
-      void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
+        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
 
-      void xtreemfs_renew_capability( XCap xcap, out XCap xcap ) # 25;
+        void xtreemfs_renew_capability( XCap xcap, out XCap xcap ) # 25;
 
-      void xtreemfs_replica_add( Context context, string file_id, Replica new_replica ) # 26;
+        void xtreemfs_replica_add( Context context, string file_id, Replica new_replica ) # 26;
 
-      void xtreemfs_replica_remove( Context context, string file_id, string osd_uuid ) # 27;
+        void xtreemfs_replica_remove( Context context, string file_id, string osd_uuid ) # 27;
 
-      void xtreemfs_restore_file(string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
+        void xtreemfs_restore_file(string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
 
-      void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse new_file_size ) # 29;
+        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse new_file_size ) # 29;
+      };
     };
   };
 };

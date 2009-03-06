@@ -1,63 +1,66 @@
 #include "mrc_osd_types.idl"
 
 
-module xtreemfs
+module org
 {
-  module interfaces
+  module xtreemfs
   {
-
-    struct ObjectData
+    module interfaces
     {
-      string   checksum;
-      uint32_t zero_padding;
-      boolean  invalid_checksum_on_osd;
-      Serializable data;
-    };
 
-    struct InternalGmax
-    {
-        uint64_t epoch;
-        uint64_t last_object_id;
-        uint64_t file_size;
-    };
-
-    struct InternalReadLocalResponse
-    {
-        NewFileSize file_size;
+      struct ObjectData
+      {
+        string   checksum;
         uint32_t zero_padding;
-        ObjectData data;
-    };
+        boolean  invalid_checksum_on_osd;
+        Serializable data;
+      };
 
-    struct OSDWriteResponse {
-        NewFileSizeSet new_file_size;
-        OSDtoMRCDataSet opaque_data;
-    };
+      struct InternalGmax
+      {
+          uint64_t epoch;
+          uint64_t last_object_id;
+          uint64_t file_size;
+      };
+
+      struct InternalReadLocalResponse
+      {
+          NewFileSize file_size;
+          uint32_t zero_padding;
+          ObjectData data;
+      };
+
+      struct OSDWriteResponse {
+          NewFileSizeSet new_file_size;
+          OSDtoMRCDataSet opaque_data;
+      };
 
 
-    interface OSDInterface # 3
-    {
-      ObjectData read( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) # 1;
+      interface OSDInterface # 3
+      {
+        ObjectData read( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) # 1;
 
-      void truncate( string file_id, FileCredentials credentials, uint64_t new_file_size, out OSDWriteResponse osd_response ) # 2;
+        void truncate( string file_id, FileCredentials credentials, uint64_t new_file_size, out OSDWriteResponse osd_response ) # 2;
 
-      void unlink( string file_id, FileCredentials credentials ) # 3;
+        void unlink( string file_id, FileCredentials credentials ) # 3;
 
-      void write( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData data, out OSDWriteResponse osd_response ) # 4;
+        void write( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData data, out OSDWriteResponse osd_response ) # 4;
 
-      void keep_file_open( string file_id, FileCredentials credentials ) # 5;
+        void keep_file_open( string file_id, FileCredentials credentials ) # 5;
 
-      
-      //internal operations, only to be used for OSD-to-OSD communication
-      InternalGmax internal_get_gmax(string file_id, FileCredentials credentials) # 100;
+        
+        //internal operations, only to be used for OSD-to-OSD communication
+        InternalGmax internal_get_gmax(string file_id, FileCredentials credentials) # 100;
 
-      void  internal_truncate(string file_id, FileCredentials credentials, uint64_t new_file_size) # 101;
+        void  internal_truncate(string file_id, FileCredentials credentials, uint64_t new_file_size) # 101;
 
-      InternalReadLocalResponse  internal_read_local(string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length) # 102;
+        InternalReadLocalResponse  internal_read_local(string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length) # 102;
 
-      ObjectData check_object( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version) # 103;
+        ObjectData check_object( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version) # 103;
 
-      //admin operations
-      void     admin_shutdown( string password ) # 50;
+        //admin operations
+        void     admin_shutdown( string password ) # 50;
+      };
     };
   };
 };

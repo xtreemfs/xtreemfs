@@ -1,64 +1,67 @@
-module xtreemfs
+module org
 {
-  module interfaces
+  module xtreemfs
   {
-
-    struct AddressMapping
+    module interfaces
     {
-      string uuid;
-      uint64_t version;
-      string protocol;
-      string address;
-      uint16_t port;
-      string match_network;
-      uint32_t ttl;
-    };
 
-    typedef sequence<AddressMapping> AddressMappingSet;
+      struct AddressMapping
+      {
+        string uuid;
+        uint64_t version;
+        string protocol;
+        string address;
+        uint16_t port;
+        string match_network;
+        uint32_t ttl;
+      };
 
-    struct KeyValuePair
-    {
-     string key;
-     string value;
-    };
+      typedef sequence<AddressMapping> AddressMappingSet;
 
-    typedef sequence<KeyValuePair> KeyValuePairSet;
+      struct KeyValuePair
+      {
+       string key;
+       string value;
+      };
 
-    struct ServiceRegistry 
-    {
-      string uuid;
-      uint64_t version;
-      uint16_t service_type;
-      string   service_name;
-      KeyValuePairSet data;
-    };
+      typedef sequence<KeyValuePair> KeyValuePairSet;
 
-    typedef sequence<ServiceRegistry> ServiceRegistrySet;
+      struct ServiceRegistry 
+      {
+        string uuid;
+        uint64_t version;
+        uint16_t service_type;
+        string   service_name;
+        KeyValuePairSet data;
+      };
 
-    interface DIRInterface # 1
-    {
-      //returns the address mappings for uuid or all mappings stored in the DB for uuid="*"
-      void address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
+      typedef sequence<ServiceRegistry> ServiceRegistrySet;
 
-      //throws a ConcurrentModificationException if the entry was modified by another process
-      uint64_t address_mappings_set( AddressMappingSet address_mappings ) # 2;
+      interface DIRInterface # 1
+      {
+        //returns the address mappings for uuid or all mappings stored in the DB for uuid="*"
+        void address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
 
-      void     address_mappings_delete( string uuid ) # 3;
+        //throws a ConcurrentModificationException if the entry was modified by another process
+        uint64_t address_mappings_set( AddressMappingSet address_mappings ) # 2;
 
-      //throws a ConcurrentModificationException if the entry was modified by another process
-      uint64_t service_register( ServiceRegistry service ) # 4;
+        void     address_mappings_delete( string uuid ) # 3;
 
-      void     service_deregister( string uuid ) # 5;
+        //throws a ConcurrentModificationException if the entry was modified by another process
+        uint64_t service_register( ServiceRegistry service ) # 4;
 
-      void     service_get_by_type( uint16_t type, out ServiceRegistrySet services) # 6;
+        void     service_deregister( string uuid ) # 5;
 
-      void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
+        void     service_get_by_type( uint16_t type, out ServiceRegistrySet services) # 6;
 
-      uint64_t global_time_get() # 8;
+        void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
 
-      //admin operations
-      void     admin_checkpoint( string password ) # 50;
-      void     admin_shutdown( string password ) # 51;
+        uint64_t global_time_get() # 8;
+
+        //admin operations
+        void     admin_checkpoint( string password ) # 50;
+        void     admin_shutdown( string password ) # 51;
+      };
     };
   };
 };
