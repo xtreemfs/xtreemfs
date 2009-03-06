@@ -47,7 +47,6 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.new_osd.operations.RequestTimeHelper;
 
 /**
  *

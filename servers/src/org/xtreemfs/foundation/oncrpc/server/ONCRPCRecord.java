@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.new_osd.operations.RequestTimeHelper;
 
 /**
  *

@@ -233,6 +233,10 @@ public class RandomAccessFile implements ObjectStore {
         return osds;
     }
 
+    public ReusableBuffer readObject(long objectNo)
+            throws IOException {
+            return readObject(objectNo, 0, stripingPolicy.getStripeSizeForObject(objectNo));
+    }
     /**
      *
      * @param objectNo
