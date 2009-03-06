@@ -15,6 +15,9 @@ module xtreemfs
     const uint16_t SERVICE_TYPE_OSD = 2;
     const uint16_t SERVICE_TYPE_VOLUME = 3;
 
+    const string   REPL_UPDATE_PC_NONE = "";
+    const string   REPL_UPDATE_PC_RONLY = "ronly";
+
 
     typedef sequence<string> StringSet;
 
@@ -51,6 +54,8 @@ module xtreemfs
       ReplicaSet replicas;
       uint32_t   version;
       string     repUpdatePolicy;
+      //used internally for read-only replication
+      uint64_t   read_only_file_size;
     };
 
 
