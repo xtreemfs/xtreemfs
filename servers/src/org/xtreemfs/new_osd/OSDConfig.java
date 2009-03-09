@@ -64,6 +64,8 @@ public class OSDConfig extends ServiceConfig {
     private String            checksumProvider;
     
     private String            capabilitySecret;
+
+    private int               httpPort;
     
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
@@ -101,6 +103,8 @@ public class OSDConfig extends ServiceConfig {
             : null;
         
         this.capabilitySecret = this.readRequiredString("capability_secret");
+
+        this.httpPort = this.readRequiredInt("http_port");
     }
     
     public InetSocketAddress getDirectoryService() {
@@ -157,6 +161,10 @@ public class OSDConfig extends ServiceConfig {
     
     public String getCapabilitySecret() {
         return capabilitySecret;
+    }
+
+    int getHttpPort() {
+        return httpPort;
     }
     
 }

@@ -89,8 +89,6 @@ public class RandomAccessFile implements ObjectStore {
 
     private final List<String> groupIDs;
 
-    private final StripingPolicyImpl sp;
-
     private Replica            currentReplica;
 
     private final boolean      isReadOnly;
@@ -117,11 +115,11 @@ public class RandomAccessFile implements ObjectStore {
 
 
         // all replicas have the same striping policy at the moment
-        sp = StripingPolicyImpl.getPolicy(fcred.getXlocs().getReplicas().get(0));
+        stripingPolicy = StripingPolicyImpl.getPolicy(fcred.getXlocs().getReplicas().get(0));
         XLocations loc = new XLocations(fcred.getXlocs());
         currentReplica = loc.getReplica(0);
         byteMapper = ByteMapperFactory.createByteMapper(
-                sp.getPolicyId(), sp.getStripeSizeForObject(0), this);
+                stripingPolicy.getPolicyId(), stripingPolicy.getStripeSizeForObject(0), this);
 
         capTime = System.currentTimeMillis();
 
@@ -237,6 +235,39 @@ public class RandomAccessFile implements ObjectStore {
             throws IOException {
             return readObject(objectNo, 0, stripingPolicy.getStripeSizeForObject(objectNo));
     }
+
+    public int checkObject(long objectNo) throws IOException {
+        checkCap();
+
+        RPCResponse<ObjectData> response = null;
+
+        ServiceUUID osd = currentReplica.getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
+
+        int size = 0;
+        ObjectData data = null;
+        ReusableBuffer buffer = null;
+        try {
+
+            response = osdClient.check_object(osd.getAddress(), fileId, fcred, objectNo, 0);
+            data = response.get();
+
+            if (data.getInvalid_checksum_on_osd()) {
+                throw new IOException("object " + objectNo + " has an invalid checksum");
+            }
+
+            size = data.getZero_padding();
+
+        } catch (ONCRPCException ex) {
+            throw new IOException("cannot read object: "+ex.toString(), ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("cannot read object: "+ex.toString(), ex);
+        } finally {
+            if (response != null) {
+                response.freeBuffers();
+            }
+        }
+        return size;
+    }
     /**
      *
      * @param objectNo
@@ -247,21 +278,22 @@ public class RandomAccessFile implements ObjectStore {
      *            - the maximal number of bytes to be read.
      * @return a ReusableBuffer containing the data which was read.
      */
-    public ReusableBuffer readObject(long objectNo, long firstByteInObject, long bytesInObject)
+    @Override
+    public ReusableBuffer readObject(long objectNo, int offset, int length)
             throws IOException {
 
         checkCap();
 
         RPCResponse<ObjectData> response = null;
 
-        ServiceUUID osd = currentReplica.getOSDs().get(sp.getOSDforObject(objectNo));
+        ServiceUUID osd = currentReplica.getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
 
         int size = 0;
         ObjectData data = null;
         ReusableBuffer buffer = null;
         try {
-
-            response = osdClient.read(osd.getAddress(), fileId, fcred, (long)objectNo, 0, 0, sp.getStripeSizeForObject(objectNo));
+            System.out.println("read: "+objectNo+" of="+offset+" len="+length);
+            response = osdClient.read(osd.getAddress(), fileId, fcred, (long)objectNo, 0, offset,length);
             data = response.get();
 
             if (data.getInvalid_checksum_on_osd()) {
@@ -290,6 +322,8 @@ public class RandomAccessFile implements ObjectStore {
             }
 
         } catch (ONCRPCException ex) {
+            System.out.println(ex.toString());
+            ex.printStackTrace();
             throw new IOException("cannot read object", ex);
         } catch (InterruptedException ex) {
             throw new IOException("cannot read object", ex);
@@ -339,7 +373,7 @@ public class RandomAccessFile implements ObjectStore {
 
         RPCResponse<OSDWriteResponse> response = null;
         try {
-            ServiceUUID osd = currentReplica.getOSDs().get(sp.getOSDforObject(objectNo));
+            ServiceUUID osd = currentReplica.getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
             ObjectData odata = new ObjectData("", 0, false, data);
             response = osdClient.write(osd.getAddress(), fileId, fcred, objectNo, 0, (int)firstByteInObject, 0, odata);
             OSDWriteResponse owr = response.get();

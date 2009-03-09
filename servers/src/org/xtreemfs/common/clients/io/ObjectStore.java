@@ -42,7 +42,7 @@ public interface ObjectStore {
      * @throws java.lang.InterruptedException
      * @throws org.xtreemfs.common.clients.HttpErrorException
      */
-    ReusableBuffer readObject(long offset, long objectNo, long length) throws IOException,
+    ReusableBuffer readObject(long objectNo, int offset, int length) throws IOException,
     InterruptedException, ONCRPCException;
 
     void writeObject(long offset, long objectNo, ReusableBuffer buffer) throws IOException,

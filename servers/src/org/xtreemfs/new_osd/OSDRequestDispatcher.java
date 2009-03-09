@@ -24,12 +24,16 @@
 
 package org.xtreemfs.new_osd;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import org.xtreemfs.common.HeartbeatThread;
@@ -63,8 +67,8 @@ import org.xtreemfs.new_osd.stages.StorageStage;
 import org.xtreemfs.new_osd.storage.HashStorageLayout;
 import org.xtreemfs.new_osd.storage.MetadataCache;
 import org.xtreemfs.new_osd.storage.StorageLayout;
-import org.xtreemfs.new_osd.storage.Striping;
 import org.xtreemfs.new_osd.client.OSDClient;
+import org.xtreemfs.new_osd.operations.CheckObjectOperation;
 import org.xtreemfs.new_osd.operations.DeleteOperation;
 import org.xtreemfs.new_osd.operations.EventCloseFile;
 import org.xtreemfs.new_osd.operations.InternalGetGmaxOperation;
@@ -79,7 +83,9 @@ import org.xtreemfs.new_osd.striping.UDPMessage;
 import org.xtreemfs.new_osd.striping.UDPReceiverInterface;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
-    
+
+    public final static String VERSION = "1.0.0 (v1.0 RC1)";
+
     protected final Map<Integer,OSDOperation>     operations;
 
     protected final Map<Class,OSDOperation>       internalEvents;
@@ -107,6 +113,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final DeletionStage   delStage;
 
     protected final UDPCommunicator udpCom;
+
+    protected final HttpServer      httpServ;
+    
+    protected final long            startupTime;
+
     
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
         
@@ -221,7 +232,27 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         };
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen,
             config);
-        
+
+        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
+        httpServ.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange httpExchange) throws IOException {
+                byte[] content;
+                try {
+                    content = StatusPage.getStatusPage(OSDRequestDispatcher.this).getBytes("ascii");
+                    httpExchange.sendResponseHeaders(200, content.length);
+                    httpExchange.getResponseBody().write(content);
+                    httpExchange.getResponseBody().close();
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                    httpExchange.sendResponseHeaders(500, 0);
+                }
+
+            }
+        });
+        httpServ.start();
+
+        startupTime = System.currentTimeMillis();
+
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID() + " ready");
     }
@@ -284,6 +315,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
+
+            httpServ.stop(0);
             
             Logging.logMessage(Logging.LEVEL_INFO, this, "OSD and all stages terminated");
             
@@ -374,6 +407,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         });
     }
 
+    int getNumClientConnections() {
+        return rpcServer.getNumConnections();
+    }
+
+    long getPendingRequests() {
+        return rpcServer.getPendingRequests();
+    }
+
     private void initializeOperations() {
         //register all ops
         OSDOperation op = new ReadOperation(this);
@@ -395,6 +436,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(),op);
 
         op = new InternalTruncateOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(),op);
 
         //--internal events here--

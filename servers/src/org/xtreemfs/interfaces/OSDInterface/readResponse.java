@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.OSDInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class readResponse implements Response
+
+public class readResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public readResponse() { returnValue = new org.xtreemfs.interfaces.ObjectData(); }
+    public readResponse() { returnValue = new ObjectData(); }
     public readResponse( ObjectData returnValue ) { this.returnValue = returnValue; }
+    public readResponse( Object from_hash_map ) { returnValue = new ObjectData(); this.deserialize( from_hash_map ); }
+    public readResponse( Object[] from_array ) { returnValue = new ObjectData();this.deserialize( from_array ); }
 
     public ObjectData getReturnValue() { return returnValue; }
     public void setReturnValue( ObjectData returnValue ) { this.returnValue = returnValue; }
 
-    // Object
-    public String toString()
-    {
-        return "readResponse( " + returnValue.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::OSDInterface::readResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        returnValue.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readResponse"; }    
+    public long getTypeId() { return 1; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.returnValue.deserialize( from_hash_map.get( "returnValue" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.returnValue.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        returnValue = new org.xtreemfs.interfaces.ObjectData(); returnValue.deserialize( buf );    
+        returnValue = new ObjectData(); returnValue.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "returnValue", returnValue.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        returnValue.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class readResponse implements Response
         return my_size;
     }
 
-    private ObjectData returnValue;
-    
-
     // Response
-    public int getInterfaceVersion() { return 3; }
-    public int getOperationNumber() { return 1; }    
+    public int getOperationNumber() { return 1; }
+
+
+    private ObjectData returnValue;
 
 }
 

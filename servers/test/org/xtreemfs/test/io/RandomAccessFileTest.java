@@ -26,27 +26,26 @@ package org.xtreemfs.test.io;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
-import org.xtreemfs.common.clients.mrc.MRCClient;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.striping.Location;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.speedy.MultiSpeedy;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.osd.OSD;
-import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.new_osd.OSD;
+import org.xtreemfs.new_osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -54,8 +53,6 @@ public class RandomAccessFileTest extends TestCase {
     RandomAccessFile randomAccessFile;
 
     private MRCRequestDispatcher mrc1;
-
-    private DIRRequestDispatcher dirService;
 
     private MRCConfig mrcCfg1;
 
@@ -73,13 +70,25 @@ public class RandomAccessFileTest extends TestCase {
 
     private TestEnvironment testEnv;
 
+    private final String userID = "test";
+
+    private final List<String> groupIDs;
+
     public RandomAccessFileTest() {
         Logging.start(Logging.LEVEL_TRACE);
+        groupIDs = new ArrayList(1);
+        groupIDs.add("test");
     }
 
     public void setUp() throws Exception {
 
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+
+        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
+        TestEnvironment.Services.MRC_CLIENT,TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER,
+                    TestEnvironment.Services.DIR_SERVICE
+        });
+        testEnv.start();
 
         dsCfg = SetupUtils.createDIRConfig();
 
@@ -94,9 +103,6 @@ public class RandomAccessFileTest extends TestCase {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
 
-        // start the Directory Service
-        dirService = new org.xtreemfs.dir.DIRRequestDispatcher(dsCfg);
-        dirService.startup();
 
         // start the OSDs
         osd1 = new OSD(osdConfig1);
@@ -106,24 +112,25 @@ public class RandomAccessFileTest extends TestCase {
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
 
-        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
-        TestEnvironment.Services.MRC_CLIENT,TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER
-        });
-        testEnv.start();
-
-        String authString = NullAuthProvider.createAuthString("userXY", MRCClient
-                .generateStringList("groupZ"));
-
         volumeName = "testVolume";
 
         // create a volume (no access control)
-        testEnv.getMrcClient().createVolume(mrc1Address, volumeName, authString);
+        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, userID, groupIDs, "",volumeName,
+                Constants.OSD_SELECTION_POLICY_SIMPLE,
+                new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
+                Constants.ACCESS_CONTROL_POLICY_NULL);
+        r.get();
 
         // create some files and directories
-        testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
+        //testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, userID, groupIDs, volumeName + "/myDir", 0);
+        r.get();
 
-        for (int i = 0; i < 10; i++)
-            testEnv.getMrcClient().createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);
+        for (int i = 0; i < 10; i++) {
+            testEnv.getMrcClient().create(mrc1Address, userID, groupIDs, volumeName + "/myDir/test" + i + ".txt", 0);
+            r.get();
+        }
+            //testEnv.getMrcClient().createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);
 
     }
 
@@ -131,16 +138,15 @@ public class RandomAccessFileTest extends TestCase {
         mrc1.shutdown();
         osd1.shutdown();
         osd2.shutdown();
-        dirService.shutdown();
-
-
+        
         testEnv.shutdown();
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
 
     public void testReadAndWrite() throws Exception {
-        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getSpeedy());
+        //randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getSpeedy());
+        randomAccessFile = new RandomAccessFile("rw", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getRpcClient(), userID, groupIDs);
 
         byte[] bytesIn = new byte[(int) (3 * randomAccessFile.getStripeSize() + 2)];
         for (int i = 0; i < 3 * randomAccessFile.getStripeSize() + 2; i++) {
@@ -179,8 +185,9 @@ public class RandomAccessFileTest extends TestCase {
 
     }
 
+    
     public void testReadAndWriteObject() throws Exception {
-        randomAccessFile = new RandomAccessFile("w", mrc1Address, volumeName + "/myDir/test1.txt", testEnv.getSpeedy());
+        randomAccessFile = new RandomAccessFile("rw", mrc1Address, volumeName + "/myDir/test4.txt", testEnv.getRpcClient(), userID, groupIDs);
 
         byte[] bytesIn = new String("Hallo").getBytes();
         int length = bytesIn.length;
@@ -189,7 +196,7 @@ public class RandomAccessFileTest extends TestCase {
 
         ReusableBuffer result = randomAccessFile.readObject(0, 0, length);
         assertEquals(new String(bytesIn), new String(result.array()));
-        int bytesRead = randomAccessFile.readObject(0);
+        int bytesRead = randomAccessFile.checkObject(0l);
         assertEquals(5, bytesRead);
 
         String content = "";
@@ -202,14 +209,14 @@ public class RandomAccessFileTest extends TestCase {
 
         randomAccessFile.write(bytesIn, 0, length);
 
-        int res = randomAccessFile.readObject(0);
+        int res = randomAccessFile.checkObject(0l);
         assertEquals(65536, res);
-        res = randomAccessFile.readObject(1);
+        res = randomAccessFile.checkObject(1l);
         assertEquals(6464, res);
     }
 
     public void testReplicaCreationAndRemoval() throws Exception {
-        randomAccessFile = new RandomAccessFile("cw", mrc1Address, volumeName + "/myDir/test2.txt", testEnv.getSpeedy());
+        //randomAccessFile = new RandomAccessFile("rw", mrc1Address, volumeName + "/myDir/test2.txt", testEnv.getRpcClient(), userID, groupIDs);
 
         // // set file read-only
         // randomAccessFile.setReadOnly(true);
@@ -276,7 +283,7 @@ public class RandomAccessFileTest extends TestCase {
     /**
      * @param osds
      */
-    private boolean findReplicaInLocations(List<ServiceUUID> osds) {
+    /*private boolean findReplicaInLocations(List<ServiceUUID> osds) {
         boolean found = false;
         for (Location loc : randomAccessFile.getLocations()) {
             if (osds.equals(loc.getOSDs())) {
@@ -286,7 +293,7 @@ public class RandomAccessFileTest extends TestCase {
             }
         }
         return found;
-    }
+    }*/
     
     public static void main(String[] args) {
         TestRunner.run(RandomAccessFileTest.class);

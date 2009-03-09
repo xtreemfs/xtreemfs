@@ -1,23 +1,20 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.OSDInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class writeRequest implements Request
+
+public class writeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public writeRequest() { file_id = ""; credentials = new org.xtreemfs.interfaces.FileCredentials(); object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; data = new org.xtreemfs.interfaces.ObjectData(); }
+    public writeRequest() { file_id = ""; credentials = new FileCredentials(); object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; data = new ObjectData(); }
     public writeRequest( String file_id, FileCredentials credentials, long object_number, long object_version, int offset, long lease_timeout, ObjectData data ) { this.file_id = file_id; this.credentials = credentials; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.lease_timeout = lease_timeout; this.data = data; }
+    public writeRequest( Object from_hash_map ) { file_id = ""; credentials = new FileCredentials(); object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; data = new ObjectData(); this.deserialize( from_hash_map ); }
+    public writeRequest( Object[] from_array ) { file_id = ""; credentials = new FileCredentials(); object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; data = new ObjectData();this.deserialize( from_array ); }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
@@ -34,34 +31,70 @@ public class writeRequest implements Request
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
 
-    // Object
-    public String toString()
-    {
-        return "writeRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Long.toString( lease_timeout ) + ", " + data.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::OSDInterface::writeRequest"; }    
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }    
+    public long getTypeId() { return 4; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.file_id = ( String )from_hash_map.get( "file_id" );
+        this.credentials.deserialize( from_hash_map.get( "credentials" ) );
+        this.object_number = ( ( Long )from_hash_map.get( "object_number" ) ).longValue();
+        this.object_version = ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
+        this.offset = ( ( Integer )from_hash_map.get( "offset" ) ).intValue();
+        this.lease_timeout = ( ( Long )from_hash_map.get( "lease_timeout" ) ).longValue();
+        this.data.deserialize( from_hash_map.get( "data" ) );
+    }
     
-    public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(file_id,writer); }
+    public void deserialize( Object[] from_array )
+    {
+        this.file_id = ( String )from_array[0];
+        this.credentials.deserialize( from_array[1] );
+        this.object_number = ( ( Long )from_array[2] ).longValue();
+        this.object_version = ( ( Long )from_array[3] ).longValue();
+        this.offset = ( ( Integer )from_array[4] ).intValue();
+        this.lease_timeout = ( ( Long )from_array[5] ).longValue();
+        this.data.deserialize( from_array[6] );        
+    }
+
+    public void deserialize( ReusableBuffer buf )
+    {
+        file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        credentials = new FileCredentials(); credentials.deserialize( buf );
+        object_number = buf.getLong();
+        object_version = buf.getLong();
+        offset = buf.getInt();
+        lease_timeout = buf.getLong();
+        data = new ObjectData(); data.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "file_id", file_id );
+        to_hash_map.put( "credentials", credentials.serialize() );
+        to_hash_map.put( "object_number", new Long( object_number ) );
+        to_hash_map.put( "object_version", new Long( object_version ) );
+        to_hash_map.put( "offset", new Integer( offset ) );
+        to_hash_map.put( "lease_timeout", new Long( lease_timeout ) );
+        to_hash_map.put( "data", data.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( file_id, writer );
         credentials.serialize( writer );
         writer.putLong( object_number );
         writer.putLong( object_version );
         writer.putInt( offset );
         writer.putLong( lease_timeout );
-        data.serialize( writer );        
-    }
-    
-    public void deserialize( ReusableBuffer buf )
-    {
-        { file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        credentials = new org.xtreemfs.interfaces.FileCredentials(); credentials.deserialize( buf );
-        object_number = buf.getLong();
-        object_version = buf.getLong();
-        offset = buf.getInt();
-        lease_timeout = buf.getLong();
-        data = new org.xtreemfs.interfaces.ObjectData(); data.deserialize( buf );    
+        data.serialize( writer );
     }
     
     public int calculateSize()
@@ -77,6 +110,11 @@ public class writeRequest implements Request
         return my_size;
     }
 
+    // Request
+    public int getOperationNumber() { return 4; }
+    public Response createDefaultResponse() { return new writeResponse(); }
+
+
     private String file_id;
     private FileCredentials credentials;
     private long object_number;
@@ -84,12 +122,6 @@ public class writeRequest implements Request
     private int offset;
     private long lease_timeout;
     private ObjectData data;
-    
-
-    // Request
-    public int getInterfaceVersion() { return 3; }    
-    public int getOperationNumber() { return 4; }
-    public Response createDefaultResponse() { return new writeResponse(); }
 
 }
 

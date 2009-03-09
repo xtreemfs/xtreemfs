@@ -70,14 +70,16 @@ public class DIRTest extends TestCase {
     @Before
     public void setUp() throws Exception {
 
-        dir = new DIRRequestDispatcher(config);
-        dir.startup();
-        dir.waitForStartup();
-
         testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
                     TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT
         });
         testEnv.start();
+
+        dir = new DIRRequestDispatcher(config);
+        dir.startup();
+        dir.waitForStartup();
+
+        
 
         
     }

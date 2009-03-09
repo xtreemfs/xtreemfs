@@ -68,6 +68,8 @@ import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
     LifeCycleListener {
 
+    public final static String VERSION = "1.0.0 (v1.0 RC1)";
+
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
      */
@@ -278,8 +280,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         }
     }
     
-    public int getNumRequests() {
-        return this.numRequests;
+    public long getNumRequests() {
+        return server.getPendingRequests();
     }
     
     public int getNumConnections() {

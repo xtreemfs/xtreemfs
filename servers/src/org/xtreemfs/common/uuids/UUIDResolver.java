@@ -249,7 +249,7 @@ public final class UUIDResolver extends Thread {
     public static void addLocalMapping(String localUUID, int port, boolean useSSL) {
         assert (theInstance != null);
         
-        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "https" : "http"), new InetSocketAddress(
+        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "oncrpcs" : "oncrpc"), new InetSocketAddress(
             "localhost", port), Long.MAX_VALUE);
         
         e.setSticky(true);

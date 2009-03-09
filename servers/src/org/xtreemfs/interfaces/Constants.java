@@ -12,6 +12,6 @@ public interface Constants
     public static final int SERVICE_TYPE_MRC = 1;
     public static final int SERVICE_TYPE_OSD = 2;
     public static final int SERVICE_TYPE_VOLUME = 3;
-    public static final String REPL_UPDATE_PC_NONE = "";
-    public static final String REPL_UPDATE_PC_RONLY = "ronly";
+    public static final String REPL_UPDATE_PC_NONE = "%(value)s";
+    public static final String REPL_UPDATE_PC_RONLY = "%(value)s";
 };

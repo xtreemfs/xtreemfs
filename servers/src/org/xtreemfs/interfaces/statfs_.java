@@ -1,22 +1,19 @@
 package org.xtreemfs.interfaces;
 
-import org.xtreemfs.interfaces.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
-   
+
+
 public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
 {
     public statfs_() { bsize = 0; bfree = 0; fsid = ""; namelen = 0; }
     public statfs_( int bsize, long bfree, String fsid, int namelen ) { this.bsize = bsize; this.bfree = bfree; this.fsid = fsid; this.namelen = namelen; }
+    public statfs_( Object from_hash_map ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0; this.deserialize( from_hash_map ); }
+    public statfs_( Object[] from_array ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0;this.deserialize( from_array ); }
 
     public int getBsize() { return bsize; }
     public void setBsize( int bsize ) { this.bsize = bsize; }
@@ -27,28 +24,55 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     public int getNamelen() { return namelen; }
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
-    // Object
-    public String toString()
-    {
-        return "statfs_( " + Integer.toString( bsize ) + ", " + Long.toString( bfree ) + ", " + "\"" + fsid + "\"" + ", " + Integer.toString( namelen ) + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::statfs_"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        writer.putInt( bsize );
-        writer.putLong( bfree );
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(fsid,writer); }
-        writer.putInt( namelen );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::statfs_"; }    
+    public long getTypeId() { return 0; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.bsize = ( ( Integer )from_hash_map.get( "bsize" ) ).intValue();
+        this.bfree = ( ( Long )from_hash_map.get( "bfree" ) ).longValue();
+        this.fsid = ( String )from_hash_map.get( "fsid" );
+        this.namelen = ( ( Integer )from_hash_map.get( "namelen" ) ).intValue();
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.bsize = ( ( Integer )from_array[0] ).intValue();
+        this.bfree = ( ( Long )from_array[1] ).longValue();
+        this.fsid = ( String )from_array[2];
+        this.namelen = ( ( Integer )from_array[3] ).intValue();        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
         bsize = buf.getInt();
         bfree = buf.getLong();
-        { fsid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        namelen = buf.getInt();    
+        fsid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        namelen = buf.getInt();
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "bsize", new Integer( bsize ) );
+        to_hash_map.put( "bfree", new Long( bfree ) );
+        to_hash_map.put( "fsid", fsid );
+        to_hash_map.put( "namelen", new Integer( namelen ) );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        writer.putInt( bsize );
+        writer.putLong( bfree );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( fsid, writer );
+        writer.putInt( namelen );
     }
     
     public int calculateSize()
@@ -60,6 +84,7 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }
+
 
     private int bsize;
     private long bfree;

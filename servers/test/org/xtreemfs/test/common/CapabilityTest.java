@@ -46,30 +46,15 @@ public class CapabilityTest extends TestCase {
     public void testCapability() throws Exception {
         
         // create and test capability that is valid for an hour
-        Capability cap = new Capability("bla:1", "r", System.currentTimeMillis() / 1000 + 3600, 0,
-            SECRET);
+        Capability cap = new Capability("1254:AB", 1, System.currentTimeMillis()/1000+100, "", 1, SECRET);
         
         assertTrue(cap.isValid());
-        assertEquals(cap.getFileId(), "bla:1");
-        assertEquals(cap.getAccessMode(), "r");
+        assertEquals(cap.getFileId(), "1254:AB");
+        assertEquals(cap.getAccessMode(), 1);
         
-        // create and test a valid capability that is parsed from
-        // a string representation
-        String capAsString = cap.toString();
-        
-        Capability cap2 = new Capability(capAsString, SECRET);
-        assertTrue(cap2.isValid());
-        assertEquals(cap2.getFileId(), "bla:1");
-        assertEquals(cap2.getAccessMode(), "r");
-        
-        // assert that a capability is invalid if the signature is invalid
-        String fakedCap = capAsString.substring(0, capAsString.length() - 35)
-            + "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\"]";
-        Capability cap3 = new Capability(fakedCap, SECRET);
-        assertFalse(cap3.isValid());
         
         // assert that a capability is invalid if it has timed out
-        Capability cap4 = new Capability("bla:2", "w", System.currentTimeMillis() / 1000 - 3600, 0,
+        Capability cap4 = new Capability("bla:2", 1, System.currentTimeMillis() / 1000 - 3600, "", 0,
             SECRET);
         assertFalse(cap4.isValid());
         

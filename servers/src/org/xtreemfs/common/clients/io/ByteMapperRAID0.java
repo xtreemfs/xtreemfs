@@ -76,14 +76,22 @@ class ByteMapperRAID0 implements ByteMapper {
             int bytesToRead = this.stripeSize;
             int objOffset = 0;
 
-            if (obj == firstObject)
+            if (obj == firstObject) {
                 objOffset = offsetInFirstObject;
-            if (obj == lastObject)
-                bytesToRead = bytesInLastObject;
+                bytesToRead = this.stripeSize - objOffset;
+            }
+            if (obj == lastObject) {
+                if (firstObject == lastObject) {
+                    bytesToRead = bytesInLastObject-objOffset;
+                } else {
+                    bytesToRead = bytesInLastObject;
+                }
+            }
 
             assert(bytesToRead > 0);
             assert(objOffset >= 0);
             assert(objOffset < stripeSize);
+            assert(objOffset+bytesToRead <= stripeSize);
 
             ReusableBuffer rb = objectStore.readObject(obj, objOffset, bytesToRead);
             assert(offset+bytesRead <= data.length);
@@ -99,7 +107,9 @@ class ByteMapperRAID0 implements ByteMapper {
                 BufferPool.free(rb);
                 break;
             }
-            rb.get(data, offset+bytesRead, bytesToRead);
+            //can get less data then requested!
+            rb.get(data, offset+bytesRead, rb.remaining());
+            
             bytesRead += rb.capacity();
             BufferPool.free(rb);
         }

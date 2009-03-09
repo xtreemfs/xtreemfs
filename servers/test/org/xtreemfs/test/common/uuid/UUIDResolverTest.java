@@ -7,11 +7,7 @@ package org.xtreemfs.test.common.uuid;
 
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map;
 import junit.framework.TestCase;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
@@ -20,12 +16,9 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -47,7 +40,7 @@ public class UUIDResolverTest extends TestCase {
     private TestEnvironment   testEnv;
 
 
-    public UUIDResolverTest(String testName) throws JSONException {
+    public UUIDResolverTest(String testName) {
         super(testName);
     }
 

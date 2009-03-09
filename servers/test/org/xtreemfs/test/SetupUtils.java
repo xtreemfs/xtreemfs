@@ -65,6 +65,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd0");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33637");
+        props.setProperty("http_port", "30637");
         // props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
@@ -91,6 +92,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd1");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33640");
+        props.setProperty("http_port", "30640");
         // props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
@@ -117,6 +119,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd2");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33641");
+        props.setProperty("http_port", "30641");
         props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
@@ -143,6 +146,7 @@ public class SetupUtils {
         props.setProperty("object_dir", TEST_DIR + "/osd3");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33642");
+        props.setProperty("http_port", "30642");
         props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
@@ -173,6 +177,7 @@ public class SetupUtils {
             props.setProperty("object_dir", TEST_DIR + "/osd" + i);
             props.setProperty("debug_level", "" + DEBUG_LEVEL);
             props.setProperty("listen.port", "" + startPort);
+            props.setProperty("http_port", "" + (startPort-3000));
             props.setProperty("listen.address", "localhost");
             props.setProperty("local_clock_renewal", "50");
             props.setProperty("remote_time_sync", "60000");

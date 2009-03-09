@@ -28,11 +28,10 @@ import java.io.IOException;
 import junit.framework.TestCase;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.HttpErrorException;
 import org.xtreemfs.common.clients.io.ByteMapper;
 import org.xtreemfs.common.clients.io.ByteMapperFactory;
 import org.xtreemfs.common.clients.io.ObjectStore;
-import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.interfaces.Constants;
 
 public class ByteMapperTest extends TestCase{
     
@@ -47,7 +46,7 @@ public class ByteMapperTest extends TestCase{
 
     public void testRead() throws Exception{
 
-        ByteMapper byteMapperRAID0 = ByteMapperFactory.createByteMapper("RADI0", 2, new TestObjectStore());
+        ByteMapper byteMapperRAID0 = ByteMapperFactory.createByteMapper(Constants.STRIPING_POLICY_RAID0, 2, new TestObjectStore());
         int offset = 0;
         int bytesToRead = 6;
         byte[] resultBuffer = new byte[bytesToRead];
@@ -72,7 +71,7 @@ public class ByteMapperTest extends TestCase{
             fail("the resultBuffer is to small");
         }catch(Exception e){}
         
-        byteMapperRAID0 = ByteMapperFactory.createByteMapper("RAID0", 2, new EmptyObjectStore());
+        byteMapperRAID0 = ByteMapperFactory.createByteMapper(Constants.STRIPING_POLICY_RAID0, 2, new EmptyObjectStore());
         bytesToRead = 1;
         offset = 0;
         resultBuffer = new byte[bytesToRead];
@@ -81,7 +80,7 @@ public class ByteMapperTest extends TestCase{
     }
     
     public void testWrite() throws Exception{
-        ByteMapper byteMapperRAID0 = ByteMapperFactory.createByteMapper("RADI0", 2, new TestObjectStore());
+        ByteMapper byteMapperRAID0 = ByteMapperFactory.createByteMapper(Constants.STRIPING_POLICY_RAID0, 2, new TestObjectStore());
         byte[] writeFromBuffer = "Hello World".getBytes();
         int offset = 0;
         int bytesToWrite = 6;
@@ -101,8 +100,8 @@ public class ByteMapperTest extends TestCase{
             return ReusableBuffer.wrap(content.substring((int) offset, (int) (offset+length)).getBytes());
         }
         
-        public void writeObject(long objectNo, long offset, ReusableBuffer buffer) throws IOException,
-        JSONException, InterruptedException, HttpErrorException {
+        public void writeObject(long objectNo, long offset, ReusableBuffer buffer) throws IOException
+        {
             
         }
     }
@@ -113,7 +112,7 @@ public class ByteMapperTest extends TestCase{
         }
         
         public void writeObject(long objectNo, long offset, ReusableBuffer buffer) throws IOException,
-        JSONException, InterruptedException, HttpErrorException {
+        InterruptedException {
             
         }
     }

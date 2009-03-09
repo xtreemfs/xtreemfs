@@ -46,7 +46,11 @@ public class TestEnvironment {
     public MRCClient getMrcClient() {
         return mrcClient;
     }
-    
+
+    public OSDClient getOSDClient() {
+        return osdClient;
+    }
+
     /**
      * @return the osdClient
      */

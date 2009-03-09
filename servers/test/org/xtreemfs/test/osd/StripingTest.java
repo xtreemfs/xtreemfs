@@ -35,29 +35,34 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.RPCResponse;
-import org.xtreemfs.common.clients.RPCResponseListener;
-import org.xtreemfs.common.clients.osd.OSDClient;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.striping.Location;
-import org.xtreemfs.common.striping.Locations;
-import org.xtreemfs.common.striping.RAID0;
-import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.foundation.pinky.HTTPHeaders;
-import org.xtreemfs.foundation.pinky.HTTPUtils;
-import org.xtreemfs.osd.OSD;
-import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.new_osd.OSD;
+import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.new_osd.client.OSDClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 public class StripingTest extends TestCase {
     private TestEnvironment testEnv;
     
-    static class MRCDummy implements RPCResponseListener {
+    static class MRCDummy implements RPCResponseAvailableListener<OSDWriteResponse> {
         
         private long   issuedEpoch;
         
@@ -74,36 +79,34 @@ public class StripingTest extends TestCase {
         Capability open(char mode) {
             if (mode == 't')
                 issuedEpoch++;
-            
-            return new Capability(FILE_ID, "DebugCapability", issuedEpoch, capSecret);
+
+            return new Capability(FILE_ID, 0, System.currentTimeMillis(), "", (int)issuedEpoch, capSecret);
         }
         
         synchronized long getFileSize() {
             return fileSize;
         }
-        
-        public synchronized void responseAvailable(RPCResponse response) {
-            
+
+        @Override
+        public void responseAvailable(RPCResponse<OSDWriteResponse> r) {
             try {
-                
-                String newFileSizeString = response.getSpeedyRequest().responseHeaders
-                        .getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-                
-                if (newFileSizeString != null) {
-                    
-                    StringTokenizer st = new StringTokenizer(newFileSizeString, "[],");
-                    long newFileSize = Long.parseLong(st.nextToken());
-                    long epochNo = Long.parseLong(st.nextToken());
-                    
+
+                OSDWriteResponse resp = r.get();
+
+                if (resp.getNew_file_size().size() > 0) {
+
+                    final long newFileSize = resp.getNew_file_size().get(0).getSize_in_bytes();
+                    final long epochNo = resp.getNew_file_size().get(0).getTruncate_epoch();
+
                     if (epochNo < epoch)
                         return;
-                    
+
                     if (epochNo > epoch || newFileSize > fileSize) {
                         epoch = epochNo;
                         fileSize = newFileSize;
                     }
                 }
-                
+
             } catch (Exception exc) {
                 exc.printStackTrace();
                 System.exit(1);
@@ -122,8 +125,6 @@ public class StripingTest extends TestCase {
     
     private static final byte[] ZEROS      = new byte[SIZE];
     
-    private final Capability    cap;
-    
     private final DIRConfig     dirConfig;
     
     private final OSDConfig     osdCfg1;
@@ -140,9 +141,9 @@ public class StripingTest extends TestCase {
     
     private OSDClient           client;
     
-    private Locations           loc;
-    
-    private StripingPolicy      sp;
+    private StripingPolicyImpl      sp;
+
+    private XLocSet                 xloc;
     
     
     /** Creates a new instance of StripingTest */
@@ -155,10 +156,10 @@ public class StripingTest extends TestCase {
         osdCfg3 = SetupUtils.createOSD3Config();
         
         capSecret = osdCfg1.getCapabilitySecret();
-        cap = new Capability(FILE_ID, "DebugCapability", 0, capSecret);
-        
-        sp = new RAID0(KB, 3);
+
+        sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, KB, 3), 0, new StringSet()));
         dirConfig = SetupUtils.createDIRConfig();
+
     }
     
     protected void setUp() throws Exception {
@@ -184,22 +185,24 @@ public class StripingTest extends TestCase {
         osdServer.add(new OSD(osdCfg2));
         osdServer.add(new OSD(osdCfg3));
         
-        client = testEnv.getOsdClient();
+        client = testEnv.getOSDClient();
+
+        ReplicaSet replicas = new ReplicaSet();
+        StringSet osdset = new StringSet();
+        osdset.add(SetupUtils.getOSD1UUID().toString());
+        osdset.add(SetupUtils.getOSD2UUID().toString());
+        osdset.add(SetupUtils.getOSD3UUID().toString());
+        Replica r = new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, KB, 3), 0, osdset);
+        replicas.add(r);
+        xloc = new XLocSet(replicas, 1, "",0);
         
-        List<Location> locations = new ArrayList<Location>(1);
-        
-        List<ServiceUUID> osd = new ArrayList<ServiceUUID>(3);
-        for (ServiceUUID oid : osdIDs)
-            osd.add(oid);
-        locations.add(new Location(sp, osd));
-        loc = new Locations(locations);
-        
+    }
+
+    private Capability getCap(String fname) {
+        return new Capability(fname, 0, System.currentTimeMillis(), "", 0, capSecret);
     }
     
     protected void tearDown() throws Exception {
-        
-        client.shutdown();
-        client.waitForShutdown();
         
         testEnv.shutdown();
 
@@ -210,9 +213,7 @@ public class StripingTest extends TestCase {
     
     /* TODO: test delete/truncate epochs! */
 
-    /**
-     * tests reading and writing of striped files
-     */
+    
     public void testPUTandGET() throws Exception {
         
         final int numObjs = 5;
@@ -221,89 +222,119 @@ public class StripingTest extends TestCase {
         for (int ts : testSizes) {
             
             ReusableBuffer data = SetupUtils.generateData(ts);
+            data.flip();
             String file = "1:1" + ts;
+            final FileCredentials fcred = new FileCredentials(xloc, getCap(file).getXCap());
             
             for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
                 
                 // write an object with the given test size
-                RPCResponse resp = client.put(osdIDs.get(osdIndex).getAddress(), loc, cap, file, i,
-                    data);
-                resp.waitForResponse();
                 
-                String fileSizeHeader = resp.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-                String fileSizeString = fileSizeHeader.substring(1, fileSizeHeader.indexOf(','));
-                assertEquals(i * SIZE + ts, Integer.parseInt(fileSizeString));
-                resp.freeBuffers();
+                ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+                RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
+                        file, fcred, i, 0, 0, 0, objdata);
+                OSDWriteResponse resp = r.get();
+                r.freeBuffers();
+                assertEquals(1,resp.getNew_file_size().size());
+                assertEquals(i * SIZE + ts, resp.getNew_file_size().get(0).getSize_in_bytes());
                 
+
                 // read and check the previously written object
-                resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, file, i);
-                assertEquals(HTTPUtils.SC_OKAY, resp.getStatusCode());
-                checkResponse(data.array(), resp);
-                resp.freeBuffers();
+
+                RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), file, fcred, i, 0, 0, data.capacity());
+                ObjectData result = r2.get();
+                checkResponse(data.array(), result);
+                r2.freeBuffers();
+                BufferPool.free(result.getData());
             }
         }
     }
     
     public void testIntermediateHoles() throws Exception {
-        
+
+        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+
         final ReusableBuffer data = SetupUtils.generateData(3);
         
         // write the nineth object, check the file size
         int obj = 8;
-        RPCResponse response = client.put(osdIDs.get(obj % osdIDs.size()).getAddress(), loc, cap,
-            FILE_ID, obj, data);
-        assertEquals("[" + (obj * SIZE + data.limit()) + ",0]", response.getHeaders().getHeader(
-            HTTPHeaders.HDR_XNEWFILESIZE));
-        response.freeBuffers();
+        ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
+                FILE_ID, fcred, obj, 0, 0, 0, objdata);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(obj * SIZE + data.limit(), resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // write the fifth object, check the file size
         obj = 5;
-        response = client.put(osdIDs.get(obj % osdIDs.size()).getAddress(), loc, cap, FILE_ID, obj, data);
-        
-        // file size header may be either null or 4 * size + data.length,
-        // depending on whether the globalmax message was received already
-        String xNewFileSize = response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE);
-        assertTrue(xNewFileSize == null || xNewFileSize.equals((obj * SIZE + data.limit()) + ""));
-        response.freeBuffers();
+
+        objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
+                FILE_ID, fcred, obj, 0, 0, 0, objdata);
+        resp = r.get();
+        r.freeBuffers();
+        assertTrue((resp.getNew_file_size().size() == 0)
+                || (resp.getNew_file_size().size() == 1)
+                && (obj * SIZE + data.limit() == resp.getNew_file_size().get(0).getSize_in_bytes()));
+
         
         // check whether the first object consists of zeros
         obj = 0;
-        response = client.get(osdIDs.get(obj % osdIDs.size()).getAddress(), loc, cap, FILE_ID, obj);
-        checkResponse(ZEROS, response);
-        response.freeBuffers();
+        RPCResponse<ObjectData> r2 = client.read(osdIDs.get(obj % osdIDs.size()).getAddress(), FILE_ID, fcred, obj, 0, 0, data.capacity());
+        ObjectData result = r2.get();
+        //either padding data or all zeros
+        if (result.getZero_padding() == 0)
+            checkResponse(ZEROS, result);
+        else
+            assertEquals(data.capacity(),result.getZero_padding());
+        
+        r2.freeBuffers();
+        BufferPool.free(result.getData());
         
         // write the first object, check the file size header (must be null)
-        response = client.put(osdIDs.get(obj % osdIDs.size()).getAddress(), loc, cap, FILE_ID, obj, data);
-        assertNull(response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-        response.freeBuffers();
+        objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
+                FILE_ID, fcred, obj, 0, 0, 0, objdata);
+        resp = r.get();
+        r.freeBuffers();
+        assertEquals(0,resp.getNew_file_size().size());
     }
     
+    
     public void testWriteExtend() throws Exception {
-        
+
+        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+
         final ReusableBuffer data = SetupUtils.generateData(3);
         final byte[] paddedData = new byte[SIZE];
         System.arraycopy(data.array(), 0, paddedData, 0, data.limit());
         
         // write first object
-        RPCResponse response = client.put(osdIDs.get(0).getAddress(), loc, cap, FILE_ID, 0, data);
-        response.waitForResponse();
-        response.freeBuffers();
+        ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(0).getAddress(),
+                FILE_ID, fcred, 0, 0, 0, 0, objdata);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
         
         // write second object
-        response = client.put(osdIDs.get(1).getAddress(), loc, cap, FILE_ID, 1, data);
-        response.waitForResponse();
-        response.freeBuffers();
+        objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        r = client.write(osdIDs.get(1).getAddress(),
+                FILE_ID, fcred, 1, 0, 0, 0, objdata);
+        resp = r.get();
+        r.freeBuffers();
         
         // read first object
-        response = client.get(osdIDs.get(0).getAddress(), loc, cap, FILE_ID, 0);
-        response.waitForResponse();
-        response.freeBuffers();
+
+        RPCResponse<ObjectData> r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
+        ObjectData result = r2.get();
+        //either padding data or all zeros
+        assertNotNull(result.getData());
+        assertEquals(3,result.getData().capacity());
+        assertEquals(SIZE-3,result.getZero_padding());
+        r2.freeBuffers();
+        BufferPool.free(result.getData());
         
-        // check whether the first object consists of zeros, except for the
-        // first character
-        response = client.get(osdIDs.get(0).getAddress(), loc, cap, FILE_ID, 0);
-        checkResponse(paddedData, response);
-        response.freeBuffers();
     }
     
     /**
@@ -312,147 +343,186 @@ public class StripingTest extends TestCase {
     public void testTruncate() throws Exception {
         
         ReusableBuffer data = SetupUtils.generateData(SIZE);
-        
+
+        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+
         // -------------------------------
         // create a file with five objects
         // -------------------------------
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            
-            RPCResponse tmp = client.put(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i, data);
-            tmp.waitForResponse();
-            tmp.freeBuffers();
+            ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+            RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
+                    FILE_ID, fcred, i, 0, 0, 0, objdata);
+            OSDWriteResponse resp = r.get();
+            r.freeBuffers();
         }
         
         // ----------------------------------------------
         // shrink the file to a length of one full object
         // ----------------------------------------------
         
-        Capability truncateCap1 = new Capability(FILE_ID, "DebugCapability", 1, capSecret);
-        
-        RPCResponse resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap1, FILE_ID,
-            SIZE);
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(1);
+
+        RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, SIZE);
+        OSDWriteResponse resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(SIZE, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
             
             // try to read the object
-            resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i);
+            RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+            ObjectData result = r2.get();
+            r2.freeBuffers();
             
             // the first object must exist, all other ones must have been
             // deleted
             if (i == 0)
-                checkResponse(data.array(), resp);
+                checkResponse(data.array(), result);
             else
-                checkResponse(null, resp);
+                checkResponse(null, result);
             
-            resp.freeBuffers();
+            BufferPool.free(result.getData());
         }
         
         // -------------------------------------------------
         // extend the file to a length of eight full objects
         // -------------------------------------------------
-        Capability truncateCap2 = new Capability(FILE_ID, "DebugCapability", 2, capSecret);
-        
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap2, FILE_ID, SIZE * 8);
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(2);
+
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, SIZE*8);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(SIZE*8, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 8; i++, osdIndex = i % osdIDs.size()) {
             
             // try to read the object
-            resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i);
+            RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+            ObjectData result = r2.get();
+            r2.freeBuffers();
             
             // the first object must contain data, all other ones must contain
             // zeros
             if (i == 0)
-                checkResponse(data.array(), resp);
-            else
-                checkResponse(ZEROS, resp);
+                checkResponse(data.array(), result);
+            else {
+                if (result.getData().capacity() == 0) {
+                    assertEquals(SIZE,result.getZero_padding());
+                } else {
+                    checkResponse(ZEROS, result);
+                }
+                
+            }
             
-            resp.freeBuffers();
+            BufferPool.free(result.getData());
         }
         
         // ------------------------------------------
         // shrink the file to a length of 3.5 objects
         // ------------------------------------------
-        Capability truncateCap3 = new Capability(FILE_ID, "DebugCapability", 3, capSecret);
-        
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap3, FILE_ID,
-            (long) (SIZE * 3.5f));
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(3);
+        final long size3p5 = (long) (SIZE * 3.5f);
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, size3p5);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(size3p5, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
             
             // try to read the object
-            resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i);
+            RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+            ObjectData result = r2.get();
+            r2.freeBuffers();
             
             // the first object must contain data, all other ones must contain
             // zeros, where the last one must only be half an object size
             if (i == 0)
-                checkResponse(data.array(), resp);
+                checkResponse(data.array(), result);
             else if (i == 3)
-                checkResponse(ZEROS_HALF, resp);
-            else if (i >= 4)
-                checkResponse(null, resp);
-            else
-                checkResponse(ZEROS, resp);
+                checkResponse(ZEROS_HALF, result);
+            else if (i >= 4) {
+                assertEquals(0,result.getZero_padding());
+                assertEquals(0,result.getData().capacity());
+            } else {
+                if (result.getData().capacity() == 0) {
+                    assertEquals(SIZE,result.getZero_padding());
+                } else {
+                    checkResponse(ZEROS, result);
+                }
+            }
             
-            resp.freeBuffers();
+            BufferPool.free(result.getData());
         }
         
         // --------------------------------------------------
         // truncate the file to the same length it had before
         // --------------------------------------------------
-        Capability truncateCap4 = new Capability(FILE_ID, "DebugCapability", 4, capSecret);
-        
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap4, FILE_ID,
-            (long) (SIZE * 3.5f));
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(4);
+
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, size3p5);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(size3p5, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            
+
             // try to read the object
-            resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i);
-            
+            RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+            ObjectData result = r2.get();
+            r2.freeBuffers();
+
             // the first object must contain data, all other ones must contain
             // zeros, where the last one must only be half an object size
             if (i == 0)
-                checkResponse(data.array(), resp);
+                checkResponse(data.array(), result);
             else if (i == 3)
-                checkResponse(ZEROS_HALF, resp);
-            else if (i >= 4)
-                checkResponse(null, resp);
-            else
-                checkResponse(ZEROS, resp);
-            
-            resp.freeBuffers();
+                checkResponse(ZEROS_HALF, result);
+            else if (i >= 4) {
+                assertEquals(0,result.getZero_padding());
+                assertEquals(0,result.getData().capacity());
+            } else {
+                if (result.getData().capacity() == 0) {
+                    assertEquals(SIZE,result.getZero_padding());
+                } else {
+                    checkResponse(ZEROS, result);
+                }
+            }
+
+            BufferPool.free(result.getData());
         }
         
         // --------------------------------
         // truncate the file to zero length
         // --------------------------------
-        Capability truncateCap5 = new Capability(FILE_ID, "DebugCapability", 5, capSecret);
-        
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap5, FILE_ID, 0);
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(5);
+
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(0, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
             
             // try to read the object
-            resp = client.get(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i);
-            
-            // none of the objects must contain data
-            checkResponse(null, resp);
-            resp.freeBuffers();
+            RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+            ObjectData result = r2.get();
+            r2.freeBuffers();
+
+            assertEquals(0,result.getZero_padding());
+            assertEquals(0,result.getData().capacity());
+
+            BufferPool.free(result.getData());
         }
         
         data = SetupUtils.generateData(5);
@@ -460,49 +530,63 @@ public class StripingTest extends TestCase {
         // ----------------------------------
         // write new data to the first object
         // ----------------------------------
-        resp = client.put(osdIDs.get(0).getAddress(), loc, truncateCap5, FILE_ID, 0, data);
-        resp.waitForResponse();
-        resp.freeBuffers();
+
+        ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+        rt = client.write(osdIDs.get(0).getAddress(),
+                FILE_ID, fcred, 0, 0, 0, 0, objdata);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(5, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // ----------------------------------------------
         // extend the file to a length of one full object
         // ----------------------------------------------
-        Capability truncateCap6 = new Capability(FILE_ID, "DebugCapability", 6, capSecret);
+        fcred.getXcap().setTruncate_epoch(6);
+
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, SIZE);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(SIZE, resp.getNew_file_size().get(0).getSize_in_bytes());
         
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap6, FILE_ID, SIZE);
-        resp.waitForResponse();
-        resp.freeBuffers();
         
         // try to read the object
-        resp = client.get(osdIDs.get(0).getAddress(), loc, cap, FILE_ID, 0);
+        RPCResponse<ObjectData> r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
+        ObjectData result = r2.get();
+        r2.freeBuffers();
         
         // the object must contain data plus padding zeros
         
         final byte[] dataWithZeros = new byte[SIZE];
         System.arraycopy(data.array(), 0, dataWithZeros, 0, data.limit());
         
-        checkResponse(dataWithZeros, resp);
-        resp.freeBuffers();
+        checkResponse(dataWithZeros, result);
+        BufferPool.free(result.getData());
         
         // ---------------------------------------------
         // shrink the file to a length of half an object
         // ---------------------------------------------
-        Capability truncateCap7 = new Capability(FILE_ID, "DebugCapability", 7, capSecret);
-        
-        resp = client.truncate(osdIDs.get(0).getAddress(), loc, truncateCap7, FILE_ID, SIZE / 2);
-        resp.waitForResponse();
-        resp.freeBuffers();
+        fcred.getXcap().setTruncate_epoch(7);
+
+        rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, SIZE/2);
+        resp = rt.get();
+        rt.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(SIZE/2, resp.getNew_file_size().get(0).getSize_in_bytes());
         
         // try to read the object
-        resp = client.get(osdIDs.get(0).getAddress(), loc, cap, FILE_ID, 0);
+        r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
+        result = r2.get();
+        r2.freeBuffers();
         
         // the object must contain data plus padding zeros
         
         final byte[] dataWithHalfZeros = new byte[SIZE / 2];
         System.arraycopy(data.array(), 0, dataWithHalfZeros, 0, data.limit());
         
-        checkResponse(dataWithHalfZeros, resp);
-        resp.freeBuffers();
+        checkResponse(dataWithHalfZeros, result);
+        BufferPool.free(result.getData());
     }
     
     public void testInterleavedWriteAndTruncate() throws Exception {
@@ -513,6 +597,9 @@ public class StripingTest extends TestCase {
         final int numWrittenObjs = 5;
         
         final MRCDummy mrcDummy = new MRCDummy(capSecret);
+
+        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+
         final List<RPCResponse> responses = new LinkedList<RPCResponse>();
         
         for (int l = 0; l < numIterations; l++) {
@@ -522,64 +609,63 @@ public class StripingTest extends TestCase {
             // randomly write 'numWrittenObjs' objects
             for (int i = 0; i < numWrittenObjs; i++) {
                 
-                int objId = (int) (Math.random() * maxObject);
-                int osdIndex = objId % osdIDs.size();
+                final int objId = (int) (Math.random() * maxObject);
+                final int osdIndex = objId % osdIDs.size();
                 
                 // write an object with a random amount of bytes
-                int size = (int) ((SIZE - 1) * Math.random()) + 1;
-                RPCResponse resp = client.put(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID,
-                    objId, SetupUtils.generateData(size));
-                responses.add(resp);
+                final int size = (int) ((SIZE - 1) * Math.random()) + 1;
+                ObjectData objdata = new ObjectData("", 0, false, SetupUtils.generateData(size));
+                RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
+                        FILE_ID, fcred, objId, 0, 0, 0, objdata);
+                responses.add(r);
                 
                 // update the file size when the response is received
-                resp.setResponseListener(mrcDummy);
+                r.registerListener(mrcDummy);
             }
-            
-            cap = mrcDummy.open('t');
-            
-            // truncate the file
-            long newSize = (long) (Math.random() * maxSize);
-            RPCResponse resp = client.truncate(osdIDs.get(0).getAddress(), loc, cap, FILE_ID,
-                newSize);
-            resp.setResponseListener(mrcDummy);
-            resp.waitForResponse();
-            resp.freeBuffers();
             
             // wait until all write requests have been completed, i.e. all file
             // size updates have been performed
             for (RPCResponse r : responses) {
-                r.waitForResponse();
+                r.waitForResult();
                 r.freeBuffers();
             }
             responses.clear();
+
+            fcred.setXcap(mrcDummy.open('t').getXCap());
+
+            // truncate the file
+            long newSize = (long) (Math.random() * maxSize);
+            RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, newSize);
+            rt.registerListener(mrcDummy);
+            rt.waitForResult();
+            rt.freeBuffers();
             
             long fileSize = mrcDummy.getFileSize();
             
             // read the previously truncated objects, check size
             for (int i = 0; i < maxObject; i++) {
-                resp = client.get(osdIDs.get(i % osdIDs.size()).getAddress(), loc, cap, FILE_ID, i);
-                resp.waitForResponse();
+                RPCResponse<ObjectData> r2 = client.read(osdIDs.get(i % osdIDs.size()).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
+                ObjectData result = r2.get();
+                r2.freeBuffers();
                 
                 // check inner objects - should be full
                 if (i < fileSize / SIZE)
-                    assertEquals(SIZE + "", resp.getHeaders().getHeader(
-                        HTTPHeaders.HDR_CONTENT_LENGTH));
+                    assertEquals(SIZE,result.getZero_padding()+result.getData().capacity());
                 
                 // check last object - should either be an EOF (null) or partial
                 // object
                 else if (i == fileSize / SIZE) {
                     if (fileSize % SIZE == 0)
-                        assertEquals(null, resp.getBody());
+                        assertEquals(0,result.getZero_padding()+result.getData().capacity());
                     else
-                        assertEquals((fileSize % SIZE) + "", resp.getHeaders().getHeader(
-                            HTTPHeaders.HDR_CONTENT_LENGTH));
+                        assertEquals(fileSize % SIZE,result.getZero_padding()+result.getData().capacity());
                 }
 
                 // check outer objects - should be EOF (null)
                 else
-                    assertEquals(null, resp.getBody());
+                    assertEquals(0,result.getZero_padding()+result.getData().capacity());
                 
-                resp.freeBuffers();
+                BufferPool.free(result.getData());
             }
             
         }
@@ -592,24 +678,24 @@ public class StripingTest extends TestCase {
     public void testDELETE() throws Exception {
         
         final int numObjs = 5;
-        
+
+        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+
         ReusableBuffer data = SetupUtils.generateData(SIZE);
         
         // create all objects
         for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
-            
-            RPCResponse tmp = client.put(osdIDs.get(osdIndex).getAddress(), loc, cap, FILE_ID, i,
-                data);
-            tmp.waitForResponse();
-            tmp.freeBuffers();
+
+            ObjectData objdata = new ObjectData("", 0, false, data.createViewBuffer());
+            RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
+                    FILE_ID, fcred, i, 0, 0, 0, objdata);
+            r.get();
         }
         
-        Capability deleteCap = new Capability(FILE_ID, "DebugCapability", 1, capSecret);
-        
         // delete the file
-        RPCResponse resp = client.delete(osdIDs.get(0).getAddress(), loc, deleteCap, FILE_ID);
-        resp.waitForResponse();
-        resp.freeBuffers();
+        RPCResponse dr = client.unlink(osdIDs.get(0).getAddress(), FILE_ID, fcred);
+        dr.get();
+        dr.freeBuffers();
     }
     
     public static void main(String[] args) {
@@ -626,17 +712,17 @@ public class StripingTest extends TestCase {
      *            the response
      * @throws Exception
      */
-    private void checkResponse(byte[] data, RPCResponse response) throws Exception {
+    private void checkResponse(byte[] data, ObjectData response) throws Exception {
         
         if (data == null) {
-            if (response.getBody() != null)
-                System.out.println("body (" + response.getBody().capacity() + "): "
-                    + new String(response.getBody().array()));
-            assertNull(response.getBody());
+            if (response.getData() != null)
+                /*System.out.println("body (" + response.getBody().capacity() + "): "
+                    + new String(response.getBody().array()));*/
+            assertEquals(0,response.getData().remaining());
         }
 
         else {
-            byte[] responseData = response.getBody().getData();
+            byte[] responseData = response.getData().array();
             assertEquals(data.length, responseData.length);
             for (int i = 0; i < data.length; i++)
                 assertEquals(data[i], responseData[i]);

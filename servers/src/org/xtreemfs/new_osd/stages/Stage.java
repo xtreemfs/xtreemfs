@@ -132,6 +132,10 @@ public abstract class Stage extends LifeCycleThread {
      */
     protected abstract void processMethod(StageRequest method);
 
+    public static interface NullCallback {
+        public void callback(Exception ex);
+    }
+
     protected static final class StageRequest {
 
         private int                    stageMethod;

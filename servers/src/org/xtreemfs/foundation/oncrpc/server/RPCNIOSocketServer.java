@@ -1,27 +1,26 @@
 /*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
-    This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
-    Grid Operating System, see <http://www.xtreemos.eu> for more details.
-    The XtreemOS project has been developed with the financial support of the
-    European Commission's IST program under contract #FP6-033576.
+This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+Grid Operating System, see <http://www.xtreemos.eu> for more details.
+The XtreemOS project has been developed with the financial support of the
+European Commission's IST program under contract #FP6-033576.
 
-    XtreemFS is free software: you can redistribute it and/or modify it under
-    the terms of the GNU General Public License as published by the Free
-    Software Foundation, either version 2 of the License, or (at your option)
-    any later version.
+XtreemFS is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
 
-    XtreemFS is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+XtreemFS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+You should have received a copy of the GNU General Public License
+along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
-
 package org.xtreemfs.foundation.oncrpc.server;
 
 import java.io.IOException;
@@ -63,7 +62,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * Maximum fragment size to accept. If the size is larger, the
      * connection is closed.
      */
-    public static final int MAX_FRAGMENT_SIZE = 1024*1024*32;
+    public static final int MAX_FRAGMENT_SIZE = 1024 * 1024 * 32;
 
     /**
      * the server socket
@@ -94,6 +93,11 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * Connection count
      */
     private final AtomicInteger numConnections;
+
+    /**
+     * Number of requests received but not answered
+     */
+    private long pendingRequests;
 
     /**
      * Port on which the server listens for incomming connections.
@@ -151,8 +155,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * @param request the request
      */
     public void sendResponse(ONCRPCRecord request) {
-        assert(request.getResponseBuffers() != null);
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"response sent");
+        assert (request.getResponseBuffers() != null);
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "response sent");
         final ClientConnection connection = request.getConnection();
         if (!connection.isConnectionClosed()) {
             synchronized (connection) {
@@ -160,8 +164,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 connection.addPendingResponse(request);
                 if (isEmpty) {
                     SelectionKey key = connection.getChannel().keyFor(selector);
-                    if (key != null)
+                    if (key != null) {
                         key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    }
                 }
             }
             selector.wakeup();
@@ -175,7 +180,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
         notifyStarted();
 
-        Logging.logMessage(Logging.LEVEL_INFO, this,"ONCRPC Srv "+bindPort+" ready");
+        Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Srv " + bindPort + " ready");
 
         try {
             while (!quit) {
@@ -223,12 +228,12 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             selector.close();
             socket.close();
 
-            Logging.logMessage(Logging.LEVEL_INFO, this,"ONCRPC Server "+bindPort+" shutdown complete");
+            Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Server " + bindPort + " shutdown complete");
 
             notifyStopped();
         } catch (Exception thr) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,"ONRPC Server "+bindPort+" CRASHED!");
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,thr);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "ONRPC Server " + bindPort + " CRASHED!");
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, thr);
             notifyCrashed(thr);
         }
 
@@ -243,81 +248,88 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         final ChannelIO channel = con.getChannel();
 
         try {
-            if (con.getOpenRequests().get() > MAX_CLIENT_QUEUE) {
-                key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-                Logging.logMessage(Logging.LEVEL_WARN, this,"client sent too many requests... not accepting new requests: "+con.getChannel().socket().getRemoteSocketAddress());
-                return;
-            }
-            while (true) {
-                final ByteBuffer fragmentHeader = con.getReceiveFragHdr();
-                if (fragmentHeader.hasRemaining()) {
-                    //read fragment header
-                    final int numBytesRead = readData(key, channel, fragmentHeader);
-                    if (numBytesRead == -1) {
-                        //connection closed
-                        closeConnection(key);
+
+            if (!channel.isShutdownInProgress()) {
+                if (channel.doHandshake(key)) {
+
+                    if (con.getOpenRequests().get() > MAX_CLIENT_QUEUE) {
+                        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                        Logging.logMessage(Logging.LEVEL_WARN, this, "client sent too many requests... not accepting new requests: " + con.getChannel().socket().getRemoteSocketAddress());
                         return;
                     }
-                    if (fragmentHeader.hasRemaining()) {
-                        //not enough data...
-                        break;
-                    } else {
-                        //fragment header is complete...
-                        fragmentHeader.position(0);
-                        final int fragmentHeaderInt = fragmentHeader.getInt();
-                        final int fragmentSize = ONCRPCRecordFragmentHeader.getFragmentLength(fragmentHeaderInt);
-                        final boolean lastFragment = ONCRPCRecordFragmentHeader.isLastFragment(fragmentHeaderInt);
-
-                        if ((fragmentSize <= 0) || (fragmentSize >= MAX_FRAGMENT_SIZE)) {
-                            if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, this,"invalid fragment size ("+fragmentSize+") received, closing connection");
+                    while (true) {
+                        final ByteBuffer fragmentHeader = con.getReceiveFragHdr();
+                        if (fragmentHeader.hasRemaining()) {
+                            //read fragment header
+                            final int numBytesRead = readData(key, channel, fragmentHeader);
+                            if (numBytesRead == -1) {
+                                //connection closed
+                                closeConnection(key);
+                                return;
                             }
-                            closeConnection(key);
-                            break;
-                        }
-                        final ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
+                            if (fragmentHeader.hasRemaining()) {
+                                //not enough data...
+                                break;
+                            } else {
+                                //fragment header is complete...
+                                fragmentHeader.position(0);
+                                final int fragmentHeaderInt = fragmentHeader.getInt();
+                                final int fragmentSize = ONCRPCRecordFragmentHeader.getFragmentLength(fragmentHeaderInt);
+                                final boolean lastFragment = ONCRPCRecordFragmentHeader.isLastFragment(fragmentHeaderInt);
 
-                        ONCRPCRecord rq = con.getReceive();
-                        if (rq == null) {
-                            rq = new ONCRPCRecord(this,con);
-                            con.setReceive(rq);
-                        }
-                        rq.addNewRequestFragment(fragment);
-                        rq.setAllFragmentsReceived(lastFragment);
-                    }
-                } else {
-                    final ONCRPCRecord rq = con.getReceive();
-                    final ReusableBuffer fragment = rq.getLastRequestFragment();
+                                if ((fragmentSize <= 0) || (fragmentSize >= MAX_FRAGMENT_SIZE)) {
+                                    if (Logging.isDebug()) {
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid fragment size (" + fragmentSize + ") received, closing connection");
+                                    }
+                                    closeConnection(key);
+                                    break;
+                                }
+                                final ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
 
-                    final int numBytesRead = readData(key, channel, fragment.getBuffer());
-                    if (numBytesRead == -1) {
-                        //connection closed
-                        closeConnection(key);
-                        return;
-                    }
-                    if (fragment.hasRemaining()) {
-                        //not enough data...
-                        break;
-                    } else {
-                        //reset fragment header position to read next fragment
-                        fragmentHeader.position(0);
-                        
-                        if (rq.isAllFragmentsReceived()) {
-                            con.setReceive(null);
-                            //request is complete... send to receiver
-                            if (Logging.tracingEnabled()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, this,rq.toString());
+                                ONCRPCRecord rq = con.getReceive();
+                                if (rq == null) {
+                                    rq = new ONCRPCRecord(this, con);
+                                    con.setReceive(rq);
+                                }
+                                rq.addNewRequestFragment(fragment);
+                                rq.setAllFragmentsReceived(lastFragment);
                             }
-                            con.getOpenRequests().incrementAndGet();
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"request received");
-                            receiveRequest(key,rq,con);
+                        } else {
+                            final ONCRPCRecord rq = con.getReceive();
+                            final ReusableBuffer fragment = rq.getLastRequestFragment();
+
+                            final int numBytesRead = readData(key, channel, fragment.getBuffer());
+                            if (numBytesRead == -1) {
+                                //connection closed
+                                closeConnection(key);
+                                return;
+                            }
+                            if (fragment.hasRemaining()) {
+                                //not enough data...
+                                break;
+                            } else {
+                                //reset fragment header position to read next fragment
+                                fragmentHeader.position(0);
+
+                                if (rq.isAllFragmentsReceived()) {
+                                    con.setReceive(null);
+                                    //request is complete... send to receiver
+                                    if (Logging.tracingEnabled()) {
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, rq.toString());
+                                    }
+                                    con.getOpenRequests().incrementAndGet();
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "request received");
+                                    pendingRequests++;
+                                    receiveRequest(key, rq, con);
+                                }
+                            }
                         }
                     }
                 }
             }
         } catch (ClosedByInterruptException ex) {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to "+con.getChannel().socket().getRemoteSocketAddress()+" closed by remote peer");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
             }
             closeConnection(key);
         } catch (IOException ex) {
@@ -328,7 +340,6 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             closeConnection(key);
         }
     }
-
 
     /**
      * write data to a writeable connection
@@ -339,86 +350,93 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         final ChannelIO channel = con.getChannel();
 
         try {
-            while (true) {
 
-                final ByteBuffer fragmentHeader = con.getSendFragHdr();
+            if (!channel.isShutdownInProgress()) {
+                if (channel.doHandshake(key)) {
 
-                ONCRPCRecord rq = con.getSend();
-                if (rq == null) {
-                    synchronized (con) {
-                        rq = con.getPendingResponses().poll();
+                    while (true) {
+
+                        final ByteBuffer fragmentHeader = con.getSendFragHdr();
+
+                        ONCRPCRecord rq = con.getSend();
                         if (rq == null) {
-                            //no more responses, stop writing...
-                            key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                            break;
-                        }
-                        con.setSend(rq);
-                    }
-                    //create fragment header
-                    fragmentHeader.position(0);
-                    final int fragmentSize = rq.getResponseSize();
-                    final boolean isLastFragment = true;
-                    final int fragmentHeaderInt = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
-                    fragmentHeader.putInt(fragmentHeaderInt);
-                    fragmentHeader.position(0);
-                }
-
-                
-
-                if (fragmentHeader.hasRemaining()) {
-                    final int numBytesWritten = writeData(key, channel, fragmentHeader);
-                    if (numBytesWritten == -1) {
-                        //connection closed
-                        closeConnection(key);
-                        return;
-                    }
-                    if (fragmentHeader.hasRemaining()) {
-                        //not enough data...
-                        break;
-                    }
-                    //finished sending... send fragment data now...
-                } else {
-                    //send fragment data
-                    final ReusableBuffer currentBuf = rq.getCurrentResponseBuffer();
-                    final int numBytesWritten = writeData(key, channel, currentBuf.getBuffer());
-                    if (numBytesWritten == -1) {
-                        //connection closed
-                        closeConnection(key);
-                        return;
-                    }
-                    if (currentBuf.hasRemaining()) {
-                        //not enough data...
-                        break;
-                    }
-                    con.setSendingFragmentHeader(true);
-                    //finished sending fragment
-                    if (rq.isLastResoponseBuffer()) {
-                        //clean up :-) request finished
-                        if (Logging.tracingEnabled()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent response for "+rq);
-                        }
-                        rq.freeBuffers();
-                        con.setSend(null);
-                        int numRq = con.getOpenRequests().decrementAndGet();
-
-                        if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
-                            if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
-                                //read from client again
-                                key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                                Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: "+con.getChannel().socket().getRemoteSocketAddress());
+                            synchronized (con) {
+                                rq = con.getPendingResponses().poll();
+                                if (rq == null) {
+                                    //no more responses, stop writing...
+                                    key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                                    break;
+                                }
+                                con.setSend(rq);
                             }
+                            //create fragment header
+                            fragmentHeader.position(0);
+                            final int fragmentSize = rq.getResponseSize();
+                            final boolean isLastFragment = true;
+                            final int fragmentHeaderInt = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
+                            fragmentHeader.putInt(fragmentHeaderInt);
+                            fragmentHeader.position(0);
                         }
 
-                        continue;
-                    } else {
-                        rq.nextResponseBuffer();
-                    }
 
+
+                        if (fragmentHeader.hasRemaining()) {
+                            final int numBytesWritten = writeData(key, channel, fragmentHeader);
+                            if (numBytesWritten == -1) {
+                                //connection closed
+                                closeConnection(key);
+                                return;
+                            }
+                            if (fragmentHeader.hasRemaining()) {
+                                //not enough data...
+                                break;
+                            }
+                        //finished sending... send fragment data now...
+                        } else {
+                            //send fragment data
+                            final ReusableBuffer currentBuf = rq.getCurrentResponseBuffer();
+                            final int numBytesWritten = writeData(key, channel, currentBuf.getBuffer());
+                            if (numBytesWritten == -1) {
+                                //connection closed
+                                closeConnection(key);
+                                return;
+                            }
+                            if (currentBuf.hasRemaining()) {
+                                //not enough data...
+                                break;
+                            }
+                            con.setSendingFragmentHeader(true);
+                            //finished sending fragment
+                            if (rq.isLastResoponseBuffer()) {
+                                //clean up :-) request finished
+                                pendingRequests--;
+                                if (Logging.tracingEnabled()) {
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent response for " + rq);
+                                }
+                                rq.freeBuffers();
+                                con.setSend(null);
+                                int numRq = con.getOpenRequests().decrementAndGet();
+
+                                if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
+                                    if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
+                                        //read from client again
+                                        key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                                        Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: " + con.getChannel().socket().getRemoteSocketAddress());
+                                    }
+                                }
+
+                                continue;
+                            } else {
+                                rq.nextResponseBuffer();
+                            }
+
+                        }
+                    }
                 }
             }
         } catch (ClosedByInterruptException ex) {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to "+con.getChannel().socket().getRemoteSocketAddress()+" closed by remote peer");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
             }
             closeConnection(key);
         } catch (IOException ex) {
@@ -430,7 +448,6 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         }
     }
 
-
     /**
      * Reads data from the socket, ensures that SSL connection is ready
      * @param key the SelectionKey
@@ -440,27 +457,29 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * @throws java.io.IOException
      */
     public static int readData(SelectionKey key, ChannelIO channel, ByteBuffer buf) throws IOException {
-        if (!channel.isShutdownInProgress()) {
-            if (channel.doHandshake(key)) {
-                return channel.read(buf);
-            } else {
-                return 0;
-            }
-        } else {
-            return 0;
-        }
+        return channel.read(buf);
+    /*if (!channel.isShutdownInProgress()) {
+    if (channel.doHandshake(key)) {
+    return channel.read(buf);
+    } else {
+    return 0;
+    }
+    } else {
+    return 0;
+    }*/
     }
 
     public static int writeData(SelectionKey key, ChannelIO channel, ByteBuffer buf) throws IOException {
-        if (!channel.isShutdownInProgress()) {
-            if (channel.doHandshake(key)) {
-                return channel.write(buf);
-            } else {
-                return 0;
-            }
-        } else {
-            return 0;
-        }
+        return channel.write(buf);
+    /*if (!channel.isShutdownInProgress()) {
+    if (channel.doHandshake(key)) {
+    return channel.write(buf);
+    } else {
+    return 0;
+    }
+    } else {
+    return 0;
+    }*/
     }
 
     /**
@@ -553,5 +572,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
     public int getNumConnections() {
         return this.numConnections.get();
+    }
+
+    public long getPendingRequests() {
+        return this.pendingRequests;
     }
 }

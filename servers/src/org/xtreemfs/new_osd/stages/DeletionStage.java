@@ -47,6 +47,8 @@ public class DeletionStage extends Stage {
 
     private DeleteThread      deletor;
 
+    private long              numFilesDeleted;
+
     public DeletionStage(OSDRequestDispatcher master, MetadataCache cache,
         StorageLayout layout) {
 
@@ -74,6 +76,13 @@ public class DeletionStage extends Stage {
         this.enqueueOperation(STAGEOP_DELETE_OBJECTS, new Object[]{fileId}, request, listener);
     }
 
+    /**
+     * @return the numFilesDeleted
+     */
+    public long getNumFilesDeleted() {
+        return numFilesDeleted;
+    }
+
     public static interface DeleteObjectsCallback {
 
         public void deleteComplete(Exception error);
@@ -85,6 +94,7 @@ public class DeletionStage extends Stage {
         try {
             switch (method.getStageMethod()) {
                 case STAGEOP_DELETE_OBJECTS:
+                    numFilesDeleted++;
                     processDeleteObjects(method);
                     break;
                 default:

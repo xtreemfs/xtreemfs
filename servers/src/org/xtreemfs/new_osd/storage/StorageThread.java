@@ -27,6 +27,7 @@ package org.xtreemfs.new_osd.storage;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -63,11 +64,15 @@ public class StorageThread extends Stage {
 
     public static final int STAGEOP_GET_GMAX = 6;
 
+    public static final int STAGEOP_GET_STATS = 7;
+
     private MetadataCache cache;
 
     private StorageLayout layout;
 
     private OSDRequestDispatcher master;
+
+    private volatile long          numBytesTX, numBytesRX, numObjsTX, numObjsRX;
 
     public StorageThread(int id, OSDRequestDispatcher dispatcher,
             MetadataCache cache, StorageLayout layout) {
@@ -103,11 +108,32 @@ public class StorageThread extends Stage {
                 case STAGEOP_GET_GMAX:
                     processGetGmax(method);
                     break;
+                case STAGEOP_GET_STATS:
+                    processGetStats(method);
+                    break;
             }
 
         } catch (Throwable th) {
             method.sendInternalServerError(th);
         }
+    }
+
+    private void processGetStats(StageRequest rq) {
+        final NullCallback cback = (NullCallback) rq.getCallback();
+        final Map<String,Long> stats = (Map) rq.getArgs()[0];
+
+        Long tmp = stats.get("numBytesTX");
+        stats.put("numBytesTX",getNumBytesTX()+ ( tmp != 0 ? tmp : 0));
+
+        tmp = stats.get("numBytesRX");
+        stats.put("numBytesRX",getNumBytesRX()+ ( tmp != 0 ? tmp : 0));
+
+        tmp = stats.get("numObjsTX");
+        stats.put("numObjsTX",getNumObjsTX()+ ( tmp != 0 ? tmp : 0));
+
+        tmp = stats.get("numObjsRX");
+        stats.put("numObjsRX",getNumObjsRX()+ ( tmp != 0 ? tmp : 0));
+        cback.callback(null);
     }
 
     private void processGmax(StageRequest rq) {
@@ -639,5 +665,33 @@ public class StorageThread extends Stage {
         String checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
         fi.getObjVersions().put(objNo, version);
         fi.getObjChecksums().put(objNo, checksum);
+    }
+
+    /**
+     * @return the numBytesTX
+     */
+    public long getNumBytesTX() {
+        return numBytesTX;
+    }
+
+    /**
+     * @return the numBytesRX
+     */
+    public long getNumBytesRX() {
+        return numBytesRX;
+    }
+
+    /**
+     * @return the numObjsTX
+     */
+    public long getNumObjsTX() {
+        return numObjsTX;
+    }
+
+    /**
+     * @return the numObjsRX
+     */
+    public long getNumObjsRX() {
+        return numObjsRX;
     }
 }

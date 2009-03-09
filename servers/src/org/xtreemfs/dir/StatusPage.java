@@ -18,6 +18,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.ServiceRegistry;
 
@@ -41,7 +42,9 @@ public class StatusPage {
         PINKYQ("<!-- $PINKYQ -->"),
         NUMREQS("<!-- $NUMREQS -->"),
         TIME("<!-- $TIME -->"),
-        TABLEDUMP("<!-- $TABLEDUMP -->");
+        TABLEDUMP("<!-- $TABLEDUMP -->"),
+        PROTOVERSION("<!-- $PROTOVERSION -->"),
+        VERSION("<!-- $VERSION -->");
 
         private String template;
 
@@ -188,9 +191,12 @@ public class StatusPage {
         tmp = tmp.replace(Vars.PORT.toString(), Integer.toString(config.getPort()));
         tmp = tmp.replace(Vars.DEBUG.toString(), Integer.toString(config.getDebugLevel()));
         tmp = tmp.replace(Vars.NUMCON.toString(), Integer.toString(master.getNumConnections()));
-        tmp = tmp.replace(Vars.NUMREQS.toString(), Integer.toString(master.getNumRequests()));
+        tmp = tmp.replace(Vars.NUMREQS.toString(), Long.toString(master.getNumRequests()));
         tmp = tmp.replace(Vars.TIME.toString(), new Date(time).toString() + " (" + time + ")");
         tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
+
+        tmp = tmp.replace(Vars.VERSION.toString(), DIRRequestDispatcher.VERSION);
+        tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRInterface.getVersion()));
 
         return tmp;
 

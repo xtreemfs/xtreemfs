@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.OSDInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class internal_read_localResponse implements Response
+
+public class internal_read_localResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public internal_read_localResponse() { returnValue = new org.xtreemfs.interfaces.InternalReadLocalResponse(); }
+    public internal_read_localResponse() { returnValue = new InternalReadLocalResponse(); }
     public internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
+    public internal_read_localResponse( Object from_hash_map ) { returnValue = new InternalReadLocalResponse(); this.deserialize( from_hash_map ); }
+    public internal_read_localResponse( Object[] from_array ) { returnValue = new InternalReadLocalResponse();this.deserialize( from_array ); }
 
     public InternalReadLocalResponse getReturnValue() { return returnValue; }
     public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
-    // Object
-    public String toString()
-    {
-        return "internal_read_localResponse( " + returnValue.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::OSDInterface::internal_read_localResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        returnValue.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_read_localResponse"; }    
+    public long getTypeId() { return 102; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.returnValue.deserialize( from_hash_map.get( "returnValue" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.returnValue.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        returnValue = new org.xtreemfs.interfaces.InternalReadLocalResponse(); returnValue.deserialize( buf );    
+        returnValue = new InternalReadLocalResponse(); returnValue.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "returnValue", returnValue.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        returnValue.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class internal_read_localResponse implements Response
         return my_size;
     }
 
-    private InternalReadLocalResponse returnValue;
-    
-
     // Response
-    public int getInterfaceVersion() { return 3; }
-    public int getOperationNumber() { return 102; }    
+    public int getOperationNumber() { return 102; }
+
+
+    private InternalReadLocalResponse returnValue;
 
 }
 

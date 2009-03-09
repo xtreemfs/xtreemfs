@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.OSDInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class admin_shutdownRequest implements Request
+
+public class admin_shutdownRequest implements org.xtreemfs.interfaces.utils.Request
 {
     public admin_shutdownRequest() { password = ""; }
     public admin_shutdownRequest( String password ) { this.password = password; }
+    public admin_shutdownRequest( Object from_hash_map ) { password = ""; this.deserialize( from_hash_map ); }
+    public admin_shutdownRequest( Object[] from_array ) { password = "";this.deserialize( from_array ); }
 
     public String getPassword() { return password; }
     public void setPassword( String password ) { this.password = password; }
 
-    // Object
-    public String toString()
-    {
-        return "admin_shutdownRequest( " + "\"" + password + "\"" + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::OSDInterface::admin_shutdownRequest"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(password,writer); }        
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::admin_shutdownRequest"; }    
+    public long getTypeId() { return 50; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.password = ( String )from_hash_map.get( "password" );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.password = ( String )from_array[0];        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        { password = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
+        password = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "password", password );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( password, writer );
     }
     
     public int calculateSize()
@@ -47,13 +62,12 @@ public class admin_shutdownRequest implements Request
         return my_size;
     }
 
-    private String password;
-    
-
     // Request
-    public int getInterfaceVersion() { return 3; }    
     public int getOperationNumber() { return 50; }
     public Response createDefaultResponse() { return new admin_shutdownResponse(); }
+
+
+    private String password;
 
 }
 

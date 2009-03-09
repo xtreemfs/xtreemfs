@@ -36,14 +36,17 @@ import junit.textui.TestRunner;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.striping.RAID0;
-import org.xtreemfs.common.striping.StripingPolicy;
 import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.osd.storage.HashStorageLayout;
-import org.xtreemfs.osd.storage.MetadataCache;
-import org.xtreemfs.osd.storage.SimpleStorageLayout;
-import org.xtreemfs.osd.storage.StorageLayout;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.new_osd.storage.HashStorageLayout;
+import org.xtreemfs.new_osd.storage.MetadataCache;
+import org.xtreemfs.new_osd.storage.ObjectInformation;
+import org.xtreemfs.new_osd.storage.StorageLayout;
 import org.xtreemfs.test.SetupUtils;
 
 /**
@@ -68,11 +71,6 @@ public class StorageLayoutTest extends TestCase {
     protected void tearDown() throws Exception {
     }
 
-    public void testSimpleStorageLayoutBasics() throws Exception {
-        SimpleStorageLayout layout = new SimpleStorageLayout(config, new MetadataCache());
-        basicTests(layout);
-    }
-
     public void testHashStorageLayoutBasics() throws Exception {
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         basicTests(layout);
@@ -84,7 +82,7 @@ public class StorageLayoutTest extends TestCase {
      */
     private void basicTests(StorageLayout layout) throws IOException {
         final String fileId = "ABCDEFG:0001";
-	StripingPolicy sp = new RAID0(64, 1);
+	    StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));//new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
 
@@ -93,19 +91,18 @@ public class StorageLayoutTest extends TestCase {
             data.put((byte) (48 + i));
         }
 
-        layout.writeObject(fileId, 0l, data, 1, 0, null, sp, 0l);
+        layout.writeObject(fileId, 0l, data, 1, 0, null, sp);
         BufferPool.free(data);
 
-        data = layout.readObject(fileId, 0l, 1, null, sp, 0l);
-        assertEquals(64, data.capacity());
+        ObjectInformation oinfo = layout.readObject(fileId, 0l, 1, null, sp);
+        assertEquals(64, oinfo.getData().capacity());
         for (int i = 0; i < 64; i++) {
-            assertEquals((byte) (48 + i), data.get());
+            assertEquals((byte) (48 + i), oinfo.getData().get());
         }
-        BufferPool.free(data);
+        BufferPool.free(oinfo.getData());
 
-        data = layout.readObject(fileId, 1l, 1, null, sp, 0l);
-        assertNull(data);
-        BufferPool.free(data);
+        oinfo = layout.readObject(fileId, 1l, 1, null, sp);
+        assertEquals(ObjectInformation.ObjectStatus.DOES_NOT_EXIST,oinfo.getStatus());
     }
 
     public static void main(String[] args) {

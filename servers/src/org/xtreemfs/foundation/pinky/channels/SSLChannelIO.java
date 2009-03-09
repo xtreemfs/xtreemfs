@@ -1,27 +1,26 @@
 /*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
-    This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
-    Grid Operating System, see <http://www.xtreemos.eu> for more details.
-    The XtreemOS project has been developed with the financial support of the
-    European Commission's IST program under contract #FP6-033576.
+This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+Grid Operating System, see <http://www.xtreemos.eu> for more details.
+The XtreemOS project has been developed with the financial support of the
+European Commission's IST program under contract #FP6-033576.
 
-    XtreemFS is free software: you can redistribute it and/or modify it under
-    the terms of the GNU General Public License as published by the Free
-    Software Foundation, either version 2 of the License, or (at your option)
-    any later version.
+XtreemFS is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
 
-    XtreemFS is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+XtreemFS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-
 package org.xtreemfs.foundation.pinky.channels;
 
 import java.io.IOException;
@@ -47,11 +46,11 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
  * @author clorenz
  */
 public class SSLChannelIO extends ChannelIO {
+
     /**
      * Number of Threads in the ThreadPool which will be used for the time-consuming tasks
      */
     // public static int EXECUTOR_THREADS = 4;
-
     /**
      * used SSLEngine for this channel
      */
@@ -60,7 +59,7 @@ public class SSLChannelIO extends ChannelIO {
     /**
      * contains the read data encrypted by ssl
      */
-    protected ReusableBuffer inNetBuffer;
+    protected ReusableBuffer inNetBuffer,  inReadBuffer;
 
     /**
      * contains the written data encrypted by ssl
@@ -76,7 +75,9 @@ public class SSLChannelIO extends ChannelIO {
      * the last SSLEngine-status
      */
     protected HandshakeStatus handshakeStatus;
+
     protected boolean handshakeComplete;
+
     protected int keyOpsBeforeHandshake = -1;
 
     /**
@@ -99,6 +100,7 @@ public class SSLChannelIO extends ChannelIO {
      */
     // private static ExecutorService executor = null;
     private boolean closed = false;
+
     private boolean shutdownComplete = false;
 
     /**
@@ -134,6 +136,7 @@ public class SSLChannelIO extends ChannelIO {
 
         int netBufSize = sslEngine.getSession().getPacketBufferSize();
         inNetBuffer = BufferPool.allocate(netBufSize);
+        inReadBuffer = BufferPool.allocate(sslEngine.getSession().getApplicationBufferSize());
         outNetBuffer = BufferPool.allocate(netBufSize);
         dummyBuffer = BufferPool.allocate(netBufSize);
 
@@ -142,26 +145,27 @@ public class SSLChannelIO extends ChannelIO {
             // enable only cipher suites without encryption
 
             if (supportedCipherSuitesWithoutEncryption == null) { // runs only first time a SSLChannelIO
-                                                                  // without Encryption is created
+                // without Encryption is created
                 // find all supported cipher suites without symmetric encryption
                 ArrayList<String> cipherSuites = new ArrayList<String>();
                 for (String cipherSuite : sslEngine.getSupportedCipherSuites()) {
-                    if (cipherSuite.contains("WITH_NULL"))
+                    if (cipherSuite.contains("WITH_NULL")) {
                         cipherSuites.add(cipherSuite);
+                    }
                 }
                 supportedCipherSuitesWithoutEncryption = new String[cipherSuites.size()];
-                supportedCipherSuitesWithoutEncryption = cipherSuites
-                        .toArray(supportedCipherSuitesWithoutEncryption);
+                supportedCipherSuitesWithoutEncryption = cipherSuites.toArray(supportedCipherSuitesWithoutEncryption);
             }
             sslEngine.setEnabledCipherSuites(supportedCipherSuitesWithoutEncryption);
-        } else
-            // enable all supported cipher suites
+        } else // enable all supported cipher suites
+        {
             sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
+        }
 
-        // only initialize the first time an SSLChannelIO is created
+    // only initialize the first time an SSLChannelIO is created
         /*
-         * if(executor==null) executor = Executors.newFixedThreadPool(EXECUTOR_THREADS);
-         */
+     * if(executor==null) executor = Executors.newFixedThreadPool(EXECUTOR_THREADS);
+     */
     }
 
     /**
@@ -172,41 +176,53 @@ public class SSLChannelIO extends ChannelIO {
         int returnValue = 0;
         if (!shutdownInProgress) {
             if (handshakeComplete) {
-                if (channel.read(inNetBuffer.getBuffer()) == -1) {
-                    throw new IOException("End of stream has reached.");
-                }
-                inNetBuffer.flip(); // ready for being read
-                while (inNetBuffer.hasRemaining()) {
-                    SSLEngineResult result = sslEngine.unwrap(inNetBuffer.getBuffer(), dst);
+                if (inReadBuffer.remaining() == inReadBuffer.capacity()) {
+                    if (channel.read(inNetBuffer.getBuffer()) == -1) {
+                        throw new IOException("End of stream has reached.");
+                    }
+                    inNetBuffer.flip(); // ready for being read
+                    inDataAvail:
+                    while (inNetBuffer.hasRemaining()) {
+                        SSLEngineResult result = sslEngine.unwrap(inNetBuffer.getBuffer(), inReadBuffer.getBuffer());
 
-                    switch (result.getStatus()) {
-                    case OK: {
-                        returnValue += result.bytesProduced();
-                        // FIXME: if client does't close the connection after receiving close_notify =>
-                        // decomment it
-                        if (sslEngine.isInboundDone()) // received close_notify
-                            close();
-                        break;
+                        switch (result.getStatus()) {
+                            case OK: {
+                                //returnValue += result.bytesProduced();
+                                // FIXME: if client does't close the connection after receiving close_notify =>
+                                // decomment it
+                                if (sslEngine.isInboundDone()) // received close_notify
+                                {
+                                    close();
+                                }
+                                break;
+                            }
+                            case BUFFER_UNDERFLOW: {
+                                // needed more data in inNetBuffer, maybe nexttime
+                                inNetBuffer.compact();
+                                break inDataAvail;
+                                //return returnValue;
+                            }
+                            case BUFFER_OVERFLOW: {
+                                // needed more space in dst
+                                throw new IOException(
+                                        "BufferOverflow in the SSLEngine: Destination-Buffer is too small.");
+                            }
+                            case CLOSED: {
+                                throw new IOException("The SSLEngine is already closed.");
+                            }
+                            default: {
+                                throw new IOException("The SSLEngine is in a undefined state.");
+                            }
+                        }
                     }
-                    case BUFFER_UNDERFLOW: {
-                        // needed more data in inNetBuffer, maybe nexttime
-                        inNetBuffer.compact();
-                        return returnValue;
-                    }
-                    case BUFFER_OVERFLOW: {
-                        // needed more space in dst
-                        throw new IOException(
-                                "BufferOverflow in the SSLEngine: Destination-Buffer is too small.");
-                    }
-                    case CLOSED: {
-                        throw new IOException("The SSLEngine is already closed.");
-                    }
-                    default: {
-                        throw new IOException("The SSLEngine is in a curiuos state.");
-                    }
-                    }
+                    inNetBuffer.compact(); // ready for reading from channel
                 }
-                inNetBuffer.compact(); // ready for reading from channel
+                inReadBuffer.flip();
+                while (inReadBuffer.hasRemaining() && dst.hasRemaining()) {
+                    dst.put(inReadBuffer.get());
+                    returnValue++;
+                }
+                inReadBuffer.compact();
             }
         }
         return returnValue;
@@ -225,29 +241,29 @@ public class SSLChannelIO extends ChannelIO {
                 outNetBuffer.flip(); // ready for writing to channel
 
                 switch (result.getStatus()) {
-                case OK: {
-                    tryFlush();
+                    case OK: {
+                        tryFlush();
 
-                    break;
-                }
-                case BUFFER_OVERFLOW: {
-                    // needed more space in outNetBuffer
-                    // two reasons for overflow:
-                    // 1. buffer is too small
-                    // 2. buffer is nearly full
-                    tryFlush();
-                    /*
-                     * throw new IOException(
-                     * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
-                     */
-                    break;
-                }
-                case CLOSED: {
-                    throw new IOException("The SSLEngine is already closed.");
-                }
-                default: {
-                    throw new IOException("The SSLEngine is in a curiuos state.");
-                }
+                        break;
+                    }
+                    case BUFFER_OVERFLOW: {
+                        // needed more space in outNetBuffer
+                        // two reasons for overflow:
+                        // 1. buffer is too small
+                        // 2. buffer is nearly full
+                        tryFlush();
+                        /*
+                         * throw new IOException(
+                         * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
+                         */
+                        break;
+                    }
+                    case CLOSED: {
+                        throw new IOException("The SSLEngine is already closed.");
+                    }
+                    default: {
+                        throw new IOException("The SSLEngine is in a curiuos state.");
+                    }
                 }
                 returnValue = result.bytesConsumed();
             }
@@ -297,12 +313,11 @@ public class SSLChannelIO extends ChannelIO {
         }
 
         if (!shutdownInProgress) { // initiate shutdown
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutdown SSL connection of "
-                    + channel.socket().getInetAddress() + ":" + channel.socket().getPort());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutdown SSL connection of " + channel.socket().getInetAddress() + ":" + channel.socket().getPort());
             sslEngine.closeOutbound();
             shutdownInProgress = true;
             key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // don't wait for the
-                                                                        // close_notify-reply
+        // close_notify-reply
         }
 
         outNetBuffer.flip(); // ready for writing to channel
@@ -316,34 +331,34 @@ public class SSLChannelIO extends ChannelIO {
             SSLEngineResult result = sslEngine.wrap(dummyBuffer.getBuffer(), outNetBuffer.getBuffer());
             outNetBuffer.flip(); // ready for writing to channel
             switch (result.getStatus()) {
-            case OK: {
-                throw new IOException("This should not happen.");
-            }
-            case BUFFER_OVERFLOW: {
-                // needed more space in outNetBuffer
-                // two reasons for overflow:
-                // 1. buffer is too small
-                // 2. buffer is nearly full
-                tryFlush();
-                key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-                /*
-                 * throw new IOException(
-                 * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
-                 */
-                break;
-            }
-            case CLOSED: {
-                if (tryFlush() && sslEngine.isOutboundDone()) {
-                    key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                    shutdownComplete = true;
-                } else {
-                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                case OK: {
+                    throw new IOException("This should not happen.");
                 }
-                break;
-            }
-            default: {
-                throw new IOException("The SSLEngine is in a curiuos state.");
-            }
+                case BUFFER_OVERFLOW: {
+                    // needed more space in outNetBuffer
+                    // two reasons for overflow:
+                    // 1. buffer is too small
+                    // 2. buffer is nearly full
+                    tryFlush();
+                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    /*
+                     * throw new IOException(
+                     * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
+                     */
+                    break;
+                }
+                case CLOSED: {
+                    if (tryFlush() && sslEngine.isOutboundDone()) {
+                        key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                        shutdownComplete = true;
+                    } else {
+                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    }
+                    break;
+                }
+                default: {
+                    throw new IOException("The SSLEngine is in a curiuos state.");
+                }
             }
         }
         return shutdownComplete;
@@ -365,6 +380,8 @@ public class SSLChannelIO extends ChannelIO {
             // free buffers
             BufferPool.free(inNetBuffer);
             inNetBuffer = null;
+            BufferPool.free(inReadBuffer);
+            inReadBuffer = null;
             BufferPool.free(outNetBuffer);
             BufferPool.free(dummyBuffer);
             shutdownInProgress = true;
@@ -404,8 +421,9 @@ public class SSLChannelIO extends ChannelIO {
         if (outNetBuffer.hasRemaining()) {
             outNetBuffer.compact(); // ready for add new data
             return false;
-        } else
+        } else {
             outNetBuffer.compact();
+        }
         // }
         return true;
     }
@@ -430,99 +448,99 @@ public class SSLChannelIO extends ChannelIO {
 
             SSLEngineResult result;
             switch (handshakeStatus) {
-            case NEED_UNWRAP: {
-                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                if (channel.read(inNetBuffer.getBuffer()) == -1) {
-                    throw new IOException("End of stream has reached.");
-                }
+                case NEED_UNWRAP: {
+                    key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                    if (channel.read(inNetBuffer.getBuffer()) == -1) {
+                        throw new IOException("End of stream has reached.");
+                    }
 
-                boolean underflow = false;
-                do { // read all read data in buffer
-                // Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake doing: unwrap");
-                    inNetBuffer.flip(); // ready for being read
-                    result = sslEngine.unwrap(inNetBuffer.getBuffer(), dummyBuffer.getBuffer());
-                    inNetBuffer.compact(); // ready for reading from channel
+                    boolean underflow = false;
+                    do { // read all read data in buffer
+                        // Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake doing: unwrap");
+                        inNetBuffer.flip(); // ready for being read
+                        result = sslEngine.unwrap(inNetBuffer.getBuffer(), dummyBuffer.getBuffer());
+                        inNetBuffer.compact(); // ready for reading from channel
+
+                        handshakeStatus = result.getHandshakeStatus();
+                        switch (result.getStatus()) {
+                            case OK: {
+                                analyseHandshakeStatus(key, handshakeStatus);
+                                break;
+                            }
+                            case BUFFER_UNDERFLOW: {
+                                // needed more data in inNetBuffer, maybe nexttime
+                                underflow = true;
+                                key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                                break;
+                            }
+                            case CLOSED: {
+                                throw new IOException("The SSLEngine is already closed.");
+                            }
+                            default: {
+                                throw new IOException("The SSLEngine is in a curiuos state.");
+                            }
+                        }
+                    } while (bufferRemaining(inNetBuffer) != 0 && handshakeStatus == HandshakeStatus.NEED_UNWRAP && !underflow);
+                    break;
+                }
+                case NEED_WRAP: {
+                    key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                    // Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake doing: wrap");
+
+                    result = sslEngine.wrap(dummyBuffer.getBuffer(), outNetBuffer.getBuffer());
+                    outNetBuffer.flip(); // ready for writing to channel
 
                     handshakeStatus = result.getHandshakeStatus();
                     switch (result.getStatus()) {
-                    case OK: {
-                        analyseHandshakeStatus(key, handshakeStatus);
-                        break;
-                    }
-                    case BUFFER_UNDERFLOW: {
-                        // needed more data in inNetBuffer, maybe nexttime
-                        underflow = true;
-                        key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                        break;
-                    }
-                    case CLOSED: {
-                        throw new IOException("The SSLEngine is already closed.");
-                    }
-                    default: {
-                        throw new IOException("The SSLEngine is in a curiuos state.");
-                    }
-                    }
-                } while (bufferRemaining(inNetBuffer) != 0 && handshakeStatus == HandshakeStatus.NEED_UNWRAP
-                        && !underflow);
-                break;
-            }
-            case NEED_WRAP: {
-                key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-                // Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake doing: wrap");
+                        case OK: {
+                            tryFlush();
 
-                result = sslEngine.wrap(dummyBuffer.getBuffer(), outNetBuffer.getBuffer());
-                outNetBuffer.flip(); // ready for writing to channel
-
-                handshakeStatus = result.getHandshakeStatus();
-                switch (result.getStatus()) {
-                case OK: {
-                    tryFlush();
-
-                    analyseHandshakeStatus(key, handshakeStatus);
+                            analyseHandshakeStatus(key, handshakeStatus);
+                            break;
+                        }
+                        case BUFFER_OVERFLOW: {
+                            // needed more space in outNetBuffer
+                            // two reasons for overflow:
+                            // 1. buffer is too small
+                            // 2. buffer is nearly full
+                            tryFlush();
+                            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                            /*
+                             * throw new IOException(
+                             * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
+                             */
+                            break;
+                        }
+                        case CLOSED: {
+                            throw new IOException("The SSLEngine is already closed.");
+                        }
+                        default: {
+                            throw new IOException("The SSLEngine is in a curiuos state.");
+                        }
+                    }
                     break;
                 }
-                case BUFFER_OVERFLOW: {
-                    // needed more space in outNetBuffer
-                    // two reasons for overflow:
-                    // 1. buffer is too small
-                    // 2. buffer is nearly full
-                    tryFlush();
-                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-                    /*
-                     * throw new IOException(
-                     * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
-                     */
+                case FINISHED: {
+                    outNetBuffer.flip(); // ready for writing to channel
+                    if (tryFlush()) {
+                        handshakeFinished(key);
+                    } else {
+                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    }
                     break;
                 }
-                case CLOSED: {
-                    throw new IOException("The SSLEngine is already closed.");
+                case NEED_TASK: {
+                    key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                    doTasks(key);
+                    break;
+                }
+                case NOT_HANDSHAKING: {
+                    // TODO: Exception or maybe handshakeComplete = true?
+                    throw new IOException("The SSLEngine is not handshaking.");
                 }
                 default: {
-                    throw new IOException("The SSLEngine is in a curiuos state.");
+                    throw new IOException("The SSLEngine is in a curiuos handshake-state.");
                 }
-                }
-                break;
-            }
-            case FINISHED: {
-                outNetBuffer.flip(); // ready for writing to channel
-                if (tryFlush())
-                    handshakeFinished(key);
-                else
-                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-                break;
-            }
-            case NEED_TASK: {
-                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                doTasks(key);
-                break;
-            }
-            case NOT_HANDSHAKING: {
-                // TODO: Exception or maybe handshakeComplete = true?
-                throw new IOException("The SSLEngine is not handshaking.");
-            }
-            default: {
-                throw new IOException("The SSLEngine is in a curiuos handshake-state.");
-            }
             }
         }
         return handshakeComplete;
@@ -542,8 +560,7 @@ public class SSLChannelIO extends ChannelIO {
      * @param key
      */
     private void handshakeFinished(SelectionKey key) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake for "
-                + channel.socket().getInetAddress() + ":" + channel.socket().getPort() + " finished");
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "SSL-handshake for " + channel.socket().getInetAddress() + ":" + channel.socket().getPort() + " finished");
         // all handshake-data processed and sent
         handshakeComplete = true;
         inNetBuffer.clear();
@@ -566,34 +583,35 @@ public class SSLChannelIO extends ChannelIO {
      */
     private void analyseHandshakeStatus(SelectionKey key, HandshakeStatus handshakeStatus) throws IOException {
         switch (handshakeStatus) {
-        case NEED_UNWRAP: {
-            key.interestOps(key.interestOps() | SelectionKey.OP_READ & ~SelectionKey.OP_WRITE);
-            break;
-        }
-        case NEED_WRAP: {
-            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-            break;
-        }
-        case NEED_TASK: {
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-            doTasks(key);
-            break;
-        }
-        case FINISHED: {
-            outNetBuffer.flip(); // ready for writing to channel
-            if (tryFlush())
-                handshakeFinished(key);
-            else
+            case NEED_UNWRAP: {
+                key.interestOps(key.interestOps() | SelectionKey.OP_READ & ~SelectionKey.OP_WRITE);
+                break;
+            }
+            case NEED_WRAP: {
                 key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-            break;
-        }
-        case NOT_HANDSHAKING: {
-            // TODO: Exception or maybe handshakeComplete = true?
-            throw new IOException("The SSLEngine is not handshaking.");
-        }
-        default: {
-            throw new IOException("The SSLEngine is in a curiuos handshake-state.");
-        }
+                break;
+            }
+            case NEED_TASK: {
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                doTasks(key);
+                break;
+            }
+            case FINISHED: {
+                outNetBuffer.flip(); // ready for writing to channel
+                if (tryFlush()) {
+                    handshakeFinished(key);
+                } else {
+                    key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                }
+                break;
+            }
+            case NOT_HANDSHAKING: {
+                // TODO: Exception or maybe handshakeComplete = true?
+                throw new IOException("The SSLEngine is not handshaking.");
+            }
+            default: {
+                throw new IOException("The SSLEngine is in a curiuos handshake-state.");
+            }
         }
     }
 
@@ -633,41 +651,41 @@ public class SSLChannelIO extends ChannelIO {
         }
 
         switch (handshakeStatus = sslEngine.getHandshakeStatus()) {
-        case NEED_WRAP: {
-            key.interestOps(tmp | SelectionKey.OP_WRITE);
-            break;
-        }
-        case NEED_UNWRAP: {
-            // need to read from channel
-            key.interestOps(tmp | SelectionKey.OP_READ);
-            break;
-        }
-        case FINISHED: {
-            // should not happen
-            handshakeFinished(key);
-            break;
-        }
-        case NEED_TASK: {
-            // should not happen
-            doTasks(key);
-            break;
-        }
-        case NOT_HANDSHAKING: {
-            // should not happen
-            Logging.logMessage(Logging.LEVEL_ERROR, this,
-                    "Exception in worker-thread: The SSLEngine is not handshaking.");
-            break;
-        }
-        default: {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,
-                    "Exception in worker-thread: The SSLEngine is in a curiuos handshake-state.");
-            assert (false);
+            case NEED_WRAP: {
+                key.interestOps(tmp | SelectionKey.OP_WRITE);
+                break;
+            }
+            case NEED_UNWRAP: {
+                // need to read from channel
+                key.interestOps(tmp | SelectionKey.OP_READ);
+                break;
+            }
+            case FINISHED: {
+                // should not happen
+                handshakeFinished(key);
+                break;
+            }
+            case NEED_TASK: {
+                // should not happen
+                doTasks(key);
+                break;
+            }
+            case NOT_HANDSHAKING: {
+                // should not happen
+                Logging.logMessage(Logging.LEVEL_ERROR, this,
+                        "Exception in worker-thread: The SSLEngine is not handshaking.");
+                break;
+            }
+            default: {
+                Logging.logMessage(Logging.LEVEL_ERROR, this,
+                        "Exception in worker-thread: The SSLEngine is in a curiuos handshake-state.");
+                assert (false);
             // throw new IOException("The SSLEngine is in a curiuos handshake-state.");
-        }
+            }
         }
 
-        /*
-         * key.selector().wakeup(); } });
-         */
+    /*
+     * key.selector().wakeup(); } });
+     */
     }
 }
