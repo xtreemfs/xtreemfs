@@ -42,7 +42,7 @@ except:
     Export( "build_env", "build_conf" )
 
     
-include_dir_paths = ['../include', '../../yieldfs/include']
+include_dir_paths = ['../include', '../share/yieldfs/include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( ['../share/yield/yield_platform/include', '../share/yield/yield_arch/include', '../share/yield/yield_ipc/include'] )
 else: include_dir_paths.extend( ['../share/yield/yield/include'] )
 for include_dir_path in include_dir_paths:

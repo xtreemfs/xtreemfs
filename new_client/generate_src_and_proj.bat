@@ -1,19 +1,20 @@
 @ECHO OFF
 
-set YIDL_PATH=%CD%\..\yidl
+set YIDL_PATH=%CD%\..\share\yidl
 set YIELD_PATH=%CD%\share\yield
-set YIELDFS_PATH=%CD%\..\yieldfs
+set YIELDFS_PATH=%CD%\share\yieldfs
 
 set DEPEND_YIELD_INCLUDE_FLAGS=--Iu %YIELD_PATH%\yield\include --Iw %YIELD_PATH%\yield_platform\include --Iw %YIELD_PATH%\yield_arch\include --Iw %YIELD_PATH%\yield_ipc\include
 set DEPEND_YIELD_LIB_FLAGS=-c %YIELD_PATH%\yield\yield.SConscript --lu yield.lib --lwS yield.lib --Lu %YIELD_PATH%\yield\lib --LwS %YIELD_PATH%\yield\lib
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include
 set DEPEND_YIELDFS_LIB_FLAGS=-c %YIELDFS_PATH%\yieldfs.SConscript --lu yieldfs.lib --lwS yieldfs.lib --Lu %YIELDFS_PATH%\lib --LwS %YIELDFS_PATH%\lib
 set DEPEND_XTREEMFS_CLIENT_FLAGS=-I ..\include -L ..\lib -c xtreemfs-client-lib.SConscript --lu xtreemfs-client.lib --lwS xtreemfs-client.lib %DEPEND_YIELD_INCLUDE_FLAGS% %DEPEND_YIELDFS_INCLUDE_FLAGS%
+set PYTHONPATH=%YIDL_PATH%\src
 
 
 REM Generate source from IDL interfaces
 REM Don't include share\yield in the scan here
-python %YIDL_PATH%\bin\generate_yield_cpp.py -i %CD%\..\xtreemfs\interfaces -o include\org\xtreemfs\interfaces --with-registerSerializableFactories
+python %YIDL_PATH%\bin\generate_yield_cpp.py -i %CD%\..\interfaces -o include\org\xtreemfs\interfaces --with-registerSerializableFactories
 python %YIDL_PATH%\bin\generate_yield_cpp.py -i include -o include --with-registerSerializableFactories
 python %YIDL_PATH%\bin\generate_yield_cpp.py -i src -o src --with-registerSerializableFactories
 

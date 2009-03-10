@@ -1,7 +1,7 @@
 import sys, os.path
 
 SConscript( '../share/yield/yield/yield.SConscript' )
-SConscript( '../../yieldfs/yieldfs.SConscript' )    
+SConscript( '../share/yieldfs/yieldfs.SConscript' )    
 
 
 try:
@@ -43,15 +43,15 @@ except:
     Export( "build_env", "build_conf" )
 
     
-include_dir_paths = ['../include', '../../yieldfs/include']
+include_dir_paths = ['../include', '../share/yieldfs/include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( ['../share/yield/yield_platform/include', '../share/yield/yield_arch/include', '../share/yield/yield_ipc/include'] )
 else: include_dir_paths.extend( ['../share/yield/yield/include'] )
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
     
 lib_dir_paths = ['../lib']
-if sys.platform.startswith( "win" ): lib_dir_paths.extend( ['../share/yield/yield/lib', '../../yieldfs/lib'] )
-else: lib_dir_paths.extend( ['../share/yield/yield/lib', '../../yieldfs/lib'] )
+if sys.platform.startswith( "win" ): lib_dir_paths.extend( ['../share/yield/yield/lib', '../share/yieldfs/lib'] )
+else: lib_dir_paths.extend( ['../share/yield/yield/lib', '../share/yieldfs/lib'] )
 for lib_dir_path in lib_dir_paths:
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
