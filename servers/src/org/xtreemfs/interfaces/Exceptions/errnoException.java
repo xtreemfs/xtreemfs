@@ -78,10 +78,6 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
         return my_size;
     }
 
-    public String toString() {
-        return getTypeName()+": ("+getError_code()+") "+getErrro_message();
-    }
-
 
     private int error_code;
     private String errro_message;

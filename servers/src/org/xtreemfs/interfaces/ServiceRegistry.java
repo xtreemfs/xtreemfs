@@ -41,7 +41,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
         this.version = ( ( Long )from_hash_map.get( "version" ) ).longValue();
         this.service_type = ( ( Integer )from_hash_map.get( "service_type" ) ).intValue();
         this.service_name = ( String )from_hash_map.get( "service_name" );
-        this.data.deserialize( ( Object[] )from_hash_map.get( "data" ) );
+        this.data.deserialize( from_hash_map.get( "data" ) );
     }
     
     public void deserialize( Object[] from_array )
@@ -50,7 +50,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
         this.version = ( ( Long )from_array[1] ).longValue();
         this.service_type = ( ( Integer )from_array[2] ).intValue();
         this.service_name = ( String )from_array[3];
-        this.data.deserialize( ( Object[] )from_array[4] );        
+        this.data.deserialize( from_array[4] );        
     }
 
     public void deserialize( ReusableBuffer buf )

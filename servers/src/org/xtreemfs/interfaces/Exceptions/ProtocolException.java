@@ -78,10 +78,6 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         return my_size;
     }
 
-    public String toString() {
-        return getTypeName()+": "+getAccept_stat()+"/"+getError_code()+"/"+getStack_trace();
-    }
-
 
     private int accept_stat;
     private int error_code;

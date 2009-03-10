@@ -1,41 +1,53 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class xtreemfs_update_file_sizeResponse implements Response
+
+public class xtreemfs_update_file_sizeResponse implements org.xtreemfs.interfaces.utils.Response
 {
     public xtreemfs_update_file_sizeResponse() {  }
-
-
-
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_update_file_sizeResponse()";
-    }    
+    public xtreemfs_update_file_sizeResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
+    public xtreemfs_update_file_sizeResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse"; }    
+    public long getTypeId() { return 29; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
         
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-    
+
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+
     }
     
     public int calculateSize()
@@ -45,12 +57,9 @@ public class xtreemfs_update_file_sizeResponse implements Response
         return my_size;
     }
 
-
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 29; }    
+    public int getOperationNumber() { return 29; }
+
 
 }
 

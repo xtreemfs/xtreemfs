@@ -1,42 +1,58 @@
 package org.xtreemfs.interfaces.Exceptions;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.Exceptions.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
-public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException 
+
+
+public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public ConcurrentModificationException() { stack_trace = ""; }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }
+    public ConcurrentModificationException( Object from_hash_map ) { stack_trace = ""; this.deserialize( from_hash_map ); }
+    public ConcurrentModificationException( Object[] from_array ) { stack_trace = "";this.deserialize( from_array ); }
 
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    // Object
-    public String toString()
-    {
-        return "ConcurrentModificationException( " + "\"" + stack_trace + "\"" + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::Exceptions::ConcurrentModificationException"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(stack_trace,writer); }        
+    public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException"; }    
+    public long getTypeId() { return 0; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.stack_trace = ( String )from_hash_map.get( "stack_trace" );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.stack_trace = ( String )from_array[0];        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        { stack_trace = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
+        stack_trace = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "stack_trace", stack_trace );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( stack_trace, writer );
     }
     
     public int calculateSize()
@@ -46,7 +62,8 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
         return my_size;
     }
 
+
     private String stack_trace;
-    
+
 }
 

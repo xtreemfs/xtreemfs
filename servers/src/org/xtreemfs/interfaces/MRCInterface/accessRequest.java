@@ -1,23 +1,20 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class accessRequest implements Request
+
+public class accessRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public accessRequest() { context = new org.xtreemfs.interfaces.Context(); path = ""; mode = 0; }
+    public accessRequest() { context = new Context(); path = ""; mode = 0; }
     public accessRequest( Context context, String path, int mode ) { this.context = context; this.path = path; this.mode = mode; }
+    public accessRequest( Object from_hash_map ) { context = new Context(); path = ""; mode = 0; this.deserialize( from_hash_map ); }
+    public accessRequest( Object[] from_array ) { context = new Context(); path = ""; mode = 0;this.deserialize( from_array ); }
 
     public Context getContext() { return context; }
     public void setContext( Context context ) { this.context = context; }
@@ -26,26 +23,50 @@ public class accessRequest implements Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    // Object
-    public String toString()
-    {
-        return "accessRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::accessRequest"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        context.serialize( writer );
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(path,writer); }
-        writer.putInt( mode );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessRequest"; }    
+    public long getTypeId() { return 1; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.context.deserialize( from_hash_map.get( "context" ) );
+        this.path = ( String )from_hash_map.get( "path" );
+        this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.context.deserialize( from_array[0] );
+        this.path = ( String )from_array[1];
+        this.mode = ( ( Integer )from_array[2] ).intValue();        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        context = new org.xtreemfs.interfaces.Context(); context.deserialize( buf );
-        { path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }
-        mode = buf.getInt();    
+        context = new Context(); context.deserialize( buf );
+        path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        mode = buf.getInt();
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "context", context.serialize() );
+        to_hash_map.put( "path", path );
+        to_hash_map.put( "mode", new Integer( mode ) );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        context.serialize( writer );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
+        writer.putInt( mode );
     }
     
     public int calculateSize()
@@ -57,15 +78,14 @@ public class accessRequest implements Request
         return my_size;
     }
 
+    // Request
+    public int getOperationNumber() { return 1; }
+    public Response createDefaultResponse() { return new accessResponse(); }
+
+
     private Context context;
     private String path;
     private int mode;
-    
-
-    // Request
-    public int getInterfaceVersion() { return 2; }    
-    public int getOperationNumber() { return 1; }
-    public Response createDefaultResponse() { return new accessResponse(); }
 
 }
 

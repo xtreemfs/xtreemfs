@@ -1,59 +1,73 @@
 package org.xtreemfs.interfaces.DIRInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.DIRInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class address_mappings_getRequest implements Request
+
+public class address_mappings_getRequest implements org.xtreemfs.interfaces.utils.Request
 {
     public address_mappings_getRequest() { uuid = ""; }
     public address_mappings_getRequest( String uuid ) { this.uuid = uuid; }
+    public address_mappings_getRequest( Object from_hash_map ) { uuid = ""; this.deserialize( from_hash_map ); }
+    public address_mappings_getRequest( Object[] from_array ) { uuid = "";this.deserialize( from_array ); }
 
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    // Object
-    public String toString()
-    {
-        return "address_mappings_getRequest( " + "\"" + uuid + "\"" + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::address_mappings_getRequest"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(uuid,writer); }        
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::address_mappings_getRequest"; }    
+    public long getTypeId() { return 1; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.uuid = ( String )from_hash_map.get( "uuid" );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.uuid = ( String )from_array[0];        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        { uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
+        uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "uuid", uuid );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( uuid, writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( uuid.length() + 4 - ( uuid.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uuid);
         return my_size;
     }
 
-    private String uuid;
-    
-
     // Request
-    public int getInterfaceVersion() { return 1; }    
     public int getOperationNumber() { return 1; }
     public Response createDefaultResponse() { return new address_mappings_getResponse(); }
+
+
+    private String uuid;
 
 }
 

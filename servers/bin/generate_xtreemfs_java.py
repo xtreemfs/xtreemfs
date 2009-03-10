@@ -10,7 +10,7 @@ except ImportError:
     if not yidl_dir_path in sys.path: sys.path.append( yidl_dir_path )
     import yidl
     
-from yidl.java_types import *
+from yidl.java_constructs import *
 from yidl.generator import *
 
 
@@ -26,8 +26,69 @@ XTREEMFS_COMMON_IMPORTS = [
                           ]
 
 
-class XtreemFSJavaTypeFactory(JavaTypeFactory): pass
+class XtreemFSJavaConstructFactory(JavaConstructFactory): pass
+
+
+class XtreemFSJavaInterface(JavaInterface, JavaClass):
+    def __init__( self, *args, **kwds ):
+        JavaInterface.__init__( self, *args, **kwds )
+        assert self.getUID() > 0, "interface "  + self.getQualifiedName() + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()
     
+    def __repr__( self ):                            
+        JavaInterface.__repr__( self ) 
+           
+        class_header = self.getClassHeader()
+        uid = self.getUID()            
+        out = """\
+%(class_header)s        
+    public static int getVersion() { return %(uid)s; }
+""" % locals()
+                            
+        request_factories = "".join( [operation.getRequestFactory() for operation in self.getOperations()] )
+        if len( request_factories ) > 0:                
+            out += """
+    public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
+    {
+        switch( header.getOperationNumber() )
+        {
+%(request_factories)s
+            default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
+        }
+    }
+""" % locals()
+
+        response_factories = "".join( [operation.getResponseFactory() for operation in self.getOperations()] )
+        if len( response_factories ) > 0:    
+                out += """            
+    public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
+    {
+        switch( header.getXID() )
+        {
+%(response_factories)s
+            default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
+        }
+    }    
+""" % locals()
+
+        exception_factories = [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()]
+        if len( exception_factories ) > 0:
+            exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
+            out += """
+    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
+    {
+        %(exception_factories)s
+        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
+    }
+""" % locals()
+
+        out += self.getClassFooter()
+                
+        writeGeneratedFile( self.getFilePath(), out )            
+        return out
+
+    def getImports( self ): 
+        return JavaClass.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
+
     
 class XtreemFSJavaBoolType(JavaBoolType):
     def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
@@ -47,65 +108,7 @@ class XtreemFSJavaNumericType(JavaNumericType):
         return "writer.put%(boxed_type)s( %(identifier)s );" % locals()
         
     def getSize( self, identifier ): return "( " + self.getBoxedType() + ".SIZE / 8 )"
-
-
-class XtreemFSJavaInterfaceType(JavaInterfaceType):
-    def generate( self ):        
-        assert self.getUID() > 0, "interface "  + self.getQualifiedName() + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()    
-        
-        JavaInterfaceType.generate( self )
-
-        class_header = self.getClassHeader()
-        uid = self.getUID()        
-    
-        out = """\
-%(class_header)s        
-    public static int getVersion() { return %(uid)s; }
-""" % locals()
-                            
-        request_factories = "".join( [operation_type.getRequestFactory() for operation_type in self.getChildOperationTypes()] )
-        if len( request_factories ) > 0:                
-            out += """
-    public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
-    {
-        switch( header.getOperationNumber() )
-        {
-%(request_factories)s
-            default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
-        }
-    }
-""" % locals()
-
-        response_factories = "".join( [operation_type.getResponseFactory() for operation_type in self.getChildOperationTypes()] )
-        if len( response_factories ) > 0:    
-                out += """            
-    public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
-    {
-        switch( header.getXID() )
-        {
-%(response_factories)s
-            default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
-        }
-    }    
-""" % locals()
-
-        exception_factories = [exception_type.getExceptionFactory() for exception_type in self.getChildExceptionTypes()]
-        if len( exception_factories ) > 0:
-            exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
-            out += """
-    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
-    {
-        %(exception_factories)s
-        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
-    }
-""" % locals()
-
-        out += self.getClassFooter()
-                
-        writeGeneratedFile( self.getFilePath(), out ) 
-
-    def getImports( self ): return JavaInterfaceType.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
-    
+   
                     
 class XtreemFSJavaSequenceType(JavaSequenceType):
     def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()
@@ -163,6 +166,7 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
     }        
 """ % locals()    
 
+
 class XtreemFSJavaSerializableType(JavaSerializableType):
     def getDeclarationTypeName( self ): return "ReusableBuffer"
     def getBufferDeserializeCall( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer( buf ); }" % locals()
@@ -173,13 +177,11 @@ class XtreemFSJavaSerializableType(JavaSerializableType):
 class XtreemFSJavaStringType(JavaStringType):
     def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );" % locals()
     def getBufferSerializeCall( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializeString( %(identifier)s, writer );" % locals()
-    def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
+    # def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
+    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(%(identifier)s)" % locals() 
 
 
 class XtreemFSJavaStructType(JavaStructType):
-    def generate( self, parents=" implements org.xtreemfs.interfaces.utils.Serializable" ):
-        JavaStructType.generate( self, parents  )    
-        
     def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()    
     def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
     
@@ -204,6 +206,12 @@ class XtreemFSJavaStructType(JavaStructType):
     }
 """  % "\n".join( [INDENT_SPACES * 2 + "my_size += " + member.getType().getSize( member.getIdentifier() ) + ";" for member in self.getMembers()] )            
 
+    def getParentTypeNames( self ):
+        if len( JavaStructType.getParentTypeNames( self ) ) == 0:
+            return ( None, "org.xtreemfs.interfaces.utils.Serializable" )
+        else: 
+            return JavaStructType.getParentTypeNames( self )
+    
     def getSerializeMethods( self ): 
         buffer_serialize_calls = "\n".join( [INDENT_SPACES * 2 + member.getType().getBufferSerializeCall( member.getIdentifier() ) for member in self.getMembers()] )
         return JavaStructType.getSerializeMethods( self ) + """
@@ -217,39 +225,34 @@ class XtreemFSJavaStructType(JavaStructType):
 
 
 class XtreemFSJavaExceptionType(JavaExceptionType):
-    def generate( self ): XtreemFSJavaStructType( self.getQualifiedName(), self.getMembers() ).generate( " extends org.xtreemfs.interfaces.utils.ONCRPCException" )
+    def __repr__( self ): return repr( XtreemFSJavaStructType( self.getQualifiedName(), self.getUID(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ) )
     def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
     
-class XtreemFSJavaOperationType(JavaOperationType):    
+class XtreemFSJavaOperation(JavaOperation):    
     def __init__( self, *args, **kwds ):
-        JavaOperationType.__init__( self, *args, **kwds )
-                
-        assert self.getUID() > 0, "operation "  + self.getQualifiedName( "." ) + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()        
-        qname = self.getQualifiedName( None )
-        assert len( qname ) > 1           
-        self.request_type = XtreemFSJavaRequestType( qname[:-1] + [qname[-1] + "Request"], [param for param in self.getParameters() if param.isInbound()], self.getUID() )
+        JavaOperation.__init__( self, *args, **kwds )                
+        qname = self.getQualifiedName()
+        self.__request_type = XtreemFSJavaRequestType( qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
         if self.isOneway():
-            self.response_type = None
+            self.__response_type = None
         else:
             params = [param for param in self.getParameters() if param.isOutbound()]
-            if self.getReturnType() is not None: 
-                params.append( JavaOperationParameter( self.getReturnType(), "returnValue", out_=True ) )
-            self.response_type = XtreemFSJavaResponseType( qname[:-1] + [qname[-1] + "Response"], params, self.getUID() )
+            if self.getReturnType() is not None:  
+                params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
+            self.__response_type = XtreemFSJavaResponseType( qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), params )
     
-    def generate( self ):
-        self.request_type.generate()
-        if self.response_type is not None:
-            self.response_type.generate()
+    def __repr__( self ):
+        out = repr( self.__request_type )
+        if self.__response_type is not None:
+            out += repr( self.__response_type )
+        return out
                 
     def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
     def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
 
 
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
-    def generate( self ): 
-        XtreemFSJavaStructType.generate( self, " implements org.xtreemfs.interfaces.utils.Request" )        
-    
     def getOtherMethods( self ):
         uid = self.getUID()     
         response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
@@ -260,21 +263,18 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
 """ % locals()
 
 
-class XtreemFSJavaResponseType(XtreemFSJavaStructType):
-    def generate( self ): 
-        XtreemFSJavaStructType.generate( self, " implements org.xtreemfs.interfaces.utils.Response" )        
-    
+class XtreemFSJavaResponseType(XtreemFSJavaStructType):    
     def getOtherMethods( self ):
         uid = self.getUID()
         return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Response
     public int getOperationNumber() { return %(uid)s; }
 """ % locals()
-                    
+                                
            
 if __name__ == "__main__":     
     if len( sys.argv ) == 1:
         sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) ), 
                            "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src" ) ) ) )
         
-    generator_main( XtreemFSJavaTypeFactory() )
+    generator_main( XtreemFSJavaConstructFactory() )

@@ -1,58 +1,72 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class getxattrResponse implements Response
+
+public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
     public getxattrResponse() { returnValue = ""; }
     public getxattrResponse( String returnValue ) { this.returnValue = returnValue; }
+    public getxattrResponse( Object from_hash_map ) { returnValue = ""; this.deserialize( from_hash_map ); }
+    public getxattrResponse( Object[] from_array ) { returnValue = "";this.deserialize( from_array ); }
 
     public String getReturnValue() { return returnValue; }
     public void setReturnValue( String returnValue ) { this.returnValue = returnValue; }
 
-    // Object
-    public String toString()
-    {
-        return "getxattrResponse( " + "\"" + returnValue + "\"" + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::getxattrResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        { org.xtreemfs.interfaces.utils.XDRUtils.serializeString(returnValue,writer); }        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }    
+    public long getTypeId() { return 6; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.returnValue = ( String )from_hash_map.get( "returnValue" );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.returnValue = ( String )from_array[0];        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        { returnValue = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString(buf); }    
+        returnValue = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "returnValue", returnValue );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( returnValue, writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += 4 + ( returnValue.length() + 4 - ( returnValue.length() % 4 ) );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(returnValue);
         return my_size;
     }
 
-    private String returnValue;
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 6; }    
+    public int getOperationNumber() { return 6; }
+
+
+    private String returnValue;
 
 }
 

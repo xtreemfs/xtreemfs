@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class readdirResponse implements Response
+
+public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public readdirResponse() { directory_entries = new org.xtreemfs.interfaces.DirectoryEntrySet(); }
+    public readdirResponse() { directory_entries = new DirectoryEntrySet(); }
     public readdirResponse( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
+    public readdirResponse( Object from_hash_map ) { directory_entries = new DirectoryEntrySet(); this.deserialize( from_hash_map ); }
+    public readdirResponse( Object[] from_array ) { directory_entries = new DirectoryEntrySet();this.deserialize( from_array ); }
 
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
-    // Object
-    public String toString()
-    {
-        return "readdirResponse( " + directory_entries.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::readdirResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        directory_entries.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }    
+    public long getTypeId() { return 12; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.directory_entries.deserialize( from_hash_map.get( "directory_entries" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.directory_entries.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        directory_entries = new org.xtreemfs.interfaces.DirectoryEntrySet(); directory_entries.deserialize( buf );    
+        directory_entries = new DirectoryEntrySet(); directory_entries.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "directory_entries", directory_entries.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        directory_entries.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class readdirResponse implements Response
         return my_size;
     }
 
-    private DirectoryEntrySet directory_entries;
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 12; }    
+    public int getOperationNumber() { return 12; }
+
+
+    private DirectoryEntrySet directory_entries;
 
 }
 

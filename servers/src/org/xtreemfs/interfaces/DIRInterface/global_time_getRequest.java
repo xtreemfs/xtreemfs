@@ -1,41 +1,53 @@
 package org.xtreemfs.interfaces.DIRInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.DIRInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class global_time_getRequest implements Request
+
+public class global_time_getRequest implements org.xtreemfs.interfaces.utils.Request
 {
     public global_time_getRequest() {  }
-
-
-
-    // Object
-    public String toString()
-    {
-        return "global_time_getRequest()";
-    }    
+    public global_time_getRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
+    public global_time_getRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::global_time_getRequest"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::global_time_getRequest"; }    
+    public long getTypeId() { return 8; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
         
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-    
+
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+
     }
     
     public int calculateSize()
@@ -45,13 +57,10 @@ public class global_time_getRequest implements Request
         return my_size;
     }
 
-
-    
-
     // Request
-    public int getInterfaceVersion() { return 1; }    
     public int getOperationNumber() { return 8; }
     public Response createDefaultResponse() { return new global_time_getResponse(); }
+
 
 }
 

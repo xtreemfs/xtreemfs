@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.DIRInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.DIRInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class service_registerRequest implements Request
+
+public class service_registerRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public service_registerRequest() { service = new org.xtreemfs.interfaces.ServiceRegistry(); }
+    public service_registerRequest() { service = new ServiceRegistry(); }
     public service_registerRequest( ServiceRegistry service ) { this.service = service; }
+    public service_registerRequest( Object from_hash_map ) { service = new ServiceRegistry(); this.deserialize( from_hash_map ); }
+    public service_registerRequest( Object[] from_array ) { service = new ServiceRegistry();this.deserialize( from_array ); }
 
     public ServiceRegistry getService() { return service; }
     public void setService( ServiceRegistry service ) { this.service = service; }
 
-    // Object
-    public String toString()
-    {
-        return "service_registerRequest( " + service.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::DIRInterface::service_registerRequest"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        service.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_registerRequest"; }    
+    public long getTypeId() { return 4; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.service.deserialize( from_hash_map.get( "service" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.service.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        service = new org.xtreemfs.interfaces.ServiceRegistry(); service.deserialize( buf );    
+        service = new ServiceRegistry(); service.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "service", service.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        service.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,13 +62,12 @@ public class service_registerRequest implements Request
         return my_size;
     }
 
-    private ServiceRegistry service;
-    
-
     // Request
-    public int getInterfaceVersion() { return 1; }    
     public int getOperationNumber() { return 4; }
     public Response createDefaultResponse() { return new service_registerResponse(); }
+
+
+    private ServiceRegistry service;
 
 }
 

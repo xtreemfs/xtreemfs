@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class renameResponse implements Response
+
+public class renameResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public renameResponse() { credentials = new org.xtreemfs.interfaces.FileCredentialsSet(); }
+    public renameResponse() { credentials = new FileCredentialsSet(); }
     public renameResponse( FileCredentialsSet credentials ) { this.credentials = credentials; }
+    public renameResponse( Object from_hash_map ) { credentials = new FileCredentialsSet(); this.deserialize( from_hash_map ); }
+    public renameResponse( Object[] from_array ) { credentials = new FileCredentialsSet();this.deserialize( from_array ); }
 
     public FileCredentialsSet getCredentials() { return credentials; }
     public void setCredentials( FileCredentialsSet credentials ) { this.credentials = credentials; }
 
-    // Object
-    public String toString()
-    {
-        return "renameResponse( " + credentials.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::renameResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        credentials.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }    
+    public long getTypeId() { return 14; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.credentials.deserialize( from_hash_map.get( "credentials" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.credentials.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        credentials = new org.xtreemfs.interfaces.FileCredentialsSet(); credentials.deserialize( buf );    
+        credentials = new FileCredentialsSet(); credentials.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "credentials", credentials.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        credentials.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class renameResponse implements Response
         return my_size;
     }
 
-    private FileCredentialsSet credentials;
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 14; }    
+    public int getOperationNumber() { return 14; }
+
+
+    private FileCredentialsSet credentials;
 
 }
 

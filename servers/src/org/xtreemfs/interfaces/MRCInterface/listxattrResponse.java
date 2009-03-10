@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class listxattrResponse implements Response
+
+public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public listxattrResponse() { names = new org.xtreemfs.interfaces.StringSet(); }
+    public listxattrResponse() { names = new StringSet(); }
     public listxattrResponse( StringSet names ) { this.names = names; }
+    public listxattrResponse( Object from_hash_map ) { names = new StringSet(); this.deserialize( from_hash_map ); }
+    public listxattrResponse( Object[] from_array ) { names = new StringSet();this.deserialize( from_array ); }
 
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    // Object
-    public String toString()
-    {
-        return "listxattrResponse( " + names.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::listxattrResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        names.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }    
+    public long getTypeId() { return 8; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.names.deserialize( from_hash_map.get( "names" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.names.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        names = new org.xtreemfs.interfaces.StringSet(); names.deserialize( buf );    
+        names = new StringSet(); names.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "names", names.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        names.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class listxattrResponse implements Response
         return my_size;
     }
 
-    private StringSet names;
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 8; }    
+    public int getOperationNumber() { return 8; }
+
+
+    private StringSet names;
 
 }
 

@@ -1,43 +1,58 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.MRCInterface.*;
+import java.util.HashMap;
 import org.xtreemfs.interfaces.utils.*;
-
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.buffer.BufferPool;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 
-         
 
-public class getattrResponse implements Response
+
+public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public getattrResponse() { stbuf = new org.xtreemfs.interfaces.stat_(); }
+    public getattrResponse() { stbuf = new stat_(); }
     public getattrResponse( stat_ stbuf ) { this.stbuf = stbuf; }
+    public getattrResponse( Object from_hash_map ) { stbuf = new stat_(); this.deserialize( from_hash_map ); }
+    public getattrResponse( Object[] from_array ) { stbuf = new stat_();this.deserialize( from_array ); }
 
     public stat_ getStbuf() { return stbuf; }
     public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
 
-    // Object
-    public String toString()
-    {
-        return "getattrResponse( " + stbuf.toString() + " )";
-    }    
-
     // Serializable
-    public String getTypeName() { return "xtreemfs::interfaces::MRCInterface::getattrResponse"; }    
-    
-    public void serialize(ONCRPCBufferWriter writer) {
-        stbuf.serialize( writer );        
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrResponse"; }    
+    public long getTypeId() { return 5; }
+
+    public void deserialize( Object from_hash_map )
+    {
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
+    }
+        
+    public void deserialize( HashMap<String, Object> from_hash_map )
+    {
+        this.stbuf.deserialize( from_hash_map.get( "stbuf" ) );
     }
     
+    public void deserialize( Object[] from_array )
+    {
+        this.stbuf.deserialize( from_array[0] );        
+    }
+
     public void deserialize( ReusableBuffer buf )
     {
-        stbuf = new org.xtreemfs.interfaces.stat_(); stbuf.deserialize( buf );    
+        stbuf = new stat_(); stbuf.deserialize( buf );
+    }
+
+    public Object serialize()
+    {
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
+        to_hash_map.put( "stbuf", stbuf.serialize() );
+        return to_hash_map;        
+    }
+
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {
+        stbuf.serialize( writer );
     }
     
     public int calculateSize()
@@ -47,12 +62,11 @@ public class getattrResponse implements Response
         return my_size;
     }
 
-    private stat_ stbuf;
-    
-
     // Response
-    public int getInterfaceVersion() { return 2; }
-    public int getOperationNumber() { return 5; }    
+    public int getOperationNumber() { return 5; }
+
+
+    private stat_ stbuf;
 
 }
 
