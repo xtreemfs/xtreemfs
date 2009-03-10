@@ -30,11 +30,6 @@ module org
           ObjectData data;
       };
 
-      struct OSDWriteResponse {
-          NewFileSizeSet new_file_size;
-          OSDtoMRCDataSet opaque_data;
-      };
-
 
       interface OSDInterface # 3
       {

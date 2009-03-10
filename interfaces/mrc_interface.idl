@@ -80,7 +80,7 @@ module org
 
         void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
 
-        void xtreemfs_renew_capability( XCap xcap, out XCap xcap ) # 25;
+        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
 
         void xtreemfs_replica_add( Context context, string file_id, Replica new_replica ) # 26;
 

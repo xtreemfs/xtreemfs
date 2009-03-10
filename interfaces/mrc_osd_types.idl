@@ -124,6 +124,11 @@ module org
           XLocSet xlocs;
           XCap    xcap;
       };
+
+      struct OSDWriteResponse {
+          NewFileSizeSet new_file_size;
+          OSDtoMRCDataSet opaque_data;
+      };
     };
   };
 };
