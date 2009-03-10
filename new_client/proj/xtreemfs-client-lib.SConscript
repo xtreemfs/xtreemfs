@@ -36,8 +36,8 @@ except:
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
         if ARGUMENTS.get( "profile-heap", 0 ): build_env["CCFLAGS"] += "-fno-omit-frame-pointer "; build_env["LIBS"].append( "tcmalloc" )
 
-    build_env["CPPPATH"] = list( set( include_dir_paths ) )
-    build_env["LIBPATH"] = list( set( lib_dir_paths ) )        
+    build_env["CPPPATH"] = list( set( [os.path.abspath( include_dir_path ) for include_dir_path in include_dir_paths] ) )
+    build_env["LIBPATH"] = list( set( [os.path.abspath( lib_dir_path ) for lib_dir_path in lib_dir_paths] ) )        
     build_env = Environment( **build_env )
     build_conf = build_env.Configure()
     Export( "build_env", "build_conf" )
@@ -47,12 +47,14 @@ include_dir_paths = ['../include', '../share/yieldfs/include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( ['../share/yield/yield_platform/include', '../share/yield/yield_arch/include', '../share/yield/yield_ipc/include'] )
 else: include_dir_paths.extend( ['../share/yield/yield/include'] )
 for include_dir_path in include_dir_paths:
+    include_dir_path = os.path.abspath( include_dir_path )
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
     
 lib_dir_paths = ['../lib']
 if sys.platform.startswith( "win" ): lib_dir_paths.extend( ['../share/yield/yield/lib', '../share/yieldfs/lib'] )
 else: lib_dir_paths.extend( ['../share/yield/yield/lib', '../share/yieldfs/lib'] )
 for lib_dir_path in lib_dir_paths:
+    lib_dir_path = os.path.abspath( lib_dir_path )
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
 

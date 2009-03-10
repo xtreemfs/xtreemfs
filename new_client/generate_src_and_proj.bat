@@ -1,6 +1,7 @@
 @ECHO OFF
 
 set YIDL_PATH=%CD%\..\share\yidl
+REM set YIDL_PATH=%CD%\..\..\yidl
 set YIELD_PATH=%CD%\share\yield
 set YIELDFS_PATH=%CD%\share\yieldfs
 
@@ -9,7 +10,7 @@ set DEPEND_YIELD_LIB_FLAGS=-c %YIELD_PATH%\yield\yield.SConscript --lu yield.lib
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include
 set DEPEND_YIELDFS_LIB_FLAGS=-c %YIELDFS_PATH%\yieldfs.SConscript --lu yieldfs.lib --lwS yieldfs.lib --Lu %YIELDFS_PATH%\lib --LwS %YIELDFS_PATH%\lib
 set DEPEND_XTREEMFS_CLIENT_FLAGS=-I ..\include -L ..\lib -c xtreemfs-client-lib.SConscript --lu xtreemfs-client.lib --lwS xtreemfs-client.lib %DEPEND_YIELD_INCLUDE_FLAGS% %DEPEND_YIELDFS_INCLUDE_FLAGS%
-set PYTHONPATH=%YIDL_PATH%\src
+REM set PYTHONPATH=%YIDL_PATH%\src
 
 
 REM Generate source from IDL interfaces
