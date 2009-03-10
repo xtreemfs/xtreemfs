@@ -1,5 +1,5 @@
-#ifndef _96284507089_H
-#define _96284507089_H
+#ifndef _48587234903_H
+#define _48587234903_H
 
 #include "yield/arch.h"
 
@@ -40,7 +40,7 @@ namespace org
         bool operator==( const AddressMapping& other ) const { return uuid == other.uuid && version == other.version && protocol == other.protocol && address == other.address && port == other.port && match_network == other.match_network && ttl == other.ttl; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::AddressMapping", 3678065204UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::AddressMapping", 3678065204UL );
   
   
         // Serializable
@@ -65,7 +65,7 @@ namespace org
         virtual ~AddressMappingSet() { }
   
         // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::AddressMappingSet", 3884050721UL )
+        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::AddressMappingSet", 3884050721UL );
   
         // YIELD::Serializable
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::AddressMapping", "item" ), ( *this )[size() - 1] ); } }
@@ -91,7 +91,7 @@ namespace org
         bool operator==( const KeyValuePair& other ) const { return key == other.key && value == other.value; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::KeyValuePair", 1206317684UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::KeyValuePair", 1206317684UL );
   
   
         // Serializable
@@ -111,7 +111,7 @@ namespace org
         virtual ~KeyValuePairSet() { }
   
         // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::KeyValuePairSet", 232319006UL )
+        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::KeyValuePairSet", 232319006UL );
   
         // YIELD::Serializable
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePair", "item" ), ( *this )[size() - 1] ); } }
@@ -123,8 +123,8 @@ namespace org
       {
       public:
         ServiceRegistry() : version( 0 ), service_type( 0 ) { }
-        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, const org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), data( data ) { }
-        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, const org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), data( data ) { }
+        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), data( data ) { }
+        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), data( data ) { }
         virtual ~ServiceRegistry() { }
   
         void set_uuid( const std::string& uuid ) { set_uuid( uuid.c_str(), uuid.size() ); }
@@ -137,25 +137,25 @@ namespace org
         void set_service_name( const std::string& service_name ) { set_service_name( service_name.c_str(), service_name.size() ); }
         void set_service_name( const char* service_name, size_t service_name_len = 0 ) { this->service_name.assign( service_name, ( service_name_len != 0 ) ? service_name_len : std::strlen( service_name ) ); }
         const std::string& get_service_name() const { return service_name; }
-        void set_data( const org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet&  data ) { this->data = data; }
-        const org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet& get_data() const { return data; }
+        void set_data( const org::xtreemfs::interfaces::KeyValuePairSet&  data ) { this->data = data; }
+        const org::xtreemfs::interfaces::KeyValuePairSet& get_data() const { return data; }
   
         bool operator==( const ServiceRegistry& other ) const { return uuid == other.uuid && version == other.version && service_type == other.service_type && service_name == other.service_name && data == other.data; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ServiceRegistry", 3874052735UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ServiceRegistry", 3874052735UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet", "data" ), data ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), &data ); }
   
       protected:
         std::string uuid;
         uint64_t version;
         uint16_t service_type;
         std::string service_name;
-        org::xtreemfs::interfaces::ServiceRegistry::KeyValuePairSet data;
+        org::xtreemfs::interfaces::KeyValuePairSet data;
       };
   
       class ServiceRegistrySet : public std::vector<org::xtreemfs::interfaces::ServiceRegistry>, public YIELD::Serializable
@@ -166,7 +166,7 @@ namespace org
         virtual ~ServiceRegistrySet() { }
   
         // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::ServiceRegistrySet", 614373350UL )
+        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::ServiceRegistrySet", 614373350UL );
   
         // YIELD::Serializable
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistry", "item" ), ( *this )[size() - 1] ); } }
@@ -286,7 +286,7 @@ namespace org
         bool operator==( const address_mappings_getResponse& other ) const { return address_mappings == other.address_mappings; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_getResponse", 3467605668UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_getResponse", 3467605668UL );
   
   
         // Serializable
@@ -312,7 +312,7 @@ namespace org
         bool operator==( const address_mappings_getRequest& other ) const { return uuid == other.uuid; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_getRequest", 1983642220UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_getRequest", 1983642220UL );
   
   
         // Serializable
@@ -363,7 +363,7 @@ namespace org
         bool operator==( const address_mappings_setResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_setResponse", 1879726015UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_setResponse", 1879726015UL );
   
   
         // Serializable
@@ -387,7 +387,7 @@ namespace org
         bool operator==( const address_mappings_setRequest& other ) const { return address_mappings == other.address_mappings; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_setRequest", 1955507110UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_setRequest", 1955507110UL );
   
   
         // Serializable
@@ -433,7 +433,7 @@ namespace org
         bool operator==( const address_mappings_deleteResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteResponse", 3734389618UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteResponse", 3734389618UL );
   
       };
   
@@ -452,7 +452,7 @@ namespace org
         bool operator==( const address_mappings_deleteRequest& other ) const { return uuid == other.uuid; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteRequest", 2769570357UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteRequest", 2769570357UL );
   
   
         // Serializable
@@ -503,7 +503,7 @@ namespace org
         bool operator==( const service_registerResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_registerResponse", 3458002187UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_registerResponse", 3458002187UL );
   
   
         // Serializable
@@ -527,7 +527,7 @@ namespace org
         bool operator==( const service_registerRequest& other ) const { return service == other.service; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_registerRequest", 2211822638UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_registerRequest", 2211822638UL );
   
   
         // Serializable
@@ -573,7 +573,7 @@ namespace org
         bool operator==( const service_deregisterResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_deregisterResponse", 3236629002UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_deregisterResponse", 3236629002UL );
   
       };
   
@@ -592,7 +592,7 @@ namespace org
         bool operator==( const service_deregisterRequest& other ) const { return uuid == other.uuid; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_deregisterRequest", 3067256812UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_deregisterRequest", 3067256812UL );
   
   
         // Serializable
@@ -643,7 +643,7 @@ namespace org
         bool operator==( const service_get_by_typeResponse& other ) const { return services == other.services; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_get_by_typeResponse", 662022626UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_get_by_typeResponse", 662022626UL );
   
   
         // Serializable
@@ -667,7 +667,7 @@ namespace org
         bool operator==( const service_get_by_typeRequest& other ) const { return type == other.type; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_get_by_typeRequest", 4251087078UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_get_by_typeRequest", 4251087078UL );
   
   
         // Serializable
@@ -717,7 +717,7 @@ namespace org
         bool operator==( const service_get_by_uuidResponse& other ) const { return services == other.services; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidResponse", 2586276636UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidResponse", 2586276636UL );
   
   
         // Serializable
@@ -743,7 +743,7 @@ namespace org
         bool operator==( const service_get_by_uuidRequest& other ) const { return uuid == other.uuid; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidRequest", 2653848206UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidRequest", 2653848206UL );
   
   
         // Serializable
@@ -794,7 +794,7 @@ namespace org
         bool operator==( const global_time_getResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::global_time_getResponse", 3513836833UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::global_time_getResponse", 3513836833UL );
   
   
         // Serializable
@@ -814,7 +814,7 @@ namespace org
         bool operator==( const global_time_getRequest& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::global_time_getRequest", 1678219641UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::global_time_getRequest", 1678219641UL );
   
         void deserialize( YIELD::StructuredInputStream& input_stream ) { ; }
   
@@ -856,7 +856,7 @@ namespace org
         bool operator==( const admin_checkpointResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::admin_checkpointResponse", 1488245919UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::admin_checkpointResponse", 1488245919UL );
   
       };
   
@@ -875,7 +875,7 @@ namespace org
         bool operator==( const admin_checkpointRequest& other ) const { return password == other.password; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::admin_checkpointRequest", 839471856UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::admin_checkpointRequest", 839471856UL );
   
   
         // Serializable
@@ -922,7 +922,7 @@ namespace org
         bool operator==( const admin_shutdownResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::admin_shutdownResponse", 1280024429UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::admin_shutdownResponse", 1280024429UL );
   
       };
   
@@ -941,7 +941,7 @@ namespace org
         bool operator==( const admin_shutdownRequest& other ) const { return password == other.password; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::admin_shutdownRequest", 1760149581UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::admin_shutdownRequest", 1760149581UL );
   
   
         // Serializable

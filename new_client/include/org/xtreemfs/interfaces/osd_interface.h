@@ -1,5 +1,5 @@
-#ifndef _89143847337_H
-#define _89143847337_H
+#ifndef _72960533435_H
+#define _72960533435_H
 
 #include "yield/arch.h"
 #include "mrc_osd_types.h"
@@ -33,7 +33,7 @@ namespace org
         bool operator==( const ObjectData& other ) const { return checksum == other.checksum && zero_padding == other.zero_padding && invalid_checksum_on_osd == other.invalid_checksum_on_osd && data.get() == other.data.get(); }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ObjectData", 1049653481UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ObjectData", 1049653481UL );
   
   
         // Serializable
@@ -64,7 +64,7 @@ namespace org
         bool operator==( const InternalGmax& other ) const { return epoch == other.epoch && last_object_id == other.last_object_id && file_size == other.file_size; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::InternalGmax", 3838673994UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::InternalGmax", 3838673994UL );
   
   
         // Serializable
@@ -81,30 +81,30 @@ namespace org
       {
       public:
         InternalReadLocalResponse() : zero_padding( 0 ) { }
-        InternalReadLocalResponse( const org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize& file_size, uint32_t zero_padding, const org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData& data ) : file_size( file_size ), zero_padding( zero_padding ), data( data ) { }
+        InternalReadLocalResponse( const org::xtreemfs::interfaces::NewFileSize& file_size, uint32_t zero_padding, const org::xtreemfs::interfaces::ObjectData& data ) : file_size( file_size ), zero_padding( zero_padding ), data( data ) { }
         virtual ~InternalReadLocalResponse() { }
   
-        void set_file_size( const org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize&  file_size ) { this->file_size = file_size; }
-        const org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize& get_file_size() const { return file_size; }
+        void set_file_size( const org::xtreemfs::interfaces::NewFileSize&  file_size ) { this->file_size = file_size; }
+        const org::xtreemfs::interfaces::NewFileSize& get_file_size() const { return file_size; }
         void set_zero_padding( uint32_t zero_padding ) { this->zero_padding = zero_padding; }
         uint32_t get_zero_padding() const { return zero_padding; }
-        void set_data( const org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData&  data ) { this->data = data; }
-        const org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData& get_data() const { return data; }
+        void set_data( const org::xtreemfs::interfaces::ObjectData&  data ) { this->data = data; }
+        const org::xtreemfs::interfaces::ObjectData& get_data() const { return data; }
   
         bool operator==( const InternalReadLocalResponse& other ) const { return file_size == other.file_size && zero_padding == other.zero_padding && data == other.data; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::InternalReadLocalResponse", 375306877UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::InternalReadLocalResponse", 375306877UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize", "file_size" ), file_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "zero_padding" ), zero_padding ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData", "data" ), data ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize", "file_size" ), &file_size ); zero_padding = input_stream.readUint32( YIELD::StructuredStream::Declaration( "zero_padding" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "file_size" ), file_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "zero_padding" ), zero_padding ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "data" ), data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "file_size" ), &file_size ); zero_padding = input_stream.readUint32( YIELD::StructuredStream::Declaration( "zero_padding" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "data" ), &data ); }
   
       protected:
-        org::xtreemfs::interfaces::InternalReadLocalResponse::NewFileSize file_size;
+        org::xtreemfs::interfaces::NewFileSize file_size;
         uint32_t zero_padding;
-        org::xtreemfs::interfaces::InternalReadLocalResponse::ObjectData data;
+        org::xtreemfs::interfaces::ObjectData data;
       };
   
   
@@ -219,7 +219,7 @@ namespace org
         bool operator==( const readResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::readResponse", 4289876024UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::readResponse", 4289876024UL );
   
   
         // Serializable
@@ -255,7 +255,7 @@ namespace org
         bool operator==( const readRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::readRequest", 4214126648UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::readRequest", 4214126648UL );
   
   
         // Serializable
@@ -311,7 +311,7 @@ namespace org
         bool operator==( const truncateResponse& other ) const { return osd_response == other.osd_response; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::truncateResponse", 233138659UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::truncateResponse", 233138659UL );
   
   
         // Serializable
@@ -341,7 +341,7 @@ namespace org
         bool operator==( const truncateRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && new_file_size == other.new_file_size; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::truncateRequest", 3445878689UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::truncateRequest", 3445878689UL );
   
   
         // Serializable
@@ -390,7 +390,7 @@ namespace org
         bool operator==( const unlinkResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::unlinkResponse", 1159409605UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::unlinkResponse", 1159409605UL );
   
       };
   
@@ -411,7 +411,7 @@ namespace org
         bool operator==( const unlinkRequest& other ) const { return file_id == other.file_id && credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::unlinkRequest", 2625011690UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::unlinkRequest", 2625011690UL );
   
   
         // Serializable
@@ -463,7 +463,7 @@ namespace org
         bool operator==( const writeResponse& other ) const { return osd_response == other.osd_response; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::writeResponse", 3887614948UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::writeResponse", 3887614948UL );
   
   
         // Serializable
@@ -501,7 +501,7 @@ namespace org
         bool operator==( const writeRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version && offset == other.offset && lease_timeout == other.lease_timeout && data == other.data; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::writeRequest", 3616508705UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::writeRequest", 3616508705UL );
   
   
         // Serializable
@@ -554,7 +554,7 @@ namespace org
         bool operator==( const keep_file_openResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::keep_file_openResponse", 261263724UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::keep_file_openResponse", 261263724UL );
   
       };
   
@@ -575,7 +575,7 @@ namespace org
         bool operator==( const keep_file_openRequest& other ) const { return file_id == other.file_id && credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::keep_file_openRequest", 3571631653UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::keep_file_openRequest", 3571631653UL );
   
   
         // Serializable
@@ -627,7 +627,7 @@ namespace org
         bool operator==( const internal_get_gmaxResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxResponse", 1454663115UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxResponse", 1454663115UL );
   
   
         // Serializable
@@ -655,7 +655,7 @@ namespace org
         bool operator==( const internal_get_gmaxRequest& other ) const { return file_id == other.file_id && credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxRequest", 593348104UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxRequest", 593348104UL );
   
   
         // Serializable
@@ -703,7 +703,7 @@ namespace org
         bool operator==( const internal_truncateResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_truncateResponse", 1835140915UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_truncateResponse", 1835140915UL );
   
       };
   
@@ -726,7 +726,7 @@ namespace org
         bool operator==( const internal_truncateRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && new_file_size == other.new_file_size; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_truncateRequest", 2365800131UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_truncateRequest", 2365800131UL );
   
   
         // Serializable
@@ -779,7 +779,7 @@ namespace org
         bool operator==( const internal_read_localResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_read_localResponse", 3564028294UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::internal_read_localResponse", 3564028294UL );
   
   
         // Serializable
@@ -815,7 +815,7 @@ namespace org
         bool operator==( const internal_read_localRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_read_localRequest", 908569103UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::internal_read_localRequest", 908569103UL );
   
   
         // Serializable
@@ -871,7 +871,7 @@ namespace org
         bool operator==( const check_objectResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::check_objectResponse", 353874046UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::check_objectResponse", 353874046UL );
   
   
         // Serializable
@@ -903,7 +903,7 @@ namespace org
         bool operator==( const check_objectRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::check_objectRequest", 2344559360UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::check_objectRequest", 2344559360UL );
   
   
         // Serializable
@@ -953,7 +953,7 @@ namespace org
         bool operator==( const admin_shutdownResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::admin_shutdownResponse", 6822557UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::admin_shutdownResponse", 6822557UL );
   
       };
   
@@ -972,7 +972,7 @@ namespace org
         bool operator==( const admin_shutdownRequest& other ) const { return password == other.password; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::admin_shutdownRequest", 2344589109UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::admin_shutdownRequest", 2344589109UL );
   
   
         // Serializable

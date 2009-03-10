@@ -1,5 +1,5 @@
-#ifndef _7797975325_H
-#define _7797975325_H
+#ifndef _72130929017_H
+#define _72130929017_H
 
 #include "yield/arch.h"
 
@@ -85,7 +85,7 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
@@ -120,7 +120,7 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new errnoException( error_code, errro_message, stack_trace); }
@@ -150,7 +150,7 @@ namespace org
         const std::string& get_to_uuid() const { return to_uuid; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new RedirectException( to_uuid); }
@@ -183,7 +183,7 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::MRCException", 32377859UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::MRCException", 32377859UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new MRCException( error_code, errro_message, stack_trace); }
@@ -218,7 +218,7 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::OSDException", 3594163714UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::OSDException", 3594163714UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new OSDException( error_code, errro_message, stack_trace); }
@@ -248,7 +248,7 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ConcurrentModificationException( stack_trace); }
@@ -276,7 +276,7 @@ namespace org
         const std::string& get_error_message() const { return error_message; }
   
           // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL )
+          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
   
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new InvalidArgumentException( error_message); }

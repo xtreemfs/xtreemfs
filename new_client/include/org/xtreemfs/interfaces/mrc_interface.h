@@ -1,5 +1,5 @@
-#ifndef _57761208352_H
-#define _57761208352_H
+#ifndef _21485227657_H
+#define _21485227657_H
 
 #include "yield/arch.h"
 #include "mrc_osd_types.h"
@@ -15,29 +15,29 @@ namespace org
       {
       public:
         Context() { }
-        Context( const std::string& user_id, const org::xtreemfs::interfaces::Context::StringSet& group_ids ) : user_id( user_id ), group_ids( group_ids ) { }
-        Context( const char* user_id, size_t user_id_len, const org::xtreemfs::interfaces::Context::StringSet& group_ids ) : user_id( user_id, user_id_len ), group_ids( group_ids ) { }
+        Context( const std::string& user_id, const org::xtreemfs::interfaces::StringSet& group_ids ) : user_id( user_id ), group_ids( group_ids ) { }
+        Context( const char* user_id, size_t user_id_len, const org::xtreemfs::interfaces::StringSet& group_ids ) : user_id( user_id, user_id_len ), group_ids( group_ids ) { }
         virtual ~Context() { }
   
         void set_user_id( const std::string& user_id ) { set_user_id( user_id.c_str(), user_id.size() ); }
         void set_user_id( const char* user_id, size_t user_id_len = 0 ) { this->user_id.assign( user_id, ( user_id_len != 0 ) ? user_id_len : std::strlen( user_id ) ); }
         const std::string& get_user_id() const { return user_id; }
-        void set_group_ids( const org::xtreemfs::interfaces::Context::StringSet&  group_ids ) { this->group_ids = group_ids; }
-        const org::xtreemfs::interfaces::Context::StringSet& get_group_ids() const { return group_ids; }
+        void set_group_ids( const org::xtreemfs::interfaces::StringSet&  group_ids ) { this->group_ids = group_ids; }
+        const org::xtreemfs::interfaces::StringSet& get_group_ids() const { return group_ids; }
   
         bool operator==( const Context& other ) const { return user_id == other.user_id && group_ids == other.group_ids; }
   
         // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::Context", 2273805342UL )
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::Context", 2273805342UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Context::StringSet", "group_ids" ), group_ids ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Context::StringSet", "group_ids" ), &group_ids ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), group_ids ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), &group_ids ); }
   
       protected:
         std::string user_id;
-        org::xtreemfs::interfaces::Context::StringSet group_ids;
+        org::xtreemfs::interfaces::StringSet group_ids;
       };
   
       class FileCredentialsSet : public std::vector<org::xtreemfs::interfaces::FileCredentials>, public YIELD::Serializable
@@ -48,7 +48,7 @@ namespace org
         virtual ~FileCredentialsSet() { }
   
         // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::FileCredentialsSet", 1629291456UL )
+        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::FileCredentialsSet", 1629291456UL );
   
         // YIELD::Serializable
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "item" ), ( *this )[size() - 1] ); } }
@@ -64,7 +64,7 @@ namespace org
         virtual ~StripingPolicySet() { }
   
         // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::StripingPolicySet", 2815459990UL )
+        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::StripingPolicySet", 2815459990UL );
   
         // YIELD::Serializable
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "item" ), ( *this )[size() - 1] ); } }
@@ -272,7 +272,7 @@ namespace org
         bool operator==( const admin_shutdownResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_shutdownResponse", 1117889079UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_shutdownResponse", 1117889079UL );
   
       };
   
@@ -291,7 +291,7 @@ namespace org
         bool operator==( const admin_shutdownRequest& other ) const { return password == other.password; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_shutdownRequest", 440700645UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_shutdownRequest", 440700645UL );
   
   
         // Serializable
@@ -338,7 +338,7 @@ namespace org
         bool operator==( const admin_checkpointResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_checkpointResponse", 695599363UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_checkpointResponse", 695599363UL );
   
       };
   
@@ -357,7 +357,7 @@ namespace org
         bool operator==( const admin_checkpointRequest& other ) const { return password == other.password; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_checkpointRequest", 1430126549UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_checkpointRequest", 1430126549UL );
   
   
         // Serializable
@@ -404,7 +404,7 @@ namespace org
         bool operator==( const admin_dump_databaseResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseResponse", 976095961UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseResponse", 976095961UL );
   
       };
   
@@ -426,7 +426,7 @@ namespace org
         bool operator==( const admin_dump_databaseRequest& other ) const { return password == other.password && dump_file == other.dump_file; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseRequest", 3734644125UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseRequest", 3734644125UL );
   
   
         // Serializable
@@ -474,7 +474,7 @@ namespace org
         bool operator==( const admin_restore_databaseResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_restore_databaseResponse", 894572093UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::admin_restore_databaseResponse", 894572093UL );
   
       };
   
@@ -496,7 +496,7 @@ namespace org
         bool operator==( const admin_restore_databaseRequest& other ) const { return password == other.password && dump_file == other.dump_file; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_restore_databaseRequest", 676678086UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::admin_restore_databaseRequest", 676678086UL );
   
   
         // Serializable
@@ -548,7 +548,7 @@ namespace org
         bool operator==( const accessResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::accessResponse", 1046856447UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::accessResponse", 1046856447UL );
   
   
         // Serializable
@@ -578,7 +578,7 @@ namespace org
         bool operator==( const accessRequest& other ) const { return context == other.context && path == other.path && mode == other.mode; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::accessRequest", 1061689358UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::accessRequest", 1061689358UL );
   
   
         // Serializable
@@ -627,7 +627,7 @@ namespace org
         bool operator==( const chmodResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::chmodResponse", 2600293463UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::chmodResponse", 2600293463UL );
   
       };
   
@@ -650,7 +650,7 @@ namespace org
         bool operator==( const chmodRequest& other ) const { return context == other.context && path == other.path && mode == other.mode; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::chmodRequest", 382547319UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::chmodRequest", 382547319UL );
   
   
         // Serializable
@@ -699,7 +699,7 @@ namespace org
         bool operator==( const chownResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::chownResponse", 2956591049UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::chownResponse", 2956591049UL );
   
       };
   
@@ -726,7 +726,7 @@ namespace org
         bool operator==( const chownRequest& other ) const { return context == other.context && path == other.path && userId == other.userId && groupId == other.groupId; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::chownRequest", 1479455167UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::chownRequest", 1479455167UL );
   
   
         // Serializable
@@ -776,7 +776,7 @@ namespace org
         bool operator==( const createResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::createResponse", 198172638UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::createResponse", 198172638UL );
   
       };
   
@@ -799,7 +799,7 @@ namespace org
         bool operator==( const createRequest& other ) const { return context == other.context && path == other.path && mode == other.mode; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::createRequest", 736916640UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::createRequest", 736916640UL );
   
   
         // Serializable
@@ -852,7 +852,7 @@ namespace org
         bool operator==( const getattrResponse& other ) const { return stbuf == other.stbuf; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::getattrResponse", 1150023493UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::getattrResponse", 1150023493UL );
   
   
         // Serializable
@@ -880,7 +880,7 @@ namespace org
         bool operator==( const getattrRequest& other ) const { return context == other.context && path == other.path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::getattrRequest", 1335718504UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::getattrRequest", 1335718504UL );
   
   
         // Serializable
@@ -934,7 +934,7 @@ namespace org
         bool operator==( const getxattrResponse& other ) const { return _return_value == other._return_value; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::getxattrResponse", 72976609UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::getxattrResponse", 72976609UL );
   
   
         // Serializable
@@ -965,7 +965,7 @@ namespace org
         bool operator==( const getxattrRequest& other ) const { return context == other.context && path == other.path && name == other.name; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::getxattrRequest", 1634969716UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::getxattrRequest", 1634969716UL );
   
   
         // Serializable
@@ -1014,7 +1014,7 @@ namespace org
         bool operator==( const linkResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::linkResponse", 1242382351UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::linkResponse", 1242382351UL );
   
       };
   
@@ -1038,7 +1038,7 @@ namespace org
         bool operator==( const linkRequest& other ) const { return context == other.context && target_path == other.target_path && link_path == other.link_path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::linkRequest", 666215785UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::linkRequest", 666215785UL );
   
   
         // Serializable
@@ -1091,7 +1091,7 @@ namespace org
         bool operator==( const listxattrResponse& other ) const { return names == other.names; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::listxattrResponse", 3509031574UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::listxattrResponse", 3509031574UL );
   
   
         // Serializable
@@ -1119,7 +1119,7 @@ namespace org
         bool operator==( const listxattrRequest& other ) const { return context == other.context && path == other.path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::listxattrRequest", 661933360UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::listxattrRequest", 661933360UL );
   
   
         // Serializable
@@ -1167,7 +1167,7 @@ namespace org
         bool operator==( const mkdirResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::mkdirResponse", 1461564105UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::mkdirResponse", 1461564105UL );
   
       };
   
@@ -1190,7 +1190,7 @@ namespace org
         bool operator==( const mkdirRequest& other ) const { return context == other.context && path == other.path && mode == other.mode; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::mkdirRequest", 2418580920UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::mkdirRequest", 2418580920UL );
   
   
         // Serializable
@@ -1239,7 +1239,7 @@ namespace org
         bool operator==( const mkvolResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::mkvolResponse", 1350127602UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::mkvolResponse", 1350127602UL );
   
       };
   
@@ -1269,7 +1269,7 @@ namespace org
         bool operator==( const mkvolRequest& other ) const { return context == other.context && password == other.password && volume_name == other.volume_name && osd_selection_policy == other.osd_selection_policy && default_striping_policy == other.default_striping_policy && access_control_policy == other.access_control_policy; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::mkvolRequest", 2457144040UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::mkvolRequest", 2457144040UL );
   
   
         // Serializable
@@ -1325,7 +1325,7 @@ namespace org
         bool operator==( const openResponse& other ) const { return credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::openResponse", 3891582700UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::openResponse", 3891582700UL );
   
   
         // Serializable
@@ -1357,7 +1357,7 @@ namespace org
         bool operator==( const openRequest& other ) const { return context == other.context && path == other.path && flags == other.flags && mode == other.mode; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::openRequest", 2208926316UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::openRequest", 2208926316UL );
   
   
         // Serializable
@@ -1411,7 +1411,7 @@ namespace org
         bool operator==( const readdirResponse& other ) const { return directory_entries == other.directory_entries; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::readdirResponse", 42716287UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::readdirResponse", 42716287UL );
   
   
         // Serializable
@@ -1439,7 +1439,7 @@ namespace org
         bool operator==( const readdirRequest& other ) const { return context == other.context && path == other.path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::readdirRequest", 2159159247UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::readdirRequest", 2159159247UL );
   
   
         // Serializable
@@ -1487,7 +1487,7 @@ namespace org
         bool operator==( const removexattrResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::removexattrResponse", 813148522UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::removexattrResponse", 813148522UL );
   
       };
   
@@ -1511,7 +1511,7 @@ namespace org
         bool operator==( const removexattrRequest& other ) const { return context == other.context && path == other.path && name == other.name; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::removexattrRequest", 4111450692UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::removexattrRequest", 4111450692UL );
   
   
         // Serializable
@@ -1564,7 +1564,7 @@ namespace org
         bool operator==( const renameResponse& other ) const { return credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::renameResponse", 4002167429UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::renameResponse", 4002167429UL );
   
   
         // Serializable
@@ -1595,7 +1595,7 @@ namespace org
         bool operator==( const renameRequest& other ) const { return context == other.context && source_path == other.source_path && target_path == other.target_path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::renameRequest", 229065239UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::renameRequest", 229065239UL );
   
   
         // Serializable
@@ -1644,7 +1644,7 @@ namespace org
         bool operator==( const rmdirResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::rmdirResponse", 161028879UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::rmdirResponse", 161028879UL );
   
       };
   
@@ -1665,7 +1665,7 @@ namespace org
         bool operator==( const rmdirRequest& other ) const { return context == other.context && path == other.path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::rmdirRequest", 1480479915UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::rmdirRequest", 1480479915UL );
   
   
         // Serializable
@@ -1713,7 +1713,7 @@ namespace org
         bool operator==( const rmvolResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::rmvolResponse", 3343228781UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::rmvolResponse", 3343228781UL );
   
       };
   
@@ -1737,7 +1737,7 @@ namespace org
         bool operator==( const rmvolRequest& other ) const { return context == other.context && password == other.password && volume_name == other.volume_name; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::rmvolRequest", 2429915851UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::rmvolRequest", 2429915851UL );
   
   
         // Serializable
@@ -1786,7 +1786,7 @@ namespace org
         bool operator==( const setattrResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::setattrResponse", 1637936981UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::setattrResponse", 1637936981UL );
   
       };
   
@@ -1809,7 +1809,7 @@ namespace org
         bool operator==( const setattrRequest& other ) const { return context == other.context && path == other.path && stbuf == other.stbuf; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::setattrRequest", 1274791757UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::setattrRequest", 1274791757UL );
   
   
         // Serializable
@@ -1858,7 +1858,7 @@ namespace org
         bool operator==( const setxattrResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::setxattrResponse", 1656711865UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::setxattrResponse", 1656711865UL );
   
       };
   
@@ -1887,7 +1887,7 @@ namespace org
         bool operator==( const setxattrRequest& other ) const { return context == other.context && path == other.path && name == other.name && value == other.value && flags == other.flags; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::setxattrRequest", 1676810928UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::setxattrRequest", 1676810928UL );
   
   
         // Serializable
@@ -1942,7 +1942,7 @@ namespace org
         bool operator==( const statfsResponse& other ) const { return statfsbuf == other.statfsbuf; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::statfsResponse", 2403576867UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::statfsResponse", 2403576867UL );
   
   
         // Serializable
@@ -1970,7 +1970,7 @@ namespace org
         bool operator==( const statfsRequest& other ) const { return context == other.context && volume_name == other.volume_name; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::statfsRequest", 1451010089UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::statfsRequest", 1451010089UL );
   
   
         // Serializable
@@ -2018,7 +2018,7 @@ namespace org
         bool operator==( const symlinkResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::symlinkResponse", 3986079894UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::symlinkResponse", 3986079894UL );
   
       };
   
@@ -2042,7 +2042,7 @@ namespace org
         bool operator==( const symlinkRequest& other ) const { return context == other.context && target_path == other.target_path && link_path == other.link_path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::symlinkRequest", 617299237UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::symlinkRequest", 617299237UL );
   
   
         // Serializable
@@ -2095,7 +2095,7 @@ namespace org
         bool operator==( const unlinkResponse& other ) const { return credentials == other.credentials; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::unlinkResponse", 35019552UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::unlinkResponse", 35019552UL );
   
   
         // Serializable
@@ -2123,7 +2123,7 @@ namespace org
         bool operator==( const unlinkRequest& other ) const { return context == other.context && path == other.path; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::unlinkRequest", 3413690043UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::unlinkRequest", 3413690043UL );
   
   
         // Serializable
@@ -2171,7 +2171,7 @@ namespace org
         bool operator==( const utimeResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::utimeResponse", 1258487299UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::utimeResponse", 1258487299UL );
   
       };
   
@@ -2198,7 +2198,7 @@ namespace org
         bool operator==( const utimeRequest& other ) const { return context == other.context && path == other.path && ctime == other.ctime && atime == other.atime && mtime == other.mtime; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::utimeRequest", 1774137591UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::utimeRequest", 1774137591UL );
   
   
         // Serializable
@@ -2255,7 +2255,7 @@ namespace org
         bool operator==( const xtreemfs_check_file_existsResponse& other ) const { return bitmap == other.bitmap; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse", 3802978278UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse", 3802978278UL );
   
   
         // Serializable
@@ -2283,7 +2283,7 @@ namespace org
         bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest", 1290835505UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest", 1290835505UL );
   
   
         // Serializable
@@ -2335,7 +2335,7 @@ namespace org
         bool operator==( const xtreemfs_get_suitable_osdsResponse& other ) const { return osd_uuids == other.osd_uuids; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse", 2352042645UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse", 2352042645UL );
   
   
         // Serializable
@@ -2361,7 +2361,7 @@ namespace org
         bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const { return file_id == other.file_id; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest", 3264623697UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest", 3264623697UL );
   
   
         // Serializable
@@ -2412,7 +2412,7 @@ namespace org
         bool operator==( const xtreemfs_renew_capabilityResponse& other ) const { return renewed_xcap == other.renewed_xcap; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse", 137996173UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse", 137996173UL );
   
   
         // Serializable
@@ -2436,7 +2436,7 @@ namespace org
         bool operator==( const xtreemfs_renew_capabilityRequest& other ) const { return old_xcap == other.old_xcap; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest", 526231386UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest", 526231386UL );
   
   
         // Serializable
@@ -2482,7 +2482,7 @@ namespace org
         bool operator==( const xtreemfs_replica_addResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse", 112572185UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse", 112572185UL );
   
       };
   
@@ -2505,7 +2505,7 @@ namespace org
         bool operator==( const xtreemfs_replica_addRequest& other ) const { return context == other.context && file_id == other.file_id && new_replica == other.new_replica; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest", 3822735046UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest", 3822735046UL );
   
   
         // Serializable
@@ -2554,7 +2554,7 @@ namespace org
         bool operator==( const xtreemfs_replica_removeResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse", 1412849496UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse", 1412849496UL );
   
       };
   
@@ -2578,7 +2578,7 @@ namespace org
         bool operator==( const xtreemfs_replica_removeRequest& other ) const { return context == other.context && file_id == other.file_id && osd_uuid == other.osd_uuid; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest", 992591294UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest", 992591294UL );
   
   
         // Serializable
@@ -2627,7 +2627,7 @@ namespace org
         bool operator==( const xtreemfs_restore_fileResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileResponse", 3701413834UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileResponse", 3701413834UL );
   
       };
   
@@ -2656,7 +2656,7 @@ namespace org
         bool operator==( const xtreemfs_restore_fileRequest& other ) const { return file_path == other.file_path && file_id == other.file_id && file_size == other.file_size && osd_uuid == other.osd_uuid && stripe_size == other.stripe_size; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest", 1511356569UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest", 1511356569UL );
   
   
         // Serializable
@@ -2707,7 +2707,7 @@ namespace org
         bool operator==( const xtreemfs_update_file_sizeResponse& other ) const { return true; }
   
         // YIELD::RTTI
-        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse", 1410569539UL )
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse", 1410569539UL );
   
       };
   
@@ -2726,7 +2726,7 @@ namespace org
         bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && new_file_size == other.new_file_size; }
   
         // YIELD::RTTI
-        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest", 152425201UL )
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest", 152425201UL );
   
   
         // Serializable
