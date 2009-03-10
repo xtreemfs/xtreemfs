@@ -227,6 +227,7 @@ public class SetupUtils {
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33636");
+        props.setProperty("http_port", "30636");
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
         props.setProperty("local_clock_renewal", "50");
@@ -257,6 +258,7 @@ public class SetupUtils {
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug_level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33639");
+        props.setProperty("http_port", "30639");
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
         props.setProperty("local_clock_renewal", "50");

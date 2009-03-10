@@ -95,7 +95,7 @@ public class ByteMapperTest extends TestCase{
     }
     
     class TestObjectStore implements ObjectStore{
-        public ReusableBuffer readObject(long objectNo, long offset, long length){
+        public ReusableBuffer readObject(long objectNo, int offset, int length){
             String content = "Hallo World";
             return ReusableBuffer.wrap(content.substring((int) offset, (int) (offset+length)).getBytes());
         }
@@ -107,7 +107,7 @@ public class ByteMapperTest extends TestCase{
     }
     
     class EmptyObjectStore implements ObjectStore{
-        public ReusableBuffer readObject(long objectNo, long offset, long length){
+        public ReusableBuffer readObject(long objectNo, int offset, int length){
             return ReusableBuffer.wrap("".getBytes());
         }
         

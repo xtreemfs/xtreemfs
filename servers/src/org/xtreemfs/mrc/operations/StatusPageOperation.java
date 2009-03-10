@@ -63,7 +63,9 @@ public class StatusPageOperation extends MRCOperation {
             MEMSTAT("<!-- $MEMSTAT -->"),
             UUIDCACHE("<!-- $UUIDCACHE -->"),
             STATCOLLECT("<!-- $STATCOLLECT -->"),
-            DISKFREE("<!-- $DISKFREE -->");
+            DISKFREE("<!-- $DISKFREE -->"),
+            PROTOVERSION("<!-- $PROTOVERSION -->"),
+            VERSION("<!-- $VERSION -->");
         
         private String template;
         
@@ -118,7 +120,7 @@ public class StatusPageOperation extends MRCOperation {
         // finishRequest(rq);
     }
     
-    protected String getStatusPage() {
+    public String getStatusPage() {
         
         Map<Vars, String> vars = master.getStatusInformation();
         String tmp = statusPageTemplate;

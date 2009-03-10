@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc;
 
-import org.xtreemfs.mrc.*;
 import org.xtreemfs.common.logging.Logging;
 
 /**

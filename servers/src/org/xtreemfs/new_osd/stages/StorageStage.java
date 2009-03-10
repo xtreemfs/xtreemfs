@@ -26,15 +26,12 @@
 package org.xtreemfs.new_osd.stages;
 
 import java.io.IOException;
-import java.util.Map;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.storage.CowPolicy;
@@ -176,46 +173,6 @@ public class StorageStage extends Stage {
     @Override
     protected void processMethod(StageRequest method) {
         throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * @return the numBytesTX
-     */
-    public long getNumBytesTX() {
-        long tmp = 0;
-        for (StorageThread thr : storageThreads)
-            tmp += thr.getNumBytesTX();
-        return tmp;
-    }
-
-    /**
-     * @return the numBytesRX
-     */
-    public long getNumBytesRX() {
-        long tmp = 0;
-        for (StorageThread thr : storageThreads)
-            tmp += thr.getNumBytesRX();
-        return tmp;
-    }
-
-    /**
-     * @return the numObjsTX
-     */
-    public long getNumObjsTX() {
-        long tmp = 0;
-        for (StorageThread thr : storageThreads)
-            tmp += thr.getNumObjsTX();
-        return tmp;
-    }
-
-    /**
-     * @return the numObjsRX
-     */
-    public long getNumObjsRX() {
-        long tmp = 0;
-        for (StorageThread thr : storageThreads)
-            tmp += thr.getNumObjsRX();
-        return tmp;
     }
 
 }

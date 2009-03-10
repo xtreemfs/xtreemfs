@@ -1,11 +1,11 @@
 package org.xtreemfs.utils;
 
 import java.io.File;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.xtreemfs.common.util.ONCRPCServiceURL;
 
 public class CLIParser {
     
@@ -22,7 +22,7 @@ public class CLIParser {
         
         public Long             numValue;
         
-        public URL              urlValue;
+        public ONCRPCServiceURL urlValue;
         
         public File             fileValue;
         
@@ -80,10 +80,10 @@ public class CLIParser {
                     if (iter.hasNext()) {
                         final String value = iter.next();
                         try {
-                            final URL tmp = new URL(value);
+                            final ONCRPCServiceURL tmp = new ONCRPCServiceURL(value);
                             option.urlValue = tmp;
                         } catch (Exception ex) {
-                            throw new IllegalArgumentException(arg + " requires <host>:<port>");
+                            throw new IllegalArgumentException(ex);
                         }
                     } else {
                         throw new IllegalArgumentException(arg + " requires a string argument");

@@ -587,7 +587,7 @@ public class MRCClient extends ONCRPCClient {
                 public XCap getResult(ReusableBuffer data) {
                     final xtreemfs_renew_capabilityResponse resp = new xtreemfs_renew_capabilityResponse();
                     resp.deserialize(data);
-                    return resp.getXcap();
+                    return resp.getRenewed_xcap();
                 }
             });
         return r;

@@ -36,6 +36,7 @@ import java.util.Map;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -76,14 +77,14 @@ public class TortureXtreemFS {
                 return;
             }
 
-            final URL mrcURL = new URL(arguments.get(1));
+            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1));
 
             final String path = (options.get("p").stringValue != null) ?
                                 options.get("p").stringValue : "/torture.data";
             final String volname = (options.get("v").stringValue != null) ?
                                     options.get("v").stringValue : "test";
 
-            final URL    dirURL = new URL(arguments.get(0));
+            final ONCRPCServiceURL    dirURL = new ONCRPCServiceURL(arguments.get(0));
 
             boolean useSSL = false;
 

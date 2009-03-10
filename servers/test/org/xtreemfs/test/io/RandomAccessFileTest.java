@@ -127,7 +127,7 @@ public class RandomAccessFileTest extends TestCase {
         r.get();
 
         for (int i = 0; i < 10; i++) {
-            testEnv.getMrcClient().create(mrc1Address, userID, groupIDs, volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().create(mrc1Address, userID, groupIDs, volumeName + "/myDir/test" + i + ".txt", 0);
             r.get();
         }
             //testEnv.getMrcClient().createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);

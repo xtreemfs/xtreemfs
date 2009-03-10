@@ -85,16 +85,94 @@ public final class CheckObjectOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            ObjectData data = result.getObjectData(true);
-            if (data.getData() != null) {
-                data.setZero_padding(data.getZero_padding()+data.getData().remaining());
-                BufferPool.free(data.getData());
-                data.setData(null);
+            if (rq.getLocationList().getLocalReplica().getOSDs().size() == 1) {
+                //non-striped case
+                nonStripedCheckObject(rq, args, result);
+            } else {
+                //striped read
+                stripedCheckObject(rq, args, result);
             }
-            sendResponse(rq, data);
+
         }
 
+    }
 
+    private void nonStripedCheckObject(OSDRequest rq, check_objectRequest args, ObjectInformation result) {
+
+        final boolean isLastObjectOrEOF = result.getLastLocalObjectNo() <= args.getObject_number();
+        readFinish(rq, args, result, isLastObjectOrEOF);
+    }
+
+    private void stripedCheckObject(final OSDRequest rq, final check_objectRequest args, final ObjectInformation result) {
+        ObjectData data;
+        final long objNo = args.getObject_number();
+        final long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
+        final boolean isLastObjectLocallyKnown = lastKnownObject <= objNo;
+        //check if GMAX must be fetched to determin EOF
+        if ((objNo > lastKnownObject) ||
+                (objNo == lastKnownObject) && (result.getData() != null) && (result.getData().remaining() < result.getStripeSize())) {
+            try {
+                final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
+                final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
+                int cnt = 0;
+                for (ServiceUUID osd : osds) {
+                    if (!osd.equals(localUUID)) {
+                        gmaxRPCs[cnt++] = master.getOSDClient().internal_get_gmax(osd.getAddress(), args.getFile_id(), args.getCredentials());
+                    }
+                }
+                this.waitForResponses(gmaxRPCs, new ResponsesListener() {
+
+                    @Override
+                    public void responsesAvailable() {
+                        stripedCheckObjectAnalyzeGmax(rq, args, result, gmaxRPCs);
+                    }
+                });
+            } catch (UnknownUUIDException ex) {
+                rq.sendInternalServerError(ex);
+                return;
+            }
+        } else {
+            readFinish(rq, args, result, isLastObjectLocallyKnown);
+        }
+    }
+
+    private void stripedCheckObjectAnalyzeGmax(final OSDRequest rq, final check_objectRequest args,
+            final ObjectInformation result, RPCResponse[] gmaxRPCs) {
+        long maxObjNo = -1;
+        long maxTruncate = -1;
+
+        try {
+            for (int i = 0; i < gmaxRPCs.length; i++) {
+                InternalGmax gmax = (InternalGmax) gmaxRPCs[i].get();
+                if ((gmax.getLast_object_id() > maxObjNo) && (gmax.getEpoch() >= maxTruncate)) {
+                    //found new max
+                    maxObjNo = gmax.getLast_object_id();
+                    maxTruncate = gmax.getEpoch();
+                }
+            }
+            final boolean isLastObjectLocallyKnown = maxObjNo <= args.getObject_number();
+            readFinish(rq, args, result, isLastObjectLocallyKnown);
+            //and update gmax locally
+            master.getStorageStage().receivedGMAX_ASYNC(args.getFile_id(), maxTruncate, maxObjNo);
+        } catch (Exception ex) {
+            rq.sendInternalServerError(ex);
+        } finally {
+            for (RPCResponse r : gmaxRPCs)
+                r.freeBuffers();
+        }
+
+    }
+
+    private void readFinish(OSDRequest rq, check_objectRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
+
+        ObjectData data;
+        data = result.getObjectData(isLastObjectOrEOF);
+        if (data.getData() != null) {
+            data.setZero_padding(data.getZero_padding()+data.getData().remaining());
+            BufferPool.free(data.getData());
+            data.setData(null);
+        }
+        sendResponse(rq, data);
     }
 
     public void sendResponse(OSDRequest rq, ObjectData result) {

@@ -87,4 +87,8 @@ public abstract class ONCRPCClient {
         return client.isAlive();
     }
 
+    public InetSocketAddress getDefaultServerAddress() {
+        return this.defaultServer;
+    }
+
 }

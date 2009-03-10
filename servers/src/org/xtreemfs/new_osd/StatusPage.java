@@ -120,12 +120,12 @@ public class StatusPage {
         tmp = tmp.replace(Vars.STORAGEQ.toString(), Integer.toString(master.getStorageStage().getQueueLength()));
         tmp = tmp.replace(Vars.DELETIONQ.toString(), Integer.toString(master.getDeletionStage().getQueueLength()));
         tmp = tmp.replace(Vars.OPENFILES.toString(), Integer.toString(master.getPreprocStage().getNumOpenFiles()));
-        tmp = tmp.replace(Vars.OBJWRITE.toString(), Long.toString(master.getStorageStage().getNumObjsRX()));
-        tmp = tmp.replace(Vars.OBJREAD.toString(), Long.toString(master.getStorageStage().getNumObjsTX()));
+        tmp = tmp.replace(Vars.OBJWRITE.toString(), Long.toString(master.getObjectsReceived()));
+        tmp = tmp.replace(Vars.OBJREAD.toString(), Long.toString(master.getObjectsSent()));
         tmp = tmp.replace(Vars.BYTETX.toString(), OutputUtils
-                .formatBytes(master.getStorageStage().getNumBytesTX()));
+                .formatBytes(master.getBytesSent()));
         tmp = tmp.replace(Vars.BYTERX.toString(), OutputUtils
-                .formatBytes(master.getStorageStage().getNumBytesRX()));
+                .formatBytes(master.getBytesReceived()));
         tmp = tmp
                 .replace(Vars.DELETES.toString(), Long.toString(master.getDeletionStage().getNumFilesDeleted()));
         tmp = tmp.replace(Vars.GLOBALTIME.toString(), new Date(globalTime).toString() + " ("

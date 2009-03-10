@@ -34,6 +34,8 @@ public class ServiceConfig extends Config {
 
     protected int port;
 
+    protected int    httpPort;
+
     protected InetAddress address;
 
     protected boolean useSSL;
@@ -70,6 +72,8 @@ public class ServiceConfig extends Config {
 
         this.port = this.readRequiredInt("listen.port");
 
+        this.httpPort = this.readRequiredInt("http_port");
+
         this.address = this.readOptionalInetAddr("listen.address", null);
 
         if(this.useSSL = this.readRequiredBoolean("ssl.enabled")){
@@ -99,6 +103,10 @@ public class ServiceConfig extends Config {
 	public int getPort() {
 		return this.port;
 	}
+
+    public int getHttpPort() {
+        return this.httpPort;
+    }
 
 	public InetAddress getAddress() {
 		return this.address;

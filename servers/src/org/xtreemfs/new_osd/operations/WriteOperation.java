@@ -70,6 +70,9 @@ public final class WriteOperation extends OSDOperation {
             return;
         }
 
+        master.objectReceived();
+        master.dataReceived(args.getData().getData().capacity());
+
         master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), 
                 sp,
                 args.getOffset(), args.getData().getData(), rq.getCowPolicy(),

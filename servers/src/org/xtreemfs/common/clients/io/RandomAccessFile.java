@@ -48,6 +48,7 @@ import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.XCap;
@@ -257,6 +258,8 @@ public class RandomAccessFile implements ObjectStore {
 
             size = data.getZero_padding();
 
+
+
         } catch (ONCRPCException ex) {
             throw new IOException("cannot read object: "+ex.toString(), ex);
         } catch (InterruptedException ex) {
@@ -264,6 +267,10 @@ public class RandomAccessFile implements ObjectStore {
         } finally {
             if (response != null) {
                 response.freeBuffers();
+            }
+            if ((data != null) && (data.getData() != null)) {
+                BufferPool.free(data.getData());
+                data.setData(null);
             }
         }
         return size;
@@ -292,7 +299,6 @@ public class RandomAccessFile implements ObjectStore {
         ObjectData data = null;
         ReusableBuffer buffer = null;
         try {
-            System.out.println("read: "+objectNo+" of="+offset+" len="+length);
             response = osdClient.read(osd.getAddress(), fileId, fcred, (long)objectNo, 0, offset,length);
             data = response.get();
 
@@ -521,28 +527,28 @@ public class RandomAccessFile implements ObjectStore {
         return stripingPolicy.getStripeSizeForObject(0);
     }
 
-//    /**
-//     * uses only the OSDs of the first replica
-//     * @return
-//     */
-//    public List<ServiceUUID> getOSDs() {
-//        // FIXME: use more than only the first replica
-//        return locations.getLocation(0).getOSDs();
-//    }
-//
-//    public long noOfObjects() throws Exception {
-//        // all replicas have the same striping policy at the moment
-//        return (length() / locations.getLocation(0).getStripingPolicy().getStripeSize(0)) + 1;
-//    }
-//
-//    /**
-//     * uses only the OSDs of the first replica
-//     * @return
-//     */
-//    public ServiceUUID getOSDId(long objectNo) {
-//        // FIXME: use more than only the first replica
-//        return locations.getOSDsByObject(objectNo).get(0);
-//    }
+    /**
+     * uses only the OSDs of the first replica
+     * @return
+     */
+    public List<ServiceUUID> getOSDs() {
+        // FIXME: use more than only the first replica
+        return currentReplica.getOSDs();
+    }
+
+    public long noOfObjects() throws Exception {
+        // all replicas have the same striping policy at the moment
+        return (length() / stripingPolicy.getStripeSizeForObject(0)) + 1;
+    }
+
+    /**
+     * uses only the OSDs of the first replica
+     * @return
+     */
+    public ServiceUUID getOSDId(long objectNo) {
+        // FIXME: use more than only the first replica
+        return currentReplica.getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
+    }
 
 
     public String getFileId() {
@@ -565,6 +571,10 @@ public class RandomAccessFile implements ObjectStore {
         return fcred.getXlocs().getReplicas().get(0).toString();
     }
 
+    public FileCredentials getCredentials() {
+        return this.fcred;
+    }
+
     private void checkCap() throws IOException {
 
         long time = System.currentTimeMillis();
@@ -581,6 +591,24 @@ public class RandomAccessFile implements ObjectStore {
             } catch (Exception e) {
                 throw new IOException(e);
             }
+        }
+    }
+
+    public void forceFileSize(long newFileSize) throws IOException {
+        NewFileSizeSet newfsset = new NewFileSizeSet();
+        newfsset.add(new NewFileSize(newFileSize, fcred.getXcap().getTruncate_epoch()));
+        OSDWriteResponse wr = new OSDWriteResponse(newfsset, new OSDtoMRCDataSet());
+        RPCResponse r = null;
+        try {
+            r = mrcClient.xtreemfs_update_file_size(mrcAddress, fcred.getXcap(), wr);
+            r.get();
+        } catch (ONCRPCException ex) {
+            throw new IOException("cannot update file size",ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("cannot update file size",ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
         }
     }
 }

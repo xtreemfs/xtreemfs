@@ -24,10 +24,14 @@
 
 package org.xtreemfs.mrc;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,6 +87,8 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     DBAccessResultListener {
+
+    public final static String VERSION = "1.0.0 (v1.0 RC1)";
     
     private static final int             RPC_TIMEOUT        = 10000;
     
@@ -109,6 +115,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final VolumeManager          volumeManager;
     
     private final FileAccessManager      fileAccessManager;
+
+    private final HttpServer             httpServ;
     
     public MRCRequestDispatcher(final MRCConfig config) throws IOException, JSONException,
         ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
@@ -182,6 +190,27 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
             
         };
+
+        final StatusPageOperation status = new StatusPageOperation(this);
+
+        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
+        httpServ.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange httpExchange) throws IOException {
+                byte[] content;
+                try {
+
+                    content = status.getStatusPage().getBytes("ascii");
+                    httpExchange.sendResponseHeaders(200, content.length);
+                    httpExchange.getResponseBody().write(content);
+                    httpExchange.getResponseBody().close();
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                    httpExchange.sendResponseHeaders(500, 0);
+                }
+
+            }
+        });
+        httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
             config);
@@ -235,6 +264,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         UUIDResolver.shutdown();
         
         volumeManager.shutdown();
+
+        httpServ.stop(0);
         
         TimeSync.getInstance().shutdown();
     }
@@ -308,6 +339,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         data.put(Vars.UUID, config.getUUID().toString());
         data.put(Vars.UUIDCACHE, UUIDResolver.getCache());
+        data.put(Vars.PROTOVERSION, Integer.toString(MRCInterface.getVersion()));
+        data.put(Vars.VERSION,VERSION);
+
+        data.put(Vars.PINKYQ, Long.toString(this.serverStage.getPendingRequests()));
+        data.put(Vars.NUMCON, Integer.toString(this.serverStage.getNumConnections()));
         
         long freeMem = Runtime.getRuntime().freeMemory();
         String span = "<span>";

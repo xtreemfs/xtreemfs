@@ -57,7 +57,7 @@ public class RenewOperation extends MRCOperation {
                     .getRequestArgs();
             
             // create a capability object to verify the capability
-            Capability cap = new Capability(rqArgs.getXcap(), master.getConfig().getCapabilitySecret());
+            Capability cap = new Capability(rqArgs.getOld_xcap(), master.getConfig().getCapabilitySecret());
             
             // check whether the capability has a valid signature
             if (!cap.hasValidSignature())

@@ -11,20 +11,20 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public xtreemfs_renew_capabilityRequest() { xcap = new XCap(); }
-    public xtreemfs_renew_capabilityRequest( XCap xcap ) { this.xcap = xcap; }
-    public xtreemfs_renew_capabilityRequest( Object from_hash_map ) { xcap = new XCap(); this.deserialize( from_hash_map ); }
-    public xtreemfs_renew_capabilityRequest( Object[] from_array ) { xcap = new XCap();this.deserialize( from_array ); }
+    public xtreemfs_renew_capabilityRequest() { old_xcap = new XCap(); }
+    public xtreemfs_renew_capabilityRequest( XCap old_xcap ) { this.old_xcap = old_xcap; }
+    public xtreemfs_renew_capabilityRequest( Object from_hash_map ) { old_xcap = new XCap(); this.deserialize( from_hash_map ); }
+    public xtreemfs_renew_capabilityRequest( Object[] from_array ) { old_xcap = new XCap();this.deserialize( from_array ); }
 
-    public XCap getXcap() { return xcap; }
-    public void setXcap( XCap xcap ) { this.xcap = xcap; }
+    public XCap getOld_xcap() { return old_xcap; }
+    public void setOld_xcap( XCap old_xcap ) { this.old_xcap = old_xcap; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest"; }    
     public long getTypeId() { return 25; }
 
     public String toString()
     {
-        return "xtreemfs_renew_capabilityRequest( " + xcap.toString() + " )"; 
+        return "xtreemfs_renew_capabilityRequest( " + old_xcap.toString() + " )";
     }
 
 
@@ -35,35 +35,35 @@ public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.xcap.deserialize( from_hash_map.get( "xcap" ) );
+        this.old_xcap.deserialize( from_hash_map.get( "old_xcap" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.xcap.deserialize( from_array[0] );        
+        this.old_xcap.deserialize( from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        xcap = new XCap(); xcap.deserialize( buf );
+        old_xcap = new XCap(); old_xcap.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "xcap", xcap.serialize() );
+        to_hash_map.put( "old_xcap", old_xcap.serialize() );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        xcap.serialize( writer );
+        old_xcap.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += xcap.calculateSize();
+        my_size += old_xcap.calculateSize();
         return my_size;
     }
 
@@ -72,7 +72,7 @@ public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces
     public Response createDefaultResponse() { return new xtreemfs_renew_capabilityResponse(); }
 
 
-    private XCap xcap;
+    private XCap old_xcap;
 
 }
 

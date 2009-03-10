@@ -172,6 +172,9 @@ public final class ReadOperation extends OSDOperation {
         } else {
             data = result.getObjectData(isLastObjectOrEOF);
         }
+        master.objectSent();
+        if (data.getData() != null)
+            master.dataSent(data.getData().capacity());
         sendResponse(rq, data);
     }
 

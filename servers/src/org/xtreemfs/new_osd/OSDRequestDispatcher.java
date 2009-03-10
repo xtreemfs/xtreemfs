@@ -36,6 +36,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
@@ -118,11 +119,18 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     protected final long            startupTime;
 
+    protected final AtomicLong      numBytesTX, numBytesRX, numObjsTX, numObjsRX;
+
     
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
         
         this.config = config;
         assert (config.getUUID() != null);
+
+        numBytesTX = new AtomicLong();
+        numBytesRX = new AtomicLong();
+        numObjsTX = new AtomicLong();
+        numObjsRX = new AtomicLong();
         
         // initialize the checksum factory
         ChecksumFactory.getInstance().addProvider(new JavaChecksumProvider());
@@ -477,5 +485,36 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
 
+    public void objectReceived() {
+        numObjsRX.incrementAndGet();
+    }
+
+    public void objectSent() {
+        numObjsTX.incrementAndGet();
+    }
+
+    public void dataReceived(int numBytes) {
+        numBytesRX.addAndGet(numBytes);
+    }
+
+    public void dataSent(int numBytes) {
+        numBytesTX.addAndGet(numBytes);
+    }
+
+    public long getObjectsReceived() {
+        return numObjsRX.get();
+    }
+
+    public long getObjectsSent() {
+        return numObjsTX.get();
+    }
+
+    public long getBytesReceived() {
+        return numBytesRX.get();
+    }
+
+    public long getBytesSent() {
+        return numBytesTX.get();
+    }
     
 }
