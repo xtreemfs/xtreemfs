@@ -1,0 +1,19 @@
+#include "org/xtreemfs/interfaces/mrc_osd_types.idl"
+
+
+module org
+{
+  module xtreemfs
+  {
+    module client
+    {
+      local interface FileInterface
+      {
+        YIELD::Stat fgetattr();
+        void ftruncate( uint64_t new_size, org::xtreemfs::interfaces::FileCredentials file_credentials );
+        size_t read( char* rbuf, in size_t size, off_t offset, org::xtreemfs::interfaces::FileCredentials file_credentials );
+        size_t write( const char* wbuf, in size_t size, off_t offset, org::xtreemfs::interfaces::FileCredentials file_credentials );
+      };
+    };
+  };
+};
