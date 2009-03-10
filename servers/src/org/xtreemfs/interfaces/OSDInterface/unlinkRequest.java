@@ -21,9 +21,14 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public FileCredentials getCredentials() { return credentials; }
     public void setCredentials( FileCredentials credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }    
     public long getTypeId() { return 3; }
+
+    public String toString()
+    {
+        return "unlinkRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

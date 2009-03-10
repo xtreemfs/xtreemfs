@@ -15,9 +15,14 @@ public class chownResponse implements org.xtreemfs.interfaces.utils.Response
     public chownResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public chownResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownResponse"; }    
     public long getTypeId() { return 3; }
+
+    public String toString()
+    {
+        return "chownResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -15,9 +15,14 @@ public class admin_restore_databaseResponse implements org.xtreemfs.interfaces.u
     public admin_restore_databaseResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public admin_restore_databaseResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::admin_restore_databaseResponse"; }    
     public long getTypeId() { return 53; }
+
+    public String toString()
+    {
+        return "admin_restore_databaseResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

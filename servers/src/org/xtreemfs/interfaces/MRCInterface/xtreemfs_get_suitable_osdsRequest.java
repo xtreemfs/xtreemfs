@@ -19,9 +19,14 @@ public class xtreemfs_get_suitable_osdsRequest implements org.xtreemfs.interface
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest"; }    
     public long getTypeId() { return 24; }
+
+    public String toString()
+    {
+        return "xtreemfs_get_suitable_osdsRequest( " + "\"" + file_id + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

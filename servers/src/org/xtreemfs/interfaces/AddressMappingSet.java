@@ -25,6 +25,14 @@ public class AddressMappingSet extends ArrayList<AddressMapping>
         this.deserialize( from_array );
     }        
 
+    public String toString()
+    {
+        String to_string = new String();
+        for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); )
+            to_string += i.next().toString() + ", ";
+        return to_string;
+    }
+
     
     public Object serialize() 
     {

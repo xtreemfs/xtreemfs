@@ -48,9 +48,14 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::stat_"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( uid ) + ", " + Integer.toString( gid ) + ", " + Integer.toString( dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( object_type ) + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

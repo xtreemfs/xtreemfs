@@ -19,9 +19,14 @@ public class renameResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentialsSet getCredentials() { return credentials; }
     public void setCredentials( FileCredentialsSet credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }    
     public long getTypeId() { return 14; }
+
+    public String toString()
+    {
+        return "renameResponse( " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
     public boolean getReturnValue() { return returnValue; }
     public void setReturnValue( boolean returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }    
     public long getTypeId() { return 1; }
+
+    public String toString()
+    {
+        return "accessResponse( " + Boolean.toString( returnValue ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

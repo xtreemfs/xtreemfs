@@ -15,9 +15,14 @@ public class createResponse implements org.xtreemfs.interfaces.utils.Response
     public createResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public createResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createResponse"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "createResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

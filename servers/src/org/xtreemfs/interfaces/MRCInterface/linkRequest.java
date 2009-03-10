@@ -23,9 +23,14 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getLink_path() { return link_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::linkRequest"; }    
     public long getTypeId() { return 7; }
+
+    public String toString()
+    {
+        return "linkRequest( " + context.toString() + ", " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

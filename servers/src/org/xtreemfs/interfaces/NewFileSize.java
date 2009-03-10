@@ -20,9 +20,14 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "NewFileSize( " + Long.toString( size_in_bytes ) + ", " + Integer.toString( truncate_epoch ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

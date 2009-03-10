@@ -19,9 +19,14 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "ConcurrentModificationException( " + "\"" + stack_trace + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

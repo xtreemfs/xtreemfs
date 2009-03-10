@@ -21,9 +21,14 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }    
     public long getTypeId() { return 21; }
+
+    public String toString()
+    {
+        return "unlinkRequest( " + context.toString() + ", " + "\"" + path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

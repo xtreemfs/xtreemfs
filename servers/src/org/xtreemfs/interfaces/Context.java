@@ -20,9 +20,14 @@ public class Context implements org.xtreemfs.interfaces.utils.Serializable
     public StringSet getGroup_ids() { return group_ids; }
     public void setGroup_ids( StringSet group_ids ) { this.group_ids = group_ids; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Context"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "Context( " + "\"" + user_id + "\"" + ", " + group_ids.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

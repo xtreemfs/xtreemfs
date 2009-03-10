@@ -19,9 +19,14 @@ public class service_deregisterRequest implements org.xtreemfs.interfaces.utils.
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_deregisterRequest"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "service_deregisterRequest( " + "\"" + uuid + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

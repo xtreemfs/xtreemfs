@@ -23,9 +23,14 @@ public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::OSDException"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "OSDException( " + Integer.toString( error_code ) + ", " + "\"" + errro_message + "\"" + ", " + "\"" + stack_trace + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

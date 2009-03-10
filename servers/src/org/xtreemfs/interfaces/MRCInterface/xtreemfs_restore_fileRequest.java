@@ -27,9 +27,14 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
     public int getStripe_size() { return stripe_size; }
     public void setStripe_size( int stripe_size ) { this.stripe_size = stripe_size; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest"; }    
     public long getTypeId() { return 28; }
+
+    public String toString()
+    {
+        return "xtreemfs_restore_fileRequest( " + "\"" + file_path + "\"" + ", " + "\"" + file_id + "\"" + ", " + Long.toString( file_size ) + ", " + "\"" + osd_uuid + "\"" + ", " + Integer.toString( stripe_size ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

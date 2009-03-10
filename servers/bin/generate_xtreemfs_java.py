@@ -98,16 +98,16 @@ class XtreemFSJavaBoolType(JavaBoolType):
 
 class XtreemFSJavaNumericType(JavaNumericType):
     def getBufferDeserializeCall( self, identifier ):
-        boxed_type= self.getBoxedType()
-        if boxed_type == "Integer": boxed_type = "Int"
-        return "%(identifier)s = buf.get%(boxed_type)s();" % locals()
+        boxed_type_name= self.getBoxedTypeName()
+        if boxed_type_name == "Integer": boxed_type_name = "Int"
+        return "%(identifier)s = buf.get%(boxed_type_name)s();" % locals()
 
     def getBufferSerializeCall( self, identifier ):
-        boxed_type= self.getBoxedType()
-        if boxed_type == "Integer": boxed_type = "Int"
-        return "writer.put%(boxed_type)s( %(identifier)s );" % locals()
+        boxed_type_name= self.getBoxedTypeName()
+        if boxed_type_name == "Integer": boxed_type_name = "Int"
+        return "writer.put%(boxed_type_name)s( %(identifier)s );" % locals()
         
-    def getSize( self, identifier ): return "( " + self.getBoxedType() + ".SIZE / 8 )"
+    def getSize( self, identifier ): return "( " + self.getBoxedTypeName() + ".SIZE / 8 )"
    
                     
 class XtreemFSJavaSequenceType(JavaSequenceType):
@@ -134,13 +134,13 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
         return JavaSequenceType.getImports( self ) + XTREEMFS_COMMON_IMPORTS
     
     def getOtherMethods( self ):
-        value_boxed_type = self.getValueType().getBoxedType()
+        value_boxed_type_name = self.getValueType().getBoxedTypeName()
         next_value_size = self.getValueType().getSize( "next_value" )        
         return JavaSequenceType.getOtherMethods( self ) + """
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
-        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); ) {
-            %(value_boxed_type)s next_value = i.next();
+        for ( Iterator<%(value_boxed_type_name)s> i = iterator(); i.hasNext(); ) {
+            %(value_boxed_type_name)s next_value = i.next();
             my_size += %(next_value_size)s;
         }
         return my_size;
@@ -151,16 +151,16 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
         return "%(identifier)s.calculateSize()" % locals()
 
     def getSerializeMethods( self ):
-        value_boxed_type = self.getValueType().getBoxedType()
+        value_boxed_type_name = self.getValueType().getBoxedTypeName()
         value_serializer = self.getValueType().getBufferSerializeCall( "next_value" )        
         return JavaSequenceType.getSerializeMethods( self ) + """
     public void serialize(ONCRPCBufferWriter writer) {
         if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
         throw new IllegalArgumentException("array is too large ("+this.size()+")");
         writer.putInt( size() );
-        for ( Iterator<%(value_boxed_type)s> i = iterator(); i.hasNext(); )
+        for ( Iterator<%(value_boxed_type_name)s> i = iterator(); i.hasNext(); )
         {
-            %(value_boxed_type)s next_value = i.next();        
+            %(value_boxed_type_name)s next_value = i.next();        
             %(value_serializer)s;
         }
     }        

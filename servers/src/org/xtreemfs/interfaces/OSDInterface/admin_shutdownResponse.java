@@ -15,9 +15,14 @@ public class admin_shutdownResponse implements org.xtreemfs.interfaces.utils.Res
     public admin_shutdownResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public admin_shutdownResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::admin_shutdownResponse"; }    
     public long getTypeId() { return 50; }
+
+    public String toString()
+    {
+        return "admin_shutdownResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -15,9 +15,14 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public unlinkResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public unlinkResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }    
     public long getTypeId() { return 3; }
+
+    public String toString()
+    {
+        return "unlinkResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

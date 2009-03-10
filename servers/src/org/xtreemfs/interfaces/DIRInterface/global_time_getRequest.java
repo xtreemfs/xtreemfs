@@ -15,9 +15,14 @@ public class global_time_getRequest implements org.xtreemfs.interfaces.utils.Req
     public global_time_getRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public global_time_getRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::global_time_getRequest"; }    
     public long getTypeId() { return 8; }
+
+    public String toString()
+    {
+        return "global_time_getRequest()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

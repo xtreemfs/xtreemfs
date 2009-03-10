@@ -21,9 +21,14 @@ public class keep_file_openRequest implements org.xtreemfs.interfaces.utils.Requ
     public FileCredentials getCredentials() { return credentials; }
     public void setCredentials( FileCredentials credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::keep_file_openRequest"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "keep_file_openRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

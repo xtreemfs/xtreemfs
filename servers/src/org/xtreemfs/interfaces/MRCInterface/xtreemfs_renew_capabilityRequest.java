@@ -19,9 +19,14 @@ public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest"; }    
     public long getTypeId() { return 25; }
+
+    public String toString()
+    {
+        return "xtreemfs_renew_capabilityRequest( " + xcap.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class readResponse implements org.xtreemfs.interfaces.utils.Response
     public ObjectData getReturnValue() { return returnValue; }
     public void setReturnValue( ObjectData returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readResponse"; }    
     public long getTypeId() { return 1; }
+
+    public String toString()
+    {
+        return "readResponse( " + returnValue.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

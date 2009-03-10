@@ -19,9 +19,14 @@ public class service_registerRequest implements org.xtreemfs.interfaces.utils.Re
     public ServiceRegistry getService() { return service; }
     public void setService( ServiceRegistry service ) { this.service = service; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_registerRequest"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "service_registerRequest( " + service.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public String getError_message() { return error_message; }
     public void setError_message( String error_message ) { this.error_message = error_message; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "InvalidArgumentException( " + "\"" + error_message + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

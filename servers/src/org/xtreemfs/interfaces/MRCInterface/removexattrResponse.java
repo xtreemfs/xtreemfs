@@ -15,9 +15,14 @@ public class removexattrResponse implements org.xtreemfs.interfaces.utils.Respon
     public removexattrResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public removexattrResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::removexattrResponse"; }    
     public long getTypeId() { return 13; }
+
+    public String toString()
+    {
+        return "removexattrResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

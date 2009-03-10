@@ -20,9 +20,14 @@ public class FileCredentials implements org.xtreemfs.interfaces.utils.Serializab
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "FileCredentials( " + xlocs.toString() + ", " + xcap.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

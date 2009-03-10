@@ -15,9 +15,14 @@ public class internal_truncateResponse implements org.xtreemfs.interfaces.utils.
     public internal_truncateResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public internal_truncateResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_truncateResponse"; }    
     public long getTypeId() { return 101; }
+
+    public String toString()
+    {
+        return "internal_truncateResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

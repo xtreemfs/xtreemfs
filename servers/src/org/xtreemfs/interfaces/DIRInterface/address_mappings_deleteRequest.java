@@ -19,9 +19,14 @@ public class address_mappings_deleteRequest implements org.xtreemfs.interfaces.u
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteRequest"; }    
     public long getTypeId() { return 3; }
+
+    public String toString()
+    {
+        return "address_mappings_deleteRequest( " + "\"" + uuid + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

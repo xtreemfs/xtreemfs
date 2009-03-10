@@ -19,9 +19,14 @@ public class statfsResponse implements org.xtreemfs.interfaces.utils.Response
     public statfs_ getStatfsbuf() { return statfsbuf; }
     public void setStatfsbuf( statfs_ statfsbuf ) { this.statfsbuf = statfsbuf; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statfsResponse"; }    
     public long getTypeId() { return 19; }
+
+    public String toString()
+    {
+        return "statfsResponse( " + statfsbuf.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

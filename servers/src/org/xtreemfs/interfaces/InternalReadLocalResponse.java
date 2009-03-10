@@ -22,9 +22,14 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "InternalReadLocalResponse( " + file_size.toString() + ", " + Integer.toString( zero_padding ) + ", " + data.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

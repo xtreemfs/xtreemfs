@@ -30,9 +30,14 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public int getTtl() { return ttl; }
     public void setTtl( int ttl ) { this.ttl = ttl; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "AddressMapping( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + "\"" + protocol + "\"" + ", " + "\"" + address + "\"" + ", " + Integer.toString( port ) + ", " + "\"" + match_network + "\"" + ", " + Integer.toString( ttl ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

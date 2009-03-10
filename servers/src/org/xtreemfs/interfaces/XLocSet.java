@@ -24,9 +24,14 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     public long getRead_only_file_size() { return read_only_file_size; }
     public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "XLocSet( " + replicas.toString() + ", " + Integer.toString( version ) + ", " + "\"" + repUpdatePolicy + "\"" + ", " + Long.toString( read_only_file_size ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -15,9 +15,14 @@ public class xtreemfs_replica_addResponse implements org.xtreemfs.interfaces.uti
     public xtreemfs_replica_addResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_replica_addResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse"; }    
     public long getTypeId() { return 26; }
+
+    public String toString()
+    {
+        return "xtreemfs_replica_addResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

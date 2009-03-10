@@ -21,9 +21,14 @@ public class statfsRequest implements org.xtreemfs.interfaces.utils.Request
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statfsRequest"; }    
     public long getTypeId() { return 19; }
+
+    public String toString()
+    {
+        return "statfsRequest( " + context.toString() + ", " + "\"" + volume_name + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

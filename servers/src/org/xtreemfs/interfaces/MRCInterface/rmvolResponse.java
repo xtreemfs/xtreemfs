@@ -15,9 +15,14 @@ public class rmvolResponse implements org.xtreemfs.interfaces.utils.Response
     public rmvolResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public rmvolResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmvolResponse"; }    
     public long getTypeId() { return 16; }
+
+    public String toString()
+    {
+        return "rmvolResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

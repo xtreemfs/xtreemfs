@@ -19,9 +19,14 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }    
     public long getTypeId() { return 24; }
+
+    public String toString()
+    {
+        return "xtreemfs_get_suitable_osdsResponse( " + osd_uuids.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

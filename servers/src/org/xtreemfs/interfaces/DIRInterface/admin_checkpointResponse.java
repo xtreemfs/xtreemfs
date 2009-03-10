@@ -15,9 +15,14 @@ public class admin_checkpointResponse implements org.xtreemfs.interfaces.utils.R
     public admin_checkpointResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public admin_checkpointResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::admin_checkpointResponse"; }    
     public long getTypeId() { return 50; }
+
+    public String toString()
+    {
+        return "admin_checkpointResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public String getReturnValue() { return returnValue; }
     public void setReturnValue( String returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }    
     public long getTypeId() { return 6; }
+
+    public String toString()
+    {
+        return "getxattrResponse( " + "\"" + returnValue + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

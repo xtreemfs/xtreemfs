@@ -21,9 +21,14 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrRequest"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "getattrRequest( " + context.toString() + ", " + "\"" + path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public String getTo_uuid() { return to_uuid; }
     public void setTo_uuid( String to_uuid ) { this.to_uuid = to_uuid; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::RedirectException"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "RedirectException( " + "\"" + to_uuid + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

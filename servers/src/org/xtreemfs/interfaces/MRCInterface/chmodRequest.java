@@ -23,9 +23,14 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }    
     public long getTypeId() { return 2; }
+
+    public String toString()
+    {
+        return "chmodRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class openResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentials getCredentials() { return credentials; }
     public void setCredentials( FileCredentials credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }    
     public long getTypeId() { return 11; }
+
+    public String toString()
+    {
+        return "openResponse( " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

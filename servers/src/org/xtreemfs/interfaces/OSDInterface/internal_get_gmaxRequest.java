@@ -21,9 +21,14 @@ public class internal_get_gmaxRequest implements org.xtreemfs.interfaces.utils.R
     public FileCredentials getCredentials() { return credentials; }
     public void setCredentials( FileCredentials credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxRequest"; }    
     public long getTypeId() { return 100; }
+
+    public String toString()
+    {
+        return "internal_get_gmaxRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

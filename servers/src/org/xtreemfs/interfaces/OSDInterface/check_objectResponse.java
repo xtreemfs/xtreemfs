@@ -19,9 +19,14 @@ public class check_objectResponse implements org.xtreemfs.interfaces.utils.Respo
     public ObjectData getReturnValue() { return returnValue; }
     public void setReturnValue( ObjectData returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::check_objectResponse"; }    
     public long getTypeId() { return 103; }
+
+    public String toString()
+    {
+        return "check_objectResponse( " + returnValue.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

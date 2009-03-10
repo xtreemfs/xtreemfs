@@ -25,6 +25,14 @@ public class StripingPolicySet extends ArrayList<StripingPolicy>
         this.deserialize( from_array );
     }        
 
+    public String toString()
+    {
+        String to_string = new String();
+        for ( Iterator<StripingPolicy> i = iterator(); i.hasNext(); )
+            to_string += i.next().toString() + ", ";
+        return to_string;
+    }
+
     
     public Object serialize() 
     {

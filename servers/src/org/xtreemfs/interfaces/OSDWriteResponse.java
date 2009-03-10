@@ -20,9 +20,14 @@ public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializa
     public OSDtoMRCDataSet getOpaque_data() { return opaque_data; }
     public void setOpaque_data( OSDtoMRCDataSet opaque_data ) { this.opaque_data = opaque_data; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "OSDWriteResponse( " + new_file_size.toString() + ", " + opaque_data.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

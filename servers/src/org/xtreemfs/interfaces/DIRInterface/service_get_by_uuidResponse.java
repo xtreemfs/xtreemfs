@@ -19,9 +19,14 @@ public class service_get_by_uuidResponse implements org.xtreemfs.interfaces.util
     public ServiceRegistrySet getServices() { return services; }
     public void setServices( ServiceRegistrySet services ) { this.services = services; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidResponse"; }    
     public long getTypeId() { return 7; }
+
+    public String toString()
+    {
+        return "service_get_by_uuidResponse( " + services.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -25,9 +25,14 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     public String getGroupId() { return groupId; }
     public void setGroupId( String groupId ) { this.groupId = groupId; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }    
     public long getTypeId() { return 3; }
+
+    public String toString()
+    {
+        return "chownRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + "\"" + userId + "\"" + ", " + "\"" + groupId + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

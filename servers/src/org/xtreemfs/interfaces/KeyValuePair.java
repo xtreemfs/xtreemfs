@@ -20,9 +20,14 @@ public class KeyValuePair implements org.xtreemfs.interfaces.utils.Serializable
     public String getValue() { return value; }
     public void setValue( String value ) { this.value = value; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::KeyValuePair"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "KeyValuePair( " + "\"" + key + "\"" + ", " + "\"" + value + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

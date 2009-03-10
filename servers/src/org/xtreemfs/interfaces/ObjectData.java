@@ -24,9 +24,14 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
     public ReusableBuffer getData() { return data; }
     public void setData( ReusableBuffer data ) { this.data = data; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "ObjectData( " + "\"" + checksum + "\"" + ", " + Integer.toString( zero_padding ) + ", " + Boolean.toString( invalid_checksum_on_osd ) + ", " + "\"" + data + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

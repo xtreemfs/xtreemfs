@@ -19,9 +19,14 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }    
     public long getTypeId() { return 8; }
+
+    public String toString()
+    {
+        return "listxattrResponse( " + names.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

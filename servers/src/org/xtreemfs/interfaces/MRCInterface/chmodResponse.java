@@ -15,9 +15,14 @@ public class chmodResponse implements org.xtreemfs.interfaces.utils.Response
     public chmodResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public chmodResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodResponse"; }    
     public long getTypeId() { return 2; }
+
+    public String toString()
+    {
+        return "chmodResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

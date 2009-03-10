@@ -19,9 +19,14 @@ public class global_time_getResponse implements org.xtreemfs.interfaces.utils.Re
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::global_time_getResponse"; }    
     public long getTypeId() { return 8; }
+
+    public String toString()
+    {
+        return "global_time_getResponse( " + Long.toString( returnValue ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

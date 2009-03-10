@@ -25,9 +25,14 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }    
     public long getTypeId() { return 11; }
+
+    public String toString()
+    {
+        return "openRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( flags ) + ", " + Integer.toString( mode ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

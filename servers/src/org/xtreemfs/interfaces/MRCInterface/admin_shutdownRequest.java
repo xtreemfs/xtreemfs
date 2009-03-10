@@ -19,9 +19,14 @@ public class admin_shutdownRequest implements org.xtreemfs.interfaces.utils.Requ
     public String getPassword() { return password; }
     public void setPassword( String password ) { this.password = password; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::admin_shutdownRequest"; }    
     public long getTypeId() { return 50; }
+
+    public String toString()
+    {
+        return "admin_shutdownRequest( " + "\"" + password + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

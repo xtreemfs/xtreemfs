@@ -15,9 +15,14 @@ public class mkdirResponse implements org.xtreemfs.interfaces.utils.Response
     public mkdirResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public mkdirResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirResponse"; }    
     public long getTypeId() { return 9; }
+
+    public String toString()
+    {
+        return "mkdirResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

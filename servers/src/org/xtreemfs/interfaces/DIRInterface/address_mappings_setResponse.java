@@ -19,9 +19,14 @@ public class address_mappings_setResponse implements org.xtreemfs.interfaces.uti
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::address_mappings_setResponse"; }    
     public long getTypeId() { return 2; }
+
+    public String toString()
+    {
+        return "address_mappings_setResponse( " + Long.toString( returnValue ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

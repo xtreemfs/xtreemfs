@@ -29,9 +29,14 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     public int getLength() { return length; }
     public void setLength( int length ) { this.length = length; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }    
     public long getTypeId() { return 1; }
+
+    public String toString()
+    {
+        return "readRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Integer.toString( length ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

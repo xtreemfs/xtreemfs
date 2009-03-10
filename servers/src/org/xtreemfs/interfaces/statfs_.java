@@ -24,9 +24,14 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     public int getNamelen() { return namelen; }
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::statfs_"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "statfs_( " + Integer.toString( bsize ) + ", " + Long.toString( bfree ) + ", " + "\"" + fsid + "\"" + ", " + Integer.toString( namelen ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -15,9 +15,14 @@ public class utimeResponse implements org.xtreemfs.interfaces.utils.Response
     public utimeResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public utimeResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimeResponse"; }    
     public long getTypeId() { return 22; }
+
+    public String toString()
+    {
+        return "utimeResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

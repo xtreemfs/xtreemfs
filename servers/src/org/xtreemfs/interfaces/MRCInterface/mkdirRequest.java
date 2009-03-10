@@ -23,9 +23,14 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirRequest"; }    
     public long getTypeId() { return 9; }
+
+    public String toString()
+    {
+        return "mkdirRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

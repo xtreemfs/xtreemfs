@@ -23,9 +23,14 @@ public class xtreemfs_replica_addRequest implements org.xtreemfs.interfaces.util
     public Replica getNew_replica() { return new_replica; }
     public void setNew_replica( Replica new_replica ) { this.new_replica = new_replica; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }    
     public long getTypeId() { return 26; }
+
+    public String toString()
+    {
+        return "xtreemfs_replica_addRequest( " + context.toString() + ", " + "\"" + file_id + "\"" + ", " + new_replica.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

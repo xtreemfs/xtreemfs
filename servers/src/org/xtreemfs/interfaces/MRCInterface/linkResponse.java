@@ -15,9 +15,14 @@ public class linkResponse implements org.xtreemfs.interfaces.utils.Response
     public linkResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public linkResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::linkResponse"; }    
     public long getTypeId() { return 7; }
+
+    public String toString()
+    {
+        return "linkResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

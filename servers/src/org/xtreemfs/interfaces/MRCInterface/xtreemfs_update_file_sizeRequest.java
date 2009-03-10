@@ -21,9 +21,14 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     public OSDWriteResponse getNew_file_size() { return new_file_size; }
     public void setNew_file_size( OSDWriteResponse new_file_size ) { this.new_file_size = new_file_size; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }    
     public long getTypeId() { return 29; }
+
+    public String toString()
+    {
+        return "xtreemfs_update_file_sizeRequest( " + xcap.toString() + ", " + new_file_size.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

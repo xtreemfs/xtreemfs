@@ -26,9 +26,14 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
     public KeyValuePairSet getData() { return data; }
     public void setData( KeyValuePairSet data ) { this.data = data; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceRegistry"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "ServiceRegistry( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + Integer.toString( service_type ) + ", " + "\"" + service_name + "\"" + ", " + data.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

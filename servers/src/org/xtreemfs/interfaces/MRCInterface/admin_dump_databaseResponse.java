@@ -15,9 +15,14 @@ public class admin_dump_databaseResponse implements org.xtreemfs.interfaces.util
     public admin_dump_databaseResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public admin_dump_databaseResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseResponse"; }    
     public long getTypeId() { return 52; }
+
+    public String toString()
+    {
+        return "admin_dump_databaseResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

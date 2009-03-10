@@ -23,9 +23,14 @@ public class rmvolRequest implements org.xtreemfs.interfaces.utils.Request
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmvolRequest"; }    
     public long getTypeId() { return 16; }
+
+    public String toString()
+    {
+        return "rmvolRequest( " + context.toString() + ", " + "\"" + password + "\"" + ", " + "\"" + volume_name + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

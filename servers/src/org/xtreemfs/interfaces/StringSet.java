@@ -25,6 +25,14 @@ public class StringSet extends ArrayList<String>
         this.deserialize( from_array );
     }        
 
+    public String toString()
+    {
+        String to_string = new String();
+        for ( Iterator<String> i = iterator(); i.hasNext(); )
+            to_string += "\"" + i.next() + "\"" + ", ";
+        return to_string;
+    }
+
     
     public Object serialize() 
     {

@@ -15,9 +15,14 @@ public class rmdirResponse implements org.xtreemfs.interfaces.utils.Response
     public rmdirResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public rmdirResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }    
     public long getTypeId() { return 15; }
+
+    public String toString()
+    {
+        return "rmdirResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

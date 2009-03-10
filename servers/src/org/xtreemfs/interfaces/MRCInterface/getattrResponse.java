@@ -19,9 +19,14 @@ public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
     public stat_ getStbuf() { return stbuf; }
     public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrResponse"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "getattrResponse( " + stbuf.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

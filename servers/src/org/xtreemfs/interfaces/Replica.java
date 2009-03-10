@@ -22,9 +22,14 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "Replica( " + striping_policy.toString() + ", " + Integer.toString( replication_flags ) + ", " + osd_uuids.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

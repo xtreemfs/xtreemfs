@@ -15,9 +15,14 @@ public class xtreemfs_update_file_sizeResponse implements org.xtreemfs.interface
     public xtreemfs_update_file_sizeResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_update_file_sizeResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse"; }    
     public long getTypeId() { return 29; }
+
+    public String toString()
+    {
+        return "xtreemfs_update_file_sizeResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentialsSet getCredentials() { return credentials; }
     public void setCredentials( FileCredentialsSet credentials ) { this.credentials = credentials; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }    
     public long getTypeId() { return 21; }
+
+    public String toString()
+    {
+        return "unlinkResponse( " + credentials.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

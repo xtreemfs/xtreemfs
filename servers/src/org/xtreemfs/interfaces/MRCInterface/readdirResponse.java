@@ -19,9 +19,14 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }    
     public long getTypeId() { return 12; }
+
+    public String toString()
+    {
+        return "readdirResponse( " + directory_entries.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

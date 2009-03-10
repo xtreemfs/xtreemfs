@@ -19,9 +19,14 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
     public String getBitmap() { return bitmap; }
     public void setBitmap( String bitmap ) { this.bitmap = bitmap; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }    
     public long getTypeId() { return 23; }
+
+    public String toString()
+    {
+        return "xtreemfs_check_file_existsResponse( " + "\"" + bitmap + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

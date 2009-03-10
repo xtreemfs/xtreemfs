@@ -15,9 +15,14 @@ public class mkvolResponse implements org.xtreemfs.interfaces.utils.Response
     public mkvolResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public mkvolResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkvolResponse"; }    
     public long getTypeId() { return 10; }
+
+    public String toString()
+    {
+        return "mkvolResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

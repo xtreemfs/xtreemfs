@@ -23,9 +23,14 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::ProtocolException"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "ProtocolException( " + Integer.toString( accept_stat ) + ", " + Integer.toString( error_code ) + ", " + "\"" + stack_trace + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

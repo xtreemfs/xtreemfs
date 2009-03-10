@@ -31,9 +31,14 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "writeRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Long.toString( lease_timeout ) + ", " + data.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

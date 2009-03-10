@@ -23,9 +23,14 @@ public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.u
     public String getOsd_uuid() { return osd_uuid; }
     public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest"; }    
     public long getTypeId() { return 27; }
+
+    public String toString()
+    {
+        return "xtreemfs_replica_removeRequest( " + context.toString() + ", " + "\"" + file_id + "\"" + ", " + "\"" + osd_uuid + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

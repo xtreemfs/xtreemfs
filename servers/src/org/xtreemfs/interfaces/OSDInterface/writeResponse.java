@@ -19,9 +19,14 @@ public class writeResponse implements org.xtreemfs.interfaces.utils.Response
     public OSDWriteResponse getOsd_response() { return osd_response; }
     public void setOsd_response( OSDWriteResponse osd_response ) { this.osd_response = osd_response; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeResponse"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "writeResponse( " + osd_response.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

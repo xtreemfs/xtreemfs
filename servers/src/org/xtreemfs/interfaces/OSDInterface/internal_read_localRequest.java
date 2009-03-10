@@ -29,9 +29,14 @@ public class internal_read_localRequest implements org.xtreemfs.interfaces.utils
     public long getLength() { return length; }
     public void setLength( long length ) { this.length = length; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_read_localRequest"; }    
     public long getTypeId() { return 102; }
+
+    public String toString()
+    {
+        return "internal_read_localRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

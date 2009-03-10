@@ -19,9 +19,14 @@ public class admin_checkpointRequest implements org.xtreemfs.interfaces.utils.Re
     public String getPassword() { return password; }
     public void setPassword( String password ) { this.password = password; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::admin_checkpointRequest"; }    
     public long getTypeId() { return 51; }
+
+    public String toString()
+    {
+        return "admin_checkpointRequest( " + "\"" + password + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

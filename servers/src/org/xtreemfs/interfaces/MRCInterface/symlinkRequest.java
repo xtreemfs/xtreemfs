@@ -23,9 +23,14 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getLink_path() { return link_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }    
     public long getTypeId() { return 20; }
+
+    public String toString()
+    {
+        return "symlinkRequest( " + context.toString() + ", " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

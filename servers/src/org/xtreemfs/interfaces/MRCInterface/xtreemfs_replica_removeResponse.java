@@ -15,9 +15,14 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
     public xtreemfs_replica_removeResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_replica_removeResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }    
     public long getTypeId() { return 27; }
+
+    public String toString()
+    {
+        return "xtreemfs_replica_removeResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

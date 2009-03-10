@@ -19,9 +19,14 @@ public class service_registerResponse implements org.xtreemfs.interfaces.utils.R
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_registerResponse"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "service_registerResponse( " + Long.toString( returnValue ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

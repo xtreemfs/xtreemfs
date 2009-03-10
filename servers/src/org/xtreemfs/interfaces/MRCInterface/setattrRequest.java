@@ -23,9 +23,14 @@ public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
     public stat_ getStbuf() { return stbuf; }
     public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }    
     public long getTypeId() { return 17; }
+
+    public String toString()
+    {
+        return "setattrRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + stbuf.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

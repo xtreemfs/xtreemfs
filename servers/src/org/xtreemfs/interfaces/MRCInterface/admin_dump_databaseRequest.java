@@ -21,9 +21,14 @@ public class admin_dump_databaseRequest implements org.xtreemfs.interfaces.utils
     public String getDump_file() { return dump_file; }
     public void setDump_file( String dump_file ) { this.dump_file = dump_file; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::admin_dump_databaseRequest"; }    
     public long getTypeId() { return 52; }
+
+    public String toString()
+    {
+        return "admin_dump_databaseRequest( " + "\"" + password + "\"" + ", " + "\"" + dump_file + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

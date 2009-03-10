@@ -22,9 +22,14 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     public String getLink_target() { return link_target; }
     public void setLink_target( String link_target ) { this.link_target = link_target; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }    
     public long getTypeId() { return 0; }
+
+    public String toString()
+    {
+        return "DirectoryEntry( " + "\"" + entry_name + "\"" + ", " + stbuf.toString() + ", " + "\"" + link_target + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

@@ -19,9 +19,14 @@ public class internal_read_localResponse implements org.xtreemfs.interfaces.util
     public InternalReadLocalResponse getReturnValue() { return returnValue; }
     public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_read_localResponse"; }    
     public long getTypeId() { return 102; }
+
+    public String toString()
+    {
+        return "internal_read_localResponse( " + returnValue.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

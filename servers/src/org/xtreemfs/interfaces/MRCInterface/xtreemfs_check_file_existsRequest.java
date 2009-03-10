@@ -21,9 +21,14 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public StringSet getFile_ids() { return file_ids; }
     public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }    
     public long getTypeId() { return 23; }
+
+    public String toString()
+    {
+        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

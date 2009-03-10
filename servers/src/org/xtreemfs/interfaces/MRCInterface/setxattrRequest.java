@@ -27,9 +27,14 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     public int getFlags() { return flags; }
     public void setFlags( int flags ) { this.flags = flags; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }    
     public long getTypeId() { return 18; }
+
+    public String toString()
+    {
+        return "setxattrRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + "\"" + name + "\"" + ", " + "\"" + value + "\"" + ", " + Integer.toString( flags ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

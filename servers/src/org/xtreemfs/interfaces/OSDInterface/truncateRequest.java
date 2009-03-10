@@ -23,9 +23,14 @@ public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
     public long getNew_file_size() { return new_file_size; }
     public void setNew_file_size( long new_file_size ) { this.new_file_size = new_file_size; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateRequest"; }    
     public long getTypeId() { return 2; }
+
+    public String toString()
+    {
+        return "truncateRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( new_file_size ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

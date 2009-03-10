@@ -23,9 +23,14 @@ public class renameRequest implements org.xtreemfs.interfaces.utils.Request
     public String getTarget_path() { return target_path; }
     public void setTarget_path( String target_path ) { this.target_path = target_path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }    
     public long getTypeId() { return 14; }
+
+    public String toString()
+    {
+        return "renameRequest( " + context.toString() + ", " + "\"" + source_path + "\"" + ", " + "\"" + target_path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

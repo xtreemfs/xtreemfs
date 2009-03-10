@@ -23,9 +23,14 @@ public class createRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createRequest"; }    
     public long getTypeId() { return 4; }
+
+    public String toString()
+    {
+        return "createRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

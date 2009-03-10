@@ -19,9 +19,14 @@ public class internal_get_gmaxResponse implements org.xtreemfs.interfaces.utils.
     public InternalGmax getReturnValue() { return returnValue; }
     public void setReturnValue( InternalGmax returnValue ) { this.returnValue = returnValue; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxResponse"; }    
     public long getTypeId() { return 100; }
+
+    public String toString()
+    {
+        return "internal_get_gmaxResponse( " + returnValue.toString() + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

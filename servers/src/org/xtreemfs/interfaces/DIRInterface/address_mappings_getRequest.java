@@ -19,9 +19,14 @@ public class address_mappings_getRequest implements org.xtreemfs.interfaces.util
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::address_mappings_getRequest"; }    
     public long getTypeId() { return 1; }
+
+    public String toString()
+    {
+        return "address_mappings_getRequest( " + "\"" + uuid + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

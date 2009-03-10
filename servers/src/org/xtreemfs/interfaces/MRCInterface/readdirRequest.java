@@ -21,9 +21,14 @@ public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }    
     public long getTypeId() { return 12; }
+
+    public String toString()
+    {
+        return "readdirRequest( " + context.toString() + ", " + "\"" + path + "\"" + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

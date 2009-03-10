@@ -27,9 +27,14 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
     public long getMtime() { return mtime; }
     public void setMtime( long mtime ) { this.mtime = mtime; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimeRequest"; }    
     public long getTypeId() { return 22; }
+
+    public String toString()
+    {
+        return "utimeRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Long.toString( ctime ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

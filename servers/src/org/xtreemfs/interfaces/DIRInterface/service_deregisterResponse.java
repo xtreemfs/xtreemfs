@@ -15,9 +15,14 @@ public class service_deregisterResponse implements org.xtreemfs.interfaces.utils
     public service_deregisterResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public service_deregisterResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_deregisterResponse"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "service_deregisterResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

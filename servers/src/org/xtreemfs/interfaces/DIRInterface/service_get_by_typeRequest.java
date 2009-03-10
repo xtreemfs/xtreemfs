@@ -19,9 +19,14 @@ public class service_get_by_typeRequest implements org.xtreemfs.interfaces.utils
     public int getType() { return type; }
     public void setType( int type ) { this.type = type; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::service_get_by_typeRequest"; }    
     public long getTypeId() { return 6; }
+
+    public String toString()
+    {
+        return "service_get_by_typeRequest( " + Integer.toString( type ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

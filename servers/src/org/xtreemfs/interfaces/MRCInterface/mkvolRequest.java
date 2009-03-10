@@ -29,9 +29,14 @@ public class mkvolRequest implements org.xtreemfs.interfaces.utils.Request
     public int getAccess_control_policy() { return access_control_policy; }
     public void setAccess_control_policy( int access_control_policy ) { this.access_control_policy = access_control_policy; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkvolRequest"; }    
     public long getTypeId() { return 10; }
+
+    public String toString()
+    {
+        return "mkvolRequest( " + context.toString() + ", " + "\"" + password + "\"" + ", " + "\"" + volume_name + "\"" + ", " + Integer.toString( osd_selection_policy ) + ", " + default_striping_policy.toString() + ", " + Integer.toString( access_control_policy ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

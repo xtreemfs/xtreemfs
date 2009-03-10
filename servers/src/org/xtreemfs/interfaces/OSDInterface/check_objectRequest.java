@@ -25,9 +25,14 @@ public class check_objectRequest implements org.xtreemfs.interfaces.utils.Reques
     public long getObject_version() { return object_version; }
     public void setObject_version( long object_version ) { this.object_version = object_version; }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::check_objectRequest"; }    
     public long getTypeId() { return 103; }
+
+    public String toString()
+    {
+        return "check_objectRequest( " + "\"" + file_id + "\"" + ", " + credentials.toString() + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + " )"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {

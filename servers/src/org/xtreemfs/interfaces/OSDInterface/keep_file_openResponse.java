@@ -15,9 +15,14 @@ public class keep_file_openResponse implements org.xtreemfs.interfaces.utils.Res
     public keep_file_openResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public keep_file_openResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Serializable
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::keep_file_openResponse"; }    
     public long getTypeId() { return 5; }
+
+    public String toString()
+    {
+        return "keep_file_openResponse()"; 
+    }
+
 
     public void deserialize( Object from_hash_map )
     {
