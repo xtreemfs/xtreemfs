@@ -6,7 +6,7 @@ my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ )
 try:
     import yidl
 except ImportError:        
-    yidl_dir_path = os.path.join( my_dir_path, "..", "share" )
+    yidl_dir_path = os.path.join( my_dir_path, "..", "..", "share", "yidl", "src" )
     if not yidl_dir_path in sys.path: sys.path.append( yidl_dir_path )
     import yidl
     
