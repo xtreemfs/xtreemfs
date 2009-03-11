@@ -1,5 +1,5 @@
-#ifndef _72960533435_H
-#define _72960533435_H
+#ifndef _52522530745_H
+#define _52522530745_H
 
 #include "yield/arch.h"
 #include "mrc_osd_types.h"
@@ -11,6 +11,7 @@ namespace org
   {
     namespace interfaces
     {
+  
       class ObjectData : public YIELD::Serializable
       {
       public:
@@ -263,8 +264,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); offset = input_stream.readUint32( YIELD::StructuredStream::Declaration( "offset" ) ); length = input_stream.readUint32( YIELD::StructuredStream::Declaration( "length" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 1; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 1; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 4289876024UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::readResponse; }
@@ -349,8 +350,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); new_file_size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "new_file_size" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 2; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 2; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 233138659UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::truncateResponse; }
@@ -419,8 +420,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 3; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 3; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1159409605UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::unlinkResponse; }
@@ -509,8 +510,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); offset = input_stream.readUint32( YIELD::StructuredStream::Declaration( "offset" ) ); lease_timeout = input_stream.readUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "data" ), &data ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 4; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 4; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3887614948UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::writeResponse; }
@@ -583,8 +584,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 5; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 5; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 261263724UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::keep_file_openResponse; }
@@ -663,8 +664,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 100; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 100; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1454663115UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::internal_get_gmaxResponse; }
@@ -734,8 +735,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); new_file_size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "new_file_size" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 101; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 101; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1835140915UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::internal_truncateResponse; }
@@ -823,8 +824,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); offset = input_stream.readUint64( YIELD::StructuredStream::Declaration( "offset" ) ); length = input_stream.readUint64( YIELD::StructuredStream::Declaration( "length" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 102; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 102; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3564028294UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::internal_read_localResponse; }
@@ -911,8 +912,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 103; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 103; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 353874046UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::check_objectResponse; }
@@ -980,8 +981,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 50; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 50; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 6822557UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::OSDInterface::admin_shutdownResponse; }
@@ -1128,8 +1129,6 @@ namespace org
       virtual void handleinternal_read_localRequest( internal_read_localRequest& req );\
       virtual void handlecheck_objectRequest( check_objectRequest& req );\
       virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req );
-  
-  
   
     };
   

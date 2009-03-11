@@ -1,5 +1,5 @@
-#ifndef _48587234903_H
-#define _48587234903_H
+#ifndef _76483057348_H
+#define _76483057348_H
 
 #include "yield/arch.h"
 
@@ -10,6 +10,7 @@ namespace org
   {
     namespace interfaces
     {
+  
       class AddressMapping : public YIELD::Serializable
       {
       public:
@@ -122,9 +123,9 @@ namespace org
       class ServiceRegistry : public YIELD::Serializable
       {
       public:
-        ServiceRegistry() : version( 0 ), service_type( 0 ) { }
-        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), data( data ) { }
-        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), data( data ) { }
+        ServiceRegistry() : version( 0 ), service_type( 0 ), last_updated( 0 ) { }
+        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, uint64_t last_updated, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), last_updated( last_updated ), data( data ) { }
+        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, uint64_t last_updated, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), last_updated( last_updated ), data( data ) { }
         virtual ~ServiceRegistry() { }
   
         void set_uuid( const std::string& uuid ) { set_uuid( uuid.c_str(), uuid.size() ); }
@@ -137,24 +138,27 @@ namespace org
         void set_service_name( const std::string& service_name ) { set_service_name( service_name.c_str(), service_name.size() ); }
         void set_service_name( const char* service_name, size_t service_name_len = 0 ) { this->service_name.assign( service_name, ( service_name_len != 0 ) ? service_name_len : std::strlen( service_name ) ); }
         const std::string& get_service_name() const { return service_name; }
+        void set_last_updated( uint64_t last_updated ) { this->last_updated = last_updated; }
+        uint64_t get_last_updated() const { return last_updated; }
         void set_data( const org::xtreemfs::interfaces::KeyValuePairSet&  data ) { this->data = data; }
         const org::xtreemfs::interfaces::KeyValuePairSet& get_data() const { return data; }
   
-        bool operator==( const ServiceRegistry& other ) const { return uuid == other.uuid && version == other.version && service_type == other.service_type && service_name == other.service_name && data == other.data; }
+        bool operator==( const ServiceRegistry& other ) const { return uuid == other.uuid && version == other.version && service_type == other.service_type && service_name == other.service_name && last_updated == other.last_updated && data == other.data; }
   
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ServiceRegistry", 3874052735UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), data ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "last_updated" ), last_updated ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); last_updated = input_stream.readUint64( YIELD::StructuredStream::Declaration( "last_updated" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), &data ); }
   
       protected:
         std::string uuid;
         uint64_t version;
         uint16_t service_type;
         std::string service_name;
+        uint64_t last_updated;
         org::xtreemfs::interfaces::KeyValuePairSet data;
       };
   
@@ -320,8 +324,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 1; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 1; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3467605668UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::address_mappings_getResponse; }
@@ -395,8 +399,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::AddressMappingSet", "address_mappings" ), &address_mappings ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 2; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 2; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1879726015UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::address_mappings_setResponse; }
@@ -460,8 +464,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 3; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 3; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3734389618UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::address_mappings_deleteResponse; }
@@ -535,8 +539,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistry", "service" ), &service ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 4; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 4; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3458002187UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::service_registerResponse; }
@@ -600,8 +604,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 5; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 5; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3236629002UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::service_deregisterResponse; }
@@ -675,8 +679,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "type" ) ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 6; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 6; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 662022626UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::service_get_by_typeResponse; }
@@ -751,8 +755,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 7; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 7; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2586276636UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::service_get_by_uuidResponse; }
@@ -819,8 +823,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { ; }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 8; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 8; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3513836833UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::global_time_getResponse; }
@@ -883,8 +887,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 50; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 50; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1488245919UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::admin_checkpointResponse; }
@@ -949,8 +953,8 @@ namespace org
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceUID() const { return 0; }
-        virtual uint32_t getOperationUID() const { return 51; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 51; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1280024429UL; }
         virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::admin_shutdownResponse; }
@@ -1097,8 +1101,6 @@ namespace org
       virtual void handleglobal_time_getRequest( global_time_getRequest& req );\
       virtual void handleadmin_checkpointRequest( admin_checkpointRequest& req );\
       virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req );
-  
-  
   
     };
   

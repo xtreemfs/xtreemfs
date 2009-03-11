@@ -10,7 +10,7 @@ except ImportError:
     if not yidl_dir_path in sys.path: sys.path.append( yidl_dir_path )
     import yidl
     
-from yidl.java_constructs import *
+from yidl.java_target import *
 from yidl.generator import *
 
 
@@ -26,16 +26,13 @@ XTREEMFS_COMMON_IMPORTS = [
                           ]
 
 
-class XtreemFSJavaConstructFactory(JavaConstructFactory): pass
-
-
 class XtreemFSJavaInterface(JavaInterface, JavaClass):
     def __init__( self, *args, **kwds ):
         JavaInterface.__init__( self, *args, **kwds )
         assert self.getUID() > 0, "interface "  + self.getQualifiedName() + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()
     
-    def __repr__( self ):                            
-        JavaInterface.__repr__( self ) 
+    def generate( self ):                            
+        JavaInterface.generate( self ) 
            
         class_header = self.getClassHeader()
         uid = self.getUID()            
@@ -84,7 +81,6 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         out += self.getClassFooter()
                 
         writeGeneratedFile( self.getFilePath(), out )            
-        return out
 
     def getImports( self ): 
         return JavaClass.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
@@ -225,7 +221,7 @@ class XtreemFSJavaStructType(JavaStructType):
 
 
 class XtreemFSJavaExceptionType(JavaExceptionType):
-    def __repr__( self ): return repr( XtreemFSJavaStructType( self.getQualifiedName(), self.getUID(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ) )
+    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getUID(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
     def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
     
@@ -233,20 +229,19 @@ class XtreemFSJavaOperation(JavaOperation):
     def __init__( self, *args, **kwds ):
         JavaOperation.__init__( self, *args, **kwds )                
         qname = self.getQualifiedName()
-        self.__request_type = XtreemFSJavaRequestType( qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
+        self.__request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
         if self.isOneway():
             self.__response_type = None
         else:
             params = [param for param in self.getParameters() if param.isOutbound()]
             if self.getReturnType() is not None:  
                 params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
-            self.__response_type = XtreemFSJavaResponseType( qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), params )
+            self.__response_type = XtreemFSJavaResponseType( self.getScope(), qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), params )
     
-    def __repr__( self ):
-        out = repr( self.__request_type )
+    def generate( self ):
+        self.__request_type.generate()
         if self.__response_type is not None:
-            out += repr( self.__response_type )
-        return out
+            self.__response_type.generate()
                 
     def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
     def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
@@ -270,6 +265,9 @@ class XtreemFSJavaResponseType(XtreemFSJavaStructType):
     // Response
     public int getOperationNumber() { return %(uid)s; }
 """ % locals()
+
+
+class XtreemFSJavaTarget(JavaTarget): pass
                                 
            
 if __name__ == "__main__":     
@@ -277,4 +275,4 @@ if __name__ == "__main__":
         sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) ), 
                            "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src" ) ) ) )
         
-    generator_main( XtreemFSJavaConstructFactory() )
+    generator_main( XtreemFSJavaTarget )

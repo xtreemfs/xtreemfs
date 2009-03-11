@@ -1,4 +1,5 @@
-#include "org/xtreemfs/interfaces/mrc_osd_types.idl"
+#include "../../../../../../interfaces/mrc_osd_types.idl"
+#include "org/xtreemfs/interfaces/mrc_osd_types.h"
 
 
 module org
