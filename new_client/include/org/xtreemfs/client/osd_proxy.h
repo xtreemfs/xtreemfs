@@ -21,6 +21,9 @@ namespace org
           org::xtreemfs::interfaces::OSDInterface::registerSerializableFactories( serializable_factories );
         }
 
+        // EventHandler
+        virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }
+
       private:
         ORG_XTREEMFS_INTERFACES_OSDINTERFACE_DUMMY_DEFINITIONS;
       };

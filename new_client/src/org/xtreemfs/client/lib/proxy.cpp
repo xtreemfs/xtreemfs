@@ -43,28 +43,29 @@ void Proxy::handleEvent( YIELD::Event& ev )
     {
       switch ( ev.getGeneralType() )
       {
-        case YIELD::RTTI::REQUEST: handleRequest( static_cast<YIELD::Request&>( ev ) ); return;
+        case YIELD::RTTI::REQUEST:
+        {
+          YIELD::Request& req = static_cast<YIELD::Request&>( ev );
+          try
+          {
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories );
+            sendProtocolRequest( oncrpc_req, req.getResponseTimeoutMS() );
+            req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
+          }
+          catch ( YIELD::ExceptionEvent* exc_ev )
+          {
+            req.respond( *exc_ev );
+          }
+
+          YIELD::SharedObject::decRef( req );
+        }
+        break;
+
         default: YIELD::DebugBreak(); break;
       }
     }
     break;
   }
-}
-
-void Proxy::handleRequest( YIELD::Request& req )
-{
-  try
-  {
-    YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories );
-    sendProtocolRequest( oncrpc_req, req.getResponseTimeoutMS() );
-    req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
-  }
-  catch ( YIELD::ExceptionEvent* exc_ev )
-  {
-    req.respond( *exc_ev );
-  }
-
-  YIELD::SharedObject::decRef( req );
 }
 
 uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )

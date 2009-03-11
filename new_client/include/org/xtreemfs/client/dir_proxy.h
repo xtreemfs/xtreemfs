@@ -22,6 +22,9 @@ namespace org
           xtreemfs::interfaces::DIRInterface::registerSerializableFactories( serializable_factories );
         }
 
+        // EventHandler
+        virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }
+
       private:
         ORG_XTREEMFS_INTERFACES_DIRINTERFACE_DUMMY_DEFINITIONS;
       };

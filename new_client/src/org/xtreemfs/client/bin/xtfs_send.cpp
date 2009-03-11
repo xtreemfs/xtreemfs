@@ -152,7 +152,7 @@ int main( int argc, char** argv )
   else if ( mrc ) { proxy = new MRCProxy( *parsed_rpc_uri ); }
   else if ( osd ) { proxy = new OSDProxy( *parsed_rpc_uri ); }
 
-  std::string req_type_name( "xtreemfs::interfaces::" );
+  std::string req_type_name( "org::xtreemfs::interfaces::" );
   req_type_name.append( proxy->getEventHandlerName() );
   req_type_name.append( "::" );
   req_type_name.append( parsed_rpc_uri->getResource() + 1 );

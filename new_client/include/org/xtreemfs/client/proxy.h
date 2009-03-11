@@ -11,40 +11,36 @@ namespace org
     namespace client
     {
       class Proxy : public YIELD::EventHandler
-        {
-        public:
-          YIELD::SerializableFactories& getSerializableFactories() { return serializable_factories; }
+      {
+      public:
+        virtual ~Proxy();
 
-          virtual ~Proxy();
+        YIELD::SerializableFactories& getSerializableFactories() { return serializable_factories; }
 
-        protected:
-          Proxy(); // Must be a default constructor because xInterface inherits from Proxy
-          void init( const YIELD::URI&, uint8_t reconnect_tries_max ); // Called by subclasses to bypass EventHandler
+      protected:
+        Proxy(); // Must be a default constructor because xInterface inherits from Proxy
+        void init( const YIELD::URI&, uint8_t reconnect_tries_max ); // Called by subclasses to bypass EventHandler
 
-          virtual void handleEvent( YIELD::Event& ev );
+        YIELD::SerializableFactories serializable_factories;
 
-        protected:
-          // Factories for creating responses from ONC-RPC
-          YIELD::SerializableFactories serializable_factories;
+        // EventHandler
+        virtual void handleEvent( YIELD::Event& ev );
 
-          // Helper methods for the new protocol
-          virtual void handleRequest( YIELD::Request& );
+      private:
+        YIELD::URI* uri;
+        uint8_t reconnect_tries_max;
 
-        private:
-          YIELD::URI* uri;
-          uint8_t reconnect_tries_max;
+        YIELD::FDEventQueue fd_event_queue;
+        unsigned int peer_ip; YIELD::SocketConnection* conn;
 
-          YIELD::FDEventQueue fd_event_queue;
-          unsigned int peer_ip; YIELD::SocketConnection* conn;
-
-          // Helper methods shared between the old and new protocols
-          void sendProtocolRequest( YIELD::ProtocolRequest&, uint64_t timeout_ms );
-          uint8_t reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
-          void throwExceptionEvent( YIELD::ExceptionEvent* );
-        };
+        // Helper methods shared between the old and new protocols
+        void sendProtocolRequest( YIELD::ProtocolRequest&, uint64_t timeout_ms );
+        uint8_t reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
+        void throwExceptionEvent( YIELD::ExceptionEvent* );
+      };
 
 
-        typedef YIELD::ExceptionEvent ProxyException;
+      typedef YIELD::ExceptionEvent ProxyException;
     };
   };
 };
