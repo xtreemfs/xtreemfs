@@ -32,6 +32,7 @@ module org
         uint64_t version;
         uint16_t service_type;
         string   service_name;
+        uint64_t last_updated;
         KeyValuePairSet data;
       };
 

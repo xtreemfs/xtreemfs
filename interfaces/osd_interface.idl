@@ -55,6 +55,7 @@ module org
 
         //admin operations
         void     admin_shutdown( string password ) # 50;
+
       };
     };
   };
