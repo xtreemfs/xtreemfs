@@ -5,8 +5,8 @@ module org
     module interfaces
     {
 
-      DEFAULT_ONCRPC_PORT = 32638;
-      DEFAULT_HTTP_PORT = 30638; 
+      const uint32_t DEFAULT_ONCRPC_PORT = 32638;
+      const uint32_t DEFAULT_HTTP_PORT = 30638; 
 
       struct AddressMapping
       {
