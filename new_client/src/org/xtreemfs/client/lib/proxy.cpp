@@ -174,7 +174,7 @@ void Proxy::sendProtocolRequest( YIELD::ProtocolRequest& protocol_req, uint64_t 
         {
           protocol_req.deserialize( *conn );
           if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
-            break;
+            return;
           else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
             reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
           else

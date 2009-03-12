@@ -65,7 +65,7 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid, uint64_t ver
     uuid_to_uri_map_lock.release();
 
   org::xtreemfs::interfaces::AddressMappingSet address_mappings;
-  dir_proxy.address_mappings_get( uuid, address_mappings, 1000 );
+  dir_proxy.address_mappings_get( uuid, address_mappings, static_cast<uint64_t>( -1 ) );
   if ( !address_mappings.empty() )
   {
     const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];

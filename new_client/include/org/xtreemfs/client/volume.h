@@ -3,8 +3,7 @@
 
 #include "yieldfs/volume_interface.h"
 
-#include "org/xtreemfs/interfaces/mrc_osd_types.h"
-
+#include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/path.h"
 
 #include <string>
@@ -61,6 +60,8 @@ namespace org
       private:
         // SharedFileCallbackInterface
         void close( SharedFile& );
+
+        org::xtreemfs::interfaces::Context test_context;
       };
     };
   };

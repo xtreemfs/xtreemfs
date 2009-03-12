@@ -12,8 +12,13 @@ using namespace org::xtreemfs::client;
 Volume::Volume( const std::string& name, DIRProxy& dir_proxy, MRCProxy& mrc_proxy, OSDProxyFactory& osd_proxy_factory )
 : name( name ), dir_proxy( dir_proxy ), mrc_proxy( mrc_proxy ), osd_proxy_factory( osd_proxy_factory )
 {
-  mrc_proxy_operation_timeout_ms = 2000;
-  osd_proxy_operation_timeout_ms = 2000;
+//  mrc_proxy_operation_timeout_ms = 2000;
+//  osd_proxy_operation_timeout_ms = 2000;
+  mrc_proxy_operation_timeout_ms = static_cast<uint64_t>( -1 );
+  osd_proxy_operation_timeout_ms = static_cast<uint64_t>( -1 );
+  test_context.set_user_id( "test" );
+  org::xtreemfs::interfaces::StringSet group_ids; group_ids.push_back( "test" );
+  test_context.set_group_ids( group_ids );
 }
 
 YIELD::Path Volume::get_name() const
@@ -23,17 +28,17 @@ YIELD::Path Volume::get_name() const
 
 bool Volume::access( const YIELD::Path& path, mode_t mode )
 {
-  return mrc_proxy.access( org::xtreemfs::interfaces::Context(), Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
+  return mrc_proxy.access( test_context, Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::create( const YIELD::Path& path, mode_t mode )
 {
-  mrc_proxy.create( org::xtreemfs::interfaces::Context(), Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.create( test_context, Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::chmod( const YIELD::Path& path, mode_t mode )
 {
-  mrc_proxy.chmod( org::xtreemfs::interfaces::Context(), Path( this->name, path ), mode );
+  mrc_proxy.chmod( test_context, Path( this->name, path ), mode );
 }
 
 void Volume::chown( const YIELD::Path&, int uid, int gid )
@@ -48,7 +53,7 @@ YIELD::Stat Volume::getattr( const YIELD::Path& path )
 YIELD::Stat Volume::getattr( const Path& path )
 {
   xtreemfs::interfaces::stat_ stbuf;
-  mrc_proxy.getattr( org::xtreemfs::interfaces::Context(), path, stbuf, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.getattr( test_context, path, stbuf, mrc_proxy_operation_timeout_ms );
   return YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(), 
 #ifdef _WIN32
                       stbuf.get_attributes()
@@ -60,24 +65,24 @@ YIELD::Stat Volume::getattr( const Path& path )
 
 std::string Volume::getxattr( const YIELD::Path& path, const std::string& name )
 {
-  return mrc_proxy.getxattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), name, mrc_proxy_operation_timeout_ms );
+  return mrc_proxy.getxattr( test_context, Path( this->name, path ), name, mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::link( const YIELD::Path& from_path, const YIELD::Path& to_path )
 {
-  mrc_proxy.link( org::xtreemfs::interfaces::Context(), Path( this->name, to_path ), Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
+  mrc_proxy.link( test_context, Path( this->name, to_path ), Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::listxattr( const YIELD::Path& path, yieldfs::xAttrNameSet& xattr_names )
 {
   xtreemfs::interfaces::StringSet names;
-  mrc_proxy.listxattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), names );
+  mrc_proxy.listxattr( test_context, Path( this->name, path ), names );
   xattr_names.assign( names.begin(), names.end() );
 }
 
 void Volume::mkdir( const YIELD::Path& path, mode_t mode )
 {
-  mrc_proxy.mkdir( org::xtreemfs::interfaces::Context(), Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.mkdir( test_context, Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
 }
 
 yieldfs::FileInterface& Volume::open( const YIELD::Path& path, uint32_t flags, mode_t mode )
@@ -87,33 +92,31 @@ yieldfs::FileInterface& Volume::open( const YIELD::Path& path, uint32_t flags, m
 
 void Volume::readdir( const YIELD::Path& path, yieldfs::DirectoryFillerInterface& directory_filler )
 {
-  /*
-  xtreemfs::interfaces::DirectoryEntrySet mrc_directory_entries;
-  mrc_proxy.readdir( Path( this->name, path ), mrc_directory_entries );
-  for ( DirectoryEntrySet::const_iterator mrc_directory_entry_i = mrc_directory_entries.begin(); mrc_directory_entry_i != mrc_directory_entries.end(); mrc_directory_entry_i++ )
+  org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
+  mrc_proxy.readdir( test_context, Path( this->name, path ), directory_entries );
+  for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
   {
-
-    directory_entries.push_back( YIELD::DirectoryEntry( mrc_directory_entry_i->get_path(),
-                                                        mrc_directory_entry_i->get_stbuf().get_mode(),
-                                                        mrc_directory_entry_i->get_stbuf().get_size(),
-                                                        mrc_directory_entry_i->get_stbuf().get_mtime(),
-                                                        mrc_directory_entry_i->get_stbuf().get_ctime(),
-                                                        mrc_directory_entry_i->get_stbuf().get_atime(),
+    YIELD::DirectoryEntry directory_entry( ( *directory_entry_i ).get_entry_name(),
+                                          ( *directory_entry_i ).get_stbuf().get_mode(),
+                                          ( *directory_entry_i ).get_stbuf().get_size(),
+                                          ( *directory_entry_i ).get_stbuf().get_mtime(),
+                                          ( *directory_entry_i ).get_stbuf().get_ctime(),
+                                          ( *directory_entry_i ).get_stbuf().get_atime(),
 #ifdef _WIN32
-                                                        mrc_directory_entry_i->get_stbuf().get_attributes()
+                                          ( *directory_entry_i ).get_stbuf().get_attributes()
 #else
-                                                        mrc_directory_entry_i->get_stbuf().get_nlink()
+                                          ( *directory_entry_i ).get_stbuf().get_nlink()
 #endif
-                                                       )
-                               );
+                                         );
+
+    directory_filler.fill( directory_entry );
   }
-  */
 }
 
 YIELD::Path Volume::readlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::stat_ stbuf;
-  mrc_proxy.getattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), stbuf, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.getattr( test_context, Path( this->name, path ), stbuf, mrc_proxy_operation_timeout_ms );
   return stbuf.get_link_target();
 }
 
@@ -121,7 +124,7 @@ void Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
 {
   Path from_xtreemfs_path( this->name, from_path ), to_xtreemfs_path( this->name, to_path );
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
-  mrc_proxy.rename( org::xtreemfs::interfaces::Context(), from_xtreemfs_path, to_xtreemfs_path, file_credentials_set, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.rename( test_context, from_xtreemfs_path, to_xtreemfs_path, file_credentials_set, mrc_proxy_operation_timeout_ms );
 /*
   if ( !file_credentials.get_xcap().get_file_id().empty() ) // The target path existed, so we have to delete it at the OSDs
   {
@@ -133,29 +136,29 @@ void Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
 
 void Volume::rmdir( const YIELD::Path& path )
 {
-  mrc_proxy.rmdir( org::xtreemfs::interfaces::Context(), Path( this->name, path ), mrc_proxy_operation_timeout_ms );
+  mrc_proxy.rmdir( test_context, Path( this->name, path ), mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::removexattr( const YIELD::Path& path, const std::string& name )
 {
-  mrc_proxy.removexattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), name, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.removexattr( test_context, Path( this->name, path ), name, mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
   xtreemfs::interfaces::stat_ stbuf; stbuf.set_attributes( file_attributes );
-  mrc_proxy.setattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), stbuf );
+  mrc_proxy.setattr( test_context, Path( this->name, path ), stbuf );
 }
 
 void Volume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags )
 {
-  mrc_proxy.setxattr( org::xtreemfs::interfaces::Context(), Path( this->name, path ), name, value, flags );
+  mrc_proxy.setxattr( test_context, Path( this->name, path ), name, value, flags );
 }
 
 void Volume::statfs( uint32_t& out_block_size, uint64_t& out_blocks_free, std::string& out_volumeID, uint32_t& out_namelen )
 {
   xtreemfs::interfaces::statfs_ statfsbuf;
-  mrc_proxy.statfs( org::xtreemfs::interfaces::Context(), this->name, statfsbuf );
+  mrc_proxy.statfs( test_context, this->name, statfsbuf );
   out_block_size = statfsbuf.get_bsize();
   out_blocks_free = statfsbuf.get_bfree();
   out_volumeID = statfsbuf.get_fsid();
@@ -164,7 +167,7 @@ void Volume::statfs( uint32_t& out_block_size, uint64_t& out_blocks_free, std::s
 
 void Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 {
-  mrc_proxy.symlink( org::xtreemfs::interfaces::Context(), to_path, Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
+  mrc_proxy.symlink( test_context, to_path, Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::truncate( const YIELD::Path& path, uint64_t new_size )
@@ -177,7 +180,7 @@ void Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 void Volume::unlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
-  mrc_proxy.unlink( org::xtreemfs::interfaces::Context(), Path( this->name, path ), file_credentials_set, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.unlink( test_context, Path( this->name, path ), file_credentials_set, mrc_proxy_operation_timeout_ms );
   /*
   if ( !xlocs.get_replicas().empty() )
   {
@@ -195,13 +198,13 @@ void Volume::unlink( const YIELD::Path& path )
 
 void Volume::utime( const YIELD::Path& path, uint64_t _ctime, uint64_t _atime, uint64_t _mtime )
 {
-  mrc_proxy.utime( org::xtreemfs::interfaces::Context(), Path( this->name, path ), _ctime, _atime, _mtime, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.utime( test_context, Path( this->name, path ), _ctime, _atime, _mtime, mrc_proxy_operation_timeout_ms );
 }
 
 OpenFile& Volume::mrc_and_local_open( const Path& path, uint32_t flags, mode_t mode )
 {
   org::xtreemfs::interfaces::FileCredentials file_credentials;
-  mrc_proxy.open( org::xtreemfs::interfaces::Context(), path, flags, mode, file_credentials, mrc_proxy_operation_timeout_ms );
+  mrc_proxy.open( test_context, path, flags, mode, file_credentials, mrc_proxy_operation_timeout_ms );
   return local_open( path, flags, file_credentials );
 }
 

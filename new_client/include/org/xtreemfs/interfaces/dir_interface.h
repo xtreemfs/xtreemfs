@@ -1,5 +1,5 @@
-#ifndef _6879542829_H
-#define _6879542829_H
+#ifndef _76903905218_H
+#define _76903905218_H
 
 #include "constants.h"
 
@@ -78,58 +78,26 @@ namespace org
         size_t getSize() const { return std::vector<org::xtreemfs::interfaces::AddressMapping>::size(); }
       };
   
-      class KeyValuePair : public YIELD::Serializable
-      {
-      public:
-        KeyValuePair() { }
-        KeyValuePair( const std::string& key, const std::string& value ) : key( key ), value( value ) { }
-        KeyValuePair( const char* key, size_t key_len, const char* value, size_t value_len ) : key( key, key_len ), value( value, value_len ) { }
-        virtual ~KeyValuePair() { }
+        class ServiceRegistryDataMap : public std::map<std::string,std::string>, public YIELD::Serializable
+        {
+        public:
+          virtual ~ServiceRegistryDataMap() { }
   
-        void set_key( const std::string& key ) { set_key( key.c_str(), key.size() ); }
-        void set_key( const char* key, size_t key_len = 0 ) { this->key.assign( key, ( key_len != 0 ) ? key_len : std::strlen( key ) ); }
-        const std::string& get_key() const { return key; }
-        void set_value( const std::string& value ) { set_value( value.c_str(), value.size() ); }
-        void set_value( const char* value, size_t value_len = 0 ) { this->value.assign( value, ( value_len != 0 ) ? value_len : std::strlen( value ) ); }
-        const std::string& get_value() const { return value; }
+          // YIELD::RTTI
+          TYPE_INFO( MAP, "org::xtreemfs::interfaces::ServiceRegistryDataMap", 1488043839UL );
   
-        bool operator==( const KeyValuePair& other ) const { return key == other.key && value == other.value; }
-  
-        // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::KeyValuePair", 1206317684UL );
-  
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "key" ), key ); output_stream.writeString( YIELD::StructuredStream::Declaration( "value" ), value ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "key" ), key ); input_stream.readString( YIELD::StructuredStream::Declaration( "value" ), value ); }
-  
-      protected:
-        std::string key;
-        std::string value;
-      };
-  
-      class KeyValuePairSet : public std::vector<org::xtreemfs::interfaces::KeyValuePair>, public YIELD::Serializable
-      {
-      public:
-        KeyValuePairSet() { }
-        KeyValuePairSet( size_type size ) : std::vector<org::xtreemfs::interfaces::KeyValuePair>( size ) { }
-        virtual ~KeyValuePairSet() { }
-  
-        // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::KeyValuePairSet", 232319006UL );
-  
-        // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePair", "item" ), ( *this )[size() - 1] ); } }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::KeyValuePair item; input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePair", "item" ), &item ); push_back( item ); }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::KeyValuePair>::size(); }
-      };
+          // YIELD::Serializable
+          void serialize( YIELD::StructuredOutputStream& output_stream ) { for ( iterator i = begin(); i != end(); i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( i->first.c_str(), static_cast<uint32_t>( 0 ) ), i->second ); } }
+          void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string key; input_stream.readString( YIELD::StructuredStream::Declaration( 0, static_cast<uint32_t>( 0 ) ), key ); if ( !key.empty() ) { std::string value; input_stream.readString( YIELD::StructuredStream::Declaration( key.c_str(), static_cast<uint32_t>( 0 ) ), value ); ( *this )[key] = value; } }
+          size_t getSize() const { return std::map<std::string, std::string>::size(); }
+        };
   
       class ServiceRegistry : public YIELD::Serializable
       {
       public:
         ServiceRegistry() : version( 0 ), service_type( 0 ), last_updated( 0 ) { }
-        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, uint64_t last_updated, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), last_updated( last_updated ), data( data ) { }
-        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, uint64_t last_updated, const org::xtreemfs::interfaces::KeyValuePairSet& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), last_updated( last_updated ), data( data ) { }
+        ServiceRegistry( const std::string& uuid, uint64_t version, uint16_t service_type, const std::string& service_name, uint64_t last_updated, const org::xtreemfs::interfaces::ServiceRegistryDataMap& data ) : uuid( uuid ), version( version ), service_type( service_type ), service_name( service_name ), last_updated( last_updated ), data( data ) { }
+        ServiceRegistry( const char* uuid, size_t uuid_len, uint64_t version, uint16_t service_type, const char* service_name, size_t service_name_len, uint64_t last_updated, const org::xtreemfs::interfaces::ServiceRegistryDataMap& data ) : uuid( uuid, uuid_len ), version( version ), service_type( service_type ), service_name( service_name, service_name_len ), last_updated( last_updated ), data( data ) { }
         virtual ~ServiceRegistry() { }
   
         void set_uuid( const std::string& uuid ) { set_uuid( uuid.c_str(), uuid.size() ); }
@@ -144,8 +112,8 @@ namespace org
         const std::string& get_service_name() const { return service_name; }
         void set_last_updated( uint64_t last_updated ) { this->last_updated = last_updated; }
         uint64_t get_last_updated() const { return last_updated; }
-        void set_data( const org::xtreemfs::interfaces::KeyValuePairSet&  data ) { this->data = data; }
-        const org::xtreemfs::interfaces::KeyValuePairSet& get_data() const { return data; }
+        void set_data( const org::xtreemfs::interfaces::ServiceRegistryDataMap&  data ) { this->data = data; }
+        const org::xtreemfs::interfaces::ServiceRegistryDataMap& get_data() const { return data; }
   
         bool operator==( const ServiceRegistry& other ) const { return uuid == other.uuid && version == other.version && service_type == other.service_type && service_name == other.service_name && last_updated == other.last_updated && data == other.data; }
   
@@ -154,8 +122,8 @@ namespace org
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "last_updated" ), last_updated ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), data ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); last_updated = input_stream.readUint64( YIELD::StructuredStream::Declaration( "last_updated" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::KeyValuePairSet", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "service_type" ), service_type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "last_updated" ), last_updated ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistryDataMap", "data" ), data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); service_type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "service_type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); last_updated = input_stream.readUint64( YIELD::StructuredStream::Declaration( "last_updated" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistryDataMap", "data" ), &data ); }
   
       protected:
         std::string uuid;
@@ -163,7 +131,7 @@ namespace org
         uint16_t service_type;
         std::string service_name;
         uint64_t last_updated;
-        org::xtreemfs::interfaces::KeyValuePairSet data;
+        org::xtreemfs::interfaces::ServiceRegistryDataMap data;
       };
   
       class ServiceRegistrySet : public std::vector<org::xtreemfs::interfaces::ServiceRegistry>, public YIELD::Serializable
@@ -273,6 +241,10 @@ namespace org
         virtual void service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services, const char* send_target ) { service_get_by_uuid( uuid, services, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services, YIELD::timeout_ns_t send_timeout_ns ) { service_get_by_uuid( uuid, services, NULL, send_timeout_ns ); }
         virtual void service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { service_get_by_uuidSyncRequest* __req = new service_get_by_uuidSyncRequest( uuid, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); service_get_by_uuidResponse& __resp = ( service_get_by_uuidResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); services = __resp.get_services(); YIELD::SharedObject::decRef( __resp ); }
+        virtual void service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { service_get_by_name( service_name, services, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services, const char* send_target ) { service_get_by_name( service_name, services, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services, YIELD::timeout_ns_t send_timeout_ns ) { service_get_by_name( service_name, services, NULL, send_timeout_ns ); }
+        virtual void service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { service_get_by_nameSyncRequest* __req = new service_get_by_nameSyncRequest( service_name, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); service_get_by_nameResponse& __resp = ( service_get_by_nameResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); services = __resp.get_services(); YIELD::SharedObject::decRef( __resp ); }
         virtual uint64_t global_time_get() { return global_time_get( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t global_time_get( const char* send_target ) { return global_time_get( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t global_time_get( YIELD::timeout_ns_t send_timeout_ns ) { return global_time_get( NULL, send_timeout_ns ); }
@@ -794,6 +766,83 @@ namespace org
           YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
       };
   
+      class service_get_by_nameResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        service_get_by_nameResponse() { }
+        service_get_by_nameResponse( const org::xtreemfs::interfaces::ServiceRegistrySet& services ) : services( services ) { }
+        virtual ~service_get_by_nameResponse() { }
+  
+        void set_services( const org::xtreemfs::interfaces::ServiceRegistrySet&  services ) { this->services = services; }
+        const org::xtreemfs::interfaces::ServiceRegistrySet& get_services() const { return services; }
+  
+        bool operator==( const service_get_by_nameResponse& other ) const { return services == other.services; }
+  
+        // YIELD::RTTI
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::DIRInterface::service_get_by_nameResponse", 1637403573UL );
+  
+  
+        // Serializable
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistrySet", "services" ), services ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceRegistrySet", "services" ), &services ); }
+  
+      protected:
+        org::xtreemfs::interfaces::ServiceRegistrySet services;
+      };
+  
+      class service_get_by_nameRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        service_get_by_nameRequest() : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
+        service_get_by_nameRequest( const std::string& service_name, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), service_name( service_name ) { }
+        service_get_by_nameRequest( const char* service_name, size_t service_name_len, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), service_name( service_name, service_name_len ) { }
+        virtual ~service_get_by_nameRequest() { }
+  
+        void set_service_name( const std::string& service_name ) { set_service_name( service_name.c_str(), service_name.size() ); }
+        void set_service_name( const char* service_name, size_t service_name_len = 0 ) { this->service_name.assign( service_name, ( service_name_len != 0 ) ? service_name_len : std::strlen( service_name ) ); }
+        const std::string& get_service_name() const { return service_name; }
+  
+        bool operator==( const service_get_by_nameRequest& other ) const { return service_name == other.service_name; }
+  
+        // YIELD::RTTI
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::service_get_by_nameRequest", 3516282474UL );
+  
+  
+        // Serializable
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "service_name" ), service_name ); }
+  
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getOperationNumber() const { return 9; }
+  
+        virtual uint32_t getDefaultResponseTypeId() const { return 1637403573UL; }
+        virtual Event* createDefaultResponse() { return new org::xtreemfs::interfaces::DIRInterface::service_get_by_nameResponse; }
+  
+  
+      protected:
+        std::string service_name;
+      };
+  
+      class service_get_by_nameSyncRequest : public service_get_by_nameRequest
+      {
+      public:
+        service_get_by_nameSyncRequest() : service_get_by_nameRequest( std::string(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
+        service_get_by_nameSyncRequest( const std::string& service_name, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : service_get_by_nameRequest( service_name, response_timeout_ns ) { }
+        service_get_by_nameSyncRequest( const char* service_name, size_t service_name_len, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : service_get_by_nameRequest( service_name, service_name_len, response_timeout_ns ) { }
+        virtual ~service_get_by_nameSyncRequest() { }
+  
+        bool operator==( const service_get_by_nameSyncRequest& other ) const { return true; }
+  
+  
+        // YIELD::Request
+        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
+        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::DIRInterface::service_get_by_nameResponse>( timeout_ns ); }
+  
+        private:
+          YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+      };
+  
       class global_time_getResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
       {
       public:
@@ -1003,6 +1052,7 @@ namespace org
           serializable_factories.registerSerializableFactory( 3236629002UL, new YIELD::SerializableFactoryImpl<service_deregisterResponse> ); serializable_factories.registerSerializableFactory( 3067256812UL, new YIELD::SerializableFactoryImpl<service_deregisterRequest> ); serializable_factories.registerSerializableFactory( 1514635645UL, new YIELD::SerializableFactoryImpl<service_deregisterSyncRequest> );
           serializable_factories.registerSerializableFactory( 662022626UL, new YIELD::SerializableFactoryImpl<service_get_by_typeResponse> ); serializable_factories.registerSerializableFactory( 4251087078UL, new YIELD::SerializableFactoryImpl<service_get_by_typeRequest> ); serializable_factories.registerSerializableFactory( 2382751063UL, new YIELD::SerializableFactoryImpl<service_get_by_typeSyncRequest> );
           serializable_factories.registerSerializableFactory( 2586276636UL, new YIELD::SerializableFactoryImpl<service_get_by_uuidResponse> ); serializable_factories.registerSerializableFactory( 2653848206UL, new YIELD::SerializableFactoryImpl<service_get_by_uuidRequest> ); serializable_factories.registerSerializableFactory( 1049065552UL, new YIELD::SerializableFactoryImpl<service_get_by_uuidSyncRequest> );
+          serializable_factories.registerSerializableFactory( 1637403573UL, new YIELD::SerializableFactoryImpl<service_get_by_nameResponse> ); serializable_factories.registerSerializableFactory( 3516282474UL, new YIELD::SerializableFactoryImpl<service_get_by_nameRequest> ); serializable_factories.registerSerializableFactory( 2622203040UL, new YIELD::SerializableFactoryImpl<service_get_by_nameSyncRequest> );
           serializable_factories.registerSerializableFactory( 3513836833UL, new YIELD::SerializableFactoryImpl<global_time_getResponse> ); serializable_factories.registerSerializableFactory( 1678219641UL, new YIELD::SerializableFactoryImpl<global_time_getRequest> ); serializable_factories.registerSerializableFactory( 3150531345UL, new YIELD::SerializableFactoryImpl<global_time_getSyncRequest> );
           serializable_factories.registerSerializableFactory( 1488245919UL, new YIELD::SerializableFactoryImpl<admin_checkpointResponse> ); serializable_factories.registerSerializableFactory( 839471856UL, new YIELD::SerializableFactoryImpl<admin_checkpointRequest> ); serializable_factories.registerSerializableFactory( 1925339384UL, new YIELD::SerializableFactoryImpl<admin_checkpointSyncRequest> );
           serializable_factories.registerSerializableFactory( 1280024429UL, new YIELD::SerializableFactoryImpl<admin_shutdownResponse> ); serializable_factories.registerSerializableFactory( 1760149581UL, new YIELD::SerializableFactoryImpl<admin_shutdownRequest> ); serializable_factories.registerSerializableFactory( 2862779601UL, new YIELD::SerializableFactoryImpl<admin_shutdownSyncRequest> );
@@ -1026,6 +1076,7 @@ namespace org
               case 3067256812UL: handleservice_deregisterRequest( static_cast<service_deregisterRequest&>( ev ) ); return;
               case 4251087078UL: handleservice_get_by_typeRequest( static_cast<service_get_by_typeRequest&>( ev ) ); return;
               case 2653848206UL: handleservice_get_by_uuidRequest( static_cast<service_get_by_uuidRequest&>( ev ) ); return;
+              case 3516282474UL: handleservice_get_by_nameRequest( static_cast<service_get_by_nameRequest&>( ev ) ); return;
               case 1678219641UL: handleglobal_time_getRequest( static_cast<global_time_getRequest&>( ev ) ); return;
               case 839471856UL: handleadmin_checkpointRequest( static_cast<admin_checkpointRequest&>( ev ) ); return;
               case 1760149581UL: handleadmin_shutdownRequest( static_cast<admin_shutdownRequest&>( ev ) ); return;
@@ -1057,6 +1108,7 @@ namespace org
         virtual void handleservice_deregisterRequest( service_deregisterRequest& req ) { service_deregisterResponse* resp = NULL; try { resp = new service_deregisterResponse; _service_deregister( req.get_uuid() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleservice_get_by_typeRequest( service_get_by_typeRequest& req ) { service_get_by_typeResponse* resp = NULL; try { resp = new service_get_by_typeResponse; org::xtreemfs::interfaces::ServiceRegistrySet services; _service_get_by_type( req.get_type(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleservice_get_by_uuidRequest( service_get_by_uuidRequest& req ) { service_get_by_uuidResponse* resp = NULL; try { resp = new service_get_by_uuidResponse; org::xtreemfs::interfaces::ServiceRegistrySet services; _service_get_by_uuid( req.get_uuid(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handleservice_get_by_nameRequest( service_get_by_nameRequest& req ) { service_get_by_nameResponse* resp = NULL; try { resp = new service_get_by_nameResponse; org::xtreemfs::interfaces::ServiceRegistrySet services; _service_get_by_name( req.get_service_name(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleglobal_time_getRequest( global_time_getRequest& req ) { global_time_getResponse* resp = NULL; try { resp = new global_time_getResponse; uint64_t _return_value = _global_time_get(); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleadmin_checkpointRequest( admin_checkpointRequest& req ) { admin_checkpointResponse* resp = NULL; try { resp = new admin_checkpointResponse; _admin_checkpoint( req.get_password() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req ) { admin_shutdownResponse* resp = NULL; try { resp = new admin_shutdownResponse; _admin_shutdown( req.get_password() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
@@ -1068,6 +1120,7 @@ namespace org
         virtual void _service_deregister( const std::string& uuid ) { }
         virtual void _service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }
         virtual void _service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }
+        virtual void _service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }
         virtual uint64_t _global_time_get() { return 0; }
         virtual void _admin_checkpoint( const std::string& password ) { }
         virtual void _admin_shutdown( const std::string& password ) { }
@@ -1082,6 +1135,7 @@ namespace org
       virtual void _service_deregister( const std::string& uuid );\
       virtual void _service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceRegistrySet& services );\
       virtual void _service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services );\
+      virtual void _service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services );\
       virtual uint64_t _global_time_get();\
       virtual void _admin_checkpoint( const std::string& password );\
       virtual void _admin_shutdown( const std::string& password );
@@ -1095,6 +1149,7 @@ namespace org
       virtual void _service_deregister( const std::string& uuid ) { }\
       virtual void _service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }\
       virtual void _service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }\
+      virtual void _service_get_by_name( const std::string& service_name, org::xtreemfs::interfaces::ServiceRegistrySet& services ) { }\
       virtual uint64_t _global_time_get() { return 0; }\
       virtual void _admin_checkpoint( const std::string& password ) { }\
       virtual void _admin_shutdown( const std::string& password ) { }
@@ -1107,6 +1162,7 @@ namespace org
       virtual void handleservice_deregisterRequest( service_deregisterRequest& req );\
       virtual void handleservice_get_by_typeRequest( service_get_by_typeRequest& req );\
       virtual void handleservice_get_by_uuidRequest( service_get_by_uuidRequest& req );\
+      virtual void handleservice_get_by_nameRequest( service_get_by_nameRequest& req );\
       virtual void handleglobal_time_getRequest( global_time_getRequest& req );\
       virtual void handleadmin_checkpointRequest( admin_checkpointRequest& req );\
       virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req );

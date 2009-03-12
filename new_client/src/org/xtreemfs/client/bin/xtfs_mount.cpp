@@ -25,7 +25,7 @@ CSimpleOpt::SOption options[] = {
   { OPT_VOLUME_URI, "--volume-uri", SO_REQ_SEP },
   { OPT_VOLUME_UUID, "--volume", SO_REQ_SEP },
   { OPT_VOLUME_UUID, "--volume-uuid", SO_REQ_SEP },
-  { OPT_VOLUME_UUID, "--volume_uuid", SO_REQ_SEP },
+  { OPT_VOLUME_UUID, "--volume_name", SO_REQ_SEP },
   SO_END_OF_OPTIONS
 };
 
@@ -34,7 +34,7 @@ int main( int argc, char** argv )
 {
   // Options to fill
   bool foreground = false, debug = false;
-  std::string dir, mount_point, volume_uri_str, volume_uuid;
+  std::string dir, mount_point, volume_uri_str, volume_name;
   YIELD::URI *dir_uri = NULL, *mrc_uri = NULL;
 
   try
@@ -52,7 +52,7 @@ int main( int argc, char** argv )
           case OPT_DEBUG: debug = true; break;
           case OPT_DIR: dir = args.OptionArg(); break;
 
-          case OPT_VOLUME_UUID: volume_uuid = args.OptionArg(); break;
+          case OPT_VOLUME_UUID: volume_name = args.OptionArg(); break;
           case OPT_VOLUME_URI: volume_uri_str = args.OptionArg(); break;
 
           case OPT_OLD:
@@ -99,8 +99,8 @@ int main( int argc, char** argv )
     switch ( args.FileCount() )
     {
       case 1: mount_point = args.Files()[0]; break;
-      case 2: volume_uuid = args.Files()[0]; mount_point = args.Files()[1]; break;
-      case 3: dir = args.Files()[0]; volume_uuid = args.Files()[1]; mount_point = args.Files()[2]; break;
+      case 2: volume_name = args.Files()[0]; mount_point = args.Files()[1]; break;
+      case 3: dir = args.Files()[0]; volume_name = args.Files()[1]; mount_point = args.Files()[2]; break;
     }
 
     if ( !dir.empty() )
@@ -125,14 +125,14 @@ int main( int argc, char** argv )
         if ( mrc_uri != NULL )
         {
           if ( strlen( mrc_uri->getResource() ) >= 2 )
-            volume_uuid = mrc_uri->getResource();
+            volume_name = mrc_uri->getResource();
           else
             throw YIELD::Exception( "must specify volume name in volume URI" );
         }
         else
-          volume_uuid = volume_uri_str;
+          volume_name = volume_uri_str;
     }
-    else
+    else if ( volume_name.empty() )
       throw YIELD::Exception( "must specify volume" );
 
     if ( mount_point.empty() )
@@ -158,25 +158,48 @@ int main( int argc, char** argv )
 
     if ( mrc_uri == NULL )
     {
-      org::xtreemfs::interfaces::AddressMappingSet address_mappings;
-      dir_proxy.address_mappings_get( volume_uuid, address_mappings );
-      if ( !address_mappings.empty() )
+      org::xtreemfs::interfaces::ServiceRegistrySet service_registries;
+      dir_proxy.service_get_by_name( volume_name, service_registries );
+      if ( !service_registries.empty() )
       {
-        std::ostringstream mrc_uri_str;
-        mrc_uri_str << address_mappings[0].get_protocol() << "://" << address_mappings[0].get_address() << ":" << address_mappings[0].get_port() << "/";
-        mrc_uri = YIELD::URI::parseURI( mrc_uri_str.str() );
-        if ( mrc_uri == NULL )
-          throw YIELD::Exception( "received invalid MRC URI from DIR" );
+        for ( org::xtreemfs::interfaces::ServiceRegistrySet::const_iterator service_registry_i = service_registries.begin(); service_registry_i != service_registries.end(); service_registry_i++ )
+        {
+          const org::xtreemfs::interfaces::ServiceRegistryDataMap& data = ( *service_registry_i ).get_data();
+          for ( org::xtreemfs::interfaces::ServiceRegistryDataMap::const_iterator data_i = data.begin(); data_i != data.end(); data_i++ )
+          {
+            if ( data_i->first == "mrc" )
+            {
+              std::string mrc_uuid = data_i->second;
+              org::xtreemfs::interfaces::AddressMappingSet mrc_address_mappings;
+              dir_proxy.address_mappings_get( mrc_uuid, mrc_address_mappings );
+              if ( !mrc_address_mappings.empty() )
+              {
+                std::ostringstream mrc_uri_str;
+                mrc_uri_str << mrc_address_mappings[0].get_protocol() << "://" << mrc_address_mappings[0].get_address() << ":" << mrc_address_mappings[0].get_port() << "/";
+                mrc_uri = YIELD::URI::parseURI( mrc_uri_str.str() );
+                if ( mrc_uri == NULL )
+                  throw YIELD::Exception( "received invalid MRC URI from DIR" );
+
+                break;
+              }
+              else
+                throw YIELD::Exception( "unknown volume" );
+            }
+
+            if ( mrc_uri != NULL )
+              break;
+          }
+        }
       }
       else
-        throw YIELD::Exception( "unknown volume UUID" );
+        throw YIELD::Exception( "unknown volume" );
     }
 
     MRCProxy mrc_proxy( *mrc_uri ); main_stage_group.createStage( mrc_proxy );
 
     OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group );
 
-    Volume volume( volume_uuid, dir_proxy, mrc_proxy, osd_proxy_factory );
+    Volume volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
     ret = yieldfs::FUSE( volume ).main( argv[0], mount_point.c_str(), foreground, debug );
 
     YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
