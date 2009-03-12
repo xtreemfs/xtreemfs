@@ -7,6 +7,10 @@ module org
   {
     module interfaces
     {
+
+      DEFAULT_ONCRPC_PORT = 32636;
+      DEFAULT_HTTP_PORT = 30636;
+
       struct Context
       {
           string user_id;

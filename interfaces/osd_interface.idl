@@ -8,6 +8,9 @@ module org
     module interfaces
     {
 
+      DEFAULT_ONCRPC_PORT = 32640;
+      DEFAULT_HTTP_PORT = 30640; 
+
       struct ObjectData
       {
         string   checksum;
