@@ -60,49 +60,6 @@ module org
         uint64_t   read_only_file_size;
       };
 
-
-      struct stat_
-      {
-        uint32_t mode;
-        uint32_t nlink;
-        uint32_t uid;
-        uint32_t gid;
-        int16_t dev;
-        uint64_t size;
-        uint64_t atime;
-        uint64_t mtime;
-        uint64_t ctime;
-
-
-        //xtreemfs specific attrs
-        string user_id;
-        string group_id;
-        string file_id;
-        string link_target;
-        uint8_t object_type;
-        uint32_t truncate_epoch;
-
-        // Win32
-        uint32_t attributes;
-      };
-
-      struct DirectoryEntry
-      {
-        string        entry_name;
-        stat_         stbuf;
-        string        link_target;
-      };
-
-      typedef sequence<DirectoryEntry> DirectoryEntrySet;
-
-      struct statfs_
-      {
-        uint32_t bsize;
-        uint64_t bfree;
-        string fsid;
-        uint32_t namelen;
-      };
-
       struct NewFileSize
       {
         uint64_t size_in_bytes;
