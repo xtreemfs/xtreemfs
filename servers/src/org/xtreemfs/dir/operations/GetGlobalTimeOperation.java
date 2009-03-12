@@ -51,7 +51,7 @@ public class GetGlobalTimeOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         global_time_getResponse gtr = new global_time_getResponse();
-        gtr.setReturnValue(System.currentTimeMillis()/1000);
+        gtr.setReturnValue(System.currentTimeMillis());
         rq.sendSuccess(gtr);
     }
 
