@@ -2,8 +2,6 @@
 #include "org/xtreemfs/client/dir_proxy.h"
 using namespace org::xtreemfs::client;
 
-using namespace org::xtreemfs::interfaces;
-
 
 namespace org
 {
@@ -66,11 +64,11 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid, uint64_t ver
   else
     uuid_to_uri_map_lock.release();
 
-  AddressMappingSet address_mappings;
+  org::xtreemfs::interfaces::AddressMappingSet address_mappings;
   dir_proxy.address_mappings_get( uuid, address_mappings, 1000 );
   if ( !address_mappings.empty() )
   {
-    const AddressMapping& address_mapping = address_mappings[0];
+    const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];
     std::ostringstream uri_str;
     uri_str << address_mapping.get_protocol() << "://" << address_mapping.get_address() << ":" << address_mapping.get_port();
     VersionedURI* versioned_uri = new VersionedURI( uri_str.str(), version );

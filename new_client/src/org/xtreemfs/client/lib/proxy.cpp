@@ -1,9 +1,7 @@
 #include "org/xtreemfs/client/proxy.h"
 using namespace org::xtreemfs::client;
 
-//#include "org/xtreemfs/interfaces/mrc_interface.h"
-#include "org/xtreemfs/interfaces/exceptions.h"
-using namespace org::xtreemfs::interfaces;
+#include "org/xtreemfs/interfaces/constants.h"
 
 #include <errno.h>
 #ifdef _WIN32
@@ -12,18 +10,22 @@ using namespace org::xtreemfs::interfaces;
 #endif
 
 
-Proxy::Proxy()
+Proxy::Proxy() 
+  : uri( NULL ), reconnect_tries_max( 0 ), 
+    peer_ip( 0 ), conn( NULL )
 {
-  uri = NULL;
-  reconnect_tries_max = 0;
   xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
 }
 
 void Proxy::init( const YIELD::URI& uri, uint8_t reconnect_tries_max )
 {
-  this->uri = new YIELD::URI( uri );
-  this->reconnect_tries_max = reconnect_tries_max;
-  peer_ip = 0; conn = NULL;
+  if ( strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 || strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
+  {
+    this->uri = new YIELD::URI( uri );
+    this->reconnect_tries_max = reconnect_tries_max;
+  }
+  else
+    throw YIELD::Exception( "unknown URI scheme" );
 }
 
 Proxy::~Proxy()
@@ -91,27 +93,12 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
   {
     reconnect_tries_left--;
 
+
     // Create the conn object based on the URI type
-    unsigned short peer_port = uri->getPort();
-    if ( strcmp( uri->getScheme(), "http" ) == 0 )
-    {
-      if ( peer_port == 0 ) peer_port = 80;
-      conn = new YIELD::TCPConnection( peer_ip, peer_port, NULL );
-    }
-    else if ( strcmp( uri->getScheme(), "https" ) == 0 )
-    {
-      if ( peer_port == 0 ) peer_port = 443;
-      throw new YIELD::ExceptionEvent( "https not implemented" );
-    }
-    else if ( strcmp( uri->getScheme(), "oncrpc" ) == 0 )
-    {
-      if ( peer_port != 0 )
-        conn = new YIELD::TCPConnection( peer_ip, peer_port, NULL );
-      else
-        throw new YIELD::ExceptionEvent( "must specify port in oncrpc:// URI" );
-    }
+    if ( strcmp( uri->getScheme(), "oncrpc" ) == 0 )
+      conn = new YIELD::TCPConnection( peer_ip, uri->getPort(), NULL );
     else
-      throw new YIELD::ExceptionEvent( "unknown URI scheme" );
+      YIELD::DebugBreak();
 
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking

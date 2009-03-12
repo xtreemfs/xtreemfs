@@ -2,7 +2,7 @@
 #define ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 
 #include "org/xtreemfs/client/proxy.h"
-#define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_PARENT_CLASS xtreemfs::client::Proxy
+#define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_INTERFACE_PARENT_CLASS org::xtreemfs::client::Proxy
 #include "org/xtreemfs/interfaces/mrc_interface.h"
 
 
@@ -15,11 +15,7 @@ namespace org
       class MRCProxy : public org::xtreemfs::interfaces::MRCInterface
       {
       public:
-        MRCProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3 )
-        {
-          Proxy::init( uri, reconnect_tries_max );
-          org::xtreemfs::interfaces::MRCInterface::registerSerializableFactories( serializable_factories ); 
-        }
+        MRCProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3 );
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }

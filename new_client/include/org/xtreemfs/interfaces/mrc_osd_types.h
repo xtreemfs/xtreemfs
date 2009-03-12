@@ -1,7 +1,9 @@
-#ifndef _56013098335_H
-#define _56013098335_H
+#ifndef _66018573478_H
+#define _66018573478_H
 
 #include "yield/arch.h"
+
+#include <map>
 
 
 namespace org
@@ -10,17 +12,6 @@ namespace org
   {
     namespace interfaces
     {
-      const static uint8_t STRIPING_POLICY_DEFAULT = 0;
-      const static uint8_t STRIPING_POLICY_RAID0 = 1;
-      const static uint8_t ACCESS_CONTROL_POLICY_NULL = 1;
-      const static uint8_t ACCESS_CONTROL_POLICY_POSIX = 2;
-      const static uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
-      const static uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
-      const static uint16_t SERVICE_TYPE_MRC = 1;
-      const static uint16_t SERVICE_TYPE_OSD = 2;
-      const static uint16_t SERVICE_TYPE_VOLUME = 3;
-      const static char* REPL_UPDATE_PC_NONE = "";
-      const static char* REPL_UPDATE_PC_RONLY = "ronly";
   
       class StringSet : public std::vector<std::string>, public YIELD::Serializable
       {
@@ -190,164 +181,6 @@ namespace org
         uint32_t version;
         std::string repUpdatePolicy;
         uint64_t read_only_file_size;
-      };
-  
-      class stat_ : public YIELD::Serializable
-      {
-      public:
-        stat_() : mode( 0 ), nlink( 0 ), uid( 0 ), gid( 0 ), dev( 0 ), size( 0 ), atime( 0 ), mtime( 0 ), ctime( 0 ), object_type( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const std::string& user_id, const std::string& group_id, const std::string& file_id, const std::string& link_target, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), dev( dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id ), group_id( group_id ), file_id( file_id ), link_target( link_target ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const char* user_id, size_t user_id_len, const char* group_id, size_t group_id_len, const char* file_id, size_t file_id_len, const char* link_target, size_t link_target_len, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), dev( dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id, user_id_len ), group_id( group_id, group_id_len ), file_id( file_id, file_id_len ), link_target( link_target, link_target_len ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
-        virtual ~stat_() { }
-  
-        void set_mode( uint32_t mode ) { this->mode = mode; }
-        uint32_t get_mode() const { return mode; }
-        void set_nlink( uint32_t nlink ) { this->nlink = nlink; }
-        uint32_t get_nlink() const { return nlink; }
-        void set_uid( uint32_t uid ) { this->uid = uid; }
-        uint32_t get_uid() const { return uid; }
-        void set_gid( uint32_t gid ) { this->gid = gid; }
-        uint32_t get_gid() const { return gid; }
-        void set_dev( int16_t dev ) { this->dev = dev; }
-        int16_t get_dev() const { return dev; }
-        void set_size( uint64_t size ) { this->size = size; }
-        uint64_t get_size() const { return size; }
-        void set_atime( uint64_t atime ) { this->atime = atime; }
-        uint64_t get_atime() const { return atime; }
-        void set_mtime( uint64_t mtime ) { this->mtime = mtime; }
-        uint64_t get_mtime() const { return mtime; }
-        void set_ctime( uint64_t ctime ) { this->ctime = ctime; }
-        uint64_t get_ctime() const { return ctime; }
-        void set_user_id( const std::string& user_id ) { set_user_id( user_id.c_str(), user_id.size() ); }
-        void set_user_id( const char* user_id, size_t user_id_len = 0 ) { this->user_id.assign( user_id, ( user_id_len != 0 ) ? user_id_len : std::strlen( user_id ) ); }
-        const std::string& get_user_id() const { return user_id; }
-        void set_group_id( const std::string& group_id ) { set_group_id( group_id.c_str(), group_id.size() ); }
-        void set_group_id( const char* group_id, size_t group_id_len = 0 ) { this->group_id.assign( group_id, ( group_id_len != 0 ) ? group_id_len : std::strlen( group_id ) ); }
-        const std::string& get_group_id() const { return group_id; }
-        void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
-        void set_file_id( const char* file_id, size_t file_id_len = 0 ) { this->file_id.assign( file_id, ( file_id_len != 0 ) ? file_id_len : std::strlen( file_id ) ); }
-        const std::string& get_file_id() const { return file_id; }
-        void set_link_target( const std::string& link_target ) { set_link_target( link_target.c_str(), link_target.size() ); }
-        void set_link_target( const char* link_target, size_t link_target_len = 0 ) { this->link_target.assign( link_target, ( link_target_len != 0 ) ? link_target_len : std::strlen( link_target ) ); }
-        const std::string& get_link_target() const { return link_target; }
-        void set_object_type( uint8_t object_type ) { this->object_type = object_type; }
-        uint8_t get_object_type() const { return object_type; }
-        void set_truncate_epoch( uint32_t truncate_epoch ) { this->truncate_epoch = truncate_epoch; }
-        uint32_t get_truncate_epoch() const { return truncate_epoch; }
-        void set_attributes( uint32_t attributes ) { this->attributes = attributes; }
-        uint32_t get_attributes() const { return attributes; }
-  
-        bool operator==( const stat_& other ) const { return mode == other.mode && nlink == other.nlink && uid == other.uid && gid == other.gid && dev == other.dev && size == other.size && atime == other.atime && mtime == other.mtime && ctime == other.ctime && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && object_type == other.object_type && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
-  
-        // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::stat_", 2292404502UL );
-  
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "nlink" ), nlink ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "uid" ), uid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "gid" ), gid ); output_stream.writeInt16( YIELD::StructuredStream::Declaration( "dev" ), dev ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size" ), size ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "atime" ), atime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "mtime" ), mtime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "ctime" ), ctime ); output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); output_stream.writeUint8( YIELD::StructuredStream::Declaration( "object_type" ), object_type ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); nlink = input_stream.readUint32( YIELD::StructuredStream::Declaration( "nlink" ) ); uid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "uid" ) ); gid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "gid" ) ); dev = input_stream.readInt16( YIELD::StructuredStream::Declaration( "dev" ) ); size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size" ) ); atime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "atime" ) ); mtime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "mtime" ) ); ctime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "ctime" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); object_type = input_stream.readUint8( YIELD::StructuredStream::Declaration( "object_type" ) ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
-  
-      protected:
-        uint32_t mode;
-        uint32_t nlink;
-        uint32_t uid;
-        uint32_t gid;
-        int16_t dev;
-        uint64_t size;
-        uint64_t atime;
-        uint64_t mtime;
-        uint64_t ctime;
-        std::string user_id;
-        std::string group_id;
-        std::string file_id;
-        std::string link_target;
-        uint8_t object_type;
-        uint32_t truncate_epoch;
-        uint32_t attributes;
-      };
-  
-      class DirectoryEntry : public YIELD::Serializable
-      {
-      public:
-        DirectoryEntry() { }
-        DirectoryEntry( const std::string& entry_name, const org::xtreemfs::interfaces::stat_& stbuf, const std::string& link_target ) : entry_name( entry_name ), stbuf( stbuf ), link_target( link_target ) { }
-        DirectoryEntry( const char* entry_name, size_t entry_name_len, const org::xtreemfs::interfaces::stat_& stbuf, const char* link_target, size_t link_target_len ) : entry_name( entry_name, entry_name_len ), stbuf( stbuf ), link_target( link_target, link_target_len ) { }
-        virtual ~DirectoryEntry() { }
-  
-        void set_entry_name( const std::string& entry_name ) { set_entry_name( entry_name.c_str(), entry_name.size() ); }
-        void set_entry_name( const char* entry_name, size_t entry_name_len = 0 ) { this->entry_name.assign( entry_name, ( entry_name_len != 0 ) ? entry_name_len : std::strlen( entry_name ) ); }
-        const std::string& get_entry_name() const { return entry_name; }
-        void set_stbuf( const org::xtreemfs::interfaces::stat_&  stbuf ) { this->stbuf = stbuf; }
-        const org::xtreemfs::interfaces::stat_& get_stbuf() const { return stbuf; }
-        void set_link_target( const std::string& link_target ) { set_link_target( link_target.c_str(), link_target.size() ); }
-        void set_link_target( const char* link_target, size_t link_target_len = 0 ) { this->link_target.assign( link_target, ( link_target_len != 0 ) ? link_target_len : std::strlen( link_target ) ); }
-        const std::string& get_link_target() const { return link_target; }
-  
-        bool operator==( const DirectoryEntry& other ) const { return entry_name == other.entry_name && stbuf == other.stbuf && link_target == other.link_target; }
-  
-        // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::DirectoryEntry", 2507394841UL );
-  
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "entry_name" ), entry_name ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::stat_", "stbuf" ), stbuf ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "entry_name" ), entry_name ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::stat_", "stbuf" ), &stbuf ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); }
-  
-      protected:
-        std::string entry_name;
-        org::xtreemfs::interfaces::stat_ stbuf;
-        std::string link_target;
-      };
-  
-      class DirectoryEntrySet : public std::vector<org::xtreemfs::interfaces::DirectoryEntry>, public YIELD::Serializable
-      {
-      public:
-        DirectoryEntrySet() { }
-        DirectoryEntrySet( size_type size ) : std::vector<org::xtreemfs::interfaces::DirectoryEntry>( size ) { }
-        virtual ~DirectoryEntrySet() { }
-  
-        // YIELD::RTTI
-        TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::DirectoryEntrySet", 3851275498UL );
-  
-        // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::DirectoryEntry", "item" ), ( *this )[size() - 1] ); } }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::DirectoryEntry item; input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::DirectoryEntry", "item" ), &item ); push_back( item ); }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::DirectoryEntry>::size(); }
-      };
-  
-      class statfs_ : public YIELD::Serializable
-      {
-      public:
-        statfs_() : bsize( 0 ), bfree( 0 ), namelen( 0 ) { }
-        statfs_( uint32_t bsize, uint64_t bfree, const std::string& fsid, uint32_t namelen ) : bsize( bsize ), bfree( bfree ), fsid( fsid ), namelen( namelen ) { }
-        statfs_( uint32_t bsize, uint64_t bfree, const char* fsid, size_t fsid_len, uint32_t namelen ) : bsize( bsize ), bfree( bfree ), fsid( fsid, fsid_len ), namelen( namelen ) { }
-        virtual ~statfs_() { }
-  
-        void set_bsize( uint32_t bsize ) { this->bsize = bsize; }
-        uint32_t get_bsize() const { return bsize; }
-        void set_bfree( uint64_t bfree ) { this->bfree = bfree; }
-        uint64_t get_bfree() const { return bfree; }
-        void set_fsid( const std::string& fsid ) { set_fsid( fsid.c_str(), fsid.size() ); }
-        void set_fsid( const char* fsid, size_t fsid_len = 0 ) { this->fsid.assign( fsid, ( fsid_len != 0 ) ? fsid_len : std::strlen( fsid ) ); }
-        const std::string& get_fsid() const { return fsid; }
-        void set_namelen( uint32_t namelen ) { this->namelen = namelen; }
-        uint32_t get_namelen() const { return namelen; }
-  
-        bool operator==( const statfs_& other ) const { return bsize == other.bsize && bfree == other.bfree && fsid == other.fsid && namelen == other.namelen; }
-  
-        // YIELD::RTTI
-        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::statfs_", 1274084092UL );
-  
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "bsize" ), bsize ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "bfree" ), bfree ); output_stream.writeString( YIELD::StructuredStream::Declaration( "fsid" ), fsid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "namelen" ), namelen ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { bsize = input_stream.readUint32( YIELD::StructuredStream::Declaration( "bsize" ) ); bfree = input_stream.readUint64( YIELD::StructuredStream::Declaration( "bfree" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "fsid" ), fsid ); namelen = input_stream.readUint32( YIELD::StructuredStream::Declaration( "namelen" ) ); }
-  
-      protected:
-        uint32_t bsize;
-        uint64_t bfree;
-        std::string fsid;
-        uint32_t namelen;
       };
   
       class NewFileSize : public YIELD::Serializable

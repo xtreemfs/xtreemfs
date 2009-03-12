@@ -39,7 +39,7 @@ int main( int argc, char** argv )
 
   // Options to fill
   bool debug = false;
-  string volume_url; YIELD::URI* parsed_volume_url = NULL;
+  string volume_uri_str; YIELD::URI* volume_uri = NULL;
   uint8_t striping_policy_id = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT; size_t striping_policy_size = 4, striping_policy_width = 1;
   int osd_selection = 1, access_policy = 2, mode = 0;
   string cert_file, dirservice;
@@ -96,15 +96,15 @@ int main( int argc, char** argv )
       }
     }
 
-    // volume_url after - options
+    // volume_uri after - options
     if ( args.FileCount() >= 1 )
-      volume_url = args.Files()[0];
+      volume_uri_str = args.Files()[0];
     else
-      throw YIELD::Exception( "must specify volume_url" );
+      throw YIELD::Exception( "must specify volume URI" );
 
-    parsed_volume_url = new YIELD::URI( volume_url );
-    if ( strlen( parsed_volume_url->getResource() ) <= 1 )
-      throw YIELD::Exception( "volume URL must include a volume name" );
+    volume_uri = new YIELD::URI( volume_uri_str );
+    if ( strlen( volume_uri->getResource() ) <= 1 )
+      throw YIELD::Exception( "volume URI must include a volume name" );
   }
   catch ( exception& exc )
   {
@@ -119,8 +119,8 @@ int main( int argc, char** argv )
 
     try
     {
-      MRCProxy mrc_proxy( *parsed_volume_url );
-      mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "user", org::xtreemfs::interfaces::StringSet() ), "", parsed_volume_url->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
+      MRCProxy mrc_proxy( *volume_uri );
+      mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "user", org::xtreemfs::interfaces::StringSet() ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
     }
     catch ( ProxyException& exc )
     {
@@ -135,6 +135,6 @@ int main( int argc, char** argv )
     }
   }
   
-  delete parsed_volume_url;
+  delete volume_uri;
   return ret;
 }

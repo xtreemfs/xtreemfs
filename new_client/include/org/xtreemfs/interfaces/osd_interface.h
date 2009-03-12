@@ -1,8 +1,12 @@
-#ifndef _52522530745_H
-#define _52522530745_H
+#ifndef _25170600445_H
+#define _25170600445_H
+
+#include "constants.h"
+#include "mrc_osd_types.h"
 
 #include "yield/arch.h"
-#include "mrc_osd_types.h"
+
+#include <map>
 
 
 namespace org
@@ -110,15 +114,15 @@ namespace org
   
   
   
-      #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS ORG_XTREEMFS_PARENT_CLASS
-      #elif defined( ORG_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS ORG_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACE_PARENT_CLASS
+      #elif defined( ORG_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS ORG_INTERFACE_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS YIELD::EventHandler
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS YIELD::EventHandler
       #endif
       #endif
   
@@ -160,11 +164,16 @@ namespace org
   
   
   
-      class OSDInterface : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PARENT_CLASS
+      class OSDInterface : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS
       {
       public:
         OSDInterface() { }
         virtual ~OSDInterface() { }
+  
+  
+      const static uint32_t DEFAULT_ONCRPC_PORT = 32640;
+      const static uint32_t DEFAULT_ONCRPCS_PORT = 32640;
+      const static uint32_t DEFAULT_HTTP_PORT = 30640;
   
       virtual org::xtreemfs::interfaces::ObjectData read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) { return read( file_id, credentials, object_number, object_version, offset, length, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::ObjectData read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, const char* send_target ) { return read( file_id, credentials, object_number, object_version, offset, length, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }

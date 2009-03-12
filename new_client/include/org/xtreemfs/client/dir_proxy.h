@@ -2,7 +2,7 @@
 #define ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 
 #include "org/xtreemfs/client/proxy.h"
-#define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS xtreemfs::client::Proxy
+#define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS org::xtreemfs::client::Proxy
 #include "org/xtreemfs/interfaces/dir_interface.h"
 #include "org/xtreemfs/client/proxy.h"
 
@@ -16,11 +16,7 @@ namespace org
       class DIRProxy : public org::xtreemfs::interfaces::DIRInterface
       {
       public:
-        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3 )
-        {
-          Proxy::init( uri, reconnect_tries_max );
-          xtreemfs::interfaces::DIRInterface::registerSerializableFactories( serializable_factories );
-        }
+        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3 );
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }

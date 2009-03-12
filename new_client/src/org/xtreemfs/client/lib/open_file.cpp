@@ -1,10 +1,8 @@
 #include "open_file.h"
 using namespace org::xtreemfs::client;
 
-using namespace org::xtreemfs::interfaces;
 
-
-OpenFile::OpenFile( FileReplica& attached_to_file_replica, uint64_t open_flags, const FileCredentials& file_credentials )
+OpenFile::OpenFile( FileReplica& attached_to_file_replica, uint64_t open_flags, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : attached_to_file_replica( attached_to_file_replica ), open_flags( open_flags ), file_credentials( file_credentials )
 { }
 

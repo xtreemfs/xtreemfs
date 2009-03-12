@@ -190,6 +190,10 @@
     >
 </File>
 <File
+    RelativePath="..\include\org\xtreemfs\client\proxy_exception_event.h"
+    >
+</File>
+<File
     RelativePath="..\include\org\xtreemfs\client\volume.h"
     >
 </File>
@@ -199,6 +203,10 @@
     >
 </File>
 <Filter Name="interfaces">
+<File
+    RelativePath="..\include\org\xtreemfs\interfaces\constants.h"
+    >
+</File>
 <File
     RelativePath="..\include\org\xtreemfs\interfaces\dir_interface.h"
     >
@@ -220,6 +228,90 @@
     >
 </File>
 </Filter>
+<File
+    RelativePath="..\..\interfaces\constants.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\interfaces\dir_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\interfaces\exceptions.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\interfaces\mrc_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\interfaces\mrc_osd_types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\interfaces\osd_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
 
         </Filter>
 

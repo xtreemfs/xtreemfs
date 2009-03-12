@@ -1,7 +1,7 @@
 @ECHO OFF
 
-set YIDL_PATH=%CD%\..\share\yidl
-REM set YIDL_PATH=%CD%\..\..\yidl
+REM set YIDL_PATH=%CD%\..\share\yidl
+set YIDL_PATH=%CD%\..\..\yidl
 set YIELD_PATH=%CD%\share\yield
 set YIELDFS_PATH=%CD%\share\yieldfs
 
@@ -22,7 +22,7 @@ python %YIDL_PATH%\bin\generate_yield_cpp.py -i src -o src --with-registerSerial
 
 REM Generate project files
 cd proj
-python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s ..\src\org\xtreemfs\client\lib -s ..\include\org\xtreemfs -I ..\include -o ..\lib\xtreemfs-client %DEPEND_YIELD_INCLUDE_FLAGS% %DEPEND_YIELD_LIB_FLAGS% %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s ..\src\org\xtreemfs\client\lib -s ..\include\org\xtreemfs -s ..\..\interfaces -I ..\include -o ..\lib\xtreemfs-client %DEPEND_YIELD_INCLUDE_FLAGS% %DEPEND_YIELD_LIB_FLAGS% %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-test -t exe -s ..\src\org\xtreemfs\client\bin\xtreemfs-client-test.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_mount.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_mkvol.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%

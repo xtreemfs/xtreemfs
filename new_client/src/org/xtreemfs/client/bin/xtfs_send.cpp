@@ -106,8 +106,8 @@ int main( int argc, char** argv )
   int ret = 0;
 
   // Arguments to be parsed
-  std::string rpc_uri;
-  YIELD::URI* parsed_rpc_uri = NULL;
+  std::string rpc_uri_str;
+  YIELD::URI* rpc_uri = NULL;
   bool debug = false; bool dir = false, mrc = true, osd = false;
 
   try
@@ -127,20 +127,20 @@ int main( int argc, char** argv )
       }
     }
 
-    // rpc_uri after - options
+    // rpc_uri_str after - options
     if ( args.FileCount() >= 1 )
-      rpc_uri = args.Files()[0];
+      rpc_uri_str = args.Files()[0];
     else
       throw YIELD::Exception( "must specify RPC URI (http://host:port/Operation)" );
 
-    parsed_rpc_uri = new YIELD::URI( rpc_uri );
-    if ( strlen( parsed_rpc_uri->getResource() ) <= 1 )
+    rpc_uri = new YIELD::URI( rpc_uri_str );
+    if ( strlen( rpc_uri->getResource() ) <= 1 )
       throw YIELD::Exception( "RPC URI must include an operation name" );
   }
   catch ( std::exception& exc )
   {
     std::cerr << "Error parsing command line arguments: " << exc.what() << std::endl;
-    delete parsed_rpc_uri;
+    delete rpc_uri;
     return 1;
   }
 
@@ -148,17 +148,17 @@ int main( int argc, char** argv )
     YIELD::SocketConnection::setTraceSocketIO( true );
 
   Proxy* proxy = NULL;
-  if ( dir ) { proxy = new DIRProxy( *parsed_rpc_uri ); }
-  else if ( mrc ) { proxy = new MRCProxy( *parsed_rpc_uri ); }
-  else if ( osd ) { proxy = new OSDProxy( *parsed_rpc_uri ); }
+  if ( dir ) { proxy = new DIRProxy( *rpc_uri ); }
+  else if ( mrc ) { proxy = new MRCProxy( *rpc_uri ); }
+  else if ( osd ) { proxy = new OSDProxy( *rpc_uri ); }
 
   std::string req_type_name( "org::xtreemfs::interfaces::" );
   req_type_name.append( proxy->getEventHandlerName() );
   req_type_name.append( "::" );
-  req_type_name.append( parsed_rpc_uri->getResource() + 1 );
+  req_type_name.append( rpc_uri->getResource() + 1 );
   req_type_name.append( "SyncRequest" );
 
-  YIELD::Request* req = static_cast<YIELD::Request*>( proxy->getSerializableFactories().createSerializable( req_type_name.c_str() ) );
+  YIELD::Request* req = proxy->createRequest( req_type_name.c_str() );
   if ( req != NULL )
   {
     try
@@ -195,11 +195,11 @@ int main( int argc, char** argv )
   }
   else
   {
-    std::cerr << "RPC operation " << parsed_rpc_uri->getResource() << " is not valid for the given server" << std::endl;
+    std::cerr << "RPC operation " << rpc_uri->getResource() << " is not valid for the given server" << std::endl;
     ret = 1;
   }
 
   delete proxy;
-  delete parsed_rpc_uri;
+  delete rpc_uri;
   return ret;
 };

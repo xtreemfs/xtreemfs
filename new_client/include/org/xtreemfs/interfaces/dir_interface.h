@@ -1,7 +1,11 @@
-#ifndef _76483057348_H
-#define _76483057348_H
+#ifndef _6879542829_H
+#define _6879542829_H
+
+#include "constants.h"
 
 #include "yield/arch.h"
+
+#include <map>
 
 
 namespace org
@@ -180,15 +184,15 @@ namespace org
   
   
   
-      #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS ORG_XTREEMFS_PARENT_CLASS
-      #elif defined( ORG_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS ORG_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACE_PARENT_CLASS
+      #elif defined( ORG_INTERFACE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS ORG_INTERFACE_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS YIELD::EventHandler
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS YIELD::EventHandler
       #endif
       #endif
   
@@ -230,11 +234,16 @@ namespace org
   
   
   
-      class DIRInterface : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PARENT_CLASS
+      class DIRInterface : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS
       {
       public:
         DIRInterface() { }
         virtual ~DIRInterface() { }
+  
+  
+      const static uint32_t DEFAULT_ONCRPC_PORT = 32638;
+      const static uint32_t DEFAULT_ONCRPCS_PORT = 32638;
+      const static uint32_t DEFAULT_HTTP_PORT = 30638;
   
       virtual void address_mappings_get( const std::string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { address_mappings_get( uuid, address_mappings, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void address_mappings_get( const std::string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings, const char* send_target ) { address_mappings_get( uuid, address_mappings, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }

@@ -1,9 +1,12 @@
-#ifndef _90452076755_H
-#define _90452076755_H
+#ifndef _96276457914_H
+#define _96276457914_H
+
+
+#include "org/xtreemfs/interfaces/mrc_osd_types.h"
 
 #include "yield/arch.h"
 
-#include "org/xtreemfs/interfaces/mrc_osd_types.h"
+#include <map>
 
 
 namespace org
