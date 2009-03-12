@@ -4,23 +4,6 @@ module org
   {
     module interfaces
     {
-      const uint8_t STRIPING_POLICY_DEFAULT = 0;
-      const uint8_t STRIPING_POLICY_RAID0 = 1;
-
-      const uint8_t ACCESS_CONTROL_POLICY_NULL = 1;
-      const uint8_t ACCESS_CONTROL_POLICY_POSIX = 2;
-      const uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
-
-      const uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
-
-      const uint16_t SERVICE_TYPE_MRC = 1;
-      const uint16_t SERVICE_TYPE_OSD = 2;
-      const uint16_t SERVICE_TYPE_VOLUME = 3;
-
-      const string   REPL_UPDATE_PC_NONE = "";
-      const string   REPL_UPDATE_PC_RONLY = "ronly";
-
-
       typedef sequence<string> StringSet;
 
 

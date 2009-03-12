@@ -1,3 +1,4 @@
+#include "constants.idl"
 #include "mrc_osd_types.idl"
 
 
@@ -7,10 +8,6 @@ module org
   {
     module interfaces
     {
-
-      const uint32_t DEFAULT_ONCRPC_PORT = 32640;
-      const uint32_t DEFAULT_HTTP_PORT = 30640; 
-
       struct ObjectData
       {
         string   checksum;
@@ -36,6 +33,11 @@ module org
 
       interface OSDInterface # 3
       {
+        const uint32_t DEFAULT_ONCRPC_PORT = 32640;
+        const uint32_t DEFAULT_ONCRPCS_PORT = 32640;
+        const uint32_t DEFAULT_HTTP_PORT = 30640; 
+
+
         ObjectData read( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) # 1;
 
         void truncate( string file_id, FileCredentials credentials, uint64_t new_file_size, out OSDWriteResponse osd_response ) # 2;

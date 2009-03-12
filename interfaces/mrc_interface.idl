@@ -1,3 +1,4 @@
+#include "constants.idl"
 #include "mrc_osd_types.idl"
 
 
@@ -7,10 +8,6 @@ module org
   {
     module interfaces
     {
-
-      const uint32_t DEFAULT_ONCRPC_PORT = 32636;
-      const uint32_t DEFAULT_HTTP_PORT = 30636;
-
       struct Context
       {
           string user_id;
@@ -64,6 +61,11 @@ module org
 
       interface MRCInterface #2
       {
+        const uint32_t DEFAULT_ONCRPC_PORT = 32636;
+        const uint32_t DEFAULT_ONCRPCS_PORT = 32636;
+        const uint32_t DEFAULT_HTTP_PORT = 30636;
+
+
         // admin operations
 
         void admin_shutdown( string password ) # 50;
