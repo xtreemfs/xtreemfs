@@ -85,14 +85,87 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
     def getImports( self ): 
         return JavaClass.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
 
+
+class XtreemFSJavaType: pass
     
-class XtreemFSJavaBoolType(JavaBoolType):
+    
+class XtreemFSJavaBoolType(JavaBoolType, XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
     def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
     def getSize( self, identifier ): return "4"
 
 
-class XtreemFSJavaNumericType(JavaNumericType):
+class XtreemFSJavaCompoundType(XtreemFSJavaType):
+    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()    
+    def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
+    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
+
+
+class XtreemFSJavaMapType(JavaMapType, XtreemFSJavaCompoundType):
+    def getDeserializeMethods( self ):
+        key_declaration_type = self.getKeyType().getDeclarationTypeName()
+        key_deserializer = self.getKeyType().getBufferDeserializeCall( "new_key" )        
+        value_declaration_type = self.getValueType().getDeclarationTypeName()
+        value_deserializer = self.getValueType().getBufferDeserializeCall( "new_value" )        
+        return JavaMapType.getDeserializeMethods( self ) + """
+    public void deserialize( ReusableBuffer buf ) 
+    {
+        int new_size = buf.getInt();
+        for ( int i = 0; i < new_size; i++ )
+        {
+            %(key_declaration_type)s new_key; 
+            %(key_deserializer)s
+            %(value_declaration_type)s new_value; 
+            %(value_deserializer)s
+            this.put( new_key, new_value );
+        }
+    } 
+""" % locals()
+
+    def getImports( self ): 
+        return JavaMapType.getImports( self ) + XTREEMFS_COMMON_IMPORTS
+
+    def getOtherMethods( self ):
+        key_boxed_type_name = self.getKeyType().getBoxedTypeName()
+        key_size = self.getKeyType().getSize( "key" )                
+        value_boxed_type_name = self.getValueType().getBoxedTypeName()
+        value_size = self.getValueType().getSize( "value" )        
+        return JavaMapType.getOtherMethods( self ) + """
+    public int calculateSize() 
+    {
+        int my_size = Integer.SIZE / 8;
+        for ( Iterator<%(key_boxed_type_name)s> key_i = keySet().iterator(); key_i.hasNext(); ) 
+        {
+            %(key_boxed_type_name)s key = key_i.next();
+            %(value_boxed_type_name)s value = get( key );
+            my_size += %(value_size)s;
+        }
+        return my_size;
+    }
+""" % locals()                       
+
+    def getSerializeMethods( self ):
+        key_boxed_type_name = self.getKeyType().getBoxedTypeName()
+        key_serializer = self.getKeyType().getBufferSerializeCall( "key" )                
+        value_boxed_type_name = self.getValueType().getBoxedTypeName()
+        value_serializer = self.getValueType().getBufferSerializeCall( "value" )        
+        return JavaMapType.getSerializeMethods( self ) + """
+    public void serialize( ONCRPCBufferWriter writer ) 
+    {       
+        writer.putInt( keySet().size() );
+        for ( Iterator<%(key_boxed_type_name)s> key_i = keySet().iterator(); key_i.hasNext(); ) 
+        {
+            %(key_boxed_type_name)s key = key_i.next();
+            %(key_serializer)s
+            %(value_boxed_type_name)s value = get( key );
+            %(value_serializer)s
+        }
+    }        
+""" % locals()    
+
+
+
+class XtreemFSJavaNumericType(JavaNumericType, XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ):
         boxed_type_name= self.getBoxedTypeName()
         if boxed_type_name == "Integer": boxed_type_name = "Int"
@@ -106,10 +179,7 @@ class XtreemFSJavaNumericType(JavaNumericType):
     def getSize( self, identifier ): return "( " + self.getBoxedTypeName() + ".SIZE / 8 )"
    
                     
-class XtreemFSJavaSequenceType(JavaSequenceType):
-    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()
-    def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
-
+class XtreemFSJavaSequenceType(JavaSequenceType, XtreemFSJavaCompoundType):
     def getDeserializeMethods( self ):
         value_declaration_type = self.getValueType().getDeclarationTypeName()
         value_deserializer = self.getValueType().getBufferDeserializeCall( "new_value" )        
@@ -131,20 +201,17 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
     
     def getOtherMethods( self ):
         value_boxed_type_name = self.getValueType().getBoxedTypeName()
-        next_value_size = self.getValueType().getSize( "next_value" )        
+        value_size = self.getValueType().getSize( "value" )        
         return JavaSequenceType.getOtherMethods( self ) + """
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<%(value_boxed_type_name)s> i = iterator(); i.hasNext(); ) {
-            %(value_boxed_type_name)s next_value = i.next();
-            my_size += %(next_value_size)s;
+            %(value_boxed_type_name)s value = i.next();
+            my_size += %(value_size)s;
         }
         return my_size;
     }
-""" % locals()        
-               
-    def getSize( self, identifier ): 
-        return "%(identifier)s.calculateSize()" % locals()
+""" % locals()                       
 
     def getSerializeMethods( self ):
         value_boxed_type_name = self.getValueType().getBoxedTypeName()
@@ -163,24 +230,21 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
 """ % locals()    
 
 
-class XtreemFSJavaSerializableType(JavaSerializableType):
+class XtreemFSJavaSerializableType(JavaSerializableType, XtreemFSJavaType):
     def getDeclarationTypeName( self ): return "ReusableBuffer"
     def getBufferDeserializeCall( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer( buf ); }" % locals()
     def getBufferSerializeCall( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer( %(identifier)s, writer ); }" % locals()
     def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength( %(identifier)s )" % locals()
         
 
-class XtreemFSJavaStringType(JavaStringType):
+class XtreemFSJavaStringType(JavaStringType, XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );" % locals()
     def getBufferSerializeCall( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializeString( %(identifier)s, writer );" % locals()
     # def getSize( self, identifier ): return "4 + ( %(identifier)s.length() + 4 - ( %(identifier)s.length() %% 4 ) )" % locals()
     def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(%(identifier)s)" % locals() 
 
 
-class XtreemFSJavaStructType(JavaStructType):
-    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()    
-    def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
-    
+class XtreemFSJavaStructType(JavaStructType, XtreemFSJavaCompoundType):    
     def getDeserializeMethods( self ):
         buffer_deserialize_calls = "\n".join( [INDENT_SPACES * 2 + member.getType().getBufferDeserializeCall( member.getIdentifier() ) for member in self.getMembers()] )
         return JavaStructType.getDeserializeMethods( self ) + """
@@ -217,10 +281,8 @@ class XtreemFSJavaStructType(JavaStructType):
     }
     """ % locals() 
                      
-    def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
 
-
-class XtreemFSJavaExceptionType(JavaExceptionType):
+class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaCompoundType):
     def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getUID(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
     def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
@@ -242,7 +304,6 @@ class XtreemFSJavaOperation(JavaOperation):
     def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
     def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
 
-
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
     def getOtherMethods( self ):        
         uid = self.getUID()     
@@ -252,7 +313,6 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
     public int getOperationNumber() { return %(uid)s; }
     public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
-
 
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):    
     def getOtherMethods( self ):

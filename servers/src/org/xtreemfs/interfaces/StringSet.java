@@ -39,7 +39,7 @@ public class StringSet extends ArrayList<String>
         Object[] to_array = new Object[size()];        
         for ( int value_i = 0; value_i < size(); value_i++ )
         {
-            String next_value = super.get( value_i );                    
+            String next_value = get( value_i );                    
             to_array[value_i] = next_value;
         }
         return to_array;
@@ -83,8 +83,8 @@ public class StringSet extends ArrayList<String>
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<String> i = iterator(); i.hasNext(); ) {
-            String next_value = i.next();
-            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(next_value);
+            String value = i.next();
+            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
         }
         return my_size;
     }

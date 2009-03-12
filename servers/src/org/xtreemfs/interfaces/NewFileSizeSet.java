@@ -39,7 +39,7 @@ public class NewFileSizeSet extends ArrayList<NewFileSize>
         Object[] to_array = new Object[size()];        
         for ( int value_i = 0; value_i < size(); value_i++ )
         {
-            NewFileSize next_value = super.get( value_i );                    
+            NewFileSize next_value = get( value_i );                    
             to_array[value_i] = next_value.serialize();
         }
         return to_array;
@@ -83,8 +83,8 @@ public class NewFileSizeSet extends ArrayList<NewFileSize>
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); ) {
-            NewFileSize next_value = i.next();
-            my_size += next_value.calculateSize();
+            NewFileSize value = i.next();
+            my_size += value.calculateSize();
         }
         return my_size;
     }

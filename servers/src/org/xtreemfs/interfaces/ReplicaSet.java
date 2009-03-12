@@ -39,7 +39,7 @@ public class ReplicaSet extends ArrayList<Replica>
         Object[] to_array = new Object[size()];        
         for ( int value_i = 0; value_i < size(); value_i++ )
         {
-            Replica next_value = super.get( value_i );                    
+            Replica next_value = get( value_i );                    
             to_array[value_i] = next_value.serialize();
         }
         return to_array;
@@ -83,8 +83,8 @@ public class ReplicaSet extends ArrayList<Replica>
     public int calculateSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<Replica> i = iterator(); i.hasNext(); ) {
-            Replica next_value = i.next();
-            my_size += next_value.calculateSize();
+            Replica value = i.next();
+            my_size += value.calculateSize();
         }
         return my_size;
     }

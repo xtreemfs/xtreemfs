@@ -10,10 +10,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public ServiceRegistry() { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new KeyValuePairSet(); }
-    public ServiceRegistry( String uuid, long version, int service_type, String service_name, long last_updated, KeyValuePairSet data ) { this.uuid = uuid; this.version = version; this.service_type = service_type; this.service_name = service_name; this.last_updated = last_updated; this.data = data; }
-    public ServiceRegistry( Object from_hash_map ) { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new KeyValuePairSet(); this.deserialize( from_hash_map ); }
-    public ServiceRegistry( Object[] from_array ) { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new KeyValuePairSet();this.deserialize( from_array ); }
+    public ServiceRegistry() { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new ServiceRegistryDataMap(); }
+    public ServiceRegistry( String uuid, long version, int service_type, String service_name, long last_updated, ServiceRegistryDataMap data ) { this.uuid = uuid; this.version = version; this.service_type = service_type; this.service_name = service_name; this.last_updated = last_updated; this.data = data; }
+    public ServiceRegistry( Object from_hash_map ) { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new ServiceRegistryDataMap(); this.deserialize( from_hash_map ); }
+    public ServiceRegistry( Object[] from_array ) { uuid = ""; version = 0; service_type = 0; service_name = ""; last_updated = 0; data = new ServiceRegistryDataMap();this.deserialize( from_array ); }
 
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
@@ -25,8 +25,8 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
     public void setService_name( String service_name ) { this.service_name = service_name; }
     public long getLast_updated() { return last_updated; }
     public void setLast_updated( long last_updated ) { this.last_updated = last_updated; }
-    public KeyValuePairSet getData() { return data; }
-    public void setData( KeyValuePairSet data ) { this.data = data; }
+    public ServiceRegistryDataMap getData() { return data; }
+    public void setData( ServiceRegistryDataMap data ) { this.data = data; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceRegistry"; }    
     public long getTypeId() { return 0; }
@@ -49,7 +49,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
         this.service_type = ( ( Integer )from_hash_map.get( "service_type" ) ).intValue();
         this.service_name = ( String )from_hash_map.get( "service_name" );
         this.last_updated = ( ( Long )from_hash_map.get( "last_updated" ) ).longValue();
-        this.data.deserialize( ( Object[] )from_hash_map.get( "data" ) );
+        this.data.deserialize( ( HashMap<String, Object> )from_hash_map.get( "data" ) );
     }
     
     public void deserialize( Object[] from_array )
@@ -59,7 +59,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
         this.service_type = ( ( Integer )from_array[2] ).intValue();
         this.service_name = ( String )from_array[3];
         this.last_updated = ( ( Long )from_array[4] ).longValue();
-        this.data.deserialize( ( Object[] )from_array[5] );        
+        this.data.deserialize( ( HashMap<String, Object> )from_array[5] );        
     }
 
     public void deserialize( ReusableBuffer buf )
@@ -69,7 +69,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
         service_type = buf.getInt();
         service_name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         last_updated = buf.getLong();
-        data = new KeyValuePairSet(); data.deserialize( buf );
+        data = new ServiceRegistryDataMap(); data.deserialize( buf );
     }
 
     public Object serialize()
@@ -112,7 +112,7 @@ public class ServiceRegistry implements org.xtreemfs.interfaces.utils.Serializab
     private int service_type;
     private String service_name;
     private long last_updated;
-    private KeyValuePairSet data;
+    private ServiceRegistryDataMap data;
 
 }
 

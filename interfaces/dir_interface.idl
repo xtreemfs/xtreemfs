@@ -20,13 +20,7 @@ module org
 
       typedef sequence<AddressMapping> AddressMappingSet;
 
-      struct KeyValuePair
-      {
-       string key;
-       string value;
-      };
-
-      typedef sequence<KeyValuePair> KeyValuePairSet;
+      typedef map<string, string> ServiceRegistryDataMap;
 
       struct ServiceRegistry 
       {
@@ -35,10 +29,11 @@ module org
         uint16_t service_type;
         string   service_name;
         uint64_t last_updated;
-        KeyValuePairSet data;
+        ServiceRegistryDataMap data;
       };
 
       typedef sequence<ServiceRegistry> ServiceRegistrySet;
+
 
       interface DIRInterface # 1
       {
