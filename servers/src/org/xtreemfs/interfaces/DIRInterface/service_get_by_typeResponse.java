@@ -24,7 +24,7 @@ public class service_get_by_typeResponse implements org.xtreemfs.interfaces.util
 
     public String toString()
     {
-        return "service_get_by_typeResponse( " + services.toString() + " )"; 
+        return "service_get_by_typeResponse( " + services.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class service_get_by_typeResponse implements org.xtreemfs.interfaces.util
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.services.deserialize( from_hash_map.get( "services" ) );
+        this.services.deserialize( ( Object[] )from_hash_map.get( "services" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.services.deserialize( from_array[0] );        
+        this.services.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )

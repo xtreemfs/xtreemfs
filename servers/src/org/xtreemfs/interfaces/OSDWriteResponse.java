@@ -25,7 +25,7 @@ public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializa
 
     public String toString()
     {
-        return "OSDWriteResponse( " + new_file_size.toString() + ", " + opaque_data.toString() + " )"; 
+        return "OSDWriteResponse( " + new_file_size.toString() + ", " + opaque_data.toString() + " )";
     }
 
 
@@ -36,14 +36,14 @@ public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializa
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.new_file_size.deserialize( from_hash_map.get( "new_file_size" ) );
-        this.opaque_data.deserialize( from_hash_map.get( "opaque_data" ) );
+        this.new_file_size.deserialize( ( Object[] )from_hash_map.get( "new_file_size" ) );
+        this.opaque_data.deserialize( ( Object[] )from_hash_map.get( "opaque_data" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.new_file_size.deserialize( from_array[0] );
-        this.opaque_data.deserialize( from_array[1] );        
+        this.new_file_size.deserialize( ( Object[] )from_array[0] );
+        this.opaque_data.deserialize( ( Object[] )from_array[1] );        
     }
 
     public void deserialize( ReusableBuffer buf )

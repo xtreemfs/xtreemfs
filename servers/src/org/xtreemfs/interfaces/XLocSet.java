@@ -29,7 +29,7 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "XLocSet( " + replicas.toString() + ", " + Integer.toString( version ) + ", " + "\"" + repUpdatePolicy + "\"" + ", " + Long.toString( read_only_file_size ) + " )"; 
+        return "XLocSet( " + replicas.toString() + ", " + Integer.toString( version ) + ", " + "\"" + repUpdatePolicy + "\"" + ", " + Long.toString( read_only_file_size ) + " )";
     }
 
 
@@ -40,7 +40,7 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.replicas.deserialize( from_hash_map.get( "replicas" ) );
+        this.replicas.deserialize( ( Object[] )from_hash_map.get( "replicas" ) );
         this.version = ( ( Integer )from_hash_map.get( "version" ) ).intValue();
         this.repUpdatePolicy = ( String )from_hash_map.get( "repUpdatePolicy" );
         this.read_only_file_size = ( ( Long )from_hash_map.get( "read_only_file_size" ) ).longValue();
@@ -48,7 +48,7 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     
     public void deserialize( Object[] from_array )
     {
-        this.replicas.deserialize( from_array[0] );
+        this.replicas.deserialize( ( Object[] )from_array[0] );
         this.version = ( ( Integer )from_array[1] ).intValue();
         this.repUpdatePolicy = ( String )from_array[2];
         this.read_only_file_size = ( ( Long )from_array[3] ).longValue();        

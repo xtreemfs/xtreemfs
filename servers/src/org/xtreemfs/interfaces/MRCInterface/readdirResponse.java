@@ -24,7 +24,7 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "readdirResponse( " + directory_entries.toString() + " )"; 
+        return "readdirResponse( " + directory_entries.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.directory_entries.deserialize( from_hash_map.get( "directory_entries" ) );
+        this.directory_entries.deserialize( ( Object[] )from_hash_map.get( "directory_entries" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.directory_entries.deserialize( from_array[0] );        
+        this.directory_entries.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )

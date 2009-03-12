@@ -25,7 +25,7 @@ public class Context implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "Context( " + "\"" + user_id + "\"" + ", " + group_ids.toString() + " )"; 
+        return "Context( " + "\"" + user_id + "\"" + ", " + group_ids.toString() + " )";
     }
 
 
@@ -37,13 +37,13 @@ public class Context implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.user_id = ( String )from_hash_map.get( "user_id" );
-        this.group_ids.deserialize( from_hash_map.get( "group_ids" ) );
+        this.group_ids.deserialize( ( Object[] )from_hash_map.get( "group_ids" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.user_id = ( String )from_array[0];
-        this.group_ids.deserialize( from_array[1] );        
+        this.group_ids.deserialize( ( Object[] )from_array[1] );        
     }
 
     public void deserialize( ReusableBuffer buf )

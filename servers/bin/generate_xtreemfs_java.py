@@ -225,30 +225,26 @@ class XtreemFSJavaExceptionType(JavaExceptionType):
     def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
     
-class XtreemFSJavaOperation(JavaOperation):    
-    def __init__( self, *args, **kwds ):
-        JavaOperation.__init__( self, *args, **kwds )                
-        qname = self.getQualifiedName()
-        self.__request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
-        if self.isOneway():
-            self.__response_type = None
-        else:
-            params = [param for param in self.getParameters() if param.isOutbound()]
-            if self.getReturnType() is not None:  
-                params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
-            self.__response_type = XtreemFSJavaResponseType( self.getScope(), qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), params )
-    
+class XtreemFSJavaOperation(JavaOperation):        
     def generate( self ):
-        self.__request_type.generate()
-        if self.__response_type is not None:
-            self.__response_type.generate()
+        qname = self.getQualifiedName()
+        
+        request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
+        request_type.generate()
+                
+        if not self.isOneway():
+            response_params = [param for param in self.getParameters() if param.isOutbound()]
+            if self.getReturnType() is not None:  
+                response_params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
+            response_type = XtreemFSJavaResponseType( self.getScope(), qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), response_params )
+            response_type.generate()
                 
     def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
     def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
 
 
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
-    def getOtherMethods( self ):
+    def getOtherMethods( self ):        
         uid = self.getUID()     
         response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
         return XtreemFSJavaStructType.getOtherMethods( self ) + """

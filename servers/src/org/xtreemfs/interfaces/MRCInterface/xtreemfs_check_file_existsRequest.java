@@ -26,7 +26,7 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
 
     public String toString()
     {
-        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + " )"; 
+        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + " )";
     }
 
 
@@ -38,13 +38,13 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.volume_id = ( String )from_hash_map.get( "volume_id" );
-        this.file_ids.deserialize( from_hash_map.get( "file_ids" ) );
+        this.file_ids.deserialize( ( Object[] )from_hash_map.get( "file_ids" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.volume_id = ( String )from_array[0];
-        this.file_ids.deserialize( from_array[1] );        
+        this.file_ids.deserialize( ( Object[] )from_array[1] );        
     }
 
     public void deserialize( ReusableBuffer buf )

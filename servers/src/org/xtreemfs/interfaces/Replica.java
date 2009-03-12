@@ -27,7 +27,7 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "Replica( " + striping_policy.toString() + ", " + Integer.toString( replication_flags ) + ", " + osd_uuids.toString() + " )"; 
+        return "Replica( " + striping_policy.toString() + ", " + Integer.toString( replication_flags ) + ", " + osd_uuids.toString() + " )";
     }
 
 
@@ -40,14 +40,14 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     {
         this.striping_policy.deserialize( from_hash_map.get( "striping_policy" ) );
         this.replication_flags = ( ( Integer )from_hash_map.get( "replication_flags" ) ).intValue();
-        this.osd_uuids.deserialize( from_hash_map.get( "osd_uuids" ) );
+        this.osd_uuids.deserialize( ( Object[] )from_hash_map.get( "osd_uuids" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.striping_policy.deserialize( from_array[0] );
         this.replication_flags = ( ( Integer )from_array[1] ).intValue();
-        this.osd_uuids.deserialize( from_array[2] );        
+        this.osd_uuids.deserialize( ( Object[] )from_array[2] );        
     }
 
     public void deserialize( ReusableBuffer buf )

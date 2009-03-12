@@ -24,7 +24,7 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "unlinkResponse( " + credentials.toString() + " )"; 
+        return "unlinkResponse( " + credentials.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.credentials.deserialize( from_hash_map.get( "credentials" ) );
+        this.credentials.deserialize( ( Object[] )from_hash_map.get( "credentials" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.credentials.deserialize( from_array[0] );        
+        this.credentials.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )

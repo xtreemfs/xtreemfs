@@ -24,7 +24,7 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "listxattrResponse( " + names.toString() + " )"; 
+        return "listxattrResponse( " + names.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.names.deserialize( from_hash_map.get( "names" ) );
+        this.names.deserialize( ( Object[] )from_hash_map.get( "names" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.names.deserialize( from_array[0] );        
+        this.names.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )

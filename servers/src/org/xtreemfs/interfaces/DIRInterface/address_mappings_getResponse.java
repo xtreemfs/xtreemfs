@@ -24,7 +24,7 @@ public class address_mappings_getResponse implements org.xtreemfs.interfaces.uti
 
     public String toString()
     {
-        return "address_mappings_getResponse( " + address_mappings.toString() + " )"; 
+        return "address_mappings_getResponse( " + address_mappings.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class address_mappings_getResponse implements org.xtreemfs.interfaces.uti
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.address_mappings.deserialize( from_hash_map.get( "address_mappings" ) );
+        this.address_mappings.deserialize( ( Object[] )from_hash_map.get( "address_mappings" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.address_mappings.deserialize( from_array[0] );        
+        this.address_mappings.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )

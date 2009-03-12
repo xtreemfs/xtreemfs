@@ -24,7 +24,7 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
 
     public String toString()
     {
-        return "xtreemfs_get_suitable_osdsResponse( " + osd_uuids.toString() + " )"; 
+        return "xtreemfs_get_suitable_osdsResponse( " + osd_uuids.toString() + " )";
     }
 
 
@@ -35,12 +35,12 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.osd_uuids.deserialize( from_hash_map.get( "osd_uuids" ) );
+        this.osd_uuids.deserialize( ( Object[] )from_hash_map.get( "osd_uuids" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.osd_uuids.deserialize( from_array[0] );        
+        this.osd_uuids.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )
