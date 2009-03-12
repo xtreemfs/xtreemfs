@@ -59,6 +59,8 @@ module org
 
         void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
 
+	void     service_get_by_name( string service_name, out ServiceRegistrySet services) # 9;
+
         uint64_t global_time_get() # 8;
 
         //admin operations
