@@ -1,10 +1,10 @@
-#ifndef _76903905218_H
-#define _76903905218_H
+#ifndef _92793517348_H
+#define _92793517348_H
 
 #include "constants.h"
-
 #include "yield/arch.h"
-
+#include <vector>
+#include "yield/platform.h"
 #include <map>
 
 

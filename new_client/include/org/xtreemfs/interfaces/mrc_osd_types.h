@@ -1,9 +1,9 @@
-#ifndef _66018573478_H
-#define _66018573478_H
+#ifndef _55404706350_H
+#define _55404706350_H
 
-#include "yield/arch.h"
-
-#include <map>
+#include <string>
+#include "yield/platform.h"
+#include <vector>
 
 
 namespace org

@@ -1,12 +1,10 @@
-#ifndef _25170600445_H
-#define _25170600445_H
+#ifndef _67697277345_H
+#define _67697277345_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
-
+#include "yield/platform.h"
 #include "yield/arch.h"
-
-#include <map>
 
 
 namespace org

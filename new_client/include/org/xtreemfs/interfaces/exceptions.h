@@ -1,9 +1,8 @@
-#ifndef _75469114364_H
-#define _75469114364_H
+#ifndef _1334656989_H
+#define _1334656989_H
 
+#include <string>
 #include "yield/arch.h"
-
-#include <map>
 
 
 namespace org
