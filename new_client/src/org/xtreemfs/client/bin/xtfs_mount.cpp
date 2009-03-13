@@ -1,7 +1,8 @@
 #include "org/xtreemfs/client.h"
 using namespace org::xtreemfs::client;
 
-#include "yield/platform.h"
+#include "yield.h"
+
 #include "yieldfs/fuse.h"
 
 #include <string>
@@ -137,21 +138,10 @@ int main( int argc, char** argv )
 
     if ( mount_point.empty() )
       throw YIELD::Exception( "must specify mount point" );
-  }
-  catch ( std::exception& exc )
-  {
-    std::cerr << "Error parsing command line arguments: " << exc.what() << std::endl;
-    delete dir_uri;
-    delete mrc_uri;
-    return 1;
-  }
 
-  if ( debug )
-    YIELD::SocketConnection::setTraceSocketIO( true );
+    if ( debug )
+      YIELD::SocketConnection::setTraceSocketIO( true );
 
-  int ret;
-  try
-  {
     YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
     DIRProxy dir_proxy( *dir_uri ); main_stage_group.createStage( dir_proxy );
@@ -200,31 +190,22 @@ int main( int argc, char** argv )
     OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group );
 
     Volume volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
-    ret = yieldfs::FUSE( volume ).main( argv[0], mount_point.c_str(), foreground, debug );
+    int ret = yieldfs::FUSE( volume ).main( argv[0], mount_point.c_str(), foreground, debug );
 
     YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
-  }
-  catch ( ProxyException& exc )
-  {
-    std::cerr << "Error mounting volume: " << exc.getTypeName() << ": " << exc.what() << std::endl;
-    std::cerr << "  errno: " << exc.get_error_code() << std::endl;
-    std::cerr << "  stack trace: " << exc.get_stack_trace() << std::endl;
-    ret = 1;
-  }
-  catch ( YIELD::Exception& exc )
-  {
-    std::cerr << "Error mounting volume: " << exc.what() << std::endl;
-    std::cerr << "  errno: " << exc.get_error_code() << std::endl;
-    ret = 1;
+
+    delete dir_uri;
+    delete mrc_uri;
+
+    return ret;
   }
   catch ( std::exception& exc )
   {
     std::cerr << "Error mounting volume: " << exc.what() << std::endl;
-    ret = 1;
+
+    delete dir_uri;
+    delete mrc_uri;
+
+    return 1;
   }
-
-  delete dir_uri;
-  delete mrc_uri;
-
-  return ret;
 }

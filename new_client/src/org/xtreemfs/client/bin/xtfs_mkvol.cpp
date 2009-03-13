@@ -4,10 +4,8 @@ using namespace org::xtreemfs::client;
 #include "yield/platform.h"
 
 #include <string>
-#include <vector>
 #include <exception>
 #include <iostream>
-using namespace std;
 
 #include "SimpleOpt.h"
 
@@ -35,14 +33,12 @@ CSimpleOpt::SOption options[] = {
 
 int main( int argc, char** argv )
 {
-  int ret = 0;
-
   // Options to fill
   bool debug = false;
-  string volume_uri_str; YIELD::URI* volume_uri = NULL;
+  std::string volume_uri_str; YIELD::URI* volume_uri = NULL;
   uint8_t striping_policy_id = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT; size_t striping_policy_size = 4, striping_policy_width = 1;
   int osd_selection = 1, access_policy = 2, mode = 0;
-  string cert_file, dirservice;
+  std::string cert_file, dirservice;
 
   try
   {
@@ -105,36 +101,24 @@ int main( int argc, char** argv )
     volume_uri = new YIELD::URI( volume_uri_str );
     if ( strlen( volume_uri->getResource() ) <= 1 )
       throw YIELD::Exception( "volume URI must include a volume name" );
-  }
-  catch ( exception& exc )
-  {
-    cerr << "Error parsing command line arguments: " << exc.what() << endl;
-    ret = 1;
-  }
 
-  if ( ret == 0 )
-  {
     if ( debug )
       YIELD::SocketConnection::setTraceSocketIO( true );  
 
-    try
-    {
-      MRCProxy mrc_proxy( *volume_uri );
-      mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "user", org::xtreemfs::interfaces::StringSet() ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
-    }
-    catch ( ProxyException& exc )
-    {
-      cerr << "Error creating volume: " << exc.what() << endl;
-      // cerr << "  exceptionName: " << exc.get_exceptionName() << endl;
-      cerr << "  errno: " << exc.get_error_code() << endl;
-      // cerr << "  stackTrace: " << exc.get_stackTrace() << endl;
-    }
-    catch ( exception& exc )
-    {
-      cerr << "Error creating volume: " << exc.what() << endl;  
-    }
+    MRCProxy mrc_proxy( *volume_uri );
+    mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "user", org::xtreemfs::interfaces::StringSet() ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
+
+    delete volume_uri;
+
+    return 0;
+  }
+  catch ( std::exception& exc )
+  {
+    std::cerr << "Error creating volume: " << exc.what() << std::endl;  
+
+    delete volume_uri;
+
+    return 1;
   }
   
-  delete volume_uri;
-  return ret;
 }

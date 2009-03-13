@@ -1,7 +1,7 @@
 #include "org/xtreemfs/client.h"
 using namespace org::xtreemfs::client;
 
-#include "yield/arch.h"
+#include "yield.h"
 
 #include "SimpleOpt.h"
 
@@ -101,17 +101,15 @@ private:
 
 int main( int argc, char** argv )
 {
-  CSimpleOpt args( argc, argv, options );
-
-  int ret = 0;
-
-  // Arguments to be parsed
-  std::string rpc_uri_str;
-  YIELD::URI* rpc_uri = NULL;
-  bool debug = false; bool dir = false, mrc = true, osd = false;
+  Proxy* proxy = NULL;
 
   try
   {
+    CSimpleOpt args( argc, argv, options );
+
+    // Arguments to be parsed
+    bool debug = false; bool dir = false, mrc = true, osd = false;
+
     // - options
     while ( args.Next() )
     {
@@ -128,78 +126,62 @@ int main( int argc, char** argv )
     }
 
     // rpc_uri_str after - options
+
     if ( args.FileCount() >= 1 )
-      rpc_uri_str = args.Files()[0];
+    {
+      YIELD::URI rpc_uri( args.Files()[0] );
+      if ( strlen( rpc_uri.getResource() ) > 1 )
+      {
+        if ( debug )
+          YIELD::SocketConnection::setTraceSocketIO( true );
+        
+        if ( dir ) { proxy = new DIRProxy( rpc_uri ); }
+        else if ( osd ) { proxy = new OSDProxy( rpc_uri ); }
+        else { proxy = new MRCProxy( rpc_uri ); }
+
+        std::string req_type_name( "org::xtreemfs::interfaces::" );
+        req_type_name.append( proxy->getEventHandlerName() );
+        req_type_name.append( "::" );
+        req_type_name.append( rpc_uri.getResource() + 1 );
+        req_type_name.append( "SyncRequest" );
+
+        YIELD::Request* req = proxy->createRequest( req_type_name.c_str() );
+        if ( req != NULL )
+        {
+          argvInputStream in_binding( args, 1 );
+          req->deserialize( in_binding );
+          req->setResponseTimeoutMS( 2000 );
+
+          YIELD::SharedObject::incRef( *req );
+          proxy->send( *req );
+
+          YIELD::Event& resp = req->waitForDefaultResponse( 2000 );
+          std::cout << resp.getTypeName() << "( ";
+          YIELD::PrettyPrintOutputStream out_binding( std::cout );
+          resp.serialize( out_binding );
+          std::cout << " )" << std::endl;
+          YIELD::SharedObject::decRef( resp );
+
+          YIELD::SharedObject::decRef( *req );  
+          delete proxy;
+
+          return 0;
+        }
+        else
+          throw YIELD::Exception( "RPC operation name is not valid for the given server" );
+      }
+      else
+        throw YIELD::Exception( "RPC URI must include an operation name" );
+    }
     else
       throw YIELD::Exception( "must specify RPC URI (http://host:port/Operation)" );
-
-    rpc_uri = new YIELD::URI( rpc_uri_str );
-    if ( strlen( rpc_uri->getResource() ) <= 1 )
-      throw YIELD::Exception( "RPC URI must include an operation name" );
   }
   catch ( std::exception& exc )
   {
-    std::cerr << "Error parsing command line arguments: " << exc.what() << std::endl;
-    delete rpc_uri;
+    std::cerr << "Error on request: " << exc.what() << std::endl;
+
+    delete proxy;
+
     return 1;
   }
-
-  if ( debug )
-    YIELD::SocketConnection::setTraceSocketIO( true );
-
-  Proxy* proxy = NULL;
-  if ( dir ) { proxy = new DIRProxy( *rpc_uri ); }
-  else if ( mrc ) { proxy = new MRCProxy( *rpc_uri ); }
-  else if ( osd ) { proxy = new OSDProxy( *rpc_uri ); }
-
-  std::string req_type_name( "org::xtreemfs::interfaces::" );
-  req_type_name.append( proxy->getEventHandlerName() );
-  req_type_name.append( "::" );
-  req_type_name.append( rpc_uri->getResource() + 1 );
-  req_type_name.append( "SyncRequest" );
-
-  YIELD::Request* req = proxy->createRequest( req_type_name.c_str() );
-  if ( req != NULL )
-  {
-    try
-    {
-      argvInputStream in_binding( args, 1 );
-      req->deserialize( in_binding );
-      req->setResponseTimeoutMS( 2000 );
-
-      YIELD::SharedObject::incRef( *req );
-      proxy->send( *req );
-
-      YIELD::Event& resp = req->waitForDefaultResponse( 2000 );
-      std::cout << resp.getTypeName() << "( ";
-      YIELD::PrettyPrintOutputStream out_binding( std::cout );
-      resp.serialize( out_binding );
-      std::cout << " )" << std::endl;
-      YIELD::SharedObject::decRef( resp );
-    }
-    catch ( YIELD::ExceptionEvent& exc_ev )
-    {
-      std::cerr << "Exception: " << exc_ev.getTypeName() << "( ";
-      YIELD::PrettyPrintOutputStream out_binding( std::cerr );
-      exc_ev.serialize( out_binding );
-      std::cerr << " ), error_code = " << exc_ev.get_error_code() << ", what = " << exc_ev.what() << std::endl;
-      ret = 1;
-    }
-    catch ( YIELD::Exception& exc )
-    {
-      std::cerr << "Exception: error_code = " << exc.get_error_code() << ", what = " << exc.what() << std::endl;
-      ret = 1;
-    }
-
-    YIELD::SharedObject::decRef( *req );
-  }
-  else
-  {
-    std::cerr << "RPC operation " << rpc_uri->getResource() << " is not valid for the given server" << std::endl;
-    ret = 1;
-  }
-
-  delete proxy;
-  delete rpc_uri;
-  return ret;
-};
+}

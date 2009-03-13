@@ -11,18 +11,19 @@ using namespace org::xtreemfs::client;
 
 
 Proxy::Proxy() 
-  : uri( NULL ), reconnect_tries_max( 0 ), 
+  : uri( NULL ), reconnect_tries_max( 0 ), flags( 0 ),
     peer_ip( 0 ), conn( NULL )
 {
   xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
 }
 
-void Proxy::init( const YIELD::URI& uri, uint8_t reconnect_tries_max )
+void Proxy::init( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t flags )
 {
   if ( strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 || strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
   {
     this->uri = new YIELD::URI( uri );
     this->reconnect_tries_max = reconnect_tries_max;
+    this->flags = flags;
   }
   else
     throw YIELD::Exception( "unknown URI scheme" );
@@ -48,6 +49,12 @@ void Proxy::handleEvent( YIELD::Event& ev )
         case YIELD::RTTI::REQUEST:
         {
           YIELD::Request& req = static_cast<YIELD::Request&>( ev );
+          if ( ( flags & PROXY_FLAG_PRINT_OPERATIONS ) == PROXY_FLAG_PRINT_OPERATIONS )
+          {
+            YIELD::PrettyPrintOutputStream pretty_print_output_stream( std::cout );
+            pretty_print_output_stream.writeSerializable( YIELD::PrettyPrintOutputStream::Declaration( req.getTypeName() ), req );
+          }
+
           try
           {
             YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories );

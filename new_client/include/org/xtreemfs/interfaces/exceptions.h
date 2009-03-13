@@ -1,5 +1,5 @@
-#ifndef _1334656989_H
-#define _1334656989_H
+#ifndef _16905107002_H
+#define _16905107002_H
 
 #include <string>
 #include "yield/arch.h"
@@ -106,16 +106,16 @@ namespace org
         {
         public:
           errnoException() : error_code( 0 ) { }
-        errnoException( uint32_t error_code, const std::string& errro_message, const std::string& stack_trace ) : error_code( error_code ), errro_message( errro_message ), stack_trace( stack_trace ) { }
-        errnoException( uint32_t error_code, const char* errro_message, size_t errro_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), errro_message( errro_message, errro_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
+        errnoException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
+        errnoException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
           errnoException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~errnoException() throw() { }
   
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
         uint32_t get_error_code() const { return error_code; }
-        void set_errro_message( const std::string& errro_message ) { set_errro_message( errro_message.c_str(), errro_message.size() ); }
-        void set_errro_message( const char* errro_message, size_t errro_message_len = 0 ) { this->errro_message.assign( errro_message, ( errro_message_len != 0 ) ? errro_message_len : std::strlen( errro_message ) ); }
-        const std::string& get_errro_message() const { return errro_message; }
+        void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
+        void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
+        const std::string& get_error_message() const { return error_message; }
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
@@ -124,16 +124,16 @@ namespace org
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
   
           // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new errnoException( error_code, errro_message, stack_trace); }
-          virtual void throwStackClone() const { throw errnoException( error_code, errro_message, stack_trace); }
+          virtual ExceptionEvent* clone() const { return new errnoException( error_code, error_message, stack_trace); }
+          virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
-        std::string errro_message;
+        std::string error_message;
         std::string stack_trace;
         };
   
@@ -169,16 +169,16 @@ namespace org
         {
         public:
           MRCException() : error_code( 0 ) { }
-        MRCException( uint32_t error_code, const std::string& errro_message, const std::string& stack_trace ) : error_code( error_code ), errro_message( errro_message ), stack_trace( stack_trace ) { }
-        MRCException( uint32_t error_code, const char* errro_message, size_t errro_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), errro_message( errro_message, errro_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
+        MRCException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
+        MRCException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
           MRCException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~MRCException() throw() { }
   
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
         uint32_t get_error_code() const { return error_code; }
-        void set_errro_message( const std::string& errro_message ) { set_errro_message( errro_message.c_str(), errro_message.size() ); }
-        void set_errro_message( const char* errro_message, size_t errro_message_len = 0 ) { this->errro_message.assign( errro_message, ( errro_message_len != 0 ) ? errro_message_len : std::strlen( errro_message ) ); }
-        const std::string& get_errro_message() const { return errro_message; }
+        void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
+        void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
+        const std::string& get_error_message() const { return error_message; }
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
@@ -187,16 +187,16 @@ namespace org
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::MRCException", 32377859UL );
   
           // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new MRCException( error_code, errro_message, stack_trace); }
-          virtual void throwStackClone() const { throw MRCException( error_code, errro_message, stack_trace); }
+          virtual ExceptionEvent* clone() const { return new MRCException( error_code, error_message, stack_trace); }
+          virtual void throwStackClone() const { throw MRCException( error_code, error_message, stack_trace); }
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
-        std::string errro_message;
+        std::string error_message;
         std::string stack_trace;
         };
   
@@ -204,16 +204,16 @@ namespace org
         {
         public:
           OSDException() : error_code( 0 ) { }
-        OSDException( uint32_t error_code, const std::string& errro_message, const std::string& stack_trace ) : error_code( error_code ), errro_message( errro_message ), stack_trace( stack_trace ) { }
-        OSDException( uint32_t error_code, const char* errro_message, size_t errro_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), errro_message( errro_message, errro_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
+        OSDException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
+        OSDException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
           OSDException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~OSDException() throw() { }
   
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
         uint32_t get_error_code() const { return error_code; }
-        void set_errro_message( const std::string& errro_message ) { set_errro_message( errro_message.c_str(), errro_message.size() ); }
-        void set_errro_message( const char* errro_message, size_t errro_message_len = 0 ) { this->errro_message.assign( errro_message, ( errro_message_len != 0 ) ? errro_message_len : std::strlen( errro_message ) ); }
-        const std::string& get_errro_message() const { return errro_message; }
+        void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
+        void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
+        const std::string& get_error_message() const { return error_message; }
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
@@ -222,16 +222,16 @@ namespace org
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::OSDException", 3594163714UL );
   
           // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new OSDException( error_code, errro_message, stack_trace); }
-          virtual void throwStackClone() const { throw OSDException( error_code, errro_message, stack_trace); }
+          virtual ExceptionEvent* clone() const { return new OSDException( error_code, error_message, stack_trace); }
+          virtual void throwStackClone() const { throw OSDException( error_code, error_message, stack_trace); }
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "errro_message" ), errro_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
-        std::string errro_message;
+        std::string error_message;
         std::string stack_trace;
         };
   
