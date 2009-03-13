@@ -20,9 +20,7 @@ namespace org
       class OSDProxyFactory
       {
       public:
-        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group )
-          : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group )
-        { }
+        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint32_t osd_proxy_flags = 0 );
         virtual ~OSDProxyFactory();
 
         OSDProxy& createOSDProxy( const std::string& uuid, uint64_t version );
@@ -30,6 +28,7 @@ namespace org
       private:
         DIRProxy& dir_proxy;
         YIELD::StageGroup& osd_proxy_stage_group;
+        uint32_t osd_proxy_flags;
 
         std::map<std::string, VersionedURI*> uuid_to_uri_map; YIELD::Mutex uuid_to_uri_map_lock;
 

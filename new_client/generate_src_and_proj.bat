@@ -18,6 +18,7 @@ REM Don't include share\yield in the scan here
 python %YIDL_PATH%\bin\generate_yield_cpp.py -i %CD%\..\interfaces -o include\org\xtreemfs\interfaces --with-registerSerializableFactories
 python %YIDL_PATH%\bin\generate_yield_cpp.py -i include -o include --with-registerSerializableFactories
 python %YIDL_PATH%\bin\generate_yield_cpp.py -i src -o src --with-registerSerializableFactories
+python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %CD%\..\interfaces -o src\org\xtreemfs\client\bin
 
 
 REM Generate project files
@@ -29,5 +30,7 @@ python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s ..\src\org\xtree
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_lsvol.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_rmvol.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_send.cpp -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIDL_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s ..\src\org\xtreemfs\client\bin\xtfs_fuzz.cpp -s ..\src\org\xtreemfs\client\bin\*_fuzzer.h -o ..\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
+
 
 cd ..

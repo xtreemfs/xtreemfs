@@ -1,9 +1,9 @@
-#ifndef _67697277345_H
-#define _67697277345_H
+#ifndef _19270491834_H
+#define _19270491834_H
 
 #include "constants.h"
-#include "mrc_osd_types.h"
 #include "yield/platform.h"
+#include "mrc_osd_types.h"
 #include "yield/arch.h"
 
 
@@ -177,18 +177,18 @@ namespace org
         virtual org::xtreemfs::interfaces::ObjectData read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, const char* send_target ) { return read( file_id, credentials, object_number, object_version, offset, length, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::ObjectData read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, YIELD::timeout_ns_t send_timeout_ns ) { return read( file_id, credentials, object_number, object_version, offset, length, NULL, send_timeout_ns ); }
         virtual org::xtreemfs::interfaces::ObjectData read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { readSyncRequest* __req = new readSyncRequest( file_id, credentials, object_number, object_version, offset, length, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); readResponse& __resp = ( readResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); org::xtreemfs::interfaces::ObjectData _return_value = __resp.get__return_value(); YIELD::SharedObject::decRef( __resp ); return _return_value; }
-        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { truncate( file_id, credentials, new_file_size, osd_response, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, const char* send_target ) { truncate( file_id, credentials, new_file_size, osd_response, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, YIELD::timeout_ns_t send_timeout_ns ) { truncate( file_id, credentials, new_file_size, osd_response, NULL, send_timeout_ns ); }
-        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { truncateSyncRequest* __req = new truncateSyncRequest( file_id, credentials, new_file_size, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); truncateResponse& __resp = ( truncateResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); osd_response = __resp.get_osd_response(); YIELD::SharedObject::decRef( __resp ); }
+        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { truncate( file_id, credentials, new_file_size, osd_write_response, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target ) { truncate( file_id, credentials, new_file_size, osd_write_response, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, YIELD::timeout_ns_t send_timeout_ns ) { truncate( file_id, credentials, new_file_size, osd_write_response, NULL, send_timeout_ns ); }
+        virtual void truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { truncateSyncRequest* __req = new truncateSyncRequest( file_id, credentials, new_file_size, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); truncateResponse& __resp = ( truncateResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); osd_write_response = __resp.get_osd_write_response(); YIELD::SharedObject::decRef( __resp ); }
         virtual void unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { unlink( file_id, credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, const char* send_target ) { unlink( file_id, credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, YIELD::timeout_ns_t send_timeout_ns ) { unlink( file_id, credentials, NULL, send_timeout_ns ); }
         virtual void unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { unlinkSyncRequest* __req = new unlinkSyncRequest( file_id, credentials, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); unlinkResponse& __resp = ( unlinkResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
-        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, data, osd_response, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, const char* send_target ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, data, osd_response, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, YIELD::timeout_ns_t send_timeout_ns ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, data, osd_response, NULL, send_timeout_ns ); }
-        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { writeSyncRequest* __req = new writeSyncRequest( file_id, credentials, object_number, object_version, offset, lease_timeout, data, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); writeResponse& __resp = ( writeResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); osd_response = __resp.get_osd_response(); YIELD::SharedObject::decRef( __resp ); }
+        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, object_data, osd_write_response, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, object_data, osd_write_response, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, YIELD::timeout_ns_t send_timeout_ns ) { write( file_id, credentials, object_number, object_version, offset, lease_timeout, object_data, osd_write_response, NULL, send_timeout_ns ); }
+        virtual void write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { writeSyncRequest* __req = new writeSyncRequest( file_id, credentials, object_number, object_version, offset, lease_timeout, object_data, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); writeResponse& __resp = ( writeResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); osd_write_response = __resp.get_osd_write_response(); YIELD::SharedObject::decRef( __resp ); }
         virtual void keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { keep_file_open( file_id, credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, const char* send_target ) { keep_file_open( file_id, credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, YIELD::timeout_ns_t send_timeout_ns ) { keep_file_open( file_id, credentials, NULL, send_timeout_ns ); }
@@ -310,24 +310,24 @@ namespace org
       {
       public:
         truncateResponse() { }
-        truncateResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) : osd_response( osd_response ) { }
+        truncateResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) : osd_write_response( osd_write_response ) { }
         virtual ~truncateResponse() { }
   
-        void set_osd_response( const org::xtreemfs::interfaces::OSDWriteResponse&  osd_response ) { this->osd_response = osd_response; }
-        const org::xtreemfs::interfaces::OSDWriteResponse& get_osd_response() const { return osd_response; }
+        void set_osd_write_response( const org::xtreemfs::interfaces::OSDWriteResponse&  osd_write_response ) { this->osd_write_response = osd_write_response; }
+        const org::xtreemfs::interfaces::OSDWriteResponse& get_osd_write_response() const { return osd_write_response; }
   
-        bool operator==( const truncateResponse& other ) const { return osd_response == other.osd_response; }
+        bool operator==( const truncateResponse& other ) const { return osd_write_response == other.osd_write_response; }
   
         // YIELD::RTTI
         TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::truncateResponse", 233138659UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_response" ), osd_response ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_response" ), &osd_response ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), osd_write_response ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), &osd_write_response ); }
   
       protected:
-        org::xtreemfs::interfaces::OSDWriteResponse osd_response;
+        org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
       };
   
       class truncateRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
@@ -462,32 +462,32 @@ namespace org
       {
       public:
         writeResponse() { }
-        writeResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) : osd_response( osd_response ) { }
+        writeResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) : osd_write_response( osd_write_response ) { }
         virtual ~writeResponse() { }
   
-        void set_osd_response( const org::xtreemfs::interfaces::OSDWriteResponse&  osd_response ) { this->osd_response = osd_response; }
-        const org::xtreemfs::interfaces::OSDWriteResponse& get_osd_response() const { return osd_response; }
+        void set_osd_write_response( const org::xtreemfs::interfaces::OSDWriteResponse&  osd_write_response ) { this->osd_write_response = osd_write_response; }
+        const org::xtreemfs::interfaces::OSDWriteResponse& get_osd_write_response() const { return osd_write_response; }
   
-        bool operator==( const writeResponse& other ) const { return osd_response == other.osd_response; }
+        bool operator==( const writeResponse& other ) const { return osd_write_response == other.osd_write_response; }
   
         // YIELD::RTTI
         TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::writeResponse", 3887614948UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_response" ), osd_response ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_response" ), &osd_response ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), osd_write_response ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), &osd_write_response ); }
   
       protected:
-        org::xtreemfs::interfaces::OSDWriteResponse osd_response;
+        org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
       };
   
       class writeRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
         writeRequest() : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ), object_number( 0 ), object_version( 0 ), offset( 0 ), lease_timeout( 0 ) { }
-        writeRequest( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), file_id( file_id ), credentials( credentials ), object_number( object_number ), object_version( object_version ), offset( offset ), lease_timeout( lease_timeout ), data( data ) { }
-        writeRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), file_id( file_id, file_id_len ), credentials( credentials ), object_number( object_number ), object_version( object_version ), offset( offset ), lease_timeout( lease_timeout ), data( data ) { }
+        writeRequest( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), file_id( file_id ), credentials( credentials ), object_number( object_number ), object_version( object_version ), offset( offset ), lease_timeout( lease_timeout ), object_data( object_data ) { }
+        writeRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), file_id( file_id, file_id_len ), credentials( credentials ), object_number( object_number ), object_version( object_version ), offset( offset ), lease_timeout( lease_timeout ), object_data( object_data ) { }
         virtual ~writeRequest() { }
   
         void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
@@ -503,18 +503,18 @@ namespace org
         uint32_t get_offset() const { return offset; }
         void set_lease_timeout( uint64_t lease_timeout ) { this->lease_timeout = lease_timeout; }
         uint64_t get_lease_timeout() const { return lease_timeout; }
-        void set_data( const org::xtreemfs::interfaces::ObjectData&  data ) { this->data = data; }
-        const org::xtreemfs::interfaces::ObjectData& get_data() const { return data; }
+        void set_object_data( const org::xtreemfs::interfaces::ObjectData&  object_data ) { this->object_data = object_data; }
+        const org::xtreemfs::interfaces::ObjectData& get_object_data() const { return object_data; }
   
-        bool operator==( const writeRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version && offset == other.offset && lease_timeout == other.lease_timeout && data == other.data; }
+        bool operator==( const writeRequest& other ) const { return file_id == other.file_id && credentials == other.credentials && object_number == other.object_number && object_version == other.object_version && offset == other.offset && lease_timeout == other.lease_timeout && object_data == other.object_data; }
   
         // YIELD::RTTI
         TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::writeRequest", 3616508705UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), credentials ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "offset" ), offset ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ), lease_timeout ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "data" ), data ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); offset = input_stream.readUint32( YIELD::StructuredStream::Declaration( "offset" ) ); lease_timeout = input_stream.readUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), credentials ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "offset" ), offset ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ), lease_timeout ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "object_data" ), object_data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "credentials" ), &credentials ); object_number = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_number" ) ); object_version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "object_version" ) ); offset = input_stream.readUint32( YIELD::StructuredStream::Declaration( "offset" ) ); lease_timeout = input_stream.readUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "object_data" ), &object_data ); }
   
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 3; }
@@ -531,15 +531,15 @@ namespace org
         uint64_t object_version;
         uint32_t offset;
         uint64_t lease_timeout;
-        org::xtreemfs::interfaces::ObjectData data;
+        org::xtreemfs::interfaces::ObjectData object_data;
       };
   
       class writeSyncRequest : public writeRequest
       {
       public:
         writeSyncRequest() : writeRequest( std::string(), org::xtreemfs::interfaces::FileCredentials(), 0, 0, 0, 0, org::xtreemfs::interfaces::ObjectData(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        writeSyncRequest( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : writeRequest( file_id, credentials, object_number, object_version, offset, lease_timeout, data, response_timeout_ns ) { }
-        writeSyncRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : writeRequest( file_id, file_id_len, credentials, object_number, object_version, offset, lease_timeout, data, response_timeout_ns ) { }
+        writeSyncRequest( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : writeRequest( file_id, credentials, object_number, object_version, offset, lease_timeout, object_data, response_timeout_ns ) { }
+        writeSyncRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : writeRequest( file_id, file_id_len, credentials, object_number, object_version, offset, lease_timeout, object_data, response_timeout_ns ) { }
         virtual ~writeSyncRequest() { }
   
         bool operator==( const writeSyncRequest& other ) const { return true; }
@@ -1077,9 +1077,9 @@ namespace org
   
       protected:
           virtual void handlereadRequest( readRequest& req ) { readResponse* resp = NULL; try { resp = new readResponse; org::xtreemfs::interfaces::ObjectData _return_value = _read( req.get_file_id(), req.get_credentials(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_length() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handletruncateRequest( truncateRequest& req ) { truncateResponse* resp = NULL; try { resp = new truncateResponse; org::xtreemfs::interfaces::OSDWriteResponse osd_response; _truncate( req.get_file_id(), req.get_credentials(), req.get_new_file_size(), osd_response ); resp->set_osd_response( osd_response ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handletruncateRequest( truncateRequest& req ) { truncateResponse* resp = NULL; try { resp = new truncateResponse; org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _truncate( req.get_file_id(), req.get_credentials(), req.get_new_file_size(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleunlinkRequest( unlinkRequest& req ) { unlinkResponse* resp = NULL; try { resp = new unlinkResponse; _unlink( req.get_file_id(), req.get_credentials() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlewriteRequest( writeRequest& req ) { writeResponse* resp = NULL; try { resp = new writeResponse; org::xtreemfs::interfaces::OSDWriteResponse osd_response; _write( req.get_file_id(), req.get_credentials(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_lease_timeout(), req.get_data(), osd_response ); resp->set_osd_response( osd_response ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlewriteRequest( writeRequest& req ) { writeResponse* resp = NULL; try { resp = new writeResponse; org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _write( req.get_file_id(), req.get_credentials(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_lease_timeout(), req.get_object_data(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlekeep_file_openRequest( keep_file_openRequest& req ) { keep_file_openResponse* resp = NULL; try { resp = new keep_file_openResponse; _keep_file_open( req.get_file_id(), req.get_credentials() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleinternal_get_gmaxRequest( internal_get_gmaxRequest& req ) { internal_get_gmaxResponse* resp = NULL; try { resp = new internal_get_gmaxResponse; org::xtreemfs::interfaces::InternalGmax _return_value = _internal_get_gmax( req.get_file_id(), req.get_credentials() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleinternal_truncateRequest( internal_truncateRequest& req ) { internal_truncateResponse* resp = NULL; try { resp = new internal_truncateResponse; _internal_truncate( req.get_file_id(), req.get_credentials(), req.get_new_file_size() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
@@ -1088,9 +1088,9 @@ namespace org
         virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req ) { admin_shutdownResponse* resp = NULL; try { resp = new admin_shutdownResponse; _admin_shutdown( req.get_password() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
   
       virtual org::xtreemfs::interfaces::ObjectData _read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) { return org::xtreemfs::interfaces::ObjectData(); }
-        virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { }
+        virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
         virtual void _unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { }
-        virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { }
+        virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
         virtual void _keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { }
         virtual org::xtreemfs::interfaces::InternalGmax _internal_get_gmax( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { return org::xtreemfs::interfaces::InternalGmax(); }
         virtual void _internal_truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size ) { }
@@ -1102,9 +1102,9 @@ namespace org
       // Use this macro in an implementation class to get all of the prototypes for the operations in OSDInterface
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_PROTOTYPES \
       virtual org::xtreemfs::interfaces::ObjectData _read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length );\
-      virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response );\
+      virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual void _unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials );\
-      virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response );\
+      virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual void _keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials );\
       virtual org::xtreemfs::interfaces::InternalGmax _internal_get_gmax( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials );\
       virtual void _internal_truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size );\
@@ -1115,9 +1115,9 @@ namespace org
       // Use this macro in an implementation class to get dummy implementations for the operations in this interface
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_DUMMY_DEFINITIONS \
       virtual org::xtreemfs::interfaces::ObjectData _read( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) { return org::xtreemfs::interfaces::ObjectData(); }\
-      virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { }\
+      virtual void _truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }\
       virtual void _unlink( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { }\
-      virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& data, org::xtreemfs::interfaces::OSDWriteResponse& osd_response ) { }\
+      virtual void _write( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }\
       virtual void _keep_file_open( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { }\
       virtual org::xtreemfs::interfaces::InternalGmax _internal_get_gmax( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials ) { return org::xtreemfs::interfaces::InternalGmax(); }\
       virtual void _internal_truncate( const std::string& file_id, const org::xtreemfs::interfaces::FileCredentials& credentials, uint64_t new_file_size ) { }\

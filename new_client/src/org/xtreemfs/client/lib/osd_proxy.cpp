@@ -2,9 +2,9 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max )
+OSDProxy::OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t flags )
 {
-  Proxy::init( uri, reconnect_tries_max );
+  Proxy::init( uri, reconnect_tries_max, flags );
   if ( this->uri->getPort() == 0 )
   {
     if ( strcmp( this->uri->getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 )

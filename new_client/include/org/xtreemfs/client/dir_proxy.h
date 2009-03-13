@@ -16,7 +16,7 @@ namespace org
       class DIRProxy : public org::xtreemfs::interfaces::DIRInterface
       {
       public:
-        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3 );
+        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3, uint32_t flags = 0 );
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }

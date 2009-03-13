@@ -1,10 +1,10 @@
-#ifndef _90313432631_H
-#define _90313432631_H
+#ifndef _98068532944_H
+#define _98068532944_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
-#include "yield/arch.h"
 #include <vector>
+#include "yield/arch.h"
 #include "yield/platform.h"
 
 
@@ -47,21 +47,21 @@ namespace org
       class stat_ : public YIELD::Serializable
       {
       public:
-        stat_() : mode( 0 ), nlink( 0 ), uid( 0 ), gid( 0 ), dev( 0 ), size( 0 ), atime( 0 ), mtime( 0 ), ctime( 0 ), object_type( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const std::string& user_id, const std::string& group_id, const std::string& file_id, const std::string& link_target, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), dev( dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id ), group_id( group_id ), file_id( file_id ), link_target( link_target ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const char* user_id, size_t user_id_len, const char* group_id, size_t group_id_len, const char* file_id, size_t file_id_len, const char* link_target, size_t link_target_len, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), dev( dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id, user_id_len ), group_id( group_id, group_id_len ), file_id( file_id, file_id_len ), link_target( link_target, link_target_len ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
+        stat_() : mode( 0 ), nlink( 0 ), unused_uid( 0 ), unused_gid( 0 ), unused_dev( 0 ), size( 0 ), atime( 0 ), mtime( 0 ), ctime( 0 ), object_type( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
+        stat_( uint32_t mode, uint32_t nlink, uint32_t unused_uid, uint32_t unused_gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const std::string& user_id, const std::string& group_id, const std::string& file_id, const std::string& link_target, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), unused_uid( unused_uid ), unused_gid( unused_gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id ), group_id( group_id ), file_id( file_id ), link_target( link_target ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
+        stat_( uint32_t mode, uint32_t nlink, uint32_t unused_uid, uint32_t unused_gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const char* user_id, size_t user_id_len, const char* group_id, size_t group_id_len, const char* file_id, size_t file_id_len, const char* link_target, size_t link_target_len, uint8_t object_type, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), unused_uid( unused_uid ), unused_gid( unused_gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id, user_id_len ), group_id( group_id, group_id_len ), file_id( file_id, file_id_len ), link_target( link_target, link_target_len ), object_type( object_type ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
         virtual ~stat_() { }
   
         void set_mode( uint32_t mode ) { this->mode = mode; }
         uint32_t get_mode() const { return mode; }
         void set_nlink( uint32_t nlink ) { this->nlink = nlink; }
         uint32_t get_nlink() const { return nlink; }
-        void set_uid( uint32_t uid ) { this->uid = uid; }
-        uint32_t get_uid() const { return uid; }
-        void set_gid( uint32_t gid ) { this->gid = gid; }
-        uint32_t get_gid() const { return gid; }
-        void set_dev( int16_t dev ) { this->dev = dev; }
-        int16_t get_dev() const { return dev; }
+        void set_unused_uid( uint32_t unused_uid ) { this->unused_uid = unused_uid; }
+        uint32_t get_unused_uid() const { return unused_uid; }
+        void set_unused_gid( uint32_t unused_gid ) { this->unused_gid = unused_gid; }
+        uint32_t get_unused_gid() const { return unused_gid; }
+        void set_unused_dev( int16_t unused_dev ) { this->unused_dev = unused_dev; }
+        int16_t get_unused_dev() const { return unused_dev; }
         void set_size( uint64_t size ) { this->size = size; }
         uint64_t get_size() const { return size; }
         void set_atime( uint64_t atime ) { this->atime = atime; }
@@ -89,22 +89,22 @@ namespace org
         void set_attributes( uint32_t attributes ) { this->attributes = attributes; }
         uint32_t get_attributes() const { return attributes; }
   
-        bool operator==( const stat_& other ) const { return mode == other.mode && nlink == other.nlink && uid == other.uid && gid == other.gid && dev == other.dev && size == other.size && atime == other.atime && mtime == other.mtime && ctime == other.ctime && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && object_type == other.object_type && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
+        bool operator==( const stat_& other ) const { return mode == other.mode && nlink == other.nlink && unused_uid == other.unused_uid && unused_gid == other.unused_gid && unused_dev == other.unused_dev && size == other.size && atime == other.atime && mtime == other.mtime && ctime == other.ctime && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && object_type == other.object_type && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
   
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::stat_", 2292404502UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "nlink" ), nlink ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "uid" ), uid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "gid" ), gid ); output_stream.writeInt16( YIELD::StructuredStream::Declaration( "dev" ), dev ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size" ), size ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "atime" ), atime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "mtime" ), mtime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "ctime" ), ctime ); output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); output_stream.writeUint8( YIELD::StructuredStream::Declaration( "object_type" ), object_type ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); nlink = input_stream.readUint32( YIELD::StructuredStream::Declaration( "nlink" ) ); uid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "uid" ) ); gid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "gid" ) ); dev = input_stream.readInt16( YIELD::StructuredStream::Declaration( "dev" ) ); size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size" ) ); atime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "atime" ) ); mtime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "mtime" ) ); ctime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "ctime" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); object_type = input_stream.readUint8( YIELD::StructuredStream::Declaration( "object_type" ) ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "nlink" ), nlink ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "unused_uid" ), unused_uid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "unused_gid" ), unused_gid ); output_stream.writeInt16( YIELD::StructuredStream::Declaration( "unused_dev" ), unused_dev ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size" ), size ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "atime" ), atime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "mtime" ), mtime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "ctime" ), ctime ); output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); output_stream.writeUint8( YIELD::StructuredStream::Declaration( "object_type" ), object_type ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); nlink = input_stream.readUint32( YIELD::StructuredStream::Declaration( "nlink" ) ); unused_uid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "unused_uid" ) ); unused_gid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "unused_gid" ) ); unused_dev = input_stream.readInt16( YIELD::StructuredStream::Declaration( "unused_dev" ) ); size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size" ) ); atime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "atime" ) ); mtime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "mtime" ) ); ctime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "ctime" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); object_type = input_stream.readUint8( YIELD::StructuredStream::Declaration( "object_type" ) ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
   
       protected:
         uint32_t mode;
         uint32_t nlink;
-        uint32_t uid;
-        uint32_t gid;
-        int16_t dev;
+        uint32_t unused_uid;
+        uint32_t unused_gid;
+        int16_t unused_dev;
         uint64_t size;
         uint64_t atime;
         uint64_t mtime;
@@ -425,10 +425,10 @@ namespace org
         virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size, const char* send_target ) { xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size, NULL, send_timeout_ns ); }
         virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_restore_fileSyncRequest* __req = new xtreemfs_restore_fileSyncRequest( file_path, file_id, file_size, osd_uuid, stripe_size, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_restore_fileResponse& __resp = ( xtreemfs_restore_fileResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
-        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size ) { xtreemfs_update_file_size( xcap, new_file_size, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size, const char* send_target ) { xtreemfs_update_file_size( xcap, new_file_size, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_update_file_size( xcap, new_file_size, NULL, send_timeout_ns ); }
-        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_update_file_sizeSyncRequest* __req = new xtreemfs_update_file_sizeSyncRequest( xcap, new_file_size, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_update_file_sizeResponse& __resp = ( xtreemfs_update_file_sizeResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in MRCInterface
+        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { xtreemfs_update_file_size( xcap, osd_write_response, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target ) { xtreemfs_update_file_size( xcap, osd_write_response, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_update_file_size( xcap, osd_write_response, NULL, send_timeout_ns ); }
+        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, const char* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_update_file_sizeSyncRequest* __req = new xtreemfs_update_file_sizeSyncRequest( xcap, osd_write_response, send_timeout_ns ); this->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_update_file_sizeResponse& __resp = ( xtreemfs_update_file_sizeResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in MRCInterface
   
       class admin_shutdownResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
       {
@@ -2882,23 +2882,23 @@ namespace org
       {
       public:
         xtreemfs_update_file_sizeRequest() : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_update_file_sizeRequest( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), xcap( xcap ), new_file_size( new_file_size ) { }
+        xtreemfs_update_file_sizeRequest( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), xcap( xcap ), osd_write_response( osd_write_response ) { }
         virtual ~xtreemfs_update_file_sizeRequest() { }
   
         void set_xcap( const org::xtreemfs::interfaces::XCap&  xcap ) { this->xcap = xcap; }
         const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
-        void set_new_file_size( const org::xtreemfs::interfaces::OSDWriteResponse&  new_file_size ) { this->new_file_size = new_file_size; }
-        const org::xtreemfs::interfaces::OSDWriteResponse& get_new_file_size() const { return new_file_size; }
+        void set_osd_write_response( const org::xtreemfs::interfaces::OSDWriteResponse&  osd_write_response ) { this->osd_write_response = osd_write_response; }
+        const org::xtreemfs::interfaces::OSDWriteResponse& get_osd_write_response() const { return osd_write_response; }
   
-        bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && new_file_size == other.new_file_size; }
+        bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && osd_write_response == other.osd_write_response; }
   
         // YIELD::RTTI
         TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest", 152425201UL );
   
   
         // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), xcap ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "new_file_size" ), new_file_size ); }
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), &xcap ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "new_file_size" ), &new_file_size ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), xcap ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), osd_write_response ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), &xcap ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDWriteResponse", "osd_write_response" ), &osd_write_response ); }
   
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 2; }
@@ -2910,14 +2910,14 @@ namespace org
   
       protected:
         org::xtreemfs::interfaces::XCap xcap;
-        org::xtreemfs::interfaces::OSDWriteResponse new_file_size;
+        org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
       };
   
       class xtreemfs_update_file_sizeSyncRequest : public xtreemfs_update_file_sizeRequest
       {
       public:
         xtreemfs_update_file_sizeSyncRequest() : xtreemfs_update_file_sizeRequest( org::xtreemfs::interfaces::XCap(), org::xtreemfs::interfaces::OSDWriteResponse(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_update_file_sizeSyncRequest( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_update_file_sizeRequest( xcap, new_file_size, response_timeout_ns ) { }
+        xtreemfs_update_file_sizeSyncRequest( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_update_file_sizeRequest( xcap, osd_write_response, response_timeout_ns ) { }
         virtual ~xtreemfs_update_file_sizeSyncRequest() { }
   
         bool operator==( const xtreemfs_update_file_sizeSyncRequest& other ) const { return true; }
@@ -3067,7 +3067,7 @@ namespace org
         virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { xtreemfs_replica_addResponse* resp = NULL; try { resp = new xtreemfs_replica_addResponse; _xtreemfs_replica_add( req.get_context(), req.get_file_id(), req.get_new_replica() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req ) { xtreemfs_replica_removeResponse* resp = NULL; try { resp = new xtreemfs_replica_removeResponse; _xtreemfs_replica_remove( req.get_context(), req.get_file_id(), req.get_osd_uuid() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req ) { xtreemfs_restore_fileResponse* resp = NULL; try { resp = new xtreemfs_restore_fileResponse; _xtreemfs_restore_file( req.get_file_path(), req.get_file_id(), req.get_file_size(), req.get_osd_uuid(), req.get_stripe_size() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { xtreemfs_update_file_sizeResponse* resp = NULL; try { resp = new xtreemfs_update_file_sizeResponse; _xtreemfs_update_file_size( req.get_xcap(), req.get_new_file_size() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { xtreemfs_update_file_sizeResponse* resp = NULL; try { resp = new xtreemfs_update_file_sizeResponse; _xtreemfs_update_file_size( req.get_xcap(), req.get_osd_write_response() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
   
       virtual void _admin_shutdown( const std::string& password ) { }
         virtual void _admin_checkpoint( const std::string& password ) { }
@@ -3101,7 +3101,7 @@ namespace org
         virtual void _xtreemfs_replica_add( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { }
         virtual void _xtreemfs_replica_remove( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const std::string& osd_uuid ) { }
         virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size ) { }
-        virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size ) { }
+        virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
       };
   
       // Use this macro in an implementation class to get all of the prototypes for the operations in MRCInterface
@@ -3138,7 +3138,7 @@ namespace org
       virtual void _xtreemfs_replica_add( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica );\
       virtual void _xtreemfs_replica_remove( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const std::string& osd_uuid );\
       virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size );\
-      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size );
+      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
   
       // Use this macro in an implementation class to get dummy implementations for the operations in this interface
       #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_DUMMY_DEFINITIONS \
@@ -3174,7 +3174,7 @@ namespace org
       virtual void _xtreemfs_replica_add( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { }\
       virtual void _xtreemfs_replica_remove( const org::xtreemfs::interfaces::Context& context, const std::string& file_id, const std::string& osd_uuid ) { }\
       virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size ) { }\
-      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& new_file_size ) { }
+      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
   
       #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handleadmin_shutdownRequest( admin_shutdownRequest& req );\

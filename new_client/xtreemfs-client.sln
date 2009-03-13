@@ -28,6 +28,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yieldfs", "share\yieldfs\yi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yield", "share\yield\yield\yield.vcproj", "{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_fuzz", "proj\xtfs_fuzz.vcproj", "{B60B97D4-1237-4BF6-85A5-B526EB7AB25A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -58,6 +63,10 @@ Global
 		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Debug|Win32.Build.0 = Debug|Win32
 		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Release|Win32.ActiveCfg = Release|Win32
 		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Release|Win32.Build.0 = Release|Win32
+		{B60B97D4-1237-4BF6-85A5-B526EB7AB25A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B60B97D4-1237-4BF6-85A5-B526EB7AB25A}.Debug|Win32.Build.0 = Debug|Win32
+		{B60B97D4-1237-4BF6-85A5-B526EB7AB25A}.Release|Win32.ActiveCfg = Release|Win32
+		{B60B97D4-1237-4BF6-85A5-B526EB7AB25A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

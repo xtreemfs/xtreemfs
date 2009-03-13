@@ -16,16 +16,21 @@ namespace org
       class Proxy : public YIELD::EventHandler
       {
       public:
+        const static uint32_t PROXY_FLAG_PRINT_OPERATIONS = 1;
+
+
         virtual ~Proxy();
 
         YIELD::Request* createRequest( const char* type_name ) { return static_cast<YIELD::Request*>( serializable_factories.createSerializable( type_name ) ); }
 
       protected:
         Proxy(); // Must be a default constructor because xInterface inherits from Proxy
-        void init( const YIELD::URI&, uint8_t reconnect_tries_max ); // Called by subclasses to bypass EventHandler
+        void init( const YIELD::URI&, uint8_t reconnect_tries_max, uint32_t flags ); // Called by subclasses to bypass EventHandler
 
         YIELD::URI* uri;
         uint8_t reconnect_tries_max;
+        uint32_t flags;
+
         YIELD::SerializableFactories serializable_factories;
 
         // EventHandler

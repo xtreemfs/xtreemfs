@@ -26,6 +26,10 @@ namespace org
 };
 
 
+OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint32_t osd_proxy_flags )
+  : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group ), osd_proxy_flags( osd_proxy_flags )
+{ }
+
 OSDProxyFactory::~OSDProxyFactory()
 {
   for ( std::map<std::string, VersionedURI*>::iterator uuid_to_uri_i = uuid_to_uri_map.begin(); uuid_to_uri_i != uuid_to_uri_map.end(); uuid_to_uri_i++ )
@@ -35,7 +39,7 @@ OSDProxyFactory::~OSDProxyFactory()
 OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
   OSDProxy* osd_proxy = new OSDProxy( uri );
-  osd_proxy_stage_group.createStage( *osd_proxy );
+  osd_proxy_stage_group.createStage( *osd_proxy, osd_proxy_flags );
   return *osd_proxy;
 }
 
