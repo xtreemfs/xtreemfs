@@ -67,6 +67,8 @@ public class RemoveXAttrOperation extends MRCOperation {
             final FileAccessManager faMan = master.getFileAccessManager();
             
             Path p = new Path(rqArgs.getPath());
+
+            validateContext(rq);
             
             VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             StorageManager sMan = vMan.getStorageManager(volume.getId());

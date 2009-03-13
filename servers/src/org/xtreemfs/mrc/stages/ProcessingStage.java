@@ -66,6 +66,7 @@ import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
 import org.xtreemfs.mrc.operations.SetACLEntriesOperation;
 import org.xtreemfs.mrc.operations.SetXAttrOperation;
+import org.xtreemfs.mrc.operations.SetattrOperation;
 import org.xtreemfs.mrc.operations.ShutdownOperation;
 import org.xtreemfs.mrc.operations.StatFSOperation;
 import org.xtreemfs.mrc.operations.StatOperation;
@@ -129,6 +130,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(CheckFileListOperation.OP_ID, new CheckFileListOperation(master));
         operations.put(RestoreFileOperation.OP_ID, new RestoreFileOperation(master));
         operations.put(CheckpointOperation.OP_ID, new CheckpointOperation(master));
+        operations.put(SetattrOperation.OP_ID, new SetattrOperation(master));
     }
     
     @Override
@@ -158,13 +160,14 @@ public class ProcessingStage extends MRCStage {
         final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getOperationNumber());
         if (op == null) {
             rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION,
-                "requested operation is not available on this MRC"));
+                "requested operation ("+rpcRequest.getRequestHeader().getOperationNumber()+") is not available on this MRC"));
             master.requestFinished(rq);
             return;
         }
         
         // parse request arguments
         ErrorRecord error = op.parseRequestArgs(rq);
+        System.out.println("rq: "+rq.getRequestArgs());
         if (error != null) {
             rq.setError(error);
             master.requestFinished(rq);

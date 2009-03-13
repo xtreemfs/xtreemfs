@@ -65,6 +65,8 @@ public class CreateLinkOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
+
+            validateContext(rq);
             
             final Path lp = new Path(rqArgs.getLink_path());
             final Path tp = new Path(rqArgs.getTarget_path());

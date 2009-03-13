@@ -73,7 +73,7 @@ public class ONCRPCRequest {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        sendException(new errnoException(ErrNo.EINVAL, message, ""));
+        sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS,ErrNo.EINVAL, message));
     }
     
     public void sendInternalServerError(Throwable rootCause) {

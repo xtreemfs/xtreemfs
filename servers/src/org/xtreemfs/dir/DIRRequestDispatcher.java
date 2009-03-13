@@ -56,6 +56,7 @@ import org.xtreemfs.dir.operations.DeleteAddressMappingOperation;
 import org.xtreemfs.dir.operations.DeregisterServiceOperation;
 import org.xtreemfs.dir.operations.GetAddressMappingOperation;
 import org.xtreemfs.dir.operations.GetGlobalTimeOperation;
+import org.xtreemfs.dir.operations.GetServiceByNameOperation;
 import org.xtreemfs.dir.operations.GetServiceByUuidOperation;
 import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
@@ -123,7 +124,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
         
-        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
+        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
@@ -215,6 +216,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         op = new GetServicesByTypeOperation(this);
         registry.put(op.getProcedureId(), op);
+
+        op = new GetServiceByNameOperation(this);
+        registry.put(op.getProcedureId(), op);
     }
     
     public BabuDB getDatabase() {
@@ -231,16 +235,16 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0,
-                "invalid version requested"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
+                    ErrNo.EINVAL,"invalid version requested"));
             return;
         }
         
         // everything ok, find the right operation
         DIROperation op = registry.get(hdr.getOperationNumber());
         if (op == null) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, 0,
-                "requested operation is not available on this DIR"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
+                ErrNo.EINVAL,"requested operation is not available on this DIR"));
             return;
         }
         

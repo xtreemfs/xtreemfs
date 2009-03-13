@@ -48,6 +48,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -63,8 +64,8 @@ import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
-import org.xtreemfs.interfaces.Exceptions.RedirectException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -167,14 +168,20 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 // get service data
                 ServiceRegistrySet sregs = new ServiceRegistrySet();
-                KeyValuePairSet kvset = new KeyValuePairSet();
-                kvset.add(new KeyValuePair("proto_version", Integer.toString(MRCInterface.getVersion())));
-                kvset.add(new KeyValuePair("totalRAM", Long.toString(totalRAM)));
-                kvset.add(new KeyValuePair("usedRAM", Long.toString(usedRAM)));
-                kvset.add(new KeyValuePair("geoCoordinated", config.getGeoCoordinates()));
+                ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+                dmap.put("load", load);
+                dmap.put("proto_version", Integer.toString(MRCInterface.getVersion()));
+                dmap.put("totalRAM", Long.toString(totalRAM));
+                dmap.put("usedRAM", Long.toString(usedRAM));
+                dmap.put("geoCoordinates", config.getGeoCoordinates());
+                try {
+                    dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getHostName() + ":" + config.getHttpPort());
+                } catch (UnknownUUIDException ex) {
+                    //should never happen
+                }
                 
                 ServiceRegistry mrcReg = new ServiceRegistry(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "
-                    + uuid, kvset);
+                    + uuid, 0, dmap);
                 sregs.add(mrcReg);
                 
                 try {
@@ -193,7 +200,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         final StatusPageOperation status = new StatusPageOperation(this);
 
-        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
+        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
@@ -291,16 +298,18 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
             case USER_EXCEPTION: {
                 rpcRequest.sendGenericException(new MRCException(error.getErrorCode(), error
-                        .getErrorMessage(), error.getStackTrace()));
+                        .getErrorMessage(), ""));
                 break;
             }
             case INVALID_ARGS: {
+                System.out.println("invalid args: "+error);
                 rpcRequest.sendGarbageArgs(error.getErrorMessage());
                 break;
             }
             case UNKNOWN_OPERATION: {
+                System.out.println("unknown operation: "+error);
                 rpcRequest.sendProtocolException(new ProtocolException(
-                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, error.getErrorCode(), error
+                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error
                             .getStackTrace()));
                 break;
             }
@@ -491,8 +500,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         
         if (hdr.getInterfaceVersion() != MRCInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0,
-                "invalid version requested"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
+                    ErrNo.EINVAL,"invalid version requested"));
             return;
         }
         

@@ -81,11 +81,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     }
     
     static boolean hasFreeCapacity(ServiceRegistry osd) {
-        String freeStr = null;
-        for (KeyValuePair kv : osd.getData()) {
-            if (kv.getKey().equals("free"))
-                freeStr = kv.getValue();
-        }
+        String freeStr = osd.getData().get("free");
 
         long free = Long.parseLong(freeStr);
         return free > MIN_FREE_CAPACITY;
@@ -98,20 +94,12 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
 
     static boolean hasTimedOut(ServiceRegistry osd) {
 
-        String lastUpdated = null;
-        for (KeyValuePair kv : osd.getData()) {
-            if (kv.getKey().equals("lastUpdated"))
-                lastUpdated = kv.getValue();
-        }
-
         // if the OSD has contacted the DS within the last 10 minutes,
         // assume that it is still running
-        if (lastUpdated != null) {
-            long updateTimestamp = Long.parseLong(lastUpdated);
-            long currentTime = TimeSync.getGlobalTime() / 1000;
-            return currentTime - updateTimestamp > OSD_TIMEOUT_SPAN;
-        } else
-            return true;
+
+        long updateTimestamp = osd.getLast_updated();
+        long currentTime = TimeSync.getGlobalTime() / 1000;
+        return currentTime - updateTimestamp > OSD_TIMEOUT_SPAN;
     }
     
     /**

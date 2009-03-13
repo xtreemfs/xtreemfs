@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.UserException;
@@ -46,17 +47,19 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  */
 public class FileAccessManager {
     
-    public static final int                    O_RDONLY               = 0;
+    public static final int                    O_RDONLY               = Constants.SYSTEM_V_FCNTL_H_O_RDONLY;
     
-    public static final int                    O_WRONLY               = 1;
+    public static final int                    O_WRONLY               = Constants.SYSTEM_V_FCNTL_H_O_WRONLY;
     
-    public static final int                    O_RDWR                 = 2;
+    public static final int                    O_RDWR                 = Constants.SYSTEM_V_FCNTL_H_O_RDWR;
     
-    public static final int                    O_CREAT                = 0100;
+    public static final int                    O_CREAT                = Constants.SYSTEM_V_FCNTL_H_O_CREAT;
     
-    public static final int                    O_TRUNC                = 01000;
+    public static final int                    O_TRUNC                = Constants.SYSTEM_V_FCNTL_H_O_TRUNC;
     
-    public static final int                    O_APPEND               = 02000;
+    public static final int                    O_APPEND               = Constants.SYSTEM_V_FCNTL_H_O_APPEND;
+
+    public static final int                    O_EXCL                 = Constants.SYSTEM_V_FCNTL_H_O_EXCL;
     
     public static final int                    NON_POSIX_SEARCH       = 04000000;
     

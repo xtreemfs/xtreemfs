@@ -123,15 +123,17 @@ public class ObjectInformation {
         if (dataLength < getStripeSize()) {
             //this is an EOF
             assert(tmp.getZero_padding() == 0);
-            final int bufLength = tmp.getData().remaining();
-            if (offset > bufLength) {
-                //no data to be sent
-                BufferPool.free(tmp.getData());
-                tmp.setData(null);
-            } else {
-                //create a range
-                final int newLength = (bufLength > offset+length) ? length : bufLength-offset;
-                tmp.getData().range(offset,newLength);
+            if (tmp.getData() != null) {
+                final int bufLength = tmp.getData().remaining();
+                if (offset > bufLength) {
+                    //no data to be sent
+                    BufferPool.free(tmp.getData());
+                    tmp.setData(null);
+                } else {
+                    //create a range
+                    final int newLength = (bufLength > offset+length) ? length : bufLength-offset;
+                    tmp.getData().range(offset,newLength);
+                }
             }
         } else {
             //full object

@@ -66,6 +66,8 @@ public class UtimeOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
+
+            validateContext(rq);
             
             Path p = new Path(rqArgs.getPath());
             

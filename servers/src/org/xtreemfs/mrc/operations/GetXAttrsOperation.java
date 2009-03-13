@@ -69,6 +69,8 @@ public class GetXAttrsOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
+
+            validateContext(rq);
             
             final Path p = new Path(rqArgs.getPath());
             

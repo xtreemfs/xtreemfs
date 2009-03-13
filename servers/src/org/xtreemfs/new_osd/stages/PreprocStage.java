@@ -40,6 +40,7 @@ import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.LocationsCache;
 import org.xtreemfs.new_osd.OSDRequest;
@@ -240,16 +241,16 @@ public class PreprocStage extends Stage {
 
         //assemble stuff
         if (hdr.getInterfaceVersion() != OSDInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH, 0,
-                    "invalid version requested"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
+                    ErrNo.EINVAL,"invalid version requested"));
             return false;
         }
 
         // everything ok, find the right operation
         OSDOperation op = master.getOperation(hdr.getOperationNumber());
         if (op == null) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, 0,
-                    "requested operation is not available on this DIR"));
+            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
+                    ErrNo.EINVAL,"requested operation is not available on this DIR"));
             return false;
         }
         rq.setOperation(op);
@@ -261,7 +262,8 @@ public class PreprocStage extends Stage {
             rpcRq.sendGenericException(osdex);
             return false;
         } catch (Throwable ex) {
-            ex.printStackTrace();
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
             rpcRq.sendGarbageArgs(ex.toString());
             return false;
         }

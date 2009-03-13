@@ -27,8 +27,10 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
-import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
+import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -37,21 +39,22 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.utils.MRCHelper;
+import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
+ * Updates the file's timestamps
  * 
- * @author stender
+ * @author bjko
  */
-public class CreateDirOperation extends MRCOperation {
+public class SetattrOperation extends MRCOperation {
     
-    public static final int OP_ID = 9;
+    public static final int OP_ID = 17;
     
-    public CreateDirOperation(MRCRequestDispatcher master) {
+    public SetattrOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -60,53 +63,64 @@ public class CreateDirOperation extends MRCOperation {
         
         try {
             
-            final mkdirRequest rqArgs = (mkdirRequest) rq.getRequestArgs();
+            final setattrRequest rqArgs = (setattrRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
 
             validateContext(rq);
             
-            final Path p = new Path(rqArgs.getPath());
+            Path p = new Path(rqArgs.getPath());
             
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
+            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+            StorageManager sMan = vMan.getStorageManager(volume.getId());
+            PathResolver res = new PathResolver(sMan, p);
             
             // check whether the path prefix is searchable
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
+            // check whether file exists
+            res.checkIfFileDoesNotExist();
             
-            // check whether the file/directory exists already
-            res.checkIfFileExistsAlready();
+            // retrieve and prepare the metadata to return
+            FileMetadata file = res.getFile();
             
-            // prepare directory creation in database
+            // if the file refers to a symbolic link, resolve the link
+            String target = sMan.getSoftlinkTarget(file.getId());
+            if (target != null) {
+                rqArgs.setPath(target);
+                p = new Path(target);
+                
+                // if the local MRC is not responsible, send a redirect
+                if (!vMan.hasVolume(p.getComp(0))) {
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
+                        "link target " + target + " does not exist"));
+                    return;
+                }
+                
+                volume = vMan.getVolumeByName(p.getComp(0));
+                sMan = vMan.getStorageManager(volume.getId());
+                res = new PathResolver(sMan, p);
+                file = res.getFile();
+            }
+            
+            // check whether write permissions are granted to the parent
+            // directory
+            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
+                    .getDetails().superUser, rq.getDetails().groupIds);
+            
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // get the next free file ID
-            long fileId = sMan.getNextFileId();
             
-            // atime, ctime, mtime
-            int time = (int) (TimeSync.getGlobalTime() / 1000);
+            file.setW32Attrs(rqArgs.getStbuf().getAttributes());
             
-            // create the metadata object
-            sMan.createDir(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
-                rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, update);
             
-            // set the file ID as the last one
-            sMan.setLastFileId(fileId, update);
-            
-            // update POSIX timestamps of parent directory
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
-                update);
+            // update POSIX timestamps
+            sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
             
             // set the response
-            rq.setResponse(new mkdirResponse());
+            rq.setResponse(new utimeResponse());
             
             update.execute();
             
@@ -120,7 +134,7 @@ public class CreateDirOperation extends MRCOperation {
     }
     
     public Context getContext(MRCRequest rq) {
-        return ((mkdirRequest) rq.getRequestArgs()).getContext();
+        return ((setattrRequest) rq.getRequestArgs()).getContext();
     }
     
 }

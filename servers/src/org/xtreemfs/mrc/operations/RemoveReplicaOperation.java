@@ -67,6 +67,8 @@ public class RemoveReplicaOperation extends MRCOperation {
             
             final FileAccessManager faMan = master.getFileAccessManager();
             final VolumeManager vMan = master.getVolumeManager();
+
+            validateContext(rq);
             
             // parse volume and file ID from global file ID
             long fileId = 0;

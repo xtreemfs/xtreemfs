@@ -135,8 +135,16 @@ public class OpenOperation extends MRCOperation {
                 // if the file does not exist, check whether the O_CREAT flag
                 // has been provided
                 if (exc.getErrno() == ErrNo.ENOENT && (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
-                    
+
+                    //check for write permission in parent dir
+                    // check whether the parent directory grants write access
+                    faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
+                            .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+                        rq.getDetails().groupIds);
+
                     // prepare file creation in database
+                    if ((rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0)
+                        res.checkIfFileExistsAlready();
                     
                     // get the next free file ID
                     long fileId = sMan.getNextFileId();

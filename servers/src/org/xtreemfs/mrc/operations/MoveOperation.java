@@ -73,6 +73,8 @@ public class MoveOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
+
+            validateContext(rq);
             
             final Path sp = new Path(rqArgs.getSource_path());
             

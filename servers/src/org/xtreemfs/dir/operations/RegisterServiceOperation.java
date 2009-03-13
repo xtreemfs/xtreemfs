@@ -85,7 +85,7 @@ public class RegisterServiceOperation extends DIROperation {
             currentVersion++;
 
             reg.setVersion(currentVersion);
-            reg.getData().add(new KeyValuePair("lastUpdated",Long.toString(System.currentTimeMillis()/1000l)));
+            reg.setLast_updated(System.currentTimeMillis()/1000l);
 
             final int dataSize = reg.calculateSize();
             ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);

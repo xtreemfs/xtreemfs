@@ -25,12 +25,15 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.interfaces.Context;
+import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.Request;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.UserException;
 
 /**
  * 
@@ -100,6 +103,15 @@ public abstract class MRCOperation {
     protected void finishRequest(MRCRequest rq, ErrorRecord error) {
         rq.setError(error);
         master.requestFinished(rq);
+    }
+
+    protected void validateContext(MRCRequest rq) throws UserException {
+        Context ctx = getContext(rq);
+        if ((ctx == null) || (ctx.getGroup_ids().size() == 0) ||
+            (ctx.getUser_id().length() == 0)) {
+            throw new UserException(ErrNo.EACCES, "Context must contain a non-empty userID and at least one groupID!");
+        }
+
     }
     
 }

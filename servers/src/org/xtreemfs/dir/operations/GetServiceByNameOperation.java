@@ -34,23 +34,24 @@ import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_typeRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_typeResponse;
-import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_nameRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_nameResponse;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidRequest;
+import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidResponse;
 
 /**
  *
  * @author bjko
  */
-public class GetServicesByTypeOperation extends DIROperation {
+public class GetServiceByNameOperation extends DIROperation {
 
     private final int operationNumber;
 
     private final BabuDB database;
 
-    public GetServicesByTypeOperation(DIRRequestDispatcher master) {
+    public GetServiceByNameOperation(DIRRequestDispatcher master) {
         super(master);
-        service_get_by_typeRequest tmp = new service_get_by_typeRequest();
+        service_get_by_nameRequest tmp = new service_get_by_nameRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -63,9 +64,9 @@ public class GetServicesByTypeOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final service_get_by_typeRequest request = (service_get_by_typeRequest)rq.getRequestMessage();
+            final service_get_by_nameRequest request = (service_get_by_nameRequest)rq.getRequestMessage();
 
-
+            
             Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
 
             ServiceRegistrySet services = new ServiceRegistrySet();
@@ -77,16 +78,15 @@ public class GetServicesByTypeOperation extends DIROperation {
                 final ServiceRegistry servEntry = new ServiceRegistry();
                 ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
                 servEntry.deserialize(buf);
-                if ((request.getType() == 0) || (servEntry.getService_type() == request.getType()))
+                if (servEntry.getService_name().equals(request.getService_name()))
                     services.add(servEntry);
 
                 long secondsSinceLastUpdate = now - servEntry.getLast_updated();
                 servEntry.getData().put("seconds_since_last_update",Long.toString(secondsSinceLastUpdate));
 
             }
-
-            service_get_by_typeResponse response = new service_get_by_typeResponse(services);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"response: "+response);
+            
+            service_get_by_nameResponse response = new service_get_by_nameResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -101,7 +101,7 @@ public class GetServicesByTypeOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        service_get_by_typeRequest amr = new service_get_by_typeRequest();
+        service_get_by_nameRequest amr = new service_get_by_nameRequest();
         rq.deserializeMessage(amr);
     }
 

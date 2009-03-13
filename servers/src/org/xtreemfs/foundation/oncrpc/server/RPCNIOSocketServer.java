@@ -46,6 +46,7 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 
 /**
  *
@@ -563,7 +564,21 @@ public class RPCNIOSocketServer extends LifeCycleThread {
     private void receiveRequest(SelectionKey key, ONCRPCRecord record, ClientConnection con) {
         try {
             ONCRPCRequest rq = new ONCRPCRequest(record);
+
+            final ONCRPCRequestHeader hdr = rq.getRequestHeader();
+            if (hdr.getRpcVersion() != 2) {
+                rq.sendGarbageArgs("Invalid RPC version: "+hdr.getRpcVersion()+", expected 2");
+                return;
+            }
+            if (hdr.getMessageType() != 0) {
+                rq.sendGarbageArgs("Invalid message type: "+hdr.getMessageType()+", expected 0");
+                return;
+            }
+
             receiver.receiveRecord(rq);
+        } catch (IllegalArgumentException ex) {
+            System.out.println("received invalid request header: "+ex);
+            closeConnection(key);
         } catch (BufferUnderflowException ex) {
             //close connection if the header cannot be parsed
             closeConnection(key);

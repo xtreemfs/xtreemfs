@@ -85,4 +85,8 @@ public class ONCRPCServiceURL {
         return port;
     }
 
+    public String toString() {
+        return protocol+"://"+host+":"+port;
+    }
+
 }

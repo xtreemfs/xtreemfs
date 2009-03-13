@@ -40,6 +40,7 @@ import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.interfaces.MRCInterface.mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.mkvolResponse;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -65,6 +66,8 @@ public class CreateVolumeOperation extends MRCOperation {
         try {
             
             final mkvolRequest rqArgs = (mkvolRequest) rq.getRequestArgs();
+
+            validateContext(rq);
             
             // first, check whether the given policies are supported
             
@@ -132,11 +135,11 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // otherwise, register the volume at the Directory Service
             
-            KeyValuePairSet kvset = new KeyValuePairSet();
-            kvset.add(new KeyValuePair("mrc", master.getConfig().getUUID().toString()));
-            kvset.add(new KeyValuePair("free", "0"));
+            ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+            dmap.put("mrc", master.getConfig().getUUID().toString());
+            dmap.put("free", "0");
             ServiceRegistry vol = new ServiceRegistry(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, rqArgs
-                    .getVolume_name(), kvset);
+                    .getVolume_name(), 0, dmap);
             
             RPCResponse<Long> rpcResponse2 = master.getDirClient().service_register(null, vol);
             rpcResponse2.registerListener(new RPCResponseAvailableListener<Long>() {

@@ -73,6 +73,8 @@ public class DeleteOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
+
+            validateContext(rq);
             
             final Path p = new Path(rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq
                     .getRequestArgs()).getPath() : ((rmdirRequest) rq.getRequestArgs()).getPath());

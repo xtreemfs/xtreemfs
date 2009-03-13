@@ -46,6 +46,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
@@ -59,6 +60,7 @@ import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.new_osd.operations.OSDOperation;
@@ -224,15 +226,21 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 ServiceRegistrySet data = new ServiceRegistrySet();
 
-                KeyValuePairSet kvset = new KeyValuePairSet();
-                kvset.add(new KeyValuePair("total", totalSpace));
-                kvset.add(new KeyValuePair("free", freeSpace));
-                kvset.add(new KeyValuePair("totalRAM", Long.toString(totalRAM)));
-                kvset.add(new KeyValuePair("usedRAM", Long.toString(usedRAM)));
-                kvset.add(new KeyValuePair("geoCoordinates", config.getGeoCoordinates()));
-                kvset.add(new KeyValuePair("proto_version", Integer.toString(OSDInterface.getVersion())));
+                ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+                dmap.put("load", load);
+                dmap.put("total", totalSpace);
+                dmap.put("free", freeSpace);
+                dmap.put("totalRAM", Long.toString(totalRAM));
+                dmap.put("usedRAM", Long.toString(usedRAM));
+                dmap.put("geoCoordinates", config.getGeoCoordinates());
+                dmap.put("proto_version", Integer.toString(OSDInterface.getVersion()));
+                try {
+                    dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getHostName() + ":" + config.getHttpPort());
+                } catch (UnknownUUIDException ex) {
+                    //should never happen
+                }
                 ServiceRegistry me = new ServiceRegistry(config.getUUID().toString(), 0
-                        , Constants.SERVICE_TYPE_OSD, "OSD @ "+config.getUUID(), kvset);
+                        , Constants.SERVICE_TYPE_OSD, "OSD @ "+config.getUUID(), 0, dmap);
                 data.add(me);
 
                 return data;
@@ -241,7 +249,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen,
             config);
 
-        httpServ = HttpServer.create(new InetSocketAddress("localhost", config.getHttpPort()), 0);
+        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;

@@ -348,11 +348,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         }
         volume = volReg.getService_name();
 
-        String mrc = null;
-        for (KeyValuePair kv : volReg.getData()) {
-            if (kv.getKey().equals("mrc"))
-                mrc = kv.getValue();
-        }
+        String mrc = volReg.getData().get("mrc");
         if (mrc == null) {
             System.err.println("volume '" + arguments.get(0) + "' has no valid ");
             System.exit(3);

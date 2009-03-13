@@ -21,6 +21,7 @@ import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 
 /**
  *
@@ -155,20 +156,21 @@ public class StatusPage {
             dump.append(sreg.getService_name());
             dump.append("</b></td></tr>");
 
-            for (KeyValuePair kv : sreg.getData()) {
+            for (Entry<String,String> dataEntry : sreg.getData().entrySet()) {
                 dump.append("<tr><td width=\"30%\">");
-                dump.append(kv.getKey());
+                dump.append(dataEntry.getKey());
                 dump.append("</td><td><b>");
-                dump.append(kv.getValue());
-                if (kv.getKey().equals("lastUpdated")) {
+                dump.append(dataEntry.getValue());
+                if (dataEntry.getKey().equals("lastUpdated")) {
                     dump.append(" (");
-                    dump.append(new Date(Long.parseLong(kv.getValue()) * 1000));
+                    dump.append(new Date(Long.parseLong(dataEntry.getValue()) * 1000));
                     dump.append(")");
-                } else if (kv.getKey().equals("free") || kv.getKey().equals("total") || kv.getKey().endsWith("RAM")) {
+                } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
+                        || dataEntry.getKey().endsWith("RAM")) {
                     dump.append(" bytes (");
-                    dump.append(OutputUtils.formatBytes(Long.parseLong(kv.getValue())));
+                    dump.append(OutputUtils.formatBytes(Long.parseLong(dataEntry.getValue())));
                     dump.append(")");
-                } else if (kv.getKey().equals("load")) {
+                } else if (dataEntry.getKey().equals("load")) {
                     dump.append("%");
                 }
                 dump.append("</b></td></tr>");

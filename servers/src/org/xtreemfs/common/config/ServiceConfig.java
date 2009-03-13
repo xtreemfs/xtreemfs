@@ -52,7 +52,9 @@ public class ServiceConfig extends Config {
 
     protected String trustedCertsContainer;
     
-    private String geoCoordinates;
+    protected String geoCoordinates;
+
+    protected String adminPassword;
 
     public ServiceConfig() {
         super();
@@ -91,9 +93,8 @@ public class ServiceConfig extends Config {
         }
         
         this.geoCoordinates = this.readOptionalString("geographic_coordinates", "");
-        
-        
 
+        this.adminPassword = this.readOptionalString("admin_password","");
     }
 
 	public int getDebugLevel() {
@@ -146,6 +147,10 @@ public class ServiceConfig extends Config {
 
     public void setGeoCoordinates(String geoCoordinates) {
         this.geoCoordinates = geoCoordinates;
+    }
+
+    public String getAdminPassword() {
+        return this.adminPassword;
     }
 
 }

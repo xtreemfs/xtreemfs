@@ -36,6 +36,7 @@ import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.ErrNo;
@@ -78,11 +79,11 @@ public class MRCHelper {
         
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
         
-        KeyValuePairSet kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("mrc", mrcUUID));
-        kvset.add(new KeyValuePair("free", free));
+        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        dmap.put("mrc", mrcUUID);
+        dmap.put("free", free);
         ServiceRegistry sreg = new ServiceRegistry(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol
-                .getName(), kvset);
+                .getName(), 0, dmap);
         
         return sreg;
     }

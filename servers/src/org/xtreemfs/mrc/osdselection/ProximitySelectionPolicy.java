@@ -76,13 +76,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     private long distance(ServiceRegistry osd) throws UnknownHostException {
 
-        String osduri = null;
-        for (KeyValuePair kv : osd.getData()) {
-            if (kv.getKey().equals("uri")) {
-                osduri = kv.getValue();
-                break;
-            }
-        }
+        String osduri = osd.getData().get("uri");
 
         if (osduri == null)
             return 10000000;

@@ -12,7 +12,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public ProtocolException() { accept_stat = 0; error_code = 0; stack_trace = ""; }
-    public ProtocolException( int accept_stat, int error_code, String stack_trace ) { this.accept_stat = accept_stat; this.error_code = error_code; this.stack_trace = stack_trace; }
+    public ProtocolException( int accept_stat, int error_code, String stack_trace ) { assert(error_code != 0); this.accept_stat = accept_stat; this.error_code = error_code; this.stack_trace = stack_trace; }
     public ProtocolException( Object from_hash_map ) { accept_stat = 0; error_code = 0; stack_trace = ""; this.deserialize( from_hash_map ); }
     public ProtocolException( Object[] from_array ) { accept_stat = 0; error_code = 0; stack_trace = "";this.deserialize( from_array ); }
 

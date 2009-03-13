@@ -137,6 +137,7 @@ public class TortureXtreemFS {
                 StripingPolicy sp = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 1);
                 RPCResponse r = mrcClient.mkvol(mrcAddr, "torture", grs, "password", volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX);
                 r.get();
+                r.freeBuffers();
             }
 
             RandomAccessFile tmp = new RandomAccessFile("rw",mrcAddr,volname+path+".tmp",rpcClient,"root",grs);

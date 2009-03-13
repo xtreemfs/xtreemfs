@@ -24,6 +24,8 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -31,6 +33,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
 
@@ -61,15 +64,32 @@ public class GetAddressMappingOperation extends DIROperation {
         try {
             final address_mappings_getRequest request = (address_mappings_getRequest)rq.getRequestMessage();
 
-            byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            if (result == null) {
-                address_mappings_getResponse response = new address_mappings_getResponse();
-                rq.sendSuccess(response);
+            if (request.getUuid().length() > 0) {
+                //single mapping was requested
+                byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
+                if (result == null) {
+                    address_mappings_getResponse response = new address_mappings_getResponse();
+                    rq.sendSuccess(response);
+                } else {
+                    AddressMappingSet set = new AddressMappingSet();
+                    set.deserialize(ReusableBuffer.wrap(result));
+                    address_mappings_getResponse response = new address_mappings_getResponse(set);
+                    rq.sendSuccess(response);
+                }
             } else {
-                AddressMappingSet set = new AddressMappingSet();
-                set.deserialize(ReusableBuffer.wrap(result));
-                address_mappings_getResponse response = new address_mappings_getResponse(set);
+                //full list requested
+                AddressMappingSet list = new AddressMappingSet();
+                Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
+                while (iter.hasNext()) {
+                    Entry<byte[],byte[]> e = iter.next();
+                    AddressMappingSet set = new AddressMappingSet();
+                    set.deserialize(ReusableBuffer.wrap(e.getValue()));
+                    for (AddressMapping m : set)
+                        list.add(m);
+                }
+                address_mappings_getResponse response = new address_mappings_getResponse(list);
                 rq.sendSuccess(response);
+
             }
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);

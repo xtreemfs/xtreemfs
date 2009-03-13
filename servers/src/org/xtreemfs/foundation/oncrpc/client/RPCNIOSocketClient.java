@@ -31,7 +31,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -40,9 +39,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -57,6 +53,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.mrc.ErrNo;
 
 /**
  *
@@ -103,7 +100,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         selector = Selector.open();
         this.sslOptions = sslOptions;
         quit = false;
-        transactionId = new AtomicInteger(1);
+        transactionId = new AtomicInteger((int)(Math.random()*1e6+1.0));
         toBeEstablished = new ConcurrentLinkedQueue<ServerConnection>();
     }
 
@@ -368,6 +365,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         ONCRPCRequest rec = con.getRequest(xid);
         if (rec == null) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "received response for unknown request with XID " + xid);
+            con.clearResponseFragments();
             return;
         }
         rec.setResponseFragments(con.getResponseFragments());
@@ -402,7 +400,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             }
             if (exName == null) {
                 //throw exception deduced from accept stat type
-                exception = new ProtocolException(hdr.getAcceptStat(), 0, "");
+                exception = new ProtocolException(hdr.getAcceptStat(), ErrNo.EINVAL, "");
             }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "reveived remote exception: " + exName + "/" + exception);

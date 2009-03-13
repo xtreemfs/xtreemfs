@@ -45,7 +45,7 @@ public class ONCRPCRequestHeader implements Serializable {
     }
 
     public int getInterfaceNumber() {
-        return prog - 20000000;
+        return prog - 0x20000000;
     }
 
     public int getInterfaceVersion() {
@@ -54,6 +54,14 @@ public class ONCRPCRequestHeader implements Serializable {
 
     public int getOperationNumber() {
         return proc;
+    }
+
+    public int getMessageType() {
+        return msg_type;
+    }
+
+    public int getRpcVersion() {
+        return rpcvers;
     }
 
     public String toString() {
@@ -79,11 +87,9 @@ public class ONCRPCRequestHeader implements Serializable {
     public void deserialize(ReusableBuffer buf) {
         xid = buf.getInt();
 //        System.out.println( "XID " + Integer.toString( xid ) );
-        int msg_type = buf.getInt();
-        assert msg_type == 0; // CALL    
-        int rpcvers = buf.getInt();
+        msg_type = buf.getInt();
+        rpcvers = buf.getInt();
 //        System.out.println( "RPC version " + Integer.toString( rpcvers ) );
-        assert rpcvers == 2;
         prog = buf.getInt();
         //       System.out.println( "Prog " + Integer.toString( prog ) );
         vers = buf.getInt();
@@ -106,5 +112,9 @@ public class ONCRPCRequestHeader implements Serializable {
     private int vers;
 
     private int proc;
+
+    private int rpcvers;
+
+    private int msg_type;
 
 }

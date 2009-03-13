@@ -374,14 +374,9 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             return 0;
         
         for (ServiceRegistry entry : usableOSDs) {
-            String freeStr = null;
-            for (KeyValuePair kv : entry.getData()) {
-                if (kv.getKey().equals("free")) {
-                    freeStr = kv.getValue();
-                    break;
-                }
-            }
-            free += Long.valueOf(free);
+            String freeStr = entry.getData().get("free");
+            if (freeStr != null)
+                free += Long.valueOf(freeStr);
         }
         return free;
     }
