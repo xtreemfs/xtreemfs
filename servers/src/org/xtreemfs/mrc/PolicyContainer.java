@@ -249,11 +249,13 @@ public class PolicyContainer {
             
             Map<Long, Class> map = policyMap.get(policyInterFace);
             if (map == null)
-                throw new ClassNotFoundException();
+                return null;
+                //throw new ClassNotFoundException();
             
             Class clazz = map.get(id);
-            if (clazz == null)
-                throw new ClassNotFoundException();
+            /*if (clazz == null)
+                return null;
+                throw new ClassNotFoundException();*/
             
             return clazz;
         }
@@ -372,6 +374,8 @@ public class PolicyContainer {
     
     public OSDSelectionPolicy getOSDSelectionPolicy(long id) throws Exception {
         Class policyClass = policyClassLoader.loadClass(id, OSDSelectionPolicy.class);
+        if (policyClass == null)
+            return null;
         return (OSDSelectionPolicy) policyClass.newInstance();
     }
     

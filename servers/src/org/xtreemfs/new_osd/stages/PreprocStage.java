@@ -277,6 +277,16 @@ public class PreprocStage extends Stage {
 
         final Capability rqCap = rq.getCapability();
 
+        //check capability args
+        if (rqCap.getFileId().length() == 0) {
+            throw new OSDException(ErrorCodes.INVALID_FILEID, "invalid capability. file_id must not be empty", "");
+        }
+
+        if (rqCap.getEpochNo() < 0) {
+            throw new OSDException(ErrorCodes.INVALID_FILEID, "invalid capability. epoch must not be < 0", "");
+        }
+
+
         if (!rqCap.getFileId().equals(rq.getFileId())) {
             throw new OSDException(ErrorCodes.AUTH_FAILED, "capability was issued for another file than the one requested", "");
         }

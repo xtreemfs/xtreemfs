@@ -42,16 +42,23 @@ public class Path {
     private List<Integer>     compIndices;
     
     public Path(String path) {
+
+        if (path.length() == 0) {
+            this.path = "";
+            this.compIndices = new ArrayList<Integer>(15);
+            compIndices.add(-1);
+        } else {
         
-        this.path = path.charAt(path.length() - 1) == SEPARATOR ? path.substring(0,
-            path.length() - 1) : path;
-        this.compIndices = new ArrayList<Integer>(15);
-        compIndices.add(-1);
-        
-        byte[] bytes = this.path.getBytes();
-        for (int i = 0; i < bytes.length; i++)
-            if (bytes[i] == SEPARATOR)
-                compIndices.add(i);
+            this.path = path.charAt(path.length() - 1) == SEPARATOR ? path.substring(0,
+                path.length() - 1) : path;
+            this.compIndices = new ArrayList<Integer>(15);
+            compIndices.add(-1);
+
+            byte[] bytes = this.path.getBytes();
+            for (int i = 0; i < bytes.length; i++)
+                if (bytes[i] == SEPARATOR)
+                    compIndices.add(i);
+        }
         
     }
     

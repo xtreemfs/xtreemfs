@@ -40,6 +40,7 @@ import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.ReadObjectCallback;
@@ -69,6 +70,23 @@ public final class ReadOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         final readRequest args = (readRequest) rq.getRequestArgs();
+
+        if (args.getObject_number() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
+            return;
+        }
+
+        if (args.getOffset() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "offset must be >= 0", ""));
+            return;
+        }
+
+        if (args.getLength() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "length must be >= 0", ""));
+            return;
+        }
+
+
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq, new ReadObjectCallback() {
 
             @Override

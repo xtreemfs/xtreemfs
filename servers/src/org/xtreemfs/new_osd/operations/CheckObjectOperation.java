@@ -31,6 +31,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDInterface.check_objectRequest;
 import org.xtreemfs.interfaces.OSDInterface.check_objectResponse;
@@ -39,6 +40,7 @@ import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.new_osd.ErrorCodes;
 import org.xtreemfs.new_osd.OSDRequest;
 import org.xtreemfs.new_osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.ReadObjectCallback;
@@ -68,6 +70,12 @@ public final class CheckObjectOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         final check_objectRequest args = (check_objectRequest) rq.getRequestArgs();
+
+        if (args.getObject_number() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
+            return;
+        }
+        
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq, new ReadObjectCallback() {
 
             @Override

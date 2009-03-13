@@ -30,6 +30,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.writeResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
@@ -62,6 +63,16 @@ public final class WriteOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         final writeRequest args = (writeRequest)rq.getRequestArgs();
+
+        if (args.getObject_number() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
+            return;
+        }
+
+        if (args.getOffset() < 0) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "offset must be >= 0", ""));
+            return;
+        }
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
