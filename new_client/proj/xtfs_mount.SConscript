@@ -42,9 +42,9 @@ except:
     Export( "build_env", "build_conf" )
 
     
-include_dir_paths = ['../include', '../share/yieldfs/include']
-if sys.platform.startswith( "win" ): include_dir_paths.extend( ['../share/yield/yield_platform/include', '../share/yield/yield_arch/include', '../share/yield/yield_ipc/include'] )
-else: include_dir_paths.extend( ['../share/yield/yield/include'] )
+include_dir_paths = ['../include', '../share/yieldfs/include', '../share/yieldfs/share/yield/include']
+if sys.platform.startswith( "win" ): include_dir_paths.extend( [] )
+else: include_dir_paths.extend( [] )
 for include_dir_path in include_dir_paths:
     include_dir_path = os.path.abspath( include_dir_path )
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
@@ -67,10 +67,10 @@ for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if sys.platform.startswith( "win" ):
-    for lib in ["xtreemfs-client.lib"]:
+    for lib in []:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 else:
-    for lib in ["xtreemfs-client"]:
+    for lib in []:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 AlwaysBuild( build_env.Program( r"../bin/xtfs_mount", (

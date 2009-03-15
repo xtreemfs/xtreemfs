@@ -27,7 +27,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yield\yield_platform\include;$(ProjectDir)..\share\yield\yield_arch\include;$(ProjectDir)..\share\yield\yield_ipc\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yieldfs\share\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -43,8 +43,8 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs_d.lib yield_d.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client_d.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
@@ -54,8 +54,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs_d.lib yield_d.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client_d.lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
@@ -75,7 +75,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yield\yield_platform\include;$(ProjectDir)..\share\yield\yield_arch\include;$(ProjectDir)..\share\yield\yield_ipc\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yieldfs\share\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
 				StringPooling="false"
 				RuntimeLibrary="2"
@@ -89,8 +89,8 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs_d.lib yield_d.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
@@ -100,8 +100,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs.lib yield.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
@@ -120,7 +120,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yield\yield_platform\include;$(ProjectDir)..\share\yield\yield_arch\include;$(ProjectDir)..\share\yield\yield_ipc\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\include;$(ProjectDir)..\share\yieldfs\include;$(ProjectDir)..\share\yieldfs\share\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
 				StringPooling="false"
 				RuntimeLibrary="2"
@@ -134,8 +134,8 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs_d.lib yield_d.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
@@ -145,8 +145,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="yieldfs.lib yield.lib"
+				AdditionalLibraryDirectories="$(ProjectDir)..\share\yieldfs\lib;$(ProjectDir)..\share\yieldfs\share\yield\lib"
 				OutputFile="$(ProjectDir)..\lib\xtreemfs-client.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
