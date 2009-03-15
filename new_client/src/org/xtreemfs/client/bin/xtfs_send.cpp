@@ -24,38 +24,19 @@ public:
   argvInputStream( CSimpleOpt& args, int next_arg_i ) : args( args ), next_arg_i( next_arg_i )
   { }
 
-  size_t readString( const Declaration& decl, std::string& str )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      str = value;
-    return str.size();
-  }
-
-  size_t readBuffer( const Declaration& decl, void* buffer, size_t buffer_len )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-    {
-      buffer_len = std::min( buffer_len, strlen( value ) + 1 );
-      memcpy( buffer, value, buffer_len );
-      return buffer_len;
-    }
-    else
-      return 0;
-  }
-
   bool readBool( const Declaration& decl )
   {
     const char* value = readValue( decl );
     return value && ( strcmp( value, "true" ) == 0 || strcmp( value, "t" ) == 0 );
   }
 
-  YIELD::Serializable* readSerializable( const Declaration&, YIELD::Serializable* s = NULL )
+  double readDouble( const Declaration& decl )
   {
-    if ( s && s->getGeneralType() == YIELD::RTTI::STRING )
-      s->deserialize( *this );
-    return s;
+    const char* value = readValue( decl );
+    if ( value )
+      return atof( value );
+    else
+      return 0;
   }
 
   int64_t readInt64( const Declaration& decl )
@@ -67,20 +48,25 @@ public:
       return 0;
   }
 
+  YIELD::Serializable* readSerializable( const Declaration&, YIELD::Serializable* s = NULL )
+  {
+    if ( s && s->getGeneralType() == YIELD::RTTI::STRING )
+      s->deserialize( *this );
+    return s;
+  }
+
+  void readString( const Declaration& decl, std::string& str )
+  {
+    const char* value = readValue( decl );
+    if ( value )
+      str = value;
+  }
+
   uint64_t readUint64( const Declaration& decl )
   {
     const char* value = readValue( decl );
     if ( value )
       return atol( value );
-    else
-      return 0;
-  }
-
-  double readDouble( const Declaration& decl )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      return atof( value );
     else
       return 0;
   }
