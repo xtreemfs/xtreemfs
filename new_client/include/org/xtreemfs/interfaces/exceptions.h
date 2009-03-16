@@ -1,5 +1,5 @@
-#ifndef _16905107002_H
-#define _16905107002_H
+#ifndef _92383987148_H
+#define _92383987148_H
 
 #include <string>
 #include "yield/arch.h"
@@ -91,10 +91,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
           virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "accept_stat" ), accept_stat ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { accept_stat = input_stream.readUint32( YIELD::StructuredStream::Declaration( "accept_stat" ) ); error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "accept_stat" ), accept_stat ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t accept_stat;
@@ -126,10 +125,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new errnoException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
@@ -156,10 +154,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new RedirectException( to_uuid); }
           virtual void throwStackClone() const { throw RedirectException( to_uuid); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
   
       protected:
         std::string to_uuid;
@@ -189,10 +186,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new MRCException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw MRCException( error_code, error_message, stack_trace); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
@@ -224,10 +220,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new OSDException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw OSDException( error_code, error_message, stack_trace); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         uint32_t error_code;
@@ -254,10 +249,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ConcurrentModificationException( stack_trace); }
           virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
   
       protected:
         std::string stack_trace;
@@ -282,10 +276,9 @@ namespace org
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new InvalidArgumentException( error_message); }
           virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
   
       protected:
         std::string error_message;

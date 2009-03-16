@@ -1,5 +1,5 @@
-#ifndef _42176073725_H
-#define _42176073725_H
+#ifndef _75417722947_H
+#define _75417722947_H
 
 #include <string>
 #include <vector>
@@ -24,8 +24,8 @@ namespace org
         TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::StringSet", 1366254439UL );
   
         // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "item" ), ( *this )[size() - 1] ); } }
         void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string item; input_stream.readString( YIELD::StructuredStream::Declaration( "item" ), item ); push_back( item ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "item" ), ( *this )[size() - 1] ); } }
         size_t getSize() const { return std::vector<std::string>::size(); }
       };
   
@@ -58,10 +58,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::XCap", 3149302578UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "access_mode" ), access_mode ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "expires" ), expires ); output_stream.writeString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); access_mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "access_mode" ) ); expires = input_stream.readUint64( YIELD::StructuredStream::Declaration( "expires" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "access_mode" ), access_mode ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "expires" ), expires ); output_stream.writeString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
   
       protected:
         std::string file_id;
@@ -91,10 +90,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::StripingPolicy", 2678528403UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint8( YIELD::StructuredStream::Declaration( "policy" ), policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "stripe_size" ), stripe_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "width" ), width ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { policy = input_stream.readUint8( YIELD::StructuredStream::Declaration( "policy" ) ); stripe_size = input_stream.readUint32( YIELD::StructuredStream::Declaration( "stripe_size" ) ); width = input_stream.readUint32( YIELD::StructuredStream::Declaration( "width" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint8( YIELD::StructuredStream::Declaration( "policy" ), policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "stripe_size" ), stripe_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "width" ), width ); }
   
       protected:
         uint8_t policy;
@@ -121,10 +119,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::Replica", 541200194UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "striping_policy" ), striping_policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "replication_flags" ), replication_flags ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "osd_uuids" ), osd_uuids ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "striping_policy" ), &striping_policy ); replication_flags = input_stream.readUint32( YIELD::StructuredStream::Declaration( "replication_flags" ) ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "osd_uuids" ), &osd_uuids ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "striping_policy" ), striping_policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "replication_flags" ), replication_flags ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "osd_uuids" ), osd_uuids ); }
   
       protected:
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
@@ -143,8 +140,8 @@ namespace org
         TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::ReplicaSet", 4051946467UL );
   
         // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Replica", "item" ), ( *this )[size() - 1] ); } }
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::Replica item; input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Replica", "item" ), &item ); push_back( item ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Replica", "item" ), ( *this )[size() - 1] ); } }
         size_t getSize() const { return std::vector<org::xtreemfs::interfaces::Replica>::size(); }
       };
   
@@ -171,10 +168,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::XLocSet", 2669278184UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ReplicaSet", "replicas" ), replicas ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeString( YIELD::StructuredStream::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "read_only_file_size" ), read_only_file_size ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ReplicaSet", "replicas" ), &replicas ); version = input_stream.readUint32( YIELD::StructuredStream::Declaration( "version" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); read_only_file_size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "read_only_file_size" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ReplicaSet", "replicas" ), replicas ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeString( YIELD::StructuredStream::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "read_only_file_size" ), read_only_file_size ); }
   
       protected:
         org::xtreemfs::interfaces::ReplicaSet replicas;
@@ -200,10 +196,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::NewFileSize", 3946675201UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size_in_bytes" ), size_in_bytes ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { size_in_bytes = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size_in_bytes" ) ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size_in_bytes" ), size_in_bytes ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); }
   
       protected:
         uint64_t size_in_bytes;
@@ -221,8 +216,8 @@ namespace org
         TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::NewFileSizeSet", 4266043619UL );
   
         // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "item" ), ( *this )[size() - 1] ); } }
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::NewFileSize item; input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "item" ), &item ); push_back( item ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "item" ), ( *this )[size() - 1] ); } }
         size_t getSize() const { return std::vector<org::xtreemfs::interfaces::NewFileSize>::size(); }
       };
   
@@ -245,10 +240,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::OSDtoMRCData", 3652194158UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint8( YIELD::StructuredStream::Declaration( "caching_policy" ), caching_policy ); output_stream.writeString( YIELD::StructuredStream::Declaration( "data" ), data ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { caching_policy = input_stream.readUint8( YIELD::StructuredStream::Declaration( "caching_policy" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "data" ), data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint8( YIELD::StructuredStream::Declaration( "caching_policy" ), caching_policy ); output_stream.writeString( YIELD::StructuredStream::Declaration( "data" ), data ); }
   
       protected:
         uint8_t caching_policy;
@@ -266,8 +260,8 @@ namespace org
         TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::OSDtoMRCDataSet", 3900363312UL );
   
         // YIELD::Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCData", "item" ), ( *this )[size() - 1] ); } }
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::OSDtoMRCData item; input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCData", "item" ), &item ); push_back( item ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type i_max = size(); for ( size_type i = 0; i < i_max; i++ ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCData", "item" ), ( *this )[size() - 1] ); } }
         size_t getSize() const { return std::vector<org::xtreemfs::interfaces::OSDtoMRCData>::size(); }
       };
   
@@ -288,10 +282,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::FileCredentials", 2631208704UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XLocSet", "xlocs" ), xlocs ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), xcap ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XLocSet", "xlocs" ), &xlocs ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), &xcap ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XLocSet", "xlocs" ), xlocs ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "xcap" ), xcap ); }
   
       protected:
         org::xtreemfs::interfaces::XLocSet xlocs;
@@ -315,10 +308,9 @@ namespace org
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::OSDWriteResponse", 1477787725UL );
   
-  
-        // Serializable
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSizeSet", "new_file_size" ), new_file_size ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCDataSet", "opaque_data" ), opaque_data ); }
+        // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSizeSet", "new_file_size" ), &new_file_size ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCDataSet", "opaque_data" ), &opaque_data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSizeSet", "new_file_size" ), new_file_size ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCDataSet", "opaque_data" ), opaque_data ); }
   
       protected:
         org::xtreemfs::interfaces::NewFileSizeSet new_file_size;
