@@ -52,6 +52,7 @@ import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -98,15 +99,15 @@ public class MRCTest extends TestCase {
         client = testEnv.getMrcClient();
         
         try {
-            KeyValuePairSet kvset = new KeyValuePairSet();
-            kvset.add(new KeyValuePair("free", "1000000000"));
-            kvset.add(new KeyValuePair("total", "1000000000"));
-            kvset.add(new KeyValuePair("load", "0"));
-            kvset.add(new KeyValuePair("totalRAM", "1000000000"));
-            kvset.add(new KeyValuePair("usedRAM", "0"));
-            kvset.add(new KeyValuePair("proto_version", "" + OSDInterface.getVersion()));
+            ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+            dmap.put("free", "1000000000");
+            dmap.put("total", "1000000000");
+            dmap.put("load", "0");
+            dmap.put("totalRAM", "1000000000");
+            dmap.put("usedRAM", "0");
+            dmap.put("proto_version", "" + OSDInterface.getVersion());
             ServiceRegistry reg = new ServiceRegistry("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD,
-                "mockUpOSD", kvset);
+                "mockUpOSD", 0, dmap);
             RPCResponse<Long> response = testEnv.getDirClient().service_register(null, reg);
             response.get();
             response.freeBuffers();
@@ -404,6 +405,31 @@ public class MRCTest extends TestCase {
         
         // TODO: check open w/ ACLs set
         
+    }
+
+
+    public void testOpenCreateNoPerm() throws Exception {
+
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final String volumeName = "testVolume";
+
+        invokeSync(client.mkvol(mrcAddress, uid, gids, "", volumeName, RandomSelectionPolicy.POLICY_ID,
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+
+        final String uid2 = "bla";
+        final List<String> gids2 = createGIDs("groupY");
+
+
+        // open O_CREATE as uid2 should fail
+        try {
+            invokeSync(client.open(mrcAddress, uid2, gids2, volumeName + "/test2.txt",
+                (FileAccessManager.O_WRONLY | FileAccessManager.O_CREAT), 256));
+            fail();
+        } catch (MRCException exc) {
+            assertEquals(ErrNo.EACCES, exc.getError_code());
+        }
+
     }
     
     public void testRename() throws Exception {

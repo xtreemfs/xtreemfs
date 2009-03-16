@@ -103,12 +103,6 @@ public class TestEnvironment {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");
         }
         
-        if (enabledServs.contains(Services.MRC)) {
-            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
-            mrc.startup();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
-        }
-        
         if (enabledServs.contains(Services.TIME_SYNC)) {
             tsInstance = TimeSync.initialize(null, 60*1000, 50);
             tsInstance.waitForStartup();
@@ -118,6 +112,12 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.UUID_RESOLVER)) {
             UUIDResolver.start(getDirClient(), 1000, 10 * 10 * 1000);
             SetupUtils.localResolver();
+        }
+
+        if (enabledServs.contains(Services.MRC)) {
+            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
+            mrc.startup();
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
         }
         
         if (enabledServs.contains(Services.MRC_CLIENT)) {

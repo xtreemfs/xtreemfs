@@ -82,11 +82,11 @@ public final class WriteOperation extends OSDOperation {
         }
 
         master.objectReceived();
-        master.dataReceived(args.getData().getData().capacity());
+        master.dataReceived(args.getObject_data().getData().capacity());
 
         master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), 
                 sp,
-                args.getOffset(), args.getData().getData(), rq.getCowPolicy(),
+                args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
                 rq.getLocationList(), rq,
                 new WriteObjectCallback() {
 

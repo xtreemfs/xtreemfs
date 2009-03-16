@@ -89,7 +89,7 @@ public class OSDClient extends ONCRPCClient {
             public OSDWriteResponse getResult(ReusableBuffer data) {
                 truncateResponse resp = new truncateResponse();
                 resp.deserialize(data);
-                return resp.getOsd_response();
+                return resp.getOsd_write_response();
             }
         });
         return r;
@@ -123,7 +123,7 @@ public class OSDClient extends ONCRPCClient {
             public OSDWriteResponse getResult(ReusableBuffer data) {
                 truncateResponse resp = new truncateResponse();
                 resp.deserialize(data);
-                return resp.getOsd_response();
+                return resp.getOsd_write_response();
             }
         });
         return r;

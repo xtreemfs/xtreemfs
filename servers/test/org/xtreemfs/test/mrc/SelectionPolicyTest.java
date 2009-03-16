@@ -36,6 +36,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
 
@@ -59,35 +60,35 @@ public class SelectionPolicyTest extends TestCase {
         
         osdMap = new ServiceRegistrySet();
 
-        KeyValuePairSet kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
-        kvset.add(new KeyValuePair("uri", "http://itu.dk"));
-        ServiceRegistry attr1 = new ServiceRegistry("attr1",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
+        dmap.put("uri", "http://itu.dk");
+        ServiceRegistry attr1 = new ServiceRegistry("attr1",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr1);
 
-        kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
-        kvset.add(new KeyValuePair("uri", "http://wiut.uz"));
-        ServiceRegistry attr2 = new ServiceRegistry("attr2",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        dmap = new ServiceRegistryDataMap();
+        dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
+        dmap.put("uri", "http://wiut.uz");
+        ServiceRegistry attr2 = new ServiceRegistry("attr2",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr2);
          
-        kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
-        kvset.add(new KeyValuePair("uri", "http://pku.edu.cn"));
-        ServiceRegistry attr3 = new ServiceRegistry("attr3",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        dmap = new ServiceRegistryDataMap();
+        dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
+        dmap.put("uri", "http://pku.edu.cn");
+        ServiceRegistry attr3 = new ServiceRegistry("attr3",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr3);
 
-        kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
-        kvset.add(new KeyValuePair("uri", "http://xtreemfs2.zib.de"));
-        ServiceRegistry attr4 = new ServiceRegistry("attr4",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        dmap = new ServiceRegistryDataMap();
+        dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
+        dmap.put("uri", "http://xtreemfs2.zib.de");
+        ServiceRegistry attr4 = new ServiceRegistry("attr4",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr4);
 
 
-        kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("free",Long.toString(MIN_FREE_CAPACITY + 1)));
-        kvset.add(new KeyValuePair("uri", "http://xtreemfs2.zib.de"));
-        ServiceRegistry attr5 = new ServiceRegistry("attr5",0,Constants.SERVICE_TYPE_OSD,"",kvset);
+        dmap = new ServiceRegistryDataMap();
+        dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
+        dmap.put("uri", "http://xtreemfs2.zib.de");
+        ServiceRegistry attr5 = new ServiceRegistry("attr5",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr5);
         
     }

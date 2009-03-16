@@ -90,7 +90,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             if (file == null)
                 throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
             
-            NewFileSizeSet newFSSet = rqArgs.getNew_file_size().getNew_file_size();
+            NewFileSizeSet newFSSet = rqArgs.getOsd_write_response().getNew_file_size();
             
             if (newFSSet.isEmpty())
                 throw new UserException(ErrNo.EINVAL, "invalid file size: empty");

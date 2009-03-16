@@ -367,6 +367,32 @@ public class OSDDataIntegrityTest extends TestCase {
         assertEquals(0,data.getData().capacity());
         BufferPool.free(data.getData());
     }
+
+
+    public void testReadBeyonEOF() throws Exception {
+
+        // first test implicit truncate through write within a single object
+        ReusableBuffer buf = BufferPool.allocate(1023);
+        for (int i = 0; i < 1023; i++)
+            buf.put((byte) 'A');
+        buf.flip();
+        ObjectData data = new ObjectData("", 0, false, buf);
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 1024, 0, data);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(2047+2048, resp.getNew_file_size().get(0).getSize_in_bytes());
+
+
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), fileId, fcred, 10, 0, 0, 2048);
+        data = r2.get();
+        r2.freeBuffers();
+
+        data.getData().position(0);
+        assertEquals(0, data.getData().capacity());
+        assertEquals(0, data.getZero_padding());
+        BufferPool.free(data.getData());
+    }
      
     
     public void testOverlappingWrites() throws Exception {

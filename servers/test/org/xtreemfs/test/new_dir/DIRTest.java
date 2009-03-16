@@ -47,6 +47,7 @@ import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.interfaces.ServiceRegistryDataMap;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -141,9 +142,9 @@ public class DIRTest extends TestCase {
 
         DIRClient client = testEnv.getDirClient();
 
-        KeyValuePairSet kvset = new KeyValuePairSet();
-        kvset.add(new KeyValuePair("bla", "yagga"));
-        ServiceRegistry sr = new ServiceRegistry("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", kvset);
+        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        dmap.put("bla", "yagga");
+        ServiceRegistry sr = new ServiceRegistry("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", 0,dmap);
 
         RPCResponse<Long> r1 = client.service_register(null, sr);
         r1.get();
