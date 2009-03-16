@@ -18,9 +18,9 @@ module org
       {
         uint32_t mode;
         uint32_t nlink;
-        uint32_t uid;
-        uint32_t gid;
-        int16_t dev;
+        uint32_t unused_uid;
+        uint32_t unused_gid;
+        int16_t unused_dev;
         uint64_t size;
         uint64_t atime;
         uint64_t mtime;
@@ -136,7 +136,7 @@ module org
 
         void xtreemfs_restore_file(string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
 
-        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse new_file_size ) # 29;
+        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 29;
       };
     };
   };
