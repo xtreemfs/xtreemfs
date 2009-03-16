@@ -11,22 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public xtreemfs_update_file_sizeRequest() { xcap = new XCap(); new_file_size = new OSDWriteResponse(); }
-    public xtreemfs_update_file_sizeRequest( XCap xcap, OSDWriteResponse new_file_size ) { this.xcap = xcap; this.new_file_size = new_file_size; }
-    public xtreemfs_update_file_sizeRequest( Object from_hash_map ) { xcap = new XCap(); new_file_size = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
-    public xtreemfs_update_file_sizeRequest( Object[] from_array ) { xcap = new XCap(); new_file_size = new OSDWriteResponse();this.deserialize( from_array ); }
+    public xtreemfs_update_file_sizeRequest() { xcap = new XCap(); osd_write_response = new OSDWriteResponse(); }
+    public xtreemfs_update_file_sizeRequest( XCap xcap, OSDWriteResponse osd_write_response ) { this.xcap = xcap; this.osd_write_response = osd_write_response; }
+    public xtreemfs_update_file_sizeRequest( Object from_hash_map ) { xcap = new XCap(); osd_write_response = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
+    public xtreemfs_update_file_sizeRequest( Object[] from_array ) { xcap = new XCap(); osd_write_response = new OSDWriteResponse();this.deserialize( from_array ); }
 
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
-    public OSDWriteResponse getNew_file_size() { return new_file_size; }
-    public void setNew_file_size( OSDWriteResponse new_file_size ) { this.new_file_size = new_file_size; }
+    public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
+    public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }    
     public long getTypeId() { return 29; }
 
     public String toString()
     {
-        return "xtreemfs_update_file_sizeRequest( " + xcap.toString() + ", " + new_file_size.toString() + " )"; 
+        return "xtreemfs_update_file_sizeRequest( " + xcap.toString() + ", " + osd_write_response.toString() + " )";
     }
 
 
@@ -38,40 +38,40 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.xcap.deserialize( from_hash_map.get( "xcap" ) );
-        this.new_file_size.deserialize( from_hash_map.get( "new_file_size" ) );
+        this.osd_write_response.deserialize( from_hash_map.get( "osd_write_response" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.xcap.deserialize( from_array[0] );
-        this.new_file_size.deserialize( from_array[1] );        
+        this.osd_write_response.deserialize( from_array[1] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
         xcap = new XCap(); xcap.deserialize( buf );
-        new_file_size = new OSDWriteResponse(); new_file_size.deserialize( buf );
+        osd_write_response = new OSDWriteResponse(); osd_write_response.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
         to_hash_map.put( "xcap", xcap.serialize() );
-        to_hash_map.put( "new_file_size", new_file_size.serialize() );
+        to_hash_map.put( "osd_write_response", osd_write_response.serialize() );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
         xcap.serialize( writer );
-        new_file_size.serialize( writer );
+        osd_write_response.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
         my_size += xcap.calculateSize();
-        my_size += new_file_size.calculateSize();
+        my_size += osd_write_response.calculateSize();
         return my_size;
     }
 
@@ -81,7 +81,7 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
 
 
     private XCap xcap;
-    private OSDWriteResponse new_file_size;
+    private OSDWriteResponse osd_write_response;
 
 }
 

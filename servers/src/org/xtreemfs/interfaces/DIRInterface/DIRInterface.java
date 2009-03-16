@@ -23,6 +23,7 @@ public class DIRInterface
             case 5: return new service_deregisterRequest();
             case 6: return new service_get_by_typeRequest();
             case 7: return new service_get_by_uuidRequest();
+            case 9: return new service_get_by_nameRequest();
             case 8: return new global_time_getRequest();
             case 50: return new admin_checkpointRequest();
             case 51: return new admin_shutdownRequest();
@@ -35,7 +36,7 @@ public class DIRInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new address_mappings_getResponse();            case 2: return new address_mappings_setResponse();            case 3: return new address_mappings_deleteResponse();            case 4: return new service_registerResponse();            case 5: return new service_deregisterResponse();            case 6: return new service_get_by_typeResponse();            case 7: return new service_get_by_uuidResponse();            case 8: return new global_time_getResponse();            case 50: return new admin_checkpointResponse();            case 51: return new admin_shutdownResponse();
+            case 1: return new address_mappings_getResponse();            case 2: return new address_mappings_setResponse();            case 3: return new address_mappings_deleteResponse();            case 4: return new service_registerResponse();            case 5: return new service_deregisterResponse();            case 6: return new service_get_by_typeResponse();            case 7: return new service_get_by_uuidResponse();            case 9: return new service_get_by_nameResponse();            case 8: return new global_time_getResponse();            case 50: return new admin_checkpointResponse();            case 51: return new admin_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    
