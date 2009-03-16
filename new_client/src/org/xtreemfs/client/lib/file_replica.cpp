@@ -16,9 +16,9 @@ FileReplica::~FileReplica()
   delete osd_proxy;
 }
 
-YIELD::Stat FileReplica::fgetattr()
+YIELD::Stat FileReplica::getattr()
 {
-  return parent_shared_file.fgetattr();
+  return parent_shared_file.getattr();
 }
 
 OSDProxy& FileReplica::get_osd_proxy()
@@ -30,13 +30,6 @@ OSDProxy& FileReplica::get_osd_proxy()
     osd_proxy = &parent_shared_file.get_osd_proxy_factory().createOSDProxy( osd_uuid, osd_uuid_version );
     return *osd_proxy;
   }
-}
-
-void FileReplica::ftruncate( uint64_t new_size, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-{
- org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
- get_osd_proxy().truncate( file_credentials.get_xcap().get_file_id(), file_credentials, new_size, osd_write_response, get_osd_proxy_operation_timeout_ms() );
- get_mrc_proxy().xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
 }
 
 size_t FileReplica::read( char* rbuf, size_t size, off_t offset, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
@@ -51,6 +44,13 @@ size_t FileReplica::read( char* rbuf, size_t size, off_t offset, const org::xtre
   }
   else
     return 0;
+}
+
+void FileReplica::truncate( off_t new_size, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+{
+ org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
+ get_osd_proxy().truncate( file_credentials.get_xcap().get_file_id(), file_credentials, new_size, osd_write_response, get_osd_proxy_operation_timeout_ms() );
+ get_mrc_proxy().xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
 }
 
 size_t FileReplica::write( const char* wbuf, size_t size, off_t offset, const org::xtreemfs::interfaces::FileCredentials& file_credentials )

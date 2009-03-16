@@ -68,16 +68,16 @@ std::string Volume::getxattr( const YIELD::Path& path, const std::string& name )
   return mrc_proxy.getxattr( test_context, Path( this->name, path ), name, mrc_proxy_operation_timeout_ms );
 }
 
-void Volume::link( const YIELD::Path& from_path, const YIELD::Path& to_path )
+void Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
 {
-  mrc_proxy.link( test_context, Path( this->name, to_path ), Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
+  mrc_proxy.link( test_context, Path( this->name, old_path ), Path( this->name, new_path ), mrc_proxy_operation_timeout_ms );
 }
 
-void Volume::listxattr( const YIELD::Path& path, yieldfs::xAttrNameSet& xattr_names )
+void Volume::listxattr( const YIELD::Path& path, yieldfs::StringSet& out_names )
 {
   xtreemfs::interfaces::StringSet names;
   mrc_proxy.listxattr( test_context, Path( this->name, path ), names );
-  xattr_names.assign( names.begin(), names.end() );
+  out_names.assign( names.begin(), names.end() );
 }
 
 void Volume::mkdir( const YIELD::Path& path, mode_t mode )
@@ -170,10 +170,10 @@ void Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
   mrc_proxy.symlink( test_context, to_path, Path( this->name, from_path ), mrc_proxy_operation_timeout_ms );
 }
 
-void Volume::truncate( const YIELD::Path& path, uint64_t new_size )
+void Volume::truncate( const YIELD::Path& path, off_t new_size )
 {
   OpenFile& open_file = mrc_and_local_open( Path( this->name, path ), O_TRUNC, 0 );
-  open_file.ftruncate( new_size );
+  open_file.truncate( new_size );
   YIELD::SharedObject::decRef( open_file );
 }
 

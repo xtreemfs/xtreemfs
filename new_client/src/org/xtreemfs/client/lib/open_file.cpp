@@ -11,19 +11,19 @@ OpenFile::~OpenFile()
   SharedObject::decRef( attached_to_file_replica.get_parent_shared_file() );
 }
 
-YIELD::Stat OpenFile::fgetattr()
+YIELD::Stat OpenFile::getattr()
 {
-  return attached_to_file_replica.fgetattr();
-}
-
-void OpenFile::ftruncate( uint64_t new_size )
-{
-  attached_to_file_replica.ftruncate( new_size, file_credentials );
+  return attached_to_file_replica.getattr();
 }
 
 size_t OpenFile::read( char* rbuf, size_t size, off_t offset )
 {
   return attached_to_file_replica.read( rbuf, size, offset, file_credentials );
+}
+
+void OpenFile::truncate( off_t new_size )
+{
+  attached_to_file_replica.truncate( new_size, file_credentials );
 }
 
 size_t OpenFile::write( const char* wbuf, size_t size, off_t offset )

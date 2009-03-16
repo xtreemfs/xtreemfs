@@ -30,14 +30,9 @@ SharedFile::~SharedFile()
   static_cast<SharedFileCallbackInterface&>( parent_volume ).close( *this );
 }
 
-YIELD::Stat SharedFile::fgetattr()
+YIELD::Stat SharedFile::getattr()
 {
   return parent_volume.getattr( path );
-}
-
-void SharedFile::ftruncate( uint64_t new_size, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-{
-  YIELD::DebugBreak();
 }
 
 OpenFile& SharedFile::open( uint64_t open_flags, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
@@ -51,6 +46,11 @@ size_t SharedFile::read( char* rbuf, size_t size, off_t offset, const org::xtree
 {
   YIELD::DebugBreak();
   return 0;
+}
+
+void SharedFile::truncate( off_t new_size, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+{
+  YIELD::DebugBreak();
 }
 
 size_t SharedFile::write( const char* wbuf, size_t size, off_t offset, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
