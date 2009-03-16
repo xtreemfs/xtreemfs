@@ -85,6 +85,8 @@ public class PreprocStage extends Stage {
 
     private final OSDRequestDispatcher master;
 
+    private final boolean ignoreCaps;
+
     /** Creates a new instance of AuthenticationStage */
     public PreprocStage(OSDRequestDispatcher master) {
 
@@ -94,6 +96,7 @@ public class PreprocStage extends Stage {
         oft = new OpenFileTable();
         xLocCache = new LocationsCache(10000);
         this.master = master;
+        this.ignoreCaps = master.getConfig().isIgnoreCaps();
     }
 
     public void prepareRequest(OSDRequest request, ParseCompleteCallback listener) {
@@ -285,6 +288,9 @@ public class PreprocStage extends Stage {
         if (rqCap.getEpochNo() < 0) {
             throw new OSDException(ErrorCodes.INVALID_FILEID, "invalid capability. epoch must not be < 0", "");
         }
+
+        if (ignoreCaps)
+            return;
 
 
         if (!rqCap.getFileId().equals(rq.getFileId())) {

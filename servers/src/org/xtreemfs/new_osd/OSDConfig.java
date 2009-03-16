@@ -64,6 +64,8 @@ public class OSDConfig extends ServiceConfig {
     private String            checksumProvider;
     
     private String            capabilitySecret;
+
+    private boolean           ignoreCaps;
     
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
@@ -101,6 +103,8 @@ public class OSDConfig extends ServiceConfig {
             : null;
         
         this.capabilitySecret = this.readRequiredString("capability_secret");
+
+        this.ignoreCaps = this.readOptionalBoolean("ignore_capabilities", false);
     }
     
     public InetSocketAddress getDirectoryService() {
@@ -157,6 +161,13 @@ public class OSDConfig extends ServiceConfig {
     
     public String getCapabilitySecret() {
         return capabilitySecret;
+    }
+
+    /**
+     * @return the ignoreCaps
+     */
+    public boolean isIgnoreCaps() {
+        return ignoreCaps;
     }
     
 }
