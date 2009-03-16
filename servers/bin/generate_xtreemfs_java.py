@@ -139,6 +139,7 @@ class XtreemFSJavaMapType(JavaMapType, XtreemFSJavaCompoundType):
             %(key_boxed_type_name)s key = key_i.next();
             %(value_boxed_type_name)s value = get( key );
             my_size += %(value_size)s;
+	    my_size += %(key_size)s;
         }
         return my_size;
     }
