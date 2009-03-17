@@ -32,7 +32,7 @@ import junit.textui.TestRunner;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.new_osd.LocationsCache;
+import org.xtreemfs.osd.LocationsCache;
 
 /**
  * This class implements the tests for LocationsCache

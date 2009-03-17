@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_osd;
+package org.xtreemfs.osd;
 
 
 public final class ErrorCodes {

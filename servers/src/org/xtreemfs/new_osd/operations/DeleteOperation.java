@@ -35,8 +35,8 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.DeletionStage.DeleteObjectsCallback;
 import org.xtreemfs.new_osd.stages.PreprocStage.DeleteOnCloseCallback;
 

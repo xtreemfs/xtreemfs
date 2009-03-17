@@ -42,7 +42,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.speedy.MultiSpeedy;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.osd.OSDConfig;
 
 /**
  * 

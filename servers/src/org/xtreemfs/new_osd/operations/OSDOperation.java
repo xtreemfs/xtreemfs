@@ -29,8 +29,8 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 
 
 public abstract class OSDOperation {

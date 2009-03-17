@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_osd;
+package org.xtreemfs.osd;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;

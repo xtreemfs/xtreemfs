@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.operations;
 import java.util.Iterator;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
@@ -127,6 +128,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 String linkTarget = sMan.getSoftlinkTarget(child.getId());
                 int mode = faMan.getPosixAccessMode(sMan, child, rq.getDetails().userId,
                     rq.getDetails().groupIds);
+                mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_S_IFLNK : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_S_IFDIR : Constants.SYSTEM_V_FCNTL_S_IFREG;
                 long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : child
                         .getSize();
                 int type = linkTarget != null ? 3 : child.isDirectory() ? 2 : 1;

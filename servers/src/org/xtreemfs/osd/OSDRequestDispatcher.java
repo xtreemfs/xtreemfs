@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB)
  */
 
-package org.xtreemfs.new_osd;
+package org.xtreemfs.osd;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

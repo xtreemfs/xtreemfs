@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.new_osd;
+package org.xtreemfs.osd;
 
 import java.util.Map;
 import org.xtreemfs.common.LRUCache;

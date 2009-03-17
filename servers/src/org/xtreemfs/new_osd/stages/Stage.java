@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.new_osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {
 

@@ -44,7 +44,7 @@ import org.xtreemfs.common.checksums.algorithms.SDBM;
 import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.osd.OSDConfig;
 
 /**
  *

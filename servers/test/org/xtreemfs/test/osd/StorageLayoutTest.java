@@ -42,7 +42,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
-import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.new_osd.storage.HashStorageLayout;
 import org.xtreemfs.new_osd.storage.MetadataCache;
 import org.xtreemfs.new_osd.storage.ObjectInformation;

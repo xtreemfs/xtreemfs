@@ -44,8 +44,8 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.new_osd.OSD;
-import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.osd.OSD;
+import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 

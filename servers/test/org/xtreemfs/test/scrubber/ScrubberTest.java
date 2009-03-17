@@ -42,8 +42,8 @@ import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.new_osd.OSD;
-import org.xtreemfs.new_osd.OSDConfig;
+import org.xtreemfs.osd.OSD;
+import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 

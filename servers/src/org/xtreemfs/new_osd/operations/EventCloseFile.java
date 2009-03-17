@@ -26,8 +26,8 @@ package org.xtreemfs.new_osd.operations;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.DeletionStage.DeleteObjectsCallback;
 import org.xtreemfs.new_osd.stages.StorageStage.CachesFlushedCallback;
 

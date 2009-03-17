@@ -38,9 +38,9 @@ import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.ErrorCodes;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ErrorCodes;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.TruncateCallback;
 
 public final class InternalTruncateOperation extends OSDOperation {

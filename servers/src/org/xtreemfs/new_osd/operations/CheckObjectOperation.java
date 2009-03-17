@@ -40,9 +40,9 @@ import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.ErrorCodes;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ErrorCodes;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.new_osd.storage.ObjectInformation;
 

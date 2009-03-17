@@ -31,8 +31,8 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.OSDInterface.keep_file_openRequest;
 import org.xtreemfs.interfaces.OSDInterface.keep_file_openResponse;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 
 /**
  *

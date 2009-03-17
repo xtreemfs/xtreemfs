@@ -54,7 +54,7 @@ import org.xtreemfs.interfaces.KeyValuePair;
 import org.xtreemfs.interfaces.ServiceRegistry;
 import org.xtreemfs.interfaces.ServiceRegistrySet;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
 import org.xtreemfs.utils.DefaultDirConfig;

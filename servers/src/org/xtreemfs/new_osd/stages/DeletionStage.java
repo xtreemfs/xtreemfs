@@ -30,8 +30,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
-import org.xtreemfs.new_osd.OSDRequest;
-import org.xtreemfs.new_osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.new_osd.storage.MetadataCache;
 import org.xtreemfs.new_osd.storage.StorageLayout;
 

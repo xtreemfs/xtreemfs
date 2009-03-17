@@ -24,7 +24,7 @@
  *          Eugenio Cesario (CNR)
  */
 
-package org.xtreemfs.new_osd;
+package org.xtreemfs.osd;
 
 import org.xtreemfs.common.ClientLease;
 import java.util.HashMap;
