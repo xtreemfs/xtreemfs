@@ -4,6 +4,8 @@ using namespace org::xtreemfs::client;
 #include "yield.h"
 
 #include "yieldfs/fuse.h"
+#include "yieldfs/time_cached_volume.h"
+#include "yieldfs/local_volume.h"
 
 #include <string>
 #include <vector>
@@ -144,7 +146,8 @@ int main( int argc, char** argv )
 
     YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
-    DIRProxy dir_proxy( *dir_uri ); main_stage_group.createStage( dir_proxy );
+    uint32_t dir_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
+    DIRProxy dir_proxy( *dir_uri, 3, dir_proxy_flags ); main_stage_group.createStage( dir_proxy );
 
     if ( mrc_uri == NULL )
     {
@@ -159,38 +162,29 @@ int main( int argc, char** argv )
           {
             if ( data_i->first == "mrc" )
             {
-              std::string mrc_uuid = data_i->second;
-              org::xtreemfs::interfaces::AddressMappingSet mrc_address_mappings;
-              dir_proxy.address_mappings_get( mrc_uuid, mrc_address_mappings );
-              if ( !mrc_address_mappings.empty() )
-              {
-                std::ostringstream mrc_uri_str;
-                mrc_uri_str << mrc_address_mappings[0].get_protocol() << "://" << mrc_address_mappings[0].get_address() << ":" << mrc_address_mappings[0].get_port() << "/";
-                mrc_uri = YIELD::URI::parseURI( mrc_uri_str.str() );
-                if ( mrc_uri == NULL )
-                  throw YIELD::Exception( "received invalid MRC URI from DIR" );
-
-                break;
-              }
-              else
-                throw YIELD::Exception( "unknown volume" );
-            }
-
-            if ( mrc_uri != NULL )
+              mrc_uri = new YIELD::URI( dir_proxy.get_uri_from_uuid( data_i->second ) );
               break;
+            }
           }
+
+          if ( mrc_uri != NULL )
+            break;
         }
       }
       else
         throw YIELD::Exception( "unknown volume" );
     }
 
-    MRCProxy mrc_proxy( *mrc_uri ); main_stage_group.createStage( mrc_proxy );
+    uint32_t mrc_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
+    MRCProxy mrc_proxy( *mrc_uri, 3, mrc_proxy_flags ); main_stage_group.createStage( mrc_proxy );
 
-    OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group );
+    uint32_t osd_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
+    OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group, 33, osd_proxy_flags );
 
-    Volume volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
-    int ret = yieldfs::FUSE( volume ).main( argv[0], mount_point.c_str(), foreground, debug );
+    Volume xtreemfs_volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
+ //   yieldfs::LocalVolume xtreemfs_volume( YIELD::Path(), "test" );
+ //   yieldfs::TimeCachedVolume time_cached_volume( xtreemfs_volume );
+    int ret = yieldfs::FUSE( xtreemfs_volume ).main( argv[0], mount_point.c_str(), foreground, debug );
 
     YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 

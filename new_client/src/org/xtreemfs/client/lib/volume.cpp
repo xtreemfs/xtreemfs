@@ -12,8 +12,10 @@ using namespace org::xtreemfs::client;
 Volume::Volume( const std::string& name, DIRProxy& dir_proxy, MRCProxy& mrc_proxy, OSDProxyFactory& osd_proxy_factory )
 : name( name ), dir_proxy( dir_proxy ), mrc_proxy( mrc_proxy ), osd_proxy_factory( osd_proxy_factory )
 {
+// dir_proxy_operations_timeout_ms = 2000;
 //  mrc_proxy_operation_timeout_ms = 2000;
 //  osd_proxy_operation_timeout_ms = 2000;
+  dir_proxy_operation_timeout_ms = static_cast<uint64_t>( -1 );
   mrc_proxy_operation_timeout_ms = static_cast<uint64_t>( -1 );
   osd_proxy_operation_timeout_ms = static_cast<uint64_t>( -1 );
   test_context.set_user_id( "test" );
@@ -125,13 +127,7 @@ void Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
   Path from_xtreemfs_path( this->name, from_path ), to_xtreemfs_path( this->name, to_path );
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
   mrc_proxy.rename( test_context, from_xtreemfs_path, to_xtreemfs_path, file_credentials_set, mrc_proxy_operation_timeout_ms );
-/*
-  if ( !file_credentials.get_xcap().get_file_id().empty() ) // The target path existed, so we have to delete it at the OSDs
-  {
-    OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids()[0], file_credentials.get_xlocs().get_version() );
-    osd_proxy.unlink( file_credentials.get_xcap().get_file_id(), file_credentials, osd_proxy_operation_timeout_ms );
-  }
-  */
+  osd_unlink( file_credentials_set );
 }
 
 void Volume::rmdir( const YIELD::Path& path )
@@ -181,19 +177,7 @@ void Volume::unlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
   mrc_proxy.unlink( test_context, Path( this->name, path ), file_credentials_set, mrc_proxy_operation_timeout_ms );
-  /*
-  if ( !xlocs.get_replicas().empty() )
-  {
-    OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( xlocs.get_replicas()[0].get_osd_uuids()[0], xlocs.get_version() );
-
-    try
-    {
-      osd_proxy.unlink( file_credentials.get_xcap().get_file_id(), file_credentials, osd_proxy_operation_timeout_ms );
-    }
-    catch ( YIELD::Exception& )
-    { }
-  }
-  */
+  osd_unlink( file_credentials_set );
 }
 
 void Volume::utime( const YIELD::Path& path, uint64_t _ctime, uint64_t _atime, uint64_t _mtime )
@@ -226,5 +210,19 @@ OpenFile& Volume::local_open( const Path& path, uint64_t open_flags, const org::
 
 void Volume::close( SharedFile& shared_file )
 {
+}
 
+void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set )
+{
+  if ( !file_credentials_set.empty() ) // We have to delete files on replica OSDs
+  {
+    const org::xtreemfs::interfaces::FileCredentials& file_credentials = file_credentials_set[0];    
+    const std::string& file_id = file_credentials.get_xcap().get_file_id();
+    const org::xtreemfs::interfaces::ReplicaSet& replicas = file_credentials.get_xlocs().get_replicas();
+    for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
+    {
+      OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( ( *replica_i ).get_osd_uuids()[0] );
+      osd_proxy.unlink( file_id, file_credentials, osd_proxy_operation_timeout_ms );
+    }
+  }
 }

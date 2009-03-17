@@ -106,7 +106,8 @@ int main( int argc, char** argv )
       YIELD::SocketConnection::setTraceSocketIO( true );  
 
     MRCProxy mrc_proxy( *volume_uri );
-    mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "user", org::xtreemfs::interfaces::StringSet() ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
+    org::xtreemfs::interfaces::StringSet group_ids; group_ids.push_back( "test" );
+    mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "test", group_ids ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
 
     delete volume_uri;
 

@@ -6,6 +6,9 @@
 #include "org/xtreemfs/interfaces/dir_interface.h"
 #include "org/xtreemfs/client/proxy.h"
 
+#include <map>
+#include <string>
+
 
 namespace org
 {
@@ -17,12 +20,35 @@ namespace org
       {
       public:
         DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3, uint32_t flags = 0 );
+        virtual ~DIRProxy();
+
+        YIELD::URI get_uri_from_uuid( const std::string& uuid, uint64_t timeout_ms = static_cast<uint64_t>( -1 ) );
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }
 
       private:
         ORG_XTREEMFS_INTERFACES_DIRINTERFACE_DUMMY_DEFINITIONS;
+
+        class CachedAddressMappingURI : public YIELD::URI
+        {
+        public:
+          CachedAddressMappingURI( const std::string& uri, uint32_t ttl_s )
+            : YIELD::URI( uri ), ttl_s( ttl_s )
+          {
+            creation_epoch_time_s = YIELD::Time::getCurrentEpochTimeS();
+          }
+
+          uint32_t get_ttl_s() const { return ttl_s; }
+          double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
+
+        private:
+          uint32_t ttl_s;
+          double creation_epoch_time_s;
+        };
+
+        std::map<std::string, CachedAddressMappingURI*> uuid_to_uri_cache; 
+        YIELD::Mutex uuid_to_uri_cache_lock;
       };
     };
   };

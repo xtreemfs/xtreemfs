@@ -29,6 +29,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yield", "share\yieldfs\share\yield\proj\yield\yield.vcproj", "{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yieldfs", "share\yieldfs\proj\yieldfs\yieldfs.vcproj", "{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7} = {2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

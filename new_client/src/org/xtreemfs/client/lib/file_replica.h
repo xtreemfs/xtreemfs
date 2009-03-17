@@ -17,7 +17,7 @@ namespace org
       class FileReplica : public FileInterface
       {
       public:
-        FileReplica( SharedFile& parent_shared_file, const std::string& osd_uuid, uint64_t osd_uuid_version, const org::xtreemfs::interfaces::StripingPolicy& striping_policy );
+        FileReplica( SharedFile& parent_shared_file, const org::xtreemfs::interfaces::StripingPolicy& striping_policy, const std::vector<std::string>& osd_uuids );
         virtual ~FileReplica();
 
         SharedFile& get_parent_shared_file() const { return parent_shared_file; }
@@ -29,11 +29,11 @@ namespace org
 
       private:
         SharedFile& parent_shared_file;
-        std::string osd_uuid; uint64_t osd_uuid_version;
-        xtreemfs::interfaces::StripingPolicy striping_policy;
+        org::xtreemfs::interfaces::StripingPolicy striping_policy;
+        std::vector<std::string> osd_uuids;
 
-        OSDProxy* osd_proxy;
-        OSDProxy& get_osd_proxy(); // Creates the OSD proxy on demand
+        OSDProxy& get_osd_proxy( uint64_t object_number );
+        std::vector<OSDProxy*> osd_proxies;
       };
     };
   };

@@ -11,15 +11,7 @@ SharedFile::SharedFile( Volume& parent_volume, const Path& path, const org::xtre
 : parent_volume( parent_volume ), path( path ), xlocs( xlocs )
 {
   for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = xlocs.get_replicas().begin(); replica_i != xlocs.get_replicas().end(); replica_i++ )
-  {
-    const org::xtreemfs::interfaces::StringSet& osd_uuids = ( *replica_i ).get_osd_uuids();
-    const org::xtreemfs::interfaces::StripingPolicy& striping_policy = ( *replica_i ).get_striping_policy();
-    for ( org::xtreemfs::interfaces::StringSet::const_iterator osd_uuid_i = osd_uuids.begin(); osd_uuid_i != osd_uuids.end(); osd_uuid_i++ )
-    {
-      FileReplica* file_replica = new FileReplica( *this, *osd_uuid_i, xlocs.get_version(), striping_policy );
-      file_replicas.push_back( file_replica );
-    }
-  }
+    file_replicas.push_back( new FileReplica( *this, ( *replica_i ).get_striping_policy(), ( *replica_i ).get_osd_uuids() ) );
 }
 
 SharedFile::~SharedFile()

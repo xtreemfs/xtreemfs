@@ -3,9 +3,6 @@
 
 #include "org/xtreemfs/client/osd_proxy.h"
 
-#include <map>
-#include <string>
-
 
 namespace org
 {
@@ -20,17 +17,16 @@ namespace org
       class OSDProxyFactory
       {
       public:
-        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint32_t osd_proxy_flags = 0 );
-        virtual ~OSDProxyFactory();
+        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max = 3, uint32_t osd_proxy_flags = 0 );
+        virtual ~OSDProxyFactory() { }
 
-        OSDProxy& createOSDProxy( const std::string& uuid, uint64_t version );
+        OSDProxy& createOSDProxy( const std::string& uuid, uint64_t timeout_ms = static_cast<uint64_t>( -1 ) );
 
       private:
         DIRProxy& dir_proxy;
         YIELD::StageGroup& osd_proxy_stage_group;
+        uint8_t osd_proxy_reconnect_tries_max;
         uint32_t osd_proxy_flags;
-
-        std::map<std::string, VersionedURI*> uuid_to_uri_map; YIELD::Mutex uuid_to_uri_map_lock;
 
         OSDProxy& createOSDProxy( const YIELD::URI& uri );
       };
