@@ -15,7 +15,7 @@ namespace org
       class OSDProxy : public org::xtreemfs::interfaces::OSDInterface
       {
       public:
-        OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3, uint32_t flags = 0 );
+        OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS );
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }

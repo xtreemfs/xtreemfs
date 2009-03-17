@@ -16,7 +16,9 @@ namespace org
       class Proxy : public YIELD::EventHandler
       {
       public:
+        const static uint8_t PROXY_DEFAULT_RECONNECT_TRIES_MAX = 3;
         const static uint32_t PROXY_FLAG_PRINT_OPERATIONS = 1;
+        const static uint32_t PROXY_DEFAULT_FLAGS = 0;
 
 
         virtual ~Proxy();
@@ -25,7 +27,7 @@ namespace org
 
       protected:
         Proxy(); // Must be a default constructor because xInterface inherits from Proxy
-        void init( const YIELD::URI&, uint8_t reconnect_tries_max, uint32_t flags ); // Called by subclasses to bypass EventHandler
+        void init( const YIELD::URI&, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS ); // Called by subclasses to bypass EventHandler
 
         YIELD::URI* uri;
         uint8_t reconnect_tries_max;

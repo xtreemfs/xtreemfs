@@ -146,8 +146,9 @@ int main( int argc, char** argv )
 
     YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
-    uint32_t dir_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
-    DIRProxy dir_proxy( *dir_uri, 3, dir_proxy_flags ); main_stage_group.createStage( dir_proxy );
+    uint32_t dir_proxy_flags = Proxy::PROXY_DEFAULT_FLAGS|( debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0 );
+    DIRProxy dir_proxy( *dir_uri, Proxy::PROXY_DEFAULT_RECONNECT_TRIES_MAX, dir_proxy_flags ); 
+    main_stage_group.createStage( dir_proxy );
 
     if ( mrc_uri == NULL )
     {
@@ -175,11 +176,12 @@ int main( int argc, char** argv )
         throw YIELD::Exception( "unknown volume" );
     }
 
-    uint32_t mrc_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
-    MRCProxy mrc_proxy( *mrc_uri, 3, mrc_proxy_flags ); main_stage_group.createStage( mrc_proxy );
+    uint32_t mrc_proxy_flags = Proxy::PROXY_DEFAULT_FLAGS|( debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0 );
+    MRCProxy mrc_proxy( *mrc_uri, Proxy::PROXY_DEFAULT_RECONNECT_TRIES_MAX, mrc_proxy_flags ); 
+    main_stage_group.createStage( mrc_proxy );
 
-    uint32_t osd_proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
-    OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group, 33, osd_proxy_flags );
+    uint32_t osd_proxy_flags = Proxy::PROXY_DEFAULT_FLAGS|( debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0 );
+    OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group, Proxy::PROXY_DEFAULT_RECONNECT_TRIES_MAX, osd_proxy_flags );
 
     Volume xtreemfs_volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
  //   yieldfs::LocalVolume xtreemfs_volume( YIELD::Path(), "test" );

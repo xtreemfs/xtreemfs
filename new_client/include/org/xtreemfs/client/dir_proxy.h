@@ -19,7 +19,7 @@ namespace org
       class DIRProxy : public org::xtreemfs::interfaces::DIRInterface
       {
       public:
-        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = 3, uint32_t flags = 0 );
+        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS );
         virtual ~DIRProxy();
 
         YIELD::URI get_uri_from_uuid( const std::string& uuid, uint64_t timeout_ms = static_cast<uint64_t>( -1 ) );
