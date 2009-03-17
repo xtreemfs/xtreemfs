@@ -64,6 +64,7 @@ public final class TruncateOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         final truncateRequest args = (truncateRequest)rq.getRequestArgs();
+        System.out.println("rq: "+args);
 
         if (args.getNew_file_size() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "new_file_size for truncate must be >= 0", ""));

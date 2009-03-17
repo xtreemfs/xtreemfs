@@ -13,6 +13,7 @@ import java.util.Map;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.DirectoryEntry;
@@ -59,7 +60,8 @@ public class mrc_ls {
             DirectoryEntrySet entries = r.get();
             r.freeBuffers();
             for (DirectoryEntry e : entries) {
-                System.out.println(e.getEntry_name()+"\t"+e.getStbuf().getMode());
+                System.out.println(e.getEntry_name()+"\t"+e.getStbuf().getMode()+"\t"+OutputUtils.formatBytes(e.getStbuf().getSize())+"\t"+
+                        e.getStbuf().getAttributes());
             }
             rpcClient.shutdown();
         } catch (Exception ex) {

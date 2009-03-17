@@ -170,9 +170,11 @@ public class OpenOperation extends MRCOperation {
             
             // get the current epoch, use (and increase) the truncate number if
             // the open mode is truncate
+            int trEpoch = file.getEpoch();
             if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
                 update = sMan.createAtomicDBUpdate(master, rq);
                 file.setIssuedEpoch(file.getIssuedEpoch() + 1);
+                trEpoch = file.getIssuedEpoch();
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
             
@@ -205,7 +207,7 @@ public class OpenOperation extends MRCOperation {
             Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                     .getGlobalTime()
                 / 1000 + Capability.DEFAULT_VALIDITY, ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(), master.getConfig()
+                    .getClientIdentity()).getAddress().getHostAddress(), trEpoch, master.getConfig()
                     .getCapabilitySecret());
             
             // update POSIX timestamps of file

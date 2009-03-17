@@ -31,6 +31,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
@@ -71,6 +72,8 @@ public final class ReadOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final readRequest args = (readRequest) rq.getRequestArgs();
 
+        System.out.println("rq: "+args);
+
         if (args.getObject_number() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
             return;
@@ -86,8 +89,14 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq, new ReadObjectCallback() {
+        if (args.getLength()+args.getOffset() > sp.getStripeSizeForObject(0)) {
+            rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "length + ofset must be <= "+sp.getStripeSizeForObject(0)+" (stripe size)", ""));
+            return;
+        }
+
+        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
@@ -193,6 +202,8 @@ public final class ReadOperation extends OSDOperation {
         master.objectSent();
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
+
+        System.out.println("resp: "+data);
         sendResponse(rq, data);
     }
 
