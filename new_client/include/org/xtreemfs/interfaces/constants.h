@@ -1,5 +1,5 @@
-#ifndef _64058480082_H
-#define _64058480082_H
+#ifndef _85971613189_H
+#define _85971613189_H
 
 #include <string>
 
@@ -30,6 +30,9 @@ namespace org
       const static uint32_t SYSTEM_V_FCNTL_H_O_CREAT = 0x0100;
       const static uint32_t SYSTEM_V_FCNTL_H_O_TRUNC = 0x0200;
       const static uint32_t SYSTEM_V_FCNTL_H_O_EXCL = 0x0400;
+      const static uint32_t SYSTEM_V_FCNTL_S_IFREG = 0x8000;
+      const static uint32_t SYSTEM_V_FCNTL_S_IFDIR = 0x4000;
+      const static uint32_t SYSTEM_V_FCNTL_S_IFLNK = 0xA000;
   
   
     };

@@ -1,6 +1,6 @@
 import sys, os.path
 
-SConscript( '../share/yieldfs/yieldfs.SConscript' )
+SConscript( '../share/yieldfs/proj/yieldfs/yieldfs.SConscript' )
 SConscript( '../share/yieldfs/share/yield/proj/yield/yield.SConscript' )    
 
 
