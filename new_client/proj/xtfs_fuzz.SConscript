@@ -63,7 +63,7 @@ for custom_SConscript in ["xtfs_fuzz_custom.SConscript"]:
 
     
 # Don't add libs until after xtfs_fuzz_custom.SConscript and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in []:
+for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if sys.platform.startswith( "win" ):

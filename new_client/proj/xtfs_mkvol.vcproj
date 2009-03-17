@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client_d.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
@@ -54,7 +54,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client_d.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
@@ -89,7 +89,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client_d.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
@@ -100,7 +100,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
@@ -134,7 +134,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client_d.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
@@ -145,7 +145,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies=""
+				AdditionalDependencies="xtreemfs-client.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)..\lib"
 				OutputFile="$(ProjectDir)..\bin\xtfs_mkvol.exe"
 				IgnoreAllDefaultLibraries="false"
