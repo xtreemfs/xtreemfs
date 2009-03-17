@@ -23,4 +23,7 @@ public interface Constants
     public static final int SYSTEM_V_FCNTL_H_O_CREAT = 0x0100;
     public static final int SYSTEM_V_FCNTL_H_O_TRUNC = 0x0200;
     public static final int SYSTEM_V_FCNTL_H_O_EXCL = 0x0400;
+    public static final int SYSTEM_V_FCNTL_S_IFREG = 0x8000;
+    public static final int SYSTEM_V_FCNTL_S_IFDIR = 0x4000;
+    public static final int SYSTEM_V_FCNTL_S_IFLNK = 0xA000;
 };
