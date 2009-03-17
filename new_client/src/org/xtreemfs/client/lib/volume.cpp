@@ -8,6 +8,17 @@ using namespace org::xtreemfs::client;
 
 #include <errno.h>
 
+const static uint32_t SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
+const static uint32_t SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;
+const static uint32_t SYSTEM_V_FCNTL_H_O_RDWR = 0x0002;
+const static uint32_t SYSTEM_V_FCNTL_H_O_APPEND = 0x0008;
+const static uint32_t SYSTEM_V_FCNTL_H_O_CREAT = 0x0100;
+const static uint32_t SYSTEM_V_FCNTL_H_O_TRUNC = 0x0200;
+const static uint32_t SYSTEM_V_FCNTL_H_O_EXCL = 0x0400;
+const static uint32_t SYSTEM_V_FCNTL_S_IFREG = 0x8000;
+const static uint32_t SYSTEM_V_FCNTL_S_IFDIR = 0x4000;
+const static uint32_t SYSTEM_V_FCNTL_S_IFLNK = 0xA000;
+
 
 Volume::Volume( const std::string& name, DIRProxy& dir_proxy, MRCProxy& mrc_proxy, OSDProxyFactory& osd_proxy_factory )
 : name( name ), dir_proxy( dir_proxy ), mrc_proxy( mrc_proxy ), osd_proxy_factory( osd_proxy_factory )
@@ -28,14 +39,9 @@ YIELD::Path Volume::get_name() const
   return name;
 }
 
-bool Volume::access( const YIELD::Path& path, mode_t mode )
+bool Volume::access( const YIELD::Path& path, int amode )
 {
-  return mrc_proxy.access( test_context, Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
-}
-
-void Volume::create( const YIELD::Path& path, mode_t mode )
-{
-  mrc_proxy.create( test_context, Path( this->name, path ), mode, mrc_proxy_operation_timeout_ms );
+  return mrc_proxy.access( test_context, Path( this->name, path ), amode, mrc_proxy_operation_timeout_ms );
 }
 
 void Volume::chmod( const YIELD::Path& path, mode_t mode )
@@ -56,7 +62,7 @@ YIELD::Stat Volume::getattr( const Path& path )
 {
   xtreemfs::interfaces::stat_ stbuf;
   mrc_proxy.getattr( test_context, path, stbuf, mrc_proxy_operation_timeout_ms );
-  return YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(), 
+  return YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(),
 #ifdef _WIN32
                       stbuf.get_attributes()
 #else
@@ -89,7 +95,44 @@ void Volume::mkdir( const YIELD::Path& path, mode_t mode )
 
 yieldfs::FileInterface& Volume::open( const YIELD::Path& path, uint32_t flags, mode_t mode )
 {
-  return mrc_and_local_open( Path( this->name, path ), flags, mode );
+  uint32_t system_v_flags = 0;
+#ifdef __linux__
+  if ( ( flags & O_WRONLY ) == O_WRONLY )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
+	flags ^= O_WRONLY;
+  }
+  if ( ( flags & O_RDWR ) == O_RDWR )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
+	flags ^= O_RDWR;
+  }
+  if ( ( flags & O_APPEND ) == O_APPEND )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
+	flags ^= O_APPEND;
+  }
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
+	flags ^= O_CREAT;
+  }
+  if ( ( flags & O_TRUNC ) == O_TRUNC )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
+	flags ^= O_TRUNC;
+  }
+  if ( ( flags & O_EXCL ) == O_EXCL )
+  {
+	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
+	flags ^= O_EXCL;
+  }
+  system_v_flags |= flags;
+#else
+  system_v_flags = flags;
+#endif
+
+  return mrc_and_local_open( Path( this->name, path ), system_v_flags, mode );
 }
 
 void Volume::readdir( const YIELD::Path& path, yieldfs::DirectoryFillerInterface& directory_filler )
@@ -168,7 +211,7 @@ void Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 
 void Volume::truncate( const YIELD::Path& path, off_t new_size )
 {
-  OpenFile& open_file = mrc_and_local_open( Path( this->name, path ), O_TRUNC, 0 );
+  OpenFile& open_file = mrc_and_local_open( Path( this->name, path ), org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC, 0 );
   open_file.truncate( new_size );
   YIELD::SharedObject::decRef( open_file );
 }
@@ -216,7 +259,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
 {
   if ( !file_credentials_set.empty() ) // We have to delete files on replica OSDs
   {
-    const org::xtreemfs::interfaces::FileCredentials& file_credentials = file_credentials_set[0];    
+    const org::xtreemfs::interfaces::FileCredentials& file_credentials = file_credentials_set[0];
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
     const org::xtreemfs::interfaces::ReplicaSet& replicas = file_credentials.get_xlocs().get_replicas();
     for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )

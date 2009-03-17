@@ -29,11 +29,11 @@ client_distclean:
 
 .PHONY:	new_client new_client_clean new_client_distclean
 new_client:
-	python new_client/share/yield/scons.py -C new_client
+	python new_client/scons.py -C new_client
 new_client_clean:
-	python new_client/share/yield/scons.py -C new_client -c
+	python new_client/scons.py -C new_client -c
 new_client_distclean:
-	python new_client/share/yield/scons.py -C new_client -c
+	python new_client/scons.py -C new_client -c
 
 .PHONY: server server_clean server_distclean
 server: check
