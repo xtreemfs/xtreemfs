@@ -73,7 +73,7 @@ public class StatusPage {
         StringBuffer sb = null;
         try {
             InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
-                    "org/xtreemfs/new_osd/templates/status.html");
+                    "org/xtreemfs/osd/templates/status.html");
             if (is == null) {
                 is = StatusPage.class.getClass().getResourceAsStream("../templates/status.html");
             }

@@ -43,10 +43,10 @@ import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.new_osd.storage.HashStorageLayout;
-import org.xtreemfs.new_osd.storage.MetadataCache;
-import org.xtreemfs.new_osd.storage.ObjectInformation;
-import org.xtreemfs.new_osd.storage.StorageLayout;
+import org.xtreemfs.osd.storage.HashStorageLayout;
+import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.test.SetupUtils;
 
 /**

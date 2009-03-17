@@ -18,7 +18,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.new_osd.client.OSDClient;
+import org.xtreemfs.osd.client.OSDClient;
 
 /**
  * 

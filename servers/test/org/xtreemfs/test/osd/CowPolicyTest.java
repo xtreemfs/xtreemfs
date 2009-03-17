@@ -6,8 +6,8 @@
 package org.xtreemfs.test.osd;
 
 import junit.framework.TestCase;
-import org.xtreemfs.new_osd.storage.CowPolicy;
-import org.xtreemfs.new_osd.storage.CowPolicy.cowMode;
+import org.xtreemfs.osd.storage.CowPolicy;
+import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 
 /**
  *

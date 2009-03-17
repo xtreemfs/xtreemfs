@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.new_osd.storage.CowPolicy;
+import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
  * This class models an OpenFileTable, storing the set of files in an 'open'

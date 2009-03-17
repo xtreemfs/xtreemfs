@@ -56,7 +56,7 @@ import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.new_osd.client.OSDClient;
+import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.utils.utils;
 
 public class RandomAccessFile implements ObjectStore {

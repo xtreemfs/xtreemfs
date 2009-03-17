@@ -46,7 +46,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.new_osd.client.OSDClient;
+import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 

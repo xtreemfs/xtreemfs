@@ -33,8 +33,8 @@ import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.new_osd.operations.OSDOperation;
-import org.xtreemfs.new_osd.storage.CowPolicy;
+import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
  * Request object.
