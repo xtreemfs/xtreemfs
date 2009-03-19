@@ -1,8 +1,8 @@
 #ifndef ORG_XTREEMFS_CLIENT_OPEN_FILE_H
 #define ORG_XTREEMFS_CLIENT_OPEN_FILE_H
 
-#include "file_replica.h"
-#include "yieldfs/file_interface.h"
+#include "org/xtreemfs/interfaces/mrc_osd_types.h"
+#include "yield.h"
 
 
 namespace org
@@ -11,18 +11,23 @@ namespace org
   {
     namespace client
     {
-      class OpenFile : public YIELD::SharedObject, public yieldfs::FileInterface
+      class FileReplica;
+
+
+      class OpenFile : public YIELD::File
       {
       public:
-        OpenFile( FileReplica& attached_to_file_replica, uint64_t open_flags, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+        OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_credentials, FileReplica& attached_to_file_replica );
         virtual ~OpenFile();
 
-        YIELDFS_FILEINTERFACE_PROTOTYPES;
+        // YIELD::File
+        virtual ssize_t read( void* buf, size_t nbyte, off_t offset );
+        virtual bool truncate( uint64_t offset );
+        virtual ssize_t write( const void* buf, size_t nbyte, off_t offset );
 
       private:
-        FileReplica& attached_to_file_replica;
-        uint64_t open_flags;
         org::xtreemfs::interfaces::FileCredentials file_credentials;
+        FileReplica& attached_to_file_replica;
       };
     };
   };

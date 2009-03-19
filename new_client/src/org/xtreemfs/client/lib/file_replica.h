@@ -2,6 +2,7 @@
 #define ORG_XTREEMFS_CLIENT_FILE_REPLICA_H
 
 #include "shared_file.h"
+#include "org/xtreemfs/interfaces/mrc_osd_types.h"
 
 
 namespace org
@@ -14,7 +15,7 @@ namespace org
       class OSDProxyFactory;    
 
 
-      class FileReplica : public FileInterface
+      class FileReplica
       {
       public:
         FileReplica( SharedFile& parent_shared_file, const org::xtreemfs::interfaces::StripingPolicy& striping_policy, const std::vector<std::string>& osd_uuids );
@@ -22,10 +23,10 @@ namespace org
 
         SharedFile& get_parent_shared_file() const { return parent_shared_file; }
         MRCProxy& get_mrc_proxy() const { return parent_shared_file.get_mrc_proxy(); }
-        uint64_t get_mrc_proxy_operation_timeout_ms() const { return parent_shared_file.get_mrc_proxy_operation_timeout_ms(); }
-        uint64_t get_osd_proxy_operation_timeout_ms() const { return parent_shared_file.get_osd_proxy_operation_timeout_ms(); }
 
-        ORG_XTREEMFS_CLIENT_FILEINTERFACE_PROTOTYPES;
+        size_t read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, off_t offset );
+        void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, off_t new_size );
+        size_t write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, off_t offset );
 
       private:
         SharedFile& parent_shared_file;

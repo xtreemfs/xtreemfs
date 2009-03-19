@@ -22,9 +22,9 @@ class XtreemFSFuzzerCPPStringType(FuzzerCPPStringType):
 
 class XtreemFSFuzzerCPPStructType(FuzzerCPPStructType):
     def getTestValues( self, identifier ):
-        if identifier == "context":
+        if identifier == "user_credentials":
             declaration_type_name = self.getDeclarationTypeName()
-            return ['StringSet group_ids; group_ids.push_back( "test" ); %(declaration_type_name)s %(identifier)s( "test", group_ids );' % locals()]
+            return ['%(declaration_type_name)s %(identifier)s( "test", StringSet( "test" ) );' % locals()]
         else:            
             return FuzzerCPPStructType.getTestValues( self, identifier )
 

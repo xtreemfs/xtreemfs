@@ -111,8 +111,6 @@ int main( int argc, char** argv )
       }
     }
 
-    // rpc_uri_str after - options
-
     if ( args.FileCount() >= 1 )
     {
       YIELD::URI rpc_uri( args.Files()[0] );
@@ -126,8 +124,9 @@ int main( int argc, char** argv )
         else { proxy = new MRCProxy( rpc_uri ); }
 
         std::string req_type_name( "org::xtreemfs::interfaces::" );
-        req_type_name.append( proxy->getEventHandlerName() );
-        req_type_name.append( "::" );
+        if ( dir ) req_type_name.append( "DIRInterface::" );
+        else if ( osd ) req_type_name.append( "OSDInterface::" );
+        else req_type_name.append( "MRCInterface::" );
         req_type_name.append( rpc_uri.getResource() + 1 );
         req_type_name.append( "SyncRequest" );
 

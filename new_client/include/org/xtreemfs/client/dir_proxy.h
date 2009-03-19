@@ -2,7 +2,6 @@
 #define ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 
 #include "org/xtreemfs/client/proxy.h"
-#define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_INTERFACE_PARENT_CLASS org::xtreemfs::client::Proxy
 #include "org/xtreemfs/interfaces/dir_interface.h"
 #include "org/xtreemfs/client/proxy.h"
 
@@ -16,19 +15,20 @@ namespace org
   {
     namespace client
     {
-      class DIRProxy : public org::xtreemfs::interfaces::DIRInterface
+      class DIRProxy : public Proxy
       {
       public:
-        DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS );
+        DIRProxy( const YIELD::URI& uri );
         virtual ~DIRProxy();
 
-        YIELD::URI get_uri_from_uuid( const std::string& uuid, uint64_t timeout_ms = static_cast<uint64_t>( -1 ) );
+        YIELD::URI getURIFromUUID( const std::string& uuid );
+        YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
 
         // EventHandler
-        virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }
+        const char* getEventHandlerName() const { return "DIRProxy"; }
 
       private:
-        ORG_XTREEMFS_INTERFACES_DIRINTERFACE_DUMMY_DEFINITIONS;
+        org::xtreemfs::interfaces::DIRInterface dir_interface;
 
         class CachedAddressMappingURI : public YIELD::URI
         {

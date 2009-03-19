@@ -2,9 +2,8 @@
 #include "file_replica.h"
 #include "open_file.h"
 #include "org/xtreemfs/client/osd_proxy_factory.h"
+#include "org/xtreemfs/client/volume.h"
 using namespace org::xtreemfs::client;
-
-#include <sstream>
 
 
 SharedFile::SharedFile( Volume& parent_volume, const Path& path, const org::xtreemfs::interfaces::XLocSet& xlocs )
@@ -22,32 +21,19 @@ SharedFile::~SharedFile()
   static_cast<SharedFileCallbackInterface&>( parent_volume ).close( *this );
 }
 
-YIELD::Stat SharedFile::getattr()
-{
-  return parent_volume.getattr( path );
+MRCProxy& SharedFile::get_mrc_proxy() const 
+{ 
+  return parent_volume.get_mrc_proxy(); 
 }
 
-OpenFile& SharedFile::open( uint64_t open_flags, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+OSDProxyFactory& SharedFile::get_osd_proxy_factory() const 
+{ 
+  return parent_volume.get_osd_proxy_factory(); 
+}
+
+OpenFile& SharedFile::open( const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
-  OpenFile* open_file = new OpenFile( *file_replicas[0], open_flags, file_credentials );
+  OpenFile* open_file = new OpenFile( file_credentials, *file_replicas[0] );
   SharedObject::incRef( *this );
   return *open_file;
 }
-
-size_t SharedFile::read( char* rbuf, size_t size, off_t offset, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-{
-  YIELD::DebugBreak();
-  return 0;
-}
-
-void SharedFile::truncate( off_t new_size, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-{
-  YIELD::DebugBreak();
-}
-
-size_t SharedFile::write( const char* wbuf, size_t size, off_t offset, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-{
-  YIELD::DebugBreak();
-  return 0;
-}
-

@@ -2,17 +2,31 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t flags )
+OSDProxy::OSDProxy( const YIELD::URI& uri )
+: Proxy( uri, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
 {
-  Proxy::init( uri, reconnect_tries_max, flags );
-  if ( this->uri->getPort() == 0 )
-  {
-    if ( strcmp( this->uri->getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 )
-      this->uri->setPort( org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPC_PORT );
-    else if ( strcmp( this->uri->getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
-      this->uri->setPort( org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT );
-    else
-      YIELD::DebugBreak();
-  }
-  org::xtreemfs::interfaces::OSDInterface::registerSerializableFactories( serializable_factories );
+  osd_interface.registerSerializableFactories( serializable_factories );
+}
+
+OSDProxy::~OSDProxy()
+{ }
+
+org::xtreemfs::interfaces::ObjectData OSDProxy::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length )
+{
+  return osd_interface.read( file_credentials, file_id, object_number, object_version, offset, length, this );
+}
+
+void OSDProxy::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response )
+{
+  osd_interface.truncate( file_credentials, file_id, new_file_size, osd_write_response, this );
+}
+
+void OSDProxy::unlink( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id )
+{
+  osd_interface.unlink( file_credentials, file_id, this );
+}
+
+void OSDProxy::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response )
+{
+  osd_interface.write( file_credentials, file_id, object_number, object_version, offset, lease_timeout, object_data, osd_write_response, this );
 }

@@ -1,7 +1,7 @@
 #ifndef ORG_XTREEMFS_CLIENT_PROXY_H
 #define ORG_XTREEMFS_CLIENT_PROXY_H
 
-#include "yield/ipc.h"
+#include "yield.h"
 
 #include "org/xtreemfs/client/proxy_exception_event.h"
 #include "org/xtreemfs/interfaces/exceptions.h"
@@ -20,25 +20,28 @@ namespace org
         const static uint32_t PROXY_FLAG_PRINT_OPERATIONS = 1;
         const static uint32_t PROXY_DEFAULT_FLAGS = 0;
 
-
         virtual ~Proxy();
 
+        uint32_t get_flags() const { return flags; }
+        void set_flags( uint32_t flags ) { this->flags = flags; }
+        uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
+        void set_reconnect_tries_max( uint8_t reconnect_tries_max ) { this->reconnect_tries_max = reconnect_tries_max; }
+
         YIELD::Request* createRequest( const char* type_name ) { return static_cast<YIELD::Request*>( serializable_factories.createSerializable( type_name ) ); }
-
-      protected:
-        Proxy(); // Must be a default constructor because xInterface inherits from Proxy
-        void init( const YIELD::URI&, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS ); // Called by subclasses to bypass EventHandler
-
-        YIELD::URI* uri;
-        uint8_t reconnect_tries_max;
-        uint32_t flags;
-
-        YIELD::SerializableFactories serializable_factories;
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev );
 
+      protected:
+        Proxy( const YIELD::URI&, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port );
+
+        YIELD::SerializableFactories serializable_factories;
+
       private:
+        YIELD::URI uri;
+
+        uint32_t flags;
+        uint8_t reconnect_tries_max;
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
 

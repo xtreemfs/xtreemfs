@@ -1,5 +1,9 @@
-#ifndef _13303512770_H
-#define _13303512770_H
+#ifndef _83980537392_H
+#define _83980537392_H
+
+
+
+
 
 namespace org
 {
@@ -16,19 +20,21 @@ namespace org
   
           void fuzz()
           {
-           fuzz_address_mappings_get();
-           fuzz_address_mappings_set();
-           fuzz_address_mappings_delete();
-           fuzz_service_register();
-           fuzz_service_deregister();
-           fuzz_service_get_by_type();
-           fuzz_service_get_by_uuid();
-           fuzz_service_get_by_name();
-           fuzz_global_time_get();
+           fuzz_xtreemfs_address_mappings_get();
+           fuzz_xtreemfs_address_mappings_remove();
+           fuzz_xtreemfs_address_mappings_set();
+           fuzz_xtreemfs_checkpoint();
+           fuzz_xtreemfs_global_time_get();
+           fuzz_xtreemfs_service_get_by_type();
+           fuzz_xtreemfs_service_get_by_uuid();
+           fuzz_xtreemfs_service_get_by_name();
+           fuzz_xtreemfs_service_register();
+           fuzz_xtreemfs_service_deregister();
+           fuzz_xtreemfs_shutdown();
           }
   
   
-           void fuzz_address_mappings_get()
+           void fuzz_xtreemfs_address_mappings_get()
            {
             {
            std::string uuid;
@@ -36,7 +42,7 @@ namespace org
   
              try
              {
-              test_interface.address_mappings_get( uuid, address_mappings );
+              test_interface.xtreemfs_address_mappings_get( uuid, address_mappings );
              }
              catch ( std::exception& )
              { }
@@ -48,7 +54,7 @@ namespace org
   
              try
              {
-              test_interface.address_mappings_get( uuid, address_mappings );
+              test_interface.xtreemfs_address_mappings_get( uuid, address_mappings );
              }
              catch ( std::exception& )
              { }
@@ -56,14 +62,40 @@ namespace org
            }
   
   
-           void fuzz_address_mappings_set()
+           void fuzz_xtreemfs_address_mappings_remove()
+           {
+            {
+           std::string uuid;
+  
+             try
+             {
+              test_interface.xtreemfs_address_mappings_remove( uuid );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           std::string uuid( "bogus string" );
+  
+             try
+             {
+              test_interface.xtreemfs_address_mappings_remove( uuid );
+             }
+             catch ( std::exception& )
+             { }
+            }
+           }
+  
+  
+           void fuzz_xtreemfs_address_mappings_set()
            {
             {
            org::xtreemfs::interfaces::AddressMappingSet address_mappings;
   
              try
              {
-              test_interface.address_mappings_set( address_mappings );
+              test_interface.xtreemfs_address_mappings_set( address_mappings );
              }
              catch ( std::exception& )
              { }
@@ -71,25 +103,14 @@ namespace org
            }
   
   
-           void fuzz_address_mappings_delete()
+           void fuzz_xtreemfs_checkpoint()
            {
             {
-           std::string uuid;
+           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
   
              try
              {
-              test_interface.address_mappings_delete( uuid );
-             }
-             catch ( std::exception& )
-             { }
-            }
-  
-            {
-           std::string uuid( "bogus string" );
-  
-             try
-             {
-              test_interface.address_mappings_delete( uuid );
+              test_interface.xtreemfs_checkpoint( user_credentials );
              }
              catch ( std::exception& )
              { }
@@ -97,28 +118,14 @@ namespace org
            }
   
   
-           void fuzz_service_register()
+           void fuzz_xtreemfs_global_time_get()
            {
             {
-           org::xtreemfs::interfaces::ServiceRegistry service;
-           {
-           std::string uuid;
-           uint64_t version = 0;
-           uint16_t service_type = 0;
-           std::string service_name;
-           uint64_t last_updated = 0;
-           org::xtreemfs::interfaces::ServiceRegistryDataMap data;
-            service.set_uuid( uuid );
-            service.set_version( version );
-            service.set_service_type( service_type );
-            service.set_service_name( service_name );
-            service.set_last_updated( last_updated );
-            service.set_data( data );
-           }
+  
   
              try
              {
-              test_interface.service_register( service );
+              test_interface.xtreemfs_global_time_get();
              }
              catch ( std::exception& )
              { }
@@ -126,41 +133,15 @@ namespace org
            }
   
   
-           void fuzz_service_deregister()
-           {
-            {
-           std::string uuid;
-  
-             try
-             {
-              test_interface.service_deregister( uuid );
-             }
-             catch ( std::exception& )
-             { }
-            }
-  
-            {
-           std::string uuid( "bogus string" );
-  
-             try
-             {
-              test_interface.service_deregister( uuid );
-             }
-             catch ( std::exception& )
-             { }
-            }
-           }
-  
-  
-           void fuzz_service_get_by_type()
+           void fuzz_xtreemfs_service_get_by_type()
            {
             {
            uint16_t type = 0;
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_type( type, services );
+              test_interface.xtreemfs_service_get_by_type( type, services );
              }
              catch ( std::exception& )
              { }
@@ -168,11 +149,11 @@ namespace org
   
             {
            uint16_t type = UINT16_MAX;
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_type( type, services );
+              test_interface.xtreemfs_service_get_by_type( type, services );
              }
              catch ( std::exception& )
              { }
@@ -180,15 +161,15 @@ namespace org
            }
   
   
-           void fuzz_service_get_by_uuid()
+           void fuzz_xtreemfs_service_get_by_uuid()
            {
             {
            std::string uuid;
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_uuid( uuid, services );
+              test_interface.xtreemfs_service_get_by_uuid( uuid, services );
              }
              catch ( std::exception& )
              { }
@@ -196,11 +177,11 @@ namespace org
   
             {
            std::string uuid( "bogus string" );
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_uuid( uuid, services );
+              test_interface.xtreemfs_service_get_by_uuid( uuid, services );
              }
              catch ( std::exception& )
              { }
@@ -208,27 +189,27 @@ namespace org
            }
   
   
-           void fuzz_service_get_by_name()
+           void fuzz_xtreemfs_service_get_by_name()
            {
             {
-           std::string service_name;
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           std::string name;
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_name( service_name, services );
+              test_interface.xtreemfs_service_get_by_name( name, services );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           std::string service_name( "bogus string" );
-           org::xtreemfs::interfaces::ServiceRegistrySet services;
+           std::string name( "bogus string" );
+           org::xtreemfs::interfaces::ServiceSet services;
   
              try
              {
-              test_interface.service_get_by_name( service_name, services );
+              test_interface.xtreemfs_service_get_by_name( name, services );
              }
              catch ( std::exception& )
              { }
@@ -236,14 +217,844 @@ namespace org
            }
   
   
-           void fuzz_global_time_get()
+           void fuzz_xtreemfs_service_register()
            {
             {
-  
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
   
              try
              {
-              test_interface.global_time_get();
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid;
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = 0;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = 0;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name;
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = 0;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::Service service;
+           {
+           std::string uuid( "bogus string" );
+           uint64_t version = UINT64_MAX;
+           uint16_t type = UINT16_MAX;
+           std::string name( "bogus string" );
+           uint64_t last_updated = UINT64_MAX;
+           org::xtreemfs::interfaces::ServiceDataMap data;
+            service.set_uuid( uuid );
+            service.set_version( version );
+            service.set_type( type );
+            service.set_name( name );
+            service.set_last_updated( last_updated );
+            service.set_data( data );
+           }
+  
+             try
+             {
+              test_interface.xtreemfs_service_register( service );
+             }
+             catch ( std::exception& )
+             { }
+            }
+           }
+  
+  
+           void fuzz_xtreemfs_service_deregister()
+           {
+            {
+           std::string uuid;
+  
+             try
+             {
+              test_interface.xtreemfs_service_deregister( uuid );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           std::string uuid( "bogus string" );
+  
+             try
+             {
+              test_interface.xtreemfs_service_deregister( uuid );
+             }
+             catch ( std::exception& )
+             { }
+            }
+           }
+  
+  
+           void fuzz_xtreemfs_shutdown()
+           {
+            {
+           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
+  
+             try
+             {
+              test_interface.xtreemfs_shutdown( user_credentials );
              }
              catch ( std::exception& )
              { }

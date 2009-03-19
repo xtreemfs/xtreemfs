@@ -1,8 +1,8 @@
-#ifndef _92383987148_H
-#define _92383987148_H
+#ifndef _34740603337_H
+#define _34740603337_H
 
-#include <string>
 #include "yield/arch.h"
+#include <string>
 
 
 namespace org
@@ -162,74 +162,6 @@ namespace org
         std::string to_uuid;
         };
   
-        class MRCException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
-        {
-        public:
-          MRCException() : error_code( 0 ) { }
-        MRCException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
-        MRCException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
-          MRCException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
-          virtual ~MRCException() throw() { }
-  
-        void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
-        uint32_t get_error_code() const { return error_code; }
-        void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
-        void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
-        const std::string& get_error_message() const { return error_message; }
-        void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
-        void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
-        const std::string& get_stack_trace() const { return stack_trace; }
-  
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::MRCException", 32377859UL );
-  
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new MRCException( error_code, error_message, stack_trace); }
-          virtual void throwStackClone() const { throw MRCException( error_code, error_message, stack_trace); }
-        // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-  
-      protected:
-        uint32_t error_code;
-        std::string error_message;
-        std::string stack_trace;
-        };
-  
-        class OSDException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
-        {
-        public:
-          OSDException() : error_code( 0 ) { }
-        OSDException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
-        OSDException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
-          OSDException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
-          virtual ~OSDException() throw() { }
-  
-        void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
-        uint32_t get_error_code() const { return error_code; }
-        void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
-        void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
-        const std::string& get_error_message() const { return error_message; }
-        void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
-        void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
-        const std::string& get_stack_trace() const { return stack_trace; }
-  
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::OSDException", 3594163714UL );
-  
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new OSDException( error_code, error_message, stack_trace); }
-          virtual void throwStackClone() const { throw OSDException( error_code, error_message, stack_trace); }
-        // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-  
-      protected:
-        uint32_t error_code;
-        std::string error_message;
-        std::string stack_trace;
-        };
-  
         class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -291,8 +223,6 @@ namespace org
           serializable_factories.registerSerializableFactory( 1268393568UL, new YIELD::SerializableFactoryImpl<ProtocolException> );
           serializable_factories.registerSerializableFactory( 405273943UL, new YIELD::SerializableFactoryImpl<errnoException> );
           serializable_factories.registerSerializableFactory( 3273969329UL, new YIELD::SerializableFactoryImpl<RedirectException> );
-          serializable_factories.registerSerializableFactory( 32377859UL, new YIELD::SerializableFactoryImpl<MRCException> );
-          serializable_factories.registerSerializableFactory( 3594163714UL, new YIELD::SerializableFactoryImpl<OSDException> );
           serializable_factories.registerSerializableFactory( 769608203UL, new YIELD::SerializableFactoryImpl<ConcurrentModificationException> );
           serializable_factories.registerSerializableFactory( 690678936UL, new YIELD::SerializableFactoryImpl<InvalidArgumentException> );
         }

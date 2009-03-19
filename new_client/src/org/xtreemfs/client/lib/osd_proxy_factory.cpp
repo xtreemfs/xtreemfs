@@ -8,14 +8,14 @@ OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_pr
   : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group ), osd_proxy_reconnect_tries_max( osd_proxy_reconnect_tries_max ), osd_proxy_flags( osd_proxy_flags )
 { }
 
-OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid, uint64_t timeout_ms )
+OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
 {
-  return createOSDProxy( dir_proxy.get_uri_from_uuid( uuid, timeout_ms ) );
+  return createOSDProxy( dir_proxy.getURIFromUUID( uuid ) );
 }
 
 OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
-  OSDProxy* osd_proxy = new OSDProxy( uri, osd_proxy_reconnect_tries_max, osd_proxy_flags );
+  OSDProxy* osd_proxy = new OSDProxy( uri ); // , osd_proxy_reconnect_tries_max, osd_proxy_flags );
   osd_proxy_stage_group.createStage( *osd_proxy );
   return *osd_proxy;
 }

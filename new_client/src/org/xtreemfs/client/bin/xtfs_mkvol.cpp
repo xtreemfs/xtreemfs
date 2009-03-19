@@ -35,7 +35,6 @@ int main( int argc, char** argv )
 {
   // Options to fill
   bool debug = false;
-  std::string volume_uri_str; YIELD::URI* volume_uri = NULL;
   uint8_t striping_policy_id = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT; size_t striping_policy_size = 4, striping_policy_width = 1;
   int osd_selection = 1, access_policy = 2, mode = 0;
   std::string cert_file, dirservice;
@@ -92,32 +91,25 @@ int main( int argc, char** argv )
       }
     }
 
-    // volume_uri after - options
     if ( args.FileCount() >= 1 )
-      volume_uri_str = args.Files()[0];
+    {
+      YIELD::URI volume_uri( args.Files()[0] );
+      if ( strlen( volume_uri.getResource() ) <= 1 )
+        throw YIELD::Exception( "volume URI must include a volume name" );
+
+      if ( debug )
+        YIELD::SocketConnection::setTraceSocketIO( true );  
+
+      MRCProxy( volume_uri ).mkvol( volume_uri.getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
+
+      return 0;
+    }
     else
       throw YIELD::Exception( "must specify volume URI" );
-
-    volume_uri = new YIELD::URI( volume_uri_str );
-    if ( strlen( volume_uri->getResource() ) <= 1 )
-      throw YIELD::Exception( "volume URI must include a volume name" );
-
-    if ( debug )
-      YIELD::SocketConnection::setTraceSocketIO( true );  
-
-    MRCProxy mrc_proxy( *volume_uri );
-    org::xtreemfs::interfaces::StringSet group_ids; group_ids.push_back( "test" );
-    mrc_proxy.mkvol( org::xtreemfs::interfaces::Context( "test", group_ids ), "", volume_uri->getResource()+1, org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE, org::xtreemfs::interfaces::StripingPolicy( striping_policy_id, striping_policy_size, striping_policy_width ), org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL );
-
-    delete volume_uri;
-
-    return 0;
   }
   catch ( std::exception& exc )
   {
     std::cerr << "Error creating volume: " << exc.what() << std::endl;  
-
-    delete volume_uri;
 
     return 1;
   }

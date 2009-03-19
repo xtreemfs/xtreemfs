@@ -22,9 +22,13 @@ python %YIDL_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %X
 python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin
 
 
-REM Generate project files
-cd proj
+REM Generate project files 
+REM Library projects
+cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\lib
 python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\lib -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\interfaces -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+
+REM Binary projects
+cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\bin
 python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-test -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtreemfs-client-test.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mount.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
@@ -33,5 +37,9 @@ python %YIDL_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s %XTREEMFS_CLIENT
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_send.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_fuzz.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\*_fuzzer.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 
+REM Policy projects
+cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\policies
+python %YIDL_PATH%\bin\generate_proj.py -n win_get_user_credentials -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\policies\win_get_user_credentials.cpp -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib
 
+ 
 cd %XTREEMFS_CLIENT_PATH%

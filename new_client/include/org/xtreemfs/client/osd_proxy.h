@@ -2,7 +2,6 @@
 #define ORG_XTREEMFS_CLIENT_OSD_PROXY_H
 
 #include "org/xtreemfs/client/proxy.h"
-#define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS org::xtreemfs::client::Proxy
 #include "org/xtreemfs/interfaces/osd_interface.h"
 
 
@@ -12,16 +11,22 @@ namespace org
   {
     namespace client
     {
-      class OSDProxy : public org::xtreemfs::interfaces::OSDInterface
+      class OSDProxy : public Proxy
       {
       public:
-        OSDProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t flags = PROXY_DEFAULT_FLAGS );
+        OSDProxy( const YIELD::URI& uri );
+        virtual ~OSDProxy();
+
+        org::xtreemfs::interfaces::ObjectData read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length );
+        void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
+        void unlink( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );
+        void write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
 
         // EventHandler
-        virtual void handleEvent( YIELD::Event& ev ) { Proxy::handleEvent( ev ); }
+        const char* getEventHandlerName() const { return "OSDProxy"; }
 
       private:
-        ORG_XTREEMFS_INTERFACES_OSDINTERFACE_DUMMY_DEFINITIONS;
+        org::xtreemfs::interfaces::OSDInterface osd_interface;
       };
     };
   };

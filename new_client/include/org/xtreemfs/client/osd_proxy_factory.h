@@ -20,7 +20,7 @@ namespace org
         OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max = 3, uint32_t osd_proxy_flags = 0 );
         virtual ~OSDProxyFactory() { }
 
-        OSDProxy& createOSDProxy( const std::string& uuid, uint64_t timeout_ms = static_cast<uint64_t>( -1 ) );
+        OSDProxy& createOSDProxy( const std::string& uuid );
 
       private:
         DIRProxy& dir_proxy;

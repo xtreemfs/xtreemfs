@@ -2,19 +2,10 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t flags )
+DIRProxy::DIRProxy( const YIELD::URI& uri ) 
+  : Proxy( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )
 {
-  Proxy::init( uri, reconnect_tries_max, flags );
-  if ( this->uri->getPort() == 0 )
-  {
-    if ( strcmp( this->uri->getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 )
-      this->uri->setPort( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
-    else if ( strcmp( this->uri->getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
-      this->uri->setPort( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT );
-    else
-      YIELD::DebugBreak();
-  }
-  xtreemfs::interfaces::DIRInterface::registerSerializableFactories( serializable_factories );
+  dir_interface.registerSerializableFactories( serializable_factories );
 }
 
 DIRProxy::~DIRProxy()
@@ -23,7 +14,7 @@ DIRProxy::~DIRProxy()
     delete uuid_to_uri_i->second;
 }
 
-YIELD::URI DIRProxy::get_uri_from_uuid( const std::string& uuid, uint64_t timeout_ms )
+YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
 {
   if ( uuid_to_uri_cache_lock.try_acquire() )
   {
@@ -49,7 +40,7 @@ YIELD::URI DIRProxy::get_uri_from_uuid( const std::string& uuid, uint64_t timeou
   }
 
   org::xtreemfs::interfaces::AddressMappingSet address_mappings;
-  this->address_mappings_get( uuid, address_mappings, timeout_ms );
+  dir_interface.xtreemfs_address_mappings_get( uuid, address_mappings, this );
   if ( !address_mappings.empty() )
   {
     const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];
@@ -64,3 +55,26 @@ YIELD::URI DIRProxy::get_uri_from_uuid( const std::string& uuid, uint64_t timeou
   else 
     throw YIELD::Exception( "could not find address mapping for UUID" );
 }
+
+YIELD::URI DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
+{
+  org::xtreemfs::interfaces::ServiceSet services;
+  dir_interface.xtreemfs_service_get_by_name( volume_name, services, this );
+  if ( !services.empty() )
+  {
+    for ( org::xtreemfs::interfaces::ServiceSet::const_iterator service_i = services.begin(); service_i != services.end(); service_i++ )
+    {
+      const org::xtreemfs::interfaces::ServiceDataMap& data = ( *service_i ).get_data();
+      for ( org::xtreemfs::interfaces::ServiceDataMap::const_iterator service_data_i = data.begin(); service_data_i != data.end(); service_data_i++ )
+      {
+        if ( service_data_i->first == "mrc" )
+          return YIELD::URI( getURIFromUUID( service_data_i->second ) );
+      }
+    }
+
+    throw YIELD::Exception( "unknown volume" );
+  }
+  else
+    throw YIELD::Exception( "unknown volume" );
+}
+

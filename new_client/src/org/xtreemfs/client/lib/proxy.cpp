@@ -5,25 +5,31 @@ using namespace org::xtreemfs::client;
 
 #include <errno.h>
 #ifdef _WIN32
-#include "yield/platform/sockets.h"
+#include "yield/ipc/sockets.h"
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 
 
-Proxy::Proxy() 
-  : uri( NULL ), reconnect_tries_max( 0 ), flags( 0 ),
-    peer_ip( 0 ), conn( NULL )
-{
-  xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
-}
-
-void Proxy::init( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t flags )
+Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port ) : uri( uri )
 {
   if ( strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 || strcmp( uri.getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
   {
-    this->uri = new YIELD::URI( uri );
-    this->reconnect_tries_max = reconnect_tries_max;
-    this->flags = flags;
+    if ( this->uri.getPort() == 0 )
+    {
+      if ( strcmp( this->uri.getScheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 )
+        this->uri.setPort( default_oncrpc_port );
+      else if ( strcmp( this->uri.getScheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
+        this->uri.setPort( default_oncrpcs_port );
+      else
+        YIELD::DebugBreak();
+    }
+
+    this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
+    this->flags = PROXY_DEFAULT_FLAGS;
+    this->peer_ip = 0;
+    this->conn = 0;
+
+    org::xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
   }
   else
     throw YIELD::Exception( "unknown URI scheme" );
@@ -31,7 +37,6 @@ void Proxy::init( const YIELD::URI& uri, uint8_t reconnect_tries_max, uint32_t f
 
 Proxy::~Proxy()
 {
-  delete uri;
   delete conn;
 }
 
@@ -81,8 +86,8 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
 {
   if ( peer_ip == 0 )
   {
-    peer_ip = YIELD::SocketLib::resolveHost( uri->getHost() );
-    if ( peer_ip == 0 && ( strcmp( uri->getHost(), "localhost" ) == 0 || strcmp( uri->getHost(), "127.0.0.1" ) == 0 ) )
+    peer_ip = YIELD::SocketLib::resolveHost( uri.getHost() );
+    if ( peer_ip == 0 && ( strcmp( uri.getHost(), "localhost" ) == 0 || strcmp( uri.getHost(), "127.0.0.1" ) == 0 ) )
       peer_ip = YIELD::SocketLib::resolveHost( YIELD::SocketLib::getLocalHostFQDN() );
     if ( peer_ip == 0 )
       throw new YIELD::PlatformExceptionEvent();
@@ -102,8 +107,8 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
 
 
     // Create the conn object based on the URI type
-    if ( strcmp( uri->getScheme(), "oncrpc" ) == 0 )
-      conn = new YIELD::TCPConnection( peer_ip, uri->getPort(), NULL );
+    if ( strcmp( uri.getScheme(), "oncrpc" ) == 0 )
+      conn = new YIELD::TCPConnection( peer_ip, uri.getPort(), NULL );
     else
       YIELD::DebugBreak();
 

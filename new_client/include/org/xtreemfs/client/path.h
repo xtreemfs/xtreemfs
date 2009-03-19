@@ -1,7 +1,7 @@
 #ifndef ORG_XTREEMFS_CLIENT_XTREEMFS_PATH_H
 #define ORG_XTREEMFS_CLIENT_XTREEMFS_PATH_H
 
-#include "yield/arch.h"
+#include "yield.h"
 
 
 namespace org

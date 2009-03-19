@@ -1,9 +1,10 @@
 #include "open_file.h"
+#include "file_replica.h"
 using namespace org::xtreemfs::client;
 
 
-OpenFile::OpenFile( FileReplica& attached_to_file_replica, uint64_t open_flags, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-: attached_to_file_replica( attached_to_file_replica ), open_flags( open_flags ), file_credentials( file_credentials )
+OpenFile::OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_credentials, FileReplica& attached_to_file_replica )
+: file_credentials( file_credentials ), attached_to_file_replica( attached_to_file_replica )
 { }
 
 OpenFile::~OpenFile()
@@ -11,22 +12,18 @@ OpenFile::~OpenFile()
   SharedObject::decRef( attached_to_file_replica.get_parent_shared_file() );
 }
 
-YIELD::Stat OpenFile::getattr()
+ssize_t OpenFile::read( void* rbuf, size_t size, off_t offset )
 {
-  return attached_to_file_replica.getattr();
+  return attached_to_file_replica.read( file_credentials, rbuf, size, offset );
 }
 
-size_t OpenFile::read( char* rbuf, size_t size, off_t offset )
+bool OpenFile::truncate( uint64_t new_size )
 {
-  return attached_to_file_replica.read( rbuf, size, offset, file_credentials );
+  attached_to_file_replica.truncate( file_credentials, new_size );
+  return true;
 }
 
-void OpenFile::truncate( off_t new_size )
+ssize_t OpenFile::write( const void* wbuf, size_t size, off_t offset )
 {
-  attached_to_file_replica.truncate( new_size, file_credentials );
-}
-
-size_t OpenFile::write( const char* wbuf, size_t size, off_t offset )
-{
-  return attached_to_file_replica.write( wbuf, size, offset, file_credentials );
+  return attached_to_file_replica.write( file_credentials, wbuf, size, offset );
 }
