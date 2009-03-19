@@ -8,12 +8,6 @@ module org
   {
     module interfaces
     {
-      struct Context
-      {
-          string user_id;
-          StringSet group_ids;
-      };
-
       struct stat_
       {
         uint32_t mode;
@@ -26,24 +20,21 @@ module org
         uint64_t mtime;
         uint64_t ctime;
 
-
-        //xtreemfs specific attrs
+        // XtreemFS-specific attributes
         string user_id;
         string group_id;
         string file_id;
         string link_target;
-        uint8_t object_type;
         uint32_t truncate_epoch;
 
-        // Win32
+        // Win32-specific attributes
         uint32_t attributes;
       };
 
       struct DirectoryEntry
       {
-        string        entry_name;
+        string        name;
         stat_         stbuf;
-        string        link_target;
       };
 
       typedef sequence<DirectoryEntry> DirectoryEntrySet;
@@ -56,87 +47,58 @@ module org
         uint32_t namelen;
       };
 
-      typedef sequence<FileCredentials> FileCredentialsSet;
       typedef sequence<StripingPolicy>  StripingPolicySet;
+
 
       interface MRCInterface #2
       {
+        // Constants
         const uint32_t DEFAULT_ONCRPC_PORT = 32636;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32636;
         const uint32_t DEFAULT_HTTP_PORT = 30636;
 
 
-        // admin operations
+        // Exceptions
+        exception MRCException { uint32_t error_code; string error_message; string stack_trace; };
 
-        void admin_shutdown( string password ) # 50;
 
-        void admin_checkpoint( string password ) # 51;
+        // POSIX/FUSE functions
+        boolean access( UserCredentials user_credentials, string path, uint32_t mode ) # 1;
+        void chmod( UserCredentials user_credentials, string path, uint32_t mode ) # 2;
+        void chown( UserCredentials user_credentials, string path, string user_id, string group_id ) # 3;
+        void create( UserCredentials user_credentials, string path, uint32_t mode ) # 4;
+        void getattr( UserCredentials user_credentials, string path, out stat_ stbuf ) # 5;
+        string getxattr( UserCredentials user_credentials, string path, string name ) # 6;
+        void link( UserCredentials user_credentials, string target_path, string link_path ) # 7;
+        void listxattr( UserCredentials user_credentials, string path, out StringSet names ) # 8;
+        void mkdir( UserCredentials user_credentials, string path, uint32_t mode ) # 9;
+        void open( UserCredentials user_credentials, string path, uint32_t flags, uint32_t mode, out FileCredentials file_credentials ) # 11;
+        void readdir( UserCredentials user_credentials, string path, out DirectoryEntrySet directory_entries ) # 12;
+        void removexattr( UserCredentials user_credentials, string path, string name ) # 13;
+        void rename( UserCredentials user_credentials, string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
+        void rmdir( UserCredentials user_credentials, string path ) # 15;
+        void setattr( UserCredentials user_credentials, string path, stat_ stbuf ) # 17;
+        void setxattr( UserCredentials user_credentials, string path, string name, string value, int flags ) # 18;
+        void statfs( UserCredentials user_credentials, string volume_name, out statfs_ statfsbuf ) # 19;
+        void symlink( UserCredentials user_credentials, string target_path, string link_path ) # 20;
+        void unlink( UserCredentials user_credentials, string path, out FileCredentialsSet file_credentials ) # 21;
+        void utime( UserCredentials user_credentials, string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
 
-        void admin_dump_database( string password, string dump_file ) # 52;
 
-        void admin_restore_database( string password, string dump_file ) #53;
-
-        // POSIX metadata calls
-
-        boolean access( Context context, string path, uint32_t mode ) # 1;
-
-        void chmod( Context context, string path, uint32_t mode ) # 2;
-
-        void chown( Context context, string path, string userId, string groupId ) # 3;
-
-        void create( Context context, string path, uint32_t mode ) # 4;
-
-        void getattr( Context context, string path, out stat_ stbuf ) # 5;
-
-        string getxattr( Context context, string path, string name ) # 6;
-
-        void link( Context context, string target_path, string link_path ) # 7;
-
-        void listxattr( Context context, string path, out StringSet names ) # 8;
-
-        void mkdir( Context context, string path, uint32_t mode ) # 9;
-
-        void mkvol( Context context, string password, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
-
-        void open( Context context, string path, uint32_t flags, uint32_t mode, out FileCredentials credentials ) # 11;
-
-        void readdir( Context context, string path, out DirectoryEntrySet directory_entries ) # 12;
-
-        void removexattr( Context context, string path, string name ) # 13;
-
-        void rename( Context context, string source_path, string target_path, out FileCredentialsSet credentials ) # 14;
-        
-        void rmdir( Context context, string path ) # 15;
-
-        void rmvol( Context context, string password, string volume_name ) # 16;
-
-        void setattr( Context context, string path, stat_ stbuf ) # 17;
-
-        void setxattr( Context context, string path, string name, string value, int flags ) # 18;
-
-        void statfs( Context context, string volume_name, out statfs_ statfsbuf ) # 19;
-
-        void symlink( Context context, string target_path, string link_path ) # 20;
-
-        void unlink( Context context, string path, out FileCredentialsSet credentials ) # 21;
-
-        void utime( Context context, string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
-
-        //xtreemfs specific metadata operations
-
-        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
-
-        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
-
-        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
-
-        void xtreemfs_replica_add( Context context, string file_id, Replica new_replica ) # 26;
-
-        void xtreemfs_replica_remove( Context context, string file_id, string osd_uuid ) # 27;
-
-        void xtreemfs_restore_file(string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
-
-        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 29;
+        // XtreemFS-specific functions
+        void xtreemfs_checkpoint( UserCredentials user_credentials ) # 51;
+        void xtreemfs_check_file_exists( UserCredentials user_credentials, string volume_id, StringSet file_ids, out string bitmap ) # 23;
+        void xtreemfs_dump_database( UserCredentials user_credentials, string dump_file ) # 52;
+        void xtreemfs_get_suitable_osds( UserCredentials user_credentials, string file_id, out StringSet osd_uuids ) # 24;
+        void xtreemfs_mkvol( UserCredentials user_credentials, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
+        void xtreemfs_renew_capability( UserCredentials user_credentials, in XCap old_xcap, out XCap renewed_xcap ) # 25;
+        void xtreemfs_replica_add( UserCredentials user_credentials, string file_id, Replica new_replica ) # 26;
+        void xtreemfs_replica_remove( UserCredentials user_credentials, string file_id, string osd_uuid ) # 27;
+        void xtreemfs_restore_database( UserCredentials user_credentials, string dump_file ) #53;
+        void xtreemfs_restore_file( UserCredentials user_credentials, string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
+        void xtreemfs_rmvol( UserCredentials user_credentials, string volume_name ) # 16;
+        void xtreemfs_shutdown( UserCredentials user_credentials ) # 50;
+        void xtreemfs_update_file_size(UserCredentials user_credentials,  XCap xcap, OSDWriteResponse osd_write_response ) # 29;
       };
     };
   };

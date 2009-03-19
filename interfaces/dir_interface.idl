@@ -1,4 +1,5 @@
 #include "constants.idl"
+#include "types.idl"
 
 
 module org
@@ -20,19 +21,19 @@ module org
 
       typedef sequence<AddressMapping> AddressMappingSet;
 
-      typedef map<string, string> ServiceRegistryDataMap;
+      typedef map<string, string> ServiceDataMap;
 
-      struct ServiceRegistry 
+      struct Service 
       {
         string uuid;
         uint64_t version;
-        uint16_t service_type;
-        string   service_name;
+        uint16_t type;
+        string   name;
         uint64_t last_updated;
-        ServiceRegistryDataMap data;
+        ServiceDataMap data;
       };
 
-      typedef sequence<ServiceRegistry> ServiceRegistrySet;
+      typedef sequence<Service> ServiceSet;
 
 
       interface DIRInterface # 1
@@ -42,30 +43,21 @@ module org
         const uint32_t DEFAULT_HTTP_PORT = 30638; 
 
 
-        //returns the address mappings for uuid or all mappings stored in the DB for uuid="*"
-        void address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
+        void xtreemfs_address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
+        void xtreemfs_address_mappings_remove( string uuid ) # 3;
+        uint64_t xtreemfs_address_mappings_set( AddressMappingSet address_mappings ) # 2;
 
-        //throws a ConcurrentModificationException if the entry was modified by another process
-        uint64_t address_mappings_set( AddressMappingSet address_mappings ) # 2;
+        void xtreemfs_checkpoint( UserCredentials user_credentials ) # 50;
 
-        void     address_mappings_delete( string uuid ) # 3;
+        uint64_t xtreemfs_global_time_get() # 8;
 
-        //throws a ConcurrentModificationException if the entry was modified by another process
-        uint64_t service_register( ServiceRegistry service ) # 4;
+        void xtreemfs_service_get_by_type( uint16_t type, out ServiceSet services ) #6;
+        void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 7;
+	      void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 9;
+        uint64_t xtreemfs_service_register( Service service ) # 4;
+        void xtreemfs_service_deregister( string uuid ) # 5;
 
-        void     service_deregister( string uuid ) # 5;
-
-        void     service_get_by_type( uint16_t type, out ServiceRegistrySet services) # 6;
-
-        void     service_get_by_uuid( string uuid, out ServiceRegistrySet services) # 7;
-
-	void     service_get_by_name( string service_name, out ServiceRegistrySet services) # 9;
-
-        uint64_t global_time_get() # 8;
-
-        //admin operations
-        void     admin_checkpoint( string password ) # 50;
-        void     admin_shutdown( string password ) # 51;
+        void xtreemfs_shutdown( UserCredentials user_credentials ) # 51;
       };
     };
   };

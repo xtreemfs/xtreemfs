@@ -1,0 +1,16 @@
+module org
+{
+  module xtreemfs
+  {
+    module interfaces
+    {
+      typedef sequence<string> StringSet;
+
+      struct UserCredentials
+      {
+        string user_id;
+        StringSet group_ids;
+      };
+    };
+  };
+};

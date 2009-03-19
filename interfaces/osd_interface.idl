@@ -8,59 +8,54 @@ module org
   {
     module interfaces
     {
-      struct ObjectData
-      {
-        string   checksum;
-        uint32_t zero_padding;
-        boolean  invalid_checksum_on_osd;
-        Serializable data;
-      };
-
       struct InternalGmax
       {
-          uint64_t epoch;
-          uint64_t last_object_id;
-          uint64_t file_size;
+        uint64_t epoch;
+        uint64_t last_object_id;
+        uint64_t file_size;
+      };
+
+      struct ObjectData
+      {
+        Serializable data;
+        uint32_t checksum;
+        uint32_t zero_padding;
+        boolean invalid_checksum_on_osd;
       };
 
       struct InternalReadLocalResponse
       {
-          NewFileSize file_size;
-          uint32_t zero_padding;
-          ObjectData data;
+        NewFileSize new_file_size;
+        uint32_t zero_padding;
+        ObjectData data;
       };
 
 
       interface OSDInterface # 3
       {
+        // Constants
         const uint32_t DEFAULT_ONCRPC_PORT = 32640;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32640;
         const uint32_t DEFAULT_HTTP_PORT = 30640; 
 
 
-        ObjectData read( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) # 1;
+        // Exceptions
+        exception OSDException { uint32_t error_code; string error_message; string stack_trace; };
 
-        void truncate( string file_id, FileCredentials credentials, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 2;
 
-        void unlink( string file_id, FileCredentials credentials ) # 3;
+        // FUSE/POSIX functions
+        ObjectData read( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) # 1;
+        void truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 2;
+        void unlink( FileCredentials file_credentials, string file_id ) # 3;
+        void write( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData object_data, out OSDWriteResponse osd_write_response ) # 4;
 
-        void write( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData object_data, out OSDWriteResponse osd_write_response ) # 4;
 
-        void keep_file_open( string file_id, FileCredentials credentials ) # 5;
-
-        
-        //internal operations, only to be used for OSD-to-OSD communication
-        InternalGmax internal_get_gmax(string file_id, FileCredentials credentials) # 100;
-
-        void  internal_truncate(string file_id, FileCredentials credentials, uint64_t new_file_size) # 101;
-
-        InternalReadLocalResponse  internal_read_local(string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length) # 102;
-
-        ObjectData check_object( string file_id, FileCredentials credentials, uint64_t object_number, uint64_t object_version) # 103;
-
-        //admin operations
-        void     admin_shutdown( string password ) # 50;
-
+        // XtreemFS-specific functions
+        ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version) # 103;
+        InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 100;
+        void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size ) # 101;
+        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) # 102;
+        void xtreemfs_shutdown( UserCredentials user_credentials ) # 50;
       };
     };
   };
