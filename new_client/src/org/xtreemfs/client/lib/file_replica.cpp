@@ -38,7 +38,7 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
     YIELD::SerializableString* data = static_cast<YIELD::SerializableString*>( object_data.get_data().get() );
     if ( data )
     {
-      memcpy( rbuf_p, data->getString(), data->getSize() );
+      memcpy( rbuf_p, data->c_str(), data->size() );
       rbuf_p += data->getSize();
       file_offset += data->getSize();
     }
@@ -80,7 +80,7 @@ size_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& fil
     size_t object_size = file_offset_max - file_offset;
     if ( object_offset + object_size > stripe_size )
       object_size = stripe_size - object_offset;
-    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::STLString( wbuf_p, object_size ), 0, 0, false );
+    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::SerializableString( wbuf_p, object_size ), 0, 0, false );
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
     org::xtreemfs::interfaces::OSDWriteResponse temp_osd_write_response;

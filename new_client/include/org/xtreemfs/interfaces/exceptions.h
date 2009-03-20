@@ -1,5 +1,5 @@
-#ifndef _34740603337_H
-#define _34740603337_H
+#ifndef _81131936257_H
+#define _81131936257_H
 
 #include "yield/arch.h"
 #include <string>

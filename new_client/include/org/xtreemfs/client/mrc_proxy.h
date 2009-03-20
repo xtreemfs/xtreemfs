@@ -2,8 +2,6 @@
 #define ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 
 #include "org/xtreemfs/client/proxy.h"
-#include "org/xtreemfs/client/mrc_proxy_request.h"
-#define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS org::xtreemfs::client::MRCProxyRequest
 #include "org/xtreemfs/interfaces/mrc_interface.h"
 
 
@@ -13,9 +11,6 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainer;
-
-
       class MRCProxy : public Proxy
       {
       public:
@@ -24,9 +19,7 @@ namespace org
 
         // EventHandler
         const char* getEventHandlerName() const { return "MRCProxy"; }
-        void handleEvent( YIELD::Event& );
 
-        // Methods that fill in user_credentials and delegate to the real implementations
         bool access( const std::string& path, uint32_t mode );
         void chmod( const std::string& path, uint32_t mode );
         void chown( const std::string& path, const std::string& userId, const std::string& groupId );
@@ -54,8 +47,6 @@ namespace org
 
       private:
         org::xtreemfs::interfaces::MRCInterface mrc_interface;
-
-        PolicyContainer* policies;
       };
     };
   };

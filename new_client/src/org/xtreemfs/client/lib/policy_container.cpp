@@ -124,9 +124,9 @@ org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials
 
     if ( getpwuid_r( caller_uid, pwd_p, pwd_buf, pwd_buf_len, &temp_pwd_p ) == 0 &&
          getgrgid_r( caller_gid, grp_p, grp_buf, grp_buf_len, &temp_grp_p ) == 0 )
-      return org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ) );
+      return org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ), "" );
 #endif
 
-    return org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ) );
+    return org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ), "anonymous" );
   }
 }

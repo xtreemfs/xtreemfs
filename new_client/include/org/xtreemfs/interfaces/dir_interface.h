@@ -1,5 +1,5 @@
-#ifndef _95064963497_H
-#define _95064963497_H
+#ifndef _13510252884_H
+#define _13510252884_H
 
 #include "constants.h"
 #include "types.h"
@@ -226,10 +226,10 @@ namespace org
         virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings, YIELD::EventTarget* send_target ) { return xtreemfs_address_mappings_set( address_mappings, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings, YIELD::timeout_ns_t send_timeout_ns ) { return xtreemfs_address_mappings_set( address_mappings, NULL, send_timeout_ns ); }
         virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_address_mappings_setSyncRequest* __req = new xtreemfs_address_mappings_setSyncRequest( address_mappings, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_address_mappings_setResponse& __resp = ( xtreemfs_address_mappings_setResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); uint64_t _return_value = __resp.get__return_value(); YIELD::SharedObject::decRef( __resp ); return _return_value; }
-        virtual void xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { xtreemfs_checkpoint( user_credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target ) { xtreemfs_checkpoint( user_credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_checkpoint( user_credentials, NULL, send_timeout_ns ); }
-        virtual void xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_checkpointSyncRequest* __req = new xtreemfs_checkpointSyncRequest( user_credentials, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_checkpointResponse& __resp = ( xtreemfs_checkpointResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
+        virtual void xtreemfs_checkpoint() { xtreemfs_checkpoint( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_checkpoint( YIELD::EventTarget* send_target ) { xtreemfs_checkpoint( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_checkpoint( YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_checkpoint( NULL, send_timeout_ns ); }
+        virtual void xtreemfs_checkpoint( YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_checkpointSyncRequest* __req = new xtreemfs_checkpointSyncRequest( send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_checkpointResponse& __resp = ( xtreemfs_checkpointResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
         virtual uint64_t xtreemfs_global_time_get() { return xtreemfs_global_time_get( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t xtreemfs_global_time_get( YIELD::EventTarget* send_target ) { return xtreemfs_global_time_get( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t xtreemfs_global_time_get( YIELD::timeout_ns_t send_timeout_ns ) { return xtreemfs_global_time_get( NULL, send_timeout_ns ); }
@@ -254,10 +254,10 @@ namespace org
         virtual void xtreemfs_service_deregister( const std::string& uuid, YIELD::EventTarget* send_target ) { xtreemfs_service_deregister( uuid, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_service_deregister( const std::string& uuid, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_service_deregister( uuid, NULL, send_timeout_ns ); }
         virtual void xtreemfs_service_deregister( const std::string& uuid, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_service_deregisterSyncRequest* __req = new xtreemfs_service_deregisterSyncRequest( uuid, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_service_deregisterResponse& __resp = ( xtreemfs_service_deregisterResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { xtreemfs_shutdown( user_credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target ) { xtreemfs_shutdown( user_credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdown( user_credentials, NULL, send_timeout_ns ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdownSyncRequest* __req = new xtreemfs_shutdownSyncRequest( user_credentials, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_shutdownResponse& __resp = ( xtreemfs_shutdownResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in DIRInterface
+        virtual void xtreemfs_shutdown() { xtreemfs_shutdown( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target ) { xtreemfs_shutdown( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_shutdown( YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdown( NULL, send_timeout_ns ); }
+        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdownSyncRequest* __req = new xtreemfs_shutdownSyncRequest( send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_shutdownResponse& __resp = ( xtreemfs_shutdownResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in DIRInterface
   
       class xtreemfs_address_mappings_getResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
       {
@@ -487,21 +487,16 @@ namespace org
       class xtreemfs_checkpointRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
-        xtreemfs_checkpointRequest() : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_checkpointRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), user_credentials( user_credentials ) { }
+        xtreemfs_checkpointRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ) { }
         virtual ~xtreemfs_checkpointRequest() { }
   
-        void set_user_credentials( const org::xtreemfs::interfaces::UserCredentials&  user_credentials ) { this->user_credentials = user_credentials; }
-        const org::xtreemfs::interfaces::UserCredentials& get_user_credentials() const { return user_credentials; }
-  
-        bool operator==( const xtreemfs_checkpointRequest& other ) const { return user_credentials == other.user_credentials; }
+        bool operator==( const xtreemfs_checkpointRequest& other ) const { return true; }
   
         // YIELD::RTTI
         TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::xtreemfs_checkpointRequest", 584547126UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), &user_credentials ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), user_credentials ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { ; }
   
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 1; }
@@ -512,14 +507,13 @@ namespace org
   
   
       protected:
-        org::xtreemfs::interfaces::UserCredentials user_credentials;
+  
       };
   
       class xtreemfs_checkpointSyncRequest : public xtreemfs_checkpointRequest
       {
       public:
-        xtreemfs_checkpointSyncRequest() : xtreemfs_checkpointRequest( org::xtreemfs::interfaces::UserCredentials(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_checkpointSyncRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_checkpointRequest( user_credentials, response_timeout_ns ) { }
+        xtreemfs_checkpointSyncRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_checkpointRequest( response_timeout_ns ) { }
         virtual ~xtreemfs_checkpointSyncRequest() { }
   
         bool operator==( const xtreemfs_checkpointSyncRequest& other ) const { return true; }
@@ -974,21 +968,16 @@ namespace org
       class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
-        xtreemfs_shutdownRequest() : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_shutdownRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), user_credentials( user_credentials ) { }
+        xtreemfs_shutdownRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ) { }
         virtual ~xtreemfs_shutdownRequest() { }
   
-        void set_user_credentials( const org::xtreemfs::interfaces::UserCredentials&  user_credentials ) { this->user_credentials = user_credentials; }
-        const org::xtreemfs::interfaces::UserCredentials& get_user_credentials() const { return user_credentials; }
-  
-        bool operator==( const xtreemfs_shutdownRequest& other ) const { return user_credentials == other.user_credentials; }
+        bool operator==( const xtreemfs_shutdownRequest& other ) const { return true; }
   
         // YIELD::RTTI
         TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::xtreemfs_shutdownRequest", 2357328795UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), &user_credentials ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), user_credentials ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { ; }
   
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 1; }
@@ -999,14 +988,13 @@ namespace org
   
   
       protected:
-        org::xtreemfs::interfaces::UserCredentials user_credentials;
+  
       };
   
       class xtreemfs_shutdownSyncRequest : public xtreemfs_shutdownRequest
       {
       public:
-        xtreemfs_shutdownSyncRequest() : xtreemfs_shutdownRequest( org::xtreemfs::interfaces::UserCredentials(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_shutdownSyncRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_shutdownRequest( user_credentials, response_timeout_ns ) { }
+        xtreemfs_shutdownSyncRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_shutdownRequest( response_timeout_ns ) { }
         virtual ~xtreemfs_shutdownSyncRequest() { }
   
         bool operator==( const xtreemfs_shutdownSyncRequest& other ) const { return true; }
@@ -1083,26 +1071,26 @@ namespace org
           virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& req ) { xtreemfs_address_mappings_getResponse* resp = NULL; try { resp = new xtreemfs_address_mappings_getResponse; org::xtreemfs::interfaces::AddressMappingSet address_mappings; _xtreemfs_address_mappings_get( req.get_uuid(), address_mappings ); resp->set_address_mappings( address_mappings ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& req ) { xtreemfs_address_mappings_removeResponse* resp = NULL; try { resp = new xtreemfs_address_mappings_removeResponse; _xtreemfs_address_mappings_remove( req.get_uuid() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& req ) { xtreemfs_address_mappings_setResponse* resp = NULL; try { resp = new xtreemfs_address_mappings_setResponse; uint64_t _return_value = _xtreemfs_address_mappings_set( req.get_address_mappings() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { xtreemfs_checkpointResponse* resp = NULL; try { resp = new xtreemfs_checkpointResponse; _xtreemfs_checkpoint( req.get_user_credentials() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { xtreemfs_checkpointResponse* resp = NULL; try { resp = new xtreemfs_checkpointResponse; _xtreemfs_checkpoint(); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_global_time_getRequest( xtreemfs_global_time_getRequest& req ) { xtreemfs_global_time_getResponse* resp = NULL; try { resp = new xtreemfs_global_time_getResponse; uint64_t _return_value = _xtreemfs_global_time_get(); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& req ) { xtreemfs_service_get_by_typeResponse* resp = NULL; try { resp = new xtreemfs_service_get_by_typeResponse; org::xtreemfs::interfaces::ServiceSet services; _xtreemfs_service_get_by_type( req.get_type(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_service_get_by_uuidRequest( xtreemfs_service_get_by_uuidRequest& req ) { xtreemfs_service_get_by_uuidResponse* resp = NULL; try { resp = new xtreemfs_service_get_by_uuidResponse; org::xtreemfs::interfaces::ServiceSet services; _xtreemfs_service_get_by_uuid( req.get_uuid(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& req ) { xtreemfs_service_get_by_nameResponse* resp = NULL; try { resp = new xtreemfs_service_get_by_nameResponse; org::xtreemfs::interfaces::ServiceSet services; _xtreemfs_service_get_by_name( req.get_name(), services ); resp->set_services( services ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& req ) { xtreemfs_service_registerResponse* resp = NULL; try { resp = new xtreemfs_service_registerResponse; uint64_t _return_value = _xtreemfs_service_register( req.get_service() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& req ) { xtreemfs_service_deregisterResponse* resp = NULL; try { resp = new xtreemfs_service_deregisterResponse; _xtreemfs_service_deregister( req.get_uuid() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { xtreemfs_shutdownResponse* resp = NULL; try { resp = new xtreemfs_shutdownResponse; _xtreemfs_shutdown( req.get_user_credentials() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { xtreemfs_shutdownResponse* resp = NULL; try { resp = new xtreemfs_shutdownResponse; _xtreemfs_shutdown(); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
   
       virtual void _xtreemfs_address_mappings_get( const std::string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { }
         virtual void _xtreemfs_address_mappings_remove( const std::string& uuid ) { }
         virtual uint64_t _xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { return 0; }
-        virtual void _xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { }
+        virtual void _xtreemfs_checkpoint() { }
         virtual uint64_t _xtreemfs_global_time_get() { return 0; }
         virtual void _xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual void _xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual void _xtreemfs_service_get_by_name( const std::string& name, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual uint64_t _xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service ) { return 0; }
         virtual void _xtreemfs_service_deregister( const std::string& uuid ) { }
-        virtual void _xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { }
+        virtual void _xtreemfs_shutdown() { }
       };
   
       // Use this macro in an implementation class to get all of the prototypes for the operations in DIRInterface
@@ -1110,14 +1098,14 @@ namespace org
       virtual void _xtreemfs_address_mappings_get( const std::string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings );\
       virtual void _xtreemfs_address_mappings_remove( const std::string& uuid );\
       virtual uint64_t _xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings );\
-      virtual void _xtreemfs_checkpoint( const org::xtreemfs::interfaces::UserCredentials& user_credentials );\
+      virtual void _xtreemfs_checkpoint();\
       virtual uint64_t _xtreemfs_global_time_get();\
       virtual void _xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual void _xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual void _xtreemfs_service_get_by_name( const std::string& name, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual uint64_t _xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service );\
       virtual void _xtreemfs_service_deregister( const std::string& uuid );\
-      virtual void _xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials );
+      virtual void _xtreemfs_shutdown();
   
       #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& req );\

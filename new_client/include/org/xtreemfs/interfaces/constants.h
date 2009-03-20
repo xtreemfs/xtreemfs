@@ -1,5 +1,5 @@
-#ifndef _85971613189_H
-#define _85971613189_H
+#ifndef _86098954434_H
+#define _86098954434_H
 
 #include <string>
 
@@ -15,6 +15,7 @@ namespace org
       const static uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
       const static char* ONCRPC_SCHEME = "oncrpc";
       const static char* ONCRPCS_SCHEME = "oncrpcs";
+      const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;
       const static uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
       const static char* REPL_UPDATE_PC_NONE = "";
       const static char* REPL_UPDATE_PC_RONLY = "ronly";

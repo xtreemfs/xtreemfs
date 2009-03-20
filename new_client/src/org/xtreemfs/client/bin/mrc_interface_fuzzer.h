@@ -1,5 +1,5 @@
-#ifndef _89150232717_H
-#define _89150232717_H
+#ifndef _11373678094_H
+#define _11373678094_H
 
 
 
@@ -59,130 +59,120 @@ namespace org
            void fuzz_access()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = 0;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.access( user_credentials, path, mode );
+              test_interface.access( path, mode );
              }
              catch ( std::exception& )
              { }
@@ -193,130 +183,120 @@ namespace org
            void fuzz_chmod()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = 0;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.chmod( user_credentials, path, mode );
+              test_interface.chmod( path, mode );
              }
              catch ( std::exception& )
              { }
@@ -327,280 +307,260 @@ namespace org
            void fuzz_chown()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string user_id;
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string user_id;
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string user_id( "bogus string" );
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string user_id( "bogus string" );
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string user_id;
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string user_id;
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string user_id( "bogus string" );
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string user_id( "bogus string" );
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string user_id;
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string user_id;
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string user_id( "bogus string" );
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string user_id( "bogus string" );
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string user_id;
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string user_id;
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string user_id( "bogus string" );
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string user_id( "bogus string" );
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string user_id;
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string user_id;
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string user_id( "bogus string" );
            std::string group_id;
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string user_id( "bogus string" );
            std::string group_id( "bogus string" );
   
              try
              {
-              test_interface.chown( user_credentials, path, user_id, group_id );
+              test_interface.chown( path, user_id, group_id );
              }
              catch ( std::exception& )
              { }
@@ -611,130 +571,120 @@ namespace org
            void fuzz_create()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = 0;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.create( user_credentials, path, mode );
+              test_interface.create( path, mode );
              }
              catch ( std::exception& )
              { }
@@ -745,65 +695,60 @@ namespace org
            void fuzz_getattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
   
              try
              {
-              test_interface.getattr( user_credentials, path, stbuf );
+              test_interface.getattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
   
              try
              {
-              test_interface.getattr( user_credentials, path, stbuf );
+              test_interface.getattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
   
              try
              {
-              test_interface.getattr( user_credentials, path, stbuf );
+              test_interface.getattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
   
              try
              {
-              test_interface.getattr( user_credentials, path, stbuf );
+              test_interface.getattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
   
              try
              {
-              test_interface.getattr( user_credentials, path, stbuf );
+              test_interface.getattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
@@ -814,130 +759,120 @@ namespace org
            void fuzz_getxattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.getxattr( user_credentials, path, name );
+              test_interface.getxattr( path, name );
              }
              catch ( std::exception& )
              { }
@@ -948,52 +883,48 @@ namespace org
            void fuzz_link()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path;
            std::string link_path;
   
              try
              {
-              test_interface.link( user_credentials, target_path, link_path );
+              test_interface.link( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path;
            std::string link_path( "bogus string" );
   
              try
              {
-              test_interface.link( user_credentials, target_path, link_path );
+              test_interface.link( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path( "bogus string" );
            std::string link_path;
   
              try
              {
-              test_interface.link( user_credentials, target_path, link_path );
+              test_interface.link( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path( "bogus string" );
            std::string link_path( "bogus string" );
   
              try
              {
-              test_interface.link( user_credentials, target_path, link_path );
+              test_interface.link( target_path, link_path );
              }
              catch ( std::exception& )
              { }
@@ -1004,65 +935,60 @@ namespace org
            void fuzz_listxattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::StringSet names;
   
              try
              {
-              test_interface.listxattr( user_credentials, path, names );
+              test_interface.listxattr( path, names );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::StringSet names;
   
              try
              {
-              test_interface.listxattr( user_credentials, path, names );
+              test_interface.listxattr( path, names );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::StringSet names;
   
              try
              {
-              test_interface.listxattr( user_credentials, path, names );
+              test_interface.listxattr( path, names );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::StringSet names;
   
              try
              {
-              test_interface.listxattr( user_credentials, path, names );
+              test_interface.listxattr( path, names );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::StringSet names;
   
              try
              {
-              test_interface.listxattr( user_credentials, path, names );
+              test_interface.listxattr( path, names );
              }
              catch ( std::exception& )
              { }
@@ -1073,130 +999,120 @@ namespace org
            void fuzz_mkdir()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = 0;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = 0;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t mode = UINT32_MAX;
   
              try
              {
-              test_interface.mkdir( user_credentials, path, mode );
+              test_interface.mkdir( path, mode );
              }
              catch ( std::exception& )
              { }
@@ -1207,7 +1123,6 @@ namespace org
            void fuzz_open()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t flags = 0;
            uint32_t mode = 0;
@@ -1215,14 +1130,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t flags = 0;
            uint32_t mode = UINT32_MAX;
@@ -1230,14 +1144,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t flags = UINT32_MAX;
            uint32_t mode = 0;
@@ -1245,14 +1158,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint32_t flags = UINT32_MAX;
            uint32_t mode = UINT32_MAX;
@@ -1260,14 +1172,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t flags = 0;
            uint32_t mode = 0;
@@ -1275,14 +1186,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t flags = 0;
            uint32_t mode = UINT32_MAX;
@@ -1290,14 +1200,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = 0;
@@ -1305,14 +1214,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = UINT32_MAX;
@@ -1320,14 +1228,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t flags = 0;
            uint32_t mode = 0;
@@ -1335,14 +1242,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t flags = 0;
            uint32_t mode = UINT32_MAX;
@@ -1350,14 +1256,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = 0;
@@ -1365,14 +1270,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = UINT32_MAX;
@@ -1380,14 +1284,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t flags = 0;
            uint32_t mode = 0;
@@ -1395,14 +1298,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t flags = 0;
            uint32_t mode = UINT32_MAX;
@@ -1410,14 +1312,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = 0;
@@ -1425,14 +1326,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = UINT32_MAX;
@@ -1440,14 +1340,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t flags = 0;
            uint32_t mode = 0;
@@ -1455,14 +1354,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t flags = 0;
            uint32_t mode = UINT32_MAX;
@@ -1470,14 +1368,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = 0;
@@ -1485,14 +1382,13 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint32_t flags = UINT32_MAX;
            uint32_t mode = UINT32_MAX;
@@ -1500,7 +1396,7 @@ namespace org
   
              try
              {
-              test_interface.open( user_credentials, path, flags, mode, file_credentials );
+              test_interface.open( path, flags, mode, file_credentials );
              }
              catch ( std::exception& )
              { }
@@ -1511,65 +1407,60 @@ namespace org
            void fuzz_readdir()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
   
              try
              {
-              test_interface.readdir( user_credentials, path, directory_entries );
+              test_interface.readdir( path, directory_entries );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
   
              try
              {
-              test_interface.readdir( user_credentials, path, directory_entries );
+              test_interface.readdir( path, directory_entries );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
   
              try
              {
-              test_interface.readdir( user_credentials, path, directory_entries );
+              test_interface.readdir( path, directory_entries );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
   
              try
              {
-              test_interface.readdir( user_credentials, path, directory_entries );
+              test_interface.readdir( path, directory_entries );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
   
              try
              {
-              test_interface.readdir( user_credentials, path, directory_entries );
+              test_interface.readdir( path, directory_entries );
              }
              catch ( std::exception& )
              { }
@@ -1580,130 +1471,120 @@ namespace org
            void fuzz_removexattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
   
              try
              {
-              test_interface.removexattr( user_credentials, path, name );
+              test_interface.removexattr( path, name );
              }
              catch ( std::exception& )
              { }
@@ -1714,56 +1595,52 @@ namespace org
            void fuzz_rename()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string source_path;
            std::string target_path;
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.rename( user_credentials, source_path, target_path, file_credentials );
+              test_interface.rename( source_path, target_path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string source_path;
            std::string target_path( "bogus string" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.rename( user_credentials, source_path, target_path, file_credentials );
+              test_interface.rename( source_path, target_path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string source_path( "bogus string" );
            std::string target_path;
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.rename( user_credentials, source_path, target_path, file_credentials );
+              test_interface.rename( source_path, target_path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string source_path( "bogus string" );
            std::string target_path( "bogus string" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.rename( user_credentials, source_path, target_path, file_credentials );
+              test_interface.rename( source_path, target_path, file_credentials );
              }
              catch ( std::exception& )
              { }
@@ -1774,60 +1651,55 @@ namespace org
            void fuzz_rmdir()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
   
              try
              {
-              test_interface.rmdir( user_credentials, path );
+              test_interface.rmdir( path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
   
              try
              {
-              test_interface.rmdir( user_credentials, path );
+              test_interface.rmdir( path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
   
              try
              {
-              test_interface.rmdir( user_credentials, path );
+              test_interface.rmdir( path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
   
              try
              {
-              test_interface.rmdir( user_credentials, path );
+              test_interface.rmdir( path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
   
              try
              {
-              test_interface.rmdir( user_credentials, path );
+              test_interface.rmdir( path );
              }
              catch ( std::exception& )
              { }
@@ -1838,7 +1710,6 @@ namespace org
            void fuzz_setattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -1870,14 +1741,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -1909,14 +1779,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -1948,14 +1817,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -1987,14 +1855,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2026,14 +1893,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2065,14 +1931,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2104,14 +1969,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2143,14 +2007,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2182,14 +2045,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2221,14 +2083,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2260,14 +2121,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2299,14 +2159,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2338,14 +2197,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2377,14 +2235,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2416,14 +2273,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2455,14 +2311,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2494,14 +2349,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2533,14 +2387,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2572,14 +2425,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2611,14 +2463,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2650,14 +2501,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2689,14 +2539,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2728,14 +2577,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2767,14 +2615,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2806,14 +2653,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2845,14 +2691,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2884,14 +2729,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2923,14 +2767,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -2962,14 +2805,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3001,14 +2843,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3040,14 +2881,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3079,14 +2919,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3118,14 +2957,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3157,14 +2995,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3196,14 +3033,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3235,14 +3071,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3274,14 +3109,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3313,14 +3147,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3352,14 +3185,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3391,14 +3223,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3430,14 +3261,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3469,14 +3299,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3508,14 +3337,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3547,14 +3375,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3586,14 +3413,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3625,14 +3451,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3664,14 +3489,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3703,14 +3527,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3742,14 +3565,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3781,14 +3603,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3820,14 +3641,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3859,14 +3679,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3898,14 +3717,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3937,14 +3755,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -3976,14 +3793,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4015,14 +3831,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4054,14 +3869,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4093,14 +3907,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4132,14 +3945,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4171,14 +3983,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4210,14 +4021,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4249,14 +4059,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4288,14 +4097,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4327,14 +4135,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4366,14 +4173,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4405,14 +4211,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4444,14 +4249,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4483,14 +4287,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4522,14 +4325,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4561,14 +4363,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4600,14 +4401,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4639,14 +4439,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4678,14 +4477,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4717,14 +4515,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4756,14 +4553,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4795,14 +4591,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4834,14 +4629,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4873,14 +4667,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4912,14 +4705,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4951,14 +4743,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -4990,14 +4781,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5029,14 +4819,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5068,14 +4857,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5107,14 +4895,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5146,14 +4933,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5185,14 +4971,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5224,14 +5009,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5263,14 +5047,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5302,14 +5085,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5341,14 +5123,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5380,14 +5161,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5419,14 +5199,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5458,14 +5237,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5497,14 +5275,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5536,14 +5313,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5575,14 +5351,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5614,14 +5389,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5653,14 +5427,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5692,14 +5465,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5731,14 +5503,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5770,14 +5541,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5809,14 +5579,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5848,14 +5617,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5887,14 +5655,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5926,14 +5693,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -5965,14 +5731,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6004,14 +5769,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6043,14 +5807,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6082,14 +5845,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6121,14 +5883,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6160,14 +5921,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6199,14 +5959,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6238,14 +5997,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6277,14 +6035,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6316,14 +6073,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6355,14 +6111,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6394,14 +6149,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6433,14 +6187,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6472,14 +6225,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6511,14 +6263,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6550,14 +6301,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6589,14 +6339,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6628,14 +6377,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6667,14 +6415,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6706,14 +6453,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6745,14 +6491,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6784,14 +6529,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6823,14 +6567,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6862,14 +6605,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6901,14 +6643,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6940,14 +6681,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -6979,14 +6719,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7018,14 +6757,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7057,14 +6795,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7096,14 +6833,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7135,14 +6871,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7174,14 +6909,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7213,14 +6947,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7252,14 +6985,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7291,14 +7023,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7330,14 +7061,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7369,14 +7099,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7408,14 +7137,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7447,14 +7175,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7486,14 +7213,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7525,14 +7251,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7564,14 +7289,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7603,14 +7327,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7642,14 +7365,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7681,14 +7403,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7720,14 +7441,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7759,14 +7479,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7798,14 +7517,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7837,14 +7555,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7876,14 +7593,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7915,14 +7631,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7954,14 +7669,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -7993,14 +7707,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8032,14 +7745,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8071,14 +7783,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8110,14 +7821,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8149,14 +7859,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8188,14 +7897,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8227,14 +7935,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8266,14 +7973,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8305,14 +8011,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8344,14 +8049,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8383,14 +8087,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8422,14 +8125,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8461,14 +8163,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8500,14 +8201,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8539,14 +8239,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8578,14 +8277,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8617,14 +8315,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8656,14 +8353,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8695,14 +8391,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8734,14 +8429,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8773,14 +8467,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8812,14 +8505,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8851,14 +8543,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8890,14 +8581,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8929,14 +8619,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -8968,14 +8657,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9007,14 +8695,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9046,14 +8733,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9085,14 +8771,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9124,14 +8809,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9163,14 +8847,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9202,14 +8885,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9241,14 +8923,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9280,14 +8961,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9319,14 +8999,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9358,14 +9037,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9397,14 +9075,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9436,14 +9113,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9475,14 +9151,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9514,14 +9189,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9553,14 +9227,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9592,14 +9265,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9631,14 +9303,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9670,14 +9341,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9709,14 +9379,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9748,14 +9417,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9787,14 +9455,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9826,14 +9493,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9865,14 +9531,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9904,14 +9569,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9943,14 +9607,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -9982,14 +9645,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10021,14 +9683,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10060,14 +9721,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10099,14 +9759,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10138,14 +9797,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10177,14 +9835,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10216,14 +9873,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10255,14 +9911,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10294,14 +9949,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10333,14 +9987,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10372,14 +10025,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10411,14 +10063,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10450,14 +10101,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10489,14 +10139,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10528,14 +10177,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10567,14 +10215,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10606,14 +10253,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10645,14 +10291,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10684,14 +10329,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10723,14 +10367,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10762,14 +10405,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10801,14 +10443,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10840,14 +10481,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10879,14 +10519,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10918,14 +10557,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10957,14 +10595,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -10996,14 +10633,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11035,14 +10671,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11074,14 +10709,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11113,14 +10747,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11152,14 +10785,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11191,14 +10823,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11230,14 +10861,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11269,14 +10899,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11308,14 +10937,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11347,14 +10975,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11386,14 +11013,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11425,14 +11051,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11464,14 +11089,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11503,14 +11127,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11542,14 +11165,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11581,14 +11203,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11620,14 +11241,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11659,14 +11279,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11698,14 +11317,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11737,14 +11355,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11776,14 +11393,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11815,14 +11431,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11854,14 +11469,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11893,14 +11507,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11932,14 +11545,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -11971,14 +11583,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12010,14 +11621,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12049,14 +11659,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12088,14 +11697,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12127,14 +11735,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12166,14 +11773,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12205,14 +11811,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12244,14 +11849,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12283,14 +11887,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12322,14 +11925,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12361,14 +11963,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12400,14 +12001,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12439,14 +12039,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12478,14 +12077,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12517,14 +12115,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12556,14 +12153,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12595,14 +12191,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12634,14 +12229,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12673,14 +12267,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12712,14 +12305,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12751,14 +12343,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12790,14 +12381,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12829,14 +12419,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12868,14 +12457,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12907,14 +12495,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12946,14 +12533,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -12985,14 +12571,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13024,14 +12609,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13063,14 +12647,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13102,14 +12685,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13141,14 +12723,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13180,14 +12761,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13219,14 +12799,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13258,14 +12837,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13297,14 +12875,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13336,14 +12913,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13375,14 +12951,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13414,14 +12989,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13453,14 +13027,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13492,14 +13065,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13531,14 +13103,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13570,14 +13141,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13609,14 +13179,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13648,14 +13217,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13687,14 +13255,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13726,14 +13293,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13765,14 +13331,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13804,14 +13369,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13843,14 +13407,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13882,14 +13445,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13921,14 +13483,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13960,14 +13521,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -13999,14 +13559,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14038,14 +13597,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14077,14 +13635,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14116,14 +13673,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14155,14 +13711,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14194,14 +13749,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14233,14 +13787,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14272,14 +13825,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14311,14 +13863,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14350,14 +13901,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14389,14 +13939,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14428,14 +13977,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14467,14 +14015,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14506,14 +14053,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14545,14 +14091,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14584,14 +14129,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14623,14 +14167,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14662,14 +14205,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14701,14 +14243,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14740,14 +14281,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14779,14 +14319,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14818,14 +14357,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14857,14 +14395,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14896,14 +14433,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14935,14 +14471,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -14974,14 +14509,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15013,14 +14547,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15052,14 +14585,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15091,14 +14623,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15130,14 +14661,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15169,14 +14699,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15208,14 +14737,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15247,14 +14775,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15286,14 +14813,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15325,14 +14851,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15364,14 +14889,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15403,14 +14927,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15442,14 +14965,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15481,14 +15003,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15520,14 +15041,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15559,14 +15079,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15598,14 +15117,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15637,14 +15155,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15676,14 +15193,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15715,14 +15231,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15754,14 +15269,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15793,14 +15307,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15832,14 +15345,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15871,14 +15383,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15910,14 +15421,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15949,14 +15459,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -15988,14 +15497,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16027,14 +15535,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16066,14 +15573,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16105,14 +15611,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16144,14 +15649,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16183,14 +15687,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16222,14 +15725,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16261,14 +15763,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16300,14 +15801,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16339,14 +15839,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16378,14 +15877,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16417,14 +15915,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16456,14 +15953,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16495,14 +15991,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16534,14 +16029,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16573,14 +16067,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16612,14 +16105,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16651,14 +16143,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16690,14 +16181,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16729,14 +16219,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16768,14 +16257,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16807,14 +16295,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16846,14 +16333,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16885,14 +16371,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16924,14 +16409,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -16963,14 +16447,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17002,14 +16485,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17041,14 +16523,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17080,14 +16561,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17119,14 +16599,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17158,14 +16637,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17197,14 +16675,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17236,14 +16713,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17275,14 +16751,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17314,14 +16789,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17353,14 +16827,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17392,14 +16865,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17431,14 +16903,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17470,14 +16941,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17509,14 +16979,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17548,14 +17017,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17587,14 +17055,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17626,14 +17093,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17665,14 +17131,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17704,14 +17169,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17743,14 +17207,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17782,14 +17245,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17821,14 +17283,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17860,14 +17321,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17899,14 +17359,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17938,14 +17397,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -17977,14 +17435,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18016,14 +17473,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18055,14 +17511,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18094,14 +17549,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18133,14 +17587,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18172,14 +17625,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18211,14 +17663,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18250,14 +17701,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18289,14 +17739,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18328,14 +17777,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18367,14 +17815,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18406,14 +17853,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18445,14 +17891,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18484,14 +17929,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18523,14 +17967,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18562,14 +18005,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18601,14 +18043,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18640,14 +18081,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18679,14 +18119,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18718,14 +18157,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18757,14 +18195,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18796,14 +18233,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18835,14 +18271,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18874,14 +18309,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18913,14 +18347,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18952,14 +18385,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -18991,14 +18423,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19030,14 +18461,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19069,14 +18499,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19108,14 +18537,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19147,14 +18575,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19186,14 +18613,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19225,14 +18651,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19264,14 +18689,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19303,14 +18727,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19342,14 +18765,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19381,14 +18803,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19420,14 +18841,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19459,14 +18879,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19498,14 +18917,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19537,14 +18955,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19576,14 +18993,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19615,14 +19031,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19654,14 +19069,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19693,14 +19107,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19732,14 +19145,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19771,14 +19183,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19810,14 +19221,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19849,14 +19259,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19888,14 +19297,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19927,14 +19335,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -19966,14 +19373,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20005,14 +19411,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20044,14 +19449,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20083,14 +19487,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20122,14 +19525,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20161,14 +19563,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20200,14 +19601,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20239,14 +19639,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20278,14 +19677,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20317,14 +19715,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20356,14 +19753,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20395,14 +19791,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20434,14 +19829,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20473,14 +19867,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20512,14 +19905,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20551,14 +19943,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20590,14 +19981,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20629,14 +20019,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20668,14 +20057,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20707,14 +20095,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20746,14 +20133,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20785,14 +20171,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20824,14 +20209,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20863,14 +20247,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20902,14 +20285,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20941,14 +20323,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -20980,14 +20361,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21019,14 +20399,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21058,14 +20437,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21097,14 +20475,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21136,14 +20513,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21175,14 +20551,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21214,14 +20589,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21253,14 +20627,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21292,14 +20665,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21331,14 +20703,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21370,14 +20741,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21409,14 +20779,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21448,14 +20817,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21487,14 +20855,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21526,14 +20893,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21565,14 +20931,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21604,14 +20969,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21643,14 +21007,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21682,14 +21045,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21721,14 +21083,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21760,14 +21121,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21799,14 +21159,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21838,14 +21197,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21877,14 +21235,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21916,14 +21273,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21955,14 +21311,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -21994,14 +21349,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22033,14 +21387,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22072,14 +21425,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22111,14 +21463,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22150,14 +21501,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22189,14 +21539,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22228,14 +21577,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22267,14 +21615,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22306,14 +21653,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22345,14 +21691,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22384,14 +21729,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22423,14 +21767,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22462,14 +21805,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22501,14 +21843,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22540,14 +21881,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22579,14 +21919,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22618,14 +21957,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22657,14 +21995,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22696,14 +22033,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22735,14 +22071,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22774,14 +22109,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22813,14 +22147,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22852,14 +22185,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22891,14 +22223,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22930,14 +22261,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -22969,14 +22299,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23008,14 +22337,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23047,14 +22375,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23086,14 +22413,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23125,14 +22451,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23164,14 +22489,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23203,14 +22527,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23242,14 +22565,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23281,14 +22603,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23320,14 +22641,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23359,14 +22679,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23398,14 +22717,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23437,14 +22755,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23476,14 +22793,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23515,14 +22831,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23554,14 +22869,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23593,14 +22907,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23632,14 +22945,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23671,14 +22983,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23710,14 +23021,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23749,14 +23059,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23788,14 +23097,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23827,14 +23135,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23866,14 +23173,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23905,14 +23211,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23944,14 +23249,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -23983,14 +23287,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24022,14 +23325,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24061,14 +23363,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24100,14 +23401,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24139,14 +23439,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24178,14 +23477,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24217,14 +23515,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24256,14 +23553,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24295,14 +23591,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24334,14 +23629,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24373,14 +23667,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24412,14 +23705,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24451,14 +23743,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24490,14 +23781,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24529,14 +23819,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24568,14 +23857,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24607,14 +23895,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24646,14 +23933,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24685,14 +23971,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24724,14 +24009,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24763,14 +24047,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24802,14 +24085,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24841,14 +24123,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24880,14 +24161,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24919,14 +24199,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24958,14 +24237,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -24997,14 +24275,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25036,14 +24313,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25075,14 +24351,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25114,14 +24389,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25153,14 +24427,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25192,14 +24465,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25231,14 +24503,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25270,14 +24541,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25309,14 +24579,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25348,14 +24617,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25387,14 +24655,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25426,14 +24693,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25465,14 +24731,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25504,14 +24769,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25543,14 +24807,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25582,14 +24845,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25621,14 +24883,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25660,14 +24921,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25699,14 +24959,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25738,14 +24997,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25777,14 +25035,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25816,14 +25073,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25855,14 +25111,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25894,14 +25149,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25933,14 +25187,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -25972,14 +25225,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26011,14 +25263,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26050,14 +25301,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26089,14 +25339,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26128,14 +25377,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26167,14 +25415,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26206,14 +25453,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26245,14 +25491,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26284,14 +25529,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26323,14 +25567,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26362,14 +25605,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26401,14 +25643,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26440,14 +25681,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26479,14 +25719,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26518,14 +25757,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26557,14 +25795,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26596,14 +25833,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26635,14 +25871,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26674,14 +25909,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26713,14 +25947,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26752,14 +25985,13 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::stat_ stbuf;
            {
@@ -26791,7 +26023,7 @@ namespace org
   
              try
              {
-              test_interface.setattr( user_credentials, path, stbuf );
+              test_interface.setattr( path, stbuf );
              }
              catch ( std::exception& )
              { }
@@ -26802,7 +26034,6 @@ namespace org
            void fuzz_setxattr()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
            std::string value;
@@ -26810,14 +26041,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
            std::string value;
@@ -26825,14 +26055,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
            std::string value( "bogus string" );
@@ -26840,14 +26069,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name;
            std::string value( "bogus string" );
@@ -26855,14 +26083,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
            std::string value;
@@ -26870,14 +26097,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
            std::string value;
@@ -26885,14 +26111,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -26900,14 +26125,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -26915,14 +26139,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
            std::string value;
@@ -26930,14 +26153,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
            std::string value;
@@ -26945,14 +26167,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
            std::string value( "bogus string" );
@@ -26960,14 +26181,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name;
            std::string value( "bogus string" );
@@ -26975,14 +26195,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
            std::string value;
@@ -26990,14 +26209,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
            std::string value;
@@ -27005,14 +26223,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27020,14 +26237,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27035,14 +26251,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
            std::string value;
@@ -27050,14 +26265,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
            std::string value;
@@ -27065,14 +26279,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
            std::string value( "bogus string" );
@@ -27080,14 +26293,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name;
            std::string value( "bogus string" );
@@ -27095,14 +26307,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
            std::string value;
@@ -27110,14 +26321,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
            std::string value;
@@ -27125,14 +26335,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27140,14 +26349,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27155,14 +26363,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
            std::string value;
@@ -27170,14 +26377,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
            std::string value;
@@ -27185,14 +26391,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
            std::string value( "bogus string" );
@@ -27200,14 +26405,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name;
            std::string value( "bogus string" );
@@ -27215,14 +26419,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
            std::string value;
@@ -27230,14 +26433,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
            std::string value;
@@ -27245,14 +26447,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27260,14 +26461,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27275,14 +26475,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
            std::string value;
@@ -27290,14 +26489,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
            std::string value;
@@ -27305,14 +26503,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
            std::string value( "bogus string" );
@@ -27320,14 +26517,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name;
            std::string value( "bogus string" );
@@ -27335,14 +26531,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
            std::string value;
@@ -27350,14 +26545,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
            std::string value;
@@ -27365,14 +26559,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27380,14 +26573,13 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
            std::string value( "bogus string" );
@@ -27395,7 +26587,7 @@ namespace org
   
              try
              {
-              test_interface.setxattr( user_credentials, path, name, value, flags );
+              test_interface.setxattr( path, name, value, flags );
              }
              catch ( std::exception& )
              { }
@@ -27406,65 +26598,60 @@ namespace org
            void fuzz_statfs()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            org::xtreemfs::interfaces::statfs_ statfsbuf;
   
              try
              {
-              test_interface.statfs( user_credentials, volume_name, statfsbuf );
+              test_interface.statfs( volume_name, statfsbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            org::xtreemfs::interfaces::statfs_ statfsbuf;
   
              try
              {
-              test_interface.statfs( user_credentials, volume_name, statfsbuf );
+              test_interface.statfs( volume_name, statfsbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            org::xtreemfs::interfaces::statfs_ statfsbuf;
   
              try
              {
-              test_interface.statfs( user_credentials, volume_name, statfsbuf );
+              test_interface.statfs( volume_name, statfsbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            org::xtreemfs::interfaces::statfs_ statfsbuf;
   
              try
              {
-              test_interface.statfs( user_credentials, volume_name, statfsbuf );
+              test_interface.statfs( volume_name, statfsbuf );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            org::xtreemfs::interfaces::statfs_ statfsbuf;
   
              try
              {
-              test_interface.statfs( user_credentials, volume_name, statfsbuf );
+              test_interface.statfs( volume_name, statfsbuf );
              }
              catch ( std::exception& )
              { }
@@ -27475,52 +26662,48 @@ namespace org
            void fuzz_symlink()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path;
            std::string link_path;
   
              try
              {
-              test_interface.symlink( user_credentials, target_path, link_path );
+              test_interface.symlink( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path;
            std::string link_path( "bogus string" );
   
              try
              {
-              test_interface.symlink( user_credentials, target_path, link_path );
+              test_interface.symlink( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path( "bogus string" );
            std::string link_path;
   
              try
              {
-              test_interface.symlink( user_credentials, target_path, link_path );
+              test_interface.symlink( target_path, link_path );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string target_path( "bogus string" );
            std::string link_path( "bogus string" );
   
              try
              {
-              test_interface.symlink( user_credentials, target_path, link_path );
+              test_interface.symlink( target_path, link_path );
              }
              catch ( std::exception& )
              { }
@@ -27531,65 +26714,60 @@ namespace org
            void fuzz_unlink()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.unlink( user_credentials, path, file_credentials );
+              test_interface.unlink( path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.unlink( user_credentials, path, file_credentials );
+              test_interface.unlink( path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.unlink( user_credentials, path, file_credentials );
+              test_interface.unlink( path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.unlink( user_credentials, path, file_credentials );
+              test_interface.unlink( path, file_credentials );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
   
              try
              {
-              test_interface.unlink( user_credentials, path, file_credentials );
+              test_interface.unlink( path, file_credentials );
              }
              catch ( std::exception& )
              { }
@@ -27600,7 +26778,6 @@ namespace org
            void fuzz_utime()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27608,14 +26785,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27623,14 +26799,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27638,14 +26813,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27653,14 +26827,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27668,14 +26841,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27683,14 +26855,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27698,14 +26869,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path;
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27713,14 +26883,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27728,14 +26897,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27743,14 +26911,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27758,14 +26925,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27773,14 +26939,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27788,14 +26953,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27803,14 +26967,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27818,14 +26981,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27833,14 +26995,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27848,14 +27009,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27863,14 +27023,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27878,14 +27037,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27893,14 +27051,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27908,14 +27065,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -27923,14 +27079,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27938,14 +27093,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol/" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -27953,14 +27107,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27968,14 +27121,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -27983,14 +27135,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -27998,14 +27149,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -28013,14 +27163,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -28028,14 +27177,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -28043,14 +27191,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -28058,14 +27205,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol//" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -28073,14 +27219,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -28088,14 +27233,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = 0;
            uint64_t atime = 0;
@@ -28103,14 +27247,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -28118,14 +27261,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = 0;
            uint64_t atime = UINT64_MAX;
@@ -28133,14 +27275,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -28148,14 +27289,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = 0;
@@ -28163,14 +27303,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -28178,14 +27317,13 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string path( "testvol\"" );
            uint64_t ctime = UINT64_MAX;
            uint64_t atime = UINT64_MAX;
@@ -28193,7 +27331,7 @@ namespace org
   
              try
              {
-              test_interface.utime( user_credentials, path, ctime, atime, mtime );
+              test_interface.utime( path, ctime, atime, mtime );
              }
              catch ( std::exception& )
              { }
@@ -28204,11 +27342,11 @@ namespace org
            void fuzz_xtreemfs_checkpoint()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
+  
   
              try
              {
-              test_interface.xtreemfs_checkpoint( user_credentials );
+              test_interface.xtreemfs_checkpoint();
              }
              catch ( std::exception& )
              { }
@@ -28219,28 +27357,26 @@ namespace org
            void fuzz_xtreemfs_check_file_exists()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_id;
            org::xtreemfs::interfaces::StringSet file_ids;
            std::string bitmap;
   
              try
              {
-              test_interface.xtreemfs_check_file_exists( user_credentials, volume_id, file_ids, bitmap );
+              test_interface.xtreemfs_check_file_exists( volume_id, file_ids, bitmap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_id( "bogus string" );
            org::xtreemfs::interfaces::StringSet file_ids;
            std::string bitmap;
   
              try
              {
-              test_interface.xtreemfs_check_file_exists( user_credentials, volume_id, file_ids, bitmap );
+              test_interface.xtreemfs_check_file_exists( volume_id, file_ids, bitmap );
              }
              catch ( std::exception& )
              { }
@@ -28251,24 +27387,22 @@ namespace org
            void fuzz_xtreemfs_dump_database()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string dump_file;
   
              try
              {
-              test_interface.xtreemfs_dump_database( user_credentials, dump_file );
+              test_interface.xtreemfs_dump_database( dump_file );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string dump_file( "bogus string" );
   
              try
              {
-              test_interface.xtreemfs_dump_database( user_credentials, dump_file );
+              test_interface.xtreemfs_dump_database( dump_file );
              }
              catch ( std::exception& )
              { }
@@ -28279,26 +27413,24 @@ namespace org
            void fuzz_xtreemfs_get_suitable_osds()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::StringSet osd_uuids;
   
              try
              {
-              test_interface.xtreemfs_get_suitable_osds( user_credentials, file_id, osd_uuids );
+              test_interface.xtreemfs_get_suitable_osds( file_id, osd_uuids );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::StringSet osd_uuids;
   
              try
              {
-              test_interface.xtreemfs_get_suitable_osds( user_credentials, file_id, osd_uuids );
+              test_interface.xtreemfs_get_suitable_osds( file_id, osd_uuids );
              }
              catch ( std::exception& )
              { }
@@ -28309,7 +27441,6 @@ namespace org
            void fuzz_xtreemfs_mkvol()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28325,14 +27456,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28348,14 +27478,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28371,14 +27500,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28394,14 +27522,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28417,14 +27544,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28440,14 +27566,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28463,14 +27588,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28486,14 +27610,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28509,14 +27632,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28532,14 +27654,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28555,14 +27676,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28578,14 +27698,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28601,14 +27720,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28624,14 +27742,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28647,14 +27764,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28670,14 +27786,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28693,14 +27808,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28716,14 +27830,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28739,14 +27852,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28762,14 +27874,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28785,14 +27896,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28808,14 +27918,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28831,14 +27940,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28854,14 +27962,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28877,14 +27984,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28900,14 +28006,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28923,14 +28028,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28946,14 +28050,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28969,14 +28072,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -28992,14 +28094,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29015,14 +28116,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29038,14 +28138,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29061,14 +28160,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29084,14 +28182,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29107,14 +28204,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29130,14 +28226,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29153,14 +28248,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29176,14 +28270,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29199,14 +28292,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29222,14 +28314,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29245,14 +28336,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29268,14 +28358,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29291,14 +28380,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29314,14 +28402,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29337,14 +28424,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29360,14 +28446,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29383,14 +28468,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29406,14 +28490,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29429,14 +28512,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29452,14 +28534,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29475,14 +28556,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29498,14 +28578,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29521,14 +28600,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29544,14 +28622,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29567,14 +28644,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29590,14 +28666,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29613,14 +28688,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29636,14 +28710,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29659,14 +28732,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29682,14 +28754,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29705,14 +28776,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29728,14 +28798,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29751,14 +28820,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29774,14 +28842,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29797,14 +28864,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29820,14 +28886,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29843,14 +28908,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29866,14 +28930,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29889,14 +28952,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29912,14 +28974,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29935,14 +28996,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29958,14 +29018,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -29981,14 +29040,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30004,14 +29062,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30027,14 +29084,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30050,14 +29106,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30073,14 +29128,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30096,14 +29150,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30119,14 +29172,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30142,14 +29194,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30165,14 +29216,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30188,14 +29238,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30211,14 +29260,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30234,14 +29282,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30257,14 +29304,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30280,14 +29326,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30303,14 +29348,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30326,14 +29370,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30349,14 +29392,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30372,14 +29414,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30395,14 +29436,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30418,14 +29458,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30441,14 +29480,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30464,14 +29502,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30487,14 +29524,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30510,14 +29546,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30533,14 +29568,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30556,14 +29590,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30579,14 +29612,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30602,14 +29634,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30625,14 +29656,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30648,14 +29678,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30671,14 +29700,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30694,14 +29722,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30717,14 +29744,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30740,14 +29766,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30763,14 +29788,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30786,14 +29810,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30809,14 +29832,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30832,14 +29854,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30855,14 +29876,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30878,14 +29898,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30901,14 +29920,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30924,14 +29942,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30947,14 +29964,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30970,14 +29986,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -30993,14 +30008,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31016,14 +30030,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31039,14 +30052,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31062,14 +30074,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31085,14 +30096,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31108,14 +30118,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31131,14 +30140,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31154,14 +30162,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31177,14 +30184,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31200,14 +30206,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31223,14 +30228,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31246,14 +30250,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31269,14 +30272,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31292,14 +30294,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31315,14 +30316,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31338,14 +30338,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31361,14 +30360,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31384,14 +30382,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31407,14 +30404,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31430,14 +30426,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31453,14 +30448,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31476,14 +30470,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31499,14 +30492,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31522,14 +30514,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31545,14 +30536,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31568,14 +30558,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31591,14 +30580,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = 0;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31614,14 +30602,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31637,14 +30624,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31660,14 +30646,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31683,14 +30668,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31706,14 +30690,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31729,14 +30712,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31752,14 +30734,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31775,14 +30756,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31798,14 +30778,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31821,14 +30800,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31844,14 +30822,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31867,14 +30844,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31890,14 +30866,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31913,14 +30888,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31936,14 +30910,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31959,14 +30932,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
            uint32_t osd_selection_policy = UINT32_MAX;
            org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
@@ -31982,7 +30954,7 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_mkvol( user_credentials, volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
+              test_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy );
              }
              catch ( std::exception& )
              { }
@@ -31993,7 +30965,6 @@ namespace org
            void fuzz_xtreemfs_renew_capability()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32013,14 +30984,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32040,14 +31010,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32067,14 +31036,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32094,14 +31062,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32121,14 +31088,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32148,14 +31114,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32175,14 +31140,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32202,14 +31166,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32229,14 +31192,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32256,14 +31218,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32283,14 +31244,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32310,14 +31270,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32337,14 +31296,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32364,14 +31322,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32391,14 +31348,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32418,14 +31374,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32445,14 +31400,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32472,14 +31426,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32499,14 +31452,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32526,14 +31478,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32553,14 +31504,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32580,14 +31530,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32607,14 +31556,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32634,14 +31582,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32661,14 +31608,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32688,14 +31634,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32715,14 +31660,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32742,14 +31686,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32769,14 +31712,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32796,14 +31738,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32823,14 +31764,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id;
@@ -32850,14 +31790,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -32877,14 +31816,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -32904,14 +31842,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -32931,14 +31868,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -32958,14 +31894,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -32985,14 +31920,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33012,14 +31946,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33039,14 +31972,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33066,14 +31998,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33093,14 +32024,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33120,14 +32050,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33147,14 +32076,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33174,14 +32102,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33201,14 +32128,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33228,14 +32154,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33255,14 +32180,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33282,14 +32206,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33309,14 +32232,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33336,14 +32258,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33363,14 +32284,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33390,14 +32310,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33417,14 +32336,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33444,14 +32362,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33471,14 +32388,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33498,14 +32414,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33525,14 +32440,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33552,14 +32466,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33579,14 +32492,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33606,14 +32518,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33633,14 +32544,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33660,14 +32570,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33687,14 +32596,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap old_xcap;
            {
            std::string file_id( "bogus string" );
@@ -33714,7 +32622,7 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_renew_capability( user_credentials, old_xcap, renewed_xcap );
+              test_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap );
              }
              catch ( std::exception& )
              { }
@@ -33725,7 +32633,6 @@ namespace org
            void fuzz_xtreemfs_replica_add()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33747,14 +32654,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33776,14 +32682,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33805,14 +32710,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33834,14 +32738,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33863,14 +32766,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33892,14 +32794,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33921,14 +32822,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33950,14 +32850,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -33979,14 +32878,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34008,14 +32906,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34037,14 +32934,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34066,14 +32962,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34095,14 +32990,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34124,14 +33018,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34153,14 +33046,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34182,14 +33074,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34211,14 +33102,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34240,14 +33130,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34269,14 +33158,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34298,14 +33186,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34327,14 +33214,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34356,14 +33242,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34385,14 +33270,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34414,14 +33298,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34443,14 +33326,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34472,14 +33354,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34501,14 +33382,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34530,14 +33410,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34559,14 +33438,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34588,14 +33466,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34617,14 +33494,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            org::xtreemfs::interfaces::Replica new_replica;
            {
@@ -34646,7 +33522,7 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_replica_add( user_credentials, file_id, new_replica );
+              test_interface.xtreemfs_replica_add( file_id, new_replica );
              }
              catch ( std::exception& )
              { }
@@ -34657,52 +33533,48 @@ namespace org
            void fuzz_xtreemfs_replica_remove()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            std::string osd_uuid;
   
              try
              {
-              test_interface.xtreemfs_replica_remove( user_credentials, file_id, osd_uuid );
+              test_interface.xtreemfs_replica_remove( file_id, osd_uuid );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id;
            std::string osd_uuid( "bogus string" );
   
              try
              {
-              test_interface.xtreemfs_replica_remove( user_credentials, file_id, osd_uuid );
+              test_interface.xtreemfs_replica_remove( file_id, osd_uuid );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            std::string osd_uuid;
   
              try
              {
-              test_interface.xtreemfs_replica_remove( user_credentials, file_id, osd_uuid );
+              test_interface.xtreemfs_replica_remove( file_id, osd_uuid );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_id( "bogus string" );
            std::string osd_uuid( "bogus string" );
   
              try
              {
-              test_interface.xtreemfs_replica_remove( user_credentials, file_id, osd_uuid );
+              test_interface.xtreemfs_replica_remove( file_id, osd_uuid );
              }
              catch ( std::exception& )
              { }
@@ -34713,24 +33585,22 @@ namespace org
            void fuzz_xtreemfs_restore_database()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string dump_file;
   
              try
              {
-              test_interface.xtreemfs_restore_database( user_credentials, dump_file );
+              test_interface.xtreemfs_restore_database( dump_file );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string dump_file( "bogus string" );
   
              try
              {
-              test_interface.xtreemfs_restore_database( user_credentials, dump_file );
+              test_interface.xtreemfs_restore_database( dump_file );
              }
              catch ( std::exception& )
              { }
@@ -34741,7 +33611,6 @@ namespace org
            void fuzz_xtreemfs_restore_file()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = 0;
@@ -34750,14 +33619,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = 0;
@@ -34766,14 +33634,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = 0;
@@ -34782,14 +33649,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = 0;
@@ -34798,14 +33664,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -34814,14 +33679,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -34830,14 +33694,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -34846,14 +33709,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -34862,14 +33724,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -34878,14 +33739,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -34894,14 +33754,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -34910,14 +33769,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -34926,14 +33784,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -34942,14 +33799,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -34958,14 +33814,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -34974,14 +33829,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path;
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -34990,14 +33844,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = 0;
@@ -35006,14 +33859,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = 0;
@@ -35022,14 +33874,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = 0;
@@ -35038,14 +33889,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = 0;
@@ -35054,14 +33904,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -35070,14 +33919,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -35086,14 +33934,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -35102,14 +33949,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id;
            uint64_t file_size = UINT64_MAX;
@@ -35118,14 +33964,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -35134,14 +33979,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -35150,14 +33994,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -35166,14 +34009,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = 0;
@@ -35182,14 +34024,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -35198,14 +34039,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -35214,14 +34054,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -35230,14 +34069,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string file_path( "bogus string" );
            std::string file_id( "bogus string" );
            uint64_t file_size = UINT64_MAX;
@@ -35246,7 +34084,7 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_restore_file( user_credentials, file_path, file_id, file_size, osd_uuid, stripe_size );
+              test_interface.xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size );
              }
              catch ( std::exception& )
              { }
@@ -35257,60 +34095,55 @@ namespace org
            void fuzz_xtreemfs_rmvol()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name;
   
              try
              {
-              test_interface.xtreemfs_rmvol( user_credentials, volume_name );
+              test_interface.xtreemfs_rmvol( volume_name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol" );
   
              try
              {
-              test_interface.xtreemfs_rmvol( user_credentials, volume_name );
+              test_interface.xtreemfs_rmvol( volume_name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol/" );
   
              try
              {
-              test_interface.xtreemfs_rmvol( user_credentials, volume_name );
+              test_interface.xtreemfs_rmvol( volume_name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol//" );
   
              try
              {
-              test_interface.xtreemfs_rmvol( user_credentials, volume_name );
+              test_interface.xtreemfs_rmvol( volume_name );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            std::string volume_name( "testvol\"" );
   
              try
              {
-              test_interface.xtreemfs_rmvol( user_credentials, volume_name );
+              test_interface.xtreemfs_rmvol( volume_name );
              }
              catch ( std::exception& )
              { }
@@ -35321,11 +34154,11 @@ namespace org
            void fuzz_xtreemfs_shutdown()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
+  
   
              try
              {
-              test_interface.xtreemfs_shutdown( user_credentials );
+              test_interface.xtreemfs_shutdown();
              }
              catch ( std::exception& )
              { }
@@ -35336,7 +34169,6 @@ namespace org
            void fuzz_xtreemfs_update_file_size()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35362,14 +34194,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35395,14 +34226,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35428,14 +34258,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35461,14 +34290,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35494,14 +34322,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35527,14 +34354,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35560,14 +34386,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35593,14 +34418,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35626,14 +34450,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35659,14 +34482,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35692,14 +34514,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35725,14 +34546,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35758,14 +34578,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35791,14 +34610,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35824,14 +34642,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35857,14 +34674,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35890,14 +34706,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35923,14 +34738,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35956,14 +34770,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -35989,14 +34802,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36022,14 +34834,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36055,14 +34866,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36088,14 +34898,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36121,14 +34930,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36154,14 +34962,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36187,14 +34994,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36220,14 +35026,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36253,14 +35058,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36286,14 +35090,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36319,14 +35122,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36352,14 +35154,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id;
@@ -36385,14 +35186,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36418,14 +35218,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36451,14 +35250,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36484,14 +35282,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36517,14 +35314,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36550,14 +35346,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36583,14 +35378,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36616,14 +35410,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36649,14 +35442,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36682,14 +35474,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36715,14 +35506,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36748,14 +35538,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36781,14 +35570,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36814,14 +35602,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36847,14 +35634,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36880,14 +35666,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36913,14 +35698,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36946,14 +35730,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -36979,14 +35762,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37012,14 +35794,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37045,14 +35826,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37078,14 +35858,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37111,14 +35890,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37144,14 +35922,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37177,14 +35954,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37210,14 +35986,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37243,14 +36018,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37276,14 +36050,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37309,14 +36082,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37342,14 +36114,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37375,14 +36146,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37408,14 +36178,13 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }
             }
   
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
            org::xtreemfs::interfaces::XCap xcap;
            {
            std::string file_id( "bogus string" );
@@ -37441,7 +36210,7 @@ namespace org
   
              try
              {
-              test_interface.xtreemfs_update_file_size( user_credentials, xcap, osd_write_response );
+              test_interface.xtreemfs_update_file_size( xcap, osd_write_response );
              }
              catch ( std::exception& )
              { }

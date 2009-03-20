@@ -1,5 +1,5 @@
-#ifndef _83980537392_H
-#define _83980537392_H
+#ifndef _7105594514_H
+#define _7105594514_H
 
 
 
@@ -106,11 +106,11 @@ namespace org
            void fuzz_xtreemfs_checkpoint()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
+  
   
              try
              {
-              test_interface.xtreemfs_checkpoint( user_credentials );
+              test_interface.xtreemfs_checkpoint();
              }
              catch ( std::exception& )
              { }
@@ -1050,11 +1050,11 @@ namespace org
            void fuzz_xtreemfs_shutdown()
            {
             {
-           org::xtreemfs::interfaces::UserCredentials user_credentials( "test", StringSet( "test" ) );
+  
   
              try
              {
-              test_interface.xtreemfs_shutdown( user_credentials );
+              test_interface.xtreemfs_shutdown();
              }
              catch ( std::exception& )
              { }

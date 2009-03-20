@@ -174,10 +174,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\..\include\org\xtreemfs\client\mrc_proxy_request.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\..\include\org\xtreemfs\client\osd_proxy.h"
     >
 </File>

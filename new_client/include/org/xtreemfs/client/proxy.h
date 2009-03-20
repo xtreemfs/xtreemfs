@@ -13,6 +13,9 @@ namespace org
   {
     namespace client
     {
+      class PolicyContainer;
+
+
       class Proxy : public YIELD::EventHandler
       {
       public:
@@ -44,8 +47,8 @@ namespace org
         uint8_t reconnect_tries_max;
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
+        PolicyContainer* policies;
 
-        void sendProtocolRequest( YIELD::ProtocolRequest&, uint64_t timeout_ms );
         uint8_t reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
         void throwExceptionEvent( YIELD::ExceptionEvent* );
       };

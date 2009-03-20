@@ -1,5 +1,5 @@
-#ifndef _2744166474_H
-#define _2744166474_H
+#ifndef _69295637573_H
+#define _69295637573_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
@@ -200,10 +200,10 @@ namespace org
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, YIELD::EventTarget* send_target ) { return xtreemfs_internal_read_local( file_credentials, file_id, object_number, object_version, offset, length, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, YIELD::timeout_ns_t send_timeout_ns ) { return xtreemfs_internal_read_local( file_credentials, file_id, object_number, object_version, offset, length, NULL, send_timeout_ns ); }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_internal_read_localSyncRequest* __req = new xtreemfs_internal_read_localSyncRequest( file_credentials, file_id, object_number, object_version, offset, length, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_internal_read_localResponse& __resp = ( xtreemfs_internal_read_localResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req ); org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = __resp.get__return_value(); YIELD::SharedObject::decRef( __resp ); return _return_value; }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { xtreemfs_shutdown( user_credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target ) { xtreemfs_shutdown( user_credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdown( user_credentials, NULL, send_timeout_ns ); }
-        virtual void xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdownSyncRequest* __req = new xtreemfs_shutdownSyncRequest( user_credentials, send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_shutdownResponse& __resp = ( xtreemfs_shutdownResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in OSDInterface
+        virtual void xtreemfs_shutdown() { xtreemfs_shutdown( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target ) { xtreemfs_shutdown( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_shutdown( YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdown( NULL, send_timeout_ns ); }
+        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target, YIELD::timeout_ns_t send_timeout_ns ) { xtreemfs_shutdownSyncRequest* __req = new xtreemfs_shutdownSyncRequest( send_timeout_ns ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); xtreemfs_shutdownResponse& __resp = ( xtreemfs_shutdownResponse& )__req->waitForDefaultResponse( send_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }  // Request/response pair Event type definitions for the operations in OSDInterface
   
       class readResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
       {
@@ -876,21 +876,16 @@ namespace org
       class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
-        xtreemfs_shutdownRequest() : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_shutdownRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ), user_credentials( user_credentials ) { }
+        xtreemfs_shutdownRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS( response_timeout_ns ) { }
         virtual ~xtreemfs_shutdownRequest() { }
   
-        void set_user_credentials( const org::xtreemfs::interfaces::UserCredentials&  user_credentials ) { this->user_credentials = user_credentials; }
-        const org::xtreemfs::interfaces::UserCredentials& get_user_credentials() const { return user_credentials; }
-  
-        bool operator==( const xtreemfs_shutdownRequest& other ) const { return user_credentials == other.user_credentials; }
+        bool operator==( const xtreemfs_shutdownRequest& other ) const { return true; }
   
         // YIELD::RTTI
         TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::xtreemfs_shutdownRequest", 1977271802UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), &user_credentials ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::UserCredentials", "user_credentials" ), user_credentials ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { ; }
   
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 3; }
@@ -901,14 +896,13 @@ namespace org
   
   
       protected:
-        org::xtreemfs::interfaces::UserCredentials user_credentials;
+  
       };
   
       class xtreemfs_shutdownSyncRequest : public xtreemfs_shutdownRequest
       {
       public:
-        xtreemfs_shutdownSyncRequest() : xtreemfs_shutdownRequest( org::xtreemfs::interfaces::UserCredentials(), static_cast<YIELD::timeout_ns_t>( -1 ) ) { }
-        xtreemfs_shutdownSyncRequest( const org::xtreemfs::interfaces::UserCredentials& user_credentials, YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_shutdownRequest( user_credentials, response_timeout_ns ) { }
+        xtreemfs_shutdownSyncRequest( YIELD::timeout_ns_t response_timeout_ns = static_cast<YIELD::timeout_ns_t>( -1 ) ) : xtreemfs_shutdownRequest( response_timeout_ns ) { }
         virtual ~xtreemfs_shutdownSyncRequest() { }
   
         bool operator==( const xtreemfs_shutdownSyncRequest& other ) const { return true; }
@@ -1021,7 +1015,7 @@ namespace org
         virtual void handlextreemfs_internal_get_gmaxRequest( xtreemfs_internal_get_gmaxRequest& req ) { xtreemfs_internal_get_gmaxResponse* resp = NULL; try { resp = new xtreemfs_internal_get_gmaxResponse; org::xtreemfs::interfaces::InternalGmax _return_value = _xtreemfs_internal_get_gmax( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& req ) { xtreemfs_internal_truncateResponse* resp = NULL; try { resp = new xtreemfs_internal_truncateResponse; _xtreemfs_internal_truncate( req.get_file_credentials(), req.get_file_id(), req.get_new_file_size() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req ) { xtreemfs_internal_read_localResponse* resp = NULL; try { resp = new xtreemfs_internal_read_localResponse; org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = _xtreemfs_internal_read_local( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_length() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { xtreemfs_shutdownResponse* resp = NULL; try { resp = new xtreemfs_shutdownResponse; _xtreemfs_shutdown( req.get_user_credentials() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { xtreemfs_shutdownResponse* resp = NULL; try { resp = new xtreemfs_shutdownResponse; _xtreemfs_shutdown(); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
   
       virtual org::xtreemfs::interfaces::ObjectData _read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length ) { return org::xtreemfs::interfaces::ObjectData(); }
         virtual void _truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
@@ -1031,7 +1025,7 @@ namespace org
         virtual org::xtreemfs::interfaces::InternalGmax _xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return org::xtreemfs::interfaces::InternalGmax(); }
         virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size ) { }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) { return org::xtreemfs::interfaces::InternalReadLocalResponse(); }
-        virtual void _xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials ) { }
+        virtual void _xtreemfs_shutdown() { }
       };
   
       // Use this macro in an implementation class to get all of the prototypes for the operations in OSDInterface
@@ -1044,7 +1038,7 @@ namespace org
       virtual org::xtreemfs::interfaces::InternalGmax _xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size );\
       virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length );\
-      virtual void _xtreemfs_shutdown( const org::xtreemfs::interfaces::UserCredentials& user_credentials );
+      virtual void _xtreemfs_shutdown();
   
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handlereadRequest( readRequest& req );\
