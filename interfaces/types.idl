@@ -10,6 +10,7 @@ module org
       {
         string user_id;
         StringSet group_ids;
+        string password;
       };
     };
   };

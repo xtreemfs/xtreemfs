@@ -10,6 +10,7 @@ module org
 
       const string ONCRPC_SCHEME = "oncrpc";
       const string ONCRPCS_SCHEME = "oncrpcs";
+      const uint32_t ONCRPC_AUTH_FLAVOR = 1326;
 
       const uint8_t OSD_SELECTION_POLICY_SIMPLE = 1;
 

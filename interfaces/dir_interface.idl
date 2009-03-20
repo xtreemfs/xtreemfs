@@ -47,7 +47,7 @@ module org
         void xtreemfs_address_mappings_remove( string uuid ) # 3;
         uint64_t xtreemfs_address_mappings_set( AddressMappingSet address_mappings ) # 2;
 
-        void xtreemfs_checkpoint( UserCredentials user_credentials ) # 50;
+        void xtreemfs_checkpoint() # 50;
 
         uint64_t xtreemfs_global_time_get() # 8;
 
@@ -57,7 +57,7 @@ module org
         uint64_t xtreemfs_service_register( Service service ) # 4;
         void xtreemfs_service_deregister( string uuid ) # 5;
 
-        void xtreemfs_shutdown( UserCredentials user_credentials ) # 51;
+        void xtreemfs_shutdown() # 51;
       };
     };
   };

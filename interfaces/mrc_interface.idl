@@ -63,42 +63,42 @@ module org
 
 
         // POSIX/FUSE functions
-        boolean access( UserCredentials user_credentials, string path, uint32_t mode ) # 1;
-        void chmod( UserCredentials user_credentials, string path, uint32_t mode ) # 2;
-        void chown( UserCredentials user_credentials, string path, string user_id, string group_id ) # 3;
-        void create( UserCredentials user_credentials, string path, uint32_t mode ) # 4;
-        void getattr( UserCredentials user_credentials, string path, out stat_ stbuf ) # 5;
-        string getxattr( UserCredentials user_credentials, string path, string name ) # 6;
-        void link( UserCredentials user_credentials, string target_path, string link_path ) # 7;
-        void listxattr( UserCredentials user_credentials, string path, out StringSet names ) # 8;
-        void mkdir( UserCredentials user_credentials, string path, uint32_t mode ) # 9;
-        void open( UserCredentials user_credentials, string path, uint32_t flags, uint32_t mode, out FileCredentials file_credentials ) # 11;
-        void readdir( UserCredentials user_credentials, string path, out DirectoryEntrySet directory_entries ) # 12;
-        void removexattr( UserCredentials user_credentials, string path, string name ) # 13;
-        void rename( UserCredentials user_credentials, string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
-        void rmdir( UserCredentials user_credentials, string path ) # 15;
-        void setattr( UserCredentials user_credentials, string path, stat_ stbuf ) # 17;
-        void setxattr( UserCredentials user_credentials, string path, string name, string value, int flags ) # 18;
-        void statfs( UserCredentials user_credentials, string volume_name, out statfs_ statfsbuf ) # 19;
-        void symlink( UserCredentials user_credentials, string target_path, string link_path ) # 20;
-        void unlink( UserCredentials user_credentials, string path, out FileCredentialsSet file_credentials ) # 21;
-        void utime( UserCredentials user_credentials, string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
+        boolean access( string path, uint32_t mode ) # 1;
+        void chmod( string path, uint32_t mode ) # 2;
+        void chown( string path, string user_id, string group_id ) # 3;
+        void create( string path, uint32_t mode ) # 4;
+        void getattr( string path, out stat_ stbuf ) # 5;
+        string getxattr( string path, string name ) # 6;
+        void link( string target_path, string link_path ) # 7;
+        void listxattr( string path, out StringSet names ) # 8;
+        void mkdir( string path, uint32_t mode ) # 9;
+        void open( string path, uint32_t flags, uint32_t mode, out FileCredentials file_credentials ) # 11;
+        void readdir( string path, out DirectoryEntrySet directory_entries ) # 12;
+        void removexattr( string path, string name ) # 13;
+        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
+        void rmdir( string path ) # 15;
+        void setattr( string path, stat_ stbuf ) # 17;
+        void setxattr( string path, string name, string value, int flags ) # 18;
+        void statfs( string volume_name, out statfs_ statfsbuf ) # 19;
+        void symlink( string target_path, string link_path ) # 20;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
+        void utime( string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
 
 
         // XtreemFS-specific functions
-        void xtreemfs_checkpoint( UserCredentials user_credentials ) # 51;
-        void xtreemfs_check_file_exists( UserCredentials user_credentials, string volume_id, StringSet file_ids, out string bitmap ) # 23;
-        void xtreemfs_dump_database( UserCredentials user_credentials, string dump_file ) # 52;
-        void xtreemfs_get_suitable_osds( UserCredentials user_credentials, string file_id, out StringSet osd_uuids ) # 24;
-        void xtreemfs_mkvol( UserCredentials user_credentials, string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
-        void xtreemfs_renew_capability( UserCredentials user_credentials, in XCap old_xcap, out XCap renewed_xcap ) # 25;
-        void xtreemfs_replica_add( UserCredentials user_credentials, string file_id, Replica new_replica ) # 26;
-        void xtreemfs_replica_remove( UserCredentials user_credentials, string file_id, string osd_uuid ) # 27;
-        void xtreemfs_restore_database( UserCredentials user_credentials, string dump_file ) #53;
-        void xtreemfs_restore_file( UserCredentials user_credentials, string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
-        void xtreemfs_rmvol( UserCredentials user_credentials, string volume_name ) # 16;
-        void xtreemfs_shutdown( UserCredentials user_credentials ) # 50;
-        void xtreemfs_update_file_size(UserCredentials user_credentials,  XCap xcap, OSDWriteResponse osd_write_response ) # 29;
+        void xtreemfs_checkpoint() # 51;
+        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
+        void xtreemfs_dump_database( string dump_file ) # 52;
+        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
+        void xtreemfs_mkvol( string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
+        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
+        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
+        void xtreemfs_replica_remove( string file_id, string osd_uuid ) # 27;
+        void xtreemfs_restore_database( string dump_file ) #53;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
+        void xtreemfs_rmvol( string volume_name ) # 16;
+        void xtreemfs_shutdown() # 50;
+        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 29;
       };
     };
   };
