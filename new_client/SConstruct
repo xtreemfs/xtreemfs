@@ -1,9 +1,5 @@
 import sys
 
-SConscript( "proj/xtreemfs-client-lib.SConscript" )
-#SConscript( "proj/xtreemfs-client-test.SConscript" )
-SConscript( "proj/xtfs_mkvol.SConscript" )
-#SConscript( "proj/xtfs_lsvol.SConscript" )
-#SConscript( "proj/xtfs_rmvol.SConscript" )
-SConscript( "proj/xtfs_mount.SConscript" )
-SConscript( "proj/xtfs_send.SConscript" )
+SConscript( "proj/org/xtreemfs/client/bin/xtfs_mkvol.SConscript" )
+SConscript( "proj/org/xtreemfs/client/bin/xtfs_mount.SConscript" )
+SConscript( "proj/org/xtreemfs/client/bin/xtfs_send.SConscript" )
