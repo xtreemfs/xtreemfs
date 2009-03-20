@@ -9,17 +9,9 @@
 using namespace org::xtreemfs::client;
 
 #include <errno.h>
-
-const static uint32_t SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
-const static uint32_t SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;
-const static uint32_t SYSTEM_V_FCNTL_H_O_RDWR = 0x0002;
-const static uint32_t SYSTEM_V_FCNTL_H_O_APPEND = 0x0008;
-const static uint32_t SYSTEM_V_FCNTL_H_O_CREAT = 0x0100;
-const static uint32_t SYSTEM_V_FCNTL_H_O_TRUNC = 0x0200;
-const static uint32_t SYSTEM_V_FCNTL_H_O_EXCL = 0x0400;
-const static uint32_t SYSTEM_V_FCNTL_S_IFREG = 0x8000;
-const static uint32_t SYSTEM_V_FCNTL_S_IFDIR = 0x4000;
-const static uint32_t SYSTEM_V_FCNTL_S_IFLNK = 0xA000;
+#ifndef _WIN32
+#include <sys/statvfs.h>
+#endif
 
 
 Volume::Volume( const std::string& name, DIRProxy& dir_proxy, MRCProxy& mrc_proxy, OSDProxyFactory& osd_proxy_factory )
@@ -81,7 +73,7 @@ bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_n
 }
 
 bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
-{ 
+{
   mrc_proxy.mkdir( Path( this->name, path ), mode );
   return true;
 }

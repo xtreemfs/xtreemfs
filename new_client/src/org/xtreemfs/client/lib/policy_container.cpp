@@ -6,6 +6,8 @@ using namespace org::xtreemfs::client;
 #ifndef _WIN32
 #include "yieldfs.h"
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 #endif
 
 
@@ -76,25 +78,25 @@ void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_
 
 org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials() const
 {
+  int caller_uid, caller_gid;
+#ifdef _WIN32
+  caller_uid = caller_gid = 0;
+#else
+  caller_uid = yieldfs::FUSE::geteuid();
+  if ( caller_uid < 0 ) caller_uid = ::geteuid();
+  caller_gid = yieldfs::FUSE::getegid();
+  if ( caller_gid < 0 ) caller_gid = ::getegid();
+#endif
+
   if ( _get_user_credentials )
   {
-    int caller_uid, caller_gid;
-#ifdef _WIN32
-    caller_uid = caller_gid = 0;
-#else
-    caller_uid = yieldfs::FUSE::geteuid();
-    if ( caller_uid < 0 ) caller_uid = ::geteuid();
-    caller_gid = yieldfs::FUSE::getegid();
-    if ( caller_gid < 0 ) caller_gid = ::getegid();
-#endif
-    
     char *user_id, **group_ids;
     int _get_user_credentials_ret = _get_user_credentials( caller_uid, caller_gid, &user_id, &group_ids );
     if ( _get_user_credentials_ret >= 0 )
     {
       org::xtreemfs::interfaces::UserCredentials user_credentials;
 
-      user_credentials.set_user_id( user_id );      
+      user_credentials.set_user_id( user_id );
       free( user_id );
 
       org::xtreemfs::interfaces::StringSet group_ids_ss;
@@ -102,16 +104,29 @@ org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials
       {
         char* group_id = group_ids[group_id_i];
         group_ids_ss.push_back( group_id );
-        free( group_id );        
+        free( group_id );
       }
       user_credentials.set_group_ids( group_ids_ss );
       free( group_ids );
 
       return user_credentials;
-    }    
+    }
     else
       throw YIELD::PlatformException( _get_user_credentials_ret * -1 );
   }
   else
+  {
+#ifndef _WIN32
+    struct passwd pwd, *pwd_p = &pwd, *temp_pwd_p;
+    char pwd_buf[256]; int pwd_buf_len = sizeof( pwd_buf );
+    struct group grp, *grp_p = &grp, *temp_grp_p;
+    char grp_buf[256]; int grp_buf_len = sizeof( grp_buf );
+
+    if ( getpwuid_r( caller_uid, pwd_p, pwd_buf, pwd_buf_len, &temp_pwd_p ) == 0 &&
+         getgrgid_r( caller_gid, grp_p, grp_buf, grp_buf_len, &temp_grp_p ) == 0 )
+      return org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ) );
+#endif
+
     return org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ) );
+  }
 }

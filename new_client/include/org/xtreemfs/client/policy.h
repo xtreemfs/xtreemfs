@@ -4,7 +4,7 @@
 #ifndef DLLEXPORT
 #if defined(_MSC_VER)
 #define DLLEXPORT extern "C" __declspec(dllexport)
-#elif defined(YIELD_HAVE_GCCVISIBILITIYPATCH) || ( defined(__GNUC__) && __GNUC__ >= 4 )
+#elif  defined(__GNUC__) && __GNUC__ >= 4
 #define DLLEXPORT extern "C" __attribute__ ( ( visibility( "default" ) ) )
 #else
 #define DLLEXPORT extern "C"
