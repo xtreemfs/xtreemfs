@@ -1,6 +1,6 @@
 import sys, os.path
 
-SConscript( 'xtreemfs-client-lib.SConscript' )    
+SConscript( '../lib/xtreemfs-client-lib.SConscript' )    
 
 
 try:
