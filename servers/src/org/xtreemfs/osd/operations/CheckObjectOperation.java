@@ -33,10 +33,8 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
-import org.xtreemfs.interfaces.OSDInterface.check_objectRequest;
-import org.xtreemfs.interfaces.OSDInterface.check_objectResponse;
-import org.xtreemfs.interfaces.OSDInterface.readRequest;
-import org.xtreemfs.interfaces.OSDInterface.readResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
@@ -56,7 +54,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     public CheckObjectOperation(OSDRequestDispatcher master) {
         super(master);
-        check_objectRequest rq = new check_objectRequest();
+        xtreemfs_check_objectRequest rq = new xtreemfs_check_objectRequest();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -69,7 +67,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final check_objectRequest args = (check_objectRequest) rq.getRequestArgs();
+        final xtreemfs_check_objectRequest args = (xtreemfs_check_objectRequest) rq.getRequestArgs();
 
         if (args.getObject_number() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
@@ -85,7 +83,7 @@ public final class CheckObjectOperation extends OSDOperation {
         });
     }
 
-    public void step2(final OSDRequest rq, check_objectRequest args, ObjectInformation result, Exception error) {
+    public void step2(final OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -105,13 +103,13 @@ public final class CheckObjectOperation extends OSDOperation {
 
     }
 
-    private void nonStripedCheckObject(OSDRequest rq, check_objectRequest args, ObjectInformation result) {
+    private void nonStripedCheckObject(OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result) {
 
         final boolean isLastObjectOrEOF = result.getLastLocalObjectNo() <= args.getObject_number();
         readFinish(rq, args, result, isLastObjectOrEOF);
     }
 
-    private void stripedCheckObject(final OSDRequest rq, final check_objectRequest args, final ObjectInformation result) {
+    private void stripedCheckObject(final OSDRequest rq, final xtreemfs_check_objectRequest args, final ObjectInformation result) {
         ObjectData data;
         final long objNo = args.getObject_number();
         final long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
@@ -125,7 +123,7 @@ public final class CheckObjectOperation extends OSDOperation {
                 int cnt = 0;
                 for (ServiceUUID osd : osds) {
                     if (!osd.equals(localUUID)) {
-                        gmaxRPCs[cnt++] = master.getOSDClient().internal_get_gmax(osd.getAddress(), args.getFile_id(), args.getCredentials());
+                        gmaxRPCs[cnt++] = master.getOSDClient().internal_get_gmax(osd.getAddress(), args.getFile_id(), args.getFile_credentials());
                     }
                 }
                 this.waitForResponses(gmaxRPCs, new ResponsesListener() {
@@ -144,7 +142,7 @@ public final class CheckObjectOperation extends OSDOperation {
         }
     }
 
-    private void stripedCheckObjectAnalyzeGmax(final OSDRequest rq, final check_objectRequest args,
+    private void stripedCheckObjectAnalyzeGmax(final OSDRequest rq, final xtreemfs_check_objectRequest args,
             final ObjectInformation result, RPCResponse[] gmaxRPCs) {
         long maxObjNo = -1;
         long maxTruncate = -1;
@@ -171,7 +169,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     }
 
-    private void readFinish(OSDRequest rq, check_objectRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
+    private void readFinish(OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
 
         ObjectData data;
         data = result.getObjectData(isLastObjectOrEOF);
@@ -184,18 +182,18 @@ public final class CheckObjectOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, ObjectData result) {
-        check_objectResponse response = new check_objectResponse(result);
+        xtreemfs_check_objectResponse response = new xtreemfs_check_objectResponse(result);
         rq.sendSuccess(response);
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        check_objectRequest rpcrq = new check_objectRequest();
+        xtreemfs_check_objectRequest rpcrq = new xtreemfs_check_objectRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(), sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

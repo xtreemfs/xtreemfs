@@ -11,26 +11,24 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chownRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public chownRequest() { context = new Context(); path = ""; userId = ""; groupId = ""; }
-    public chownRequest( Context context, String path, String userId, String groupId ) { this.context = context; this.path = path; this.userId = userId; this.groupId = groupId; }
-    public chownRequest( Object from_hash_map ) { context = new Context(); path = ""; userId = ""; groupId = ""; this.deserialize( from_hash_map ); }
-    public chownRequest( Object[] from_array ) { context = new Context(); path = ""; userId = ""; groupId = "";this.deserialize( from_array ); }
+    public chownRequest() { path = ""; user_id = ""; group_id = ""; }
+    public chownRequest( String path, String user_id, String group_id ) { this.path = path; this.user_id = user_id; this.group_id = group_id; }
+    public chownRequest( Object from_hash_map ) { path = ""; user_id = ""; group_id = ""; this.deserialize( from_hash_map ); }
+    public chownRequest( Object[] from_array ) { path = ""; user_id = ""; group_id = "";this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
-    public String getUserId() { return userId; }
-    public void setUserId( String userId ) { this.userId = userId; }
-    public String getGroupId() { return groupId; }
-    public void setGroupId( String groupId ) { this.groupId = groupId; }
+    public String getUser_id() { return user_id; }
+    public void setUser_id( String user_id ) { this.user_id = user_id; }
+    public String getGroup_id() { return group_id; }
+    public void setGroup_id( String group_id ) { this.group_id = group_id; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }    
     public long getTypeId() { return 3; }
 
     public String toString()
     {
-        return "chownRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + "\"" + userId + "\"" + ", " + "\"" + groupId + "\"" + " )"; 
+        return "chownRequest( " + "\"" + path + "\"" + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + " )";
     }
 
 
@@ -41,53 +39,47 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.path = ( String )from_hash_map.get( "path" );
-        this.userId = ( String )from_hash_map.get( "userId" );
-        this.groupId = ( String )from_hash_map.get( "groupId" );
+        this.user_id = ( String )from_hash_map.get( "user_id" );
+        this.group_id = ( String )from_hash_map.get( "group_id" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.path = ( String )from_array[1];
-        this.userId = ( String )from_array[2];
-        this.groupId = ( String )from_array[3];        
+        this.path = ( String )from_array[0];
+        this.user_id = ( String )from_array[1];
+        this.group_id = ( String )from_array[2];        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        userId = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        groupId = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        user_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        group_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "path", path );
-        to_hash_map.put( "userId", userId );
-        to_hash_map.put( "groupId", groupId );
+        to_hash_map.put( "user_id", user_id );
+        to_hash_map.put( "group_id", group_id );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( userId, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( groupId, writer );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( user_id, writer );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( group_id, writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(userId);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(groupId);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(user_id);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(group_id);
         return my_size;
     }
 
@@ -96,10 +88,9 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new chownResponse(); }
 
 
-    private Context context;
     private String path;
-    private String userId;
-    private String groupId;
+    private String user_id;
+    private String group_id;
 
 }
 

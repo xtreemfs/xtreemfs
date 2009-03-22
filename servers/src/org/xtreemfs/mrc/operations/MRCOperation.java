@@ -24,9 +24,8 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -83,7 +82,10 @@ public abstract class MRCOperation {
      *            the MRC request
      * @return the context, or <code>null</code>, if not available
      */
-    public abstract Context getContext(MRCRequest rq);
+    public UserCredentials getUserCredentials(MRCRequest rq) {
+        UserCredentials cred = rq.getRPCRequest().getUserCredentials();
+        return cred;
+    }
     
     /**
      * Completes a request. This method should be used if no error has occurred.
@@ -106,10 +108,10 @@ public abstract class MRCOperation {
     }
 
     protected void validateContext(MRCRequest rq) throws UserException {
-        Context ctx = getContext(rq);
+        UserCredentials ctx = getUserCredentials(rq);
         if ((ctx == null) || (ctx.getGroup_ids().size() == 0) ||
             (ctx.getUser_id().length() == 0)) {
-            throw new UserException(ErrNo.EACCES, "Context must contain a non-empty userID and at least one groupID!");
+            throw new UserException(ErrNo.EACCES, "UserCredentials must contain a non-empty userID and at least one groupID!");
         }
 
     }

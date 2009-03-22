@@ -31,12 +31,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
-import org.xtreemfs.interfaces.ServiceRegistry;
+import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.service_registerRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_registerResponse;
-import org.xtreemfs.interfaces.KeyValuePair;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
 
 /**
  *
@@ -50,7 +49,7 @@ public class RegisterServiceOperation extends DIROperation {
 
     public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        service_registerRequest tmp = new service_registerRequest();
+        xtreemfs_service_registerRequest tmp = new xtreemfs_service_registerRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -63,15 +62,15 @@ public class RegisterServiceOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final service_registerRequest request = (service_registerRequest)rq.getRequestMessage();
+            final xtreemfs_service_registerRequest request = (xtreemfs_service_registerRequest)rq.getRequestMessage();
 
-            final ServiceRegistry reg = request.getService();
+            final Service reg = request.getService();
 
             byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
                     DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes());
             long currentVersion = 0;
             if (data != null) {
-                ServiceRegistry dbData = new ServiceRegistry();
+                Service dbData = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 dbData.deserialize(buf);
                 currentVersion = dbData.getVersion();
@@ -98,7 +97,7 @@ public class RegisterServiceOperation extends DIROperation {
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
             database.directInsert(ig);
             
-            service_registerResponse response = new service_registerResponse(currentVersion);
+            xtreemfs_service_registerResponse response = new xtreemfs_service_registerResponse(currentVersion);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -116,7 +115,7 @@ public class RegisterServiceOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        service_registerRequest amr = new service_registerRequest();
+        xtreemfs_service_registerRequest amr = new xtreemfs_service_registerRequest();
         rq.deserializeMessage(amr);
     }
 

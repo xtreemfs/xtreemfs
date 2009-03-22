@@ -30,7 +30,6 @@ import java.util.List;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.interfaces.Context;
 
 /**
  * authentication provider for XOS certificates.
@@ -41,7 +40,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
     
     private NullAuthProvider nullAuth;
     
-    public UserCredentials getEffectiveCredentials(Context ctx, ChannelIO channel)
+    public UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx, ChannelIO channel)
         throws AuthenticationException {
         // use cached info!
         assert (nullAuth != null);

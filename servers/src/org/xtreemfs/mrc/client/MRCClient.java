@@ -32,7 +32,6 @@ import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
@@ -43,17 +42,9 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.statfs_;
-import org.xtreemfs.interfaces.DIRInterface.admin_checkpointRequest;
-import org.xtreemfs.interfaces.DIRInterface.admin_checkpointResponse;
-import org.xtreemfs.interfaces.DIRInterface.admin_shutdownRequest;
-import org.xtreemfs.interfaces.DIRInterface.admin_shutdownResponse;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessResponse;
-import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseRequest;
-import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseResponse;
-import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseRequest;
-import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
@@ -70,8 +61,6 @@ import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.listxattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
-import org.xtreemfs.interfaces.MRCInterface.mkvolRequest;
-import org.xtreemfs.interfaces.MRCInterface.mkvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.openRequest;
 import org.xtreemfs.interfaces.MRCInterface.openResponse;
 import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
@@ -82,8 +71,6 @@ import org.xtreemfs.interfaces.MRCInterface.renameRequest;
 import org.xtreemfs.interfaces.MRCInterface.renameResponse;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.rmdirResponse;
-import org.xtreemfs.interfaces.MRCInterface.rmvolRequest;
-import org.xtreemfs.interfaces.MRCInterface.rmvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.setxattrRequest;
@@ -98,17 +85,30 @@ import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
 import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_checkpointRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_checkpointResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
+import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  * 
@@ -122,72 +122,72 @@ public class MRCClient extends ONCRPCClient {
     
     /* admin calls */
 
-    public RPCResponse admin_shutdown(InetSocketAddress server, String password) {
+    public RPCResponse xtreemfs_shutdown(InetSocketAddress server, UserCredentials credentials) {
         
-        admin_shutdownRequest rq = new admin_shutdownRequest(password);
+        xtreemfs_shutdownRequest rq = new xtreemfs_shutdownRequest();
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final admin_shutdownResponse resp = new admin_shutdownResponse();
+                final xtreemfs_shutdownResponse resp = new xtreemfs_shutdownResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        }, credentials);
         return r;
     }
     
-    public RPCResponse admin_checkpoint(InetSocketAddress server, String password) {
+    public RPCResponse xtreemfs_checkpoint(InetSocketAddress server, UserCredentials credentials) {
         
-        admin_checkpointRequest rq = new admin_checkpointRequest(password);
+        xtreemfs_checkpointRequest rq = new xtreemfs_checkpointRequest();
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final admin_checkpointResponse resp = new admin_checkpointResponse();
+                final xtreemfs_checkpointResponse resp = new xtreemfs_checkpointResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse admin_dump_database(InetSocketAddress server, String password, String dumpFile) {
+    public RPCResponse xtreemfs_dump_database(InetSocketAddress server, UserCredentials credentials, String dumpFile) {
         
-        admin_dump_databaseRequest rq = new admin_dump_databaseRequest(password, dumpFile);
+        xtreemfs_dump_databaseRequest rq = new xtreemfs_dump_databaseRequest(dumpFile);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final admin_dump_databaseResponse resp = new admin_dump_databaseResponse();
+                final xtreemfs_dump_databaseResponse resp = new xtreemfs_dump_databaseResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse admin_restore_database(InetSocketAddress server, String password, String dumpFile) {
+    public RPCResponse xtreemfs_restore_database(InetSocketAddress server, UserCredentials credentials, String dumpFile) {
         
-        admin_restore_databaseRequest rq = new admin_restore_databaseRequest(password, dumpFile);
+        xtreemfs_restore_databaseRequest rq = new xtreemfs_restore_databaseRequest(dumpFile);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final admin_restore_databaseResponse resp = new admin_restore_databaseResponse();
+                final xtreemfs_restore_databaseResponse resp = new xtreemfs_restore_databaseResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
     /* POSIX metadata calls */
 
-    public RPCResponse<Boolean> access(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse<Boolean> access(InetSocketAddress server, UserCredentials credentials, String path,
         int mode) {
         
-        accessRequest rq = new accessRequest(toContext(uid, gids), path, mode);
+        accessRequest rq = new accessRequest(path, mode);
         RPCResponse<Boolean> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<Boolean>() {
                 
@@ -197,13 +197,13 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getReturnValue();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse chmod(InetSocketAddress server, String uid, List<String> gids, String path, int mode) {
+    public RPCResponse chmod(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
-        chmodRequest rq = new chmodRequest(toContext(uid, gids), path, mode);
+        chmodRequest rq = new chmodRequest(path, mode);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -212,14 +212,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse chown(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse chown(InetSocketAddress server, UserCredentials credentials, String path,
         String newUID, String newGID) {
         
-        chownRequest rq = new chownRequest(toContext(uid, gids), path, newUID, newGID);
+        chownRequest rq = new chownRequest(path, newUID, newGID);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -228,13 +228,13 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse create(InetSocketAddress server, String uid, List<String> gids, String path, int mode) {
+    public RPCResponse create(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
-        createRequest rq = new createRequest(toContext(uid, gids), path, mode);
+        createRequest rq = new createRequest(path, mode);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -243,13 +243,13 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<stat_> getattr(InetSocketAddress server, String uid, List<String> gids, String path) {
+    public RPCResponse<stat_> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
         
-        getattrRequest rq = new getattrRequest(toContext(uid, gids), path);
+        getattrRequest rq = new getattrRequest(path);
         RPCResponse<stat_> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<stat_>() {
                 
@@ -259,14 +259,14 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getStbuf();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse<String> getxattr(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse<String> getxattr(InetSocketAddress server, UserCredentials credentials, String path,
         String name) {
         
-        getxattrRequest rq = new getxattrRequest(toContext(uid, gids), path, name);
+        getxattrRequest rq = new getxattrRequest(path, name);
         RPCResponse<String> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<String>() {
                 
@@ -276,14 +276,14 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getReturnValue();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse link(InetSocketAddress server, String uid, List<String> gids, String targetPath,
+    public RPCResponse link(InetSocketAddress server, UserCredentials credentials, String targetPath,
         String linkPath) {
         
-        linkRequest rq = new linkRequest(toContext(uid, gids), targetPath, linkPath);
+        linkRequest rq = new linkRequest(targetPath, linkPath);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -292,14 +292,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<StringSet> listxattr(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<StringSet> listxattr(InetSocketAddress server, UserCredentials credentials,
         String path) {
         
-        listxattrRequest rq = new listxattrRequest(toContext(uid, gids), path);
+        listxattrRequest rq = new listxattrRequest(path);
         RPCResponse<StringSet> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<StringSet>() {
                 
@@ -309,13 +309,13 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getNames();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse mkdir(InetSocketAddress server, String uid, List<String> gids, String path, int mode) {
+    public RPCResponse mkdir(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
-        mkdirRequest rq = new mkdirRequest(toContext(uid, gids), path, mode);
+        mkdirRequest rq = new mkdirRequest(path, mode);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -324,32 +324,32 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse mkvol(InetSocketAddress server, String uid, List<String> gids, String password,
+    public RPCResponse mkvol(InetSocketAddress server, UserCredentials credentials,
         String volumeName, int osdSelectionPolicy, StripingPolicy defaultStripingPolicy,
         int accessControlPolicy) {
         
-        mkvolRequest rq = new mkvolRequest(toContext(uid, gids), password, volumeName, osdSelectionPolicy,
+        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(volumeName, osdSelectionPolicy,
             defaultStripingPolicy, accessControlPolicy);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final mkvolResponse resp = new mkvolResponse();
+                final xtreemfs_mkvolResponse resp = new xtreemfs_mkvolResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<FileCredentials> open(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<FileCredentials> open(InetSocketAddress server, UserCredentials credentials,
         String path, int flags, int mode) {
         
-        openRequest rq = new openRequest(toContext(uid, gids), path, flags, mode);
+        openRequest rq = new openRequest(path, flags, mode);
         RPCResponse<FileCredentials> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<FileCredentials>() {
                 
@@ -357,16 +357,16 @@ public class MRCClient extends ONCRPCClient {
                 public FileCredentials getResult(ReusableBuffer data) {
                     final openResponse resp = new openResponse();
                     resp.deserialize(data);
-                    return resp.getCredentials();
+                    return resp.getFile_credentials();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse<DirectoryEntrySet> readdir(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<DirectoryEntrySet> readdir(InetSocketAddress server, UserCredentials credentials,
         String path) {
         
-        readdirRequest rq = new readdirRequest(toContext(uid, gids), path);
+        readdirRequest rq = new readdirRequest(path);
         RPCResponse<DirectoryEntrySet> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<DirectoryEntrySet>() {
                 
@@ -376,14 +376,14 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getDirectory_entries();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse removexattr(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse removexattr(InetSocketAddress server, UserCredentials credentials, String path,
         String name) {
         
-        removexattrRequest rq = new removexattrRequest(toContext(uid, gids), path, name);
+        removexattrRequest rq = new removexattrRequest(path, name);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -392,14 +392,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<FileCredentialsSet> rename(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<FileCredentialsSet> rename(InetSocketAddress server, UserCredentials credentials,
         String sourcePath, String targetPath) {
         
-        renameRequest rq = new renameRequest(toContext(uid, gids), sourcePath, targetPath);
+        renameRequest rq = new renameRequest(sourcePath, targetPath);
         RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<FileCredentialsSet>() {
                 
@@ -407,15 +407,15 @@ public class MRCClient extends ONCRPCClient {
                 public FileCredentialsSet getResult(ReusableBuffer data) {
                     final renameResponse resp = new renameResponse();
                     resp.deserialize(data);
-                    return resp.getCredentials();
+                    return resp.getFile_credentials();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse rmdir(InetSocketAddress server, String uid, List<String> gids, String path) {
+    public RPCResponse rmdir(InetSocketAddress server, UserCredentials credentials, String path) {
         
-        rmdirRequest rq = new rmdirRequest(toContext(uid, gids), path);
+        rmdirRequest rq = new rmdirRequest(path);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -424,30 +424,30 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse rmvol(InetSocketAddress server, String uid, List<String> gids, String password,
+    public RPCResponse rmvol(InetSocketAddress server, UserCredentials credentials,
         String volumeName) {
         
-        rmvolRequest rq = new rmvolRequest(toContext(uid, gids), password, volumeName);
+        xtreemfs_rmvolRequest rq = new xtreemfs_rmvolRequest(volumeName);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final rmvolResponse resp = new rmvolResponse();
+                final xtreemfs_rmvolResponse resp = new xtreemfs_rmvolResponse();
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse setattr(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse setattr(InetSocketAddress server, UserCredentials credentials, String path,
         stat_ statInfo) {
         
-        setattrRequest rq = new setattrRequest(toContext(uid, gids), path, statInfo);
+        setattrRequest rq = new setattrRequest(path, statInfo);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -456,14 +456,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse setxattr(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse setxattr(InetSocketAddress server, UserCredentials credentials, String path,
         String name, String value, int flags) {
         
-        setxattrRequest rq = new setxattrRequest(toContext(uid, gids), path, name, value, flags);
+        setxattrRequest rq = new setxattrRequest(path, name, value, flags);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -472,14 +472,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<statfs_> statfs(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<statfs_> statfs(InetSocketAddress server, UserCredentials credentials,
         String volumeName) {
         
-        statfsRequest rq = new statfsRequest(toContext(uid, gids), volumeName);
+        statfsRequest rq = new statfsRequest(volumeName);
         RPCResponse<statfs_> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<statfs_>() {
                 
@@ -489,14 +489,14 @@ public class MRCClient extends ONCRPCClient {
                     resp.deserialize(data);
                     return resp.getStatfsbuf();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse symlink(InetSocketAddress server, String uid, List<String> gids, String targetPath,
+    public RPCResponse symlink(InetSocketAddress server, UserCredentials credentials, String targetPath,
         String linkPath) {
         
-        symlinkRequest rq = new symlinkRequest(toContext(uid, gids), targetPath, linkPath);
+        symlinkRequest rq = new symlinkRequest(targetPath, linkPath);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -505,14 +505,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse<FileCredentialsSet> unlink(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse<FileCredentialsSet> unlink(InetSocketAddress server, UserCredentials credentials,
         String path) {
         
-        unlinkRequest rq = new unlinkRequest(toContext(uid, gids), path);
+        unlinkRequest rq = new unlinkRequest(path);
         RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<FileCredentialsSet>() {
                 
@@ -520,16 +520,16 @@ public class MRCClient extends ONCRPCClient {
                 public FileCredentialsSet getResult(ReusableBuffer data) {
                     final unlinkResponse resp = new unlinkResponse();
                     resp.deserialize(data);
-                    return resp.getCredentials();
+                    return resp.getFile_credentials();
                 }
-            });
+            },credentials);
         return r;
     }
     
-    public RPCResponse utime(InetSocketAddress server, String uid, List<String> gids, String path,
+    public RPCResponse utime(InetSocketAddress server, UserCredentials credentials, String path,
         long atime, long ctime, long mtime) {
         
-        utimeRequest rq = new utimeRequest(toContext(uid, gids), path, atime, ctime, mtime);
+        utimeRequest rq = new utimeRequest(path, atime, ctime, mtime);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -538,7 +538,7 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        }, credentials);
         return r;
     }
     
@@ -593,10 +593,10 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse xtreemfs_replica_add(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse xtreemfs_replica_add(InetSocketAddress server, UserCredentials credentials,
         String fileId, Replica newReplica) {
         
-        xtreemfs_replica_addRequest rq = new xtreemfs_replica_addRequest(toContext(uid, gids), fileId,
+        xtreemfs_replica_addRequest rq = new xtreemfs_replica_addRequest(fileId,
             newReplica);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
@@ -606,14 +606,14 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
-    public RPCResponse xtreemfs_replica_remove(InetSocketAddress server, String uid, List<String> gids,
+    public RPCResponse xtreemfs_replica_remove(InetSocketAddress server, UserCredentials credentials,
         String fileId, String osdUUID) {
         
-        xtreemfs_replica_removeRequest rq = new xtreemfs_replica_removeRequest(toContext(uid, gids), fileId,
+        xtreemfs_replica_removeRequest rq = new xtreemfs_replica_removeRequest(fileId,
             osdUUID);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
@@ -623,7 +623,7 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        });
+        },credentials);
         return r;
     }
     
@@ -660,13 +660,13 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    private static Context toContext(String uid, List<String> gids) {
+    public static UserCredentials getCredentials(String uid, List<String> gids) {
         
         StringSet gidsAsSet = new StringSet();
         for (String gid : gids)
             gidsAsSet.add(gid);
         
-        return new Context(uid, gidsAsSet);
+        return new UserCredentials(uid, gidsAsSet,"");
     }
     
 }

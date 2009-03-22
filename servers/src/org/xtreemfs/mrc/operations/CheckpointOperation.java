@@ -25,8 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.DIRInterface.admin_checkpointResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_checkpointResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -50,17 +49,13 @@ public class CheckpointOperation extends MRCOperation {
             master.getVolumeManager().checkpointDB();
             
             // set the response
-            rq.setResponse(new admin_checkpointResponse());
+            rq.setResponse(new xtreemfs_checkpointResponse());
             finishRequest(rq);
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
             master.requestFailed(rq, ex);
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
     
 }

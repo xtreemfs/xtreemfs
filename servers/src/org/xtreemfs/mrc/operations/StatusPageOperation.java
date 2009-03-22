@@ -30,7 +30,6 @@ import java.io.InputStreamReader;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -128,10 +127,6 @@ public class StatusPageOperation extends MRCOperation {
             tmp = tmp.replace(key.toString(), vars.get(key));
         }
         return tmp;
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
     
 }

@@ -25,17 +25,12 @@ package org.xtreemfs.common.clients.io;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -50,14 +45,13 @@ import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
-import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.client.OSDClient;
-import org.xtreemfs.utils.utils;
 
 public class RandomAccessFile implements ObjectStore {
 
@@ -86,21 +80,23 @@ public class RandomAccessFile implements ObjectStore {
 
     private long capTime;
 
-    private final String userID;
-
-    private final List<String> groupIDs;
-
     private Replica            currentReplica;
 
     private final boolean      isReadOnly;
-    
+
+    private final UserCredentials credentials;
+
+    public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
+            RPCNIOSocketClient rpcClient,
+            String userID, List<String> groupIDs) throws ONCRPCException,InterruptedException,IOException {
+            this(mode, mrcAddress, pathName, rpcClient,  MRCClient.getCredentials(userID, groupIDs));
+    }
+
     public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
             RPCNIOSocketClient rpcClient, 
-            String userID, List<String> groupIDs) throws ONCRPCException,InterruptedException,IOException {
+            UserCredentials credentials) throws ONCRPCException,InterruptedException,IOException {
         this.pathName = pathName;
         this.mrcAddress = mrcAddress;
-        this.userID = userID;
-        this.groupIDs = groupIDs;
 
         assert (rpcClient != null);
 
@@ -110,7 +106,9 @@ public class RandomAccessFile implements ObjectStore {
 
         // create a new file if necessary
 
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, userID, groupIDs, pathName, FileAccessManager.O_CREAT, translateMode(mode));
+        this.credentials = credentials;
+
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, translateMode(mode));
         fcred = r.get();
         r.freeBuffers();
 
@@ -380,7 +378,7 @@ public class RandomAccessFile implements ObjectStore {
         RPCResponse<OSDWriteResponse> response = null;
         try {
             ServiceUUID osd = currentReplica.getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
-            ObjectData odata = new ObjectData("", 0, false, data);
+            ObjectData odata = new ObjectData(data, 0, 0, false);
             response = osdClient.write(osd.getAddress(), fileId, fcred, objectNo, 0, (int)firstByteInObject, 0, odata);
             OSDWriteResponse owr = response.get();
             this.updateWriteResponse(owr);
@@ -420,7 +418,7 @@ public class RandomAccessFile implements ObjectStore {
             RPCResponse<FileCredentialsSet> r = null;
             RPCResponse delR = null;
             try {
-                r = mrcClient.unlink(mrcAddress, userID,groupIDs,pathName);
+                r = mrcClient.unlink(mrcAddress, credentials,pathName);
                 FileCredentialsSet fcreds = r.get();
                 if (fcreds.size() > 0) {
                     //must delete on OSDs too!
@@ -447,7 +445,7 @@ public class RandomAccessFile implements ObjectStore {
     public long length() throws IOException {
         RPCResponse<stat_> r = null;
         try {
-            r = mrcClient.getattr(mrcAddress, userID, groupIDs, pathName);
+            r = mrcClient.getattr(mrcAddress, credentials, pathName);
             stat_ statInfo = r.get();
 
             //decide what to use...

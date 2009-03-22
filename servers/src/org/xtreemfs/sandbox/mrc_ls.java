@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -52,15 +53,15 @@ public class mrc_ls {
 
             MRCClient c = new MRCClient(rpcClient,new InetSocketAddress(mrcUrl.getHost(),mrcUrl.getPort()));
 
-            final String user = "test";
             final List<String> groups = new ArrayList(1);
             groups.add("test");
+            final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<DirectoryEntrySet> r = c.readdir(null, user,groups, path);
+            RPCResponse<DirectoryEntrySet> r = c.readdir(null, uc, path);
             DirectoryEntrySet entries = r.get();
             r.freeBuffers();
             for (DirectoryEntry e : entries) {
-                System.out.println(e.getEntry_name()+"\t"+e.getStbuf().getMode()+"\t"+OutputUtils.formatBytes(e.getStbuf().getSize())+"\t"+
+                System.out.println(e.getName()+"\t"+e.getStbuf().getMode()+"\t"+OutputUtils.formatBytes(e.getStbuf().getSize())+"\t"+
                         e.getStbuf().getAttributes());
             }
             rpcClient.shutdown();

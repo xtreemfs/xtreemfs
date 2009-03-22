@@ -33,14 +33,11 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
-import org.xtreemfs.interfaces.MRCInterface.mkvolRequest;
-import org.xtreemfs.interfaces.MRCInterface.mkvolResponse;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
+import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -65,7 +62,7 @@ public class CreateVolumeOperation extends MRCOperation {
         
         try {
             
-            final mkvolRequest rqArgs = (mkvolRequest) rq.getRequestArgs();
+            final xtreemfs_mkvolRequest rqArgs = (xtreemfs_mkvolRequest) rq.getRequestArgs();
 
             validateContext(rq);
             
@@ -96,12 +93,12 @@ public class CreateVolumeOperation extends MRCOperation {
             List<String> attrs = new LinkedList<String>();
             attrs.add("version");
             
-            RPCResponse<ServiceRegistrySet> response = master.getDirClient().service_get_by_type(null,
+            RPCResponse<ServiceSet> response = master.getDirClient().xtreemfs_service_get_by_type(null,
                 Constants.SERVICE_TYPE_VOLUME);
-            response.registerListener(new RPCResponseAvailableListener<ServiceRegistrySet>() {
+            response.registerListener(new RPCResponseAvailableListener<ServiceSet>() {
                 
                 @Override
-                public void responseAvailable(RPCResponse<ServiceRegistrySet> r) {
+                public void responseAvailable(RPCResponse<ServiceSet> r) {
                     processStep2(rqArgs, volumeId, rq, r);
                 }
             });
@@ -115,19 +112,19 @@ public class CreateVolumeOperation extends MRCOperation {
         }
     }
     
-    private void processStep2(final mkvolRequest rqArgs, final String volumeId, final MRCRequest rq,
-        RPCResponse<ServiceRegistrySet> rpcResponse) {
+    private void processStep2(final xtreemfs_mkvolRequest rqArgs, final String volumeId, final MRCRequest rq,
+        RPCResponse<ServiceSet> rpcResponse) {
         
         try {
             
             // check the response; if a volume with the same name has already
             // been registered, return an error
             
-            ServiceRegistrySet response = rpcResponse.get();
+            ServiceSet response = rpcResponse.get();
             
             // check if the volume already exists
-            for (ServiceRegistry reg : response)
-                if (rqArgs.getVolume_name().equals(reg.getService_name())) {
+            for (Service reg : response)
+                if (rqArgs.getVolume_name().equals(reg.getName())) {
                     String uuid = reg.getUuid();
                     throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.getVolume_name()
                         + "' already exists in Directory Service, id='" + uuid + "'");
@@ -135,13 +132,13 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // otherwise, register the volume at the Directory Service
             
-            ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+            ServiceDataMap dmap = new ServiceDataMap();
             dmap.put("mrc", master.getConfig().getUUID().toString());
             dmap.put("free", "0");
-            ServiceRegistry vol = new ServiceRegistry(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, rqArgs
+            Service vol = new Service(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, rqArgs
                     .getVolume_name(), 0, dmap);
             
-            RPCResponse<Long> rpcResponse2 = master.getDirClient().service_register(null, vol);
+            RPCResponse<Long> rpcResponse2 = master.getDirClient().xtreemfs_service_register(null, vol);
             rpcResponse2.registerListener(new RPCResponseAvailableListener<Long>() {
                 
                 @Override
@@ -161,7 +158,7 @@ public class CreateVolumeOperation extends MRCOperation {
         }
     }
     
-    public void processStep3(final mkvolRequest rqArgs, final String volumeId, final MRCRequest rq,
+    public void processStep3(final xtreemfs_mkvolRequest rqArgs, final String volumeId, final MRCRequest rq,
         RPCResponse<Long> rpcResponse) {
         
         try {
@@ -178,7 +175,7 @@ public class CreateVolumeOperation extends MRCOperation {
                 rq.getDetails().groupIds.get(0), rqArgs.getDefault_striping_policy());
             
             // set the response
-            rq.setResponse(new mkvolResponse());
+            rq.setResponse(new xtreemfs_mkvolResponse());
             finishRequest(rq);
             
         } catch (UserException exc) {
@@ -190,10 +187,6 @@ public class CreateVolumeOperation extends MRCOperation {
         } finally {
             rpcResponse.freeBuffers();
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((mkvolRequest) rq.getRequestArgs()).getContext();
     }
     
 }

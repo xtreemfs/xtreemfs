@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.listxattrResponse;
@@ -126,9 +125,5 @@ public class GetXAttrsOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((listxattrRequest) rq.getRequestArgs()).getContext();
     }
 }

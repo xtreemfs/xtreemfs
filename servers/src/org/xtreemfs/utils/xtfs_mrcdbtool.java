@@ -36,6 +36,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -114,7 +115,7 @@ public class xtfs_mrcdbtool {
             if (op.equals("dump")) {
                 RPCResponse<Object> r = null;
                 try {
-                    r = client.admin_dump_database(null, "", dumpFile);
+                    r = client.xtreemfs_dump_database(null, new UserCredentials(), dumpFile);
                     r.waitForResult();
                 } finally {
                     if (r != null)
@@ -125,7 +126,7 @@ public class xtfs_mrcdbtool {
             else if (op.equals("restore")) {
                 RPCResponse<Object> r = null;
                 try {
-                    r = client.admin_restore_database(null, "", dumpFile);
+                    r = client.xtreemfs_restore_database(null,  new UserCredentials(), dumpFile);
                     r.waitForResult();
                 } finally {
                     if (r != null)

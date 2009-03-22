@@ -123,8 +123,8 @@ public final class WriteOperation extends OSDOperation {
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(),sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

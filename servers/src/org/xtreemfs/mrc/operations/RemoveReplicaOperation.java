@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -158,10 +157,6 @@ public class RemoveReplicaOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((xtreemfs_replica_removeRequest) rq.getRequestArgs()).getContext();
     }
     
 }

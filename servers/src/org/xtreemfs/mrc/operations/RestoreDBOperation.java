@@ -33,9 +33,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseRequest;
-import org.xtreemfs.interfaces.MRCInterface.admin_restore_databaseResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -66,7 +65,7 @@ public class RestoreDBOperation extends MRCOperation {
         
         try {
             
-            final admin_restore_databaseRequest rqArgs = (admin_restore_databaseRequest) rq.getRequestArgs();
+            final xtreemfs_restore_databaseRequest rqArgs = (xtreemfs_restore_databaseRequest) rq.getRequestArgs();
             final VolumeManager vMan = master.getVolumeManager();
             
             // First, check if any volume exists already. If so, deny the
@@ -207,7 +206,7 @@ public class RestoreDBOperation extends MRCOperation {
             });
             
             // set the response
-            rq.setResponse(new admin_restore_databaseResponse());
+            rq.setResponse(new xtreemfs_restore_databaseResponse());
             finishRequest(rq);
             
         } catch (UserException exc) {
@@ -220,10 +219,6 @@ public class RestoreDBOperation extends MRCOperation {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
                 exc.getMessage() == null ? "an error has occurred" : exc.getMessage(), exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
     
 }

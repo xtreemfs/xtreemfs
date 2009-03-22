@@ -34,8 +34,8 @@ import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 
 /**
  *
@@ -49,7 +49,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        address_mappings_getRequest tmp = new address_mappings_getRequest();
+        xtreemfs_address_mappings_getRequest tmp = new xtreemfs_address_mappings_getRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -62,18 +62,18 @@ public class GetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final address_mappings_getRequest request = (address_mappings_getRequest)rq.getRequestMessage();
+            final xtreemfs_address_mappings_getRequest request = (xtreemfs_address_mappings_getRequest)rq.getRequestMessage();
 
             if (request.getUuid().length() > 0) {
                 //single mapping was requested
                 byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
                 if (result == null) {
-                    address_mappings_getResponse response = new address_mappings_getResponse();
+                    xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse();
                     rq.sendSuccess(response);
                 } else {
                     AddressMappingSet set = new AddressMappingSet();
                     set.deserialize(ReusableBuffer.wrap(result));
-                    address_mappings_getResponse response = new address_mappings_getResponse(set);
+                    xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(set);
                     rq.sendSuccess(response);
                 }
             } else {
@@ -87,7 +87,7 @@ public class GetAddressMappingOperation extends DIROperation {
                     for (AddressMapping m : set)
                         list.add(m);
                 }
-                address_mappings_getResponse response = new address_mappings_getResponse(list);
+                xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(list);
                 rq.sendSuccess(response);
 
             }
@@ -104,7 +104,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        address_mappings_getRequest amr = new address_mappings_getRequest();
+        xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest();
         rq.deserializeMessage(amr);
     }
 

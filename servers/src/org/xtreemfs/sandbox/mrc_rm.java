@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentialsSet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -52,11 +53,11 @@ public class mrc_rm {
 
             MRCClient c = new MRCClient(rpcClient,new InetSocketAddress(mrcUrl.getHost(),mrcUrl.getPort()));
 
-            final String user = "test";
             final List<String> groups = new ArrayList(1);
             groups.add("test");
+            final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<FileCredentialsSet> r = c.unlink(null, user,groups, path);
+            RPCResponse<FileCredentialsSet> r = c.unlink(null, uc, path);
             FileCredentialsSet fcreds = r.get();
             r.freeBuffers();
             

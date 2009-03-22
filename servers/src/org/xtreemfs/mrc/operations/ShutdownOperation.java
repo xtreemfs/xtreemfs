@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -48,10 +47,6 @@ public class ShutdownOperation extends MRCOperation {
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
     
 }

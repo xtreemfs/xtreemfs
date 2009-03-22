@@ -27,9 +27,8 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.MRCInterface.rmvolRequest;
-import org.xtreemfs.interfaces.MRCInterface.rmvolResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -56,7 +55,7 @@ public class DeleteVolumeOperation extends MRCOperation {
         
         try {
             
-            final rmvolRequest rqArgs = (rmvolRequest) rq.getRequestArgs();
+            final xtreemfs_rmvolRequest rqArgs = (xtreemfs_rmvolRequest) rq.getRequestArgs();
             
             final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
             final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
@@ -70,7 +69,7 @@ public class DeleteVolumeOperation extends MRCOperation {
                 rq.getDetails().superUser, rq.getDetails().groupIds);
             
             // deregister the volume from the Directory Service
-            RPCResponse response = master.getDirClient().service_deregister(null, volume.getId());
+            RPCResponse response = master.getDirClient().xtreemfs_service_deregister(null, volume.getId());
             response.registerListener(new RPCResponseAvailableListener() {
                 
                 @Override
@@ -88,7 +87,7 @@ public class DeleteVolumeOperation extends MRCOperation {
         }
     }
     
-    private void processStep2(rmvolRequest rqArgs, final String volumeId, final MRCRequest rq,
+    private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq,
         final RPCResponse rpcResponse) {
         
         try {
@@ -101,7 +100,7 @@ public class DeleteVolumeOperation extends MRCOperation {
             master.getVolumeManager().deleteVolume(volumeId, master, rq);
             
             // set the response
-            rq.setResponse(new rmvolResponse());
+            rq.setResponse(new xtreemfs_rmvolResponse());
             finishRequest(rq);
             
         } catch (UserException exc) {
@@ -113,10 +112,6 @@ public class DeleteVolumeOperation extends MRCOperation {
         } finally {
             rpcResponse.freeBuffers();
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((rmvolRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -34,6 +34,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.ErrNo;
 
 /**
@@ -143,6 +144,10 @@ public class ONCRPCRequest {
 
     public ONCRPCRequestHeader getRequestHeader() {
         return this.requestHeader;
+    }
+
+    public UserCredentials getUserCredentials() {
+        return requestHeader.getUser_credentials();
     }
 
     public String toString() {

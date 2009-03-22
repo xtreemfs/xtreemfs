@@ -33,9 +33,8 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.volumes.VolumeChangeListener;
@@ -70,7 +69,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         /**
          * Map of suitable OSDs for that volume. Can be empty.
          */
-        public ServiceRegistrySet usableOSDs;
+        public ServiceSet         usableOSDs;
     }
     
     /**
@@ -91,7 +90,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     /**
      * The latest set of all known OSDs fetched from the Directory Service.
      */
-    private ServiceRegistrySet                          knownOSDs;
+    private ServiceSet                                  knownOSDs;
     
     /**
      * An client used to send requests to the Directory Service.
@@ -135,7 +134,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         this.config = config;
         
         volumeMap = new HashMap<String, VolumeOSDs>();
-        knownOSDs = new ServiceRegistrySet();
+        knownOSDs = new ServiceSet();
         
         this.client = client;
         
@@ -160,7 +159,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                     vol.volID = volume.getId();
                     vol.selectionPolicyID = volume.getOsdPolicyId();
                     vol.selectionPolicyArgs = volume.getOsdPolicyArgs();
-                    vol.usableOSDs = new ServiceRegistrySet();
+                    vol.usableOSDs = new ServiceSet();
                     
                     volumeMap.put(volId, vol);
                     
@@ -202,9 +201,9 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     public void run() {
         
         // initially fetch the list of OSDs from the Directory Service
-        RPCResponse<ServiceRegistrySet> r = null;
+        RPCResponse<ServiceSet> r = null;
         try {
-            r = client.service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
+            r = client.xtreemfs_service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
             knownOSDs = r.get();
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
@@ -227,7 +226,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             try {
                 // request list of registered OSDs from Directory
                 // Service
-                r = client.service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
+                r = client.xtreemfs_service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
                 knownOSDs = r.get();
                 
                 evaluateResponse(knownOSDs);
@@ -265,7 +264,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
      * @return a list of feasible OSDs. Each list entry contains a mapping from
      *         keys to values which describes a certain OSD
      */
-    public synchronized ServiceRegistrySet getUsableOSDs(String volumeId) {
+    public synchronized ServiceSet getUsableOSDs(String volumeId) {
         
         VolumeOSDs vol = volumeMap.get(volumeId);
         if (vol == null) {
@@ -305,7 +304,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         return map;
     }
     
-    public synchronized void evaluateResponse(ServiceRegistrySet knownOSDs) {
+    public synchronized void evaluateResponse(ServiceSet knownOSDs) {
         
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "response...");
         
@@ -314,7 +313,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "registered OSDs");
         if (knownOSDs.size() == 0)
             Logging.logMessage(Logging.LEVEL_WARN, this, "there are currently no OSDs available");
-        for (ServiceRegistry osd : knownOSDs) {
+        for (Service osd : knownOSDs) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, osd.getUuid());
         }
         
@@ -325,7 +324,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs for " + vol.volID);
                 if (vol.usableOSDs != null)
-                    for (ServiceRegistry osd : vol.usableOSDs) {
+                    for (Service osd : vol.usableOSDs) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "       " + osd.getUuid());
                     }
                 
@@ -369,11 +368,11 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         
         long free = 0;
         
-        ServiceRegistrySet usableOSDs = getUsableOSDs(volumeId);
+        ServiceSet usableOSDs = getUsableOSDs(volumeId);
         if (usableOSDs == null)
             return 0;
         
-        for (ServiceRegistry entry : usableOSDs) {
+        for (Service entry : usableOSDs) {
             String freeStr = entry.getData().get("free");
             if (freeStr != null)
                 free += Long.valueOf(freeStr);

@@ -11,13 +11,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public utimeRequest() { context = new Context(); path = ""; ctime = 0; atime = 0; mtime = 0; }
-    public utimeRequest( Context context, String path, long ctime, long atime, long mtime ) { this.context = context; this.path = path; this.ctime = ctime; this.atime = atime; this.mtime = mtime; }
-    public utimeRequest( Object from_hash_map ) { context = new Context(); path = ""; ctime = 0; atime = 0; mtime = 0; this.deserialize( from_hash_map ); }
-    public utimeRequest( Object[] from_array ) { context = new Context(); path = ""; ctime = 0; atime = 0; mtime = 0;this.deserialize( from_array ); }
+    public utimeRequest() { path = ""; ctime = 0; atime = 0; mtime = 0; }
+    public utimeRequest( String path, long ctime, long atime, long mtime ) { this.path = path; this.ctime = ctime; this.atime = atime; this.mtime = mtime; }
+    public utimeRequest( Object from_hash_map ) { path = ""; ctime = 0; atime = 0; mtime = 0; this.deserialize( from_hash_map ); }
+    public utimeRequest( Object[] from_array ) { path = ""; ctime = 0; atime = 0; mtime = 0;this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
     public long getCtime() { return ctime; }
@@ -32,7 +30,7 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
 
     public String toString()
     {
-        return "utimeRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Long.toString( ctime ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + " )"; 
+        return "utimeRequest( " + "\"" + path + "\"" + ", " + Long.toString( ctime ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + " )";
     }
 
 
@@ -43,7 +41,6 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.path = ( String )from_hash_map.get( "path" );
         this.ctime = ( ( Long )from_hash_map.get( "ctime" ) ).longValue();
         this.atime = ( ( Long )from_hash_map.get( "atime" ) ).longValue();
@@ -52,16 +49,14 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.path = ( String )from_array[1];
-        this.ctime = ( ( Long )from_array[2] ).longValue();
-        this.atime = ( ( Long )from_array[3] ).longValue();
-        this.mtime = ( ( Long )from_array[4] ).longValue();        
+        this.path = ( String )from_array[0];
+        this.ctime = ( ( Long )from_array[1] ).longValue();
+        this.atime = ( ( Long )from_array[2] ).longValue();
+        this.mtime = ( ( Long )from_array[3] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         ctime = buf.getLong();
         atime = buf.getLong();
@@ -71,7 +66,6 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "path", path );
         to_hash_map.put( "ctime", new Long( ctime ) );
         to_hash_map.put( "atime", new Long( atime ) );
@@ -81,7 +75,6 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
         writer.putLong( ctime );
         writer.putLong( atime );
@@ -91,7 +84,6 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
@@ -104,7 +96,6 @@ public class utimeRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new utimeResponse(); }
 
 
-    private Context context;
     private String path;
     private long ctime;
     private long atime;

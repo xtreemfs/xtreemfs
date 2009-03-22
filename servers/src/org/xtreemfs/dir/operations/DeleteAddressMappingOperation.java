@@ -30,8 +30,8 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_deleteRequest;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_deleteResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeResponse;
 
 /**
  *
@@ -45,7 +45,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
 
     public DeleteAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        address_mappings_deleteRequest tmp = new address_mappings_deleteRequest();
+        xtreemfs_address_mappings_removeRequest tmp = new xtreemfs_address_mappings_removeRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -58,13 +58,13 @@ public class DeleteAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final address_mappings_deleteRequest request = (address_mappings_deleteRequest)rq.getRequestMessage();
+            final xtreemfs_address_mappings_removeRequest request = (xtreemfs_address_mappings_removeRequest)rq.getRequestMessage();
 
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
             database.directInsert(ig);
             
-            address_mappings_deleteResponse response = new address_mappings_deleteResponse();
+            xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -79,7 +79,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        address_mappings_deleteRequest amr = new address_mappings_deleteRequest();
+        xtreemfs_address_mappings_removeRequest amr = new xtreemfs_address_mappings_removeRequest();
         rq.deserializeMessage(amr);
     }
 

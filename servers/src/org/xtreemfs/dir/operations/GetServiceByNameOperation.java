@@ -30,14 +30,12 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_nameRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_nameResponse;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameResponse;
 
 /**
  *
@@ -51,7 +49,7 @@ public class GetServiceByNameOperation extends DIROperation {
 
     public GetServiceByNameOperation(DIRRequestDispatcher master) {
         super(master);
-        service_get_by_nameRequest tmp = new service_get_by_nameRequest();
+        xtreemfs_service_get_by_nameRequest tmp = new xtreemfs_service_get_by_nameRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -64,21 +62,21 @@ public class GetServiceByNameOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final service_get_by_nameRequest request = (service_get_by_nameRequest)rq.getRequestMessage();
+            final xtreemfs_service_get_by_nameRequest request = (xtreemfs_service_get_by_nameRequest)rq.getRequestMessage();
 
             
             Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
 
-            ServiceRegistrySet services = new ServiceRegistrySet();
+            ServiceSet services = new ServiceSet();
 
             long now = System.currentTimeMillis()/1000l;
 
             while (iter.hasNext()) {
                 final Entry<byte[],byte[]> e = iter.next();
-                final ServiceRegistry servEntry = new ServiceRegistry();
+                final Service servEntry = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
                 servEntry.deserialize(buf);
-                if (servEntry.getService_name().equals(request.getService_name()))
+                if (servEntry.getName().equals(request.getName()))
                     services.add(servEntry);
 
                 long secondsSinceLastUpdate = now - servEntry.getLast_updated();
@@ -86,7 +84,7 @@ public class GetServiceByNameOperation extends DIROperation {
 
             }
             
-            service_get_by_nameResponse response = new service_get_by_nameResponse(services);
+            xtreemfs_service_get_by_nameResponse response = new xtreemfs_service_get_by_nameResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -101,7 +99,7 @@ public class GetServiceByNameOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        service_get_by_nameRequest amr = new service_get_by_nameRequest();
+        xtreemfs_service_get_by_nameRequest amr = new xtreemfs_service_get_by_nameRequest();
         rq.deserializeMessage(amr);
     }
 

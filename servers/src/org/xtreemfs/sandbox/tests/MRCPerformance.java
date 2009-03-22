@@ -17,6 +17,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 
 /**
@@ -37,9 +38,7 @@ public class MRCPerformance {
     
     public final int                 MAXINFLIGHT = 500;
     
-    private final String             uid;
-    
-    private final List<String>       gids;
+    private final UserCredentials    userCred;
     
     public MRCPerformance(InetSocketAddress mrcAddress, String volName, int numFiles) throws IOException {
         this.mrcAddress = mrcAddress;
@@ -48,9 +47,11 @@ public class MRCPerformance {
         this.rpcClient = new RPCNIOSocketClient(null, 10000, 300000);
         this.client = new MRCClient(rpcClient, mrcAddress);
         
-        this.uid = "me";
-        this.gids = new LinkedList<String>();
-        this.gids.add("myGroup");
+        
+        List<String>gids = new LinkedList<String>();
+        gids.add("myGroup");
+
+        userCred = MRCClient.getCredentials("me", gids);
     }
     
     public void shutdown() throws Exception {
@@ -95,7 +96,7 @@ public class MRCPerformance {
         
         for (int i = 0; i < numFiles; i++) {
             final String fname = String.format("%020d", i);
-            RPCResponse<Object> r = client.create(null, uid, gids, volName + fname, 509);
+            RPCResponse<Object> r = client.create(null, userCred, volName + fname, 509);
             r.registerListener(rl);
             if (inFlight.incrementAndGet() > MAXINFLIGHT) {
                 synchronized (inFlight) {
@@ -152,7 +153,7 @@ public class MRCPerformance {
         
         for (int i = 0; i < numFiles; i++) {
             final String fname = String.format("%020d", i);
-            RPCResponse r = client.unlink(null, uid, gids, volName + fname);
+            RPCResponse r = client.unlink(null, userCred, volName + fname);
             r.registerListener(rl);
             if (inFlight.incrementAndGet() > MAXINFLIGHT) {
                 synchronized (inFlight) {
@@ -177,7 +178,7 @@ public class MRCPerformance {
         
         long tStart = System.currentTimeMillis();
         
-        RPCResponse<DirectoryEntrySet> files = client.readdir(null, uid, gids, volName);
+        RPCResponse<DirectoryEntrySet> files = client.readdir(null,userCred, volName);
         
         long tEnd = System.currentTimeMillis();
         

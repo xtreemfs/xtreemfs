@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -117,10 +116,6 @@ public class CreateDirOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((mkdirRequest) rq.getRequestArgs()).getContext();
     }
     
 }

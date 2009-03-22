@@ -11,13 +11,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public getattrRequest() { context = new Context(); path = ""; }
-    public getattrRequest( Context context, String path ) { this.context = context; this.path = path; }
-    public getattrRequest( Object from_hash_map ) { context = new Context(); path = ""; this.deserialize( from_hash_map ); }
-    public getattrRequest( Object[] from_array ) { context = new Context(); path = "";this.deserialize( from_array ); }
+    public getattrRequest() { path = ""; }
+    public getattrRequest( String path ) { this.path = path; }
+    public getattrRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
+    public getattrRequest( Object[] from_array ) { path = "";this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
@@ -26,7 +24,7 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
 
     public String toString()
     {
-        return "getattrRequest( " + context.toString() + ", " + "\"" + path + "\"" + " )"; 
+        return "getattrRequest( " + "\"" + path + "\"" + " )";
     }
 
 
@@ -37,40 +35,34 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.path = ( String )from_hash_map.get( "path" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.path = ( String )from_array[1];        
+        this.path = ( String )from_array[0];        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "path", path );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
         return my_size;
     }
@@ -80,7 +72,6 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new getattrResponse(); }
 
 
-    private Context context;
     private String path;
 
 }

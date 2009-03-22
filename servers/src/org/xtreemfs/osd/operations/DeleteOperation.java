@@ -105,7 +105,7 @@ public final class DeleteOperation extends OSDOperation {
                 for (ServiceUUID osd : osds) {
                     if (!osd.equals(localUUID)) {
                         gmaxRPCs[cnt++] = master.getOSDClient().unlink(osd.getAddress(), args.getFile_id(),
-                                args.getCredentials());
+                                args.getFile_credentials());
                     }
                 }
                 this.waitForResponses(gmaxRPCs, new ResponsesListener() {
@@ -150,8 +150,8 @@ public final class DeleteOperation extends OSDOperation {
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(), sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

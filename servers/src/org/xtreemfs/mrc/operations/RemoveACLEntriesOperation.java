@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -119,10 +118,6 @@ public class RemoveACLEntriesOperation extends MRCOperation {
         // finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
         // "an error has occurred", exc));
         // }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null; // TODO
     }
     
 }

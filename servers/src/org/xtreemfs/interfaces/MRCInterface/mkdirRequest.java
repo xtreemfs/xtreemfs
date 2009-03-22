@@ -11,13 +11,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public mkdirRequest() { context = new Context(); path = ""; mode = 0; }
-    public mkdirRequest( Context context, String path, int mode ) { this.context = context; this.path = path; this.mode = mode; }
-    public mkdirRequest( Object from_hash_map ) { context = new Context(); path = ""; mode = 0; this.deserialize( from_hash_map ); }
-    public mkdirRequest( Object[] from_array ) { context = new Context(); path = ""; mode = 0;this.deserialize( from_array ); }
+    public mkdirRequest() { path = ""; mode = 0; }
+    public mkdirRequest( String path, int mode ) { this.path = path; this.mode = mode; }
+    public mkdirRequest( Object from_hash_map ) { path = ""; mode = 0; this.deserialize( from_hash_map ); }
+    public mkdirRequest( Object[] from_array ) { path = ""; mode = 0;this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
     public int getMode() { return mode; }
@@ -28,7 +26,7 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
 
     public String toString()
     {
-        return "mkdirRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )"; 
+        return "mkdirRequest( " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
     }
 
 
@@ -39,21 +37,18 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.path = ( String )from_hash_map.get( "path" );
         this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.path = ( String )from_array[1];
-        this.mode = ( ( Integer )from_array[2] ).intValue();        
+        this.path = ( String )from_array[0];
+        this.mode = ( ( Integer )from_array[1] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         mode = buf.getInt();
     }
@@ -61,7 +56,6 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "path", path );
         to_hash_map.put( "mode", new Integer( mode ) );
         return to_hash_map;        
@@ -69,7 +63,6 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
         writer.putInt( mode );
     }
@@ -77,7 +70,6 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
         my_size += ( Integer.SIZE / 8 );
         return my_size;
@@ -88,7 +80,6 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new mkdirResponse(); }
 
 
-    private Context context;
     private String path;
     private int mode;
 

@@ -28,12 +28,12 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_get_by_uuidResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidResponse;
 
 /**
  *
@@ -47,7 +47,7 @@ public class GetServiceByUuidOperation extends DIROperation {
 
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
-        service_get_by_uuidRequest tmp = new service_get_by_uuidRequest();
+        xtreemfs_service_get_by_uuidRequest tmp = new xtreemfs_service_get_by_uuidRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -60,21 +60,21 @@ public class GetServiceByUuidOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final service_get_by_uuidRequest request = (service_get_by_uuidRequest)rq.getRequestMessage();
+            final xtreemfs_service_get_by_uuidRequest request = (xtreemfs_service_get_by_uuidRequest)rq.getRequestMessage();
 
             
             byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
                     DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
 
-            ServiceRegistrySet services = new ServiceRegistrySet();
+            ServiceSet services = new ServiceSet();
             if (data != null) {
-                ServiceRegistry dbData = new ServiceRegistry();
+                Service dbData = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 dbData.deserialize(buf);
                 services.add(dbData);
             }
             
-            service_get_by_uuidResponse response = new service_get_by_uuidResponse(services);
+            xtreemfs_service_get_by_uuidResponse response = new xtreemfs_service_get_by_uuidResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -89,7 +89,7 @@ public class GetServiceByUuidOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        service_get_by_uuidRequest amr = new service_get_by_uuidRequest();
+        xtreemfs_service_get_by_uuidRequest amr = new xtreemfs_service_get_by_uuidRequest();
         rq.deserializeMessage(amr);
     }
 

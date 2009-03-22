@@ -28,9 +28,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 
 import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.interfaces.Context;
-import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseRequest;
-import org.xtreemfs.interfaces.MRCInterface.admin_dump_databaseResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -56,7 +55,7 @@ public class DumpDBOperation extends MRCOperation {
         
         try {
             
-            final admin_dump_databaseRequest rqArgs = (admin_dump_databaseRequest) rq.getRequestArgs();
+            final xtreemfs_dump_databaseRequest rqArgs = (xtreemfs_dump_databaseRequest) rq.getRequestArgs();
             final VolumeManager vMan = master.getVolumeManager();
             
             BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.getDump_file()));
@@ -85,15 +84,11 @@ public class DumpDBOperation extends MRCOperation {
             xmlWriter.close();
             
             // set the response
-            rq.setResponse(new admin_dump_databaseResponse());
+            rq.setResponse(new xtreemfs_dump_databaseResponse());
             finishRequest(rq);
             
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
 }

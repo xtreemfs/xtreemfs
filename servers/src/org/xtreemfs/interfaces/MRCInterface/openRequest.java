@@ -11,13 +11,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class openRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public openRequest() { context = new Context(); path = ""; flags = 0; mode = 0; }
-    public openRequest( Context context, String path, int flags, int mode ) { this.context = context; this.path = path; this.flags = flags; this.mode = mode; }
-    public openRequest( Object from_hash_map ) { context = new Context(); path = ""; flags = 0; mode = 0; this.deserialize( from_hash_map ); }
-    public openRequest( Object[] from_array ) { context = new Context(); path = ""; flags = 0; mode = 0;this.deserialize( from_array ); }
+    public openRequest() { path = ""; flags = 0; mode = 0; }
+    public openRequest( String path, int flags, int mode ) { this.path = path; this.flags = flags; this.mode = mode; }
+    public openRequest( Object from_hash_map ) { path = ""; flags = 0; mode = 0; this.deserialize( from_hash_map ); }
+    public openRequest( Object[] from_array ) { path = ""; flags = 0; mode = 0;this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
     public int getFlags() { return flags; }
@@ -30,7 +28,7 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
 
     public String toString()
     {
-        return "openRequest( " + context.toString() + ", " + "\"" + path + "\"" + ", " + Integer.toString( flags ) + ", " + Integer.toString( mode ) + " )"; 
+        return "openRequest( " + "\"" + path + "\"" + ", " + Integer.toString( flags ) + ", " + Integer.toString( mode ) + " )";
     }
 
 
@@ -41,7 +39,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.path = ( String )from_hash_map.get( "path" );
         this.flags = ( ( Integer )from_hash_map.get( "flags" ) ).intValue();
         this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
@@ -49,15 +46,13 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.path = ( String )from_array[1];
-        this.flags = ( ( Integer )from_array[2] ).intValue();
-        this.mode = ( ( Integer )from_array[3] ).intValue();        
+        this.path = ( String )from_array[0];
+        this.flags = ( ( Integer )from_array[1] ).intValue();
+        this.mode = ( ( Integer )from_array[2] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         flags = buf.getInt();
         mode = buf.getInt();
@@ -66,7 +61,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "path", path );
         to_hash_map.put( "flags", new Integer( flags ) );
         to_hash_map.put( "mode", new Integer( mode ) );
@@ -75,7 +69,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
         writer.putInt( flags );
         writer.putInt( mode );
@@ -84,7 +77,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
@@ -96,7 +88,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new openResponse(); }
 
 
-    private Context context;
     private String path;
     private int flags;
     private int mode;

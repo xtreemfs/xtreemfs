@@ -25,7 +25,6 @@
 package org.xtreemfs.common.auth;
 
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.interfaces.Context;
 
 /**
  * Authentication Providers extract the credentials (UID/GIDs/SuperUser) from
@@ -57,6 +56,6 @@ public interface AuthenticationProvider {
      * @throws org.xtreemfs.common.auth.AuthenticationException
      *             if authentication is not possible
      */
-    UserCredentials getEffectiveCredentials(Context ctx, ChannelIO channel) throws AuthenticationException;
+    UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx, ChannelIO channel) throws AuthenticationException;
     
 }

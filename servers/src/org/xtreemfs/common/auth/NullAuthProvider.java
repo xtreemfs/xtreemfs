@@ -25,7 +25,6 @@
 package org.xtreemfs.common.auth;
 
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.interfaces.Context;
 
 /**
  * A simple provider that parses the JSON string sent in the authentication
@@ -38,7 +37,7 @@ public class NullAuthProvider implements AuthenticationProvider {
     public NullAuthProvider() {
     }
     
-    public UserCredentials getEffectiveCredentials(Context ctx, ChannelIO channel)
+    public UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx, ChannelIO channel)
         throws AuthenticationException {
         return new UserCredentials(ctx.getUser_id(), ctx.getGroup_ids(), ctx.getUser_id().equals("root"));
     }

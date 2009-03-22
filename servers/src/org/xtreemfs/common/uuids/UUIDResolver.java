@@ -156,7 +156,7 @@ public final class UUIDResolver extends Thread {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "loading uuid mapping for " + uuid);
         try {
-            r = dir.address_mappings_get(null, uuid);
+            r = dir.xtreemfs_address_mappings_get(null, uuid);
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent request to DIR");
             AddressMappingSet ams = r.get();
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "received response for " + uuid);

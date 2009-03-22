@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.setxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -146,8 +145,5 @@ public class SetXAttrOperation extends MRCOperation {
         }
     }
     
-    public Context getContext(MRCRequest rq) {
-        return ((setxattrRequest) rq.getRequestArgs()).getContext();
-    }
     
 }

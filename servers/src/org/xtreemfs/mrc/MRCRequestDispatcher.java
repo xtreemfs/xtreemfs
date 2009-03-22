@@ -58,14 +58,12 @@ import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
+import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -155,7 +153,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
-            public ServiceRegistrySet getServiceData() {
+            public ServiceSet getServiceData() {
                 
                 String uuid = config.getUUID().toString();
                 
@@ -167,8 +165,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
                 // get service data
-                ServiceRegistrySet sregs = new ServiceRegistrySet();
-                ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+                ServiceSet sregs = new ServiceSet();
+                ServiceDataMap dmap = new ServiceDataMap();
                 dmap.put("load", load);
                 dmap.put("proto_version", Integer.toString(MRCInterface.getVersion()));
                 dmap.put("totalRAM", Long.toString(totalRAM));
@@ -180,13 +178,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     //should never happen
                 }
                 
-                ServiceRegistry mrcReg = new ServiceRegistry(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "
+                Service mrcReg = new Service(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ "
                     + uuid, 0, dmap);
                 sregs.add(mrcReg);
                 
                 try {
                     for (VolumeInfo vol : volumeManager.getVolumes()) {
-                        ServiceRegistry dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, uuid);
+                        Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, uuid);
                         sregs.add(dsVolumeInfo);
                     }
                 } catch (DatabaseException exc) {
@@ -386,15 +384,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Collection<VolumeInfo> vols = volumeManager.getVolumes();
             for (VolumeInfo v : vols) {
                 
-                ServiceRegistrySet osdList = osdMonitor.getUsableOSDs(v.getId());
+                ServiceSet osdList = osdMonitor.getUsableOSDs(v.getId());
                 
                 volTableBuf.append("<tr><td align=\"left\">");
                 volTableBuf.append(v.getName());
                 volTableBuf
                         .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
-                Iterator<ServiceRegistry> it = osdList.iterator();
+                Iterator<Service> it = osdList.iterator();
                 while (it.hasNext()) {
-                    ServiceRegistry osd = it.next();
+                    Service osd = it.next();
                     final ServiceUUID osdUUID = new ServiceUUID(osd.getUuid());
                     volTableBuf.append("<a href=\"");
                     volTableBuf.append(osdUUID.toURL());

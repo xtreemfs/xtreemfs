@@ -8,6 +8,7 @@ public interface Constants
     public static final int ACCESS_CONTROL_POLICY_VOLUME = 3;
     public static final String ONCRPC_SCHEME = "oncrpc";
     public static final String ONCRPCS_SCHEME = "oncrpcs";
+    public static final int ONCRPC_AUTH_FLAVOR = 1326;
     public static final int OSD_SELECTION_POLICY_SIMPLE = 1;
     public static final String REPL_UPDATE_PC_NONE = "";
     public static final String REPL_UPDATE_PC_RONLY = "ronly";

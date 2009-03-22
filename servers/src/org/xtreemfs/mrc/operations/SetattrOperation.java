@@ -24,12 +24,9 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
-import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
-import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
+import org.xtreemfs.interfaces.MRCInterface.setattrResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -120,7 +117,7 @@ public class SetattrOperation extends MRCOperation {
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
             
             // set the response
-            rq.setResponse(new utimeResponse());
+            rq.setResponse(new setattrResponse());
             
             update.execute();
             
@@ -131,10 +128,6 @@ public class SetattrOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((setattrRequest) rq.getRequestArgs()).getContext();
     }
     
 }

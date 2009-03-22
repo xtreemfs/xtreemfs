@@ -32,7 +32,7 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
 
     public String toString()
     {
-        return "xtreemfs_restore_fileRequest( " + "\"" + file_path + "\"" + ", " + "\"" + file_id + "\"" + ", " + Long.toString( file_size ) + ", " + "\"" + osd_uuid + "\"" + ", " + Integer.toString( stripe_size ) + " )"; 
+        return "xtreemfs_restore_fileRequest( " + "\"" + file_path + "\"" + ", " + "\"" + file_id + "\"" + ", " + Long.toString( file_size ) + ", " + "\"" + osd_uuid + "\"" + ", " + Integer.toString( stripe_size ) + " )";
     }
 
 

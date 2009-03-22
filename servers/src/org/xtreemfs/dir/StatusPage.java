@@ -19,9 +19,7 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
+import org.xtreemfs.interfaces.Service;
 
 /**
  *
@@ -137,7 +135,7 @@ public class StatusPage {
         while (iter.hasNext()) {
             Entry<byte[],byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
-            final ServiceRegistry sreg = new ServiceRegistry();
+            final Service sreg = new Service();
             sreg.deserialize(ReusableBuffer.wrap(e.getValue()));
 
             dump.append("<tr><td class=\"uuid\">");
@@ -147,13 +145,13 @@ public class StatusPage {
             dump.append("<tr><td width=\"30%\">");
             dump.append("type");
             dump.append("</td><td><b>");
-            dump.append(sreg.getService_type());
+            dump.append(sreg.getType());
             dump.append("</b></td></tr>");
 
             dump.append("<tr><td width=\"30%\">");
             dump.append("name");
             dump.append("</td><td><b>");
-            dump.append(sreg.getService_name());
+            dump.append(sreg.getName());
             dump.append("</b></td></tr>");
 
             for (Entry<String,String> dataEntry : sreg.getData().entrySet()) {

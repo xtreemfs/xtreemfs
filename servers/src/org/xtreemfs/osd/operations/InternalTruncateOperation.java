@@ -24,17 +24,13 @@
 
 package org.xtreemfs.osd.operations;
 
-import java.util.List;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Exceptions.OSDException;
-import org.xtreemfs.interfaces.OSDInterface.internal_truncateRequest;
-import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
-import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
@@ -51,7 +47,7 @@ public final class InternalTruncateOperation extends OSDOperation {
 
     public InternalTruncateOperation(OSDRequestDispatcher master) {
         super(master);
-        internal_truncateRequest rq = new internal_truncateRequest();
+        xtreemfs_internal_truncateRequest rq = new xtreemfs_internal_truncateRequest();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -64,7 +60,7 @@ public final class InternalTruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final internal_truncateRequest args = (internal_truncateRequest)rq.getRequestArgs();
+        final xtreemfs_internal_truncateRequest args = (xtreemfs_internal_truncateRequest)rq.getRequestArgs();
 
         if (args.getNew_file_size() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "new_file_size for truncate must be >= 0", ""));
@@ -98,18 +94,18 @@ public final class InternalTruncateOperation extends OSDOperation {
 
     
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        truncateResponse response = new truncateResponse(result);
+        xtreemfs_internal_truncateResponse response = new xtreemfs_internal_truncateResponse(result);
         rq.sendSuccess(response);
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        internal_truncateRequest rpcrq = new internal_truncateRequest();
+        xtreemfs_internal_truncateRequest rpcrq = new xtreemfs_internal_truncateRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(),sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

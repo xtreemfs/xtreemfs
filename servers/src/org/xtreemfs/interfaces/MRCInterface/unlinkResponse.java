@@ -11,20 +11,20 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public unlinkResponse() { credentials = new FileCredentialsSet(); }
-    public unlinkResponse( FileCredentialsSet credentials ) { this.credentials = credentials; }
-    public unlinkResponse( Object from_hash_map ) { credentials = new FileCredentialsSet(); this.deserialize( from_hash_map ); }
-    public unlinkResponse( Object[] from_array ) { credentials = new FileCredentialsSet();this.deserialize( from_array ); }
+    public unlinkResponse() { file_credentials = new FileCredentialsSet(); }
+    public unlinkResponse( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
+    public unlinkResponse( Object from_hash_map ) { file_credentials = new FileCredentialsSet(); this.deserialize( from_hash_map ); }
+    public unlinkResponse( Object[] from_array ) { file_credentials = new FileCredentialsSet();this.deserialize( from_array ); }
 
-    public FileCredentialsSet getCredentials() { return credentials; }
-    public void setCredentials( FileCredentialsSet credentials ) { this.credentials = credentials; }
+    public FileCredentialsSet getFile_credentials() { return file_credentials; }
+    public void setFile_credentials( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }    
     public long getTypeId() { return 21; }
 
     public String toString()
     {
-        return "unlinkResponse( " + credentials.toString() + " )";
+        return "unlinkResponse( " + file_credentials.toString() + " )";
     }
 
 
@@ -35,35 +35,35 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.credentials.deserialize( ( Object[] )from_hash_map.get( "credentials" ) );
+        this.file_credentials.deserialize( ( Object[] )from_hash_map.get( "file_credentials" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.credentials.deserialize( ( Object[] )from_array[0] );        
+        this.file_credentials.deserialize( ( Object[] )from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        credentials = new FileCredentialsSet(); credentials.deserialize( buf );
+        file_credentials = new FileCredentialsSet(); file_credentials.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "credentials", credentials.serialize() );
+        to_hash_map.put( "file_credentials", file_credentials.serialize() );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        credentials.serialize( writer );
+        file_credentials.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += credentials.calculateSize();
+        my_size += file_credentials.calculateSize();
         return my_size;
     }
 
@@ -71,7 +71,7 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public int getOperationNumber() { return 21; }
 
 
-    private FileCredentialsSet credentials;
+    private FileCredentialsSet file_credentials;
 
 }
 

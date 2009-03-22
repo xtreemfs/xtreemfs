@@ -16,17 +16,17 @@ public class DIRInterface
     {
         switch( header.getOperationNumber() )
         {
-            case 1: return new address_mappings_getRequest();
-            case 2: return new address_mappings_setRequest();
-            case 3: return new address_mappings_deleteRequest();
-            case 4: return new service_registerRequest();
-            case 5: return new service_deregisterRequest();
-            case 6: return new service_get_by_typeRequest();
-            case 7: return new service_get_by_uuidRequest();
-            case 9: return new service_get_by_nameRequest();
-            case 8: return new global_time_getRequest();
-            case 50: return new admin_checkpointRequest();
-            case 51: return new admin_shutdownRequest();
+            case 1: return new xtreemfs_address_mappings_getRequest();
+            case 3: return new xtreemfs_address_mappings_removeRequest();
+            case 2: return new xtreemfs_address_mappings_setRequest();
+            case 50: return new xtreemfs_checkpointRequest();
+            case 8: return new xtreemfs_global_time_getRequest();
+            case 6: return new xtreemfs_service_get_by_typeRequest();
+            case 7: return new xtreemfs_service_get_by_uuidRequest();
+            case 9: return new xtreemfs_service_get_by_nameRequest();
+            case 4: return new xtreemfs_service_registerRequest();
+            case 5: return new xtreemfs_service_deregisterRequest();
+            case 51: return new xtreemfs_shutdownRequest();
 
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
         }
@@ -36,7 +36,7 @@ public class DIRInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new address_mappings_getResponse();            case 2: return new address_mappings_setResponse();            case 3: return new address_mappings_deleteResponse();            case 4: return new service_registerResponse();            case 5: return new service_deregisterResponse();            case 6: return new service_get_by_typeResponse();            case 7: return new service_get_by_uuidResponse();            case 9: return new service_get_by_nameResponse();            case 8: return new global_time_getResponse();            case 50: return new admin_checkpointResponse();            case 51: return new admin_shutdownResponse();
+            case 1: return new xtreemfs_address_mappings_getResponse();            case 3: return new xtreemfs_address_mappings_removeResponse();            case 2: return new xtreemfs_address_mappings_setResponse();            case 50: return new xtreemfs_checkpointResponse();            case 8: return new xtreemfs_global_time_getResponse();            case 6: return new xtreemfs_service_get_by_typeResponse();            case 7: return new xtreemfs_service_get_by_uuidResponse();            case 9: return new xtreemfs_service_get_by_nameResponse();            case 4: return new xtreemfs_service_registerResponse();            case 5: return new xtreemfs_service_deregisterResponse();            case 51: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    

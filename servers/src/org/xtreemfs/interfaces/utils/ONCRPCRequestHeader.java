@@ -26,6 +26,8 @@ package org.xtreemfs.interfaces.utils;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.UserCredentials;
 
 public class ONCRPCRequestHeader implements Serializable {
 
@@ -33,12 +35,18 @@ public class ONCRPCRequestHeader implements Serializable {
         xid = prog = vers = proc = 0;
     }
 
-    public ONCRPCRequestHeader(int xid, int prog, int vers, int proc) {
+    public ONCRPCRequestHeader(int xid, int prog, int vers, int proc, UserCredentials cred) {
         this.xid = xid;
         this.prog = prog;
         this.vers = vers;
         this.proc = proc;
+        this.user_credentials = cred;
     }
+
+    public ONCRPCRequestHeader(int xid, int prog, int vers, int proc) {
+        this(xid,prog,vers,proc,null);
+    }
+
 
     public int getXID() {
         return xid;
@@ -78,8 +86,17 @@ public class ONCRPCRequestHeader implements Serializable {
         writer.putInt(prog);
         writer.putInt(vers);
         writer.putInt(proc);
-        writer.putInt(0); // cred_auth_flavor
-        writer.putInt(0); // cred auth opaque data
+        if (user_credentials != null) {
+            writer.putInt(Constants.ONCRPC_AUTH_FLAVOR);
+            final int dataLength = user_credentials.calculateSize();
+            writer.putInt(dataLength);
+            user_credentials.serialize(writer);
+        } else {
+            writer.putInt(0); // cred_auth_flavor
+            writer.putInt(0); // cred auth opaque data
+        }
+
+        
         writer.putInt(0); // verf_auth_flavor
         writer.putInt(0); // verf auth opaque data
     }
@@ -96,14 +113,21 @@ public class ONCRPCRequestHeader implements Serializable {
 //        System.out.println( "Vers " + Integer.toString( vers ) );        
         proc = buf.getInt();
 //        System.out.println( "proc " + Integer.toString( proc ) );        
-        buf.getInt(); // cred_auth_flavor
-        buf.getInt(); // cred auth opaque data
+        auth_flavor = buf.getInt(); // cred_auth_flavor
+        if (getAuth_flavor() == Constants.ONCRPC_AUTH_FLAVOR) {
+            int size = buf.getInt();
+            user_credentials = new UserCredentials();
+            user_credentials.deserialize(buf);
+        } else {
+            buf.getInt(); // cred auth opaque data
+        }
         buf.getInt(); // verf_auth_flavor
         buf.getInt(); // verf auth opaque data
     }
 
     public int calculateSize() {
-        return 10 * Integer.SIZE/8;
+        final int authSize = (getUser_credentials() != null) ? getUser_credentials().calculateSize() : 0;
+        return 10 * Integer.SIZE/8 + authSize;
     }
     private int xid;
 
@@ -116,5 +140,24 @@ public class ONCRPCRequestHeader implements Serializable {
     private int rpcvers;
 
     private int msg_type;
+
+    private int auth_flavor;
+
+    private UserCredentials user_credentials;
+
+    /**
+     * @return the auth_flavor
+     */
+    public int getAuth_flavor() {
+        return auth_flavor;
+    }
+
+    /**
+     * @return the user_credentials
+     */
+    public UserCredentials getUser_credentials() {
+        return user_credentials;
+    }
+
 
 }

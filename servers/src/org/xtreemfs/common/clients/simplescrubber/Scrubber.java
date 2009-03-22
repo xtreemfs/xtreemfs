@@ -50,9 +50,10 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.utils.CLIParser;
@@ -67,13 +68,12 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
     public static String                       latestScrubAttr    = "scrubber.latestscrub";
 
-    public static final String                userID = "root";
-
-    public static final List<String>          groupIDs;
+    public static final UserCredentials       credentials;
 
     static {
-        groupIDs = new ArrayList(1);
+        StringSet groupIDs = new StringSet();
         groupIDs.add("root");
+        credentials = new UserCredentials("root", groupIDs, "");
     }
 
     private static final int DEFAULT_NUM_THREADS = 10;
@@ -153,7 +153,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
                         String filename = files.pop();
                         try {
                             RandomAccessFile file = new RandomAccessFile("rw", mrcClient.getDefaultServerAddress(),
-                                filename, rpcClient, userID, groupIDs);
+                                filename, rpcClient, credentials);
                             FileInfo fi = new FileInfo(file, this);
                             tPool.submit(fi);
                             numInFlight++;
@@ -173,7 +173,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
             try {
                 //mark volume as scrubbed
-                RPCResponse r = mrcClient.setxattr(null, userID, groupIDs, volumeName, latestScrubAttr, Long.toString(TimeSync.getLocalSystemTime()), 0);
+                RPCResponse r = mrcClient.setxattr(null, credentials, volumeName, latestScrubAttr, Long.toString(TimeSync.getLocalSystemTime()), 0);
                 r.get();
                 r.freeBuffers();
             } catch (Exception ex2) {
@@ -218,16 +218,16 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         currentDirName = directories.pop();
 
         try {
-            RPCResponse<DirectoryEntrySet> r = mrcClient.readdir(null, userID, groupIDs, currentDirName);
+            RPCResponse<DirectoryEntrySet> r = mrcClient.readdir(null, credentials, currentDirName);
             DirectoryEntrySet ls = r.get();
             r.freeBuffers();
 
             for (DirectoryEntry e : ls) {
-                if (e.getStbuf().getObject_type() == 1) {
+                if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_S_IFREG) != 0) {
                     //regular file
-                    files.push(currentDirName+"/"+e.getEntry_name());
-                } else if (e.getStbuf().getObject_type() == 2) {
-                    directories.push(currentDirName+"/"+e.getEntry_name());
+                    files.push(currentDirName+"/"+e.getName());
+                } else if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_S_IFDIR) != 0) {
+                    directories.push(currentDirName+"/"+e.getName());
                 }
             }
         } catch (Exception ex) {
@@ -323,20 +323,20 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         TimeSync.initialize(dirClient, 100000, 50).waitForStartup();
 
 
-        RPCResponse<ServiceRegistrySet> resp = dirClient.service_get_by_type(null,Constants.SERVICE_TYPE_VOLUME);
-        ServiceRegistrySet result = resp.get();
+        RPCResponse<ServiceSet> resp = dirClient.xtreemfs_service_get_by_type(null,Constants.SERVICE_TYPE_VOLUME);
+        ServiceSet result = resp.get();
         resp.freeBuffers();
 
-        ServiceRegistry volReg = null;
+        Service volReg = null;
 
         if (isVolUUID) {
-            for (ServiceRegistry reg : result) {
+            for (Service reg : result) {
                 if (reg.getUuid().equals(volume))
                     volReg = reg;
             }
         } else {
-            for (ServiceRegistry reg : result) {
-                if (reg.getService_name().equals(volume))
+            for (Service reg : result) {
+                if (reg.getName().equals(volume))
                     volReg = reg;
             }
         }
@@ -346,7 +346,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
                 + dirURL + "'");
             System.exit(3);
         }
-        volume = volReg.getService_name();
+        volume = volReg.getName();
 
         String mrc = volReg.getData().get("mrc");
         if (mrc == null) {

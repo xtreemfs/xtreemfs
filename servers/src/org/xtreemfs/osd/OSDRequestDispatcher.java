@@ -57,9 +57,9 @@ import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.stages.DeletionStage;
@@ -198,7 +198,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
-            public ServiceRegistrySet getServiceData() {
+            public ServiceSet getServiceData() {
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
                 String freeSpace = "0";
@@ -222,9 +222,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
-                ServiceRegistrySet data = new ServiceRegistrySet();
+                ServiceSet data = new ServiceSet();
 
-                ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+                ServiceDataMap dmap = new ServiceDataMap();
                 dmap.put("load", load);
                 dmap.put("total", totalSpace);
                 dmap.put("free", freeSpace);
@@ -237,7 +237,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 } catch (UnknownUUIDException ex) {
                     //should never happen
                 }
-                ServiceRegistry me = new ServiceRegistry(config.getUUID().toString(), 0
+                Service me = new Service(config.getUUID().toString(), 0
                         , Constants.SERVICE_TYPE_OSD, "OSD @ "+config.getUUID(), 0, dmap);
                 data.add(me);
 
@@ -307,7 +307,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void shutdown() {
         
         try {
-            
+           
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
             

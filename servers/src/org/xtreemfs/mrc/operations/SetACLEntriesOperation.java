@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -120,8 +119,5 @@ public class SetACLEntriesOperation extends MRCOperation {
         // }
     }
     
-    public Context getContext(MRCRequest rq) {
-        return null; // TODO
-    }
     
 }

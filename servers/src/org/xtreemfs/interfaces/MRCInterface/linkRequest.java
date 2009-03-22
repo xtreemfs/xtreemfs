@@ -11,13 +11,11 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class linkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public linkRequest() { context = new Context(); target_path = ""; link_path = ""; }
-    public linkRequest( Context context, String target_path, String link_path ) { this.context = context; this.target_path = target_path; this.link_path = link_path; }
-    public linkRequest( Object from_hash_map ) { context = new Context(); target_path = ""; link_path = ""; this.deserialize( from_hash_map ); }
-    public linkRequest( Object[] from_array ) { context = new Context(); target_path = ""; link_path = "";this.deserialize( from_array ); }
+    public linkRequest() { target_path = ""; link_path = ""; }
+    public linkRequest( String target_path, String link_path ) { this.target_path = target_path; this.link_path = link_path; }
+    public linkRequest( Object from_hash_map ) { target_path = ""; link_path = ""; this.deserialize( from_hash_map ); }
+    public linkRequest( Object[] from_array ) { target_path = ""; link_path = "";this.deserialize( from_array ); }
 
-    public Context getContext() { return context; }
-    public void setContext( Context context ) { this.context = context; }
     public String getTarget_path() { return target_path; }
     public void setTarget_path( String target_path ) { this.target_path = target_path; }
     public String getLink_path() { return link_path; }
@@ -28,7 +26,7 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
 
     public String toString()
     {
-        return "linkRequest( " + context.toString() + ", " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )"; 
+        return "linkRequest( " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )";
     }
 
 
@@ -39,21 +37,18 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.context.deserialize( from_hash_map.get( "context" ) );
         this.target_path = ( String )from_hash_map.get( "target_path" );
         this.link_path = ( String )from_hash_map.get( "link_path" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.context.deserialize( from_array[0] );
-        this.target_path = ( String )from_array[1];
-        this.link_path = ( String )from_array[2];        
+        this.target_path = ( String )from_array[0];
+        this.link_path = ( String )from_array[1];        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        context = new Context(); context.deserialize( buf );
         target_path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         link_path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
@@ -61,7 +56,6 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "context", context.serialize() );
         to_hash_map.put( "target_path", target_path );
         to_hash_map.put( "link_path", link_path );
         return to_hash_map;        
@@ -69,7 +63,6 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        context.serialize( writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( target_path, writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( link_path, writer );
     }
@@ -77,7 +70,6 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += context.calculateSize();
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(target_path);
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(link_path);
         return my_size;
@@ -88,7 +80,6 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     public Response createDefaultResponse() { return new linkResponse(); }
 
 
-    private Context context;
     private String target_path;
     private String link_path;
 

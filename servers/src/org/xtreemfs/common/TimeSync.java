@@ -198,7 +198,7 @@ public final class TimeSync extends LifeCycleThread {
             long tStart = localSysTime;
             
             long oldDrift = currentDrift;
-            RPCResponse<Long> r = dir.global_time_get(null);
+            RPCResponse<Long> r = dir.xtreemfs_global_time_get(null);
             Long globalTime = r.get();
             r.freeBuffers();
             long tEnd = System.currentTimeMillis();

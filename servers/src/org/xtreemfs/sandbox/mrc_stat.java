@@ -17,6 +17,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
@@ -52,11 +53,11 @@ public class mrc_stat {
 
             MRCClient c = new MRCClient(rpcClient,new InetSocketAddress(mrcUrl.getHost(),mrcUrl.getPort()));
 
-            final String user = "test";
             final List<String> groups = new ArrayList(1);
             groups.add("test");
+            final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<stat_> r = c.getattr(null, user,groups, path);
+            RPCResponse<stat_> r = c.getattr(null, uc, path);
             stat_ data = r.get();
             r.freeBuffers();
             rpcClient.shutdown();

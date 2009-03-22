@@ -29,8 +29,8 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.InternalGmax;
-import org.xtreemfs.interfaces.OSDInterface.internal_get_gmaxRequest;
-import org.xtreemfs.interfaces.OSDInterface.internal_get_gmaxResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -50,7 +50,7 @@ public final class InternalGetGmaxOperation extends OSDOperation {
 
     public InternalGetGmaxOperation(OSDRequestDispatcher master) {
         super(master);
-        internal_get_gmaxRequest rq = new internal_get_gmaxRequest();
+        xtreemfs_internal_get_gmaxRequest rq = new xtreemfs_internal_get_gmaxRequest();
         procId = rq.getOperationNumber();
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -63,7 +63,7 @@ public final class InternalGetGmaxOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final internal_get_gmaxRequest args = (internal_get_gmaxRequest)rq.getRequestArgs();
+        final xtreemfs_internal_get_gmaxRequest args = (xtreemfs_internal_get_gmaxRequest)rq.getRequestArgs();
         master.getStorageStage().internalGetGmax(args.getFile_id(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
                 rq, new InternalGetGmaxCallback() {
@@ -83,18 +83,18 @@ public final class InternalGetGmaxOperation extends OSDOperation {
 
 
     public void sendResponse(OSDRequest rq, InternalGmax result) {
-        internal_get_gmaxResponse response = new internal_get_gmaxResponse(result);
+        xtreemfs_internal_get_gmaxResponse response = new xtreemfs_internal_get_gmaxResponse(result);
         rq.sendSuccess(response);
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        internal_get_gmaxRequest rpcrq = new internal_get_gmaxRequest();
+        xtreemfs_internal_get_gmaxRequest rpcrq = new xtreemfs_internal_get_gmaxRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(),sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

@@ -24,7 +24,7 @@ public class xtreemfs_get_suitable_osdsRequest implements org.xtreemfs.interface
 
     public String toString()
     {
-        return "xtreemfs_get_suitable_osdsRequest( " + "\"" + file_id + "\"" + " )"; 
+        return "xtreemfs_get_suitable_osdsRequest( " + "\"" + file_id + "\"" + " )";
     }
 
 

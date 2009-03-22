@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.linkRequest;
 import org.xtreemfs.interfaces.MRCInterface.linkResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -133,10 +132,6 @@ public class CreateLinkOperation extends MRCOperation {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
                 "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((linkRequest) rq.getRequestArgs()).getContext();
     }
     
 }

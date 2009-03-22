@@ -28,7 +28,6 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
@@ -150,11 +149,6 @@ public class DeleteOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq.getRequestArgs())
-                .getContext() : ((rmdirRequest) rq.getRequestArgs()).getContext();
     }
     
 }

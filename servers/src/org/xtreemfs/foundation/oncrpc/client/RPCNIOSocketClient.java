@@ -53,6 +53,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.ErrNo;
 
 /**
@@ -111,7 +112,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
             int versionId, int procedureId, Serializable message, Object attachment) {
-        ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId, versionId, procedureId, message, attachment);
+        sendRequest(listener, server, programId, versionId, procedureId, message, attachment, null);
+    }
+
+    public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
+            int versionId, int procedureId, Serializable message, Object attachment, UserCredentials credentials) {
+        ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId, versionId, procedureId, message, attachment,credentials);
         sendRequest(server, rec);
     }
 

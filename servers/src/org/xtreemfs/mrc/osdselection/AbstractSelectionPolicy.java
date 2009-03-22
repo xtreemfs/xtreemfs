@@ -35,9 +35,8 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 
 public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     
@@ -46,7 +45,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     static final long MIN_FREE_CAPACITY = 32 * 1024 * 1024; // 32 mb
                                                             
     @Override
-    public ServiceRegistrySet getUsableOSDs(ServiceRegistrySet osds,
+    public ServiceSet getUsableOSDs(ServiceSet osds,
         String args) {
         
         Set<String> rules = null;
@@ -66,8 +65,8 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
             }
         }
         
-        ServiceRegistrySet suitable = new ServiceRegistrySet();
-        for (ServiceRegistry osd : osds) {
+        ServiceSet suitable = new ServiceSet();
+        for (Service osd : osds) {
             try {
                 if ((rules.isEmpty() || follows(osd.getUuid(), rules))
                     && (hasFreeCapacity(osd) && !hasTimedOut(osd)))
@@ -80,7 +79,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         return suitable;
     }
     
-    static boolean hasFreeCapacity(ServiceRegistry osd) {
+    static boolean hasFreeCapacity(Service osd) {
         String freeStr = osd.getData().get("free");
 
         long free = Long.parseLong(freeStr);
@@ -92,7 +91,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
      * (String) osd.get("location"); return location; }
      */
 
-    static boolean hasTimedOut(ServiceRegistry osd) {
+    static boolean hasTimedOut(Service osd) {
 
         // if the OSD has contacted the DS within the last 10 minutes,
         // assume that it is still running

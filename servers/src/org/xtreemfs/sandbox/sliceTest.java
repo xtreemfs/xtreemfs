@@ -7,11 +7,6 @@ package org.xtreemfs.sandbox;
 
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
 
 /**
  *
@@ -42,15 +37,6 @@ public class sliceTest {
             double dur = nanoEnd-nanoStart;
 
             System.out.println("took "+dur/1e6+"ms");*/
-
-            ServiceRegistrySet sregset = new ServiceRegistrySet();
-            KeyValuePairSet kvset = new KeyValuePairSet();
-            kvset.add(new KeyValuePair("yagga", "bla"));
-            sregset.add(new ServiceRegistry("123", 1, 1, "yagga OSD", 0, new ServiceRegistryDataMap()));
-            Object[] data = (Object[])sregset.serialize();
-            for (Object o : data) {
-                System.out.println("entry: "+o);
-            }
 
         } catch (Exception ex) {
             ex.printStackTrace();

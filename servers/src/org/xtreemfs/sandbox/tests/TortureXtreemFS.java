@@ -44,6 +44,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -130,12 +131,13 @@ public class TortureXtreemFS {
 
             List<String> grs = new ArrayList(1);
             grs.add("torture");
+            final UserCredentials uc = MRCClient.getCredentials("torture", grs);
 
 
             if (options.get("mkvol").switchValue) {
                 MRCClient mrcClient = new MRCClient(rpcClient, mrcAddr);
                 StripingPolicy sp = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 1);
-                RPCResponse r = mrcClient.mkvol(mrcAddr, "torture", grs, "password", volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX);
+                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX);
                 r.get();
                 r.freeBuffers();
             }

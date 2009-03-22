@@ -30,8 +30,8 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.service_deregisterRequest;
-import org.xtreemfs.interfaces.DIRInterface.service_deregisterResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterResponse;
 
 /**
  *
@@ -45,7 +45,7 @@ public class DeregisterServiceOperation extends DIROperation {
 
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        service_deregisterRequest tmp = new service_deregisterRequest();
+        xtreemfs_service_deregisterRequest tmp = new xtreemfs_service_deregisterRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -58,13 +58,13 @@ public class DeregisterServiceOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final service_deregisterRequest request = (service_deregisterRequest)rq.getRequestMessage();
+            final xtreemfs_service_deregisterRequest request = (xtreemfs_service_deregisterRequest)rq.getRequestMessage();
 
             BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
             database.directInsert(ig);
             
-            service_deregisterResponse response = new service_deregisterResponse();
+            xtreemfs_service_deregisterResponse response = new xtreemfs_service_deregisterResponse();
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -79,7 +79,7 @@ public class DeregisterServiceOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        service_deregisterRequest amr = new service_deregisterRequest();
+        xtreemfs_service_deregisterRequest amr = new xtreemfs_service_deregisterRequest();
         rq.deserializeMessage(amr);
     }
 

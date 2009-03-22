@@ -29,7 +29,6 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
@@ -235,10 +234,6 @@ public class OpenOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((openRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.removexattrResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -142,10 +141,6 @@ public class RemoveXAttrOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((removexattrRequest) rq.getRequestArgs()).getContext();
     }
     
 }

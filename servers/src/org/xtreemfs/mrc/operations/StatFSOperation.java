@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.statfs_;
 import org.xtreemfs.interfaces.MRCInterface.statfsRequest;
 import org.xtreemfs.interfaces.MRCInterface.statfsResponse;
@@ -73,10 +72,6 @@ public class StatFSOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((statfsRequest) rq.getRequestArgs()).getContext();
     }
     
 }

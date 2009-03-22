@@ -31,6 +31,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.interfaces.UserCredentials;
 
 
 /**
@@ -56,8 +57,9 @@ public class ONCRPCRequest {
 
     private final Object              attachment;
 
-    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, Serializable response, Object attachment) {
-        ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId);
+    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, Serializable response, Object attachment,
+            UserCredentials credentials) {
+        ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId,credentials);
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         hdr.serialize(writer);
         response.serialize(writer);

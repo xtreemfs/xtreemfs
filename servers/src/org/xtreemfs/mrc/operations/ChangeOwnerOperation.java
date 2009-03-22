@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -103,7 +102,7 @@ public class ChangeOwnerOperation extends MRCOperation {
             }
             
             // check whether the owner may be changed
-            if (rqArgs.getUserId() != null) {
+            if (rqArgs.getUser_id() != null) {
                 if (!rq.getDetails().superUser)
                     throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
                 
@@ -114,8 +113,8 @@ public class ChangeOwnerOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // change owner and owning group
-            file.setOwnerAndGroup(rqArgs.getUserId() == null ? file.getOwnerId() : rqArgs.getUserId(), rqArgs
-                    .getGroupId() == null ? file.getOwningGroupId() : rqArgs.getGroupId());
+            file.setOwnerAndGroup(rqArgs.getUser_id() == null ? file.getOwnerId() : rqArgs.getUser_id(), rqArgs
+                    .getGroup_id() == null ? file.getOwningGroupId() : rqArgs.getGroup_id());
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // update POSIX timestamps
@@ -133,10 +132,6 @@ public class ChangeOwnerOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((chownRequest) rq.getRequestArgs()).getContext();
     }
     
 }

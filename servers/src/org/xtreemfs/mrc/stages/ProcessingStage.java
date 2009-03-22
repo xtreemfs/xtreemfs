@@ -30,7 +30,6 @@ import java.util.Map;
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -177,7 +176,7 @@ public class ProcessingStage extends MRCStage {
         try {
             
             // get the context
-            Context ctx = op.getContext(rq);
+            org.xtreemfs.interfaces.UserCredentials ctx = op.getUserCredentials(rq);
             
             if (ctx != null)
                 try {

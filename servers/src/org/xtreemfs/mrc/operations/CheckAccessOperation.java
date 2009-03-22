@@ -25,7 +25,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -100,10 +99,6 @@ public class CheckAccessOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((accessRequest) rq.getRequestArgs()).getContext();
     }
     
 }

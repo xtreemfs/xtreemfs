@@ -25,7 +25,7 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.ServiceSet;
 
 /**
  * Interface for policies implementing a selection mechanism for OSDs.
@@ -42,8 +42,8 @@ public interface OSDSelectionPolicy {
      *            directory service
      * @return the filtered list
      */
-    public ServiceRegistrySet getUsableOSDs(
-        ServiceRegistrySet osds, String args);
+    public ServiceSet getUsableOSDs(
+        ServiceSet osds, String args);
 
     /**
      * Returns a list of OSDs to be allocated to a newly created file.
@@ -52,7 +52,7 @@ public interface OSDSelectionPolicy {
      *            list of osds that match the policy
      * @return a list of osds that can be used to create a new file
      */
-    public String[] getOSDsForNewFile(ServiceRegistrySet osds,
+    public String[] getOSDsForNewFile(ServiceSet osds,
         InetAddress clientAddr, int amount, String args);
 
 }

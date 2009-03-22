@@ -115,7 +115,7 @@ public final class TruncateOperation extends OSDOperation {
             for (ServiceUUID osd : osds) {
                 if (!osd.equals(localUUID)) {
                     gmaxRPCs[cnt++] = master.getOSDClient().internal_truncate(osd.getAddress(),
-                            args.getFile_id(), args.getCredentials(),args.getNew_file_size());
+                            args.getFile_id(), args.getFile_credentials(),args.getNew_file_size());
                 }
             }
             this.waitForResponses(gmaxRPCs, new ResponsesListener() {
@@ -158,8 +158,8 @@ public final class TruncateOperation extends OSDOperation {
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getCredentials().getXcap(),sharedSecret));
-        rq.setLocationList(new XLocations(rpcrq.getCredentials().getXlocs(), localUUID));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
     }

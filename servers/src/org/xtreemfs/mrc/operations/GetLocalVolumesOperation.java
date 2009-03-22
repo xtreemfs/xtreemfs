@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -65,8 +64,5 @@ public class GetLocalVolumesOperation extends MRCOperation {
         }
     }
     
-    public Context getContext(MRCRequest rq) {
-        return null;
-    }
     
 }

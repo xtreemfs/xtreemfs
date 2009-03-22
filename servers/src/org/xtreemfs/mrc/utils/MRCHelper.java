@@ -32,12 +32,10 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
 import org.xtreemfs.interfaces.Replica;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
@@ -75,14 +73,14 @@ public class MRCHelper {
         nexists, dir, file
     }
     
-    public static ServiceRegistry createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan, String mrcUUID) {
+    public static Service createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan, String mrcUUID) {
         
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
         
-        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("mrc", mrcUUID);
         dmap.put("free", free);
-        ServiceRegistry sreg = new ServiceRegistry(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol
+        Service sreg = new Service(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol
                 .getName(), 0, dmap);
         
         return sreg;
@@ -129,7 +127,7 @@ public class MRCHelper {
         
         StringSet osds = new StringSet();
         
-        ServiceRegistrySet osdMaps = osdMan.getUsableOSDs(volume.getId());
+        ServiceSet osdMaps = osdMan.getUsableOSDs(volume.getId());
         
         if (osdMaps == null || osdMaps.size() == 0)
             throw new MRCException("could not open file " + path + ": no feasible OSDs available");

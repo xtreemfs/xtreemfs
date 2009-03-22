@@ -36,8 +36,8 @@ import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.Exceptions.InvalidArgumentException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_setRequest;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_setResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setResponse;
 
 /**
  *
@@ -51,7 +51,7 @@ public class SetAddressMappingOperation extends DIROperation {
 
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        address_mappings_setRequest tmp = new address_mappings_setRequest();
+        xtreemfs_address_mappings_setRequest tmp = new xtreemfs_address_mappings_setRequest();
         operationNumber = tmp.getOperationNumber();
         database = master.getDatabase();
     }
@@ -64,7 +64,7 @@ public class SetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final address_mappings_setRequest request = (address_mappings_setRequest)rq.getRequestMessage();
+            final xtreemfs_address_mappings_setRequest request = (xtreemfs_address_mappings_setRequest)rq.getRequestMessage();
 
             final AddressMappingSet mappings = request.getAddress_mappings();
             String uuid = null;
@@ -112,7 +112,7 @@ public class SetAddressMappingOperation extends DIROperation {
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newData);
             database.directInsert(ig);
             
-            address_mappings_setResponse response = new address_mappings_setResponse(currentVersion);
+            xtreemfs_address_mappings_setResponse response = new xtreemfs_address_mappings_setResponse(currentVersion);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
@@ -127,7 +127,7 @@ public class SetAddressMappingOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        address_mappings_setRequest amr = new address_mappings_setRequest();
+        xtreemfs_address_mappings_setRequest amr = new xtreemfs_address_mappings_setRequest();
         rq.deserializeMessage(amr);
     }
 

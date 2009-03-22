@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
 import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -146,10 +145,6 @@ public class UtimeOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((utimeRequest) rq.getRequestArgs()).getContext();
     }
     
 }

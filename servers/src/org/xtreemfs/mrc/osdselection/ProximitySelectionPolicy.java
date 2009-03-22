@@ -31,9 +31,8 @@ import java.util.PriorityQueue;
 import java.util.Map;
 import java.net.URI;
 import java.net.UnknownHostException;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 
 public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
@@ -42,7 +41,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
     private byte[] clientAddress;
     private long clientAddressLong;
 
-    public String[] getOSDsForNewFile(ServiceRegistrySet osdSet,
+    public String[] getOSDsForNewFile(ServiceSet osdSet,
             InetAddress clientAddress, int amount, String args) {
 
         this.clientAddress = clientAddress.getAddress();
@@ -54,7 +53,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
         PriorityQueue<Pair> queue = new PriorityQueue<Pair>();
         LinkedList<String> list = new LinkedList<String>();
 
-        for (ServiceRegistry osd : osdSet) {
+        for (Service osd : osdSet) {
             if (hasFreeCapacity(osd)) {
                 try {
                     queue.add(new Pair(osd, distance(osd)));
@@ -74,7 +73,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     }
 
-    private long distance(ServiceRegistry osd) throws UnknownHostException {
+    private long distance(Service osd) throws UnknownHostException {
 
         String osduri = osd.getData().get("uri");
 
@@ -113,10 +112,10 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
 
     class Pair implements Comparable<Pair> {
 
-        private ServiceRegistry osd;
+        private Service osd;
         private long distance;
 
-        Pair(ServiceRegistry osd, long distance) {
+        Pair(Service osd, long distance) {
             this.osd = osd;
             this.distance = distance;
         }
@@ -129,7 +128,7 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
             return distance;
         }
 
-        public ServiceRegistry getOsd() {
+        public Service getOsd() {
             return osd;
         }
 

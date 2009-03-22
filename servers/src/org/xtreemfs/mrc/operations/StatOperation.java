@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
@@ -90,7 +89,7 @@ public class StatOperation extends MRCOperation {
             int type = linkTarget != null ? 3 : file.isDirectory() ? 2 : 1;
             stat_ stat = new stat_(mode, file.getLinkCount(), 1, 1, 0, size, file.getAtime(),
                 file.getMtime(), file.getCtime(), file.getOwnerId(), file.getOwningGroupId(), volume.getId()
-                    + ":" + file.getId(), linkTarget, type, file.getEpoch(), (int) file.getW32Attrs());
+                    + ":" + file.getId(), linkTarget, file.getEpoch(), (int) file.getW32Attrs());
             // TODO: check whether Win32 attrs are 32 or 64 bits long
             
             // set the response
@@ -104,10 +103,6 @@ public class StatOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return ((getattrRequest) rq.getRequestArgs()).getContext();
     }
     
 }

@@ -28,7 +28,6 @@ import java.util.Iterator;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.stat_;
@@ -135,10 +134,10 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
                         .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
                         .getId()
-                    + ":" + child.getId(), linkTarget, type, child.getEpoch(), (int) child.getW32Attrs());
+                    + ":" + child.getId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
                 // TODO: check whether Win32 attrs are 32 or 64 bits long
                 
-                dirContent.add(new DirectoryEntry(child.getFileName(), stat, linkTarget));
+                dirContent.add(new DirectoryEntry(child.getFileName(), stat));
             }
             
             // set the response
@@ -155,7 +154,4 @@ public class ReadDirAndStatOperation extends MRCOperation {
         }
     }
     
-    public Context getContext(MRCRequest rq) {
-        return ((readdirRequest) rq.getRequestArgs()).getContext();
-    }
 }

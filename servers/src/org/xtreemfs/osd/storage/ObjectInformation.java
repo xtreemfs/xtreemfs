@@ -92,19 +92,19 @@ public class ObjectInformation {
     public ObjectData getObjectData(boolean isLastObject) {
         if (isLastObject) {
             switch (status) {
-                case EXISTS: return new ObjectData("", 0, checksumInvalidOnOSD, data);
-                case DOES_NOT_EXIST: return new ObjectData("", 0, checksumInvalidOnOSD, null);
+                case EXISTS: return new ObjectData(data, 0, 0, checksumInvalidOnOSD);
+                case DOES_NOT_EXIST: return new ObjectData(null,0,0,checksumInvalidOnOSD);
                 case PADDING_OBJECT: throw new RuntimeException("padding object must not be last object!");
             }
         } else {
             switch (status) {
                 case EXISTS: {
                     final int paddingZeros = getStripeSize()-data.capacity();
-                    return new ObjectData("", paddingZeros, checksumInvalidOnOSD, data);
+                    return new ObjectData(data,0,paddingZeros,checksumInvalidOnOSD);
                 }
                 case DOES_NOT_EXIST:
                 case PADDING_OBJECT: {
-                    return new ObjectData("",getStripeSize(), checksumInvalidOnOSD, null);
+                    return new ObjectData(data, 0, getStripeSize(), checksumInvalidOnOSD);
                 }
             }
         }

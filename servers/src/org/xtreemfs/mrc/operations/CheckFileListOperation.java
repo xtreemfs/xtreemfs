@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.Context;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -82,10 +81,6 @@ public class CheckFileListOperation extends MRCOperation {
         } catch (Exception exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
-    }
-    
-    public Context getContext(MRCRequest rq) {
-        return null;
     }
     
 }
