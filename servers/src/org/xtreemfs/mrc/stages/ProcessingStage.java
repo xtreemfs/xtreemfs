@@ -51,6 +51,7 @@ import org.xtreemfs.mrc.operations.DeleteOperation;
 import org.xtreemfs.mrc.operations.DeleteVolumeOperation;
 import org.xtreemfs.mrc.operations.DumpDBOperation;
 import org.xtreemfs.mrc.operations.GetLocalVolumesOperation;
+import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
 import org.xtreemfs.mrc.operations.GetXAttrsOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
@@ -94,8 +95,6 @@ public class ProcessingStage extends MRCStage {
     
     public void installOperations() {
         operations.put(ShutdownOperation.OP_ID, new ShutdownOperation(master));
-        // operations.put(StatusPageOperation.RPC_NAME, new
-        // StatusPageOperation(master));
         operations.put(CreateVolumeOperation.OP_ID, new CreateVolumeOperation(master));
         operations.put(DeleteVolumeOperation.OP_ID, new DeleteVolumeOperation(master));
         operations.put(GetLocalVolumesOperation.OP_ID, new GetLocalVolumesOperation(master));
@@ -130,6 +129,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(RestoreFileOperation.OP_ID, new RestoreFileOperation(master));
         operations.put(CheckpointOperation.OP_ID, new CheckpointOperation(master));
         operations.put(SetattrOperation.OP_ID, new SetattrOperation(master));
+        operations.put(GetSuitableOSDsOperation.OP_ID, new GetSuitableOSDsOperation(master));
     }
     
     @Override

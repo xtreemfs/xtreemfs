@@ -33,7 +33,6 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.interfaces.MRCInterface.createResponse;
 import org.xtreemfs.interfaces.MRCInterface.openRequest;
 import org.xtreemfs.interfaces.MRCInterface.openResponse;
 import org.xtreemfs.mrc.ErrNo;

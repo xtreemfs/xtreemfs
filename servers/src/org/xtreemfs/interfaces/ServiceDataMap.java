@@ -35,7 +35,7 @@ public class ServiceDataMap extends HashMap<String, String>
     
     public Object serialize()
     {
-        HashMap<String, String> to_hash_map = new HashMap<String, String>();
+        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
         for ( Iterator<String> key_i = keySet().iterator(); key_i.hasNext(); )
         {
              String key = key_i.next();
@@ -59,7 +59,7 @@ public class ServiceDataMap extends HashMap<String, String>
 
     public void deserialize( Object from_hash_map )
     {
-        this.deserialize( ( HashMap<String, String> )from_hash_map );
+        this.deserialize( ( HashMap<String, Object> )from_hash_map );
     }
     
     public void deserialize( HashMap<String, String> from_hash_map )
@@ -92,7 +92,7 @@ public class ServiceDataMap extends HashMap<String, String>
         {
             String key = key_i.next();
             String value = get( key );
-            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);	    my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(key);
+            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
 	    my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(key);
         }
         return my_size;

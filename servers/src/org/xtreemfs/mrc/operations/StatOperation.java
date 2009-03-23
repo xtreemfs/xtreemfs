@@ -84,7 +84,7 @@ public class StatOperation extends MRCOperation {
             
             String linkTarget = sMan.getSoftlinkTarget(file.getId());
             int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_S_IFLNK : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_S_IFDIR : Constants.SYSTEM_V_FCNTL_S_IFREG;
+            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
             int type = linkTarget != null ? 3 : file.isDirectory() ? 2 : 1;
             stat_ stat = new stat_(mode, file.getLinkCount(), 1, 1, 0, size, file.getAtime(),

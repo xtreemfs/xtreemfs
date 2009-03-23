@@ -70,7 +70,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
-
+            
             validateContext(rq);
             
             Path p = new Path(rqArgs.getPath());
@@ -96,8 +96,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
                     return;
                 }
                 
@@ -127,7 +127,9 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 String linkTarget = sMan.getSoftlinkTarget(child.getId());
                 int mode = faMan.getPosixAccessMode(sMan, child, rq.getDetails().userId,
                     rq.getDetails().groupIds);
-                mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_S_IFLNK : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_S_IFDIR : Constants.SYSTEM_V_FCNTL_S_IFREG;
+                mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
+                    : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
+                        : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
                 long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child
                         .getSize();
                 int type = linkTarget != null ? 3 : child.isDirectory() ? 2 : 1;

@@ -77,8 +77,8 @@ public class UpdateFileSizeOperation extends MRCOperation {
             try {
                 String globalFileId = cap.getFileId();
                 int i = globalFileId.indexOf(':');
-                volumeId = cap.getFileId().substring(0, i);
-                fileId = Long.parseLong(cap.getFileId().substring(i + 1));
+                volumeId = globalFileId.substring(0, i);
+                fileId = Long.parseLong(globalFileId.substring(i + 1));
             } catch (Exception exc) {
                 throw new UserException("invalid global file ID: " + cap.getFileId()
                     + "; expected pattern: <volume_ID>:<local_file_ID>");
@@ -118,6 +118,19 @@ public class UpdateFileSizeOperation extends MRCOperation {
                     sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
                     sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
                 }
+            }
+
+            else {
+                if (epochNo < file.getEpoch())
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                            "received file size update w/ invalid epoch: " + epochNo + ", current epoch="
+                                + file.getEpoch());
+                    } else if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                            "received update for outdated file size: " + newFileSize + ", current file size="
+                                + file.getSize());
+                    }
             }
             
             // set the response
