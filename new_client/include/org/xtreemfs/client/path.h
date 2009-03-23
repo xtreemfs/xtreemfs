@@ -10,7 +10,7 @@ namespace org
   {
     namespace client
     {
-      class Path : public YIELD::SerializableString
+      class Path
       {
       public:
         Path() { }
@@ -25,22 +25,10 @@ namespace org
         const YIELD::Path& getLocalPath() const { return local_path; }
         const std::string& getGlobalPath() const { return global_path; } // Volume + /-separated local path
 
-        // RTTI
-        TYPE_INFO( RTTI::STRING, "xtreemfs::client::Path", 921263543UL );
-
-        // Serializable
-        virtual void deserialize( YIELD::StructuredInputStream& );
-        virtual size_t getSize() const { return getGlobalPath().size(); }
-
-        // SerializableString
-        virtual const char* getString() const { return getGlobalPath().c_str(); }
-
       private:
         std::string volume_name;
         std::string global_path; 
         YIELD::Path local_path;
-
-        void init( const std::string& global_path ); // Also used by deserialize
       };
     };
   };

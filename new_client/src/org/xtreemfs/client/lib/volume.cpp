@@ -121,7 +121,7 @@ YIELD::File* Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode
 
   org::xtreemfs::interfaces::FileCredentials file_credentials;
   mrc_proxy.open( path, system_v_flags, mode, file_credentials );
-  uint32_t path_hash = string_hash( path );
+  uint32_t path_hash = YIELD::string_hash( path );
 
   SharedFile* shared_file = in_use_shared_files.find( path_hash );
   if ( shared_file == NULL )
@@ -208,7 +208,8 @@ bool Volume::statvfs( const YIELD::Path& path, struct statvfs* buf )
     xtreemfs::interfaces::statfs_ xtreemfs_statfsbuf;
     mrc_proxy.statfs( this->name, xtreemfs_statfsbuf );
     buf->f_bsize = xtreemfs_statfsbuf.get_bsize();
-    buf->f_bfree = xtreemfs_statfsbuf.get_bfree();
+    buf->f_bavail = buf->f_bfree = xtreemfs_statfsbuf.get_bfree();
+    buf->f_blocks = xtreemfs_statfsbuf.get_bfree() * 1024;
     buf->f_namemax = xtreemfs_statfsbuf.get_namelen();
     return true;
   }

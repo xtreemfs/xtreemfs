@@ -61,8 +61,8 @@ int main( int argc, char** argv )
 
       // Create the MRCProxy
       std::string volume_name( args.Files()[1] );
-      YIELD::URI volume_uri = dir_proxy.getVolumeURIFromVolumeName( volume_name );
-      MRCProxy mrc_proxy( volume_uri );
+      YIELD::URI mrc_uri = dir_proxy.getVolumeURIFromVolumeName( volume_name );
+      MRCProxy mrc_proxy( mrc_uri );
       main_stage_group.createStage( mrc_proxy );
 
       // Create the OSDProxyFactory

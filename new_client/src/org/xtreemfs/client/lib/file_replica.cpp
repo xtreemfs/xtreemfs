@@ -39,8 +39,8 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
     if ( data )
     {
       memcpy( rbuf_p, data->c_str(), data->size() );
-      rbuf_p += data->getSize();
-      file_offset += data->getSize();
+      rbuf_p += data->size();
+      file_offset += data->size();
     }
 
     uint32_t zero_padding = object_data.get_zero_padding();

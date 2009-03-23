@@ -89,7 +89,11 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   {
                     oncrpc_req.deserialize( *conn );
                     if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
+                    {
+                      req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
+                      YIELD::SharedObject::decRef( req );
                       return;
+                    }
                     else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
                       reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
                     else
@@ -145,14 +149,12 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   throwExceptionEvent( new YIELD::PlatformExceptionEvent( ETIMEDOUT ) );
               }
             }
-            req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
           }
           catch ( YIELD::ExceptionEvent* exc_ev )
           {
             req.respond( *exc_ev );
+            YIELD::SharedObject::decRef( req );
           }
-
-          YIELD::SharedObject::decRef( req );
         }
         break;
 

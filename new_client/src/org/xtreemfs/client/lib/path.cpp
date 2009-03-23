@@ -40,11 +40,6 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
 Path::Path( const std::string& global_path )
 : global_path( global_path )
 {
-  init( global_path );
-}
-
-void Path::init( const std::string& global_path )
-{
   std::string::size_type first_slash = global_path.find( '/' );
   if ( first_slash != -1 )
   {
@@ -70,10 +65,3 @@ void Path::init( const std::string& global_path )
     this->global_path.append( "/" );
   }
 }
-
-void Path::deserialize( YIELD::StructuredInputStream& input_stream )
-{
-  input_stream.readString( "path", global_path );
-  init( global_path );
-}
-
