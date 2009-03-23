@@ -158,9 +158,6 @@ public class OpenOperation extends MRCOperation {
                     
                     // set the file ID as the last one
                     sMan.setLastFileId(fileId, update);
-                    
-                    // set the response
-                    rq.setResponse(new createResponse());
                 }
 
                 else
@@ -171,7 +168,6 @@ public class OpenOperation extends MRCOperation {
             // the open mode is truncate
             int trEpoch = file.getEpoch();
             if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
-                update = sMan.createAtomicDBUpdate(master, rq);
                 file.setIssuedEpoch(file.getIssuedEpoch() + 1);
                 trEpoch = file.getIssuedEpoch();
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
