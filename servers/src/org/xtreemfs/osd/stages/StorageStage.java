@@ -72,6 +72,16 @@ public class StorageStage extends Stage {
         public void readComplete(ObjectInformation result, Exception error);
     }
 
+    public void getFilesize(String fileId, StripingPolicyImpl sp,
+            OSDRequest request, GetFileSizeCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_FILE_SIZE, new Object[]{fileId,sp}, request, listener);
+    }
+
+    public static interface GetFileSizeCallback {
+
+        public void getFileSizeComplete(long fileSize, Exception error);
+    }
+
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp,
             int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc,
             OSDRequest request, WriteObjectCallback listener) {

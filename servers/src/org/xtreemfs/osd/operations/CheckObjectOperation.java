@@ -31,7 +31,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;

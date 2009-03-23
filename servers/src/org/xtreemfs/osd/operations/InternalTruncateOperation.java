@@ -28,7 +28,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;

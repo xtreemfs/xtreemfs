@@ -35,7 +35,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
@@ -44,6 +44,7 @@ import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
+import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
@@ -63,6 +64,8 @@ public class StorageThread extends Stage {
     public static final int STAGEOP_GMAX_RECEIVED = 5;
 
     public static final int STAGEOP_GET_GMAX = 6;
+
+    public static final int STAGEOP_GET_FILE_SIZE = 7;
 
 
     private MetadataCache cache;
@@ -104,6 +107,9 @@ public class StorageThread extends Stage {
                     break;
                 case STAGEOP_GET_GMAX:
                     processGetGmax(method);
+                    break;
+                case STAGEOP_GET_FILE_SIZE:
+                    processGetFileSize(method);
                     break;
             }
 
@@ -162,6 +168,7 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             cache.removeFileInfo(fileId);
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"removed file info from cache for file "+fileId);
+            cback.cachesFlushed(null);
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
             return;
@@ -234,6 +241,27 @@ public class StorageThread extends Stage {
         }
 
     }
+
+    /**
+     * Reads an object from disk and checks the checksum
+     * @param rq
+     */
+    private void processGetFileSize(StageRequest rq) {
+        final GetFileSizeCallback cback = (GetFileSizeCallback) rq.getCallback();
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+
+            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            //final boolean rangeRequested = (offset > 0) || (length < stripeSize);
+
+            cback.getFileSizeComplete(fi.getFilesize(), null);
+        } catch (IOException ex) {
+            cback.getFileSizeComplete(-1, ex);
+        }
+
+    }
+
 
 
     private void processWrite(StageRequest rq) {

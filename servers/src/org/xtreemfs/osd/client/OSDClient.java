@@ -49,6 +49,8 @@ import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 
@@ -156,6 +158,22 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public InternalGmax getResult(ReusableBuffer data) {
                 xtreemfs_internal_get_gmaxResponse resp = new xtreemfs_internal_get_gmaxResponse();
+                resp.deserialize(data);
+                return resp.getReturnValue();
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse<Long> internal_get_file_size(InetSocketAddress server, String file_id,
+            FileCredentials credentials) {
+        xtreemfs_internal_get_file_sizeRequest rq = new xtreemfs_internal_get_file_sizeRequest(credentials, file_id);
+
+        RPCResponse<Long> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<Long>() {
+
+            @Override
+            public Long getResult(ReusableBuffer data) {
+                xtreemfs_internal_get_file_sizeResponse resp = new xtreemfs_internal_get_file_sizeResponse();
                 resp.deserialize(data);
                 return resp.getReturnValue();
             }

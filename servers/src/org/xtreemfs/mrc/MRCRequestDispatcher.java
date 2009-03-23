@@ -60,7 +60,7 @@ import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.interfaces.Exceptions.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.ServiceDataMap;

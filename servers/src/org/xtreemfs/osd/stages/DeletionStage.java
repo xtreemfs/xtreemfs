@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.MetadataCache;

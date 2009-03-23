@@ -30,7 +30,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.writeResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;

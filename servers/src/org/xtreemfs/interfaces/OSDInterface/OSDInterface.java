@@ -22,6 +22,7 @@ public class OSDInterface
             case 4: return new writeRequest();
             case 103: return new xtreemfs_check_objectRequest();
             case 100: return new xtreemfs_internal_get_gmaxRequest();
+            case 104: return new xtreemfs_internal_get_file_sizeRequest();
             case 101: return new xtreemfs_internal_truncateRequest();
             case 102: return new xtreemfs_internal_read_localRequest();
             case 50: return new xtreemfs_shutdownRequest();
@@ -34,7 +35,7 @@ public class OSDInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new readResponse();            case 2: return new truncateResponse();            case 3: return new unlinkResponse();            case 4: return new writeResponse();            case 103: return new xtreemfs_check_objectResponse();            case 100: return new xtreemfs_internal_get_gmaxResponse();            case 101: return new xtreemfs_internal_truncateResponse();            case 102: return new xtreemfs_internal_read_localResponse();            case 50: return new xtreemfs_shutdownResponse();
+            case 1: return new readResponse();            case 2: return new truncateResponse();            case 3: return new unlinkResponse();            case 4: return new writeResponse();            case 103: return new xtreemfs_check_objectResponse();            case 100: return new xtreemfs_internal_get_gmaxResponse();            case 104: return new xtreemfs_internal_get_file_sizeResponse();            case 101: return new xtreemfs_internal_truncateResponse();            case 102: return new xtreemfs_internal_read_localResponse();            case 50: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    

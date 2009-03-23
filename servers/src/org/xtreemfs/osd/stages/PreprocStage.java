@@ -35,7 +35,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
@@ -253,7 +253,7 @@ public class PreprocStage extends Stage {
         OSDOperation op = master.getOperation(hdr.getOperationNumber());
         if (op == null) {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
-                    ErrNo.EINVAL,"requested operation is not available on this DIR"));
+                    ErrNo.EINVAL,"requested operation is not available on this OSD (proc # "+hdr.getOperationNumber()+")"));
             return false;
         }
         rq.setOperation(op);

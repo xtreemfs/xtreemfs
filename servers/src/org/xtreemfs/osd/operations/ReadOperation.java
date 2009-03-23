@@ -34,7 +34,8 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Exceptions.OSDException;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
@@ -113,7 +114,10 @@ public final class ReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            if (rq.getLocationList().getLocalReplica().getOSDs().size() == 1) {
+            if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
+                //FIXME: read only replication!
+            }
+            if (rq.getLocationList().getLocalReplica().isStriped()) {
                 //non-striped case
                 nonStripedRead(rq, args, result);
             } else {
