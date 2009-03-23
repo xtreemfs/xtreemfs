@@ -5,6 +5,7 @@
 
 #include "org/xtreemfs/client/proxy_exception_event.h"
 #include "org/xtreemfs/interfaces/exceptions.h"
+#include "org/xtreemfs/interfaces/types.h"
 
 
 namespace org
@@ -13,9 +14,6 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainer;
-
-
       class Proxy : public YIELD::EventHandler
       {
       public:
@@ -38,6 +36,8 @@ namespace org
       protected:
         Proxy( const YIELD::URI&, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port );
 
+        virtual YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const { return NULL; }
+
         YIELD::SerializableFactories serializable_factories;
 
       private:
@@ -47,7 +47,6 @@ namespace org
         uint8_t reconnect_tries_max;
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
-        PolicyContainer* policies;
 
         uint8_t reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
         void throwExceptionEvent( YIELD::ExceptionEvent* );

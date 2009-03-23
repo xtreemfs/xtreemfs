@@ -11,6 +11,9 @@ namespace org
   {
     namespace client
     {
+      class PolicyContainer;
+
+
       class MRCProxy : public Proxy
       {
       public:
@@ -45,8 +48,13 @@ namespace org
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utime( const std::string& path, uint64_t ctime, uint64_t atime, uint64_t mtime );
 
+      protected:
+        // Proxy
+        YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const;
+
       private:
         org::xtreemfs::interfaces::MRCInterface mrc_interface;
+        PolicyContainer* policies;
       };
     };
   };

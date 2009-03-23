@@ -21,7 +21,7 @@ namespace org
         PolicyContainer();
         virtual ~PolicyContainer();
 
-        org::xtreemfs::interfaces::UserCredentials get_user_credentials() const;
+        YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const;
 
       private:        
         get_user_credentials_t _get_user_credentials;

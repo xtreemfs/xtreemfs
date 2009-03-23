@@ -1,17 +1,25 @@
 #include "org/xtreemfs/client/dir_proxy.h"
+#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 
 DIRProxy::DIRProxy( const YIELD::URI& uri ) 
   : Proxy( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )
 {
+  policies = new PolicyContainer;
   dir_interface.registerSerializableFactories( serializable_factories );
 }
 
 DIRProxy::~DIRProxy()
 {
+  delete policies;
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
     delete uuid_to_uri_i->second;
+}
+
+YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> DIRProxy::get_user_credentials() const
+{
+  return policies->get_user_credentials();
 }
 
 YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )

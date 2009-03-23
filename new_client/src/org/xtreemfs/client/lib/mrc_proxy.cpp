@@ -6,11 +6,19 @@ using namespace org::xtreemfs::client;
 MRCProxy::MRCProxy( const YIELD::URI& uri )
 : Proxy( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
 {
+  policies = new PolicyContainer;
   mrc_interface.registerSerializableFactories( serializable_factories );
 }
 
 MRCProxy::~MRCProxy()
-{ }
+{
+  delete policies;
+}
+
+YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> MRCProxy::get_user_credentials() const
+{
+  return policies->get_user_credentials();
+}
 
 bool MRCProxy::access( const std::string& path, uint32_t mode )
 {

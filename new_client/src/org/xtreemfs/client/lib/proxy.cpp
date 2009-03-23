@@ -30,8 +30,6 @@ Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port, uint16_t defa
     this->peer_ip = 0;
     this->conn = 0;
   
-    policies = new PolicyContainer;
-
     org::xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
   }
   else
@@ -41,7 +39,6 @@ Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port, uint16_t defa
 Proxy::~Proxy()
 {
   delete conn;
-  delete policies;
 }
 
 void Proxy::handleEvent( YIELD::Event& ev )
@@ -66,8 +63,8 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
           try
           {
-            org::xtreemfs::interfaces::UserCredentials user_credentials = policies->get_user_credentials();
-            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, &user_credentials );
+            YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> user_credentials = get_user_credentials();
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, user_credentials.get() ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : YIELD::ONCRPCRequest::AUTH_NONE, user_credentials.get() );
 
             uint64_t timeout_ms = req.getResponseTimeoutMS();
             uint64_t original_timeout_ms = timeout_ms;

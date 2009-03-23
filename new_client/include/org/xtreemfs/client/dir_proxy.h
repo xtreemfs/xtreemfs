@@ -15,6 +15,9 @@ namespace org
   {
     namespace client
     {
+      class PolicyContainer;
+
+
       class DIRProxy : public Proxy
       {
       public:
@@ -27,8 +30,13 @@ namespace org
         // EventHandler
         const char* getEventHandlerName() const { return "DIRProxy"; }
 
+      protected:
+        // Proxy
+        YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const;
+
       private:
         org::xtreemfs::interfaces::DIRInterface dir_interface;
+        PolicyContainer* policies;
 
         class CachedAddressMappingURI : public YIELD::URI
         {

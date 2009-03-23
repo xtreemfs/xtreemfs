@@ -76,7 +76,7 @@ void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_
   }
 }
 
-org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials() const
+YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> PolicyContainer::get_user_credentials() const
 {
   int caller_uid, caller_gid;
 #ifdef _WIN32
@@ -94,9 +94,9 @@ org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials
     int _get_user_credentials_ret = _get_user_credentials( caller_uid, caller_gid, &user_id, &group_ids );
     if ( _get_user_credentials_ret >= 0 )
     {
-      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      org::xtreemfs::interfaces::UserCredentials* user_credentials = new org::xtreemfs::interfaces::UserCredentials;
 
-      user_credentials.set_user_id( user_id );
+      user_credentials->set_user_id( user_id );
       free( user_id );
 
       org::xtreemfs::interfaces::StringSet group_ids_ss;
@@ -106,7 +106,7 @@ org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials
         group_ids_ss.push_back( group_id );
         free( group_id );
       }
-      user_credentials.set_group_ids( group_ids_ss );
+      user_credentials->set_group_ids( group_ids_ss );
       free( group_ids );
 
       return user_credentials;
@@ -122,11 +122,11 @@ org::xtreemfs::interfaces::UserCredentials PolicyContainer::get_user_credentials
     struct group grp, *grp_p = &grp, *temp_grp_p;
     char grp_buf[256]; int grp_buf_len = sizeof( grp_buf );
 
-    if ( getpwuid_r( caller_uid, pwd_p, pwd_buf, pwd_buf_len, &temp_pwd_p ) == 0 &&
-         getgrgid_r( caller_gid, grp_p, grp_buf, grp_buf_len, &temp_grp_p ) == 0 )
-      return org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ), "" );
+    if ( getpwuid_r( caller_uid, pwd_p, pwd_buf, pwd_buf_len, &temp_pwd_p ) == 0 && pwd.pw_name &&
+         getgrgid_r( caller_gid, grp_p, grp_buf, grp_buf_len, &temp_grp_p ) == 0 && grp.gr_name )
+      return new org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ), "" );
 #endif
 
-    return org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ), "anonymous" );
+    return new org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ), "anonymous" );
   }
 }
