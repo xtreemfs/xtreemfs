@@ -18,6 +18,7 @@ namespace org
         Path( const std::string& global_path );
 
         operator const std::string&() const { return getGlobalPath(); }
+        operator const YIELD::Path&() const { return getLocalPath(); }
         operator const char*() const { return getGlobalPath().c_str(); }
 
         // strings are all in UTF-8

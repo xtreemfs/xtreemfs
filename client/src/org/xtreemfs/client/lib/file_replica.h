@@ -2,7 +2,6 @@
 #define ORG_XTREEMFS_CLIENT_FILE_REPLICA_H
 
 #include "shared_file.h"
-#include "org/xtreemfs/interfaces/mrc_osd_types.h"
 
 
 namespace org
@@ -22,7 +21,8 @@ namespace org
         virtual ~FileReplica();
 
         SharedFile& get_parent_shared_file() const { return parent_shared_file; }
-        MRCProxy& get_mrc_proxy() const { return parent_shared_file.get_mrc_proxy(); }
+        Volume& get_parent_volume() const { return parent_shared_file.get_parent_volume(); }
+        const Path& get_path() const { return parent_shared_file.get_path(); }
 
         size_t read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, off_t offset );
         void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, off_t new_size );
@@ -32,6 +32,8 @@ namespace org
         SharedFile& parent_shared_file;
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
         std::vector<std::string> osd_uuids;
+
+        MRCProxy& get_mrc_proxy() const { return parent_shared_file.get_mrc_proxy(); }
 
         OSDProxy& get_osd_proxy( uint64_t object_number );
         std::vector<OSDProxy*> osd_proxies;

@@ -21,16 +21,6 @@ SharedFile::~SharedFile()
   static_cast<SharedFileCallbackInterface&>( parent_volume ).close( *this );
 }
 
-MRCProxy& SharedFile::get_mrc_proxy() const 
-{ 
-  return parent_volume.get_mrc_proxy(); 
-}
-
-OSDProxyFactory& SharedFile::get_osd_proxy_factory() const 
-{ 
-  return parent_volume.get_osd_proxy_factory(); 
-}
-
 OpenFile& SharedFile::open( const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
   OpenFile* open_file = new OpenFile( file_credentials, *file_replicas[0] );
