@@ -41,7 +41,7 @@ YIELD::Stat* Volume::getattr( const YIELD::Path& path )
 
 YIELD::Stat* Volume::getattr( const Path& path )
 {
-  xtreemfs::interfaces::stat_ stbuf;
+  org::xtreemfs::interfaces::stat_ stbuf;
   mrc_proxy.getattr( path, stbuf );
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(),
 #ifdef _WIN32

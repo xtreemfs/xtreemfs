@@ -101,7 +101,7 @@ size_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& fil
         newest_osd_write_response = temp_osd_write_response;
     }
   }
- 
+
   if ( !newest_osd_write_response.get_new_file_size().empty() )
     get_mrc_proxy().update_file_size( file_credentials.get_xcap(), newest_osd_write_response );
 
@@ -111,11 +111,11 @@ size_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& fil
 OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )
 {
   OSDProxy* osd_proxy;
-  size_t osd_i = object_number % striping_policy.get_width();  
+  size_t osd_i = object_number % striping_policy.get_width();
   if ( osd_proxies.size() > osd_i )
     return *osd_proxies[osd_i];
   else
-  {    
+  {
     osd_proxy = &parent_shared_file.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] );
     osd_proxies.resize( osd_i+1 );
     osd_proxies[osd_i] = osd_proxy;

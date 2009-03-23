@@ -21,6 +21,7 @@ namespace org
         virtual ~OpenFile();
 
         // YIELD::File
+        virtual YIELD::Stat* getattr();
         virtual ssize_t read( void* buf, size_t nbyte, off_t offset );
         virtual bool truncate( uint64_t offset );
         virtual ssize_t write( const void* buf, size_t nbyte, off_t offset );

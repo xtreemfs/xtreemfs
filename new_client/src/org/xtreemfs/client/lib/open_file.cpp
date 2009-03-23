@@ -1,5 +1,6 @@
 #include "open_file.h"
 #include "file_replica.h"
+#include "org/xtreemfs/client/mrc_proxy.h"
 using namespace org::xtreemfs::client;
 
 
@@ -10,6 +11,19 @@ OpenFile::OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_crede
 OpenFile::~OpenFile()
 {
   SharedObject::decRef( attached_to_file_replica.get_parent_shared_file() );
+}
+
+YIELD::Stat* OpenFile::getattr()
+{
+  org::xtreemfs::interfaces::stat_ stbuf;
+  attached_to_file_replica.get_mrc_proxy().getattr( attached_to_file_replica.get_parent_shared_file().get_path(), stbuf );
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(),
+#ifdef _WIN32
+                      stbuf.get_attributes()
+#else
+                      stbuf.get_nlink()
+#endif
+                    );
 }
 
 ssize_t OpenFile::read( void* rbuf, size_t size, off_t offset )

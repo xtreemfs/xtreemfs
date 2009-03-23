@@ -16,7 +16,7 @@ namespace org
       class FileReplica;
       class MRCProxy;
       class OpenFile;
-      class OSDProxyFactory;      
+      class OSDProxyFactory;
       class Volume;
 
 
@@ -24,7 +24,7 @@ namespace org
       {
       public:
         SharedFile( Volume& parent_volume, const Path& path, const org::xtreemfs::interfaces::XLocSet& xlocs );
-        virtual ~SharedFile(); 
+        virtual ~SharedFile();
 
         const Path& get_path() const { return path; }
         const org::xtreemfs::interfaces::XLocSet& get_xlocs() const { return xlocs; }
