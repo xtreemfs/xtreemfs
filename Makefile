@@ -2,7 +2,7 @@ ifeq "$(ANT_HOME)" ""
 	ANT_HOME = /usr
 endif
 
-TARGETS = client new_client server
+TARGETS = client server
 .PHONY:	clean distclean
 
 # Some toplevel configuration
@@ -21,19 +21,11 @@ check:
 	
 .PHONY:	client client_clean client_distclean
 client:
-	$(MAKE) -C client all || exit 1;
+	python client/scons.py -C client
 client_clean:
-	$(MAKE) -C client clean || exit 1;
+	python client/scons.py -C client -c
 client_distclean:
-	$(MAKE) -C client distclean || exit 1;
-
-.PHONY:	new_client new_client_clean new_client_distclean
-new_client:
-	python new_client/scons.py -C new_client
-new_client_clean:
-	python new_client/scons.py -C new_client -c
-new_client_distclean:
-	python new_client/scons.py -C new_client -c
+	python client/scons.py -C client -c
 
 .PHONY: server server_clean server_distclean
 server: check
