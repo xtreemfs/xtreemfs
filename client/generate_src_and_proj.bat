@@ -16,9 +16,9 @@ set DEPEND_XTREEMFS_CLIENT_FLAGS=-I %XTREEMFS_CLIENT_PATH%\include -L %XTREEMFS_
 
 REM Generate source from IDL interfaces
 REM Don't include share\yield in the scan here
-python %YIDL_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces --with-registerSerializableFactories
-python %YIDL_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include --with-registerSerializableFactories
-python %YIDL_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src --with-registerSerializableFactories
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces --with-registerSerializableFactories
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include --with-registerSerializableFactories
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src --with-registerSerializableFactories
 python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin
 
 
