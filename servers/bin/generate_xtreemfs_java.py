@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os.path
+from copy import copy
 
 my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
 try:
@@ -292,11 +293,11 @@ class XtreemFSJavaOperation(JavaOperation):
     def generate( self ):
         qname = self.getQualifiedName()
         
-        request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), [param for param in self.getParameters() if param.isInbound()] )
+        request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), self.getInboundParameters() )
         request_type.generate()
                 
         if not self.isOneway():
-            response_params = [param for param in self.getParameters() if param.isOutbound()]
+            response_params = copy( self.getOutboundParameters() )
             if self.getReturnType() is not None:  
                 response_params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
             response_type = XtreemFSJavaResponseType( self.getScope(), qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), response_params )

@@ -92,7 +92,7 @@ public class ServiceDataMap extends HashMap<String, String>
         {
             String key = key_i.next();
             String value = get( key );
-            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);	    my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(key);
+            my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
 	    my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(key);
         }
         return my_size;
