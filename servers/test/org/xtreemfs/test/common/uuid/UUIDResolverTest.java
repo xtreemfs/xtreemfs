@@ -81,7 +81,7 @@ public class UUIDResolverTest extends TestCase {
     public void testSimpleMapping() throws Exception {
         AddressMappingSet mpgs = NetUtils.getReachableEndpoints(32636, "http");
         mpgs.get(0).setUuid("MY_TEST_UUID");
-        RPCResponse<Long> r = testEnv.getDirClient().address_mappings_set(null,mpgs);
+        RPCResponse<Long> r = testEnv.getDirClient().xtreemfs_address_mappings_set(null,mpgs);
         r.get();
         ServiceUUID uuid = new ServiceUUID("MY_TEST_UUID");
         uuid.resolve();

@@ -39,15 +39,13 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
+import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -98,7 +96,7 @@ public class DIRTest extends TestCase {
     //@Test
     public void testGlobalTime() throws Exception {
 
-        RPCResponse<Long> r = testEnv.getDirClient().global_time_get(null);
+        RPCResponse<Long> r = testEnv.getDirClient().xtreemfs_global_time_get(null);
         Long response = r.get();
 
     }
@@ -112,11 +110,11 @@ public class DIRTest extends TestCase {
         AddressMapping mapping = new AddressMapping("uuid1", 0, "oncrpc", "localhost", 12345, "*", 3600);
         set.add(mapping);
 
-        RPCResponse<Long> r1 = client.address_mappings_set(null, set);
+        RPCResponse<Long> r1 = client.xtreemfs_address_mappings_set(null, set);
         r1.get();
         r1.freeBuffers();
 
-        r1 = client.address_mappings_set(null, set);
+        r1 = client.xtreemfs_address_mappings_set(null, set);
         try {
             r1.get();
             fail();
@@ -124,7 +122,7 @@ public class DIRTest extends TestCase {
             //expected exception because of version mismatch
         }
 
-        RPCResponse<AddressMappingSet> r2 = client.address_mappings_get(null, "uuid1");
+        RPCResponse<AddressMappingSet> r2 = client.xtreemfs_address_mappings_get(null, "uuid1");
         AddressMappingSet response = r2.get();
         assertEquals(response.size(),1);
         assertEquals(response.get(0).getUuid(),"uuid1");
@@ -132,7 +130,7 @@ public class DIRTest extends TestCase {
         assertEquals(response.get(0).getAddress(),"localhost");
         assertEquals(response.get(0).getVersion(),1);
 
-        RPCResponse r3 = client.address_mappings_delete(null, "uuid1");
+        RPCResponse r3 = client.xtreemfs_address_mappings_remove(null, "uuid1");
         r3.get();
 
     }
@@ -142,15 +140,15 @@ public class DIRTest extends TestCase {
 
         DIRClient client = testEnv.getDirClient();
 
-        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("bla", "yagga");
-        ServiceRegistry sr = new ServiceRegistry("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", 0,dmap);
+        Service sr = new Service("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", 0,dmap);
 
-        RPCResponse<Long> r1 = client.service_register(null, sr);
+        RPCResponse<Long> r1 = client.xtreemfs_service_register(null, sr);
         r1.get();
         r1.freeBuffers();
 
-        r1 = client.service_register(null, sr);
+        r1 = client.xtreemfs_service_register(null, sr);
         try {
             r1.get();
             fail();
@@ -158,11 +156,11 @@ public class DIRTest extends TestCase {
             //expected exception because of version mismatch
         }
 
-        RPCResponse<ServiceRegistrySet> r2 = client.service_get_by_uuid(null, "uuid1");
-        ServiceRegistrySet response = r2.get();
+        RPCResponse<ServiceSet> r2 = client.xtreemfs_service_get_by_uuid(null, "uuid1");
+        ServiceSet response = r2.get();
         
 
-        RPCResponse r3 = client.service_deregister(null, "uuid1");
+        RPCResponse r3 = client.xtreemfs_service_deregister(null, "uuid1");
         r3.get();
 
     }

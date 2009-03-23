@@ -134,7 +134,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -152,7 +152,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -163,7 +163,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'C');
         buf.flip();
-        data = new ObjectData("", 0, false, buf);
+        data = new ObjectData(buf, 0, 0, false);
         r = osdClient.write(serverID.getAddress(), fileId, fcred, 3, 0, 0, 0, data);
         resp = r.get();
         r.freeBuffers();
@@ -205,7 +205,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -243,7 +243,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -283,7 +283,7 @@ public class OSDTruncateTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();

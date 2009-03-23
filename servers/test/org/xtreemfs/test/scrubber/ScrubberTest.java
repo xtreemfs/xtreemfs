@@ -119,7 +119,7 @@ public class ScrubberTest extends TestCase {
 
 
         // create a volume (no access control)
-        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, Scrubber.userID, Scrubber.groupIDs, "",volumeName,
+        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, Scrubber.credentials,volumeName,
                 Constants.OSD_SELECTION_POLICY_SIMPLE,
                 new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
                 Constants.ACCESS_CONTROL_POLICY_NULL);
@@ -128,40 +128,40 @@ public class ScrubberTest extends TestCase {
 
         // create some files and directories
         //testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/myDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/myDir", 0);
         r.get();
         r.freeBuffers();
 
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/anotherDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir", 0);
         r.get();
         r.freeBuffers();
 
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/yetAnotherDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/yetAnotherDir", 0);
         r.get();
         
         for (int i = 0; i < 2; i++) {
-            r = testEnv.getMrcClient().create(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test" + i + ".txt", 0);
             r.get();
             r.freeBuffers();
         }
 
-        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/test10.txt", 0);
+        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt", 0);
         r.get();
         r.freeBuffers();
 
-        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/anotherDir/test11.txt", 0);
+        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt", 0);
         r.get();
         r.freeBuffers();
 
         
         RandomAccessFile randomAccessFile1 = new RandomAccessFile("r", mrc1Address, volumeName
-            + "/anotherDir/test11.txt", testEnv.getRpcClient(), Scrubber.userID, Scrubber.groupIDs);
+            + "/anotherDir/test11.txt", testEnv.getRpcClient(), Scrubber.credentials);
         RandomAccessFile randomAccessFile2 = new RandomAccessFile("r", mrc1Address, volumeName
-            + "/test10.txt", testEnv.getRpcClient(), Scrubber.userID, Scrubber.groupIDs);
+            + "/test10.txt", testEnv.getRpcClient(), Scrubber.credentials);
         randomAccessFile2.forceFileSize(10);
 
         RandomAccessFile randomAccessFile3 = new RandomAccessFile("r", mrc1Address, volumeName
-            + "/test0.txt", testEnv.getRpcClient(), Scrubber.userID, Scrubber.groupIDs);
+            + "/test0.txt", testEnv.getRpcClient(), Scrubber.credentials);
         randomAccessFile3.forceFileSize(10);
 
 
@@ -198,7 +198,7 @@ public class ScrubberTest extends TestCase {
 
 
         // file size corrected from 10 to 0
-        RPCResponse r = client.getattr(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/myDir/test0.txt");
+        RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test0.txt");
         stat_ s = (stat_) r.get();
         r.freeBuffers();
 
@@ -206,13 +206,13 @@ public class ScrubberTest extends TestCase {
 
 
         // file size same as before
-        r = client.getattr(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/myDir/test1.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test1.txt");
         s = (stat_) r.get();
         r.freeBuffers();
 
         assertEquals(0, s.getSize());
 
-        r = client.getxattr(mrc1Address, Scrubber.userID, Scrubber.groupIDs,
+        r = client.getxattr(mrc1Address, Scrubber.credentials,
                 volumeName, Scrubber.latestScrubAttr);
         String result = (String)r.get();
         r.freeBuffers();
@@ -222,7 +222,7 @@ public class ScrubberTest extends TestCase {
 
         // file size corrected from 0 to 72000 (this file is stored in two
         // objects)
-        r = client.getattr(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/anotherDir/test11.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt");
         s = (stat_) r.get();
         r.freeBuffers();
 
@@ -230,7 +230,7 @@ public class ScrubberTest extends TestCase {
 
         // file size corrected from 0 to 65536, which is the stripe size.
 
-        r = client.getattr(mrc1Address, Scrubber.userID, Scrubber.groupIDs, volumeName + "/test10.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt");
         s = (stat_) r.get();
         r.freeBuffers();
 

@@ -42,8 +42,10 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
@@ -74,10 +76,13 @@ public class RandomAccessFileTest extends TestCase {
 
     private final List<String> groupIDs;
 
+    private final UserCredentials uc;
+
     public RandomAccessFileTest() {
         Logging.start(Logging.LEVEL_TRACE);
         groupIDs = new ArrayList(1);
         groupIDs.add("test");
+        uc = MRCClient.getCredentials(userID, groupIDs);
     }
 
     public void setUp() throws Exception {
@@ -115,7 +120,7 @@ public class RandomAccessFileTest extends TestCase {
         volumeName = "testVolume";
 
         // create a volume (no access control)
-        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, userID, groupIDs, "",volumeName,
+        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, uc, volumeName,
                 Constants.OSD_SELECTION_POLICY_SIMPLE,
                 new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
                 Constants.ACCESS_CONTROL_POLICY_NULL);
@@ -123,11 +128,11 @@ public class RandomAccessFileTest extends TestCase {
 
         // create some files and directories
         //testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
-        r = testEnv.getMrcClient().mkdir(mrc1Address, userID, groupIDs, volumeName + "/myDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, uc, volumeName + "/myDir", 0);
         r.get();
 
         for (int i = 0; i < 10; i++) {
-            r = testEnv.getMrcClient().create(mrc1Address, userID, groupIDs, volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().create(mrc1Address, uc, volumeName + "/myDir/test" + i + ".txt", 0);
             r.get();
         }
             //testEnv.getMrcClient().createFile(mrc1Address, volumeName + "/myDir/test" + i + ".txt", authString);

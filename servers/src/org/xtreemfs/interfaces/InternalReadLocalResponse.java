@@ -10,13 +10,13 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public InternalReadLocalResponse() { file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); }
-    public InternalReadLocalResponse( NewFileSize file_size, int zero_padding, ObjectData data ) { this.file_size = file_size; this.zero_padding = zero_padding; this.data = data; }
-    public InternalReadLocalResponse( Object from_hash_map ) { file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); this.deserialize( from_hash_map ); }
-    public InternalReadLocalResponse( Object[] from_array ) { file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData();this.deserialize( from_array ); }
+    public InternalReadLocalResponse() { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); }
+    public InternalReadLocalResponse( NewFileSize new_file_size, int zero_padding, ObjectData data ) { this.new_file_size = new_file_size; this.zero_padding = zero_padding; this.data = data; }
+    public InternalReadLocalResponse( Object from_hash_map ) { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); this.deserialize( from_hash_map ); }
+    public InternalReadLocalResponse( Object[] from_array ) { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData();this.deserialize( from_array ); }
 
-    public NewFileSize getFile_size() { return file_size; }
-    public void setFile_size( NewFileSize file_size ) { this.file_size = file_size; }
+    public NewFileSize getNew_file_size() { return new_file_size; }
+    public void setNew_file_size( NewFileSize new_file_size ) { this.new_file_size = new_file_size; }
     public int getZero_padding() { return zero_padding; }
     public void setZero_padding( int zero_padding ) { this.zero_padding = zero_padding; }
     public ObjectData getData() { return data; }
@@ -27,7 +27,7 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
 
     public String toString()
     {
-        return "InternalReadLocalResponse( " + file_size.toString() + ", " + Integer.toString( zero_padding ) + ", " + data.toString() + " )"; 
+        return "InternalReadLocalResponse( " + new_file_size.toString() + ", " + Integer.toString( zero_padding ) + ", " + data.toString() + " )";
     }
 
 
@@ -38,21 +38,21 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.file_size.deserialize( from_hash_map.get( "file_size" ) );
+        this.new_file_size.deserialize( from_hash_map.get( "new_file_size" ) );
         this.zero_padding = ( ( Integer )from_hash_map.get( "zero_padding" ) ).intValue();
         this.data.deserialize( from_hash_map.get( "data" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.file_size.deserialize( from_array[0] );
+        this.new_file_size.deserialize( from_array[0] );
         this.zero_padding = ( ( Integer )from_array[1] ).intValue();
         this.data.deserialize( from_array[2] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        file_size = new NewFileSize(); file_size.deserialize( buf );
+        new_file_size = new NewFileSize(); new_file_size.deserialize( buf );
         zero_padding = buf.getInt();
         data = new ObjectData(); data.deserialize( buf );
     }
@@ -60,7 +60,7 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "file_size", file_size.serialize() );
+        to_hash_map.put( "new_file_size", new_file_size.serialize() );
         to_hash_map.put( "zero_padding", new Integer( zero_padding ) );
         to_hash_map.put( "data", data.serialize() );
         return to_hash_map;        
@@ -68,7 +68,7 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        file_size.serialize( writer );
+        new_file_size.serialize( writer );
         writer.putInt( zero_padding );
         data.serialize( writer );
     }
@@ -76,14 +76,14 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += file_size.calculateSize();
+        my_size += new_file_size.calculateSize();
         my_size += ( Integer.SIZE / 8 );
         my_size += data.calculateSize();
         return my_size;
     }
 
 
-    private NewFileSize file_size;
+    private NewFileSize new_file_size;
     private int zero_padding;
     private ObjectData data;
 

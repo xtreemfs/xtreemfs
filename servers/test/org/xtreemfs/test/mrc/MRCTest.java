@@ -47,7 +47,6 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.stat_;
-import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.Exceptions.MRCException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;

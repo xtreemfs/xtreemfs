@@ -33,11 +33,9 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.KeyValuePair;
-import org.xtreemfs.interfaces.KeyValuePairSet;
-import org.xtreemfs.interfaces.ServiceRegistry;
-import org.xtreemfs.interfaces.ServiceRegistryDataMap;
-import org.xtreemfs.interfaces.ServiceRegistrySet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
 
 public class SelectionPolicyTest extends TestCase {
@@ -46,7 +44,7 @@ public class SelectionPolicyTest extends TestCase {
     
     private ProximitySelectionPolicy         policy;
     
-    private ServiceRegistrySet osdMap;
+    private ServiceSet osdMap;
     
     private InetAddress                      clientAddress;
     
@@ -58,37 +56,37 @@ public class SelectionPolicyTest extends TestCase {
         
         clientAddress = InetAddress.getByName(URI.create("http://01.xtreemfs.com").getHost());
         
-        osdMap = new ServiceRegistrySet();
+        osdMap = new ServiceSet();
 
-        ServiceRegistryDataMap dmap = new ServiceRegistryDataMap();
+        ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://itu.dk");
-        ServiceRegistry attr1 = new ServiceRegistry("attr1",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr1 = new Service("attr1",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr1);
 
-        dmap = new ServiceRegistryDataMap();
+        dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://wiut.uz");
-        ServiceRegistry attr2 = new ServiceRegistry("attr2",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr2 = new Service("attr2",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr2);
          
-        dmap = new ServiceRegistryDataMap();
+        dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://pku.edu.cn");
-        ServiceRegistry attr3 = new ServiceRegistry("attr3",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr3 = new Service("attr3",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr3);
 
-        dmap = new ServiceRegistryDataMap();
+        dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://xtreemfs2.zib.de");
-        ServiceRegistry attr4 = new ServiceRegistry("attr4",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr4 = new Service("attr4",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr4);
 
 
-        dmap = new ServiceRegistryDataMap();
+        dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://xtreemfs2.zib.de");
-        ServiceRegistry attr5 = new ServiceRegistry("attr5",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr5 = new Service("attr5",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
         osdMap.add(attr5);
         
     }

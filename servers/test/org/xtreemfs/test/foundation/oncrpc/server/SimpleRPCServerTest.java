@@ -26,8 +26,8 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_getRequest;
-import org.xtreemfs.interfaces.DIRInterface.address_mappings_getResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -160,10 +160,10 @@ public class SimpleRPCServerTest extends TestCase {
                     System.out.println("request received");
                     ReusableBuffer buf = rq.getRequestFragment();
 
-                    address_mappings_getRequest rpcRequest = new address_mappings_getRequest();
+                    xtreemfs_address_mappings_getRequest rpcRequest = new xtreemfs_address_mappings_getRequest();
                     rpcRequest.deserialize(buf);
 
-                    address_mappings_getResponse rpcResponse = new address_mappings_getResponse();
+                    xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                     if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                         rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
@@ -192,7 +192,7 @@ public class SimpleRPCServerTest extends TestCase {
 
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         
-        address_mappings_getRequest rq = new address_mappings_getRequest("Yagga");
+        xtreemfs_address_mappings_getRequest rq = new xtreemfs_address_mappings_getRequest("Yagga");
 
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.calculateSize()+rq.calculateSize(), true);
         System.out.println("fragment size is "+fragHdr+"/"+(rqHdr.calculateSize()+rq.calculateSize()));
@@ -248,7 +248,7 @@ public class SimpleRPCServerTest extends TestCase {
         assertEquals(rhdr.getReplyStat(),ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED);
         assertEquals(rhdr.getAcceptStat(),ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
-        address_mappings_getResponse resp = new address_mappings_getResponse();
+        xtreemfs_address_mappings_getResponse resp = new xtreemfs_address_mappings_getResponse();
         resp.deserialize(buf);
         assertNotNull(resp.getAddress_mappings().get(0));
         assertEquals(resp.getAddress_mappings().get(0).getAddress(),"localhost");

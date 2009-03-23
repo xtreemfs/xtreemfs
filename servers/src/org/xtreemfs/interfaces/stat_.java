@@ -10,10 +10,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public stat_() { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; object_type = 0; truncate_epoch = 0; attributes = 0; }
-    public stat_( int mode, int nlink, int unused_uid, int unused_gid, int unused_dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, String link_target, int object_type, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.unused_uid = unused_uid; this.unused_gid = unused_gid; this.unused_dev = unused_dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.object_type = object_type; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
-    public stat_( Object from_hash_map ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; object_type = 0; truncate_epoch = 0; attributes = 0; this.deserialize( from_hash_map ); }
-    public stat_( Object[] from_array ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; object_type = 0; truncate_epoch = 0; attributes = 0;this.deserialize( from_array ); }
+    public stat_() { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; }
+    public stat_( int mode, int nlink, int unused_uid, int unused_gid, int unused_dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, String link_target, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.unused_uid = unused_uid; this.unused_gid = unused_gid; this.unused_dev = unused_dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
+    public stat_( Object from_hash_map ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; this.deserialize( from_hash_map ); }
+    public stat_( Object[] from_array ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0;this.deserialize( from_array ); }
 
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
@@ -41,8 +41,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     public void setFile_id( String file_id ) { this.file_id = file_id; }
     public String getLink_target() { return link_target; }
     public void setLink_target( String link_target ) { this.link_target = link_target; }
-    public int getObject_type() { return object_type; }
-    public void setObject_type( int object_type ) { this.object_type = object_type; }
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public int getAttributes() { return attributes; }
@@ -53,7 +51,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( unused_uid ) + ", " + Integer.toString( unused_gid ) + ", " + Integer.toString( unused_dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( object_type ) + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
+        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( unused_uid ) + ", " + Integer.toString( unused_gid ) + ", " + Integer.toString( unused_dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
     }
 
 
@@ -77,7 +75,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         this.group_id = ( String )from_hash_map.get( "group_id" );
         this.file_id = ( String )from_hash_map.get( "file_id" );
         this.link_target = ( String )from_hash_map.get( "link_target" );
-        this.object_type = ( ( Integer )from_hash_map.get( "object_type" ) ).intValue();
         this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
         this.attributes = ( ( Integer )from_hash_map.get( "attributes" ) ).intValue();
     }
@@ -97,9 +94,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         this.group_id = ( String )from_array[10];
         this.file_id = ( String )from_array[11];
         this.link_target = ( String )from_array[12];
-        this.object_type = ( ( Integer )from_array[13] ).intValue();
-        this.truncate_epoch = ( ( Integer )from_array[14] ).intValue();
-        this.attributes = ( ( Integer )from_array[15] ).intValue();        
+        this.truncate_epoch = ( ( Integer )from_array[13] ).intValue();
+        this.attributes = ( ( Integer )from_array[14] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
@@ -117,7 +113,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         group_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         link_target = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        object_type = buf.getInt();
         truncate_epoch = buf.getInt();
         attributes = buf.getInt();
     }
@@ -138,7 +133,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         to_hash_map.put( "group_id", group_id );
         to_hash_map.put( "file_id", file_id );
         to_hash_map.put( "link_target", link_target );
-        to_hash_map.put( "object_type", new Integer( object_type ) );
         to_hash_map.put( "truncate_epoch", new Integer( truncate_epoch ) );
         to_hash_map.put( "attributes", new Integer( attributes ) );
         return to_hash_map;        
@@ -159,7 +153,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( group_id, writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( file_id, writer );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( link_target, writer );
-        writer.putInt( object_type );
         writer.putInt( truncate_epoch );
         writer.putInt( attributes );
     }
@@ -182,7 +175,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(link_target);
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
         return my_size;
     }
 
@@ -200,7 +192,6 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     private String group_id;
     private String file_id;
     private String link_target;
-    private int object_type;
     private int truncate_epoch;
     private int attributes;
 

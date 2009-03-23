@@ -138,7 +138,7 @@ public class OSDDataIntegrityTest extends TestCase {
                 buf.put((byte) 'A');
 
             buf.flip();
-            ObjectData data = new ObjectData("", 0, false, buf.createViewBuffer());
+            ObjectData data = new ObjectData(buf.createViewBuffer(), 0, 0, false);
             RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, objId, 0, 0, 0, data);
             OSDWriteResponse resp = r.get();
 
@@ -164,7 +164,7 @@ public class OSDDataIntegrityTest extends TestCase {
             for (int i = 0; i < 1024; i++)
                 buf.put((byte) 'a');
             buf.flip();
-            data = new ObjectData("", 0, false, buf);
+            data = new ObjectData(buf, 0 , 0, false);
             RPCResponse<OSDWriteResponse> r3 = osdClient.write(serverID.getAddress(), fileId, fcred, objId, 0, 1024, 0, data);
             resp = r3.get();
             r3.freeBuffers();
@@ -191,7 +191,7 @@ public class OSDDataIntegrityTest extends TestCase {
             for (int i = 0; i < 1024; i++)
                 buf.put((byte) 'x');
             buf.flip();
-            data = new ObjectData("", 0, false, buf);
+            data = new ObjectData(buf, 0, 0, false);
             RPCResponse<OSDWriteResponse> r5 = osdClient.write(serverID.getAddress(), fileId, fcred, objId, 0, 512, 0, data);
             resp = r5.get();
             r5.freeBuffers();
@@ -230,7 +230,7 @@ public class OSDDataIntegrityTest extends TestCase {
                 buf.put((byte) 'D');
 
             buf.flip();
-            ObjectData data = new ObjectData("", 0, false, buf);
+            ObjectData data = new ObjectData(buf, 0, 0, false);
             RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, objId, 0, 0, 0, data);
             OSDWriteResponse resp = r.get();
             r.freeBuffers();
@@ -269,7 +269,7 @@ public class OSDDataIntegrityTest extends TestCase {
             buf.put((byte) 'A');
 
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 1024, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -300,7 +300,7 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 1024, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -339,7 +339,7 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1023; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 1024, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -376,7 +376,7 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1023; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 1024, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -403,7 +403,7 @@ public class OSDDataIntegrityTest extends TestCase {
             buf.put((byte) 'A');
 
         buf.flip();
-        ObjectData data = new ObjectData("", 0, false, buf);
+        ObjectData data = new ObjectData(buf, 0, 0, false);
         RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 0, 0, data);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
@@ -414,7 +414,7 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'B');
         buf.flip();
-        data = new ObjectData("", 0, false, buf);
+        data = new ObjectData(buf, 0, 0, false);
         r = osdClient.write(serverID.getAddress(), fileId, fcred, 1, 0, 512, 0, data);
         resp = r.get();
         r.freeBuffers();
