@@ -64,7 +64,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
           try
           {
             YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> user_credentials = get_user_credentials();
-            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, user_credentials.get() ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : YIELD::ONCRPCRequest::AUTH_NONE, user_credentials.get() );
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, user_credentials.get() ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, user_credentials.get() );
 
             uint64_t timeout_ms = req.getResponseTimeoutMS();
             uint64_t original_timeout_ms = timeout_ms;
