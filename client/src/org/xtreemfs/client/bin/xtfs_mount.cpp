@@ -69,9 +69,16 @@ int main( int argc, char** argv )
       OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group );
 
       // Start FUSE with the XtreemFS Volume
-      Volume xtreemfs_volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
       std::string mount_point( args.Files()[2] );
-      int ret = yieldfs::FUSE( xtreemfs_volume ).main( argv[0], mount_point.c_str(), foreground, debug );
+      Volume xtreemfs_volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory );
+      int ret;
+      if ( debug )
+      {
+        yieldfs::TracingVolume tracing_xtreemfs_volume( xtreemfs_volume );
+        ret = yieldfs::FUSE( tracing_xtreemfs_volume ).main( argv[0], mount_point.c_str(), foreground, debug );
+      }
+      else
+        ret = yieldfs::FUSE( xtreemfs_volume ).main( argv[0], mount_point.c_str(), foreground, debug );
 
       YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 
