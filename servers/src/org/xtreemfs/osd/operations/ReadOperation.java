@@ -117,7 +117,7 @@ public final class ReadOperation extends OSDOperation {
             if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
                 //FIXME: read only replication!
             }
-            if (rq.getLocationList().getLocalReplica().isStriped()) {
+            if (!rq.getLocationList().getLocalReplica().isStriped()) {
                 //non-striped case
                 nonStripedRead(rq, args, result);
             } else {
