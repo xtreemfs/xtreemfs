@@ -291,17 +291,8 @@ class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaCompoundType):
     
 class XtreemFSJavaOperation(JavaOperation):        
     def generate( self ):
-        qname = self.getQualifiedName()
-        
-        request_type = XtreemFSJavaRequestType( self.getScope(), qname[:-1] + [qname[-1] + "Request"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Request" ), self.getInboundParameters() )
-        request_type.generate()
-                
-        if not self.isOneway():
-            response_params = copy( self.getOutboundParameters() )
-            if self.getReturnType() is not None:  
-                response_params.append( self.getReturnValueAsOperationParameter( "returnValue" ) )
-            response_type = XtreemFSJavaResponseType( self.getScope(), qname[:-1] + [qname[-1] + "Response"], self.getUID(), ( None, "org.xtreemfs.interfaces.utils.Response" ), response_params )
-            response_type.generate()
+        self._getRequestType().generate()
+        self._getResponseType( "returnValue" ).generate()
                 
     def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
     def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
@@ -316,6 +307,9 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
     public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
 
+    def getParentTypeNames( self ):
+        return ( None, "org.xtreemfs.interfaces.utils.Request" )            
+
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):    
     def getOtherMethods( self ):
         uid = self.getUID()
@@ -323,6 +317,9 @@ class XtreemFSJavaResponseType(XtreemFSJavaStructType):
     // Response
     public int getOperationNumber() { return %(uid)s; }
 """ % locals()
+
+    def getParentTypeNames( self ):
+        return ( None, "org.xtreemfs.interfaces.utils.Response" )
 
 
 class XtreemFSJavaTarget(JavaTarget): pass

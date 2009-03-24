@@ -24,7 +24,7 @@ public class readResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "readResponse( " + returnValue.toString() + " )"; 
+        return "readResponse( " + returnValue.toString() + " )";
     }
 
 

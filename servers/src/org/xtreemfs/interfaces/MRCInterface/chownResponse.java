@@ -20,7 +20,7 @@ public class chownResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "chownResponse()"; 
+        return "chownResponse()";
     }
 
 

@@ -24,7 +24,7 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "accessResponse( " + Boolean.toString( returnValue ) + " )"; 
+        return "accessResponse( " + Boolean.toString( returnValue ) + " )";
     }
 
 

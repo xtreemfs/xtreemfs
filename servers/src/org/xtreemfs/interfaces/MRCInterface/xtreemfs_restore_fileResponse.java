@@ -20,7 +20,7 @@ public class xtreemfs_restore_fileResponse implements org.xtreemfs.interfaces.ut
 
     public String toString()
     {
-        return "xtreemfs_restore_fileResponse()"; 
+        return "xtreemfs_restore_fileResponse()";
     }
 
 

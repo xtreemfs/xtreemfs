@@ -20,7 +20,7 @@ public class mkdirResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "mkdirResponse()"; 
+        return "mkdirResponse()";
     }
 
 

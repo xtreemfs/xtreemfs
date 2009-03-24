@@ -20,7 +20,7 @@ public class setxattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "setxattrResponse()"; 
+        return "setxattrResponse()";
     }
 
 

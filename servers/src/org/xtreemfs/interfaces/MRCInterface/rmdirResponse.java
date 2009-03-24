@@ -20,7 +20,7 @@ public class rmdirResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "rmdirResponse()"; 
+        return "rmdirResponse()";
     }
 
 

@@ -20,7 +20,7 @@ public class symlinkResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "symlinkResponse()"; 
+        return "symlinkResponse()";
     }
 
 

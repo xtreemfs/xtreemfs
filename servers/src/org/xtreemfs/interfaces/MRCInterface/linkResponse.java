@@ -20,7 +20,7 @@ public class linkResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "linkResponse()"; 
+        return "linkResponse()";
     }
 
 

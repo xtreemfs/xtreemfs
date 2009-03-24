@@ -24,7 +24,7 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
 
     public String toString()
     {
-        return "xtreemfs_check_file_existsResponse( " + "\"" + bitmap + "\"" + " )"; 
+        return "xtreemfs_check_file_existsResponse( " + "\"" + bitmap + "\"" + " )";
     }
 
 

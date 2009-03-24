@@ -24,7 +24,7 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "getxattrResponse( " + "\"" + returnValue + "\"" + " )"; 
+        return "getxattrResponse( " + "\"" + returnValue + "\"" + " )";
     }
 
 

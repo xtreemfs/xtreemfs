@@ -20,7 +20,7 @@ public class setattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "setattrResponse()"; 
+        return "setattrResponse()";
     }
 
 

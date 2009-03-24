@@ -24,7 +24,7 @@ public class statfsResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "statfsResponse( " + statfsbuf.toString() + " )"; 
+        return "statfsResponse( " + statfsbuf.toString() + " )";
     }
 
 

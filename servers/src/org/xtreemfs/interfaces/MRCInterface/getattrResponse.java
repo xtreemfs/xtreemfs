@@ -24,7 +24,7 @@ public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public String toString()
     {
-        return "getattrResponse( " + stbuf.toString() + " )"; 
+        return "getattrResponse( " + stbuf.toString() + " )";
     }
 
 

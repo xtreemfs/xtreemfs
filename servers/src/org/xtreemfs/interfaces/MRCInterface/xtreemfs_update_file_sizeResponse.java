@@ -20,7 +20,7 @@ public class xtreemfs_update_file_sizeResponse implements org.xtreemfs.interface
 
     public String toString()
     {
-        return "xtreemfs_update_file_sizeResponse()"; 
+        return "xtreemfs_update_file_sizeResponse()";
     }
 
 

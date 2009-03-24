@@ -20,7 +20,7 @@ public class xtreemfs_replica_addResponse implements org.xtreemfs.interfaces.uti
 
     public String toString()
     {
-        return "xtreemfs_replica_addResponse()"; 
+        return "xtreemfs_replica_addResponse()";
     }
 
 

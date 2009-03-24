@@ -20,7 +20,7 @@ public class removexattrResponse implements org.xtreemfs.interfaces.utils.Respon
 
     public String toString()
     {
-        return "removexattrResponse()"; 
+        return "removexattrResponse()";
     }
 
 

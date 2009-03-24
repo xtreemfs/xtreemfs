@@ -20,7 +20,7 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
 
     public String toString()
     {
-        return "xtreemfs_replica_removeResponse()"; 
+        return "xtreemfs_replica_removeResponse()";
     }
 
 
