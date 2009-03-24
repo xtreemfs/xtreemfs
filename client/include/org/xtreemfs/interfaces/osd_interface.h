@@ -1,5 +1,5 @@
-#ifndef _20550453687_H
-#define _20550453687_H
+#ifndef _27850927752_H
+#define _27850927752_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
@@ -264,7 +264,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "offset" ), offset ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "length" ), length ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 1; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 1; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 4289876024UL; }
@@ -348,7 +348,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "new_file_size" ), new_file_size ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 2; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 2; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 233138659UL; }
@@ -505,7 +505,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "offset" ), offset ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "lease_timeout" ), lease_timeout ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ObjectData", "object_data" ), object_data ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 4; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 4; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3887614948UL; }
@@ -592,7 +592,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 103; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 103; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 1067317409UL; }
@@ -672,7 +672,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 100; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 100; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 827639084UL; }
@@ -750,7 +750,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 104; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 104; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3846913658UL; }
@@ -820,7 +820,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "new_file_size" ), new_file_size ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 101; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 101; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 666509058UL; }
@@ -907,7 +907,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "file_credentials" ), file_credentials ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_number" ), object_number ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "object_version" ), object_version ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "offset" ), offset ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "length" ), length ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 102; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 102; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2259419931UL; }
@@ -968,7 +968,7 @@ namespace org
   
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 50; }
+        virtual uint32_t getInterfaceNumber() const { return 3; }
         virtual uint32_t getOperationNumber() const { return 50; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3362631755UL; }

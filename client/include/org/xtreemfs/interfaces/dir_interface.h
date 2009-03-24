@@ -1,5 +1,5 @@
-#ifndef _2706871956_H
-#define _2706871956_H
+#ifndef _64425687277_H
+#define _64425687277_H
 
 #include "constants.h"
 #include "types.h"
@@ -369,7 +369,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 3; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 279051446UL; }
@@ -442,7 +442,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::AddressMappingSet", "address_mappings" ), address_mappings ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 2; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 2; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 261715923UL; }
@@ -497,7 +497,7 @@ namespace org
   
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 50; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 50; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2107062528UL; }
@@ -558,7 +558,7 @@ namespace org
   
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 8; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 8; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 4247422848UL; }
@@ -626,7 +626,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint16( YIELD::StructuredStream::Declaration( "type" ), type ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 6; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 6; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3237041635UL; }
@@ -700,7 +700,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 7; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 7; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 4062260027UL; }
@@ -775,7 +775,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "name" ), name ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 9; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 9; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2629941400UL; }
@@ -848,7 +848,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Service", "service" ), service ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 4; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 4; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2428095872UL; }
@@ -912,7 +912,7 @@ namespace org
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); }
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 5; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 5; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 3229214492UL; }
@@ -968,7 +968,7 @@ namespace org
   
   
         // YIELD::Request
-        virtual uint32_t getInterfaceNumber() const { return 51; }
+        virtual uint32_t getInterfaceNumber() const { return 1; }
         virtual uint32_t getOperationNumber() const { return 51; }
   
         virtual uint32_t getDefaultResponseTypeId() const { return 2619067177UL; }
