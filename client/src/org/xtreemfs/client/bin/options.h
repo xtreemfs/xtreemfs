@@ -39,6 +39,7 @@ namespace org
 
         void printUsage()
         {
+          std::cout << std::endl;
           std::cout << program_name << ": " << program_description << std::endl;
           std::cout << std::endl;
           std::cout << "Usage:" << std::endl;
@@ -59,6 +60,7 @@ namespace org
               std::cout << "=" << option.get_default_values();
             std::cout << std::endl;
            }
+           std::cout << std::endl;
         }
 
         // Accessors for built-in options
@@ -69,50 +71,62 @@ namespace org
       protected:
         void parseOptions( int argc, char** argv )
         {
-          std::vector<CSimpleOpt::SOption> simpleopt_options;
-          for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
+          if ( argc == 1 )
           {
-            const Option& option = *option_i;
-            CSimpleOpt::SOption short_simpleopt_option = { option.get_id(), option.get_short_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
-            simpleopt_options.push_back( short_simpleopt_option );
-            if ( option.get_long_arg() )
-            {
-              CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
-              simpleopt_options.push_back( long_simpleopt_option );            
-            }
+            help = true;
+            return;
           }
-
-          CSimpleOpt args( argc, argv, &simpleopt_options[0] );
-
-          while ( args.Next() )
+          else if ( !options.empty() )
           {
-            if ( args.LastError() == SO_SUCCESS )
+            std::vector<CSimpleOpt::SOption> simpleopt_options;
+            for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
             {
-              switch ( args.OptionId() )
+              const Option& option = *option_i;
+              CSimpleOpt::SOption short_simpleopt_option = { option.get_id(), option.get_short_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+              simpleopt_options.push_back( short_simpleopt_option );
+              if ( option.get_long_arg() )
               {
-                case OPTION_PARSER_OPT_DEBUG: debug = true; break;
-                case OPTION_PARSER_OPT_HELP: help = true; return;
-
-                case OPTION_PARSER_OPT_TIMEOUT_MS:
-                {
-                  timeout_ms = atol( args.OptionArg() );
-                  if ( timeout_ms == 0 )
-                    timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
-                }
-                break;
-
-                default:
-                {
-                  if ( !help )
-                    parseOption( args.OptionId(), args.OptionArg() );
-                }
-                break;
+                CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+                simpleopt_options.push_back( long_simpleopt_option );            
               }
             }
-          }
+            CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
+            simpleopt_options.push_back( sentinel_simpleopt_option );
 
-          if ( !help && args.FileCount() > 0 )
-            parseFiles( args.FileCount(), args.Files() );
+            CSimpleOpt args( argc, argv, &simpleopt_options[0] );
+
+            while ( args.Next() )
+            {
+              if ( args.LastError() == SO_SUCCESS )
+              {
+                switch ( args.OptionId() )
+                {
+                  case OPTION_PARSER_OPT_DEBUG: debug = true; break;
+                  case OPTION_PARSER_OPT_HELP: help = true; return;
+
+                  case OPTION_PARSER_OPT_TIMEOUT_MS:
+                  {
+                    timeout_ms = atol( args.OptionArg() );
+                    if ( timeout_ms == 0 )
+                      timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+                  }
+                  break;
+
+                  default:
+                  {
+                    if ( !help )
+                      parseOption( args.OptionId(), args.OptionArg() );
+                  }
+                  break;
+                }
+              }
+            }
+
+            if ( !help && args.FileCount() > 0 )
+              parseFiles( args.FileCount(), args.Files() );
+          }
+          else
+            parseFiles( argc - 1, argv+1 );
         }
 
         virtual void parseOption( int id, const char* sep_arg )
@@ -136,7 +150,7 @@ namespace org
           const char* get_long_arg() const { return long_arg; }
           const char* get_default_values() const { return default_values; }         
 
-          bool operator<( const Option& other )
+          bool operator<( const Option& other ) const
           {
             return strcmp( get_short_arg(), other.get_short_arg() ) < 0;
           }

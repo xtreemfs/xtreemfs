@@ -116,11 +116,16 @@ namespace org
         Proxy* proxy;
 
         // OptionParser
-        void parseFiles( int argc, char** argv )
+        void parseFiles( int files_count, char** files )
         {
-          if ( argc >= 1 )
+          if ( files_count >= 1 )
           {
-            YIELD::URI rpc_uri( argv[0] );
+            std::string rpc_uri_str( files[0] );
+            if ( rpc_uri_str.find( "://" ) == std::string::npos )
+              rpc_uri_str = "oncrpc://" + rpc_uri_str;
+
+            YIELD::URI rpc_uri( rpc_uri_str );
+
             if ( strlen( rpc_uri.getResource() ) > 1 )
             {
               std::string request_type_name( rpc_uri.getResource() + 1 );
@@ -142,9 +147,9 @@ namespace org
                 }
               }
 
-              if ( argc > 1 )
+              if ( files_count > 1 )
               {
-                argvInputStream argv_input_stream( argc - 1, argv+1 );
+                argvInputStream argv_input_stream( files_count - 1, files+1 );
                 request->deserialize( argv_input_stream );
               }
 
