@@ -1,171 +1,194 @@
 #include "org/xtreemfs/client.h"
+#include "options.h"
 using namespace org::xtreemfs::client;
 
 #include "yield.h"
 
-#include "SimpleOpt.h"
+#include <iostream>
+using std::cout;
+using std::endl;
 
 
-enum { OPT_DEBUG, OPT_DIR, OPT_MRC, OPT_OSD };
-
-CSimpleOpt::SOption options[] = {
-  { OPT_DEBUG, "-d", SO_NONE },
-  { OPT_DEBUG, "--debug", SO_NONE },
-  { OPT_DIR, "--dir", SO_NONE },
-  { OPT_MRC, "--mrc", SO_NONE },
-  { OPT_OSD, "--osd", SO_NONE },
-  SO_END_OF_OPTIONS
-};
-
-
-class argvInputStream : public YIELD::StructuredInputStream
+namespace org
 {
-public:
-  argvInputStream( CSimpleOpt& args, int next_arg_i ) : args( args ), next_arg_i( next_arg_i )
-  { }
-
-  bool readBool( const Declaration& decl )
+  namespace xtreemfs
   {
-    const char* value = readValue( decl );
-    return value && ( strcmp( value, "true" ) == 0 || strcmp( value, "t" ) == 0 );
-  }
+    namespace client
+    {
+      class argvInputStream : public YIELD::StructuredInputStream
+      {
+      public:
+        argvInputStream( int argc, char** argv ) : argc( argc ), argv( argv )
+        {
+          next_arg_i = 0;
+        }
 
-  double readDouble( const Declaration& decl )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      return atof( value );
-    else
-      return 0;
-  }
+        bool readBool( const Declaration& decl )
+        {
+          const char* value = readValue( decl );
+          return value && ( strcmp( value, "true" ) == 0 || strcmp( value, "t" ) == 0 );
+        }
 
-  int64_t readInt64( const Declaration& decl )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      return atol( value );
-    else
-      return 0;
-  }
+        double readDouble( const Declaration& decl )
+        {
+          const char* value = readValue( decl );
+          if ( value )
+            return atof( value );
+          else
+            return 0;
+        }
 
-  YIELD::Serializable* readSerializable( const Declaration&, YIELD::Serializable* s = NULL )
-  {
-    if ( s && s->getGeneralType() == YIELD::RTTI::STRING )
-      s->deserialize( *this );
-    return s;
-  }
+        int64_t readInt64( const Declaration& decl )
+        {
+          const char* value = readValue( decl );
+          if ( value )
+            return atol( value );
+          else
+            return 0;
+        }
 
-  void readString( const Declaration& decl, std::string& str )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      str = value;
-  }
+        YIELD::Serializable* readSerializable( const Declaration&, YIELD::Serializable* s = NULL )
+        {
+          if ( s && s->getGeneralType() == YIELD::RTTI::STRING )
+            s->deserialize( *this );
+          return s;
+        }
 
-  uint64_t readUint64( const Declaration& decl )
-  {
-    const char* value = readValue( decl );
-    if ( value )
-      return atol( value );
-    else
-      return 0;
-  }
+        void readString( const Declaration& decl, std::string& str )
+        {
+          const char* value = readValue( decl );
+          if ( value )
+            str = value;
+        }
 
-private:
-  CSimpleOpt& args;
-  int next_arg_i;
+        uint64_t readUint64( const Declaration& decl )
+        {
+          const char* value = readValue( decl );
+          if ( value )
+            return atol( value );
+          else
+            return 0;
+        }
 
-  const char* readValue( const Declaration& decl )
-  {
-    if ( next_arg_i < args.FileCount() )
-      return args.Files()[next_arg_i++];
-    else
-      return NULL;
-  }
+      private:
+        int argc;
+        char** argv;
+        int next_arg_i;
+
+        const char* readValue( const Declaration& decl )
+        {
+          if ( next_arg_i < argc )
+            return argv[next_arg_i++];
+          else
+            return NULL;
+        }
+      };
+
+
+      class xtfs_sendOptions : public Options
+      {
+      public:
+        xtfs_sendOptions( int argc, char** argv )
+          : Options( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]host[:port]/rpc_operation_name [rpc_operation_parameters]" )
+        {
+          org::xtreemfs::interfaces::DIRInterface().registerSerializableFactories( serializable_factories );
+          org::xtreemfs::interfaces::MRCInterface().registerSerializableFactories( serializable_factories );
+          org::xtreemfs::interfaces::OSDInterface().registerSerializableFactories( serializable_factories );
+
+          request = NULL;
+          proxy = NULL;
+
+          parseOptions( argc, argv );
+        }
+
+        ~xtfs_sendOptions()
+        {
+          YIELD::SharedObject::decRef( request );
+          delete proxy;
+        }
+        
+        Proxy& get_proxy() const { return *proxy; }
+        YIELD::Request& get_request() const { return *request; }
+
+      private:
+        YIELD::SerializableFactories serializable_factories;
+        YIELD::Request* request;
+        Proxy* proxy;
+
+        // OptionParser
+        void parseFiles( int argc, char** argv )
+        {
+          if ( argc >= 1 )
+          {
+            YIELD::URI rpc_uri( argv[0] );
+            if ( strlen( rpc_uri.getResource() ) > 1 )
+            {
+              std::string request_type_name( rpc_uri.getResource() + 1 );
+              request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
+              if ( request != NULL )
+                proxy = new MRCProxy( rpc_uri );
+              else
+              {
+                request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
+                if ( request != NULL )
+                  proxy = new DIRProxy( rpc_uri );
+                else
+                {
+                  request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
+                  if ( request != NULL )
+                    proxy = new OSDProxy( rpc_uri );
+                  else
+                    throw YIELD::Exception( "unknown operation" );
+                }
+              }
+
+              if ( argc > 1 )
+              {
+                argvInputStream argv_input_stream( argc - 1, argv+1 );
+                request->deserialize( argv_input_stream );
+              }
+
+              proxy->set_operation_timeout_ms( get_timeout_ms() );
+            }
+            else
+              throw YIELD::Exception( "RPC URI must include an operation name" );                       
+          }
+          else
+            throw YIELD::Exception( "must specify RPC URI" );
+        }
+      };
+    };
+  };
 };
-
 
 int main( int argc, char** argv )
 {
-  Proxy* proxy = NULL;
-
   try
   {
-    CSimpleOpt args( argc, argv, options );
+    xtfs_sendOptions options( argc, argv );
 
-    // Arguments to be parsed
-    bool debug = false; bool dir = false, mrc = true, osd = false;
-
-    // - options
-    while ( args.Next() )
-    {
-      if ( args.LastError() == SO_SUCCESS )
-      {
-        switch ( args.OptionId() )
-        {
-          case OPT_DEBUG: debug = true; break;
-          case OPT_DIR: dir = true; break;
-          case OPT_MRC: mrc = true; break;
-          case OPT_OSD: osd = true; break;
-        }
-      }
-    }
-
-    if ( args.FileCount() >= 1 )
-    {
-      YIELD::URI rpc_uri( args.Files()[0] );
-      if ( strlen( rpc_uri.getResource() ) > 1 )
-      {
-        if ( debug )
-          YIELD::SocketConnection::setTraceSocketIO( true );
-        
-        if ( dir ) { proxy = new DIRProxy( rpc_uri ); }
-        else if ( osd ) { proxy = new OSDProxy( rpc_uri ); }
-        else { proxy = new MRCProxy( rpc_uri ); }
-
-        std::string req_type_name( "org::xtreemfs::interfaces::" );
-        if ( dir ) req_type_name.append( "DIRInterface::" );
-        else if ( osd ) req_type_name.append( "OSDInterface::" );
-        else req_type_name.append( "MRCInterface::" );
-        req_type_name.append( rpc_uri.getResource() + 1 );
-        req_type_name.append( "SyncRequest" );
-
-        YIELD::Request* req = proxy->createRequest( req_type_name.c_str() );
-        if ( req != NULL )
-        {
-          argvInputStream in_binding( args, 1 );
-          req->deserialize( in_binding );
-          req->setResponseTimeoutMS( 2000 );
-
-          YIELD::SharedObject::incRef( *req );
-          proxy->send( *req );
-
-          YIELD::Event& resp = req->waitForDefaultResponse( 2000 );
-          std::cout << resp.getTypeName() << "( ";
-          YIELD::PrettyPrintOutputStream out_binding( std::cout );
-          resp.serialize( out_binding );
-          std::cout << " )" << std::endl;
-          YIELD::SharedObject::decRef( resp );
-
-          YIELD::SharedObject::decRef( *req );  
-          delete proxy;
-
-          return 0;
-        }
-        else
-          throw YIELD::Exception( "RPC operation name is not valid for the given server" );
-      }
-      else
-        throw YIELD::Exception( "RPC URI must include an operation name" );
-    }
+    if ( options.get_help() )
+      options.printUsage();
     else
-      throw YIELD::Exception( "must specify RPC URI (http://host:port/Operation)" );
+    {
+      Proxy& proxy = options.get_proxy();
+      YIELD::Request& req = options.get_request();
+      YIELD::SharedObject::incRef( req );
+      proxy.send( req );
+
+      YIELD::Event& resp = req.waitForDefaultResponse( options.get_timeout_ms() );
+      std::cout << resp.getTypeName() << "( ";
+      YIELD::PrettyPrintOutputStream output_stream( std::cout );
+      resp.serialize( output_stream );
+      std::cout << " )" << std::endl;
+      YIELD::SharedObject::decRef( resp );
+    }
+
+    return 0;
   }
   catch ( std::exception& exc )
   {
     std::cerr << "Error on request: " << exc.what() << std::endl;
-
-    delete proxy;
 
     return 1;
   }

@@ -1,5 +1,5 @@
-#ifndef _81131936257_H
-#define _81131936257_H
+#ifndef _12137089606_H
+#define _12137089606_H
 
 #include "yield/arch.h"
 #include <string>
@@ -220,11 +220,11 @@ namespace org
   
         void registerSerializableFactories( YIELD::SerializableFactories& serializable_factories )
         {
-          serializable_factories.registerSerializableFactory( 1268393568UL, new YIELD::SerializableFactoryImpl<ProtocolException> );
-          serializable_factories.registerSerializableFactory( 405273943UL, new YIELD::SerializableFactoryImpl<errnoException> );
-          serializable_factories.registerSerializableFactory( 3273969329UL, new YIELD::SerializableFactoryImpl<RedirectException> );
-          serializable_factories.registerSerializableFactory( 769608203UL, new YIELD::SerializableFactoryImpl<ConcurrentModificationException> );
-          serializable_factories.registerSerializableFactory( 690678936UL, new YIELD::SerializableFactoryImpl<InvalidArgumentException> );
+          serializable_factories.registerSerializableFactory( 1268393568UL, new YIELD::SerializableFactoryImpl<ProtocolException> );;
+          serializable_factories.registerSerializableFactory( 405273943UL, new YIELD::SerializableFactoryImpl<errnoException> );;
+          serializable_factories.registerSerializableFactory( 3273969329UL, new YIELD::SerializableFactoryImpl<RedirectException> );;
+          serializable_factories.registerSerializableFactory( 769608203UL, new YIELD::SerializableFactoryImpl<ConcurrentModificationException> );;
+          serializable_factories.registerSerializableFactory( 690678936UL, new YIELD::SerializableFactoryImpl<InvalidArgumentException> );;
         }
   
   

@@ -1,188 +1,190 @@
 #include "org/xtreemfs/client.h"
+#include "options.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
 
-#include <string>
-#include <exception>
-#include <iostream>
-using std::cout;
-using std::endl;
 
-#include "SimpleOpt.h"
-
-
-enum 
-{ 
- OPT_ACCESS_CONTROL_POLICY,
- OPT_CERTIFICATE_FILE_PATH, 
- OPT_DEBUG, 
- OPT_HELP,
- OPT_MODE, 
- OPT_OSD_SELECTION_POLICY, 
- OPT_STRIPING_POLICY,
- OPT_STRIPING_POLICY_STRIPE_SIZE,
- OPT_STRIPING_POLICY_WIDTH,
-};
-
-CSimpleOpt::SOption options[] = 
+namespace org
 {
-  { OPT_ACCESS_CONTROL_POLICY, "-a", SO_REQ_SEP },
-  { OPT_ACCESS_CONTROL_POLICY, "--access-policy", SO_REQ_SEP },
-  { OPT_ACCESS_CONTROL_POLICY, "--access-control-policy", SO_REQ_SEP },
-  { OPT_CERTIFICATE_FILE_PATH, "-c", SO_REQ_SEP },
-  { OPT_CERTIFICATE_FILE_PATH, "--cert", SO_REQ_SEP },
-  { OPT_CERTIFICATE_FILE_PATH, "--certificate-file-path", SO_REQ_SEP },
-  { OPT_HELP, "-h", SO_NONE },
-  { OPT_HELP, "--help", SO_NONE },
-  { OPT_HELP, "-u", SO_NONE },
-  { OPT_HELP, "--usage", SO_NONE },
-  { OPT_DEBUG, "-d", SO_NONE },
-  { OPT_MODE, "-m", SO_REQ_SEP },
-  { OPT_MODE, "--mode", SO_REQ_SEP },
-  { OPT_OSD_SELECTION_POLICY, "-o", SO_REQ_SEP },
-  { OPT_OSD_SELECTION_POLICY, "--osd-selection", SO_REQ_SEP },
-  { OPT_OSD_SELECTION_POLICY, "--osd-selection-selection", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY, "-p", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY, "--striping-policy", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_STRIPE_SIZE, "-s", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_STRIPE_SIZE, "--stripe-size", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_STRIPE_SIZE, "--striping-policy-stripe-size", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_WIDTH, "-w", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_WIDTH, "--width", SO_REQ_SEP },
-  { OPT_STRIPING_POLICY_WIDTH, "--striping-policy-width", SO_REQ_SEP },
-  SO_END_OF_OPTIONS
+  namespace xtreemfs
+  {
+    namespace client
+    {
+      class xtfs_mkvolOptions : public Options
+      {
+      public:
+        xtfs_mkvolOptions( int argc, char** argv )
+          : Options( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]mrc_host[:port]/volume_name" )
+        { 
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
+          access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_CERTIFICATE_FILE_PATH, "-c", "--certificate-file-path", "path" );
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_CERTIFICATE_FILE_PATH, "-m", "--mode", "n" );
+          mode = org::xtreemfs::interfaces::MODE_DEFAULT;
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_OSD_SELECTION_POLICY, "-o", "--osd-selection-policy", "SIMPLE" );
+          osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_DEFAULT;
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY, "-p", "--striping-policy", "NONE|RAID0" );
+          striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT;
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_STRIPE_SIZE, "-s", "--striping-policy-stripe-size", "n" );
+          striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
+
+          addOption( XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_WIDTH, "-w", "--striping-policy-width", "n" );
+          striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+
+          volume_uri = NULL;
+
+          parseOptions( argc, argv );
+        }
+
+        ~xtfs_mkvolOptions()
+        {
+          delete volume_uri;
+        }
+
+        uint8_t get_access_control_policy() const { return access_control_policy; }
+        const std::string& get_certificate_file_path() const { return certificate_file_path; }
+        uint32_t get_mode() const { return mode; }
+        uint8_t get_osd_selection_policy() const { return osd_selection_policy; }
+        uint8_t get_striping_policy() const { return striping_policy; }
+        uint32_t get_striping_policy_stripe_size() const { return striping_policy_stripe_size; }
+        uint16_t get_striping_policy_width() const { return striping_policy_width; }
+        YIELD::URI& get_volume_uri() const { return *volume_uri; }
+
+      private:
+        enum 
+        { 
+         XTFS_MKVOL_OPTION_PARSER_OPT_ACCESS_CONTROL_POLICY,
+         XTFS_MKVOL_OPTION_PARSER_OPT_CERTIFICATE_FILE_PATH, 
+         XTFS_MKVOL_OPTION_PARSER_OPT_MODE, 
+         XTFS_MKVOL_OPTION_PARSER_OPT_OSD_SELECTION_POLICY, 
+         XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY,
+         XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_STRIPE_SIZE,
+         XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_WIDTH
+        };
+
+        uint8_t access_control_policy;
+        std::string certificate_file_path;
+        uint32_t mode;
+        uint8_t osd_selection_policy;
+        uint8_t striping_policy;
+        uint32_t striping_policy_stripe_size;
+        uint16_t striping_policy_width;
+        YIELD::URI* volume_uri;
+
+        // OptionParser
+        void parseOption( int id, const char* arg )
+        {
+          switch ( id )
+          {
+            case XTFS_MKVOL_OPTION_PARSER_OPT_ACCESS_CONTROL_POLICY:
+            {
+              if ( strcmp( arg, "NULL" ) == 0 )
+                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
+              else if ( strcmp( arg, "POSIX" ) == 0 )
+                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+              else if ( strcmp( arg, "VOLUME" ) == 0 )
+                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
+            }
+            break;
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_CERTIFICATE_FILE_PATH:
+            {
+              certificate_file_path = arg;
+            }
+            break;
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_MODE: 
+            {
+              mode = atoi( arg );
+              if ( mode == 0 )
+                mode = org::xtreemfs::interfaces::MODE_DEFAULT;
+            }
+            break;
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_OSD_SELECTION_POLICY: 
+            {
+              if ( strcmp( arg, "SIMPLE" ) == 0 )
+                osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
+            }
+            break;           
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY:
+            {
+              if ( strcmp( arg, "NONE" ) == 0 || strcmp( arg, "NULL" ) == 0 )
+                striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_NONE;
+              else if ( strcmp( arg, "RAID0" ) == 0 )
+                striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+            }
+            break;
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_STRIPE_SIZE:
+            {
+              striping_policy_stripe_size = atoi( arg );
+              if ( striping_policy_stripe_size == 0 )
+                striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
+            }
+            break;
+
+            case XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_WIDTH:
+            {
+              striping_policy_width = atoi( arg );
+              if ( striping_policy_width == 0 )
+                striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+            }
+            break;
+          }
+        }
+
+        void parseFiles( int files_count, char** files )
+        {
+          if ( files_count >= 1 )
+          {
+            std::string volume_uri_str( files[0] );
+            if ( volume_uri_str.find( "://" ) == std::string::npos )
+              volume_uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + volume_uri_str;
+            volume_uri = new YIELD::URI( volume_uri_str );
+            if ( strlen( volume_uri->getResource() ) <= 1 )
+              throw YIELD::Exception( "volume URI must include a volume name" );
+          }
+          else
+            throw YIELD::Exception( "must specify volume URI" );
+        }
+      };
+    };
+  };
 };
+
 
 int main( int argc, char** argv )
 {
-  // Options to fill
-  bool debug = false;
-  uint8_t striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT; 
-  uint32_t striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
-  uint16_t striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
-  uint8_t osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_DEFAULT;
-  uint8_t access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
-  uint32_t mode = org::xtreemfs::interfaces::MODE_DEFAULT;
-  std::string certificate_file_path;
-
   try
   {
-    CSimpleOpt args( argc, argv, options );
+    xtfs_mkvolOptions options( argc, argv );
 
-    // - options
-    while ( args.Next() )
+    if ( options.get_help() )
+      options.printUsage();
+    else
     {
-      if ( args.LastError() == SO_SUCCESS )
-      {
-        switch ( args.OptionId() )
-        {
-          case OPT_ACCESS_CONTROL_POLICY:
-          {
-            if ( strcmp( args.OptionArg(), "NULL" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
-            else if ( strcmp( args.OptionArg(), "POSIX" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
-            else if ( strcmp( args.OptionArg(), "VOLUME" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
-          }
-          break;
-
-          case OPT_CERTIFICATE_FILE_PATH:
-          {
-           certificate_file_path = args.OptionArg();
-          }
-          break;
-
-          case OPT_DEBUG: debug = true; break;
-
-          case OPT_HELP:
-          {
-            cout << "mkvol: create a new volume on a specified MRC." << endl;
-            cout << endl;
-            cout << "Usage:" << endl;
-            cout << "  mkvol [options] [oncrpc[s]://]mrc_host[:port]/volume_name" << endl;
-            cout << endl;
-            cout << "Options:" << endl;
-            cout << "  -a/--access-control-policy=NULL|POSIX|VOLUME" << endl;
-            cout << "  -c/--certificate-file-path=path" << endl;
-            cout << "  -m/--mode=n" << endl;
-            cout << "  -o/--osd-selection-policy=SIMPLE" << endl;
-            cout << "  -p/--striping-policy=NONE|RAID0" << endl;
-            cout << "  -s/--striping-policy-stripe-size=n" << endl;
-            cout << "  -w/--striping-policy-width=n" << endl;
-            cout << endl;
-            return 0;
-          }
-          break;
-
-          case OPT_MODE: 
-          {
-            mode = atoi( args.OptionArg() );
-            if ( mode == 0 )
-              mode = org::xtreemfs::interfaces::MODE_DEFAULT;
-          }
-          break;
-
-          case OPT_OSD_SELECTION_POLICY: 
-          {
-            if ( strcmp( args.OptionArg(), "SIMPLE" ) == 0 )
-              osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
-          }
-          break;           
-
-          case OPT_STRIPING_POLICY:
-          {
-            if ( strcmp( args.OptionArg(), "NONE" ) == 0 || strcmp( args.OptionArg(), "NULL" ) == 0 )
-              striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_NONE;
-            else if ( strcmp( args.OptionArg(), "RAID0" ) == 0 )
-              striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
-          }
-          break;
-
-          case OPT_STRIPING_POLICY_STRIPE_SIZE:
-          {
-            striping_policy_stripe_size = atoi( args.OptionArg() );
-            if ( striping_policy_stripe_size == 0 )
-              striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
-          }
-          break;
-
-          case OPT_STRIPING_POLICY_WIDTH:
-          {
-            striping_policy_width = atoi( args.OptionArg() );
-            if ( striping_policy_width == 0 )
-              striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
-          }
-          break;
-        }
-      }
-    }
-
-    if ( args.FileCount() >= 1 )
-    {
-      std::string volume_uri_str( args.Files()[0] );
-      if ( volume_uri_str.find( "://" ) == std::string::npos )
-        volume_uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + volume_uri_str;
-      YIELD::URI volume_uri( volume_uri_str );
-      if ( strlen( volume_uri.getResource() ) <= 1 )
-        throw YIELD::Exception( "volume URI must include a volume name" );
-
-      if ( debug )
+      if ( options.get_debug() )
         YIELD::SocketConnection::setTraceSocketIO( true );  
 
-      MRCProxy( volume_uri ).mkvol( volume_uri.getResource()+1, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy );
-
-      return 0;
+      MRCProxy mrc_proxy( options.get_volume_uri() );
+      mrc_proxy.set_operation_timeout_ms( options.get_timeout_ms() );
+      mrc_proxy.mkvol( options.get_volume_uri().getResource()+1, options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() );
     }
-    else
-      throw YIELD::Exception( "must specify volume URI" );
+
+    return 0;
   }
   catch ( std::exception& exc )
   {
-    std::cerr << "Error creating volume: " << exc.what() << endl;  
+    std::cerr << "Error creating volume: " << exc.what() << std::endl;  
 
     return 1;
-  }
-  
+  }  
 }

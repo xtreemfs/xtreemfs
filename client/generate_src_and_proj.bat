@@ -30,7 +30,7 @@ python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEM
 REM Binary projects
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\bin
 python %YIDL_PATH%\bin\generate_proj.py -n xtreemfs-client-test -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtreemfs-client-test.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mount.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mount.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\options.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_rmvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%

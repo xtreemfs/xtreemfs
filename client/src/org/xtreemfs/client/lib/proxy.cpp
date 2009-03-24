@@ -25,8 +25,10 @@ Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port, uint16_t defa
         YIELD::DebugBreak();
     }
 
-    this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
     this->flags = PROXY_DEFAULT_FLAGS;
+    this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
+    this->operation_timeout_ms = PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+    
     this->peer_ip = 0;
     this->conn = 0;
   
@@ -66,14 +68,12 @@ void Proxy::handleEvent( YIELD::Event& ev )
             YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> user_credentials = get_user_credentials();
             YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, user_credentials.get() ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, user_credentials.get() );
 
-            uint64_t timeout_ms = req.getResponseTimeoutMS();
-            uint64_t original_timeout_ms = timeout_ms;
             uint8_t reconnect_tries_left = reconnect_tries_max;
 
             if ( conn == NULL )
-              reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
+              reconnect_tries_left = reconnect( reconnect_tries_left );
 
-            if ( timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
+            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
             {
               YIELD::SocketLib::setBlocking( conn->getSocket() );
 
@@ -92,19 +92,20 @@ void Proxy::handleEvent( YIELD::Event& ev )
                       return;
                     }
                     else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
-                      reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
+                      reconnect_tries_left = reconnect( reconnect_tries_left );
                     else
                       YIELD::DebugBreak();
                   }
                 }
                 else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
-                  reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
+                  reconnect_tries_left = reconnect( reconnect_tries_left );
                 else
                   YIELD::DebugBreak();
               }
             }
             else // Non-blocking/timed
             {
+              uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
               YIELD::SocketLib::setNonBlocking( conn->getSocket() );
 
               bool have_written = false; // Use the variable so the read and write attempt loops can be combined and eliminate some code duplication
@@ -125,19 +126,19 @@ void Proxy::handleEvent( YIELD::Event& ev )
                     break;
                 }
                 else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
-                  reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
-                else if ( timeout_ms > 0 )
+                  reconnect_tries_left = reconnect( reconnect_tries_left );
+                else if ( remaining_operation_timeout_ms > 0 )
                 {
                   bool enable_read = conn->getStatus() == YIELD::SocketConnection::SCS_BLOCKED_ON_READ;
                   fd_event_queue.toggleSocketEvent( conn->getSocket(), conn, enable_read, !enable_read );
                   double start_epoch_time_ms = YIELD::Time::getCurrentEpochTimeMS();
-                  YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( timeout_ms ) * NS_IN_MS ) );
+                  YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
                   if ( fd_event )
                   {
                     if ( fd_event->error_code == 0 )
-                      timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentEpochTimeMS() - start_epoch_time_ms ), timeout_ms );
+                      remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentEpochTimeMS() - start_epoch_time_ms ), remaining_operation_timeout_ms );
                     else
-                      reconnect_tries_left = reconnect( original_timeout_ms, reconnect_tries_left );
+                      reconnect_tries_left = reconnect( reconnect_tries_left );
                   }
                   else
                     throwExceptionEvent( new YIELD::PlatformExceptionEvent( ETIMEDOUT ) );
@@ -162,7 +163,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
   }
 }
 
-uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
+uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
 {
   if ( peer_ip == 0 )
   {
@@ -198,7 +199,7 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
 
 
     // Now try the actual connect
-    if ( timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
+    if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
     {
       YIELD::SocketLib::setBlocking( conn->getSocket() );
 
@@ -207,6 +208,7 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
     }
     else // Non-blocking/timed
     {
+      uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
       YIELD::SocketLib::setNonBlocking( conn->getSocket() );
 
       switch ( conn->connect() )
@@ -216,7 +218,7 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
         {
           fd_event_queue.toggleSocketEvent( conn->getSocket(), conn, false, true ); // Write readiness = the connect() operation is complete
           double start_epoch_time_ms = YIELD::Time::getCurrentEpochTimeMS();
-          YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( timeout_ms ) * NS_IN_MS ) );
+          YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
           if ( fd_event && fd_event->error_code == 0 &&
                conn->connect() == YIELD::SocketConnection::SCS_READY )
           {
@@ -225,8 +227,8 @@ uint8_t Proxy::reconnect( uint64_t timeout_ms, uint8_t reconnect_tries_left )
           }
           else
           {
-            timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentEpochTimeMS() - start_epoch_time_ms ), timeout_ms );
-            if ( timeout_ms == 0 ) { reconnect_tries_left = 0; break; }
+            remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentEpochTimeMS() - start_epoch_time_ms ), remaining_operation_timeout_ms );
+            if ( remaining_operation_timeout_ms == 0 ) { reconnect_tries_left = 0; break; }
           }
         }
       }
