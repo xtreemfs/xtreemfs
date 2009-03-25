@@ -49,6 +49,8 @@ import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.interfaces.Exceptions.Exceptions;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -395,7 +397,13 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             firstFragment.get();
                         }
                     }
-                    exception = Exceptions.createException(exName);
+                    if (exName.startsWith("org::xtreemfs::interfaces::MRCInterface::")) {
+                        exception = MRCInterface.createException(exName);
+                    } else if (exName.startsWith("org::xtreemfs::interfaces::OSDInterface::")) {
+                        exception = OSDInterface.createException(exName);
+                    } else {
+                        exception = Exceptions.createException(exName);
+                    }
                     Serializable exAsSer = (Serializable) exception;
                     exAsSer.deserialize(firstFragment);
                 } catch (IOException ex) {
