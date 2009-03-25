@@ -117,14 +117,17 @@ YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> PolicyConta
   else
   {
 #ifndef _WIN32
-    struct passwd pwd, *pwd_p = &pwd, *temp_pwd_p;
-    char pwd_buf[256]; int pwd_buf_len = sizeof( pwd_buf );
-    struct group grp, *grp_p = &grp, *temp_grp_p;
-    char grp_buf[256]; int grp_buf_len = sizeof( grp_buf );
+	if ( caller_uid >= 0 && caller_gid >= 0 )
+	{
+      struct passwd pwd, *pwd_res;
+      char pwd_buf[256]; int pwd_buf_len = sizeof( pwd_buf );
+      struct group grp, *grp_res;
+      char grp_buf[256]; int grp_buf_len = sizeof( grp_buf );
 
-    if ( getpwuid_r( caller_uid, pwd_p, pwd_buf, pwd_buf_len, &temp_pwd_p ) == 0 && pwd.pw_name &&
-         getgrgid_r( caller_gid, grp_p, grp_buf, grp_buf_len, &temp_grp_p ) == 0 && grp.gr_name )
-      return new org::xtreemfs::interfaces::UserCredentials( pwd.pw_name, org::xtreemfs::interfaces::StringSet( grp.gr_name ), "" );
+      if ( getpwuid_r( caller_uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL && pwd_res->pw_name != NULL &&
+           getgrgid_r( caller_gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL && grp_res->gr_name != NULL )
+        return new org::xtreemfs::interfaces::UserCredentials( pwd_res->pw_name, org::xtreemfs::interfaces::StringSet( grp_res->gr_name ), "" );
+	}
 #endif
 
     return new org::xtreemfs::interfaces::UserCredentials( "anonymous", org::xtreemfs::interfaces::StringSet( "anonymous" ), "anonymous" );
