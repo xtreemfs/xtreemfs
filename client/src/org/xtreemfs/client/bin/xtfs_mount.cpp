@@ -22,17 +22,26 @@ namespace org
         {
           addOption( XTFS_MOUNT_OPTION_PARSER_OPT_FOREGROUND, "-f", "--foreground" );
           foreground = false;
+
+          dir_uri = NULL;
+
           parseOptions( argc, argv );
         }
 
-        const std::string& get_dir_uri() const { return dir_uri; }
+        ~xtfs_mountOptions()
+        {
+          delete dir_uri;
+        }
+
+        const YIELD::URI& get_dir_uri() const { return *dir_uri; }
         const std::string& get_mount_point() const { return mount_point; }
         const std::string& get_volume_name() const { return volume_name; }
         bool get_foreground() const { return foreground; }
 
       private:
         bool foreground;      
-        std::string dir_uri, mount_point, volume_name;
+        YIELD::URI* dir_uri;
+        std::string mount_point, volume_name;
 
         enum 
         { 
@@ -50,14 +59,12 @@ namespace org
         {
           if ( file_count >= 3 )
           {
-            dir_uri = files[0];
-            if ( dir_uri.find( "://" ) == std::string::npos )
-              dir_uri = "oncrpc://" + dir_uri;            
+            dir_uri = parseURI( files[0] );
             volume_name = files[1];
             mount_point = files[2];
           }
           else
-            throw YIELD::Exception( "must specify directory service, volume_name, and mount point" );
+            throw YIELD::Exception( "must specify directory service URI, volume name, and mount point" );
         }
       };
     };

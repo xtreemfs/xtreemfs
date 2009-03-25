@@ -120,28 +120,24 @@ namespace org
         {
           if ( files_count >= 1 )
           {
-            std::string rpc_uri_str( files[0] );
-            if ( rpc_uri_str.find( "://" ) == std::string::npos )
-              rpc_uri_str = "oncrpc://" + rpc_uri_str;
+            std::auto_ptr<YIELD::URI> rpc_uri( parseURI( files[0] ) );
 
-            YIELD::URI rpc_uri( rpc_uri_str );
-
-            if ( strlen( rpc_uri.getResource() ) > 1 )
+            if ( strlen( rpc_uri.get()->getResource() ) > 1 )
             {
-              std::string request_type_name( rpc_uri.getResource() + 1 );
+              std::string request_type_name( rpc_uri.get()->getResource() + 1 );
               request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request != NULL )
-                proxy = new MRCProxy( rpc_uri );
+                proxy = new MRCProxy( *rpc_uri.get() );
               else
               {
                 request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
                 if ( request != NULL )
-                  proxy = new DIRProxy( rpc_uri );
+                  proxy = new DIRProxy( *rpc_uri.get() );
                 else
                 {
                   request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
                   if ( request != NULL )
-                    proxy = new OSDProxy( rpc_uri );
+                    proxy = new OSDProxy( *rpc_uri.get() );
                   else
                     throw YIELD::Exception( "unknown operation" );
                 }

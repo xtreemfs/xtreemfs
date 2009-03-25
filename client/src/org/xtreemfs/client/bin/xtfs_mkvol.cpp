@@ -37,24 +37,25 @@ namespace org
           addOption( XTFS_MKVOL_OPTION_PARSER_OPT_STRIPING_POLICY_WIDTH, "-w", "--striping-policy-width", "n" );
           striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
 
-          volume_uri = NULL;
+          mrc_uri = NULL;
 
           parseOptions( argc, argv );
         }
 
         ~xtfs_mkvolOptions()
         {
-          delete volume_uri;
+          delete mrc_uri;
         }
 
         uint8_t get_access_control_policy() const { return access_control_policy; }
         const std::string& get_certificate_file_path() const { return certificate_file_path; }
         uint32_t get_mode() const { return mode; }
+        YIELD::URI& get_mrc_uri() const { return *mrc_uri; }
         uint8_t get_osd_selection_policy() const { return osd_selection_policy; }
         uint8_t get_striping_policy() const { return striping_policy; }
         uint32_t get_striping_policy_stripe_size() const { return striping_policy_stripe_size; }
         uint16_t get_striping_policy_width() const { return striping_policy_width; }
-        YIELD::URI& get_volume_uri() const { return *volume_uri; }
+        const std::string& get_volume_name() const { return volume_name; }
 
       private:
         enum 
@@ -71,11 +72,12 @@ namespace org
         uint8_t access_control_policy;
         std::string certificate_file_path;
         uint32_t mode;
+        YIELD::URI* mrc_uri;
         uint8_t osd_selection_policy;
         uint8_t striping_policy;
         uint32_t striping_policy_stripe_size;
         uint16_t striping_policy_width;
-        YIELD::URI* volume_uri;
+        std::string volume_name;
 
         // OptionParser
         void parseOption( int id, const char* arg )
@@ -145,15 +147,16 @@ namespace org
         {
           if ( files_count >= 1 )
           {
-            std::string volume_uri_str( files[0] );
-            if ( volume_uri_str.find( "://" ) == std::string::npos )
-              volume_uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + volume_uri_str;
-            volume_uri = new YIELD::URI( volume_uri_str );
-            if ( strlen( volume_uri->getResource() ) <= 1 )
-              throw YIELD::Exception( "volume URI must include a volume name" );
+            mrc_uri = parseURI( files[0] );            
+            if ( strlen( mrc_uri->getResource() ) > 1 )
+              volume_name = mrc_uri->getResource() + 1;
+            else if ( files_count >= 2 )
+              volume_name = files[1];
+            else
+              throw YIELD::URI( "must specify a volume name, either as part of the MRC URI or as a separate parameter" );
           }
           else
-            throw YIELD::Exception( "must specify volume URI" );
+            throw YIELD::Exception( "must specify a volume URI" );
         }
       };
     };
@@ -174,9 +177,9 @@ int main( int argc, char** argv )
       if ( options.get_debug() )
         YIELD::SocketConnection::setTraceSocketIO( true );  
 
-      MRCProxy mrc_proxy( options.get_volume_uri() );
+      MRCProxy mrc_proxy( options.get_mrc_uri() );
       mrc_proxy.set_operation_timeout_ms( options.get_timeout_ms() );
-      mrc_proxy.mkvol( options.get_volume_uri().getResource()+1, options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() );
+      mrc_proxy.mkvol( options.get_volume_name(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() );
     }
 
     return 0;

@@ -135,6 +135,14 @@ namespace org
         virtual void parseFiles( int file_count, char** files )
         { }
 
+        YIELD::URI* parseURI( const char* uri_c_str )
+        {
+          std::string uri_str( uri_c_str );          
+          if ( uri_str.find( "://" ) == std::string::npos )
+            uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
+          return new YIELD::URI( uri_str );
+        }
+
       private:
         const char *program_name, *program_description, *files_usage;
 
