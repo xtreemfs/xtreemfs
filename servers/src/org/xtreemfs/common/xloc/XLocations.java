@@ -40,7 +40,7 @@ public class XLocations {
             }
         }
         if (localReplica == null)
-            throw new InvalidXLocationsException("local OSD is not in any replica in XLocations list");
+            throw new InvalidXLocationsException("local OSD (" + localOSD + ") is not in any replica in XLocations list: " + xloc);
     }
 
     public XLocSet getXLocSet() {

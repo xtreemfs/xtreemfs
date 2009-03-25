@@ -132,7 +132,6 @@ public class ReadDirAndStatOperation extends MRCOperation {
                         : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
                 long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child
                         .getSize();
-                int type = linkTarget != null ? 3 : child.isDirectory() ? 2 : 1;
                 stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
                         .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
                         .getId()

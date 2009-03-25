@@ -92,58 +92,15 @@ public class MRCTest extends TestCase {
         // it to a new file on 'open')
         
         testEnv = new TestEnvironment(Services.DIR_CLIENT, Services.TIME_SYNC, Services.UUID_RESOLVER,
-            Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC);
+            Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.MOCKUP_OSD);
         testEnv.start();
         
         client = testEnv.getMrcClient();
-        
-        try {
-            ServiceDataMap dmap = new ServiceDataMap();
-            dmap.put("free", "1000000000");
-            dmap.put("total", "1000000000");
-            dmap.put("load", "0");
-            dmap.put("totalRAM", "1000000000");
-            dmap.put("usedRAM", "0");
-            dmap.put("proto_version", "" + OSDInterface.getVersion());
-            Service reg = new Service("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD, "mockUpOSD", 0, dmap);
-            RPCResponse<Long> response = testEnv.getDirClient().xtreemfs_service_register(null, reg);
-            response.get();
-            response.freeBuffers();
-        } catch (Exception exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-        }
     }
     
     protected void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
-    }
-    
-    public void testTest() throws Exception {
-        
-        // final String uid = "userXY";
-        // final List<String> gids = createGIDs("groupZ");
-        // final String volumeName = "testVolume";
-        // final UserCredentials uc = MRCClient.getCredentials(uid, gids);
-        //        
-        // invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1,
-        // getDefaultStripingPolicy(),
-        // YesToAnyoneFileAccessPolicy.POLICY_ID));
-        //        
-        // for (int i = 0; i < 100; i++) {
-        // if (Math.random() > .5)
-        // invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/" + i, 0));
-        // else
-        // invokeSync(client.create(mrcAddress, uc, volumeName + "/" + i, 0));
-        // }
-        //        
-        // DirectoryEntrySet entrySet = invokeSync(client.readdir(mrcAddress,
-        // uc, volumeName));
-        // for (int i = 0; i < entrySet.size(); i++)
-        // System.out.println(entrySet.get(i));
-        //        
-        // System.exit(0);
-        
     }
     
     public void testCreateDelete() throws Exception {
@@ -433,7 +390,7 @@ public class MRCTest extends TestCase {
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0));
         assertEquals(1, creds.getXcap().getTruncate_epoch());
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0));
-        assertEquals(1, creds.getXcap().getTruncate_epoch());
+        assertEquals(2, creds.getXcap().getTruncate_epoch());
         
         // TODO: check open w/ ACLs set
         
@@ -682,7 +639,7 @@ public class MRCTest extends TestCase {
         assertTrue(invokeSync(client.access(mrcAddress, uc2, posixVolName + "/newDir",
             FileAccessManager.NON_POSIX_SEARCH)));
         
-        assertFalse(invokeSync(client.access(mrcAddress, uc3, posixVolName,
+        assertTrue(invokeSync(client.access(mrcAddress, uc3, posixVolName,
             FileAccessManager.NON_POSIX_SEARCH)));
         
         // grant any rights to the volume to anyone
@@ -706,11 +663,11 @@ public class MRCTest extends TestCase {
         
         invokeSync(client.create(mrcAddress, uc1, posixVolName + "/someFile.txt", 224));
         stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt"));
-        assertEquals(224, stat.getMode());
+        assertEquals(224, stat.getMode() & 0x7FF);
         
         invokeSync(client.chmod(mrcAddress, uc1, posixVolName + "/someFile.txt", 192));
         stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt"));
-        assertEquals(192, stat.getMode());
+        assertEquals(192, stat.getMode() & 0x7FF);
         
         // create a new directory w/ search access for anyone w/ access rights
         // to anyone

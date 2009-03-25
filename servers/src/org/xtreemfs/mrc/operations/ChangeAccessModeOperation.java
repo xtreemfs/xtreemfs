@@ -107,9 +107,9 @@ public class ChangeAccessModeOperation extends MRCOperation {
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // change the access mode
+            // change the access mode; only bits 0-11 may be changed
             faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().groupIds, rqArgs.getMode(), update);
+                    .getDetails().groupIds, (file.getPerms() & 0xFFFFF800) | (rqArgs.getMode() & 0x7FF), update);
             
             // update POSIX timestamps
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);

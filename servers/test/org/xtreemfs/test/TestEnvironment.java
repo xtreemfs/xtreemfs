@@ -15,7 +15,12 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.include.common.logging.Logging;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.client.OSDClient;
@@ -46,19 +51,28 @@ public class TestEnvironment {
     public MRCClient getMrcClient() {
         return mrcClient;
     }
-
+    
     public OSDClient getOSDClient() {
         return osdClient;
     }
-
+    
     /**
      * @return the osdClient
      */
     // public OSDClient getOsdClient() {
     // return osdClient;
     // }
+    
     public enum Services {
-        TIME_SYNC, UUID_RESOLVER, RPC_CLIENT, DIR_CLIENT, MRC_CLIENT, OSD_CLIENT, DIR_SERVICE, MRC
+        TIME_SYNC, // time sync facility
+            UUID_RESOLVER, // UUID resolver
+            RPC_CLIENT, // RPC client
+            DIR_CLIENT, // Directory Service client
+            MRC_CLIENT, // MRC client
+            OSD_CLIENT, // OSD client
+            DIR_SERVICE, // Directory Service
+            MRC, // MRC
+            MOCKUP_OSD // mock-up OSD: registers a non-existing OSD at the DIR
     };
     
     private RPCNIOSocketClient   rpcClient;
@@ -67,7 +81,7 @@ public class TestEnvironment {
     
     private MRCClient            mrcClient;
     
-    private OSDClient osdClient;
+    private OSDClient            osdClient;
     
     private DIRRequestDispatcher dirService;
     
@@ -75,7 +89,7 @@ public class TestEnvironment {
     
     private final List<Services> enabledServs;
     
-    private TimeSync            tsInstance;
+    private TimeSync             tsInstance;
     
     public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
@@ -95,7 +109,7 @@ public class TestEnvironment {
         getRpcClient().waitForStartup();
         
         dirClient = SetupUtils.createDIRClient(getRpcClient());
-
+        
         if (enabledServs.contains(Services.DIR_SERVICE)) {
             dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig());
             dirService.startup();
@@ -104,16 +118,29 @@ public class TestEnvironment {
         }
         
         if (enabledServs.contains(Services.TIME_SYNC)) {
-            tsInstance = TimeSync.initialize(null, 60*1000, 50);
+            tsInstance = TimeSync.initialize(null, 60 * 1000, 50);
             tsInstance.waitForStartup();
         }
         
-
         if (enabledServs.contains(Services.UUID_RESOLVER)) {
             UUIDResolver.start(getDirClient(), 1000, 10 * 10 * 1000);
             SetupUtils.localResolver();
         }
-
+        
+        if (enabledServs.contains(Services.MOCKUP_OSD)) {
+            ServiceDataMap dmap = new ServiceDataMap();
+            dmap.put("free", "1000000000");
+            dmap.put("total", "1000000000");
+            dmap.put("load", "0");
+            dmap.put("totalRAM", "1000000000");
+            dmap.put("usedRAM", "0");
+            dmap.put("proto_version", "" + OSDInterface.getVersion());
+            Service reg = new Service("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD, "mockUpOSD", 0, dmap);
+            RPCResponse<Long> response = dirClient.xtreemfs_service_register(null, reg);
+            response.get();
+            response.freeBuffers();
+        }
+        
         if (enabledServs.contains(Services.MRC)) {
             mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
             mrc.startup();
@@ -138,7 +165,7 @@ public class TestEnvironment {
             } catch (Throwable th) {
             }
         }
-
+        
         if (enabledServs.contains(Services.MRC)) {
             try {
                 mrc.shutdown();
