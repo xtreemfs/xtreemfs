@@ -78,7 +78,7 @@ public class CheckFileListOperation extends MRCOperation {
             rq.setResponse(new xtreemfs_check_file_existsResponse(response));
             finishRequest(rq);
             
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }

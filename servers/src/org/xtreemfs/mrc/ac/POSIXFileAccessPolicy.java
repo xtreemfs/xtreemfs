@@ -181,11 +181,16 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     @Override
     public String translateAccessFlags(int accessMode) {
+        
+        accessMode = accessMode
+            & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY | FileAccessManager.O_APPEND
+                | FileAccessManager.NON_POSIX_SEARCH | FileAccessManager.NON_POSIX_DELETE | FileAccessManager.NON_POSIX_RM_MV_IN_DIR);
+        
         if (accessMode == FileAccessManager.O_RDONLY)
             return AM_READ;
-        if ( ((accessMode & FileAccessManager.O_RDWR) != 0)
-                || ((accessMode & FileAccessManager.O_WRONLY) != 0)
-                || ((accessMode & FileAccessManager.O_APPEND) != 0))
+        if (((accessMode & FileAccessManager.O_RDWR) != 0)
+            || ((accessMode & FileAccessManager.O_WRONLY) != 0)
+            || ((accessMode & FileAccessManager.O_APPEND) != 0))
             return AM_WRITE;
         if ((accessMode & FileAccessManager.NON_POSIX_SEARCH) != 0)
             return AM_EXECUTE;
@@ -193,8 +198,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
             return AM_DELETE;
         if ((accessMode & FileAccessManager.NON_POSIX_RM_MV_IN_DIR) != 0)
             return AM_MV_RM_IN_DIR;
-
-        assert(false) : "never ever! mode is "+accessMode;
+        
+        assert (false) : "never ever! mode is " + accessMode;
         return null;
     }
     

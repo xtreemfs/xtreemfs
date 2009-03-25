@@ -24,10 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_checkpointResponse;
+import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 /**
  * 
@@ -52,9 +53,8 @@ public class CheckpointOperation extends MRCOperation {
             rq.setResponse(new xtreemfs_checkpointResponse());
             finishRequest(rq);
             
-        } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
-            master.requestFailed(rq, ex);
+        } catch (Throwable exc) {
+            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
     

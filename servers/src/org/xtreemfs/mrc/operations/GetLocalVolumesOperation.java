@@ -59,7 +59,7 @@ public class GetLocalVolumesOperation extends MRCOperation {
             // TODO
             finishRequest(rq);
             
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }

@@ -215,7 +215,7 @@ public class RestoreDBOperation extends MRCOperation {
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION,
                 exc.getException().getMessage() == null ? "an error has occured" : exc.getException()
                         .getMessage(), exc.getException()));
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
                 exc.getMessage() == null ? "an error has occurred" : exc.getMessage(), exc));
         }

@@ -87,7 +87,7 @@ public class DumpDBOperation extends MRCOperation {
             rq.setResponse(new xtreemfs_dump_databaseResponse());
             finishRequest(rq);
             
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
