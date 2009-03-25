@@ -17,10 +17,13 @@ namespace org
       class xtfs_mountOptions : public Options
       {
       public:
-        xtfs_mountOptions( int argc, char** argv ) 
+        xtfs_mountOptions( int argc, char** argv )
           : Options( "xtfs_mount", "mount an XtreemFS volume", "<directory service URI> <volume_name> <mount point>" )
         {
-          addOption( XTFS_MOUNT_OPTION_PARSER_OPT_FOREGROUND, "-f", "--foreground" );
+  		  addOption( XTFS_MOUNT_OPTION_DIRECT_IO, "--direct_io", "--direct-io" );
+		  direct_io = false;
+
+          addOption( XTFS_MOUNT_OPTION_FOREGROUND, "-f", "--foreground" );
           foreground = false;
 
           dir_uri = NULL;
@@ -33,26 +36,31 @@ namespace org
           delete dir_uri;
         }
 
+        bool get_direct_io() const { return direct_io; }
         const YIELD::URI& get_dir_uri() const { return *dir_uri; }
+        bool get_foreground() const { return foreground; }
         const std::string& get_mount_point() const { return mount_point; }
         const std::string& get_volume_name() const { return volume_name; }
-        bool get_foreground() const { return foreground; }
 
       private:
-        bool foreground;      
+        bool direct_io, foreground;
         YIELD::URI* dir_uri;
         std::string mount_point, volume_name;
 
-        enum 
-        { 
-          XTFS_MOUNT_OPTION_PARSER_OPT_FOREGROUND = 10 
+        enum
+        {
+          XTFS_MOUNT_OPTION_DIRECT_IO = 10,
+          XTFS_MOUNT_OPTION_FOREGROUND = 11
         };
 
         // OptionParser
         void parseOption( int id, const char* )
         {
-          if ( id == XTFS_MOUNT_OPTION_PARSER_OPT_FOREGROUND )
-            foreground = true;
+          switch ( id )
+          {
+            case XTFS_MOUNT_OPTION_DIRECT_IO: direct_io = true; break;
+            case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
+          }
         }
 
         void parseFiles( int file_count, char** files )
@@ -68,7 +76,7 @@ namespace org
         }
       };
     };
-  };      
+  };
 };
 
 
@@ -88,7 +96,7 @@ int main( int argc, char** argv )
       YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
       // Create the DIRProxy
-      DIRProxy dir_proxy( options.get_dir_uri() ); 
+      DIRProxy dir_proxy( options.get_dir_uri() );
       main_stage_group.createStage( dir_proxy );
 
       // Create the MRCProxy
@@ -101,14 +109,23 @@ int main( int argc, char** argv )
 
       // Start FUSE with an XtreemFS volume
       Volume xtreemfs_volume( options.get_volume_name(), dir_proxy, mrc_proxy, osd_proxy_factory );
+
+      uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
+      if ( options.get_debug() )
+    	  fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+      if ( options.get_direct_io() )
+    	  fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+      if ( options.get_foreground() )
+    	  fuse_flags |= yieldfs::FUSE::FUSE_FLAG_FOREGROUND;
+
       int ret;
       if ( options.get_debug() )
       {
         yieldfs::TracingVolume tracing_xtreemfs_volume( xtreemfs_volume );
-        ret = yieldfs::FUSE( tracing_xtreemfs_volume ).main( argv[0], options.get_mount_point().c_str(), options.get_foreground(), options.get_debug() );
+        ret = yieldfs::FUSE( tracing_xtreemfs_volume, fuse_flags ).main( argv[0], options.get_mount_point().c_str() );
       }
       else
-        ret = yieldfs::FUSE( xtreemfs_volume ).main( argv[0], options.get_mount_point().c_str(), options.get_foreground(), options.get_debug() );
+        ret = yieldfs::FUSE( xtreemfs_volume, fuse_flags ).main( argv[0], options.get_mount_point().c_str() );
 
       YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 

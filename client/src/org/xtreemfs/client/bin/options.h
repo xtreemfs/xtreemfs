@@ -19,16 +19,16 @@ namespace org
       class Options
       {
       public:
-        Options( const char* program_name, const char* program_description, const char* files_usage = NULL ) 
+        Options( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
-          addOption( OPTION_PARSER_OPT_DEBUG, "-d", "--debug" ); 
+          addOption( OPTION_DEBUG, "-d", "--debug" );
           debug = false;
 
-          addOption( OPTION_PARSER_OPT_HELP, "-h", "--help" );
+          addOption( OPTION_HELP, "-h", "--help" );
           help = false;
 
-          addOption( OPTION_PARSER_OPT_TIMEOUT_MS, "-t", "--timeout-ms", "n" ); 
+          addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
         }
 
@@ -87,7 +87,7 @@ namespace org
               if ( option.get_long_arg() )
               {
                 CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
-                simpleopt_options.push_back( long_simpleopt_option );            
+                simpleopt_options.push_back( long_simpleopt_option );
               }
             }
             CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
@@ -101,10 +101,10 @@ namespace org
               {
                 switch ( args.OptionId() )
                 {
-                  case OPTION_PARSER_OPT_DEBUG: debug = true; break;
-                  case OPTION_PARSER_OPT_HELP: help = true; return;
+                  case OPTION_DEBUG: debug = true; break;
+                  case OPTION_HELP: help = true; return;
 
-                  case OPTION_PARSER_OPT_TIMEOUT_MS:
+                  case OPTION_TIMEOUT_MS:
                   {
                     timeout_ms = atol( args.OptionArg() );
                     if ( timeout_ms == 0 )
@@ -137,7 +137,7 @@ namespace org
 
         YIELD::URI* parseURI( const char* uri_c_str )
         {
-          std::string uri_str( uri_c_str );          
+          std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
             uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
           return new YIELD::URI( uri_str );
@@ -152,11 +152,11 @@ namespace org
           Option( int id, const char* short_arg, const char* long_arg, const char* default_values )
             : id( id ), short_arg( short_arg ), long_arg( long_arg ), default_values( default_values )
           { }
-        
+
           int get_id() const { return id; }
           const char* get_short_arg() const { return short_arg; }
           const char* get_long_arg() const { return long_arg; }
-          const char* get_default_values() const { return default_values; }         
+          const char* get_default_values() const { return default_values; }
 
           bool operator<( const Option& other ) const
           {
@@ -176,9 +176,9 @@ namespace org
 
         enum
         {
-          OPTION_PARSER_OPT_DEBUG = 1,
-          OPTION_PARSER_OPT_HELP = 2,
-          OPTION_PARSER_OPT_TIMEOUT_MS = 3
+          OPTION_DEBUG = 1,
+          OPTION_HELP = 2,
+          OPTION_TIMEOUT_MS = 3
         };
       };
     };
