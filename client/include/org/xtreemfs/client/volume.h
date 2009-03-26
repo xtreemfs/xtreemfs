@@ -28,7 +28,7 @@ namespace org
       private:
         friend class SharedFile;
 
-        virtual void close( SharedFile& ) = 0;
+        virtual void release( SharedFile& ) = 0;
       };
 
 
@@ -51,13 +51,13 @@ namespace org
         DIRProxy& dir_proxy; uint64_t dir_proxy_operation_timeout_ms;
         MRCProxy& mrc_proxy; uint64_t mrc_proxy_operation_timeout_ms;
         OSDProxyFactory& osd_proxy_factory; uint64_t osd_proxy_operation_timeout_ms;
-        
+
         YIELD::HashMap<SharedFile*> in_use_shared_files;
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
 
       private:
         // SharedFileCallbackInterface
-        void close( SharedFile& );
+        void release( SharedFile& );
       };
     };
   };

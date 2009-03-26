@@ -15,7 +15,7 @@ FileReplica::FileReplica( SharedFile& parent_shared_file, const org::xtreemfs::i
 FileReplica::~FileReplica()
 {
   for ( std::vector<OSDProxy*>::iterator osd_proxy_i = osd_proxies.begin(); osd_proxy_i != osd_proxies.end(); osd_proxy_i++ )
-    delete *osd_proxy_i;
+    YIELD::SharedObject::decRef( *osd_proxy_i );
 }
 
 size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, off_t offset )

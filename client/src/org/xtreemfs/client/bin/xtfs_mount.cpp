@@ -89,14 +89,26 @@ namespace org
 
         void parseFiles( int file_count, char** files )
         {
-          if ( file_count >= 3 )
+          if ( file_count >= 2 )
           {
             dir_uri = parseURI( files[0] );
-            volume_name = files[1];
-            mount_point = files[2];
+            if ( file_count == 2 )
+            {
+              if ( strlen( dir_uri->getResource() ) > 1 )
+              {
+                volume_name = dir_uri->getResource() + 1;
+                mount_point = files[1];
+                return;
+              }
+            }
+            else
+            {
+              volume_name = files[1];
+              mount_point = files[2];
+            }
           }
-          else
-            throw YIELD::Exception( "must specify directory service URI, volume name, and mount point" );
+
+          throw YIELD::Exception( "must specify directory service URI, volume name, and mount point" );
         }
       };
     };

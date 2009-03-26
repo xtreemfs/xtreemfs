@@ -128,11 +128,12 @@ YIELD::File* Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode
   {
     shared_file = new SharedFile( *this, path, file_credentials.get_xlocs() );
     in_use_shared_files.insert( path_hash, shared_file );
+    OpenFile& open_file = shared_file->open( file_credentials );
+    YIELD::SharedObject::decRef( *shared_file ); // every open creates a new reference to the SharedFile; decRef the original reference here so that the last released'd OpenFile will delete the SharedFile
+    return &open_file;
   }
-
-  OpenFile& open_file = shared_file->open( file_credentials );
-
-  return &open_file;
+  else
+    return &shared_file->open( file_credentials );
 }
 
 bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
@@ -250,8 +251,10 @@ YIELD::Path Volume::volname( const YIELD::Path& )
   return name;
 }
 
-void Volume::close( SharedFile& shared_file )
+void Volume::release( SharedFile& shared_file )
 {
+  uint32_t path_hash = YIELD::string_hash( shared_file.get_path() );
+  in_use_shared_files.remove( path_hash );
 }
 
 void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set )

@@ -14,7 +14,7 @@ namespace org
   {
     namespace client
     {
-      class Proxy : public YIELD::EventHandler
+      class Proxy : public YIELD::EventHandler, public YIELD::SharedObject
       {
       public:
         const static uint8_t PROXY_DEFAULT_RECONNECT_TRIES_MAX = 3;
