@@ -69,6 +69,13 @@ namespace org
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
       protected:
+        enum
+        {
+          OPTION_DEBUG = 1,
+          OPTION_HELP = 2,
+          OPTION_TIMEOUT_MS = 3
+        };
+
         void parseOptions( int argc, char** argv )
         {
           if ( argc == 1 )
@@ -111,14 +118,10 @@ namespace org
                       timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
                   }
                   break;
-
-                  default:
-                  {
-                    if ( !help )
-                      parseOption( args.OptionId(), args.OptionArg() );
-                  }
-                  break;
                 }
+
+                if ( !help )
+                  parseOption( args.OptionId(), args.OptionArg() );
               }
             }
 
@@ -129,7 +132,7 @@ namespace org
             parseFiles( argc - 1, argv+1 );
         }
 
-        virtual void parseOption( int id, const char* sep_arg )
+        virtual void parseOption( int id, char* sep_arg )
         { }
 
         virtual void parseFiles( int file_count, char** files )
@@ -173,13 +176,6 @@ namespace org
         // Built-in options
         bool debug, help;
         uint64_t timeout_ms;
-
-        enum
-        {
-          OPTION_DEBUG = 1,
-          OPTION_HELP = 2,
-          OPTION_TIMEOUT_MS = 3
-        };
       };
     };
   };

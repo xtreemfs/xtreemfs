@@ -80,7 +80,7 @@ namespace org
         std::string volume_name;
 
         // OptionParser
-        void parseOption( int id, const char* arg )
+        void parseOption( int id, char* arg )
         {
           switch ( id )
           {
