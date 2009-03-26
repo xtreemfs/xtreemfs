@@ -63,7 +63,7 @@ public class GetXAttrOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
-
+            
             validateContext(rq);
             
             Path p = new Path(rqArgs.getPath());
@@ -90,8 +90,8 @@ public class GetXAttrOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
                     return;
                 }
                 
@@ -113,10 +113,10 @@ public class GetXAttrOperation extends MRCOperation {
                 // if no such attribute exists, try to fetch a global attribute
                 if (value == null)
                     value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.getName());
-                
-                else
-                    throw new UserException(ErrNo.ENODATA);
             }
+            
+            if (value == null)
+                throw new UserException(ErrNo.ENODATA);
             
             // set the response
             rq.setResponse(new getxattrResponse(value));
