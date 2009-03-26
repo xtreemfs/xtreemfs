@@ -114,8 +114,8 @@ public class GetXAttrOperation extends MRCOperation {
                 if (value == null)
                     value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.getName());
                 
-                if (value == null)
-                    value = "";
+                else
+                    throw new UserException(ErrNo.ENODATA);
             }
             
             // set the response
