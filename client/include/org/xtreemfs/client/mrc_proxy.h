@@ -27,6 +27,7 @@ namespace org
         void chmod( const std::string& path, uint32_t mode );
         void chown( const std::string& path, const std::string& userId, const std::string& groupId );
         void create( const std::string& path, uint32_t mode );
+        void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );
         void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );
         std::string getxattr( const std::string& path, const std::string& name );
         void link( const std::string& target_path, const std::string& link_path );

@@ -1,5 +1,5 @@
-#ifndef _34466289163_H
-#define _34466289163_H
+#ifndef _62615308345_H
+#define _62615308345_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
@@ -260,6 +260,10 @@ namespace org
         virtual void create( const std::string& path, uint32_t mode, YIELD::EventTarget* send_target ) { create( path, mode, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void create( const std::string& path, uint32_t mode, YIELD::timeout_ns_t response_timeout_ns ) { create( path, mode, NULL, response_timeout_ns ); }
         virtual void create( const std::string& path, uint32_t mode, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { createSyncRequest* __req = new createSyncRequest( path, mode ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); createResponse& __resp = ( createResponse& )__req->waitForDefaultResponse( response_timeout_ns ); YIELD::SharedObject::decRef( *__req );  YIELD::SharedObject::decRef( __resp ); }
+        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap ) { ftruncate( write_xcap, truncate_xcap, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap, YIELD::EventTarget* send_target ) { ftruncate( write_xcap, truncate_xcap, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap, YIELD::timeout_ns_t response_timeout_ns ) { ftruncate( write_xcap, truncate_xcap, NULL, response_timeout_ns ); }
+        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { ftruncateSyncRequest* __req = new ftruncateSyncRequest( write_xcap ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); ftruncateResponse& __resp = ( ftruncateResponse& )__req->waitForDefaultResponse( response_timeout_ns ); YIELD::SharedObject::decRef( *__req ); truncate_xcap = __resp.get_truncate_xcap(); YIELD::SharedObject::decRef( __resp ); }
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf ) { getattr( path, stbuf, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf, YIELD::EventTarget* send_target ) { getattr( path, stbuf, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf, YIELD::timeout_ns_t response_timeout_ns ) { getattr( path, stbuf, NULL, response_timeout_ns ); }
@@ -659,6 +663,78 @@ namespace org
         // YIELD::Request
         bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
         YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::createResponse>( timeout_ns ); }
+  
+      private:
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+      };
+  
+      class ftruncateResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        ftruncateResponse() { }
+        ftruncateResponse( const org::xtreemfs::interfaces::XCap& truncate_xcap ) : truncate_xcap( truncate_xcap ) { }
+        virtual ~ftruncateResponse() { }
+  
+        void set_truncate_xcap( const org::xtreemfs::interfaces::XCap&  truncate_xcap ) { this->truncate_xcap = truncate_xcap; }
+        const org::xtreemfs::interfaces::XCap& get_truncate_xcap() const { return truncate_xcap; }
+  
+        bool operator==( const ftruncateResponse& other ) const { return truncate_xcap == other.truncate_xcap; }
+  
+        // YIELD::RTTI
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse", 3573723824UL );
+  
+        // YIELD::Serializable
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "truncate_xcap" ), &truncate_xcap ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "truncate_xcap" ), truncate_xcap ); }
+  
+      protected:
+        org::xtreemfs::interfaces::XCap truncate_xcap;
+      };
+  
+      class ftruncateRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        ftruncateRequest() { }
+        ftruncateRequest( const org::xtreemfs::interfaces::XCap& write_xcap ) : write_xcap( write_xcap ) { }
+        virtual ~ftruncateRequest() { }
+  
+        void set_write_xcap( const org::xtreemfs::interfaces::XCap&  write_xcap ) { this->write_xcap = write_xcap; }
+        const org::xtreemfs::interfaces::XCap& get_write_xcap() const { return write_xcap; }
+  
+        bool operator==( const ftruncateRequest& other ) const { return write_xcap == other.write_xcap; }
+  
+        // YIELD::RTTI
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest", 360001814UL );
+  
+        // YIELD::Serializable
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "write_xcap" ), &write_xcap ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::XCap", "write_xcap" ), write_xcap ); }
+  
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 2; }
+        virtual uint32_t getOperationNumber() const { return 30; }
+  
+        virtual uint32_t getDefaultResponseTypeId() const { return 3573723824UL; }
+        virtual Event* createDefaultResponse() { return new ftruncateResponse; }
+  
+  
+      protected:
+        org::xtreemfs::interfaces::XCap write_xcap;
+      };
+  
+      class ftruncateSyncRequest : public ftruncateRequest
+      {
+      public:
+        ftruncateSyncRequest() : ftruncateRequest( org::xtreemfs::interfaces::XCap() ) { }
+        ftruncateSyncRequest( const org::xtreemfs::interfaces::XCap& write_xcap ) : ftruncateRequest( write_xcap ) { }
+        virtual ~ftruncateSyncRequest() { }
+  
+        bool operator==( const ftruncateSyncRequest& other ) const { return true; }
+  
+  
+        // YIELD::Request
+        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
+        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::ftruncateResponse>( timeout_ns ); }
   
       private:
         YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
@@ -2759,6 +2835,7 @@ namespace org
           serializable_factories.registerSerializableFactory( 382547319UL, new YIELD::SerializableFactoryImpl<chmodRequest> ); serializable_factories.registerSerializableFactory( 3170294911UL, new YIELD::SerializableFactoryImpl<chmodSyncRequest> ); serializable_factories.registerSerializableFactory( 2600293463UL, new YIELD::SerializableFactoryImpl<chmodResponse> );
           serializable_factories.registerSerializableFactory( 1479455167UL, new YIELD::SerializableFactoryImpl<chownRequest> ); serializable_factories.registerSerializableFactory( 3658998544UL, new YIELD::SerializableFactoryImpl<chownSyncRequest> ); serializable_factories.registerSerializableFactory( 2956591049UL, new YIELD::SerializableFactoryImpl<chownResponse> );
           serializable_factories.registerSerializableFactory( 736916640UL, new YIELD::SerializableFactoryImpl<createRequest> ); serializable_factories.registerSerializableFactory( 14769888UL, new YIELD::SerializableFactoryImpl<createSyncRequest> ); serializable_factories.registerSerializableFactory( 198172638UL, new YIELD::SerializableFactoryImpl<createResponse> );
+          serializable_factories.registerSerializableFactory( 360001814UL, new YIELD::SerializableFactoryImpl<ftruncateRequest> ); serializable_factories.registerSerializableFactory( 2520433270UL, new YIELD::SerializableFactoryImpl<ftruncateSyncRequest> ); serializable_factories.registerSerializableFactory( 3573723824UL, new YIELD::SerializableFactoryImpl<ftruncateResponse> );
           serializable_factories.registerSerializableFactory( 1335718504UL, new YIELD::SerializableFactoryImpl<getattrRequest> ); serializable_factories.registerSerializableFactory( 1454483433UL, new YIELD::SerializableFactoryImpl<getattrSyncRequest> ); serializable_factories.registerSerializableFactory( 1150023493UL, new YIELD::SerializableFactoryImpl<getattrResponse> );
           serializable_factories.registerSerializableFactory( 1634969716UL, new YIELD::SerializableFactoryImpl<getxattrRequest> ); serializable_factories.registerSerializableFactory( 875919323UL, new YIELD::SerializableFactoryImpl<getxattrSyncRequest> ); serializable_factories.registerSerializableFactory( 72976609UL, new YIELD::SerializableFactoryImpl<getxattrResponse> );
           serializable_factories.registerSerializableFactory( 666215785UL, new YIELD::SerializableFactoryImpl<linkRequest> ); serializable_factories.registerSerializableFactory( 2091207585UL, new YIELD::SerializableFactoryImpl<linkSyncRequest> ); serializable_factories.registerSerializableFactory( 1242382351UL, new YIELD::SerializableFactoryImpl<linkResponse> );
@@ -2806,6 +2883,7 @@ namespace org
               case 382547319UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
               case 1479455167UL: handlechownRequest( static_cast<chownRequest&>( ev ) ); return;
               case 736916640UL: handlecreateRequest( static_cast<createRequest&>( ev ) ); return;
+              case 360001814UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
               case 1335718504UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
               case 1634969716UL: handlegetxattrRequest( static_cast<getxattrRequest&>( ev ) ); return;
               case 666215785UL: handlelinkRequest( static_cast<linkRequest&>( ev ) ); return;
@@ -2860,6 +2938,7 @@ namespace org
         virtual void handlechmodRequest( chmodRequest& req ) { chmodResponse* resp = NULL; try { resp = new chmodResponse; _chmod( req.get_path(), req.get_mode() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlechownRequest( chownRequest& req ) { chownResponse* resp = NULL; try { resp = new chownResponse; _chown( req.get_path(), req.get_user_id(), req.get_group_id() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlecreateRequest( createRequest& req ) { createResponse* resp = NULL; try { resp = new createResponse; _create( req.get_path(), req.get_mode() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handleftruncateRequest( ftruncateRequest& req ) { ftruncateResponse* resp = NULL; try { resp = new ftruncateResponse; org::xtreemfs::interfaces::XCap truncate_xcap; _ftruncate( req.get_write_xcap(), truncate_xcap ); resp->set_truncate_xcap( truncate_xcap ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlegetattrRequest( getattrRequest& req ) { getattrResponse* resp = NULL; try { resp = new getattrResponse; org::xtreemfs::interfaces::stat_ stbuf; _getattr( req.get_path(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlegetxattrRequest( getxattrRequest& req ) { getxattrResponse* resp = NULL; try { resp = new getxattrResponse; std::string _return_value = _getxattr( req.get_path(), req.get_name() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlelinkRequest( linkRequest& req ) { linkResponse* resp = NULL; try { resp = new linkResponse; _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
@@ -2894,6 +2973,7 @@ namespace org
         virtual void _chmod( const std::string& path, uint32_t mode ) { }
         virtual void _chown( const std::string& path, const std::string& user_id, const std::string& group_id ) { }
         virtual void _create( const std::string& path, uint32_t mode ) { }
+        virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap ) { }
         virtual void _getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf ) { }
         virtual std::string _getxattr( const std::string& path, const std::string& name ) { return std::string(); }
         virtual void _link( const std::string& target_path, const std::string& link_path ) { }
@@ -2931,6 +3011,7 @@ namespace org
       virtual void _chmod( const std::string& path, uint32_t mode );\
       virtual void _chown( const std::string& path, const std::string& user_id, const std::string& group_id );\
       virtual void _create( const std::string& path, uint32_t mode );\
+      virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );\
       virtual void _getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );\
       virtual std::string _getxattr( const std::string& path, const std::string& name );\
       virtual void _link( const std::string& target_path, const std::string& link_path );\
@@ -2966,6 +3047,7 @@ namespace org
       virtual void handlechmodRequestRequest( chmodRequest& req );\
       virtual void handlechownRequestRequest( chownRequest& req );\
       virtual void handlecreateRequestRequest( createRequest& req );\
+      virtual void handleftruncateRequestRequest( ftruncateRequest& req );\
       virtual void handlegetattrRequestRequest( getattrRequest& req );\
       virtual void handlegetxattrRequestRequest( getxattrRequest& req );\
       virtual void handlelinkRequestRequest( linkRequest& req );\

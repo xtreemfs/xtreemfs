@@ -40,6 +40,11 @@ void MRCProxy::create( const std::string& path, uint32_t mode )
   mrc_interface.create( path, mode, this );
 }
 
+void MRCProxy::ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap )
+{
+  mrc_interface.ftruncate( write_xcap, truncate_xcap, this );
+}
+
 void MRCProxy::getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf )
 {
   mrc_interface.getattr( path, stbuf, this );

@@ -51,6 +51,9 @@ bool OpenFile::setxattr( const std::string& name, const std::string& value, int 
 
 bool OpenFile::truncate( uint64_t new_size )
 {
+  org::xtreemfs::interfaces::XCap truncate_xcap;
+  get_parent_volume().get_mrc_proxy().ftruncate( file_credentials.get_xcap(), truncate_xcap );
+  file_credentials.set_xcap( truncate_xcap );
   attached_to_file_replica.truncate( file_credentials, new_size );
   return true;
 }

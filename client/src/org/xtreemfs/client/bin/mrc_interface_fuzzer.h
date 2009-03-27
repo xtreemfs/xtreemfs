@@ -1,5 +1,5 @@
-#ifndef _11373678094_H
-#define _11373678094_H
+#ifndef _97014164395_H
+#define _97014164395_H
 
 
 
@@ -11,7 +11,7 @@ namespace org
   {
     namespace interfaces
     {
-        class MRCInterfaceFuzzer
+      class MRCInterfaceFuzzer
       {
       public:
           MRCInterfaceFuzzer( MRCInterface& test_interface )
@@ -24,6 +24,7 @@ namespace org
            fuzz_chmod();
            fuzz_chown();
            fuzz_create();
+           fuzz_ftruncate();
            fuzz_getattr();
            fuzz_getxattr();
            fuzz_link();
@@ -685,6 +686,1674 @@ namespace org
              try
              {
               test_interface.create( path, mode );
+             }
+             catch ( std::exception& )
+             { }
+            }
+           }
+  
+  
+           void fuzz_ftruncate()
+           {
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id;
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = 0;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = 0;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity;
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = 0;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature;
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
+             }
+             catch ( std::exception& )
+             { }
+            }
+  
+            {
+           org::xtreemfs::interfaces::XCap write_xcap;
+           {
+           std::string file_id( "bogus string" );
+           uint32_t access_mode = UINT32_MAX;
+           uint64_t expires = UINT64_MAX;
+           std::string client_identity( "bogus string" );
+           uint32_t truncate_epoch = UINT32_MAX;
+           std::string server_signature( "bogus string" );
+            write_xcap.set_file_id( file_id );
+            write_xcap.set_access_mode( access_mode );
+            write_xcap.set_expires( expires );
+            write_xcap.set_client_identity( client_identity );
+            write_xcap.set_truncate_epoch( truncate_epoch );
+            write_xcap.set_server_signature( server_signature );
+           }
+           org::xtreemfs::interfaces::XCap truncate_xcap;
+  
+             try
+             {
+              test_interface.ftruncate( write_xcap, truncate_xcap );
              }
              catch ( std::exception& )
              { }
@@ -36229,7 +37898,7 @@ namespace org
   };
   
   
-  
+
 };
 
 #endif

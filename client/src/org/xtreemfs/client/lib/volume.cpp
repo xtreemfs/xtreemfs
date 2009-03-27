@@ -226,7 +226,7 @@ bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 
 bool Volume::truncate( const YIELD::Path& path, off_t new_size )
 {
-  YIELD::File* file = this->open( path, O_TRUNC, 0 );
+  YIELD::File* file = this->open( path, O_TRUNC, 0 ).release();
   file->truncate( new_size );
   YIELD::SharedObject::decRef( file );
   return true;
