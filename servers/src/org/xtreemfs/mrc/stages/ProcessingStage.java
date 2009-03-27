@@ -70,6 +70,7 @@ import org.xtreemfs.mrc.operations.SetattrOperation;
 import org.xtreemfs.mrc.operations.ShutdownOperation;
 import org.xtreemfs.mrc.operations.StatFSOperation;
 import org.xtreemfs.mrc.operations.StatOperation;
+import org.xtreemfs.mrc.operations.TruncateOperation;
 import org.xtreemfs.mrc.operations.UpdateFileSizeOperation;
 import org.xtreemfs.mrc.operations.UtimeOperation;
 
@@ -130,6 +131,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(CheckpointOperation.OP_ID, new CheckpointOperation(master));
         operations.put(SetattrOperation.OP_ID, new SetattrOperation(master));
         operations.put(GetSuitableOSDsOperation.OP_ID, new GetSuitableOSDsOperation(master));
+        operations.put(TruncateOperation.OP_ID, new TruncateOperation(master));
     }
     
     @Override
