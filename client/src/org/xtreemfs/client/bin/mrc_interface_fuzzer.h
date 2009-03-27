@@ -1,5 +1,5 @@
-#ifndef _97014164395_H
-#define _97014164395_H
+#ifndef _56707613095_H
+#define _56707613095_H
 
 
 
@@ -3384,6 +3384,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3396,6 +3398,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3422,6 +3426,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3434,6 +3440,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3460,6 +3468,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3472,6 +3482,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3498,6 +3510,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3510,6 +3524,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3536,6 +3552,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3548,6 +3566,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3574,6 +3594,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3586,6 +3608,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3612,6 +3636,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3624,6 +3650,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3650,6 +3678,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3662,6 +3692,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3688,6 +3720,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3700,6 +3734,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3726,6 +3762,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3738,6 +3776,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3764,6 +3804,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3776,6 +3818,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3802,6 +3846,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3814,6 +3860,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3840,6 +3888,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3852,6 +3902,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3878,6 +3930,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3890,6 +3944,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3916,6 +3972,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3928,6 +3986,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3954,6 +4014,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -3966,6 +4028,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -3992,6 +4056,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4004,6 +4070,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4030,6 +4098,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4042,6 +4112,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4068,6 +4140,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4080,6 +4154,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4106,6 +4182,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4118,6 +4196,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4144,6 +4224,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4156,6 +4238,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4182,6 +4266,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4194,6 +4280,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4220,6 +4308,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4232,6 +4322,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4258,6 +4350,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4270,6 +4364,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4296,6 +4392,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4308,6 +4406,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4334,6 +4434,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4346,6 +4448,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4372,6 +4476,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4384,6 +4490,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4410,6 +4518,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4422,6 +4532,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4448,6 +4560,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4460,6 +4574,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4486,6 +4602,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4498,6 +4616,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4524,6 +4644,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4536,6 +4658,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4562,6 +4686,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4574,6 +4700,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4600,6 +4728,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4612,6 +4742,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4638,6 +4770,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4650,6 +4784,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4676,6 +4812,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4688,6 +4826,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4714,6 +4854,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4726,6 +4868,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4752,6 +4896,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4764,6 +4910,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4790,6 +4938,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4802,6 +4952,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4828,6 +4980,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4840,6 +4994,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4866,6 +5022,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4878,6 +5036,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4904,6 +5064,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4916,6 +5078,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4942,6 +5106,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4954,6 +5120,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -4980,6 +5148,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -4992,6 +5162,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5018,6 +5190,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5030,6 +5204,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5056,6 +5232,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5068,6 +5246,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5094,6 +5274,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5106,6 +5288,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5132,6 +5316,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5144,6 +5330,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5170,6 +5358,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5182,6 +5372,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5208,6 +5400,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5220,6 +5414,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5246,6 +5442,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5258,6 +5456,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5284,6 +5484,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5296,6 +5498,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5322,6 +5526,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5334,6 +5540,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5360,6 +5568,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5372,6 +5582,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5398,6 +5610,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5410,6 +5624,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5436,6 +5652,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5448,6 +5666,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5474,6 +5694,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5486,6 +5708,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5512,6 +5736,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5524,6 +5750,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5550,6 +5778,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5562,6 +5792,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5588,6 +5820,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5600,6 +5834,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5626,6 +5862,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5638,6 +5876,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5664,6 +5904,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5676,6 +5918,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5702,6 +5946,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5714,6 +5960,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5740,6 +5988,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5752,6 +6002,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5778,6 +6030,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5790,6 +6044,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5816,6 +6072,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5828,6 +6086,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5854,6 +6114,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5866,6 +6128,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5892,6 +6156,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5904,6 +6170,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5930,6 +6198,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5942,6 +6212,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -5968,6 +6240,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -5980,6 +6254,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6006,6 +6282,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6018,6 +6296,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6044,6 +6324,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6056,6 +6338,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6082,6 +6366,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6094,6 +6380,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6120,6 +6408,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6132,6 +6422,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6158,6 +6450,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6170,6 +6464,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6196,6 +6492,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6208,6 +6506,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6234,6 +6534,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6246,6 +6548,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6272,6 +6576,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6284,6 +6590,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6310,6 +6618,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6322,6 +6632,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6348,6 +6660,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6360,6 +6674,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6386,6 +6702,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6398,6 +6716,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6424,6 +6744,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6436,6 +6758,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6462,6 +6786,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6474,6 +6800,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6500,6 +6828,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6512,6 +6842,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6538,6 +6870,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6550,6 +6884,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6576,6 +6912,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6588,6 +6926,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6614,6 +6954,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6626,6 +6968,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6652,6 +6996,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6664,6 +7010,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6690,6 +7038,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6702,6 +7052,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6728,6 +7080,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6740,6 +7094,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6766,6 +7122,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6778,6 +7136,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6804,6 +7164,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6816,6 +7178,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6842,6 +7206,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6854,6 +7220,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6880,6 +7248,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6892,6 +7262,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6918,6 +7290,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6930,6 +7304,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6956,6 +7332,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -6968,6 +7346,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -6994,6 +7374,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7006,6 +7388,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7032,6 +7416,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7044,6 +7430,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7070,6 +7458,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7082,6 +7472,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7108,6 +7500,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7120,6 +7514,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7146,6 +7542,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7158,6 +7556,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7184,6 +7584,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7196,6 +7598,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7222,6 +7626,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7234,6 +7640,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7260,6 +7668,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7272,6 +7682,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7298,6 +7710,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7310,6 +7724,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7336,6 +7752,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7348,6 +7766,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7374,6 +7794,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7386,6 +7808,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7412,6 +7836,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7424,6 +7850,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7450,6 +7878,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7462,6 +7892,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7488,6 +7920,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7500,6 +7934,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7526,6 +7962,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7538,6 +7976,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7564,6 +8004,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7576,6 +8018,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7602,6 +8046,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7614,6 +8060,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7640,6 +8088,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7652,6 +8102,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7678,6 +8130,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7690,6 +8144,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7716,6 +8172,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7728,6 +8186,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7754,6 +8214,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7766,6 +8228,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7792,6 +8256,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7804,6 +8270,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7830,6 +8298,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7842,6 +8312,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7868,6 +8340,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7880,6 +8354,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7906,6 +8382,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7918,6 +8396,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7944,6 +8424,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7956,6 +8438,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -7982,6 +8466,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -7994,6 +8480,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8020,6 +8508,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8032,6 +8522,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8058,6 +8550,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8070,6 +8564,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8096,6 +8592,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8108,6 +8606,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8134,6 +8634,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8146,6 +8648,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8172,6 +8676,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8184,6 +8690,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8210,6 +8718,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8222,6 +8732,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8248,6 +8760,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8260,6 +8774,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8286,6 +8802,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8298,6 +8816,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8324,6 +8844,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8336,6 +8858,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8362,6 +8886,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8374,6 +8900,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8400,6 +8928,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8412,6 +8942,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8438,6 +8970,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8450,6 +8984,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8476,6 +9012,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8488,6 +9026,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8514,6 +9054,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8526,6 +9068,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8552,6 +9096,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8564,6 +9110,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8590,6 +9138,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8602,6 +9152,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8628,6 +9180,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8640,6 +9194,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8666,6 +9222,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8678,6 +9236,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8704,6 +9264,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8716,6 +9278,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8742,6 +9306,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8754,6 +9320,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8780,6 +9348,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8792,6 +9362,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8818,6 +9390,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8830,6 +9404,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8856,6 +9432,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8868,6 +9446,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8894,6 +9474,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8906,6 +9488,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8932,6 +9516,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8944,6 +9530,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -8970,6 +9558,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -8982,6 +9572,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9008,6 +9600,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9020,6 +9614,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9046,6 +9642,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9058,6 +9656,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9084,6 +9684,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9096,6 +9698,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9122,6 +9726,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9134,6 +9740,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9160,6 +9768,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9172,6 +9782,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9198,6 +9810,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9210,6 +9824,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9236,6 +9852,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9248,6 +9866,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9274,6 +9894,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9286,6 +9908,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9312,6 +9936,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9324,6 +9950,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9350,6 +9978,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9362,6 +9992,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9388,6 +10020,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9400,6 +10034,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9426,6 +10062,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9438,6 +10076,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9464,6 +10104,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9476,6 +10118,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9502,6 +10146,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9514,6 +10160,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9540,6 +10188,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9552,6 +10202,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9578,6 +10230,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9590,6 +10244,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9616,6 +10272,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9628,6 +10286,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9654,6 +10314,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9666,6 +10328,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9692,6 +10356,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9704,6 +10370,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9730,6 +10398,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9742,6 +10412,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9768,6 +10440,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9780,6 +10454,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9806,6 +10482,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9818,6 +10496,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9844,6 +10524,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9856,6 +10538,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9882,6 +10566,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9894,6 +10580,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9920,6 +10608,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9932,6 +10622,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9958,6 +10650,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -9970,6 +10664,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -9996,6 +10692,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10008,6 +10706,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10034,6 +10734,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10046,6 +10748,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10072,6 +10776,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10084,6 +10790,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10110,6 +10818,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10122,6 +10832,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10148,6 +10860,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10160,6 +10874,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10186,6 +10902,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10198,6 +10916,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10224,6 +10944,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10236,6 +10958,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10262,6 +10986,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10274,6 +11000,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10300,6 +11028,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10312,6 +11042,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10338,6 +11070,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10350,6 +11084,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10376,6 +11112,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10388,6 +11126,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10414,6 +11154,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10426,6 +11168,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10452,6 +11196,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10464,6 +11210,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10490,6 +11238,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10502,6 +11252,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10528,6 +11280,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10540,6 +11294,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10566,6 +11322,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10578,6 +11336,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10604,6 +11364,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10616,6 +11378,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10642,6 +11406,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10654,6 +11420,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10680,6 +11448,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10692,6 +11462,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10718,6 +11490,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10730,6 +11504,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10756,6 +11532,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10768,6 +11546,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10794,6 +11574,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10806,6 +11588,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10832,6 +11616,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10844,6 +11630,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10870,6 +11658,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10882,6 +11672,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10908,6 +11700,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10920,6 +11714,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10946,6 +11742,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10958,6 +11756,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -10984,6 +11784,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -10996,6 +11798,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11022,6 +11826,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11034,6 +11840,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11060,6 +11868,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11072,6 +11882,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11098,6 +11910,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11110,6 +11924,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11136,6 +11952,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11148,6 +11966,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11174,6 +11994,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11186,6 +12008,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11212,6 +12036,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11224,6 +12050,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11250,6 +12078,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11262,6 +12092,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11288,6 +12120,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11300,6 +12134,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11326,6 +12162,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11338,6 +12176,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11364,6 +12204,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11376,6 +12218,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11402,6 +12246,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11414,6 +12260,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11440,6 +12288,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11452,6 +12302,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11478,6 +12330,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11490,6 +12344,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11516,6 +12372,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11528,6 +12386,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11554,6 +12414,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11566,6 +12428,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11592,6 +12456,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11604,6 +12470,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11630,6 +12498,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11642,6 +12512,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11668,6 +12540,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11680,6 +12554,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11706,6 +12582,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11718,6 +12596,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11744,6 +12624,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11756,6 +12638,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11782,6 +12666,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11794,6 +12680,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11820,6 +12708,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11832,6 +12722,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11858,6 +12750,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11870,6 +12764,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11896,6 +12792,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11908,6 +12806,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11934,6 +12834,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11946,6 +12848,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -11972,6 +12876,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -11984,6 +12890,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12010,6 +12918,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12022,6 +12932,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12048,6 +12960,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12060,6 +12974,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12086,6 +13002,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12098,6 +13016,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12124,6 +13044,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12136,6 +13058,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12162,6 +13086,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12174,6 +13100,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12200,6 +13128,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12212,6 +13142,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12238,6 +13170,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12250,6 +13184,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12276,6 +13212,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12288,6 +13226,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12314,6 +13254,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12326,6 +13268,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12352,6 +13296,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12364,6 +13310,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12390,6 +13338,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12402,6 +13352,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12428,6 +13380,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12440,6 +13394,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12466,6 +13422,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12478,6 +13436,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12504,6 +13464,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12516,6 +13478,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12542,6 +13506,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12554,6 +13520,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12580,6 +13548,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12592,6 +13562,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12618,6 +13590,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12630,6 +13604,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12656,6 +13632,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12668,6 +13646,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12694,6 +13674,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12706,6 +13688,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12732,6 +13716,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12744,6 +13730,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12770,6 +13758,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12782,6 +13772,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12808,6 +13800,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12820,6 +13814,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12846,6 +13842,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12858,6 +13856,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12884,6 +13884,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12896,6 +13898,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12922,6 +13926,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12934,6 +13940,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12960,6 +13968,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -12972,6 +13982,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -12998,6 +14010,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13010,6 +14024,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13036,6 +14052,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13048,6 +14066,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13074,6 +14094,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13086,6 +14108,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13112,6 +14136,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13124,6 +14150,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13150,6 +14178,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13162,6 +14192,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13188,6 +14220,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13200,6 +14234,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13226,6 +14262,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13238,6 +14276,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13264,6 +14304,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13276,6 +14318,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13302,6 +14346,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13314,6 +14360,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13340,6 +14388,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13352,6 +14402,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13378,6 +14430,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13390,6 +14444,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13416,6 +14472,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13428,6 +14486,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13454,6 +14514,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13466,6 +14528,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13492,6 +14556,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13504,6 +14570,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13530,6 +14598,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13542,6 +14612,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13568,6 +14640,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13580,6 +14654,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13606,6 +14682,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13618,6 +14696,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13644,6 +14724,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13656,6 +14738,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13682,6 +14766,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13694,6 +14780,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13720,6 +14808,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13732,6 +14822,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13758,6 +14850,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13770,6 +14864,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13796,6 +14892,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13808,6 +14906,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13834,6 +14934,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13846,6 +14948,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13872,6 +14976,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13884,6 +14990,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13910,6 +15018,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13922,6 +15032,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13948,6 +15060,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13960,6 +15074,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -13986,6 +15102,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -13998,6 +15116,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14024,6 +15144,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14036,6 +15158,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14062,6 +15186,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14074,6 +15200,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14100,6 +15228,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14112,6 +15242,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14138,6 +15270,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14150,6 +15284,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14176,6 +15312,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14188,6 +15326,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14214,6 +15354,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14226,6 +15368,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14252,6 +15396,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14264,6 +15410,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14290,6 +15438,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14302,6 +15452,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14328,6 +15480,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14340,6 +15494,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14366,6 +15522,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14378,6 +15536,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14404,6 +15564,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14416,6 +15578,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14442,6 +15606,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14454,6 +15620,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14480,6 +15648,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14492,6 +15662,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14518,6 +15690,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14530,6 +15704,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14556,6 +15732,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14568,6 +15746,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14594,6 +15774,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14606,6 +15788,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14632,6 +15816,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14644,6 +15830,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14670,6 +15858,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14682,6 +15872,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14708,6 +15900,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14720,6 +15914,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14746,6 +15942,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14758,6 +15956,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14784,6 +15984,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14796,6 +15998,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14822,6 +16026,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14834,6 +16040,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14860,6 +16068,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14872,6 +16082,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14898,6 +16110,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14910,6 +16124,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14936,6 +16152,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14948,6 +16166,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -14974,6 +16194,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -14986,6 +16208,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15012,6 +16236,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15024,6 +16250,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15050,6 +16278,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15062,6 +16292,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15088,6 +16320,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15100,6 +16334,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15126,6 +16362,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15138,6 +16376,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15164,6 +16404,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15176,6 +16418,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15202,6 +16446,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15214,6 +16460,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15240,6 +16488,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15252,6 +16502,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15278,6 +16530,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15290,6 +16544,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15316,6 +16572,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15328,6 +16586,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15354,6 +16614,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15366,6 +16628,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15392,6 +16656,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15404,6 +16670,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15430,6 +16698,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15442,6 +16712,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15468,6 +16740,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15480,6 +16754,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15506,6 +16782,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15518,6 +16796,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15544,6 +16824,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15556,6 +16838,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15582,6 +16866,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15594,6 +16880,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15620,6 +16908,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15632,6 +16922,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15658,6 +16950,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15670,6 +16964,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15696,6 +16992,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15708,6 +17006,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15734,6 +17034,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15746,6 +17048,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15772,6 +17076,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15784,6 +17090,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15810,6 +17118,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15822,6 +17132,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15848,6 +17160,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15860,6 +17174,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15886,6 +17202,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15898,6 +17216,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15924,6 +17244,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15936,6 +17258,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -15962,6 +17286,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -15974,6 +17300,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16000,6 +17328,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16012,6 +17342,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16038,6 +17370,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16050,6 +17384,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16076,6 +17412,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16088,6 +17426,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16114,6 +17454,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16126,6 +17468,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16152,6 +17496,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16164,6 +17510,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16190,6 +17538,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16202,6 +17552,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16228,6 +17580,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16240,6 +17594,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16266,6 +17622,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16278,6 +17636,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16304,6 +17664,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16316,6 +17678,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16342,6 +17706,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16354,6 +17720,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16380,6 +17748,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16392,6 +17762,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16418,6 +17790,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16430,6 +17804,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16456,6 +17832,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16468,6 +17846,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16494,6 +17874,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16506,6 +17888,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16532,6 +17916,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16544,6 +17930,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16570,6 +17958,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16582,6 +17972,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16608,6 +18000,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16620,6 +18014,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16646,6 +18042,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16658,6 +18056,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16684,6 +18084,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16696,6 +18098,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16722,6 +18126,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16734,6 +18140,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16760,6 +18168,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16772,6 +18182,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16798,6 +18210,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16810,6 +18224,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16836,6 +18252,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16848,6 +18266,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16874,6 +18294,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16886,6 +18308,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16912,6 +18336,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16924,6 +18350,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16950,6 +18378,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -16962,6 +18392,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -16988,6 +18420,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17000,6 +18434,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17026,6 +18462,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17038,6 +18476,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17064,6 +18504,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17076,6 +18518,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17102,6 +18546,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17114,6 +18560,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17140,6 +18588,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17152,6 +18602,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17178,6 +18630,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17190,6 +18644,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17216,6 +18672,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17228,6 +18686,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17254,6 +18714,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17266,6 +18728,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17292,6 +18756,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17304,6 +18770,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17330,6 +18798,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17342,6 +18812,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17368,6 +18840,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17380,6 +18854,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17406,6 +18882,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17418,6 +18896,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17444,6 +18924,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17456,6 +18938,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17482,6 +18966,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17494,6 +18980,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17520,6 +19008,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17532,6 +19022,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17558,6 +19050,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17570,6 +19064,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17596,6 +19092,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17608,6 +19106,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17634,6 +19134,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17646,6 +19148,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17672,6 +19176,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17684,6 +19190,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17710,6 +19218,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17722,6 +19232,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17748,6 +19260,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17760,6 +19274,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17786,6 +19302,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17798,6 +19316,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17824,6 +19344,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17836,6 +19358,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17862,6 +19386,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17874,6 +19400,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17900,6 +19428,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17912,6 +19442,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17938,6 +19470,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17950,6 +19484,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -17976,6 +19512,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -17988,6 +19526,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18014,6 +19554,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18026,6 +19568,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18052,6 +19596,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18064,6 +19610,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18090,6 +19638,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18102,6 +19652,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18128,6 +19680,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18140,6 +19694,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18166,6 +19722,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18178,6 +19736,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18204,6 +19764,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18216,6 +19778,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18242,6 +19806,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18254,6 +19820,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18280,6 +19848,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18292,6 +19862,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18318,6 +19890,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18330,6 +19904,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18356,6 +19932,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18368,6 +19946,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18394,6 +19974,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18406,6 +19988,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18432,6 +20016,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18444,6 +20030,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18470,6 +20058,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18482,6 +20072,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18508,6 +20100,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18520,6 +20114,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18546,6 +20142,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18558,6 +20156,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18584,6 +20184,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18596,6 +20198,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18622,6 +20226,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18634,6 +20240,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18660,6 +20268,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18672,6 +20282,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18698,6 +20310,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18710,6 +20324,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18736,6 +20352,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18748,6 +20366,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18774,6 +20394,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18786,6 +20408,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18812,6 +20436,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18824,6 +20450,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18850,6 +20478,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18862,6 +20492,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18888,6 +20520,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18900,6 +20534,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18926,6 +20562,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18938,6 +20576,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -18964,6 +20604,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -18976,6 +20618,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19002,6 +20646,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19014,6 +20660,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19040,6 +20688,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19052,6 +20702,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19078,6 +20730,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19090,6 +20744,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19116,6 +20772,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19128,6 +20786,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19154,6 +20814,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19166,6 +20828,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19192,6 +20856,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19204,6 +20870,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19230,6 +20898,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19242,6 +20912,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19268,6 +20940,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19280,6 +20954,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19306,6 +20982,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19318,6 +20996,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19344,6 +21024,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19356,6 +21038,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19382,6 +21066,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19394,6 +21080,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19420,6 +21108,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19432,6 +21122,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19458,6 +21150,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19470,6 +21164,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19496,6 +21192,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19508,6 +21206,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19534,6 +21234,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19546,6 +21248,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19572,6 +21276,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19584,6 +21290,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19610,6 +21318,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19622,6 +21332,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19648,6 +21360,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19660,6 +21374,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19686,6 +21402,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19698,6 +21416,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19724,6 +21444,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19736,6 +21458,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19762,6 +21486,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19774,6 +21500,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19800,6 +21528,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19812,6 +21542,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19838,6 +21570,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19850,6 +21584,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19876,6 +21612,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19888,6 +21626,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19914,6 +21654,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19926,6 +21668,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19952,6 +21696,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -19964,6 +21710,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -19990,6 +21738,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20002,6 +21752,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20028,6 +21780,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20040,6 +21794,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20066,6 +21822,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20078,6 +21836,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20104,6 +21864,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20116,6 +21878,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20142,6 +21906,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20154,6 +21920,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20180,6 +21948,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20192,6 +21962,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20218,6 +21990,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20230,6 +22004,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20256,6 +22032,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20268,6 +22046,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20294,6 +22074,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20306,6 +22088,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20332,6 +22116,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20344,6 +22130,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20370,6 +22158,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20382,6 +22172,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20408,6 +22200,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20420,6 +22214,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20446,6 +22242,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20458,6 +22256,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20484,6 +22284,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20496,6 +22298,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20522,6 +22326,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20534,6 +22340,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20560,6 +22368,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20572,6 +22382,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20598,6 +22410,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20610,6 +22424,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20636,6 +22452,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20648,6 +22466,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20674,6 +22494,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20686,6 +22508,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20712,6 +22536,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20724,6 +22550,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20750,6 +22578,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20762,6 +22592,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20788,6 +22620,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20800,6 +22634,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20826,6 +22662,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20838,6 +22676,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20864,6 +22704,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20876,6 +22718,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20902,6 +22746,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20914,6 +22760,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20940,6 +22788,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20952,6 +22802,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -20978,6 +22830,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -20990,6 +22844,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21016,6 +22872,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21028,6 +22886,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21054,6 +22914,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21066,6 +22928,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21092,6 +22956,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21104,6 +22970,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21130,6 +22998,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21142,6 +23012,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21168,6 +23040,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21180,6 +23054,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21206,6 +23082,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21218,6 +23096,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21244,6 +23124,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21256,6 +23138,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21282,6 +23166,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21294,6 +23180,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21320,6 +23208,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21332,6 +23222,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21358,6 +23250,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21370,6 +23264,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21396,6 +23292,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21408,6 +23306,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21434,6 +23334,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21446,6 +23348,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21472,6 +23376,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21484,6 +23390,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21510,6 +23418,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21522,6 +23432,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21548,6 +23460,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21560,6 +23474,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21586,6 +23502,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21598,6 +23516,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21624,6 +23544,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21636,6 +23558,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21662,6 +23586,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21674,6 +23600,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21700,6 +23628,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21712,6 +23642,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21738,6 +23670,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21750,6 +23684,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21776,6 +23712,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21788,6 +23726,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21814,6 +23754,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21826,6 +23768,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21852,6 +23796,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21864,6 +23810,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21890,6 +23838,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21902,6 +23852,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21928,6 +23880,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21940,6 +23894,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -21966,6 +23922,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -21978,6 +23936,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22004,6 +23964,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22016,6 +23978,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22042,6 +24006,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22054,6 +24020,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22080,6 +24048,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22092,6 +24062,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22118,6 +24090,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22130,6 +24104,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22156,6 +24132,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22168,6 +24146,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22194,6 +24174,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22206,6 +24188,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22232,6 +24216,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22244,6 +24230,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22270,6 +24258,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22282,6 +24272,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22308,6 +24300,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22320,6 +24314,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22346,6 +24342,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22358,6 +24356,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22384,6 +24384,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22396,6 +24398,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22422,6 +24426,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22434,6 +24440,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22460,6 +24468,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22472,6 +24482,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22498,6 +24510,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22510,6 +24524,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22536,6 +24552,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22548,6 +24566,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22574,6 +24594,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22586,6 +24608,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22612,6 +24636,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22624,6 +24650,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22650,6 +24678,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22662,6 +24692,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22688,6 +24720,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22700,6 +24734,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22726,6 +24762,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22738,6 +24776,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22764,6 +24804,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22776,6 +24818,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22802,6 +24846,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22814,6 +24860,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22840,6 +24888,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22852,6 +24902,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22878,6 +24930,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22890,6 +24944,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22916,6 +24972,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22928,6 +24986,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22954,6 +25014,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -22966,6 +25028,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -22992,6 +25056,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23004,6 +25070,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23030,6 +25098,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23042,6 +25112,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23068,6 +25140,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23080,6 +25154,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23106,6 +25182,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23118,6 +25196,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23144,6 +25224,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23156,6 +25238,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23182,6 +25266,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23194,6 +25280,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23220,6 +25308,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23232,6 +25322,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23258,6 +25350,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23270,6 +25364,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23296,6 +25392,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23308,6 +25406,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23334,6 +25434,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23346,6 +25448,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23372,6 +25476,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23384,6 +25490,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23410,6 +25518,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23422,6 +25532,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23448,6 +25560,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23460,6 +25574,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23486,6 +25602,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23498,6 +25616,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23524,6 +25644,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23536,6 +25658,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23562,6 +25686,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23574,6 +25700,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23600,6 +25728,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23612,6 +25742,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23638,6 +25770,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23650,6 +25784,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23676,6 +25812,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23688,6 +25826,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23714,6 +25854,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23726,6 +25868,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23752,6 +25896,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23764,6 +25910,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23790,6 +25938,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23802,6 +25952,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23828,6 +25980,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23840,6 +25994,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23866,6 +26022,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23878,6 +26036,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23904,6 +26064,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23916,6 +26078,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23942,6 +26106,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23954,6 +26120,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -23980,6 +26148,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -23992,6 +26162,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24018,6 +26190,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24030,6 +26204,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24056,6 +26232,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24068,6 +26246,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24094,6 +26274,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24106,6 +26288,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24132,6 +26316,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24144,6 +26330,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24170,6 +26358,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24182,6 +26372,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24208,6 +26400,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24220,6 +26414,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24246,6 +26442,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24258,6 +26456,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24284,6 +26484,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24296,6 +26498,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24322,6 +26526,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24334,6 +26540,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24360,6 +26568,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24372,6 +26582,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24398,6 +26610,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24410,6 +26624,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24436,6 +26652,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24448,6 +26666,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24474,6 +26694,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24486,6 +26708,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24512,6 +26736,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24524,6 +26750,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24550,6 +26778,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24562,6 +26792,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24588,6 +26820,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24600,6 +26834,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24626,6 +26862,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24638,6 +26876,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24664,6 +26904,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24676,6 +26918,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24702,6 +26946,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24714,6 +26960,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24740,6 +26988,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24752,6 +27002,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24778,6 +27030,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24790,6 +27044,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24816,6 +27072,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24828,6 +27086,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24854,6 +27114,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24866,6 +27128,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24892,6 +27156,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24904,6 +27170,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24930,6 +27198,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24942,6 +27212,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -24968,6 +27240,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -24980,6 +27254,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25006,6 +27282,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25018,6 +27296,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25044,6 +27324,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25056,6 +27338,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25082,6 +27366,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25094,6 +27380,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25120,6 +27408,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25132,6 +27422,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25158,6 +27450,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25170,6 +27464,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25196,6 +27492,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25208,6 +27506,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25234,6 +27534,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25246,6 +27548,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25272,6 +27576,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25284,6 +27590,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25310,6 +27618,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25322,6 +27632,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25348,6 +27660,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25360,6 +27674,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25386,6 +27702,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25398,6 +27716,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25424,6 +27744,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25436,6 +27758,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25462,6 +27786,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25474,6 +27800,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25500,6 +27828,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25512,6 +27842,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25538,6 +27870,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25550,6 +27884,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25576,6 +27912,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25588,6 +27926,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25614,6 +27954,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25626,6 +27968,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25652,6 +27996,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25664,6 +28010,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25690,6 +28038,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25702,6 +28052,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25728,6 +28080,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25740,6 +28094,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25766,6 +28122,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25778,6 +28136,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25804,6 +28164,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25816,6 +28178,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25842,6 +28206,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25854,6 +28220,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25880,6 +28248,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25892,6 +28262,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25918,6 +28290,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25930,6 +28304,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25956,6 +28332,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -25968,6 +28346,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -25994,6 +28374,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26006,6 +28388,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26032,6 +28416,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26044,6 +28430,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26070,6 +28458,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26082,6 +28472,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26108,6 +28500,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26120,6 +28514,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26146,6 +28542,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26158,6 +28556,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26184,6 +28584,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26196,6 +28598,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26222,6 +28626,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26234,6 +28640,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26260,6 +28668,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26272,6 +28682,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26298,6 +28710,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26310,6 +28724,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26336,6 +28752,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26348,6 +28766,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26374,6 +28794,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26386,6 +28808,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26412,6 +28836,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26424,6 +28850,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26450,6 +28878,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26462,6 +28892,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26488,6 +28920,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26500,6 +28934,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26526,6 +28962,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26538,6 +28976,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26564,6 +29004,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26576,6 +29018,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26602,6 +29046,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26614,6 +29060,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26640,6 +29088,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26652,6 +29102,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26678,6 +29130,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26690,6 +29144,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26716,6 +29172,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26728,6 +29186,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26754,6 +29214,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26766,6 +29228,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26792,6 +29256,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26804,6 +29270,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26830,6 +29298,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26842,6 +29312,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26868,6 +29340,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26880,6 +29354,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26906,6 +29382,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26918,6 +29396,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26944,6 +29424,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26956,6 +29438,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -26982,6 +29466,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -26994,6 +29480,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27020,6 +29508,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27032,6 +29522,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27058,6 +29550,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27070,6 +29564,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27096,6 +29592,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27108,6 +29606,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27134,6 +29634,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27146,6 +29648,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27172,6 +29676,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27184,6 +29690,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27210,6 +29718,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27222,6 +29732,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27248,6 +29760,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27260,6 +29774,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27286,6 +29802,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27298,6 +29816,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27324,6 +29844,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27336,6 +29858,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27362,6 +29886,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27374,6 +29900,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27400,6 +29928,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27412,6 +29942,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27438,6 +29970,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27450,6 +29984,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27476,6 +30012,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27488,6 +30026,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27514,6 +30054,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27526,6 +30068,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27552,6 +30096,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27564,6 +30110,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27590,6 +30138,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27602,6 +30152,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27628,6 +30180,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27640,6 +30194,8 @@ namespace org
            uint32_t attributes = 0;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );
@@ -27666,6 +30222,8 @@ namespace org
            {
            uint32_t mode = 0;
            uint32_t nlink = 0;
+           uint32_t uid = 0;
+           uint32_t gid = 0;
            uint64_t size = 0;
            uint64_t atime = 0;
            uint64_t mtime = 0;
@@ -27678,6 +30236,8 @@ namespace org
            uint32_t attributes = UINT32_MAX;
             stbuf.set_mode( mode );
             stbuf.set_nlink( nlink );
+            stbuf.set_uid( uid );
+            stbuf.set_gid( gid );
             stbuf.set_size( size );
             stbuf.set_atime( atime );
             stbuf.set_mtime( mtime );

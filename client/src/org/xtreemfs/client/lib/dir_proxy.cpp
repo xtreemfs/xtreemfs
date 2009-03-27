@@ -17,9 +17,10 @@ DIRProxy::~DIRProxy()
     delete uuid_to_uri_i->second;
 }
 
-YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> DIRProxy::get_user_credentials() const
+bool DIRProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
 {
-  return policies->get_user_credentials();
+  policies->getCurrentUserCredentials( out_user_credentials );
+  return true;
 }
 
 YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )

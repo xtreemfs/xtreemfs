@@ -1,5 +1,5 @@
-#ifndef _71061679390_H
-#define _71061679390_H
+#ifndef _29914729147_H
+#define _29914729147_H
 
 #include <string>
 
@@ -14,7 +14,6 @@ namespace org
       const static uint8_t ACCESS_CONTROL_POLICY_POSIX = 2;
       const static uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
       const static uint8_t ACCESS_CONTROL_POLICY_DEFAULT = 2;
-      const static uint32_t MODE_DEFAULT = 420;
       const static char* ONCRPC_SCHEME = "oncrpc";
       const static char* ONCRPCS_SCHEME = "oncrpcs";
       const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;

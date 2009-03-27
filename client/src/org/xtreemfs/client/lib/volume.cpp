@@ -29,8 +29,9 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return true;
 }
 
-bool Volume::chown( const YIELD::Path&, int uid, int gid )
+bool Volume::chown( const YIELD::Path& path, int uid, int gid )
 {
+  mrc_proxy.chown( Path( this->name, path ), uid, gid );
   return true;
 }
 
@@ -43,13 +44,11 @@ YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
 {
   org::xtreemfs::interfaces::stat_ stbuf;
   mrc_proxy.getattr( path, stbuf );
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_atime(),
 #ifdef _WIN32
-                      stbuf.get_attributes()
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_attributes() );
 #else
-                      stbuf.get_nlink()
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime(), stbuf.get_mtime(), stbuf.get_ctime() );                   
 #endif
-                    );
 }
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
@@ -142,19 +141,13 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
   mrc_proxy.readdir( Path( this->name, path ), directory_entries );
   for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
   {
-    YIELD::Stat stbuf( ( *directory_entry_i ).get_stbuf().get_mode(),
-                       ( *directory_entry_i ).get_stbuf().get_size(),
-                       ( *directory_entry_i ).get_stbuf().get_mtime(),
-                       ( *directory_entry_i ).get_stbuf().get_ctime(),
-                       ( *directory_entry_i ).get_stbuf().get_atime(),
+    const org::xtreemfs::interfaces::stat_& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
 #ifdef _WIN32
-                       ( *directory_entry_i ).get_stbuf().get_attributes()
+    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime(), xtreemfs_stat.get_mtime(), xtreemfs_stat.get_ctime(), xtreemfs_stat.get_attributes() );
 #else
-                       ( *directory_entry_i ).get_stbuf().get_nlink()
+    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime(), xtreemfs_stat.get_mtime(), xtreemfs_stat.get_ctime() );
 #endif
-                     );
-
-    if ( !callback( ( *directory_entry_i ).get_name(), stbuf ) )
+    if ( !callback( ( *directory_entry_i ).get_name(), yield_stat ) )
       return false;
   }
   return true;

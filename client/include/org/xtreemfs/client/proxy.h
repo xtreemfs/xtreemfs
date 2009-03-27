@@ -37,7 +37,7 @@ namespace org
       protected:
         Proxy( const YIELD::URI&, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port );
 
-        virtual YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const { return NULL; }
+        virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 
         YIELD::SerializableFactories serializable_factories;
 

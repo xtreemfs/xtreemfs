@@ -28,8 +28,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mkvol", "proj\org\xtre
 		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win_get_user_credentials", "proj\org\xtreemfs\client\policies\win_get_user_credentials.vcproj", "{6C3F0A89-5898-4444-A8C3-F84BD0C48FA8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -60,10 +58,6 @@ Global
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Debug|Win32.Build.0 = Debug|Win32
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.ActiveCfg = Release|Win32
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.Build.0 = Release|Win32
-		{6C3F0A89-5898-4444-A8C3-F84BD0C48FA8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{6C3F0A89-5898-4444-A8C3-F84BD0C48FA8}.Debug|Win32.Build.0 = Debug|Win32
-		{6C3F0A89-5898-4444-A8C3-F84BD0C48FA8}.Release|Win32.ActiveCfg = Release|Win32
-		{6C3F0A89-5898-4444-A8C3-F84BD0C48FA8}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

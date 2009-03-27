@@ -23,7 +23,7 @@ namespace org
           addOption( XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH, "-c", "--certificate-file-path", "path" );
 
           addOption( XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH, "-m", "--mode", "n" );
-          mode = org::xtreemfs::interfaces::MODE_DEFAULT;
+          mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
 
           addOption( XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY, "-o", "--osd-selection-policy", "SIMPLE" );
           osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_DEFAULT;
@@ -105,7 +105,7 @@ namespace org
             {
               mode = atoi( arg );
               if ( mode == 0 )
-                mode = org::xtreemfs::interfaces::MODE_DEFAULT;
+                mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
             }
             break;
 

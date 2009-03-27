@@ -1,5 +1,5 @@
-#ifndef _62615308345_H
-#define _62615308345_H
+#ifndef _89900039440_H
+#define _89900039440_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
@@ -18,19 +18,19 @@ namespace org
       class stat_ : public YIELD::Serializable
       {
       public:
-        stat_() : mode( 0 ), nlink( 0 ), unused_uid( 0 ), unused_gid( 0 ), unused_dev( 0 ), size( 0 ), atime( 0 ), mtime( 0 ), ctime( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t unused_uid, uint32_t unused_gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const std::string& user_id, const std::string& group_id, const std::string& file_id, const std::string& link_target, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), unused_uid( unused_uid ), unused_gid( unused_gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id ), group_id( group_id ), file_id( file_id ), link_target( link_target ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
-        stat_( uint32_t mode, uint32_t nlink, uint32_t unused_uid, uint32_t unused_gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const char* user_id, size_t user_id_len, const char* group_id, size_t group_id_len, const char* file_id, size_t file_id_len, const char* link_target, size_t link_target_len, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), unused_uid( unused_uid ), unused_gid( unused_gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id, user_id_len ), group_id( group_id, group_id_len ), file_id( file_id, file_id_len ), link_target( link_target, link_target_len ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
+        stat_() : mode( 0 ), nlink( 0 ), uid( 0 ), gid( 0 ), unused_dev( 0 ), size( 0 ), atime( 0 ), mtime( 0 ), ctime( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
+        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const std::string& user_id, const std::string& group_id, const std::string& file_id, const std::string& link_target, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id ), group_id( group_id ), file_id( file_id ), link_target( link_target ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
+        stat_( uint32_t mode, uint32_t nlink, uint32_t uid, uint32_t gid, int16_t unused_dev, uint64_t size, uint64_t atime, uint64_t mtime, uint64_t ctime, const char* user_id, size_t user_id_len, const char* group_id, size_t group_id_len, const char* file_id, size_t file_id_len, const char* link_target, size_t link_target_len, uint32_t truncate_epoch, uint32_t attributes ) : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), unused_dev( unused_dev ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), user_id( user_id, user_id_len ), group_id( group_id, group_id_len ), file_id( file_id, file_id_len ), link_target( link_target, link_target_len ), truncate_epoch( truncate_epoch ), attributes( attributes ) { }
         virtual ~stat_() { }
   
         void set_mode( uint32_t mode ) { this->mode = mode; }
         uint32_t get_mode() const { return mode; }
         void set_nlink( uint32_t nlink ) { this->nlink = nlink; }
         uint32_t get_nlink() const { return nlink; }
-        void set_unused_uid( uint32_t unused_uid ) { this->unused_uid = unused_uid; }
-        uint32_t get_unused_uid() const { return unused_uid; }
-        void set_unused_gid( uint32_t unused_gid ) { this->unused_gid = unused_gid; }
-        uint32_t get_unused_gid() const { return unused_gid; }
+        void set_uid( uint32_t uid ) { this->uid = uid; }
+        uint32_t get_uid() const { return uid; }
+        void set_gid( uint32_t gid ) { this->gid = gid; }
+        uint32_t get_gid() const { return gid; }
         void set_unused_dev( int16_t unused_dev ) { this->unused_dev = unused_dev; }
         int16_t get_unused_dev() const { return unused_dev; }
         void set_size( uint64_t size ) { this->size = size; }
@@ -58,20 +58,20 @@ namespace org
         void set_attributes( uint32_t attributes ) { this->attributes = attributes; }
         uint32_t get_attributes() const { return attributes; }
   
-        bool operator==( const stat_& other ) const { return mode == other.mode && nlink == other.nlink && unused_uid == other.unused_uid && unused_gid == other.unused_gid && unused_dev == other.unused_dev && size == other.size && atime == other.atime && mtime == other.mtime && ctime == other.ctime && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
+        bool operator==( const stat_& other ) const { return mode == other.mode && nlink == other.nlink && uid == other.uid && gid == other.gid && unused_dev == other.unused_dev && size == other.size && atime == other.atime && mtime == other.mtime && ctime == other.ctime && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
   
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::stat_", 2292404502UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); nlink = input_stream.readUint32( YIELD::StructuredStream::Declaration( "nlink" ) ); unused_uid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "unused_uid" ) ); unused_gid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "unused_gid" ) ); unused_dev = input_stream.readInt16( YIELD::StructuredStream::Declaration( "unused_dev" ) ); size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size" ) ); atime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "atime" ) ); mtime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "mtime" ) ); ctime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "ctime" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "nlink" ), nlink ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "unused_uid" ), unused_uid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "unused_gid" ), unused_gid ); output_stream.writeInt16( YIELD::StructuredStream::Declaration( "unused_dev" ), unused_dev ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size" ), size ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "atime" ), atime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "mtime" ), mtime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "ctime" ), ctime ); output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); nlink = input_stream.readUint32( YIELD::StructuredStream::Declaration( "nlink" ) ); uid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "uid" ) ); gid = input_stream.readUint32( YIELD::StructuredStream::Declaration( "gid" ) ); unused_dev = input_stream.readInt16( YIELD::StructuredStream::Declaration( "unused_dev" ) ); size = input_stream.readUint64( YIELD::StructuredStream::Declaration( "size" ) ); atime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "atime" ) ); mtime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "mtime" ) ); ctime = input_stream.readUint64( YIELD::StructuredStream::Declaration( "ctime" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "nlink" ), nlink ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "uid" ), uid ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "gid" ), gid ); output_stream.writeInt16( YIELD::StructuredStream::Declaration( "unused_dev" ), unused_dev ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "size" ), size ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "atime" ), atime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "mtime" ), mtime ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "ctime" ), ctime ); output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "group_id" ), group_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "link_target" ), link_target ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
   
       protected:
         uint32_t mode;
         uint32_t nlink;
-        uint32_t unused_uid;
-        uint32_t unused_gid;
+        uint32_t uid;
+        uint32_t gid;
         int16_t unused_dev;
         uint64_t size;
         uint64_t atime;

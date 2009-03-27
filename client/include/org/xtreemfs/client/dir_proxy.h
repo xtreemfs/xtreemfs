@@ -32,7 +32,7 @@ namespace org
 
       protected:
         // Proxy
-        YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const;
+        bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
 
       private:
         org::xtreemfs::interfaces::DIRInterface dir_interface;

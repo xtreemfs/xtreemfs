@@ -20,12 +20,10 @@ namespace org
         MRCProxy( const YIELD::URI& uri );
         virtual ~MRCProxy();
 
-        // EventHandler
-        const char* getEventHandlerName() const { return "MRCProxy"; }
-
         bool access( const std::string& path, uint32_t mode );
         void chmod( const std::string& path, uint32_t mode );
-        void chown( const std::string& path, const std::string& userId, const std::string& groupId );
+        void chown( const std::string& path, int uid, int gid );
+        void chown( const std::string& path, const std::string& user_id, const std::string& group_id );
         void create( const std::string& path, uint32_t mode );
         void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );
         void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );
@@ -49,9 +47,12 @@ namespace org
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utime( const std::string& path, uint64_t ctime, uint64_t atime, uint64_t mtime );
 
+        // EventHandler
+        const char* getEventHandlerName() const { return "MRCProxy"; }
+
       protected:
         // Proxy
-        YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> get_user_credentials() const;
+        bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
 
       private:
         org::xtreemfs::interfaces::MRCInterface mrc_interface;

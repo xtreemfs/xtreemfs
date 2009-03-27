@@ -15,9 +15,10 @@ MRCProxy::~MRCProxy()
   delete policies;
 }
 
-YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> MRCProxy::get_user_credentials() const
+bool MRCProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
 {
-  return policies->get_user_credentials();
+  policies->getCurrentUserCredentials( out_user_credentials );
+  return true;
 }
 
 bool MRCProxy::access( const std::string& path, uint32_t mode )
@@ -28,6 +29,17 @@ bool MRCProxy::access( const std::string& path, uint32_t mode )
 void MRCProxy::chmod( const std::string& path, uint32_t mode )
 {
   mrc_interface.chmod( path, mode, this );
+}
+
+void MRCProxy::chown( const std::string& path, int uid, int gid )
+{
+#ifdef _WIN32
+  YIELD::DebugBreak();
+#else
+  org::xtreemfs::interfaces::UserCredentials user_credentials;
+  policies->getUserCredentialsFrompasswd( uid, gid, user_credentials );
+  chown( path, user_credentials.get_user_id(), user_credentials.get_group_ids()[0] );
+#endif
 }
 
 void MRCProxy::chown( const std::string& path, const std::string& user_id, const std::string& group_id )
@@ -48,6 +60,12 @@ void MRCProxy::ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org
 void MRCProxy::getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf )
 {
   mrc_interface.getattr( path, stbuf, this );
+#ifndef _WIN32
+  int uid, gid;
+  policies->getpasswdFromUserCredentials( stbuf.get_user_id(), stbuf.get_group_id(), uid, gid );
+  stbuf.set_uid( uid );
+  stbuf.set_gid( gid );
+#endif
 }
 
 std::string MRCProxy::getxattr( const std::string& path, const std::string& name )
@@ -83,6 +101,17 @@ void MRCProxy::open( const std::string& path, uint32_t flags, uint32_t mode, org
 void MRCProxy::readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries )
 {
   mrc_interface.readdir( path, directory_entries, this );
+#ifndef _WIN32
+  for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
+  {
+    int uid, gid;
+    policies->getpasswdFromUserCredentials( ( *directory_entry_i ).get_stbuf().get_user_id(), stbuf.get_stbuf().get_group_id(), uid, gid );
+    org::xtreemfs::interfaces::stat_ new_stbuf = ( *directory_entry_i ).get_stbuf();
+    new_stbuf.set_uid( uid );
+    new_stbuf.set_gid( gid );
+    ( *directory_entry_i ).set_stbuf( new_stbuf );
+  }
+#endif
 }
 
 void MRCProxy::removexattr( const std::string& path, const std::string& name )

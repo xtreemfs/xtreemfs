@@ -65,8 +65,9 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
           try
           {
-            YIELD::auto_SharedObject<org::xtreemfs::interfaces::UserCredentials> user_credentials = get_user_credentials();
-            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, user_credentials.get() ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, user_credentials.get() );
+            org::xtreemfs::interfaces::UserCredentials user_credentials;
+            bool have_user_credentials = getCurrentUserCredentials( user_credentials );
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, have_user_credentials ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, &user_credentials );
 
             uint8_t reconnect_tries_left = reconnect_tries_max;
 
