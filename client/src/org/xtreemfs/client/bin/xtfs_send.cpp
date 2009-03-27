@@ -89,7 +89,7 @@ namespace org
       {
       public:
         xtfs_sendOptions( int argc, char** argv )
-          : Options( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]host[:port]/rpc_operation_name [rpc_operation_parameters]" )
+          : Options( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
         {
           org::xtreemfs::interfaces::DIRInterface().registerSerializableFactories( serializable_factories );
           org::xtreemfs::interfaces::MRCInterface().registerSerializableFactories( serializable_factories );
@@ -122,9 +122,9 @@ namespace org
           {
             std::auto_ptr<YIELD::URI> rpc_uri( parseURI( files[0] ) );
 
-            if ( strlen( rpc_uri.get()->getResource() ) > 1 )
+            if ( strlen( rpc_uri.get()->get_resource() ) > 1 )
             {
-              std::string request_type_name( rpc_uri.get()->getResource() + 1 );
+              std::string request_type_name( rpc_uri.get()->get_resource() + 1 );
               request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request != NULL )
                 proxy = new MRCProxy( *rpc_uri.get() );

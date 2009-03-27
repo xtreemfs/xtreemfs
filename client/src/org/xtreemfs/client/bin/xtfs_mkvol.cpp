@@ -15,7 +15,7 @@ namespace org
       {
       public:
         xtfs_mkvolOptions( int argc, char** argv )
-          : Options( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]mrc_host[:port]/volume_name" )
+          : Options( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         {
           addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
           access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
@@ -148,8 +148,8 @@ namespace org
           if ( files_count >= 1 )
           {
             mrc_uri = parseURI( files[0] );
-            if ( strlen( mrc_uri->getResource() ) > 1 )
-              volume_name = mrc_uri->getResource() + 1;
+            if ( strlen( mrc_uri->get_resource() ) > 1 )
+              volume_name = mrc_uri->get_resource() + 1;
             else if ( files_count >= 2 )
               volume_name = files[1];
             else

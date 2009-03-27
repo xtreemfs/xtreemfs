@@ -19,7 +19,7 @@ bool OpenFile::close()
   return false;
 }
 
-YIELD::Stat* OpenFile::getattr()
+YIELD::auto_SharedObject<YIELD::Stat> OpenFile::getattr()
 {
   return get_parent_volume().getattr( get_path() );
 }

@@ -34,12 +34,12 @@ bool Volume::chown( const YIELD::Path&, int uid, int gid )
   return true;
 }
 
-YIELD::Stat* Volume::getattr( const YIELD::Path& path )
+YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
 {
   return getattr( Path( this->name, path ) );
 }
 
-YIELD::Stat* Volume::getattr( const Path& path )
+YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
 {
   org::xtreemfs::interfaces::stat_ stbuf;
   mrc_proxy.getattr( path, stbuf );
@@ -78,7 +78,7 @@ bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
   return true;
 }
 
-YIELD::File* Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode )
+YIELD::auto_SharedObject<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode )
 {
   Path path( this->name, _path );
 

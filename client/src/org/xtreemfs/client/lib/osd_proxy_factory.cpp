@@ -8,6 +8,15 @@ OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_pr
   : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group ), osd_proxy_reconnect_tries_max( osd_proxy_reconnect_tries_max ), osd_proxy_flags( osd_proxy_flags )
 { }
 
+OSDProxyFactory::~OSDProxyFactory() 
+{ 
+  osd_proxy_cache_lock.acquire();
+  for ( YIELD::HashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
+    YIELD::SharedObject::decRef( *osd_proxy_i->second );
+  osd_proxy_cache.clear();
+  osd_proxy_cache_lock.release();
+}
+
 OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
 {
   return createOSDProxy( dir_proxy.getURIFromUUID( uuid ) );
@@ -15,7 +24,20 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
 
 OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
-  OSDProxy* osd_proxy = new OSDProxy( uri ); // , osd_proxy_reconnect_tries_max, osd_proxy_flags );
-  osd_proxy_stage_group.createStage( *osd_proxy );
-  return *osd_proxy;
+  uint32_t uri_hash = YIELD::string_hash( uri.get_decoded_uri() );
+  osd_proxy_cache_lock.acquire();
+  OSDProxy* osd_proxy = osd_proxy_cache.find( uri_hash );
+  osd_proxy_cache_lock.release();
+  if ( osd_proxy != NULL )
+    return YIELD::SharedObject::incRef( *osd_proxy );
+  else
+  {
+    OSDProxy* osd_proxy = new OSDProxy( uri ); // , osd_proxy_reconnect_tries_max, osd_proxy_flags );
+    osd_proxy_stage_group.createStage( *osd_proxy );
+    YIELD::SharedObject::incRef( *osd_proxy ); // For the cache
+    osd_proxy_cache_lock.acquire();
+    osd_proxy_cache.insert( uri_hash, osd_proxy );
+    osd_proxy_cache_lock.release();
+    return *osd_proxy;
+  }
 }
