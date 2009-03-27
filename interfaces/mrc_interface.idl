@@ -12,8 +12,8 @@ module org
       {
         uint32_t mode;
         uint32_t nlink;
-        uint32_t unused_uid;
-        uint32_t unused_gid;
+        uint32_t uid;
+        uint32_t gid;
         int16_t unused_dev;
         uint64_t size;
         uint64_t atime;
