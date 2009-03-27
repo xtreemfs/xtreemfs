@@ -1,5 +1,5 @@
-#ifndef _56707613095_H
-#define _56707613095_H
+#ifndef _21963415117_H
+#define _21963415117_H
 
 
 
@@ -2430,10 +2430,11 @@ namespace org
             {
            std::string path;
            std::string name;
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2442,10 +2443,11 @@ namespace org
             {
            std::string path;
            std::string name( "bogus string" );
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2454,10 +2456,11 @@ namespace org
             {
            std::string path( "testvol" );
            std::string name;
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2466,10 +2469,11 @@ namespace org
             {
            std::string path( "testvol" );
            std::string name( "bogus string" );
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2478,10 +2482,11 @@ namespace org
             {
            std::string path( "testvol/" );
            std::string name;
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2490,10 +2495,11 @@ namespace org
             {
            std::string path( "testvol/" );
            std::string name( "bogus string" );
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2502,10 +2508,11 @@ namespace org
             {
            std::string path( "testvol//" );
            std::string name;
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2514,10 +2521,11 @@ namespace org
             {
            std::string path( "testvol//" );
            std::string name( "bogus string" );
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2526,10 +2534,11 @@ namespace org
             {
            std::string path( "testvol\"" );
            std::string name;
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }
@@ -2538,10 +2547,11 @@ namespace org
             {
            std::string path( "testvol\"" );
            std::string name( "bogus string" );
+           std::string value;
   
              try
              {
-              test_interface.getxattr( path, name );
+              test_interface.getxattr( path, name, value );
              }
              catch ( std::exception& )
              { }

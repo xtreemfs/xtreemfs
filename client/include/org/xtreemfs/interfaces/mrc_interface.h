@@ -1,5 +1,5 @@
-#ifndef _89900039440_H
-#define _89900039440_H
+#ifndef _69277023205_H
+#define _69277023205_H
 
 #include "constants.h"
 #include "mrc_osd_types.h"
@@ -268,10 +268,10 @@ namespace org
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf, YIELD::EventTarget* send_target ) { getattr( path, stbuf, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf, YIELD::timeout_ns_t response_timeout_ns ) { getattr( path, stbuf, NULL, response_timeout_ns ); }
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { getattrSyncRequest* __req = new getattrSyncRequest( path ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); getattrResponse& __resp = ( getattrResponse& )__req->waitForDefaultResponse( response_timeout_ns ); YIELD::SharedObject::decRef( *__req ); stbuf = __resp.get_stbuf(); YIELD::SharedObject::decRef( __resp ); }
-        virtual std::string getxattr( const std::string& path, const std::string& name ) { return getxattr( path, name, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual std::string getxattr( const std::string& path, const std::string& name, YIELD::EventTarget* send_target ) { return getxattr( path, name, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual std::string getxattr( const std::string& path, const std::string& name, YIELD::timeout_ns_t response_timeout_ns ) { return getxattr( path, name, NULL, response_timeout_ns ); }
-        virtual std::string getxattr( const std::string& path, const std::string& name, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { getxattrSyncRequest* __req = new getxattrSyncRequest( path, name ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); getxattrResponse& __resp = ( getxattrResponse& )__req->waitForDefaultResponse( response_timeout_ns ); YIELD::SharedObject::decRef( *__req ); std::string _return_value = __resp.get__return_value(); YIELD::SharedObject::decRef( __resp ); return _return_value; }
+        virtual void getxattr( const std::string& path, const std::string& name, std::string& value ) { getxattr( path, name, value, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void getxattr( const std::string& path, const std::string& name, std::string& value, YIELD::EventTarget* send_target ) { getxattr( path, name, value, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void getxattr( const std::string& path, const std::string& name, std::string& value, YIELD::timeout_ns_t response_timeout_ns ) { getxattr( path, name, value, NULL, response_timeout_ns ); }
+        virtual void getxattr( const std::string& path, const std::string& name, std::string& value, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { getxattrSyncRequest* __req = new getxattrSyncRequest( path, name ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); getxattrResponse& __resp = ( getxattrResponse& )__req->waitForDefaultResponse( response_timeout_ns ); YIELD::SharedObject::decRef( *__req ); value = __resp.get_value(); YIELD::SharedObject::decRef( __resp ); }
         virtual void link( const std::string& target_path, const std::string& link_path ) { link( target_path, link_path, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void link( const std::string& target_path, const std::string& link_path, YIELD::EventTarget* send_target ) { link( target_path, link_path, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void link( const std::string& target_path, const std::string& link_path, YIELD::timeout_ns_t response_timeout_ns ) { link( target_path, link_path, NULL, response_timeout_ns ); }
@@ -819,25 +819,25 @@ namespace org
       {
       public:
         getxattrResponse() { }
-        getxattrResponse( const std::string& _return_value ) : _return_value( _return_value ) { }
-        getxattrResponse( const char* _return_value, size_t _return_value_len ) : _return_value( _return_value, _return_value_len ) { }
+        getxattrResponse( const std::string& value ) : value( value ) { }
+        getxattrResponse( const char* value, size_t value_len ) : value( value, value_len ) { }
         virtual ~getxattrResponse() { }
   
-        void set__return_value( const std::string& _return_value ) { set__return_value( _return_value.c_str(), _return_value.size() ); }
-        void set__return_value( const char* _return_value, size_t _return_value_len = 0 ) { this->_return_value.assign( _return_value, ( _return_value_len != 0 ) ? _return_value_len : std::strlen( _return_value ) ); }
-        const std::string& get__return_value() const { return _return_value; }
+        void set_value( const std::string& value ) { set_value( value.c_str(), value.size() ); }
+        void set_value( const char* value, size_t value_len = 0 ) { this->value.assign( value, ( value_len != 0 ) ? value_len : std::strlen( value ) ); }
+        const std::string& get_value() const { return value; }
   
-        bool operator==( const getxattrResponse& other ) const { return _return_value == other._return_value; }
+        bool operator==( const getxattrResponse& other ) const { return value == other.value; }
   
         // YIELD::RTTI
         TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::getxattrResponse", 72976609UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "_return_value" ), _return_value ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "_return_value" ), _return_value ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "value" ), value ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "value" ), value ); }
   
       protected:
-        std::string _return_value;
+        std::string value;
       };
   
       class getxattrRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
@@ -2940,7 +2940,7 @@ namespace org
         virtual void handlecreateRequest( createRequest& req ) { createResponse* resp = NULL; try { resp = new createResponse; _create( req.get_path(), req.get_mode() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleftruncateRequest( ftruncateRequest& req ) { ftruncateResponse* resp = NULL; try { resp = new ftruncateResponse; org::xtreemfs::interfaces::XCap truncate_xcap; _ftruncate( req.get_write_xcap(), truncate_xcap ); resp->set_truncate_xcap( truncate_xcap ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlegetattrRequest( getattrRequest& req ) { getattrResponse* resp = NULL; try { resp = new getattrResponse; org::xtreemfs::interfaces::stat_ stbuf; _getattr( req.get_path(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handlegetxattrRequest( getxattrRequest& req ) { getxattrResponse* resp = NULL; try { resp = new getxattrResponse; std::string _return_value = _getxattr( req.get_path(), req.get_name() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlegetxattrRequest( getxattrRequest& req ) { getxattrResponse* resp = NULL; try { resp = new getxattrResponse; std::string value; _getxattr( req.get_path(), req.get_name(), value ); resp->set_value( value ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlelinkRequest( linkRequest& req ) { linkResponse* resp = NULL; try { resp = new linkResponse; _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlelistxattrRequest( listxattrRequest& req ) { listxattrResponse* resp = NULL; try { resp = new listxattrResponse; org::xtreemfs::interfaces::StringSet names; _listxattr( req.get_path(), names ); resp->set_names( names ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlemkdirRequest( mkdirRequest& req ) { mkdirResponse* resp = NULL; try { resp = new mkdirResponse; _mkdir( req.get_path(), req.get_mode() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
@@ -2975,7 +2975,7 @@ namespace org
         virtual void _create( const std::string& path, uint32_t mode ) { }
         virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap ) { }
         virtual void _getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf ) { }
-        virtual std::string _getxattr( const std::string& path, const std::string& name ) { return std::string(); }
+        virtual void _getxattr( const std::string& path, const std::string& name, std::string& value ) { }
         virtual void _link( const std::string& target_path, const std::string& link_path ) { }
         virtual void _listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { }
         virtual void _mkdir( const std::string& path, uint32_t mode ) { }
@@ -3013,7 +3013,7 @@ namespace org
       virtual void _create( const std::string& path, uint32_t mode );\
       virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );\
       virtual void _getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );\
-      virtual std::string _getxattr( const std::string& path, const std::string& name );\
+      virtual void _getxattr( const std::string& path, const std::string& name, std::string& value );\
       virtual void _link( const std::string& target_path, const std::string& link_path );\
       virtual void _listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names );\
       virtual void _mkdir( const std::string& path, uint32_t mode );\

@@ -15,7 +15,6 @@ SharedFile::SharedFile( Volume& parent_volume, const Path& path, const org::xtre
 
 SharedFile::~SharedFile()
 {
-  std::cout << "Deleting shared file.";
   for ( std::vector<FileReplica*>::iterator file_replica_i = file_replicas.begin(); file_replica_i != file_replicas.end(); file_replica_i++ )
     delete *file_replica_i;
 

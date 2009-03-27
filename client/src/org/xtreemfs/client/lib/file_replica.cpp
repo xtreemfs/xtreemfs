@@ -33,10 +33,11 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
       object_size = stripe_size - object_offset;
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
-    org::xtreemfs::interfaces::ObjectData object_data = osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, object_size );
+    org::xtreemfs::interfaces::ObjectData object_data;
+    osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, object_size, object_data );
 
     YIELD::SerializableString* data = static_cast<YIELD::SerializableString*>( object_data.get_data().get() );
-    if ( data )
+    if ( data && !data->empty() )
     {
       memcpy( rbuf_p, data->c_str(), data->size() );
       rbuf_p += data->size();
@@ -46,12 +47,14 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
     uint32_t zero_padding = object_data.get_zero_padding();
     if ( zero_padding > 0 )
     {
+      if ( zero_padding > size )
+        zero_padding = size;
       memset( rbuf_p, 0, zero_padding );
       rbuf_p += zero_padding;
       file_offset += zero_padding;
     }
 
-    if ( data && data->getSize() < object_size )
+    if ( data && data->size() < object_size )
       break;
   }
 

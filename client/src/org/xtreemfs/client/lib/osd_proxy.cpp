@@ -11,9 +11,9 @@ OSDProxy::OSDProxy( const YIELD::URI& uri )
 OSDProxy::~OSDProxy()
 { }
 
-org::xtreemfs::interfaces::ObjectData OSDProxy::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length )
+void OSDProxy::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data )
 {
-  return osd_interface.read( file_credentials, file_id, object_number, object_version, offset, length, this );
+  osd_interface.read( file_credentials, file_id, object_number, object_version, offset, length, object_data, this );
 }
 
 void OSDProxy::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response )

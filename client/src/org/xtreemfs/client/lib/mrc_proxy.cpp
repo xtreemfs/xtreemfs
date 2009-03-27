@@ -68,9 +68,9 @@ void MRCProxy::getattr( const std::string& path, org::xtreemfs::interfaces::stat
 #endif
 }
 
-std::string MRCProxy::getxattr( const std::string& path, const std::string& name )
+void MRCProxy::getxattr( const std::string& path, const std::string& name, std::string& value )
 {
-  return mrc_interface.getxattr( path, name, this );
+  mrc_interface.getxattr( path, name, value, this );
 }
 
 void MRCProxy::link( const std::string& target_path, const std::string& link_path )

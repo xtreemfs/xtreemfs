@@ -27,7 +27,7 @@ namespace org
         void create( const std::string& path, uint32_t mode );
         void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );
         void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );
-        std::string getxattr( const std::string& path, const std::string& name );
+        void getxattr( const std::string& path, const std::string& name, std::string& value );
         void link( const std::string& target_path, const std::string& link_path );
         void listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names );
         void mkdir( const std::string& path, uint32_t mode );

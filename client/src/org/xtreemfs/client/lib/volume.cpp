@@ -53,7 +53,7 @@ YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
-  out_value = mrc_proxy.getxattr( Path( this->name, path ), name );
+  mrc_proxy.getxattr( Path( this->name, path ), name, out_value );
   return true;
 }
 

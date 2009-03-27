@@ -69,7 +69,7 @@ module org
         void create( string path, uint32_t mode ) # 4;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 30;
         void getattr( string path, out stat_ stbuf ) # 5;
-        string getxattr( string path, string name ) # 6;
+        void getxattr( string path, string name, out string value ) # 6;
         void link( string target_path, string link_path ) # 7;
         void listxattr( string path, out StringSet names ) # 8;
         void mkdir( string path, uint32_t mode ) # 9;
