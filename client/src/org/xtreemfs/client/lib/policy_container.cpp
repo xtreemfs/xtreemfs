@@ -9,9 +9,10 @@ using namespace org::xtreemfs::client;
 #pragma comment( lib, "Netapi32.lib" )
 #else
 #include "yieldfs.h"
+#include <errno.h>
 #include <unistd.h>
 #include <pwd.h>
-#define PWD_BUF_LEN 128
+#define PWD_BUF_LEN 256
 #include <grp.h>
 #define GRP_BUF_LEN 1024
 #endif
@@ -100,7 +101,7 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
     {
       if ( user_info !=NULL )
       {
-        size_t username_wcslen = wcslen( user_info->wkui1_username );   
+        size_t username_wcslen = wcslen( user_info->wkui1_username );
         size_t username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
         char* user_id = new char[username_strlen+1];
         WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, user_id, username_strlen+1, 0, NULL );
@@ -126,10 +127,12 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
     throw YIELD::PlatformException( ERROR_ACCESS_DENIED, "could not retrieve user_id and group_id" );
   }
 #else
-  int caller_uid = yieldfs::FUSE::geteuid();
-  if ( caller_uid < 0 ) caller_uid = ::geteuid();
-  int caller_gid = yieldfs::FUSE::getegid();
-  if ( caller_gid < 0 ) caller_gid = ::getegid();
+//  int caller_uid = yieldfs::FUSE::geteuid();
+//  if ( caller_uid < 0 ) caller_uid = ::geteuid();
+//  int caller_gid = yieldfs::FUSE::getegid();
+ // if ( caller_gid < 0 ) caller_gid = ::getegid();
+  int caller_uid = ::geteuid();
+  int caller_gid = ::getegid();
   getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials );
 #endif
 }
@@ -146,7 +149,7 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
       {
         char* user_id = new char[user_id_len];
         char* group_ids = new char[group_ids_len];
-        
+
         get_user_credentials_from_passwd_ret = get_user_credentials_from_passwd( uid, gid, user_id, &user_id_len, group_ids, &group_ids_len );
         if ( get_user_credentials_from_passwd_ret >= 0 )
         {
@@ -177,11 +180,15 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
     struct group grp, *grp_res;
     char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
 
-    if ( getpwuid_r( caller_uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL && pwd_res->pw_name != NULL &&
-         getgrgid_r( caller_gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL && grp_res->gr_name != NULL )
-      return new org::xtreemfs::interfaces::UserCredentials( pwd_res->pw_name, org::xtreemfs::interfaces::StringSet( grp_res->gr_name ), "" );
-
-  throw YIELD::PlatformException( EACCES, "could not retrieve user_id and group_id" );
+    if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL && pwd_res->pw_name != NULL &&
+         getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL && grp_res->gr_name != NULL )
+    {
+      out_user_credentials.set_user_id( pwd_res->pw_name );
+      out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+      return;
+    }
+    else
+      throw YIELD::PlatformException();
 #endif
 }
 
@@ -193,23 +200,23 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
 #ifdef _WIN32
   YIELD::DebugBreak();
 #else
-  if ( !user_id.empty() && !group_id.empty() )
+  struct passwd pwd, *pwd_res;
+  char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
+  struct group grp, *grp_res;
+  char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
+
+  if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
+       getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
   {
-    struct passwd pwd, *pwd_res;
-    char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
-    struct group grp, *grp_res;
-    char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
-
-    if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL 
-         getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
-    {
-      out_uid = pwd_res->pw_uid;
-      out_gid = grp_res->gr_gid;
-      return;
-    }
+    out_uid = pwd_res->pw_uid;
+    out_gid = grp_res->gr_gid;
   }
-
-  throw YIELD::PlatformException( EACCES, "could not retrieve uid and gid" );
+  else
+  {
+    //    throw YIELD::PlatformException();
+    out_uid = 0;
+    out_gid = 0;
+  }
 #endif
 }
 

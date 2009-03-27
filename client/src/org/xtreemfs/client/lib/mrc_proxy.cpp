@@ -102,10 +102,10 @@ void MRCProxy::readdir( const std::string& path, org::xtreemfs::interfaces::Dire
 {
   mrc_interface.readdir( path, directory_entries, this );
 #ifndef _WIN32
-  for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
+  for ( org::xtreemfs::interfaces::DirectoryEntrySet::iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
   {
     int uid, gid;
-    policies->getpasswdFromUserCredentials( ( *directory_entry_i ).get_stbuf().get_user_id(), stbuf.get_stbuf().get_group_id(), uid, gid );
+    policies->getpasswdFromUserCredentials( ( *directory_entry_i ).get_stbuf().get_user_id(), ( *directory_entry_i ).get_stbuf().get_group_id(), uid, gid );
     org::xtreemfs::interfaces::stat_ new_stbuf = ( *directory_entry_i ).get_stbuf();
     new_stbuf.set_uid( uid );
     new_stbuf.set_gid( gid );
