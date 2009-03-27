@@ -83,6 +83,7 @@ module org
         void symlink( string target_path, string link_path ) # 20;
         void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
         void utime( string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
+        void ftruncate( XCap write_cap, out XCap truncate_cap ) # 30;
 
 
         // XtreemFS-specific functions
