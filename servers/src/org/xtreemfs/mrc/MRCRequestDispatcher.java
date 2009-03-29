@@ -220,6 +220,26 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
             config);
     }
+
+    public void asyncShutdown() {
+        heartbeatThread.shutdown();
+
+        serverStage.shutdown();
+
+        clientStage.shutdown();
+
+        osdMonitor.shutdown();
+
+        procStage.shutdown();
+
+        UUIDResolver.shutdown();
+        
+        volumeManager.shutdown();
+
+        httpServ.stop(0);
+
+        TimeSync.getInstance().shutdown();
+    }
     
     public void startup() throws Exception {
         

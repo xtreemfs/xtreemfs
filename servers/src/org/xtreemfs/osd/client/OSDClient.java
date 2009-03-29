@@ -51,8 +51,12 @@ import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  *
@@ -75,7 +79,8 @@ public class OSDClient extends ONCRPCClient {
             public ObjectData getResult(ReusableBuffer data) {
                 readResponse resp = new readResponse();
                 resp.deserialize(data);
-                return resp.getReturnValue();
+                System.out.println("client: "+resp.getObject_data());
+                return resp.getObject_data();
             }
         });
         return r;
@@ -211,6 +216,24 @@ public class OSDClient extends ONCRPCClient {
                 return resp.getReturnValue();
             }
         });
+        return r;
+    }
+
+    public RPCResponse internal_shutdown(InetSocketAddress server, String password) {
+
+        xtreemfs_shutdownRequest rq = new xtreemfs_shutdownRequest();
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_shutdownResponse resp = new xtreemfs_shutdownResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        },creds);
         return r;
     }
 

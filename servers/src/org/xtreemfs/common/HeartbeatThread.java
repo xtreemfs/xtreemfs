@@ -89,9 +89,11 @@ public class HeartbeatThread extends LifeCycleThread {
         RPCResponse<String> r = null;
         try {
             if (client.clientIsAlive()) {
-                r = client.xtreemfs_service_deregister(null, uuid.toString());
-                r.get();
-                Logging.logMessage(Logging.LEVEL_INFO, this, uuid + " dergistered");
+
+                RPCResponse r1 = client.xtreemfs_service_offline(null, uuid.toString());
+                r1.get();
+                r1.freeBuffers();
+
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "cannot deregister at DIR: " + ex);

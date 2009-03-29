@@ -46,6 +46,8 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
 import org.xtreemfs.interfaces.Service;
@@ -141,6 +143,21 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_service_deregisterResponse resp = new xtreemfs_service_deregisterResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse xtreemfs_service_offline(InetSocketAddress server, String uuid) {
+        xtreemfs_service_offlineRequest rq = new xtreemfs_service_offlineRequest(uuid);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                final xtreemfs_service_offlineResponse resp = new xtreemfs_service_offlineResponse();
                 resp.deserialize(data);
                 return null;
             }

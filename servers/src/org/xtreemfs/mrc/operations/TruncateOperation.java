@@ -61,7 +61,7 @@ public class TruncateOperation extends MRCOperation {
             
             final ftruncateRequest rqArgs = (ftruncateRequest) rq.getRequestArgs();
             
-            Capability writeCap = new Capability(rqArgs.getWrite_cap(), master.getConfig()
+            Capability writeCap = new Capability(rqArgs.getWrite_xcap(), master.getConfig()
                     .getCapabilitySecret());
             
             // check whether the capability has a valid signature

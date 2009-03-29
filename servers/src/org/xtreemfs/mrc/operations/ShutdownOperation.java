@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 
@@ -34,7 +35,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  */
 public class ShutdownOperation extends MRCOperation {
     
-    public static final int OP_ID = 0;
+    public static final int OP_ID = 50;
     
     public ShutdownOperation(MRCRequestDispatcher master) {
         super(master);
@@ -43,7 +44,10 @@ public class ShutdownOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) {
         try {
-            master.shutdown();
+            rq.setResponse(new xtreemfs_shutdownResponse());
+            finishRequest(rq);
+
+            master.asyncShutdown();
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
         }

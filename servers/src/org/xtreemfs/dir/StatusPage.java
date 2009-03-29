@@ -159,10 +159,8 @@ public class StatusPage {
                 dump.append(dataEntry.getKey());
                 dump.append("</td><td><b>");
                 dump.append(dataEntry.getValue());
-                if (dataEntry.getKey().equals("lastUpdated")) {
-                    dump.append(" (");
-                    dump.append(new Date(Long.parseLong(dataEntry.getValue()) * 1000));
-                    dump.append(")");
+                if (dataEntry.getKey().equals("last_updated")) {
+                    
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
                         || dataEntry.getKey().endsWith("RAM")) {
                     dump.append(" bytes (");
@@ -173,6 +171,20 @@ public class StatusPage {
                 }
                 dump.append("</b></td></tr>");
             }
+
+            dump.append("<tr><td width=\"30%\">");
+            dump.append("last updated");
+            dump.append("</td><td><b>");
+            dump.append(sreg.getLast_updated());
+            if (sreg.getLast_updated() == 0) {
+                dump.append(" (service is offline)");
+            } else {
+                dump.append(" (");
+                dump.append(new Date(sreg.getLast_updated() * 1000));
+                dump.append(")");
+                dump.append("</b></td></tr>");
+            }
+
             dump.append("<td></td><td class=\"version\">version: <b>");
             dump.append(sreg.getVersion());
             dump.append("</b></td></table></td></tr>");

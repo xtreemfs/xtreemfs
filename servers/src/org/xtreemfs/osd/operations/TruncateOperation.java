@@ -126,7 +126,7 @@ public final class TruncateOperation extends OSDOperation {
                 }
 
             });
-        } catch (UnknownUUIDException ex) {
+        } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
             return;
         }
@@ -139,7 +139,7 @@ public final class TruncateOperation extends OSDOperation {
                 gmaxRPCs[i].get();
             }
             sendResponse(rq, result);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
         } finally {
             for (RPCResponse r : gmaxRPCs)

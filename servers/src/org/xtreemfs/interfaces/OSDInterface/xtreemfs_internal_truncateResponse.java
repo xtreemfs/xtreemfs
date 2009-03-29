@@ -11,16 +11,20 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_truncateResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public xtreemfs_internal_truncateResponse() {  }
-    public xtreemfs_internal_truncateResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_truncateResponse( Object[] from_array ) { this.deserialize( from_array ); }
+    public xtreemfs_internal_truncateResponse() { osd_write_response = new OSDWriteResponse(); }
+    public xtreemfs_internal_truncateResponse( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
+    public xtreemfs_internal_truncateResponse( Object from_hash_map ) { osd_write_response = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
+    public xtreemfs_internal_truncateResponse( Object[] from_array ) { osd_write_response = new OSDWriteResponse();this.deserialize( from_array ); }
+
+    public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
+    public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateResponse"; }    
     public long getTypeId() { return 101; }
 
     public String toString()
     {
-        return "xtreemfs_internal_truncateResponse()";
+        return "xtreemfs_internal_truncateResponse( " + osd_write_response.toString() + " )";
     }
 
 
@@ -31,40 +35,43 @@ public class xtreemfs_internal_truncateResponse implements org.xtreemfs.interfac
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-
+        this.osd_write_response.deserialize( from_hash_map.get( "osd_write_response" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        
+        this.osd_write_response.deserialize( from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-
+        osd_write_response = new OSDWriteResponse(); osd_write_response.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-return to_hash_map;        
+        to_hash_map.put( "osd_write_response", osd_write_response.serialize() );
+        return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-
+        osd_write_response.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-
+        my_size += osd_write_response.calculateSize();
         return my_size;
     }
 
     // Response
     public int getOperationNumber() { return 101; }
 
+
+    private OSDWriteResponse osd_write_response;
 
 }
 

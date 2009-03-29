@@ -60,6 +60,7 @@ import org.xtreemfs.dir.operations.GetServiceByNameOperation;
 import org.xtreemfs.dir.operations.GetServiceByUuidOperation;
 import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
+import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 
 /**
@@ -218,6 +219,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         registry.put(op.getProcedureId(), op);
 
         op = new GetServiceByNameOperation(this);
+        registry.put(op.getProcedureId(), op);
+
+        op = new ServiceOfflineOperation(this);
         registry.put(op.getProcedureId(), op);
     }
     

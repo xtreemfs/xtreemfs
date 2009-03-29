@@ -52,7 +52,9 @@ public class XDRUtils {
             return BufferPool.allocate(0);
         final ReusableBuffer viewbuf = data.createViewBuffer();
         viewbuf.range(data.position(), dataSize);
-        if (dataSize % 4 > 0) {
+        int bytesToSkip = dataSize;
+        data.position(data.position()+dataSize);
+        if (dataSize% 4 > 0) {
             for (int k = 0; k < (4 - (dataSize % 4)); k++) {
                 data.get();
             }

@@ -274,7 +274,7 @@ public class MRCClient extends ONCRPCClient {
                 public String getResult(ReusableBuffer data) {
                     final getxattrResponse resp = new getxattrResponse();
                     resp.deserialize(data);
-                    return resp.getReturnValue();
+                    return resp.getValue();
                 }
             },credentials);
         return r;

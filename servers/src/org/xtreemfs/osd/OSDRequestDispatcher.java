@@ -77,6 +77,7 @@ import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
 import org.xtreemfs.osd.operations.KeepFileOpenOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.striping.GMAXMessage;
@@ -326,7 +327,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.shutdown();
             stStage.shutdown();
 
-            udpCom.waitForStartup();
+            udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
@@ -335,6 +336,31 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             Logging.logMessage(Logging.LEVEL_INFO, this, "OSD and all stages terminated");
             
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
+            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+        }
+    }
+
+    public void asyncShutdown() {
+        try {
+
+            heartbeatThread.shutdown();
+
+            UUIDResolver.shutdown();
+
+            rpcServer.shutdown();
+            rpcClient.shutdown();
+
+            udpCom.shutdown();
+            preprocStage.shutdown();
+            delStage.shutdown();
+            stStage.shutdown();
+
+            httpServ.stop(0);
+
+            Logging.logMessage(Logging.LEVEL_INFO, this, "OSD and all stages terminated");
+
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
             Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
@@ -457,6 +483,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(),op);
 
         op = new InternalGetFileSizeOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new ShutdownOperation(this);
         operations.put(op.getProcedureId(),op);
 
         //--internal events here--

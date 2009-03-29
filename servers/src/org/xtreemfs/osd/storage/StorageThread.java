@@ -531,7 +531,7 @@ public class StorageThread extends Stage {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize-1);
         final long oldLastObject = fi.getLastObjectNumber();
-        assert (newLastObject <= oldLastObject);
+        assert (newLastObject <= oldLastObject) : "new= "+newLastObject+" old="+oldLastObject;
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "truncate shrink to: " + fileSize + " old last: " + fi.getLastObjectNumber() + "   new last: " + newLastObject);
 

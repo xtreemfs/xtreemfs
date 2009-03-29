@@ -36,6 +36,35 @@ public final class OutputUtils {
     
     public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
         'B', 'C', 'D', 'E', 'F'     };
+
+    public static final byte[] fromHex;
+
+    static {
+        fromHex = new byte[128];
+        fromHex['0'] = 0;
+        fromHex['1'] = 1;
+        fromHex['2'] = 2;
+        fromHex['3'] = 3;
+        fromHex['4'] = 4;
+        fromHex['5'] = 5;
+        fromHex['6'] = 6;
+        fromHex['7'] = 7;
+        fromHex['8'] = 8;
+        fromHex['9'] = 9;
+        fromHex['A'] = 10;
+        fromHex['a'] = 10;
+        fromHex['B'] = 11;
+        fromHex['b'] = 11;
+        fromHex['C'] = 12;
+        fromHex['c'] = 12;
+        fromHex['D'] = 13;
+        fromHex['d'] = 13;
+        fromHex['E'] = 14;
+        fromHex['e'] = 14;
+        fromHex['F'] = 15;
+        fromHex['f'] = 15;
+
+    }
     
     public static final String byteToHexString(byte b) {
         StringBuilder sb = new StringBuilder(2);
@@ -140,6 +169,41 @@ public final class OutputUtils {
         }
         
         return bytes;
+    }
+
+    /**
+     * Writes an integer as a hex string to sb starting with the LSB.
+     * @param sb
+     * @param value
+     */
+    public static void writeHexInt(final StringBuffer sb, final int value) {
+        sb.append(OutputUtils.trHex[(value & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 4) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 8) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 12) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 16) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 20) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 24) & 0x0F)]);
+        sb.append(OutputUtils.trHex[((value >> 28) & 0x0F)]);
+    }
+
+    /**
+     * Reads an integer from a hex string (starting with the LSB).
+     * @param str
+     * @param position
+     * @return
+     */
+    public static int readHexInt(final String str, int position) {
+        int value = OutputUtils.fromHex[str.charAt(position)];
+        value += ((int)OutputUtils.fromHex[str.charAt(position+1)]) << 4;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+2)]) << 8;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+3)]) << 12;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+4)]) << 16;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+5)]) << 20;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+6)]) << 24;
+        value += ((int)OutputUtils.fromHex[str.charAt(position+7)]) << 28;
+
+        return value;
     }
     
 }

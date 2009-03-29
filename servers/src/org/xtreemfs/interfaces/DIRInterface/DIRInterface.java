@@ -26,6 +26,7 @@ public class DIRInterface
             case 9: return new xtreemfs_service_get_by_nameRequest();
             case 4: return new xtreemfs_service_registerRequest();
             case 5: return new xtreemfs_service_deregisterRequest();
+            case 10: return new xtreemfs_service_offlineRequest();
             case 51: return new xtreemfs_shutdownRequest();
 
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
@@ -36,7 +37,7 @@ public class DIRInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new xtreemfs_address_mappings_getResponse();            case 3: return new xtreemfs_address_mappings_removeResponse();            case 2: return new xtreemfs_address_mappings_setResponse();            case 50: return new xtreemfs_checkpointResponse();            case 8: return new xtreemfs_global_time_getResponse();            case 6: return new xtreemfs_service_get_by_typeResponse();            case 7: return new xtreemfs_service_get_by_uuidResponse();            case 9: return new xtreemfs_service_get_by_nameResponse();            case 4: return new xtreemfs_service_registerResponse();            case 5: return new xtreemfs_service_deregisterResponse();            case 51: return new xtreemfs_shutdownResponse();
+            case 1: return new xtreemfs_address_mappings_getResponse();            case 3: return new xtreemfs_address_mappings_removeResponse();            case 2: return new xtreemfs_address_mappings_setResponse();            case 50: return new xtreemfs_checkpointResponse();            case 8: return new xtreemfs_global_time_getResponse();            case 6: return new xtreemfs_service_get_by_typeResponse();            case 7: return new xtreemfs_service_get_by_uuidResponse();            case 9: return new xtreemfs_service_get_by_nameResponse();            case 4: return new xtreemfs_service_registerResponse();            case 5: return new xtreemfs_service_deregisterResponse();            case 10: return new xtreemfs_service_offlineResponse();            case 51: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    
