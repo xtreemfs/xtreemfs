@@ -56,6 +56,7 @@ module org
 	      void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 9;
         uint64_t xtreemfs_service_register( Service service ) # 4;
         void xtreemfs_service_deregister( string uuid ) # 5;
+	void xtreemfs_service_offline( string uuid ) #10;
 
         void xtreemfs_shutdown() # 51;
       };
