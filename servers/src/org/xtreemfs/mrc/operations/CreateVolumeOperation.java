@@ -172,7 +172,8 @@ public class CreateVolumeOperation extends MRCOperation {
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
                 rqArgs.getVolume_name(), (short) rqArgs.getAccess_control_policy(),
                 (short) rqArgs.getOsd_selection_policy(), null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), rqArgs.getDefault_striping_policy());
+                rq.getDetails().groupIds.get(0), rqArgs.getDefault_striping_policy(), 0770);
+            // FIXME: replace 0770 w/ 'default access mode' parameter
             
             // set the response
             rq.setResponse(new xtreemfs_mkvolResponse());

@@ -106,9 +106,4 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
-    @Override
-    public int getDefaultRootRights() {
-        return 511;
-    }
-    
 }

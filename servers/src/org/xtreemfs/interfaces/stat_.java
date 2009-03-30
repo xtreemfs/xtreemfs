@@ -10,19 +10,19 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public stat_() { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; }
-    public stat_( int mode, int nlink, int unused_uid, int unused_gid, int unused_dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, String link_target, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.unused_uid = unused_uid; this.unused_gid = unused_gid; this.unused_dev = unused_dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
-    public stat_( Object from_hash_map ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; this.deserialize( from_hash_map ); }
-    public stat_( Object[] from_array ) { mode = 0; nlink = 0; unused_uid = 0; unused_gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0;this.deserialize( from_array ); }
+    public stat_() { mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; }
+    public stat_( int mode, int nlink, int uid, int gid, int unused_dev, long size, long atime, long mtime, long ctime, String user_id, String group_id, String file_id, String link_target, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.unused_dev = unused_dev; this.size = size; this.atime = atime; this.mtime = mtime; this.ctime = ctime; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
+    public stat_( Object from_hash_map ) { mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; this.deserialize( from_hash_map ); }
+    public stat_( Object[] from_array ) { mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime = 0; mtime = 0; ctime = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0;this.deserialize( from_array ); }
 
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
     public int getNlink() { return nlink; }
     public void setNlink( int nlink ) { this.nlink = nlink; }
-    public int getUnused_uid() { return unused_uid; }
-    public void setUnused_uid( int unused_uid ) { this.unused_uid = unused_uid; }
-    public int getUnused_gid() { return unused_gid; }
-    public void setUnused_gid( int unused_gid ) { this.unused_gid = unused_gid; }
+    public int getUid() { return uid; }
+    public void setUid( int uid ) { this.uid = uid; }
+    public int getGid() { return gid; }
+    public void setGid( int gid ) { this.gid = gid; }
     public int getUnused_dev() { return unused_dev; }
     public void setUnused_dev( int unused_dev ) { this.unused_dev = unused_dev; }
     public long getSize() { return size; }
@@ -51,7 +51,7 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( unused_uid ) + ", " + Integer.toString( unused_gid ) + ", " + Integer.toString( unused_dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
+        return "stat_( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( uid ) + ", " + Integer.toString( gid ) + ", " + Integer.toString( unused_dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime ) + ", " + Long.toString( mtime ) + ", " + Long.toString( ctime ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
     }
 
 
@@ -64,8 +64,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     {
         this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
         this.nlink = ( ( Integer )from_hash_map.get( "nlink" ) ).intValue();
-        this.unused_uid = ( ( Integer )from_hash_map.get( "unused_uid" ) ).intValue();
-        this.unused_gid = ( ( Integer )from_hash_map.get( "unused_gid" ) ).intValue();
+        this.uid = ( ( Integer )from_hash_map.get( "uid" ) ).intValue();
+        this.gid = ( ( Integer )from_hash_map.get( "gid" ) ).intValue();
         this.unused_dev = ( ( Integer )from_hash_map.get( "unused_dev" ) ).intValue();
         this.size = ( ( Long )from_hash_map.get( "size" ) ).longValue();
         this.atime = ( ( Long )from_hash_map.get( "atime" ) ).longValue();
@@ -83,8 +83,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     {
         this.mode = ( ( Integer )from_array[0] ).intValue();
         this.nlink = ( ( Integer )from_array[1] ).intValue();
-        this.unused_uid = ( ( Integer )from_array[2] ).intValue();
-        this.unused_gid = ( ( Integer )from_array[3] ).intValue();
+        this.uid = ( ( Integer )from_array[2] ).intValue();
+        this.gid = ( ( Integer )from_array[3] ).intValue();
         this.unused_dev = ( ( Integer )from_array[4] ).intValue();
         this.size = ( ( Long )from_array[5] ).longValue();
         this.atime = ( ( Long )from_array[6] ).longValue();
@@ -102,8 +102,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     {
         mode = buf.getInt();
         nlink = buf.getInt();
-        unused_uid = buf.getInt();
-        unused_gid = buf.getInt();
+        uid = buf.getInt();
+        gid = buf.getInt();
         unused_dev = buf.getInt();
         size = buf.getLong();
         atime = buf.getLong();
@@ -122,8 +122,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
         to_hash_map.put( "mode", new Integer( mode ) );
         to_hash_map.put( "nlink", new Integer( nlink ) );
-        to_hash_map.put( "unused_uid", new Integer( unused_uid ) );
-        to_hash_map.put( "unused_gid", new Integer( unused_gid ) );
+        to_hash_map.put( "uid", new Integer( uid ) );
+        to_hash_map.put( "gid", new Integer( gid ) );
         to_hash_map.put( "unused_dev", new Integer( unused_dev ) );
         to_hash_map.put( "size", new Long( size ) );
         to_hash_map.put( "atime", new Long( atime ) );
@@ -142,8 +142,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
     {
         writer.putInt( mode );
         writer.putInt( nlink );
-        writer.putInt( unused_uid );
-        writer.putInt( unused_gid );
+        writer.putInt( uid );
+        writer.putInt( gid );
         writer.putInt( unused_dev );
         writer.putLong( size );
         writer.putLong( atime );
@@ -181,8 +181,8 @@ public class stat_ implements org.xtreemfs.interfaces.utils.Serializable
 
     private int mode;
     private int nlink;
-    private int unused_uid;
-    private int unused_gid;
+    private int uid;
+    private int gid;
     private int unused_dev;
     private long size;
     private long atime;

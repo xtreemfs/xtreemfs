@@ -72,6 +72,10 @@ public class TruncateOperation extends MRCOperation {
             if (writeCap.hasExpired())
                 throw new UserException(writeCap + " has expired");
             
+            // check whether the capability grants write permissions
+            if ((writeCap.getAccessMode() & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR | FileAccessManager.O_TRUNC)) == 0)
+                throw new UserException(ErrNo.EACCES, writeCap + " is not a write capability");
+            
             // parse volume and file ID from global file ID
             long fileId = 0;
             String volumeId = null;
@@ -103,7 +107,7 @@ public class TruncateOperation extends MRCOperation {
                 | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
                 ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
                 newEpoch, master.getConfig().getCapabilitySecret());
-                       
+            
             // set the response
             rq.setResponse(new ftruncateResponse(truncCap.getXCap()));
             update.execute();
@@ -116,5 +120,4 @@ public class TruncateOperation extends MRCOperation {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-    
 }

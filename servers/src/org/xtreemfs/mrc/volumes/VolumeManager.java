@@ -70,14 +70,16 @@ public interface VolumeManager {
      *            the owning group ID
      * @param defaultStripingPolicy
      *            the default striping policy
+     * @param initialAccessMode
+     *            the initial access mode for the volume's root directory
      * @return a volume info object
      * @throws UserException
      * @throws DatabaseException
      */
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, StripingPolicy defaultStripingPolicy) throws UserException,
-        DatabaseException;
+        String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode)
+        throws UserException, DatabaseException;
     
     /**
      * Checks whether a volume with the given name is known locally.
@@ -165,7 +167,6 @@ public interface VolumeManager {
      * @throws IOException
      * @throws BackendException
      */
-    public void addVolumeChangeListener(VolumeChangeListener listener) throws IOException,
-        DatabaseException;
+    public void addVolumeChangeListener(VolumeChangeListener listener) throws IOException, DatabaseException;
     
 }

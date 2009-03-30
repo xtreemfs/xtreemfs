@@ -7,7 +7,6 @@ public interface Constants
     public static final int ACCESS_CONTROL_POLICY_POSIX = 2;
     public static final int ACCESS_CONTROL_POLICY_VOLUME = 3;
     public static final int ACCESS_CONTROL_POLICY_DEFAULT = 2;
-    public static final int MODE_DEFAULT = 420;
     public static final String ONCRPC_SCHEME = "oncrpc";
     public static final String ONCRPCS_SCHEME = "oncrpcs";
     public static final int ONCRPC_AUTH_FLAVOR = 1326;

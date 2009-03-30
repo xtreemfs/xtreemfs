@@ -434,11 +434,6 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         return null;
     }
     
-    @Override
-    public int getDefaultRootRights() {
-        return 509;
-    }
-    
     private static boolean checkIfAllowed(StorageManager sMan, String accessMode, short aclRights,
         FileMetadata file, long parentId, String userId) throws DatabaseException {
         

@@ -243,18 +243,6 @@ public interface FileAccessPolicy {
         throws MRCException, UserException;
     
     /**
-     * Returns the default permissions for the root directory. The method is
-     * invoked in order to assign initial access rights to a the root directory
-     * of a newly-created volume.
-     * 
-     * @param sMan
-     *            the volume's Storage Manager
-     * 
-     * @return the default root permissions
-     */
-    public int getDefaultRootRights();
-    
-    /**
      * Returns the default ACL for the root directory. The method is invoked in
      * order to assign an initial ACL to a the root directory of a newly-created
      * volume.

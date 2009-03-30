@@ -42,8 +42,6 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDtoMRCDataSet;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -51,7 +49,6 @@ import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -223,8 +220,12 @@ public class MRCTest extends TestCase {
             if (!key.startsWith("xtreemfs."))
                 attrKeys.add(key);
         assertEquals(2, attrKeys.size());
-        val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test2.txt", "key1"));
-        assertEquals("", val);
+        try {
+            val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test2.txt", "key1"));
+            fail("got value for non-existing key");
+        } catch (MRCException exc) {
+            assertEquals(ErrNo.ENODATA, exc.getError_code());
+        }
         
         invokeSync(client.removexattr(mrcAddress, uc, volumeName + "/test2.txt", "key3"));
         keys = invokeSync(client.listxattr(mrcAddress, uc, volumeName + "/test2.txt"));
@@ -233,8 +234,12 @@ public class MRCTest extends TestCase {
             if (!key.startsWith("xtreemfs."))
                 attrKeys.add(key);
         assertEquals(1, attrKeys.size());
-        val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test2.txt", "key3"));
-        assertEquals("", val);
+        try {
+            val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test2.txt", "key3"));
+            fail("got value for non-existing key");
+        } catch (MRCException exc) {
+            assertEquals(ErrNo.ENODATA, exc.getError_code());
+        }
         
         // retrieve a system attribute
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test.txt", "xtreemfs.object_type"));
@@ -394,6 +399,19 @@ public class MRCTest extends TestCase {
         
         // TODO: check open w/ ACLs set
         
+        // test truncate
+        
+        // open w/ write cap and truncate
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0));
+        invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
+        
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDONLY, 0));
+        try {
+            invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
+            fail("truncated file w/o write permissions");
+        } catch (MRCException exc) {
+            // ignore
+        }
     }
     
     public void testOpenCreateNoPerm() throws Exception {
@@ -639,8 +657,8 @@ public class MRCTest extends TestCase {
         assertTrue(invokeSync(client.access(mrcAddress, uc2, posixVolName + "/newDir",
             FileAccessManager.NON_POSIX_SEARCH)));
         
-        assertTrue(invokeSync(client.access(mrcAddress, uc3, posixVolName,
-            FileAccessManager.NON_POSIX_SEARCH)));
+        assertTrue(invokeSync(client
+                .access(mrcAddress, uc3, posixVolName, FileAccessManager.NON_POSIX_SEARCH)));
         
         // grant any rights to the volume to anyone
         invokeSync(client.chmod(mrcAddress, uc1, posixVolName, 0777));

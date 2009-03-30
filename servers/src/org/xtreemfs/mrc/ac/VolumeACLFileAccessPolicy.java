@@ -237,9 +237,4 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         return acl;
     }
     
-    @Override
-    public int getDefaultRootRights() {
-        return 0;
-    }
-    
 }

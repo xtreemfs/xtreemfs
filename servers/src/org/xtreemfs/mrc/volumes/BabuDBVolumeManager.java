@@ -140,7 +140,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, StripingPolicy defaultStripingPolicy) throws UserException, DatabaseException {
+        String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode)
+        throws UserException, DatabaseException {
         
         if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)
             throw new UserException(ErrNo.EINVAL, "volume name must not contain '/' or '\\'");
@@ -171,11 +172,10 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         // get the default permissions and ACL
         FileAccessPolicy policy = faMan.getFileAccessPolicy(fileAccessPolicyId);
-        int perms = policy.getDefaultRootRights();
         ACLEntry[] acl = policy.getDefaultRootACL(sMan);
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-        sMan.init(ownerId, owningGroupId, perms, acl, defaultStripingPolicy, update);
+        sMan.init(ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy, update);
         update.execute();
         
         try {
@@ -183,8 +183,6 @@ public class BabuDBVolumeManager implements VolumeManager {
             ig.addInsert(VOL_INDEX, volumeId.getBytes(), volume.getBuffer());
             ig.addInsert(VOL_NAME_INDEX, volumeName.getBytes(), volumeId.getBytes());
             database.directInsert(ig);
-            // database.asyncInsert(ig, new
-            // BabuDBRequestListenerWrapper(listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

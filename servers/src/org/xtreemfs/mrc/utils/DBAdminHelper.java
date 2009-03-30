@@ -130,7 +130,7 @@ public class DBAdminHelper {
             if (id == 1) {
                 vMan.createVolume(faMan, state.currentVolume.getId(), state.currentVolume.getName(),
                     state.currentVolume.getAcPolicyId(), state.currentVolume.getOsdPolicyId(),
-                    state.currentVolume.getOsdPolicyArgs(), owner, owningGroup, null);
+                    state.currentVolume.getOsdPolicyArgs(), owner, owningGroup, null, rights);
                 
                 StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
                 state.currentEntity = sMan.getMetadata(1);

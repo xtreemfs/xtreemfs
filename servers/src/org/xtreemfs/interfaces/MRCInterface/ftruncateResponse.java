@@ -11,20 +11,20 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public ftruncateResponse() { truncate_cap = new XCap(); }
-    public ftruncateResponse( XCap truncate_cap ) { this.truncate_cap = truncate_cap; }
-    public ftruncateResponse( Object from_hash_map ) { truncate_cap = new XCap(); this.deserialize( from_hash_map ); }
-    public ftruncateResponse( Object[] from_array ) { truncate_cap = new XCap();this.deserialize( from_array ); }
+    public ftruncateResponse() { truncate_xcap = new XCap(); }
+    public ftruncateResponse( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
+    public ftruncateResponse( Object from_hash_map ) { truncate_xcap = new XCap(); this.deserialize( from_hash_map ); }
+    public ftruncateResponse( Object[] from_array ) { truncate_xcap = new XCap();this.deserialize( from_array ); }
 
-    public XCap getTruncate_cap() { return truncate_cap; }
-    public void setTruncate_cap( XCap truncate_cap ) { this.truncate_cap = truncate_cap; }
+    public XCap getTruncate_xcap() { return truncate_xcap; }
+    public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }    
     public long getTypeId() { return 30; }
 
     public String toString()
     {
-        return "ftruncateResponse( " + truncate_cap.toString() + " )";
+        return "ftruncateResponse( " + truncate_xcap.toString() + " )";
     }
 
 
@@ -35,35 +35,35 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.truncate_cap.deserialize( from_hash_map.get( "truncate_cap" ) );
+        this.truncate_xcap.deserialize( from_hash_map.get( "truncate_xcap" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.truncate_cap.deserialize( from_array[0] );        
+        this.truncate_xcap.deserialize( from_array[0] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        truncate_cap = new XCap(); truncate_cap.deserialize( buf );
+        truncate_xcap = new XCap(); truncate_xcap.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "truncate_cap", truncate_cap.serialize() );
+        to_hash_map.put( "truncate_xcap", truncate_xcap.serialize() );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        truncate_cap.serialize( writer );
+        truncate_xcap.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += truncate_cap.calculateSize();
+        my_size += truncate_xcap.calculateSize();
         return my_size;
     }
 
@@ -71,7 +71,7 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
     public int getOperationNumber() { return 30; }
 
 
-    private XCap truncate_cap;
+    private XCap truncate_xcap;
 
 }
 
