@@ -85,7 +85,7 @@ public class FileInfo {
 
     public Long getObjectChecksum(long objId) {
         Long c = objChecksums.get(objId);
-        return (c == null) ? -1 : c;
+        return (c == null) ? 0 : c;
     }
 
     public boolean isIncVersionOnWrite() {
