@@ -35,7 +35,7 @@ import org.xtreemfs.common.checksums.StringChecksumAlgorithm;
  * @author clorenz
  */
 public class SDBM implements StringChecksumAlgorithm {
-	private String hash = null;
+	private Long hash = null;
 
 	private String name = "SDBM";
 
@@ -86,12 +86,12 @@ public class SDBM implements StringChecksumAlgorithm {
 	 * @see org.xtreemfs.common.checksums.ChecksumAlgorithm#getValue()
 	 */
 	@Override
-	public String getValue() {
-		String value;
+	public long getValue() {
+		long value;
 		if (this.hash != null)
 			value = this.hash;
 		else
-			value = "";
+			value = 0;
 		reset();
 		return value;
 	}
@@ -122,11 +122,11 @@ public class SDBM implements StringChecksumAlgorithm {
 	 * @param str
 	 * @return
 	 */
-	protected static String sdbmHash(String str) {
+	protected static long sdbmHash(String str) {
 		long hash = 0;
 		for (int c : str.toCharArray()) {
 			hash = c + (hash << 6) + (hash << 16) - hash;
 		}
-		return Long.toHexString(hash);
+		return hash;
 	}
 }

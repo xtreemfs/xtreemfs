@@ -220,7 +220,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting objVer " + objVer);
             }
 
-            String objChksm = fi.getObjectChecksum(objNo);
+            long objChksm = fi.getObjectChecksum(objNo);
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "checksum is " + objChksm);
             }
@@ -278,7 +278,7 @@ public class StorageThread extends Stage {
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
             final FileInfo fi = layout.getFileInfo(sp, fileId);
-            final String checksum = fi.getObjectChecksum(objNo);
+            final long oldChecksum = fi.getObjectChecksum(objNo);
             final boolean rangeRequested = (offset > 0) || (data.capacity() < stripeSize);
 
 
@@ -314,7 +314,7 @@ public class StorageThread extends Stage {
                 // otherwise simply write data to new object version
 
                 if (rangeRequested) {
-                    ObjectInformation obj = layout.readObject(fileId, objNo, currentV, checksum, sp);
+                    ObjectInformation obj = layout.readObject(fileId, objNo, currentV, oldChecksum, sp);
                     ObjectData oldObject = obj.getObjectData(fi.getLastObjectNumber()==objNo);
                     if (oldObject.getData() == null) {
                         if (oldObject.getZero_padding() > 0) {
@@ -367,8 +367,8 @@ public class StorageThread extends Stage {
             }
 
             writeData.position(0);
-            layout.writeObject(fileId, objNo, writeData, nextV, offset, checksum, sp);
-            String newChecksum = layout.createChecksum(fileId, objNo, writeData.capacity() == sp.getStripeSizeForObject(objNo) ? writeData : null, nextV, checksum);
+            layout.writeObject(fileId, objNo, writeData, nextV, offset, oldChecksum, sp);
+            long newChecksum = layout.createChecksum(fileId, objNo, writeData.capacity() == sp.getStripeSizeForObject(objNo) ? writeData : null, nextV, oldChecksum);
 
 
             fi.getObjVersions().put(objNo, nextV);
@@ -409,18 +409,19 @@ public class StorageThread extends Stage {
                 // if the written object has a larger ID than the largest
                 // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
-                if (objNo > fi.getLastObjectNumber() && objNo > fi.getGlobalLastObjectNumber()) {
-
+                if (objNo > fi.getLastObjectNumber()) {
                     fi.setLastObjectNumber(objNo);
 
-                    //send UDP packets...
-                    final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
-                    final ServiceUUID localUUID = master.getConfig().getUUID();
-                    if (osds.size() > 1) {
-                        for (ServiceUUID osd : osds) {
-                            if (!osd.equals(localUUID)) {
-                                final GMAXMessage m = new GMAXMessage(fileId, fi.getTruncateEpoch(), objNo);
-                                master.getUdpComStage().send(m.getMessage(osd.getAddress()));
+                    if (objNo > fi.getGlobalLastObjectNumber()) {
+                        //send UDP packets...
+                        final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
+                        final ServiceUUID localUUID = master.getConfig().getUUID();
+                        if (osds.size() > 1) {
+                            for (ServiceUUID osd : osds) {
+                                if (!osd.equals(localUUID)) {
+                                    final GMAXMessage m = new GMAXMessage(fileId, fi.getTruncateEpoch(), objNo);
+                                    master.getUdpComStage().send(m.getMessage(osd.getAddress()));
+                                }
                             }
                         }
                     }
@@ -618,7 +619,7 @@ public class StorageThread extends Stage {
 
         final FileInfo fi = layout.getFileInfo(sp, fileId);
         final int version = fi.getObjectVersion(objNo);
-        final String checksum = fi.getObjectChecksum(objNo);
+        final long checksum = fi.getObjectChecksum(objNo);
 
         ObjectInformation obj = layout.readObject(fileId, objNo, version, checksum, sp);
         ReusableBuffer oldData = obj.getData();
@@ -629,7 +630,7 @@ public class StorageThread extends Stage {
         }
 
         // test the checksum
-        if (!layout.checkObject(oldData, checksum)) {
+        if ((obj.getStatus() != ObjectInformation.ObjectStatus.DOES_NOT_EXIST) && !layout.checkObject(oldData, checksum)) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "invalid checksum: file=" + fileId + ", objNo=" + objNo);
             BufferPool.free(oldData);
             throw new OSDException(ErrorCodes.INVALID_CHECKSUM, "invalid checksum", "");
@@ -657,7 +658,7 @@ public class StorageThread extends Stage {
         }
 
         layout.writeObject(fileId, objNo, newData, version + 1, 0, checksum, sp);
-        String newChecksum = layout.createChecksum(fileId, objNo, newData, version + 1, checksum);
+        long newChecksum = layout.createChecksum(fileId, objNo, newData, version + 1, checksum);
 
         BufferPool.free(newData);
 
@@ -667,7 +668,7 @@ public class StorageThread extends Stage {
 
     private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version,
             long size, FileInfo fi) throws IOException {
-        String checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
+        long checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
         fi.getObjVersions().put(objNo, version);
         fi.getObjChecksums().put(objNo, checksum);
     }

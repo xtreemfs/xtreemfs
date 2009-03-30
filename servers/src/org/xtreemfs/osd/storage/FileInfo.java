@@ -36,7 +36,7 @@ public class FileInfo {
 
     private Map<Long, Integer> objVersions;
 
-    private Map<Long, String>  objChecksums;
+    private Map<Long, Long>  objChecksums;
 
     private long               filesize;
 
@@ -51,14 +51,14 @@ public class FileInfo {
     /** Creates a new instance of FileInfo */
     public FileInfo() {
         objVersions = new HashMap<Long, Integer>();
-        objChecksums = new HashMap<Long, String>();
+        objChecksums = new HashMap<Long, Long>();
     }
 
     public Map<Long, Integer> getObjVersions() {
         return objVersions;
     }
 
-    public Map<Long, String> getObjChecksums() {
+    public Map<Long, Long> getObjChecksums() {
         return objChecksums;
     }
 
@@ -83,9 +83,9 @@ public class FileInfo {
         return (v == null) ? 0 : v;
     }
 
-    public String getObjectChecksum(long objId) {
-        String c = objChecksums.get(objId);
-        return c;
+    public Long getObjectChecksum(long objId) {
+        Long c = objChecksums.get(objId);
+        return (c == null) ? -1 : c;
     }
 
     public boolean isIncVersionOnWrite() {

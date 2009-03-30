@@ -187,6 +187,11 @@ public final class OutputUtils {
         sb.append(OutputUtils.trHex[((value >> 28) & 0x0F)]);
     }
 
+    public static void writeHexLong(final StringBuffer sb, final long value) {
+        OutputUtils.writeHexInt(sb,(int) (value & 0xFFFFFFFF));
+        OutputUtils.writeHexInt(sb,(int) (value >> 32));
+    }
+
     /**
      * Reads an integer from a hex string (starting with the LSB).
      * @param str
@@ -205,5 +210,11 @@ public final class OutputUtils {
 
         return value;
     }
-    
+
+    public static long readHexLong(final String str, int position) {
+        long value = OutputUtils.readHexInt(str, position+8);
+        int tmp = OutputUtils.readHexInt(str, position);
+        value += ((long)tmp)<< 32;
+        return value;
+    }
 }

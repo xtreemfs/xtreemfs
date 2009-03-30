@@ -91,17 +91,17 @@ public class StorageLayoutTest extends TestCase {
             data.put((byte) (48 + i));
         }
 
-        layout.writeObject(fileId, 0l, data, 1, 0, null, sp);
+        layout.writeObject(fileId, 0l, data, 1, 0, 0, sp);
         BufferPool.free(data);
 
-        ObjectInformation oinfo = layout.readObject(fileId, 0l, 1, null, sp);
+        ObjectInformation oinfo = layout.readObject(fileId, 0l, 1, 0, sp);
         assertEquals(64, oinfo.getData().capacity());
         for (int i = 0; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
         }
         BufferPool.free(oinfo.getData());
 
-        oinfo = layout.readObject(fileId, 1l, 1, null, sp);
+        oinfo = layout.readObject(fileId, 1l, 1, 0, sp);
         assertEquals(ObjectInformation.ObjectStatus.DOES_NOT_EXIST,oinfo.getStatus());
     }
 

@@ -73,8 +73,6 @@ public final class ReadOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final readRequest args = (readRequest) rq.getRequestArgs();
 
-        System.out.println("rq: "+args);
-
         if (args.getObject_number() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
             return;
@@ -207,7 +205,6 @@ public final class ReadOperation extends OSDOperation {
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
 
-        System.out.println("resp: "+data);
         sendResponse(rq, data);
     }
 

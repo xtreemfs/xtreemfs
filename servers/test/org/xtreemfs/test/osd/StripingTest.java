@@ -92,6 +92,7 @@ public class StripingTest extends TestCase {
             try {
 
                 OSDWriteResponse resp = r.get();
+                System.out.println("fs-update: "+resp);
 
                 if (resp.getNew_file_size().size() > 0) {
 
@@ -149,7 +150,7 @@ public class StripingTest extends TestCase {
     /** Creates a new instance of StripingTest */
     public StripingTest(String testName) throws IOException {
         super(testName);
-        Logging.start(SetupUtils.DEBUG_LEVEL);
+        Logging.start(Logging.LEVEL_DEBUG);
         
         osdCfg1 = SetupUtils.createOSD1Config();
         osdCfg2 = SetupUtils.createOSD2Config();
@@ -215,21 +216,21 @@ public class StripingTest extends TestCase {
 
     
     public void testPUTandGET() throws Exception {
-        
+
         final int numObjs = 5;
         final int[] testSizes = { 1, 2, SIZE - 1, SIZE };
-        
+
         for (int ts : testSizes) {
-            
+
             ReusableBuffer data = SetupUtils.generateData(ts);
             data.flip();
             String file = "1:1" + ts;
             final FileCredentials fcred = new FileCredentials(xloc, getCap(file).getXCap());
-            
+
             for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
-                
+
                 // write an object with the given test size
-                
+
                 ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
                 RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
                         file, fcred, i, 0, 0, 0, objdata);
@@ -237,7 +238,7 @@ public class StripingTest extends TestCase {
                 r.freeBuffers();
                 assertEquals(1,resp.getNew_file_size().size());
                 assertEquals(i * SIZE + ts, resp.getNew_file_size().get(0).getSize_in_bytes());
-                
+
 
                 // read and check the previously written object
 
@@ -249,13 +250,13 @@ public class StripingTest extends TestCase {
             }
         }
     }
-    
+
     public void testIntermediateHoles() throws Exception {
 
         final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
 
         final ReusableBuffer data = SetupUtils.generateData(3);
-        
+
         // write the nineth object, check the file size
         int obj = 8;
         ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
@@ -265,7 +266,7 @@ public class StripingTest extends TestCase {
         r.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(obj * SIZE + data.limit(), resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // write the fifth object, check the file size
         obj = 5;
 
@@ -278,7 +279,7 @@ public class StripingTest extends TestCase {
                 || (resp.getNew_file_size().size() == 1)
                 && (obj * SIZE + data.limit() == resp.getNew_file_size().get(0).getSize_in_bytes()));
 
-        
+
         // check whether the first object consists of zeros
         obj = 0;
         RPCResponse<ObjectData> r2 = client.read(osdIDs.get(obj % osdIDs.size()).getAddress(), FILE_ID, fcred, obj, 0, 0, data.capacity());
@@ -288,10 +289,10 @@ public class StripingTest extends TestCase {
             checkResponse(ZEROS, result);
         else
             assertEquals(data.capacity(),result.getZero_padding());
-        
+
         r2.freeBuffers();
         BufferPool.free(result.getData());
-        
+
         // write the first object, check the file size header (must be null)
         objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
         r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
@@ -300,8 +301,8 @@ public class StripingTest extends TestCase {
         r.freeBuffers();
         assertEquals(0,resp.getNew_file_size().size());
     }
-    
-    
+
+
     public void testWriteExtend() throws Exception {
 
         final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
@@ -309,39 +310,40 @@ public class StripingTest extends TestCase {
         final ReusableBuffer data = SetupUtils.generateData(3);
         final byte[] paddedData = new byte[SIZE];
         System.arraycopy(data.array(), 0, paddedData, 0, data.limit());
-        
+
         // write first object
         ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
         RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(0).getAddress(),
                 FILE_ID, fcred, 0, 0, 0, 0, objdata);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
-        
+
         // write second object
         objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
         r = client.write(osdIDs.get(1).getAddress(),
                 FILE_ID, fcred, 1, 0, 0, 0, objdata);
         resp = r.get();
         r.freeBuffers();
-        
+
         // read first object
 
         RPCResponse<ObjectData> r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
         ObjectData result = r2.get();
+        System.out.println(result);
         //either padding data or all zeros
         assertNotNull(result.getData());
         assertEquals(3,result.getData().capacity());
         assertEquals(SIZE-3,result.getZero_padding());
         r2.freeBuffers();
         BufferPool.free(result.getData());
-        
+
     }
-    
+
     /**
      * tests the truncation of striped files
      */
     public void testTruncate() throws Exception {
-        
+
         ReusableBuffer data = SetupUtils.generateData(SIZE);
 
         final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
@@ -356,11 +358,11 @@ public class StripingTest extends TestCase {
             OSDWriteResponse resp = r.get();
             r.freeBuffers();
         }
-        
+
         // ----------------------------------------------
         // shrink the file to a length of one full object
         // ----------------------------------------------
-        
+
         fcred.getXcap().setTruncate_epoch(1);
 
         RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), FILE_ID, fcred, SIZE);
@@ -368,25 +370,25 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(SIZE, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            
+
             // try to read the object
             RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
             ObjectData result = r2.get();
             r2.freeBuffers();
-            
+
             // the first object must exist, all other ones must have been
             // deleted
             if (i == 0)
                 checkResponse(data.array(), result);
             else
                 checkResponse(null, result);
-            
+
             BufferPool.free(result.getData());
         }
-        
+
         // -------------------------------------------------
         // extend the file to a length of eight full objects
         // -------------------------------------------------
@@ -397,15 +399,15 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(SIZE*8, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 8; i++, osdIndex = i % osdIDs.size()) {
-            
+
             // try to read the object
             RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
             ObjectData result = r2.get();
             r2.freeBuffers();
-            
+
             // the first object must contain data, all other ones must contain
             // zeros
             if (i == 0)
@@ -416,12 +418,12 @@ public class StripingTest extends TestCase {
                 } else {
                     checkResponse(ZEROS, result);
                 }
-                
+
             }
-            
+
             BufferPool.free(result.getData());
         }
-        
+
         // ------------------------------------------
         // shrink the file to a length of 3.5 objects
         // ------------------------------------------
@@ -432,15 +434,15 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(size3p5, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            
+
             // try to read the object
             RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
             ObjectData result = r2.get();
             r2.freeBuffers();
-            
+
             // the first object must contain data, all other ones must contain
             // zeros, where the last one must only be half an object size
             if (i == 0)
@@ -457,10 +459,10 @@ public class StripingTest extends TestCase {
                     checkResponse(ZEROS, result);
                 }
             }
-            
+
             BufferPool.free(result.getData());
         }
-        
+
         // --------------------------------------------------
         // truncate the file to the same length it had before
         // --------------------------------------------------
@@ -471,7 +473,7 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(size3p5, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
 
@@ -499,7 +501,7 @@ public class StripingTest extends TestCase {
 
             BufferPool.free(result.getData());
         }
-        
+
         // --------------------------------
         // truncate the file to zero length
         // --------------------------------
@@ -510,10 +512,10 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(0, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // check whether all objects have the expected content
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            
+
             // try to read the object
             RPCResponse<ObjectData> r2 = client.read(osdIDs.get(osdIndex).getAddress(), FILE_ID, fcred, i, 0, 0, SIZE);
             ObjectData result = r2.get();
@@ -524,9 +526,9 @@ public class StripingTest extends TestCase {
 
             BufferPool.free(result.getData());
         }
-        
+
         data = SetupUtils.generateData(5);
-        
+
         // ----------------------------------
         // write new data to the first object
         // ----------------------------------
@@ -538,7 +540,7 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(5, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // ----------------------------------------------
         // extend the file to a length of one full object
         // ----------------------------------------------
@@ -549,21 +551,21 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(SIZE, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
-        
+
+
         // try to read the object
         RPCResponse<ObjectData> r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
         ObjectData result = r2.get();
         r2.freeBuffers();
-        
+
         // the object must contain data plus padding zeros
-        
+
         final byte[] dataWithZeros = new byte[SIZE];
         System.arraycopy(data.array(), 0, dataWithZeros, 0, data.limit());
-        
+
         checkResponse(dataWithZeros, result);
         BufferPool.free(result.getData());
-        
+
         // ---------------------------------------------
         // shrink the file to a length of half an object
         // ---------------------------------------------
@@ -574,17 +576,17 @@ public class StripingTest extends TestCase {
         rt.freeBuffers();
         assertEquals(1,resp.getNew_file_size().size());
         assertEquals(SIZE/2, resp.getNew_file_size().get(0).getSize_in_bytes());
-        
+
         // try to read the object
         r2 = client.read(osdIDs.get(0).getAddress(), FILE_ID, fcred, 0, 0, 0, SIZE);
         result = r2.get();
         r2.freeBuffers();
-        
+
         // the object must contain data plus padding zeros
-        
+
         final byte[] dataWithHalfZeros = new byte[SIZE / 2];
         System.arraycopy(data.array(), 0, dataWithHalfZeros, 0, data.limit());
-        
+
         checkResponse(dataWithHalfZeros, result);
         BufferPool.free(result.getData());
     }
@@ -675,28 +677,28 @@ public class StripingTest extends TestCase {
     /**
      * tests the deletion of striped files
      */
-    public void testDELETE() throws Exception {
-        
-        final int numObjs = 5;
-
-        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
-
-        ReusableBuffer data = SetupUtils.generateData(SIZE);
-        
-        // create all objects
-        for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
-
-            ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
-            RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
-                    FILE_ID, fcred, i, 0, 0, 0, objdata);
-            r.get();
-        }
-        
-        // delete the file
-        RPCResponse dr = client.unlink(osdIDs.get(0).getAddress(), FILE_ID, fcred);
-        dr.get();
-        dr.freeBuffers();
-    }
+//    public void testDELETE() throws Exception {
+//
+//        final int numObjs = 5;
+//
+//        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+//
+//        ReusableBuffer data = SetupUtils.generateData(SIZE);
+//
+//        // create all objects
+//        for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
+//
+//            ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+//            RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
+//                    FILE_ID, fcred, i, 0, 0, 0, objdata);
+//            r.get();
+//        }
+//
+//        // delete the file
+//        RPCResponse dr = client.unlink(osdIDs.get(0).getAddress(), FILE_ID, fcred);
+//        dr.get();
+//        dr.freeBuffers();
+//    }
     
     public static void main(String[] args) {
         TestRunner.run(StripingTest.class);

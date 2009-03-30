@@ -30,17 +30,24 @@ import junit.textui.TestRunner;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
 
 public class CapabilityTest extends TestCase {
     
     private static final String SECRET = "secret";
-    
+
+    private TestEnvironment te;
+
     protected void setUp() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+
+        te = new TestEnvironment(TestEnvironment.Services.TIME_SYNC);
+        te.start();
     }
     
     protected void tearDown() throws Exception {
+        te.shutdown();
     }
     
     public void testCapability() throws Exception {

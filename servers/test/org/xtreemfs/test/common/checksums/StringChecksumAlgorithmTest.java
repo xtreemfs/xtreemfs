@@ -72,11 +72,11 @@ public class StringChecksumAlgorithmTest extends TestCase {
 
 		// string
 		algorithm.digest(stringData);
-		String stringValue = algorithm.getValue();
+		long stringValue = algorithm.getValue();
 
 		// buffer
 		algorithm.update(bufferData);
-		String bufferValue = algorithm.getValue();
+		long bufferValue = algorithm.getValue();
 
 //		System.out.println(stringValue);
 //		System.out.println(bufferValue);

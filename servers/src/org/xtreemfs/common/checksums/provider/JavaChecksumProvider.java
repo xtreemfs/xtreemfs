@@ -47,7 +47,7 @@ public class JavaChecksumProvider extends ChecksumProvider {
 
 		addAlgorithm(new org.xtreemfs.common.checksums.algorithms.Adler32());
 		addAlgorithm(new org.xtreemfs.common.checksums.algorithms.CRC32());
-		try {
+		/*try {
 			addAlgorithm(new org.xtreemfs.common.checksums.algorithms.JavaMessageDigestAlgorithm(
 					"MD5", "MD5"));
 			addAlgorithm(new org.xtreemfs.common.checksums.algorithms.JavaMessageDigestAlgorithm(
@@ -55,7 +55,7 @@ public class JavaChecksumProvider extends ChecksumProvider {
 		} catch (NoSuchAlgorithmException e) {
 			Logging.logMessage(Logging.LEVEL_WARN, this, e.getMessage()
 					+ " in your java-installation");
-		}
+		}*/
 		addAlgorithm(new org.xtreemfs.common.checksums.algorithms.JavaHash());
 	}
 

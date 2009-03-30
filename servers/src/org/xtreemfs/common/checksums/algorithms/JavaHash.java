@@ -36,7 +36,7 @@ import org.xtreemfs.common.checksums.StringChecksumAlgorithm;
  * @author clorenz
  */
 public class JavaHash implements StringChecksumAlgorithm {
-	private String hash = null;
+	private Long hash = null;
 
 	private String name = "Java-Hash";
 
@@ -46,7 +46,7 @@ public class JavaHash implements StringChecksumAlgorithm {
 	 * @param data
 	 */
 	public void digest(String data) {
-		this.hash = Integer.toHexString(data.hashCode());
+		this.hash = Long.valueOf(data.hashCode());
 	}
 
 	/*
@@ -68,7 +68,7 @@ public class JavaHash implements StringChecksumAlgorithm {
 			data.position(oldPos);
 		}
 
-		this.hash = Integer.toHexString(new String(array).hashCode());
+		this.hash = (long)new String(array).hashCode();
 	}
 
 	/*
@@ -87,12 +87,12 @@ public class JavaHash implements StringChecksumAlgorithm {
 	 * @see org.xtreemfs.common.checksums.ChecksumAlgorithm#getValue()
 	 */
 	@Override
-	public String getValue() {
-		String value;
+	public long getValue() {
+		long value;
 		if (this.hash != null)
 			value = this.hash;
 		else
-			value = "";
+			value = 0;
 		reset();
 		return value;
 	}

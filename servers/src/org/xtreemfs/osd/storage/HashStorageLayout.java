@@ -93,6 +93,8 @@ public class HashStorageLayout extends StorageLayout {
 
     // object list of file IDs, ordered by volume ID
     private ConcurrentFileMap fileMap;
+
+    private final boolean     checksumsEnabled;
     
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
@@ -120,6 +122,7 @@ public class HashStorageLayout extends StorageLayout {
             this.hashAlgo = new SDBM();
         }
 
+        this.checksumsEnabled = config.isUseChecksums();
         if (config.isUseChecksums()) {
 
             // get the algorithm from the factory
@@ -148,7 +151,7 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
     }
 
-    public ObjectInformation readObject(String fileId, long objNo, int version, String checksum,
+    public ObjectInformation readObject(String fileId, long objNo, int version, long checksum,
         StripingPolicyImpl sp) throws IOException {
         ReusableBuffer bbuf = null;
 
@@ -179,28 +182,28 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
-    public boolean checkObject(ReusableBuffer obj, String checksum) {
+    public boolean checkObject(ReusableBuffer obj, long checksum) {
 
         // calculate and compare the checksum if checksumming is enabled
-        if (checksumAlgo != null && checksum != null) {
+        if (checksumsEnabled) {
 
             // calculate the checksum
             checksumAlgo.update(obj.getBuffer());
-            String calcedChecksum = checksumAlgo.getValue();
+            long calcedChecksum = checksumAlgo.getValue();
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "calc'ed checksum: " + calcedChecksum
                     + ", stored checksum: " + checksum);
 
             // test the checksum
-            return calcedChecksum.equals(checksum);
+            return calcedChecksum == checksum;
         }
 
         return true;
     }
 
     public void writeObject(String fileId, long objNo, ReusableBuffer data, int version,
-        int offset, String currentChecksum, StripingPolicyImpl sp) throws IOException {
+        int offset, long checksum, StripingPolicyImpl sp) throws IOException {
 
         // ignore empty writes
         if (data.capacity() > 0) {
@@ -211,8 +214,8 @@ public class HashStorageLayout extends StorageLayout {
             try {
                 // write file
                 String filename = generateAbsoluteObjectPath(relPath, objNo, version,
-                    currentChecksum);
-                File file = new File(filename);
+                    checksum);
+                File file = new File(filename);              
                 RandomAccessFile f = new RandomAccessFile(file, "rw");
 
                 data.position(0);
@@ -223,7 +226,7 @@ public class HashStorageLayout extends StorageLayout {
                 if (version > 0) {
                     // delete old file
                     String fileNameOld = generateAbsoluteObjectPath(relPath, objNo, version - 1,
-                        currentChecksum);
+                        checksum);
                     File oldFile = new File(fileNameOld);
                     oldFile.delete();
                 }
@@ -235,8 +238,8 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
-    public String createChecksum(String fileId, long objNo, ReusableBuffer data, int version,
-        String currentChecksum) throws IOException {
+    public long createChecksum(String fileId, long objNo, ReusableBuffer data, int version,
+        long currentChecksum) throws IOException {
 
         String relPath = generateRelativeFilePath(fileId);
         new File(this.storageDir + relPath).mkdirs();
@@ -269,7 +272,7 @@ public class HashStorageLayout extends StorageLayout {
 
                 // calculate the checksum and wrap it into a buffer, in
                 // order to write it to the object file
-                String checksum = checksumAlgo.getValue();
+                long checksum = checksumAlgo.getValue();
 
                 // encode the checksum in the file name by renaming the file
                 // accordingly
@@ -283,10 +286,10 @@ public class HashStorageLayout extends StorageLayout {
             throw new IOException("unable to create file directory or object: " + ex.getMessage());
         }
 
-        return null;
+        return 0;
     }
 
-    public String createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version,
+    public long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version,
         long size) throws IOException {
 
         assert(size >= 0) : "size is "+size;
@@ -295,7 +298,7 @@ public class HashStorageLayout extends StorageLayout {
         new File(this.storageDir + relPath).mkdirs();
 
         // calculate the checksum for the padding object if necessary
-        String checksum = null;
+        long checksum = 0;
         if (checksumAlgo != null) {
             byte[] content = new byte[(int) size];
             checksumAlgo.update(ByteBuffer.wrap(content));
@@ -345,11 +348,12 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     public void deleteObject(String fileId, final long objNo) throws IOException {
+        final String prefix = createFileName(objNo, 0, 0).substring(0,8);
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
-                return pathname.getName().startsWith("" + objNo);
+                return pathname.getName().startsWith(prefix);
             }
         });
         for (File obj : objs) {
@@ -358,12 +362,12 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     public void deleteObject(String fileId, final long objNo, final int version) throws IOException {
+        final String prefix = createFileName(objNo, 0, 0).substring(0,8+4);
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
-                return pathname.getName().startsWith("" + objNo)
-                    && pathname.getName().endsWith("" + version);
+                return pathname.getName().startsWith(prefix);
             }
         });
         for (File obj : objs) {
@@ -393,25 +397,16 @@ public class HashStorageLayout extends StorageLayout {
             for (String obj : objs) {
                 if (obj.startsWith("."))
                     continue; // ignore special files (metadata, .tepoch)
-                int cpos = obj.indexOf(VERSION_SEPARATOR);
-                int cpos2 = obj.indexOf(CHECKSUM_SEPARATOR);
-                String tmp = obj.substring(0, cpos);
-                long objNum = Long.valueOf(tmp);
-                tmp = cpos2 == -1 ? obj.substring(cpos + 1) : obj.substring(cpos + 1, cpos2);
-                int objVer = Integer.valueOf(tmp);
-                if (objNum > lastObjNum) {
+                ObjFileData ofd = parseFileName(obj);
+                if (ofd.objNo > lastObjNum) {
                     lastObject = obj;
-                    lastObjNum = objNum;
+                    lastObjNum = ofd.objNo;
                 }
 
-                String checksum = null;
-                if (cpos2 != -1)
-                    checksum = obj.substring(cpos2 + 1);
-
-                Integer oldver = info.getObjVersions().get(objNum);
-                if ((oldver == null) || (oldver < objVer)) {
-                    info.getObjVersions().put(objNum, objVer);
-                    info.getObjChecksums().put(objNum, checksum);
+                Integer oldver = info.getObjVersions().get(ofd.objNo);
+                if ((oldver == null) || (oldver < ofd.objVersion)) {
+                    info.getObjVersions().put((long)ofd.objNo, ofd.objVersion);
+                    info.getObjChecksums().put((long)ofd.objNo, ofd.checksum);
                 }
             }
 
@@ -473,17 +468,17 @@ public class HashStorageLayout extends StorageLayout {
         return this.storageDir + generateRelativeFilePath(fileId);
     }
 
-    private String generateAbsolutObjectPath(String fileId, long objNo, int version, String checksum) {
+    private String generateAbsolutObjectPath(String fileId, long objNo, int version, long checksum) {
         StringBuilder path = new StringBuilder(generateAbsoluteFilePath(fileId));
-        path.append(generateFilename(objNo, version, checksum));
+        path.append(createFileName(objNo, version, checksum));
         return path.toString();
     }
 
     private String generateAbsoluteObjectPath(String relativeFilePath, long objNo, int version,
-        String checksum) {
+        long checksum) {
         StringBuilder path = new StringBuilder(this.storageDir);
         path.append(relativeFilePath);
-        path.append(generateFilename(objNo, version, checksum));
+        path.append(createFileName(objNo, version, checksum));
         return path.toString();
     }
 
@@ -492,18 +487,6 @@ public class HashStorageLayout extends StorageLayout {
         path.append(fileId);
         path.append("/");
         return path.toString();
-    }
-
-    private StringBuilder generateFilename(long objNo, int version, String checksum) {
-        StringBuilder filename = new StringBuilder();
-        filename.append(objNo);
-        filename.append(VERSION_SEPARATOR);
-        filename.append(version);
-        if (checksum != null) {
-            filename.append(CHECKSUM_SEPARATOR);
-            filename.append(checksum);
-        }
-        return filename;
     }
 
     /**
@@ -539,12 +522,13 @@ public class HashStorageLayout extends StorageLayout {
      */
     private String hash(String str) {
     	this.hashAlgo.digest(str);
-    	String res = this.hashAlgo.getValue();
+        StringBuffer sb = new StringBuffer(16);
+    	OutputUtils.writeHexLong(sb, this.hashAlgo.getValue());
 
-        if (res.length() > this.hashCutLength) {
-            res = res.substring(0, this.hashCutLength);
-        }
-        return res;
+        if (sb.length() > this.hashCutLength) {
+            return sb.substring(0, this.hashCutLength);
+        } else
+            return sb.toString();
     }
 
     public long getFileInfoLoadCount() {
@@ -625,14 +609,9 @@ public class HashStorageLayout extends StorageLayout {
      * @throws NumberFormatException
      */
     private int getVersion(File f) throws NumberFormatException{
-        String name = f.getName();
-        if (name.indexOf(CHECKSUM_SEPARATOR)!=-1)
-            return Integer.parseInt(name.substring(
-                                   name.indexOf(VERSION_SEPARATOR)+1, 
-                                   name.indexOf(CHECKSUM_SEPARATOR)));
-        else return Integer.parseInt(name.substring(
-                                    name.indexOf(VERSION_SEPARATOR)+1, 
-                                    name.length()));
+        final String name = f.getName();
+        ObjFileData ofd = parseFileName(name);
+        return ofd.objVersion;
     }    
     
     /**
@@ -642,7 +621,9 @@ public class HashStorageLayout extends StorageLayout {
      * @throws NumberFormatException
      */
     private int getObjectNo(File f) throws NumberFormatException{
-        return Integer.parseInt(f.getName().substring(0, f.getName().indexOf(VERSION_SEPARATOR)));
+        final String name = f.getName();
+        ObjFileData ofd = parseFileName(name);
+        return (int)ofd.objNo;
     } 
     
     /**
@@ -676,5 +657,32 @@ public class HashStorageLayout extends StorageLayout {
     public boolean isFilesizeWrittenToDisk(String fileId) throws IOException {
         File parent = new File(generateAbsoluteFilePath(fileId));
         return parent.exists() && (new File(parent,LOCAL_KNOWN_FILESIZE_FILENAME)).exists(); 
+    }
+
+    public static String createFileName(long objNo, int objVersion, long checksum) {
+        final StringBuffer sb = new StringBuffer(Integer.SIZE/8*3+Long.SIZE/8);
+        OutputUtils.writeHexLong(sb, objNo);
+        OutputUtils.writeHexInt(sb,objVersion);
+        OutputUtils.writeHexLong(sb, checksum);
+        return sb.toString();
+    }
+
+    public static ObjFileData parseFileName(String filename) {
+        final long objNo = OutputUtils.readHexLong(filename, 0);
+        final int objVersion = OutputUtils.readHexInt(filename, 16);
+        final long checksum = OutputUtils.readHexLong(filename, 20);
+        return new ObjFileData(objNo, objVersion, checksum);
+    }
+
+    public static final class ObjFileData {
+        final long objNo;
+        final int objVersion;
+        final long checksum;
+
+        public ObjFileData(long objNo, int objVersion, long checksum) {
+            this.objNo = objNo;
+            this.objVersion = objVersion;
+            this.checksum = checksum;
+        }
     }
 }

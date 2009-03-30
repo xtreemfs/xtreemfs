@@ -46,7 +46,7 @@ public interface ChecksumAlgorithm extends Cloneable {
 	 * 
 	 * @return checksum
 	 */
-	public String getValue();
+	public long getValue();
 
 	/**
 	 * Resets checksum to initial value.

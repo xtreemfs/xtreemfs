@@ -199,6 +199,39 @@ public class OSDTruncateTest extends TestCase {
         BufferPool.free(data.getData());
     }
 
+    public void testTruncateShrink2() throws Exception {
+        // wirte first 1024 bytes to object 0
+        ReusableBuffer buf = BufferPool.allocate(1024);
+        for (int i = 0; i < 1024; i++)
+            buf.put((byte) 'A');
+        buf.flip();
+        ObjectData data = new ObjectData(buf, 0, 0, false);
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 6, 0, 0, 0, data);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(6*2048+1024, resp.getNew_file_size().get(0).getSize_in_bytes());
+
+        fcred.getXcap().setTruncate_epoch(1);
+
+        //truncate shrink to 3 object, 3rd object half
+        r = osdClient.truncate(serverID.getAddress(), fileId, fcred, 2048*2+1024);
+        resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(2048*2+1024, resp.getNew_file_size().get(0).getSize_in_bytes());
+
+
+        //get object 2 should be 1024 bytes long, no padding
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), fileId, fcred, 6, 0, 0, 2048);
+        data = r2.get();
+
+        assertEquals(0,data.getZero_padding());
+        assertEquals(0,data.getData().capacity());
+        r2.freeBuffers();
+        BufferPool.free(data.getData());
+    }
+
     public void testTruncateShrinkInObject() throws Exception {
         // wirte first 1024 bytes to object 0
         ReusableBuffer buf = BufferPool.allocate(1024);

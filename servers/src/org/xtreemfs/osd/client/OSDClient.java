@@ -79,7 +79,6 @@ public class OSDClient extends ONCRPCClient {
             public ObjectData getResult(ReusableBuffer data) {
                 readResponse resp = new readResponse();
                 resp.deserialize(data);
-                System.out.println("client: "+resp.getObject_data());
                 return resp.getObject_data();
             }
         });

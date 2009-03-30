@@ -64,8 +64,6 @@ public final class WriteOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final writeRequest args = (writeRequest)rq.getRequestArgs();
 
-        System.out.println("rq: "+args);
-
         if (args.getObject_number() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
             return;
@@ -112,7 +110,6 @@ public final class WriteOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        System.out.println("resp: "+result);
         writeResponse response = new writeResponse(result);
         rq.sendSuccess(response);
     }

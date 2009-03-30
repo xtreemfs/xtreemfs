@@ -97,12 +97,12 @@ public class ChecksumFactoryTest extends TestCase {
      */
 	public void testJavaChecksumAlgorithm() throws Exception {
 		// compute checksum with xtreemfs ChecksumFactory
-		String xtreemfsValue = computeXtreemfsChecksum("Adler32", true);
+		long xtreemfsValue = computeXtreemfsChecksum("Adler32", true);
 
 		// compute checksum with java API
 		Checksum javaAlgorithm = new Adler32();
 		javaAlgorithm.update(data.array(), 0, data.array().length);
-		String javaValue = Long.toHexString(javaAlgorithm.getValue());
+		long javaValue = javaAlgorithm.getValue();
 
 		// System.out.println(javaValue);
 		// System.out.println(xtreemfsValue);
@@ -110,22 +110,22 @@ public class ChecksumFactoryTest extends TestCase {
 		assertEquals(javaValue, xtreemfsValue);
 	}
 
-    /**
-     * tests the internal java message digest algorithms
-     * @throws Exception
-     */
-	public void testJavaMessageDigestAlgorithm() throws Exception {
-		// compute checksum with xtreemfs ChecksumFactory
-		String xtreemfsValue = computeXtreemfsChecksum("MD5", true);
-
-		// compute checksum with java API
-		String javaValue = computeJavaMessageDigest("MD5");
-
-//		System.out.println("java:     "+xtreemfsValue);
-//		System.out.println("xtreemfs: "+javaValue.toString());
-
-		assertEquals(javaValue.toString(), xtreemfsValue);
-	}
+//    /**
+//     * tests the internal java message digest algorithms
+//     * @throws Exception
+//     */
+//	public void testJavaMessageDigestAlgorithm() throws Exception {
+//		// compute checksum with xtreemfs ChecksumFactory
+//		String xtreemfsValue = computeXtreemfsChecksum("MD5", true);
+//
+//		// compute checksum with java API
+//		String javaValue = computeJavaMessageDigest("MD5");
+//
+////		System.out.println("java:     "+xtreemfsValue);
+////		System.out.println("xtreemfs: "+javaValue.toString());
+//
+//		assertEquals(javaValue.toString(), xtreemfsValue);
+//	}
 
 	/**
 	 * @param algorithm TODO
@@ -133,11 +133,11 @@ public class ChecksumFactoryTest extends TestCase {
 	 * @return
 	 * @throws NoSuchAlgorithmException
 	 */
-	private String computeXtreemfsChecksum(String algorithm, boolean returnAlgorithm) throws NoSuchAlgorithmException {
+	private long computeXtreemfsChecksum(String algorithm, boolean returnAlgorithm) throws NoSuchAlgorithmException {
 		// compute checksum with xtreemfs ChecksumFactory
 		ChecksumAlgorithm xtreemfsAlgorithm = factory.getAlgorithm(algorithm);
 		xtreemfsAlgorithm.update(data);
-		String xtreemfsValue = xtreemfsAlgorithm.getValue();
+		long xtreemfsValue = xtreemfsAlgorithm.getValue();
 		if(returnAlgorithm)
 			this.factory.returnAlgorithm(xtreemfsAlgorithm);
 		return xtreemfsValue;
@@ -161,19 +161,27 @@ public class ChecksumFactoryTest extends TestCase {
 		return javaValue.toString();
 	}
 
+    private long computeJavaCheckSum(String algorithm)
+			throws NoSuchAlgorithmException {
+		// compute checksum with java API
+		Adler32 adler = new Adler32();
+        adler.update(data.array());
+        return adler.getValue();
+	}
+
 	/**
 	 * tests, if the internal buffer of the checksums is working correctly,
 	 * if the checksum is used more than once
 	 * @throws Exception
 	 */
 	public void testIfChecksumIsAlwaysTheSame() throws Exception {
-		ChecksumAlgorithm algorithm = factory.getAlgorithm("SHA-1");
+		ChecksumAlgorithm algorithm = factory.getAlgorithm("Adler32");
 		algorithm.update(data);
-		String oldValue = algorithm.getValue();
+		long oldValue = algorithm.getValue();
 
 		for(int i=0; i<32; i++){
 			algorithm.update(data);
-			String newValue = algorithm.getValue();
+			long newValue = algorithm.getValue();
 
 			assertEquals(oldValue, newValue);
 			oldValue = newValue;
@@ -189,30 +197,30 @@ public class ChecksumFactoryTest extends TestCase {
 		this.data = ByteBuffer.wrap(generateRandomBytes(1024 * 1024 * 32));
 
 		// compute correct checksum with java API
-		String javaValue = computeJavaMessageDigest("SHA-1");
+		Long javaValue = computeJavaCheckSum("Adler32");
 
-		Callable<String> computation = new Callable<String>(){
+		Callable<Long> computation = new Callable<Long>(){
 			@Override
-			public String call() {
+			public Long call() {
 				try {
 					// compute checksum with xtreemfs ChecksumFactory
-					String xtreemfsValue = computeXtreemfsChecksum("SHA-1", true);
+					long xtreemfsValue = computeXtreemfsChecksum("Adler32", true);
 					return xtreemfsValue;
 				} catch (NoSuchAlgorithmException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					return null;
+					return 0l;
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					return null;
+					return 0l;
 				}
 			}
 		};
-		LinkedList<Future<String>> results = useMultipleThreads(THREADS, computation);
+		LinkedList<Future<Long>> results = useMultipleThreads(THREADS, computation);
 
 		// compare correct java checksum with xtreemfs checksums
-		for(Future<String> result : results){
+		for(Future<Long> result : results){
 			assertEquals(javaValue, result.get());
 		}
 	}
@@ -228,17 +236,17 @@ public class ChecksumFactoryTest extends TestCase {
 		this.data = ByteBuffer.wrap(generateRandomBytes(1024 * 1024));
 
 		// compute correct checksum with java API
-		String javaValue = computeJavaMessageDigest("SHA-1");
+		Long javaValue = computeJavaCheckSum("Adler32");
 
-		Callable<LinkedList<String>> computation = new Callable<LinkedList<String>>(){
+		Callable<LinkedList<Long>> computation = new Callable<LinkedList<Long>>(){
 			@Override
-			public LinkedList<String> call() {
+			public LinkedList<Long> call() {
 				try {
-					LinkedList<String> values = new LinkedList<String>();
+					LinkedList<Long> values = new LinkedList<Long>();
 					boolean returning = false;
 					for(int i=0; i<ROUNDS; i++){
 						// compute checksum with xtreemfs ChecksumFactory
-						String xtreemfsValue = computeXtreemfsChecksum("SHA-1", returning);
+						long xtreemfsValue = computeXtreemfsChecksum("Adler32", returning);
 						values.add(xtreemfsValue);
 						returning = !returning;
 					}
@@ -254,11 +262,11 @@ public class ChecksumFactoryTest extends TestCase {
 				}
 			}
 		};
-		LinkedList<Future<LinkedList<String>>> results = useMultipleThreads(THREADS, computation);
+		LinkedList<Future<LinkedList<Long>>> results = useMultipleThreads(THREADS, computation);
 
 		// compare correct java checksum with xtreemfs checksums
-		for(Future<LinkedList<String>> result : results){
-			for(String value : result.get()){
+		for(Future<LinkedList<Long>> result : results){
+			for(Long value : result.get()){
 				assertEquals(javaValue, value);
 			}
 		}

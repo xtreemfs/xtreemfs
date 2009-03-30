@@ -149,7 +149,7 @@ public abstract class StorageLayout {
      *         object does not exist
      */
     public abstract ObjectInformation readObject(String fileId, long objNo, int version,
-	    String checksum, StripingPolicyImpl sp)
+	    long checksum, StripingPolicyImpl sp)
 	    throws IOException;
 
     /**
@@ -162,7 +162,7 @@ public abstract class StorageLayout {
      * @return <code>true</code>, if the given checksum matches the checksum
      *         of the data, <code>false</code>, otherwise
      */
-    public abstract boolean checkObject(ReusableBuffer obj, String checksum);
+    public abstract boolean checkObject(ReusableBuffer obj, long checksum);
 
     /**
      * Writes a partial object to the storage device.
@@ -188,7 +188,7 @@ public abstract class StorageLayout {
      *             when the object cannot be written
      */
     public abstract void writeObject(String fileId, long objNo, ReusableBuffer data, int version,
-        int offset, String currentChecksum, StripingPolicyImpl sp) throws IOException;
+        int offset, long checksum, StripingPolicyImpl sp) throws IOException;
 
     /**
      * Calculates and stores the checksum for an object.
@@ -211,8 +211,8 @@ public abstract class StorageLayout {
      * @throws java.io.IOException
      *             if an I/O error occured
      */
-    public abstract String createChecksum(String fileId, long objNo, ReusableBuffer data,
-        int version, String currentChecksum) throws IOException;
+    public abstract long createChecksum(String fileId, long objNo, ReusableBuffer data,
+        int version, long currentChecksum) throws IOException;
 
     /**
      * Deletes all objects of a file.
@@ -266,7 +266,7 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred when storing the object
      */
-    public abstract String createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp,
+    public abstract long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp,
         int version, long size) throws IOException;
 
     /**

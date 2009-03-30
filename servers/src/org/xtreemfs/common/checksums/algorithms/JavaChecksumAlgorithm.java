@@ -88,10 +88,10 @@ abstract public class JavaChecksumAlgorithm<RealJavaAlgorithm extends Checksum>
 	 * @see org.xtreemfs.common.checksum.ChecksumAlgorithm#getValue()
 	 */
 	@Override
-	public String getValue() {
-		String value = Long.toHexString(realAlgorithm.getValue());
+	public long getValue() {
+		final long tmp = realAlgorithm.getValue();
 		realAlgorithm.reset();
-		return value;
+		return tmp;
 	}
 
 	/*

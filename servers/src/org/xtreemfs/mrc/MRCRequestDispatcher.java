@@ -320,12 +320,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case INVALID_ARGS: {
-                System.out.println("invalid args: " + error);
                 rpcRequest.sendGarbageArgs(error.getErrorMessage());
                 break;
             }
             case UNKNOWN_OPERATION: {
-                System.out.println("unknown operation: " + error);
                 rpcRequest.sendProtocolException(new ProtocolException(
                     ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getStackTrace()));
                 break;
@@ -340,7 +338,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         else {
             assert (request.getResponse() != null);
-            System.out.println("response: " + request.getResponse());
             rpcRequest.sendResponse(request.getResponse());
         }
         
