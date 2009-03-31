@@ -47,7 +47,6 @@ namespace org
         void unlink( const Path& path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
-        void utimens_current( const Path& path );
 
         // EventHandler
         const char* getEventHandlerName() const { return "MRCProxy"; }

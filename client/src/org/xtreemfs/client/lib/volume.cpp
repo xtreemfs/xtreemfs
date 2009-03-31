@@ -47,7 +47,7 @@ YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
 #ifdef _WIN32
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
 #else
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );                   
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
 #endif
 }
 
@@ -183,7 +183,7 @@ bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
 
 bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
-  xtreemfs::interfaces::Stat stbuf; 
+  xtreemfs::interfaces::Stat stbuf;
   stbuf.set_attributes( file_attributes );
   mrc_proxy.setattr( Path( this->name, path ), stbuf );
   return true;
@@ -237,12 +237,6 @@ bool Volume::unlink( const YIELD::Path& path )
 bool Volume::utimens( const YIELD::Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns )
 {
   mrc_proxy.utimens( Path( this->name, path ), atime_ns, mtime_ns, ctime_ns );
-  return true;
-}
-
-bool Volume::utimens_current( const YIELD::Path& path )
-{
-  mrc_proxy.utimens_current( Path( this->name, path ) );
   return true;
 }
 

@@ -174,7 +174,3 @@ void MRCProxy::utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, 
   mrc_interface.utimens( path, atime_ns, mtime_ns, ctime_ns, this );
 }
 
-void MRCProxy::utimens_current( const Path& path )
-{
-  mrc_interface.utimens_current( path );
-}
