@@ -21,17 +21,17 @@ bool MRCProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredent
   return true;
 }
 
-bool MRCProxy::access( const std::string& path, uint32_t mode )
+bool MRCProxy::access( const Path& path, uint32_t mode )
 {
   return mrc_interface.access( path, mode, this );
 }
 
-void MRCProxy::chmod( const std::string& path, uint32_t mode )
+void MRCProxy::chmod( const Path& path, uint32_t mode )
 {
   mrc_interface.chmod( path, mode, this );
 }
 
-void MRCProxy::chown( const std::string& path, int uid, int gid )
+void MRCProxy::chown( const Path& path, int uid, int gid )
 {
 #ifdef _WIN32
   YIELD::DebugBreak();
@@ -42,12 +42,12 @@ void MRCProxy::chown( const std::string& path, int uid, int gid )
 #endif
 }
 
-void MRCProxy::chown( const std::string& path, const std::string& user_id, const std::string& group_id )
+void MRCProxy::chown( const Path& path, const std::string& user_id, const std::string& group_id )
 {
   mrc_interface.chown( path, user_id, group_id, this );
 }
 
-void MRCProxy::create( const std::string& path, uint32_t mode )
+void MRCProxy::create( const Path& path, uint32_t mode )
 {
   mrc_interface.create( path, mode, this );
 }
@@ -57,7 +57,7 @@ void MRCProxy::ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org
   mrc_interface.ftruncate( write_xcap, truncate_xcap, this );
 }
 
-void MRCProxy::getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf )
+void MRCProxy::getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf )
 {
   mrc_interface.getattr( path, stbuf, this );
 #ifndef _WIN32
@@ -68,7 +68,7 @@ void MRCProxy::getattr( const std::string& path, org::xtreemfs::interfaces::stat
 #endif
 }
 
-void MRCProxy::getxattr( const std::string& path, const std::string& name, std::string& value )
+void MRCProxy::getxattr( const Path& path, const std::string& name, std::string& value )
 {
   mrc_interface.getxattr( path, name, value, this );
 }
@@ -78,27 +78,27 @@ void MRCProxy::link( const std::string& target_path, const std::string& link_pat
   mrc_interface.link( target_path, link_path, this );
 }
 
-void MRCProxy::listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names )
+void MRCProxy::listxattr( const Path& path, org::xtreemfs::interfaces::StringSet& names )
 {
   mrc_interface.listxattr( path, names, this );
 }
 
-void MRCProxy::mkdir( const std::string& path, uint32_t mode )
+void MRCProxy::mkdir( const Path& path, uint32_t mode )
 {
   mrc_interface.mkdir( path, mode, this );
 }
 
-void MRCProxy::mkvol( const std::string& volume_name, uint32_t osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, uint32_t access_control_policy )
+void MRCProxy::mkvol( const org::xtreemfs::interfaces::Volume& volume )
 {
-  mrc_interface.xtreemfs_mkvol( volume_name, osd_selection_policy, default_striping_policy, access_control_policy, this );
+  mrc_interface.xtreemfs_mkvol( volume, this );
 }
 
-void MRCProxy::open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials )
+void MRCProxy::open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
   mrc_interface.open( path, flags, mode, file_credentials, this );
 }
 
-void MRCProxy::readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries )
+void MRCProxy::readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries )
 {
   mrc_interface.readdir( path, directory_entries, this );
 #ifndef _WIN32
@@ -106,7 +106,7 @@ void MRCProxy::readdir( const std::string& path, org::xtreemfs::interfaces::Dire
   {
     int uid, gid;
     policies->getpasswdFromUserCredentials( ( *directory_entry_i ).get_stbuf().get_user_id(), ( *directory_entry_i ).get_stbuf().get_group_id(), uid, gid );
-    org::xtreemfs::interfaces::stat_ new_stbuf = ( *directory_entry_i ).get_stbuf();
+    org::xtreemfs::interfaces::Stat new_stbuf = ( *directory_entry_i ).get_stbuf();
     new_stbuf.set_uid( uid );
     new_stbuf.set_gid( gid );
     ( *directory_entry_i ).set_stbuf( new_stbuf );
@@ -114,7 +114,7 @@ void MRCProxy::readdir( const std::string& path, org::xtreemfs::interfaces::Dire
 #endif
 }
 
-void MRCProxy::removexattr( const std::string& path, const std::string& name )
+void MRCProxy::removexattr( const Path& path, const std::string& name )
 {
   mrc_interface.removexattr( path, name, this );
 }
@@ -129,7 +129,7 @@ void MRCProxy::renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap
   mrc_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap, this );
 }
 
-void MRCProxy::rmdir( const std::string& path )
+void MRCProxy::rmdir( const Path& path )
 {
   mrc_interface.rmdir( path, this );
 }
@@ -139,19 +139,19 @@ void MRCProxy::rmvol( const std::string& volume_name )
   mrc_interface.xtreemfs_rmvol( volume_name, this );
 }
 
-void MRCProxy::setattr( const std::string& path, const org::xtreemfs::interfaces::stat_& stbuf )
+void MRCProxy::setattr( const Path& path, const org::xtreemfs::interfaces::Stat& stbuf )
 {
   mrc_interface.setattr( path, stbuf, this );
 }
 
-void MRCProxy::setxattr( const std::string& path, const std::string& name, const std::string& value, int32_t flags )
+void MRCProxy::setxattr( const Path& path, const std::string& name, const std::string& value, int32_t flags )
 {
   mrc_interface.setxattr( path, name, value, flags, this );
 }
 
-void MRCProxy::statfs( const std::string& volume_name, org::xtreemfs::interfaces::statfs_& statfsbuf )
+void MRCProxy::statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& buf )
 {
-  mrc_interface.statfs( volume_name, statfsbuf, this );
+  mrc_interface.statvfs( volume_name, buf, this );
 }
 
 void MRCProxy::symlink( const std::string& target_path, const std::string& link_path )
@@ -159,7 +159,7 @@ void MRCProxy::symlink( const std::string& target_path, const std::string& link_
   mrc_interface.symlink( target_path, link_path, this );
 }
 
-void MRCProxy::unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials )
+void MRCProxy::unlink( const Path& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials )
 {
   mrc_interface.unlink( path, file_credentials, this );
 }
@@ -169,7 +169,12 @@ void MRCProxy::update_file_size( const org::xtreemfs::interfaces::XCap& xcap, co
   mrc_interface.xtreemfs_update_file_size( xcap, osd_write_response, this );
 }
 
-void MRCProxy::utime( const std::string& path, uint64_t ctime, uint64_t atime, uint64_t mtime )
+void MRCProxy::utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns )
 {
-  mrc_interface.utime( path, ctime, atime, mtime, this );
+  mrc_interface.utimens( path, atime_ns, mtime_ns, ctime_ns, this );
+}
+
+void MRCProxy::utimens_current( const Path& path )
+{
+  mrc_interface.utimens_current( path );
 }

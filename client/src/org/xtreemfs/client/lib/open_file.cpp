@@ -34,9 +34,9 @@ bool OpenFile::listxattr( std::vector<std::string>& out_names )
   return get_parent_volume().listxattr( get_path(), out_names );
 }
 
-ssize_t OpenFile::read( void* rbuf, size_t size, off_t offset )
+ssize_t OpenFile::read( void* rbuf, uint64_t size, uint64_t offset )
 {
-  return attached_to_file_replica.read( file_credentials, rbuf, size, offset );
+  return static_cast<size_t>( attached_to_file_replica.read( file_credentials, rbuf, size, offset ) );
 }
 
 bool OpenFile::removexattr( const std::string& name )
@@ -58,7 +58,7 @@ bool OpenFile::truncate( uint64_t new_size )
   return true;
 }
 
-ssize_t OpenFile::write( const void* wbuf, size_t size, off_t offset )
+ssize_t OpenFile::write( const void* wbuf, uint64_t size, uint64_t offset )
 {
-  return attached_to_file_replica.write( file_credentials, wbuf, size, offset );
+  return static_cast<size_t>( attached_to_file_replica.write( file_credentials, wbuf, size, offset ) );
 }

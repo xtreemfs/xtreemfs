@@ -159,26 +159,7 @@
 	<References>
 	</References>
 	<Files>
-		        <Filter
-            Name="Header Files"
-            Filter="h;hpp;hxx;hm;inl;inc;xsd"
-            UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-            >
-            <File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\bin\dir_interface_fuzzer.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\bin\mrc_interface_fuzzer.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\bin\osd_interface_fuzzer.h"
-    >
-</File>
-
-        </Filter>
-
+		
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"

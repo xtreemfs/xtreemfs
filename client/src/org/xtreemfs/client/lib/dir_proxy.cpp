@@ -31,7 +31,7 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
     if ( uuid_to_uri_i != uuid_to_uri_cache.end() )
     {
       CachedAddressMappingURI* uri = uuid_to_uri_i->second;   
-      double uri_age_s = YIELD::Time::getCurrentEpochTimeS()- uri->get_creation_epoch_time_s();
+      double uri_age_s = YIELD::Time::getCurrentUnixTimeS()- uri->get_creation_epoch_time_s();
       if ( uri_age_s < uri->get_ttl_s() )
       {
         uuid_to_uri_cache_lock.release();
@@ -55,7 +55,7 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
     const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];
     std::ostringstream uri_str;
     uri_str << address_mapping.get_protocol() << "://" << address_mapping.get_address() << ":" << address_mapping.get_port();
-    CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl() );  
+    CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl_s() );  
     uuid_to_uri_cache_lock.acquire();
     uuid_to_uri_cache[uuid] = uri;
     uuid_to_uri_cache_lock.release();

@@ -44,7 +44,7 @@ namespace org
           CachedAddressMappingURI( const std::string& uri, uint32_t ttl_s )
             : YIELD::URI( uri ), ttl_s( ttl_s )
           {
-            creation_epoch_time_s = YIELD::Time::getCurrentEpochTimeS();
+            creation_epoch_time_s = YIELD::Time::getCurrentUnixTimeS();
           }
 
           uint32_t get_ttl_s() const { return ttl_s; }

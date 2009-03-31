@@ -179,7 +179,7 @@ int main( int argc, char** argv )
 
       MRCProxy mrc_proxy( options.get_mrc_uri() );
       mrc_proxy.set_operation_timeout_ms( options.get_timeout_ms() );
-      mrc_proxy.mkvol( options.get_volume_name(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() );
+      mrc_proxy.mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() ) );
     }
 
     return 0;

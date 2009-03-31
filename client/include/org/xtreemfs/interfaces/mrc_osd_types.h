@@ -1,5 +1,5 @@
-#ifndef _53916465524_H
-#define _53916465524_H
+#ifndef _7825732659_H
+#define _7825732659_H
 
 #include "types.h"
 #include "yield/platform.h"
@@ -205,9 +205,9 @@ namespace org
       class XCap : public YIELD::Serializable
       {
       public:
-        XCap() : access_mode( 0 ), expires( 0 ), truncate_epoch( 0 ) { }
-        XCap( const std::string& file_id, uint32_t access_mode, uint64_t expires, const std::string& client_identity, uint32_t truncate_epoch, const std::string& server_signature ) : file_id( file_id ), access_mode( access_mode ), expires( expires ), client_identity( client_identity ), truncate_epoch( truncate_epoch ), server_signature( server_signature ) { }
-        XCap( const char* file_id, size_t file_id_len, uint32_t access_mode, uint64_t expires, const char* client_identity, size_t client_identity_len, uint32_t truncate_epoch, const char* server_signature, size_t server_signature_len ) : file_id( file_id, file_id_len ), access_mode( access_mode ), expires( expires ), client_identity( client_identity, client_identity_len ), truncate_epoch( truncate_epoch ), server_signature( server_signature, server_signature_len ) { }
+        XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ) { }
+        XCap( const std::string& file_id, uint32_t access_mode, uint64_t expires_s, const std::string& client_identity, uint32_t truncate_epoch, const std::string& server_signature ) : file_id( file_id ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity ), truncate_epoch( truncate_epoch ), server_signature( server_signature ) { }
+        XCap( const char* file_id, size_t file_id_len, uint32_t access_mode, uint64_t expires_s, const char* client_identity, size_t client_identity_len, uint32_t truncate_epoch, const char* server_signature, size_t server_signature_len ) : file_id( file_id, file_id_len ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity, client_identity_len ), truncate_epoch( truncate_epoch ), server_signature( server_signature, server_signature_len ) { }
         virtual ~XCap() { }
   
         void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
@@ -215,8 +215,8 @@ namespace org
         const std::string& get_file_id() const { return file_id; }
         void set_access_mode( uint32_t access_mode ) { this->access_mode = access_mode; }
         uint32_t get_access_mode() const { return access_mode; }
-        void set_expires( uint64_t expires ) { this->expires = expires; }
-        uint64_t get_expires() const { return expires; }
+        void set_expires_s( uint64_t expires_s ) { this->expires_s = expires_s; }
+        uint64_t get_expires_s() const { return expires_s; }
         void set_client_identity( const std::string& client_identity ) { set_client_identity( client_identity.c_str(), client_identity.size() ); }
         void set_client_identity( const char* client_identity, size_t client_identity_len = 0 ) { this->client_identity.assign( client_identity, ( client_identity_len != 0 ) ? client_identity_len : std::strlen( client_identity ) ); }
         const std::string& get_client_identity() const { return client_identity; }
@@ -226,19 +226,19 @@ namespace org
         void set_server_signature( const char* server_signature, size_t server_signature_len = 0 ) { this->server_signature.assign( server_signature, ( server_signature_len != 0 ) ? server_signature_len : std::strlen( server_signature ) ); }
         const std::string& get_server_signature() const { return server_signature; }
   
-        bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires == other.expires && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && server_signature == other.server_signature; }
+        bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && server_signature == other.server_signature; }
   
         // YIELD::RTTI
         TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::XCap", 3149302578UL );
   
         // YIELD::Serializable
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); access_mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "access_mode" ) ); expires = input_stream.readUint64( YIELD::StructuredStream::Declaration( "expires" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "access_mode" ), access_mode ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "expires" ), expires ); output_stream.writeString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); access_mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "access_mode" ) ); expires_s = input_stream.readUint64( YIELD::StructuredStream::Declaration( "expires_s" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); truncate_epoch = input_stream.readUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "access_mode" ), access_mode ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "expires_s" ), expires_s ); output_stream.writeString( YIELD::StructuredStream::Declaration( "client_identity" ), client_identity ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "truncate_epoch" ), truncate_epoch ); output_stream.writeString( YIELD::StructuredStream::Declaration( "server_signature" ), server_signature ); }
   
       protected:
         std::string file_id;
         uint32_t access_mode;
-        uint64_t expires;
+        uint64_t expires_s;
         std::string client_identity;
         uint32_t truncate_epoch;
         std::string server_signature;

@@ -42,12 +42,12 @@ YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
 
 YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
 {
-  org::xtreemfs::interfaces::stat_ stbuf;
+  org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy.getattr( path, stbuf );
 #ifdef _WIN32
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime(), stbuf.get_mtime(), stbuf.get_ctime(), stbuf.get_attributes() );
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
 #else
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime(), stbuf.get_mtime(), stbuf.get_ctime() );                   
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );                   
 #endif
 }
 
@@ -141,11 +141,11 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
   mrc_proxy.readdir( Path( this->name, path ), directory_entries );
   for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
   {
-    const org::xtreemfs::interfaces::stat_& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
+    const org::xtreemfs::interfaces::Stat& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
 #ifdef _WIN32
-    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime(), xtreemfs_stat.get_mtime(), xtreemfs_stat.get_ctime(), xtreemfs_stat.get_attributes() );
+    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() );
 #else
-    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime(), xtreemfs_stat.get_mtime(), xtreemfs_stat.get_ctime() );
+    YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() );
 #endif
     if ( !callback( ( *directory_entry_i ).get_name(), yield_stat ) )
       return false;
@@ -155,7 +155,7 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
 
 YIELD::Path Volume::readlink( const YIELD::Path& path )
 {
-  org::xtreemfs::interfaces::stat_ stbuf;
+  org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy.getattr( Path( this->name, path ), stbuf );
   return stbuf.get_link_target();
 }
@@ -183,7 +183,8 @@ bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
 
 bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
-  xtreemfs::interfaces::stat_ stbuf; stbuf.set_attributes( file_attributes );
+  xtreemfs::interfaces::Stat stbuf; 
+  stbuf.set_attributes( file_attributes );
   mrc_proxy.setattr( Path( this->name, path ), stbuf );
   return true;
 }
@@ -194,17 +195,17 @@ bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const s
   return true;
 }
 
-bool Volume::statvfs( const YIELD::Path& path, struct statvfs* buf )
+bool Volume::statvfs( const YIELD::Path& path, struct statvfs* statvfsbuf )
 {
-  if ( buf )
+  if ( statvfsbuf )
   {
-    memset( buf, 0, sizeof( *buf ) );
-    xtreemfs::interfaces::statfs_ xtreemfs_statfsbuf;
-    mrc_proxy.statfs( this->name, xtreemfs_statfsbuf );
-    buf->f_bsize = xtreemfs_statfsbuf.get_bsize();
-    buf->f_bavail = buf->f_bfree = xtreemfs_statfsbuf.get_bfree();
-    buf->f_blocks = xtreemfs_statfsbuf.get_bfree() * 1024;
-    buf->f_namemax = xtreemfs_statfsbuf.get_namelen();
+    memset( statvfsbuf, 0, sizeof( *statvfsbuf ) );
+    xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
+    mrc_proxy.statvfs( this->name, xtreemfs_statvfsbuf );
+    statvfsbuf->f_bsize = xtreemfs_statvfsbuf.get_bsize();
+    statvfsbuf->f_bavail = statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bfree();
+    statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_bfree() * 1024;
+    statvfsbuf->f_namemax = xtreemfs_statvfsbuf.get_namelen();
     return true;
   }
   else
@@ -217,7 +218,7 @@ bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
   return true;
 }
 
-bool Volume::truncate( const YIELD::Path& path, off_t new_size )
+bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
   YIELD::File* file = this->open( path, O_TRUNC, 0 ).release();
   file->truncate( new_size );
@@ -233,9 +234,15 @@ bool Volume::unlink( const YIELD::Path& path )
   return true;
 }
 
-bool Volume::utime( const YIELD::Path& path, uint64_t _ctime, uint64_t _atime, uint64_t _mtime )
+bool Volume::utimens( const YIELD::Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns )
 {
-  mrc_proxy.utime( Path( this->name, path ), _ctime, _atime, _mtime );
+  mrc_proxy.utimens( Path( this->name, path ), atime_ns, mtime_ns, ctime_ns );
+  return true;
+}
+
+bool Volume::utimens_current( const YIELD::Path& path )
+{
+  mrc_proxy.utimens_current( Path( this->name, path ) );
   return true;
 }
 

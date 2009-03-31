@@ -1,6 +1,7 @@
 #ifndef ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 #define ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 
+#include "org/xtreemfs/client/path.h"
 #include "org/xtreemfs/client/proxy.h"
 #include "org/xtreemfs/interfaces/mrc_interface.h"
 
@@ -20,32 +21,33 @@ namespace org
         MRCProxy( const YIELD::URI& uri );
         virtual ~MRCProxy();
 
-        bool access( const std::string& path, uint32_t mode );
-        void chmod( const std::string& path, uint32_t mode );
-        void chown( const std::string& path, int uid, int gid );
-        void chown( const std::string& path, const std::string& user_id, const std::string& group_id );
-        void create( const std::string& path, uint32_t mode );
+        bool access( const Path& path, uint32_t mode );
+        void chmod( const Path& path, uint32_t mode );
+        void chown( const Path& path, int uid, int gid );
+        void chown( const Path& path, const std::string& user_id, const std::string& group_id );
+        void create( const Path& path, uint32_t mode );
         void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );
-        void getattr( const std::string& path, org::xtreemfs::interfaces::stat_& stbuf );
-        void getxattr( const std::string& path, const std::string& name, std::string& value );
+        void getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf );
+        void getxattr( const Path& path, const std::string& name, std::string& value );
         void link( const std::string& target_path, const std::string& link_path );
-        void listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names );
-        void mkdir( const std::string& path, uint32_t mode );
-        void mkvol( const std::string& volume_name, uint32_t osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, uint32_t access_control_policy );
+        void listxattr( const Path& path, org::xtreemfs::interfaces::StringSet& names );
+        void mkdir( const Path& path, uint32_t mode );
+        void mkvol( const org::xtreemfs::interfaces::Volume& volume );
         void rmvol( const std::string& volume_name );
-        void open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& credentials );
-        void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );
-        void removexattr( const std::string& path, const std::string& name );
+        void open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& credentials );
+        void readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );
+        void removexattr( const Path& path, const std::string& name );
         void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
         void renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );
-        void rmdir( const std::string& path );
-        void setattr( const std::string& path, const org::xtreemfs::interfaces::stat_& stbuf );
-        void setxattr( const std::string& path, const std::string& name, const std::string& value, int32_t flags );
-        void statfs( const std::string& volume_name, org::xtreemfs::interfaces::statfs_& statfsbuf );
+        void rmdir( const Path& path );
+        void setattr( const Path& path, const org::xtreemfs::interfaces::Stat& stbuf );
+        void setxattr( const Path& path, const std::string& name, const std::string& value, int32_t flags );
+        void statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& );
         void symlink( const std::string& target_path, const std::string& link_path );
-        void unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
+        void unlink( const Path& path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
-        void utime( const std::string& path, uint64_t ctime, uint64_t atime, uint64_t mtime );
+        void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
+        void utimens_current( const Path& path );
 
         // EventHandler
         const char* getEventHandlerName() const { return "MRCProxy"; }

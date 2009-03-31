@@ -24,9 +24,9 @@ namespace org
         Volume& get_parent_volume() const { return parent_shared_file.get_parent_volume(); }
         const Path& get_path() const { return parent_shared_file.get_path(); }
 
-        size_t read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, off_t offset );
-        void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, off_t new_size );
-        size_t write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, off_t offset );
+        uint64_t read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, uint64_t size, uint64_t offset );
+        void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size );
+        uint64_t write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, uint64_t size, uint64_t offset );
 
       private:
         SharedFile& parent_shared_file;

@@ -18,23 +18,23 @@ FileReplica::~FileReplica()
     YIELD::SharedObject::decRef( *osd_proxy_i );
 }
 
-size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, off_t offset )
+uint64_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, uint64_t size, uint64_t offset )
 {
   char* rbuf_p = static_cast<char*>( rbuf );
-  off_t file_offset = offset, file_offset_max = offset + size;
+  uint64_t file_offset = offset, file_offset_max = offset + size;
   uint32_t stripe_size = striping_policy.get_stripe_size() * 1024;
 
   while ( file_offset < file_offset_max )
   {
     uint64_t object_number = file_offset / stripe_size;
-    off_t object_offset = file_offset % stripe_size;
-    size_t object_size = file_offset_max - file_offset;
+    uint32_t object_offset = file_offset % stripe_size;
+    uint64_t object_size = file_offset_max - file_offset;
     if ( object_offset + object_size > stripe_size )
       object_size = stripe_size - object_offset;
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
     org::xtreemfs::interfaces::ObjectData object_data;
-    osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, object_size, object_data );
+    osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
     YIELD::SerializableString* data = static_cast<YIELD::SerializableString*>( object_data.get_data().get() );
     if ( data && !data->empty() )
@@ -48,7 +48,7 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
     if ( zero_padding > 0 )
     {
       if ( zero_padding > size )
-        zero_padding = size;
+        zero_padding = static_cast<uint32_t>( size );
       memset( rbuf_p, 0, zero_padding );
       rbuf_p += zero_padding;
       file_offset += zero_padding;
@@ -61,7 +61,7 @@ size_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file
   return file_offset - offset;
 }
 
-void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, off_t new_size )
+void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size )
 {
  org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
  get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
@@ -69,21 +69,21 @@ void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& fi
    get_mrc_proxy().update_file_size( file_credentials.get_xcap(), osd_write_response );
 }
 
-size_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, off_t offset )
+uint64_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, uint64_t size, uint64_t offset )
 {
   const char* wbuf_p = static_cast<const char*>( wbuf );
-  off_t file_offset = offset, file_offset_max = offset + size;
+  uint64_t file_offset = offset, file_offset_max = offset + size;
   uint32_t stripe_size = striping_policy.get_stripe_size() * 1024;
   org::xtreemfs::interfaces::OSDWriteResponse newest_osd_write_response;
 
   while ( file_offset < file_offset_max )
   {
     uint64_t object_number = file_offset / stripe_size;
-    off_t object_offset = file_offset % stripe_size;
-    size_t object_size = file_offset_max - file_offset;
+    uint32_t object_offset = file_offset % stripe_size;
+    uint64_t object_size = file_offset_max - file_offset;
     if ( object_offset + object_size > stripe_size )
       object_size = stripe_size - object_offset;
-    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::SerializableString( wbuf_p, object_size ), 0, 0, false );
+    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::SerializableString( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
     org::xtreemfs::interfaces::OSDWriteResponse temp_osd_write_response;

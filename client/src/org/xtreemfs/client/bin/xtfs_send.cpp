@@ -47,10 +47,17 @@ namespace org
             return 0;
         }
 
-        YIELD::Serializable* readSerializable( const Declaration&, YIELD::Serializable* s = NULL )
+        YIELD::Serializable* readSerializable( const Declaration& decl, YIELD::Serializable* s = NULL )
         {
-          if ( s && s->getGeneralType() == YIELD::RTTI::STRING )
-            s->deserialize( *this );
+          if ( s )
+          {
+            switch ( s->getGeneralType() )
+            {              
+              case YIELD::RTTI::STRING: readString( decl, static_cast<YIELD::SerializableString&>( *s ) ); break;
+              case YIELD::RTTI::STRUCT: s->deserialize( *this ); break;
+            }
+          }
+
           return s;
         }
 
