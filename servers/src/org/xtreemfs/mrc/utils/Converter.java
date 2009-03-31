@@ -292,6 +292,11 @@ public class Converter {
         return Converter.intToPolicyName(sp.getPolicy()) + ", " + sp.getStripe_size() + ", " + sp.getWidth();
     }
     
+    public static org.xtreemfs.interfaces.StripingPolicy stripingPolicyToStripingPolicy(StripingPolicy sp) {
+        return new org.xtreemfs.interfaces.StripingPolicy(policyNameToInt(sp.getPattern()), sp
+                .getStripeSize(), sp.getWidth());
+    }
+    
     /**
      * Converts a String array to a list of Strings.
      * 

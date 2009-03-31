@@ -24,9 +24,6 @@
 
 package org.xtreemfs.mrc;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -59,11 +56,11 @@ import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.interfaces.MRCInterface.MRCException;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -79,6 +76,10 @@ import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.volumes.BabuDBVolumeManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 /**
  * 

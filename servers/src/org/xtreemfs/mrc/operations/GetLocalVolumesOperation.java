@@ -25,13 +25,16 @@
 package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
+import org.xtreemfs.interfaces.Volume;
+import org.xtreemfs.interfaces.VolumeSet;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
@@ -40,7 +43,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class GetLocalVolumesOperation extends MRCOperation {
     
-    public static final int OP_ID = -1;
+    public static final int OP_ID = 31;
     
     public GetLocalVolumesOperation(MRCRequestDispatcher master) {
         super(master);
@@ -52,17 +55,20 @@ public class GetLocalVolumesOperation extends MRCOperation {
         try {
             Collection<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
             
-            Map<String, String> map = new HashMap<String, String>();
-            for (VolumeInfo data : volumes)
-                map.put(data.getId(), data.getName());
+            VolumeSet vSet = new VolumeSet();
+            for (VolumeInfo data : volumes) {
+                StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
+                vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), data.getOsdPolicyId(),
+                    Converter.stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)), data
+                            .getAcPolicyId()));
+            }
             
-            // TODO
+            rq.setResponse(new xtreemfs_lsvolResponse(vSet));
             finishRequest(rq);
             
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
     }
-    
     
 }

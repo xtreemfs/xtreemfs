@@ -25,8 +25,8 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
-import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
+import org.xtreemfs.interfaces.MRCInterface.utimensRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimensResponse;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -60,7 +60,7 @@ public class UtimeOperation extends MRCOperation {
         
         try {
             
-            final utimeRequest rqArgs = (utimeRequest) rq.getRequestArgs();
+            final utimensRequest rqArgs = (utimensRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
@@ -109,18 +109,18 @@ public class UtimeOperation extends MRCOperation {
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            if (rqArgs.getAtime() != 0)
-                file.setAtime((int) (rqArgs.getAtime() / (long) 1e9));
-            if (rqArgs.getCtime() != 0)
-                file.setCtime((int) (rqArgs.getCtime() / (long) 1e9));
-            if (rqArgs.getMtime() != 0)
-                file.setMtime((int) (rqArgs.getMtime() / (long) 1e9));
+            if (rqArgs.getAtime_ns() != 0)
+                file.setAtime((int) (rqArgs.getAtime_ns() / (long) 1e9));
+            if (rqArgs.getCtime_ns() != 0)
+                file.setCtime((int) (rqArgs.getCtime_ns() / (long) 1e9));
+            if (rqArgs.getMtime_ns() != 0)
+                file.setMtime((int) (rqArgs.getMtime_ns() / (long) 1e9));
             
             // update POSIX timestamps
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
             
             // set the response
-            rq.setResponse(new utimeResponse());
+            rq.setResponse(new utimensResponse());
             
             update.execute();
             

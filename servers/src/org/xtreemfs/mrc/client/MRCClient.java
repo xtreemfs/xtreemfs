@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.Volume;
+import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
@@ -95,6 +96,8 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
@@ -331,6 +334,22 @@ public class MRCClient extends ONCRPCClient {
                 }
             }, credentials);
         return r;
+    }
+    
+    public RPCResponse<VolumeSet> lsvol(InetSocketAddress server, UserCredentials credentials) {
+        
+        xtreemfs_lsvolRequest rq = new xtreemfs_lsvolRequest();
+        RPCResponse<VolumeSet> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<VolumeSet>() {
+            
+            @Override
+            public VolumeSet getResult(ReusableBuffer data) {
+                final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        }, credentials);
+        return r;
+        
     }
     
     public RPCResponse mkdir(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
