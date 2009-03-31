@@ -102,10 +102,9 @@ public class UtimeOperation extends MRCOperation {
                 file = res.getFile();
             }
             
-            // check whether write permissions are granted to the parent
-            // directory
-            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
+            // check whether write permissions are granted to file
+//            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
+//                    .getDetails().superUser, rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
