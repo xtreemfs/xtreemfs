@@ -10,10 +10,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Service implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public Service() { uuid = ""; version = 0; type = 0; name = ""; last_updated = 0; data = new ServiceDataMap(); }
-    public Service( String uuid, long version, int type, String name, long last_updated, ServiceDataMap data ) { this.uuid = uuid; this.version = version; this.type = type; this.name = name; this.last_updated = last_updated; this.data = data; }
-    public Service( Object from_hash_map ) { uuid = ""; version = 0; type = 0; name = ""; last_updated = 0; data = new ServiceDataMap(); this.deserialize( from_hash_map ); }
-    public Service( Object[] from_array ) { uuid = ""; version = 0; type = 0; name = ""; last_updated = 0; data = new ServiceDataMap();this.deserialize( from_array ); }
+    public Service() { uuid = ""; version = 0; type = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); }
+    public Service( String uuid, long version, int type, String name, long last_updated_s, ServiceDataMap data ) { this.uuid = uuid; this.version = version; this.type = type; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
+    public Service( Object from_hash_map ) { uuid = ""; version = 0; type = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); this.deserialize( from_hash_map ); }
+    public Service( Object[] from_array ) { uuid = ""; version = 0; type = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap();this.deserialize( from_array ); }
 
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
@@ -23,8 +23,8 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     public void setType( int type ) { this.type = type; }
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
-    public long getLast_updated() { return last_updated; }
-    public void setLast_updated( long last_updated ) { this.last_updated = last_updated; }
+    public long getLast_updated_s() { return last_updated_s; }
+    public void setLast_updated_s( long last_updated_s ) { this.last_updated_s = last_updated_s; }
     public ServiceDataMap getData() { return data; }
     public void setData( ServiceDataMap data ) { this.data = data; }
 
@@ -33,7 +33,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
 
     public String toString()
     {
-        return "Service( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + Integer.toString( type ) + ", " + "\"" + name + "\"" + ", " + Long.toString( last_updated ) + ", " + data.toString() + " )";
+        return "Service( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + Integer.toString( type ) + ", " + "\"" + name + "\"" + ", " + Long.toString( last_updated_s ) + ", " + data.toString() + " )";
     }
 
 
@@ -48,7 +48,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
         this.version = ( ( Long )from_hash_map.get( "version" ) ).longValue();
         this.type = ( ( Integer )from_hash_map.get( "type" ) ).intValue();
         this.name = ( String )from_hash_map.get( "name" );
-        this.last_updated = ( ( Long )from_hash_map.get( "last_updated" ) ).longValue();
+        this.last_updated_s = ( ( Long )from_hash_map.get( "last_updated_s" ) ).longValue();
         this.data.deserialize( ( HashMap<String, Object> )from_hash_map.get( "data" ) );
     }
     
@@ -58,7 +58,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
         this.version = ( ( Long )from_array[1] ).longValue();
         this.type = ( ( Integer )from_array[2] ).intValue();
         this.name = ( String )from_array[3];
-        this.last_updated = ( ( Long )from_array[4] ).longValue();
+        this.last_updated_s = ( ( Long )from_array[4] ).longValue();
         this.data.deserialize( ( HashMap<String, Object> )from_array[5] );        
     }
 
@@ -68,7 +68,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
         version = buf.getLong();
         type = buf.getInt();
         name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        last_updated = buf.getLong();
+        last_updated_s = buf.getLong();
         data = new ServiceDataMap(); data.deserialize( buf );
     }
 
@@ -79,7 +79,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
         to_hash_map.put( "version", new Long( version ) );
         to_hash_map.put( "type", new Integer( type ) );
         to_hash_map.put( "name", name );
-        to_hash_map.put( "last_updated", new Long( last_updated ) );
+        to_hash_map.put( "last_updated_s", new Long( last_updated_s ) );
         to_hash_map.put( "data", data.serialize() );
         return to_hash_map;        
     }
@@ -90,7 +90,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
         writer.putLong( version );
         writer.putInt( type );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( name, writer );
-        writer.putLong( last_updated );
+        writer.putLong( last_updated_s );
         data.serialize( writer );
     }
     
@@ -111,7 +111,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     private long version;
     private int type;
     private String name;
-    private long last_updated;
+    private long last_updated_s;
     private ServiceDataMap data;
 
 }

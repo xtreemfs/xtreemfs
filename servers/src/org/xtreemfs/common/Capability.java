@@ -117,7 +117,7 @@ public class Capability {
     }
     
     public long getExpires() {
-        return xcap.getExpires();
+        return xcap.getExpires_s();
     }
     
     public String getClientIdentity() {
@@ -149,7 +149,7 @@ public class Capability {
      *         expiration time stamp <code>false</code>, otherwise
      */
     public boolean hasExpired() {
-        return TimeSync.getGlobalTime() / 1000 > xcap.getExpires();
+        return TimeSync.getGlobalTime() / 1000 > xcap.getExpires_s();
     }
     
     /**
@@ -179,7 +179,7 @@ public class Capability {
         // techniques
         
         String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode()) +
-                Long.toString(xcap.getExpires()) + Long.toString(xcap.getTruncate_epoch()) +
+                Long.toString(xcap.getExpires_s()) + Long.toString(xcap.getTruncate_epoch()) +
                 sharedSecret;
         
         try {

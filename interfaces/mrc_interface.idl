@@ -93,7 +93,6 @@ module org
         void symlink( string target_path, string link_path ) # 20;
         void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
         void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 22;
-        void utimens_current( string path );
 
 
         // XtreemFS-specific functions

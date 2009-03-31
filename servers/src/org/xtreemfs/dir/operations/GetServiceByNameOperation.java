@@ -79,7 +79,7 @@ public class GetServiceByNameOperation extends DIROperation {
                 if (servEntry.getName().equals(request.getName()))
                     services.add(servEntry);
 
-                long secondsSinceLastUpdate = now - servEntry.getLast_updated();
+                long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
                 servEntry.getData().put("seconds_since_last_update",Long.toString(secondsSinceLastUpdate));
 
             }

@@ -96,7 +96,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
         // if the OSD has contacted the DS within the last 10 minutes,
         // assume that it is still running
 
-        long updateTimestamp = osd.getLast_updated();
+        long updateTimestamp = osd.getLast_updated_s();
         long currentTime = TimeSync.getGlobalTime() / 1000;
         return currentTime - updateTimestamp > OSD_TIMEOUT_SPAN;
     }

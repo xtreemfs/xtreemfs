@@ -170,7 +170,7 @@ public final class UUIDResolver extends Thread {
                     final String address = addrMapping.getAddress();
                     final String protocol = addrMapping.getProtocol();
                     final int port = addrMapping.getPort();
-                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl() * 1000;
+                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl_s() * 1000;
                     final InetSocketAddress endpoint = new InetSocketAddress(address, port);
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "matching uuid record found for uuid "

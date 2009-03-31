@@ -107,7 +107,7 @@ public class uuidmappings {
         if (ams.size() > 0) {
             System.out.println("UUID "+ams.get(0).getUuid()+" (version "+ams.get(0).getVersion()+")");
             for (AddressMapping am : ams) {
-                System.out.println("     "+am.getMatch_network()+" -> "+am.getProtocol()+"://"+am.getAddress()+":"+am.getPort()+"  (ttl "+am.getTtl()+")");
+                System.out.println("     "+am.getMatch_network()+" -> "+am.getProtocol()+"://"+am.getAddress()+":"+am.getPort()+"  (ttl "+am.getTtl_s()+")");
             }
             System.out.println("");
         } else {

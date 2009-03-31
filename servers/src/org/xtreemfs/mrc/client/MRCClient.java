@@ -37,12 +37,13 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatVFS;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.XCap;
-import org.xtreemfs.interfaces.stat_;
-import org.xtreemfs.interfaces.statfs_;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessResponse;
@@ -78,8 +79,8 @@ import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.setxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
-import org.xtreemfs.interfaces.MRCInterface.statfsRequest;
-import org.xtreemfs.interfaces.MRCInterface.statfsResponse;
+import org.xtreemfs.interfaces.MRCInterface.statvfsRequest;
+import org.xtreemfs.interfaces.MRCInterface.statvfsResponse;
 import org.xtreemfs.interfaces.MRCInterface.symlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.symlinkResponse;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
@@ -267,14 +268,14 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<stat_> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
+    public RPCResponse<Stat> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
         
         getattrRequest rq = new getattrRequest(path);
-        RPCResponse<stat_> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<stat_>() {
+        RPCResponse<Stat> r = sendRequest(server, rq.getOperationNumber(), rq,
+            new RPCResponseDecoder<Stat>() {
                 
                 @Override
-                public stat_ getResult(ReusableBuffer data) {
+                public Stat getResult(ReusableBuffer data) {
                     final getattrResponse resp = new getattrResponse();
                     resp.deserialize(data);
                     return resp.getStbuf();
@@ -348,10 +349,10 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse mkvol(InetSocketAddress server, UserCredentials credentials, String volumeName,
-        int osdSelectionPolicy, StripingPolicy defaultStripingPolicy, int accessControlPolicy) {
+        int osdSelectionPolicy, StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
-        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(volumeName, osdSelectionPolicy,
-            defaultStripingPolicy, accessControlPolicy);
+        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(volumeName, accessMode, osdSelectionPolicy,
+            defaultStripingPolicy, accessControlPolicy));
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -462,7 +463,7 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse setattr(InetSocketAddress server, UserCredentials credentials, String path,
-        stat_ statInfo) {
+        Stat statInfo) {
         
         setattrRequest rq = new setattrRequest(path, statInfo);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
@@ -493,18 +494,18 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<statfs_> statfs(InetSocketAddress server, UserCredentials credentials,
+    public RPCResponse<StatVFS> statfs(InetSocketAddress server, UserCredentials credentials,
         String volumeName) {
         
-        statfsRequest rq = new statfsRequest(volumeName);
-        RPCResponse<statfs_> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<statfs_>() {
+        statvfsRequest rq = new statvfsRequest(volumeName);
+        RPCResponse<StatVFS> r = sendRequest(server, rq.getOperationNumber(), rq,
+            new RPCResponseDecoder<StatVFS>() {
                 
                 @Override
-                public statfs_ getResult(ReusableBuffer data) {
-                    final statfsResponse resp = new statfsResponse();
+                public StatVFS getResult(ReusableBuffer data) {
+                    final statvfsResponse resp = new statvfsResponse();
                     resp.deserialize(data);
-                    return resp.getStatfsbuf();
+                    return resp.getStbuf();
                 }
             }, credentials);
         return r;

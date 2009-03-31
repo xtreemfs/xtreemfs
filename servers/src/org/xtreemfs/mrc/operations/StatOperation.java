@@ -26,7 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.stat_;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -63,7 +63,7 @@ public class StatOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
-
+            
             validateContext(rq);
             
             final Path p = new Path(rqArgs.getPath());
@@ -84,11 +84,14 @@ public class StatOperation extends MRCOperation {
             
             String linkTarget = sMan.getSoftlinkTarget(file.getId());
             int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
+            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
+                : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
+                    : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-            stat_ stat = new stat_(mode, file.getLinkCount(), 1, 1, 0, size, file.getAtime(),
-                file.getMtime(), file.getCtime(), file.getOwnerId(), file.getOwningGroupId(), volume.getId()
-                    + ":" + file.getId(), linkTarget, file.getEpoch(), (int) file.getW32Attrs());
+            Stat stat = new Stat(mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime()
+                * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file
+                    .getOwnerId(), file.getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget,
+                file.getEpoch(), (int) file.getW32Attrs());
             // TODO: check whether Win32 attrs are 32 or 64 bits long
             
             // set the response

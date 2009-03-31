@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
 import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
@@ -65,7 +64,7 @@ public class UtimeOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
-
+            
             validateContext(rq);
             
             Path p = new Path(rqArgs.getPath());
@@ -92,8 +91,8 @@ public class UtimeOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
                     return;
                 }
                 
@@ -110,25 +109,12 @@ public class UtimeOperation extends MRCOperation {
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
-            // in case of empty args, check whether privileged permissions are
-            // granted to the file
-            // if (rqArgs.getTimes().isEmtpy()) {
-            if (false) {
-                // TODO: change the interface
-                
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                    rq.getDetails().superUser, rq.getDetails().groupIds);
-                
-                file.setAtime((int) (TimeSync.getGlobalTime() / 1000L));
-                file.setCtime((int) (TimeSync.getGlobalTime() / 1000L));
-                file.setMtime((int) (TimeSync.getGlobalTime() / 1000L));
-            }
-
-            else {
-                file.setAtime((int) rqArgs.getAtime());
-                file.setCtime((int) rqArgs.getCtime());
-                file.setMtime((int) rqArgs.getMtime());
-            }
+            if (rqArgs.getAtime() != 0)
+                file.setAtime((int) (rqArgs.getAtime() / (long) 1e9));
+            if (rqArgs.getCtime() != 0)
+                file.setCtime((int) (rqArgs.getCtime() / (long) 1e9));
+            if (rqArgs.getMtime() != 0)
+                file.setMtime((int) (rqArgs.getMtime() / (long) 1e9));
             
             // update POSIX timestamps
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);

@@ -45,9 +45,9 @@ import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
-import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -443,10 +443,10 @@ public class RandomAccessFile implements ObjectStore {
     }
 
     public long length() throws IOException {
-        RPCResponse<stat_> r = null;
+        RPCResponse<Stat> r = null;
         try {
             r = mrcClient.getattr(mrcAddress, credentials, pathName);
-            stat_ statInfo = r.get();
+            Stat statInfo = r.get();
 
             //decide what to use...
             if (wresp != null) {

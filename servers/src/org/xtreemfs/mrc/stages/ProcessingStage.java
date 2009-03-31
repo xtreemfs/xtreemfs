@@ -168,7 +168,6 @@ public class ProcessingStage extends MRCStage {
         
         // parse request arguments
         ErrorRecord error = op.parseRequestArgs(rq);
-        System.out.println("rq: "+rq.getRequestArgs());
         if (error != null) {
             rq.setError(error);
             master.requestFinished(rq);

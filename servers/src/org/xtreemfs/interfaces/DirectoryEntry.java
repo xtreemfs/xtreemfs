@@ -10,15 +10,15 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public DirectoryEntry() { name = ""; stbuf = new stat_(); }
-    public DirectoryEntry( String name, stat_ stbuf ) { this.name = name; this.stbuf = stbuf; }
-    public DirectoryEntry( Object from_hash_map ) { name = ""; stbuf = new stat_(); this.deserialize( from_hash_map ); }
-    public DirectoryEntry( Object[] from_array ) { name = ""; stbuf = new stat_();this.deserialize( from_array ); }
+    public DirectoryEntry() { name = ""; stbuf = new Stat(); }
+    public DirectoryEntry( String name, Stat stbuf ) { this.name = name; this.stbuf = stbuf; }
+    public DirectoryEntry( Object from_hash_map ) { name = ""; stbuf = new Stat(); this.deserialize( from_hash_map ); }
+    public DirectoryEntry( Object[] from_array ) { name = ""; stbuf = new Stat();this.deserialize( from_array ); }
 
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
-    public stat_ getStbuf() { return stbuf; }
-    public void setStbuf( stat_ stbuf ) { this.stbuf = stbuf; }
+    public Stat getStbuf() { return stbuf; }
+    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }    
     public long getTypeId() { return 0; }
@@ -49,7 +49,7 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     public void deserialize( ReusableBuffer buf )
     {
         name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        stbuf = new stat_(); stbuf.deserialize( buf );
+        stbuf = new Stat(); stbuf.deserialize( buf );
     }
 
     public Object serialize()
@@ -76,7 +76,7 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
 
 
     private String name;
-    private stat_ stbuf;
+    private Stat stbuf;
 
 }
 

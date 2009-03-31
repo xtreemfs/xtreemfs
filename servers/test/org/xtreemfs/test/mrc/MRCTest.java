@@ -42,12 +42,12 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDtoMRCDataSet;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ErrNo;
@@ -109,7 +109,7 @@ public class MRCTest extends TestCase {
         
         // create and delete a volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         // Map<String, String> localVols = client.getLocalVolumes(mrc1Address);
         // assertEquals(1, localVols.size());
@@ -120,7 +120,7 @@ public class MRCTest extends TestCase {
         
         // create a volume (no access control)
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         // create some files and directories
         invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/myDir", 0));
@@ -156,13 +156,13 @@ public class MRCTest extends TestCase {
         entrySet = invokeSync(client.readdir(mrcAddress, uc, volumeName + "/myDir"));
         assertEquals(10, entrySet.size());
         
-        stat_ stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/myDir/test2.txt"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/myDir/test2.txt"));
         assertEquals(uid, stat.getUser_id());
         assertTrue("test2.txt is a not a file", (stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0);
         assertEquals(0, stat.getSize());
-        assertTrue(stat.getAtime() > 0);
-        assertTrue(stat.getCtime() > 0);
-        assertTrue(stat.getMtime() > 0);
+        assertTrue(stat.getAtime_ns() > 0);
+        assertTrue(stat.getCtime_ns() > 0);
+        assertTrue(stat.getMtime_ns() > 0);
         assertTrue((stat.getMode() & 511) > 0);
         assertEquals(1, stat.getNlink());
         
@@ -185,7 +185,7 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         // create a file and add some user attributes
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0));
@@ -254,12 +254,12 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0));
         
         // create and test a symbolic link
         invokeSync(client.symlink(mrcAddress, uc, volumeName + "/test.txt", volumeName + "/testAlias.txt"));
-        stat_ stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/testAlias.txt"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/testAlias.txt"));
         assertEquals(volumeName + "/test.txt", stat.getLink_target());
         assertTrue((stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFLNK) != 0);
     }
@@ -272,22 +272,22 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test1.txt", 0));
         
         // create a new link
         invokeSync(client.link(mrcAddress, uc, volumeName + "/test1.txt", volumeName + "/test2.txt"));
         
         // check whether both links refer to the same file
-        stat_ stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt"));
-        stat_ stat2 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
+        Stat stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt"));
+        Stat stat2 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         
         assertEquals(stat1.getFile_id(), stat2.getFile_id());
         assertEquals(2, stat1.getNlink());
         
         // delete both files and check link count
         invokeSync(client.unlink(mrcAddress, uc, volumeName + "/test1.txt"));
-        stat_ stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         assertEquals(1, stat.getNlink());
         invokeSync(client.unlink(mrcAddress, uc, volumeName + "/test2.txt"));
         
@@ -322,7 +322,7 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0774));
         invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/test.txt", "xtreemfs.read_only", "true", 0));
@@ -338,7 +338,7 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0775));
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0774));
         
         // open w/ O_RDONLY; should not fail
@@ -381,7 +381,7 @@ public class MRCTest extends TestCase {
         
         // test renewing a capability
         XCap newCap = invokeSync(client.xtreemfs_renew_capability(mrcAddress, creds.getXcap()));
-        assertTrue(creds.getXcap().getExpires() < newCap.getExpires());
+        assertTrue(creds.getXcap().getExpires_s() < newCap.getExpires_s());
         
         // test redirect
         try {
@@ -422,7 +422,7 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         final String uid2 = "bla";
         final List<String> gids2 = createGIDs("groupY");
@@ -447,7 +447,7 @@ public class MRCTest extends TestCase {
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         // create some files and directories
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0));
@@ -557,13 +557,13 @@ public class MRCTest extends TestCase {
         
         // create a volume
         invokeSync(client.mkvol(mrcAddress, uc1, noACVolumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         // test chown
         invokeSync(client.create(mrcAddress, uc1, noACVolumeName + "/chownTestFile", 0));
         invokeSync(client.chown(mrcAddress, uc4, noACVolumeName + "/chownTestFile", "newUser", "newGroup"));
         
-        stat_ stat = invokeSync(client.getattr(mrcAddress, uc3, noACVolumeName + "/chownTestFile"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc3, noACVolumeName + "/chownTestFile"));
         assertEquals("newUser", stat.getUser_id());
         assertEquals("newGroup", stat.getGroup_id());
         
@@ -584,7 +584,7 @@ public class MRCTest extends TestCase {
         
         // create a volume
         invokeSync(client.mkvol(mrcAddress, uc1, volACVolumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), VolumeACLFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), VolumeACLFileAccessPolicy.POLICY_ID, 0));
         
         // create a new directory: should succeed for user1, fail
         // for user2
@@ -599,7 +599,7 @@ public class MRCTest extends TestCase {
         
         // create a volume
         invokeSync(client.mkvol(mrcAddress, uc1, posixVolName, POSIXFileAccessPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         invokeSync(client.chmod(mrcAddress, uc1, posixVolName, 0700));
         
@@ -677,7 +677,7 @@ public class MRCTest extends TestCase {
         // create a POSIX ACL new volume and test "chmod"
         invokeSync(client.rmvol(mrcAddress, uc1, posixVolName));
         invokeSync(client.mkvol(mrcAddress, uc1, posixVolName, POSIXFileAccessPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         invokeSync(client.create(mrcAddress, uc1, posixVolName + "/someFile.txt", 224));
         stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt"));
@@ -731,12 +731,12 @@ public class MRCTest extends TestCase {
         
         // create a new file in a new volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID,
-            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID));
+            getDefaultStripingPolicy(), YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         invokeSync(client.create(mrcAddress, uc, fileName, 0));
         
         // check and update file sizes repeatedly
         XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0)).getXcap();
-        stat_ stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
         assertEquals(0L, stat.getSize());
         
         NewFileSizeSet newFSSet = new NewFileSizeSet();
@@ -813,7 +813,7 @@ public class MRCTest extends TestCase {
         
         // create a new file in a directory in a new volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID, sp1,
-            YesToAnyoneFileAccessPolicy.POLICY_ID));
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         invokeSync(client.mkdir(mrcAddress, uc, dirName, 0));
         invokeSync(client.create(mrcAddress, uc, fileName1, 0));
@@ -843,7 +843,7 @@ public class MRCTest extends TestCase {
         for (String path : paths) {
             
             try {
-                stat_ stat = invokeSync(client.getattr(mrcAddress, uc, path));
+                Stat stat = invokeSync(client.getattr(mrcAddress, uc, path));
                 
                 // continue if the path does not point to a directory
                 if ((stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) == 0)

@@ -30,7 +30,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
-import org.xtreemfs.interfaces.stat_;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
 import org.xtreemfs.mrc.ErrNo;
@@ -132,8 +132,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
                         : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
                 long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child
                         .getSize();
-                stat_ stat = new stat_(mode, child.getLinkCount(), 1, 1, 0, size, child.getAtime(), child
-                        .getMtime(), child.getCtime(), child.getOwnerId(), child.getOwningGroupId(), volume
+                Stat stat = new Stat(mode, child.getLinkCount(), 1, 1, 0, size, (long) child.getAtime()
+                    * (long) 1e9, (long) child.getMtime() * (long) 1e9, (long) child.getCtime() * (long) 1e9, child.getOwnerId(), child.getOwningGroupId(), volume
                         .getId()
                     + ":" + child.getId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
                 // TODO: check whether Win32 attrs are 32 or 64 bits long

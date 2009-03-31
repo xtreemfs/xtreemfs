@@ -73,7 +73,7 @@ public class ServiceOfflineOperation extends DIROperation {
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 dbData.deserialize(buf);
 
-                dbData.setLast_updated(0);
+                dbData.setLast_updated_s(0);
 
                 final int dataSize = dbData.calculateSize();
                 ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);

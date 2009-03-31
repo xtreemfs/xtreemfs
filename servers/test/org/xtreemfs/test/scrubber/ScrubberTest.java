@@ -37,8 +37,8 @@ import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StripingPolicy;
-import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -122,7 +122,7 @@ public class ScrubberTest extends TestCase {
         RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, Scrubber.credentials,volumeName,
                 Constants.OSD_SELECTION_POLICY_SIMPLE,
                 new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
-                Constants.ACCESS_CONTROL_POLICY_NULL);
+                Constants.ACCESS_CONTROL_POLICY_NULL, 0);
         r.get();
         r.freeBuffers();
 
@@ -199,7 +199,7 @@ public class ScrubberTest extends TestCase {
 
         // file size corrected from 10 to 0
         RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test0.txt");
-        stat_ s = (stat_) r.get();
+        Stat s = (Stat) r.get();
         r.freeBuffers();
 
         assertEquals(0, s.getSize());
@@ -207,7 +207,7 @@ public class ScrubberTest extends TestCase {
 
         // file size same as before
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test1.txt");
-        s = (stat_) r.get();
+        s = (Stat) r.get();
         r.freeBuffers();
 
         assertEquals(0, s.getSize());
@@ -223,7 +223,7 @@ public class ScrubberTest extends TestCase {
         // file size corrected from 0 to 72000 (this file is stored in two
         // objects)
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt");
-        s = (stat_) r.get();
+        s = (Stat) r.get();
         r.freeBuffers();
 
         assertEquals(72000, s.getSize());
@@ -231,7 +231,7 @@ public class ScrubberTest extends TestCase {
         // file size corrected from 0 to 65536, which is the stripe size.
 
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt");
-        s = (stat_) r.get();
+        s = (Stat) r.get();
         r.freeBuffers();
 
         assertEquals(65536, s.getSize());

@@ -25,9 +25,9 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.statfs_;
-import org.xtreemfs.interfaces.MRCInterface.statfsRequest;
-import org.xtreemfs.interfaces.MRCInterface.statfsResponse;
+import org.xtreemfs.interfaces.StatVFS;
+import org.xtreemfs.interfaces.MRCInterface.statvfsRequest;
+import org.xtreemfs.interfaces.MRCInterface.statvfsResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -53,16 +53,16 @@ public class StatFSOperation extends MRCOperation {
         
         try {
             
-            final statfsRequest rqArgs = (statfsRequest) rq.getRequestArgs();
+            final statvfsRequest rqArgs = (statvfsRequest) rq.getRequestArgs();
             
             final VolumeManager vMan = master.getVolumeManager();
             final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
             
             long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
-            statfs_ statfs = new statfs_(1024, blocks, volume.getId(), 1024);
+            StatVFS statfs = new StatVFS(1024, blocks, volume.getId(), 1024);
             
             // set the response
-            rq.setResponse(new statfsResponse(statfs));
+            rq.setResponse(new statvfsResponse(statfs));
             finishRequest(rq);
             
         } catch (UserException exc) {

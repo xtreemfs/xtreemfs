@@ -79,7 +79,7 @@ public class GetServicesByTypeOperation extends DIROperation {
                 if ((request.getType() == 0) || (servEntry.getType() == request.getType()))
                     services.add(servEntry);
 
-                long secondsSinceLastUpdate = now - servEntry.getLast_updated();
+                long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
                 servEntry.getData().put("seconds_since_last_update",Long.toString(secondsSinceLastUpdate));
 
             }

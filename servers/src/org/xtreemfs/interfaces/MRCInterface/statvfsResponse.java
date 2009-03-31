@@ -9,22 +9,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
+public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public getattrResponse() { stbuf = new Stat(); }
-    public getattrResponse( Stat stbuf ) { this.stbuf = stbuf; }
-    public getattrResponse( Object from_hash_map ) { stbuf = new Stat(); this.deserialize( from_hash_map ); }
-    public getattrResponse( Object[] from_array ) { stbuf = new Stat();this.deserialize( from_array ); }
+    public statvfsResponse() { stbuf = new StatVFS(); }
+    public statvfsResponse( StatVFS stbuf ) { this.stbuf = stbuf; }
+    public statvfsResponse( Object from_hash_map ) { stbuf = new StatVFS(); this.deserialize( from_hash_map ); }
+    public statvfsResponse( Object[] from_array ) { stbuf = new StatVFS();this.deserialize( from_array ); }
 
-    public Stat getStbuf() { return stbuf; }
-    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
+    public StatVFS getStbuf() { return stbuf; }
+    public void setStbuf( StatVFS stbuf ) { this.stbuf = stbuf; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrResponse"; }    
-    public long getTypeId() { return 5; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }    
+    public long getTypeId() { return 19; }
 
     public String toString()
     {
-        return "getattrResponse( " + stbuf.toString() + " )";
+        return "statvfsResponse( " + stbuf.toString() + " )";
     }
 
 
@@ -45,7 +45,7 @@ public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
 
     public void deserialize( ReusableBuffer buf )
     {
-        stbuf = new Stat(); stbuf.deserialize( buf );
+        stbuf = new StatVFS(); stbuf.deserialize( buf );
     }
 
     public Object serialize()
@@ -68,10 +68,10 @@ public class getattrResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 5; }
+    public int getOperationNumber() { return 19; }
 
 
-    private Stat stbuf;
+    private StatVFS stbuf;
 
 }
 

@@ -8,12 +8,12 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
+public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public statfs_() { bsize = 0; bfree = 0; fsid = ""; namelen = 0; }
-    public statfs_( int bsize, long bfree, String fsid, int namelen ) { this.bsize = bsize; this.bfree = bfree; this.fsid = fsid; this.namelen = namelen; }
-    public statfs_( Object from_hash_map ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0; this.deserialize( from_hash_map ); }
-    public statfs_( Object[] from_array ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0;this.deserialize( from_array ); }
+    public StatVFS() { bsize = 0; bfree = 0; fsid = ""; namelen = 0; }
+    public StatVFS( int bsize, long bfree, String fsid, int namelen ) { this.bsize = bsize; this.bfree = bfree; this.fsid = fsid; this.namelen = namelen; }
+    public StatVFS( Object from_hash_map ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0; this.deserialize( from_hash_map ); }
+    public StatVFS( Object[] from_array ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0;this.deserialize( from_array ); }
 
     public int getBsize() { return bsize; }
     public void setBsize( int bsize ) { this.bsize = bsize; }
@@ -24,12 +24,12 @@ public class statfs_ implements org.xtreemfs.interfaces.utils.Serializable
     public int getNamelen() { return namelen; }
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::statfs_"; }    
+    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }    
     public long getTypeId() { return 0; }
 
     public String toString()
     {
-        return "statfs_( " + Integer.toString( bsize ) + ", " + Long.toString( bfree ) + ", " + "\"" + fsid + "\"" + ", " + Integer.toString( namelen ) + " )"; 
+        return "StatVFS( " + Integer.toString( bsize ) + ", " + Long.toString( bfree ) + ", " + "\"" + fsid + "\"" + ", " + Integer.toString( namelen ) + " )";
     }
 
 

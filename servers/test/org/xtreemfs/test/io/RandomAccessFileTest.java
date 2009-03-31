@@ -123,7 +123,7 @@ public class RandomAccessFileTest extends TestCase {
         RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, uc, volumeName,
                 Constants.OSD_SELECTION_POLICY_SIMPLE,
                 new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
-                Constants.ACCESS_CONTROL_POLICY_NULL);
+                Constants.ACCESS_CONTROL_POLICY_NULL, 0);
         r.get();
 
         // create some files and directories

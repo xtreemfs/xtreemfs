@@ -9,22 +9,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class statfsRequest implements org.xtreemfs.interfaces.utils.Request
+public class statvfsRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public statfsRequest() { volume_name = ""; }
-    public statfsRequest( String volume_name ) { this.volume_name = volume_name; }
-    public statfsRequest( Object from_hash_map ) { volume_name = ""; this.deserialize( from_hash_map ); }
-    public statfsRequest( Object[] from_array ) { volume_name = "";this.deserialize( from_array ); }
+    public statvfsRequest() { volume_name = ""; }
+    public statvfsRequest( String volume_name ) { this.volume_name = volume_name; }
+    public statvfsRequest( Object from_hash_map ) { volume_name = ""; this.deserialize( from_hash_map ); }
+    public statvfsRequest( Object[] from_array ) { volume_name = "";this.deserialize( from_array ); }
 
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statfsRequest"; }    
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsRequest"; }    
     public long getTypeId() { return 19; }
 
     public String toString()
     {
-        return "statfsRequest( " + "\"" + volume_name + "\"" + " )";
+        return "statvfsRequest( " + "\"" + volume_name + "\"" + " )";
     }
 
 
@@ -69,7 +69,7 @@ public class statfsRequest implements org.xtreemfs.interfaces.utils.Request
 
     // Request
     public int getOperationNumber() { return 19; }
-    public Response createDefaultResponse() { return new statfsResponse(); }
+    public Response createDefaultResponse() { return new statvfsResponse(); }
 
 
     private String volume_name;

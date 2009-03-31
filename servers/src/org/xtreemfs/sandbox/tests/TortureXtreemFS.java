@@ -137,7 +137,7 @@ public class TortureXtreemFS {
             if (options.get("mkvol").switchValue) {
                 MRCClient mrcClient = new MRCClient(rpcClient, mrcAddr);
                 StripingPolicy sp = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 1);
-                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX);
+                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX, 0775);
                 r.get();
                 r.freeBuffers();
             }

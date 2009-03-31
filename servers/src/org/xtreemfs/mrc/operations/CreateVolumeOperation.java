@@ -34,10 +34,11 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
-import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
@@ -63,18 +64,19 @@ public class CreateVolumeOperation extends MRCOperation {
         try {
             
             final xtreemfs_mkvolRequest rqArgs = (xtreemfs_mkvolRequest) rq.getRequestArgs();
-
+            
             validateContext(rq);
+            Volume volData = rqArgs.getVolume();
             
             // first, check whether the given policies are supported
             
-            if (master.getOSDStatusManager().getOSDSelectionPolicy((short) rqArgs.getOsd_selection_policy()) == null)
+            if (master.getOSDStatusManager().getOSDSelectionPolicy((short) volData.getOsd_selection_policy()) == null)
                 throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
-                    + rqArgs.getOsd_selection_policy());
+                    + volData.getOsd_selection_policy());
             
-            if (master.getFileAccessManager().getFileAccessPolicy((short) rqArgs.getAccess_control_policy()) == null)
+            if (master.getFileAccessManager().getFileAccessPolicy((short) volData.getAccess_control_policy()) == null)
                 throw new UserException(ErrNo.EINVAL, "invalid file access policy ID: "
-                    + rqArgs.getAccess_control_policy());
+                    + volData.getAccess_control_policy());
             
             // in order to allow volume creation in a single-threaded
             // non-blocking
@@ -89,7 +91,7 @@ public class CreateVolumeOperation extends MRCOperation {
             // registered at the Directory Service
             
             Map<String, Object> queryMap = new HashMap<String, Object>();
-            queryMap.put("name", rqArgs.getVolume_name());
+            queryMap.put("name", volData.getName());
             List<String> attrs = new LinkedList<String>();
             attrs.add("version");
             
@@ -121,12 +123,13 @@ public class CreateVolumeOperation extends MRCOperation {
             // been registered, return an error
             
             ServiceSet response = rpcResponse.get();
+            Volume volData = rqArgs.getVolume();
             
             // check if the volume already exists
             for (Service reg : response)
-                if (rqArgs.getVolume_name().equals(reg.getName())) {
+                if (volData.getName().equals(reg.getName())) {
                     String uuid = reg.getUuid();
-                    throw new UserException(ErrNo.EEXIST, "volume '" + rqArgs.getVolume_name()
+                    throw new UserException(ErrNo.EEXIST, "volume '" + volData.getName()
                         + "' already exists in Directory Service, id='" + uuid + "'");
                 }
             
@@ -135,8 +138,7 @@ public class CreateVolumeOperation extends MRCOperation {
             ServiceDataMap dmap = new ServiceDataMap();
             dmap.put("mrc", master.getConfig().getUUID().toString());
             dmap.put("free", "0");
-            Service vol = new Service(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, rqArgs
-                    .getVolume_name(), 0, dmap);
+            Service vol = new Service(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, volData.getName(), 0, dmap);
             
             RPCResponse<Long> rpcResponse2 = master.getDirClient().xtreemfs_service_register(null, vol);
             rpcResponse2.registerListener(new RPCResponseAvailableListener<Long>() {
@@ -167,12 +169,13 @@ public class CreateVolumeOperation extends MRCOperation {
             // thrown when trying to parse the response
             
             rpcResponse.get();
+            Volume volData = rqArgs.getVolume();
             
             // create the volume and its database
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
-                rqArgs.getVolume_name(), (short) rqArgs.getAccess_control_policy(),
-                (short) rqArgs.getOsd_selection_policy(), null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), rqArgs.getDefault_striping_policy(), 0775);
+                volData.getName(), (short) volData.getAccess_control_policy(),
+                (short) volData.getOsd_selection_policy(), null, rq.getDetails().userId,
+                rq.getDetails().groupIds.get(0), volData.getDefault_striping_policy(), volData.getMode());
             // FIXME: replace 0775 w/ 'default access mode' parameter
             
             // set the response

@@ -10,15 +10,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.DirectoryEntry;
-import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.interfaces.stat_;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -57,8 +56,8 @@ public class mrc_stat {
             groups.add("test");
             final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<stat_> r = c.getattr(null, uc, path);
-            stat_ data = r.get();
+            RPCResponse<Stat> r = c.getattr(null, uc, path);
+            Stat data = r.get();
             r.freeBuffers();
             rpcClient.shutdown();
             System.out.println("file id      "+data.getFile_id());

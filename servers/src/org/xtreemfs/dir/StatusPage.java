@@ -116,7 +116,7 @@ public class StatusPage {
                 dump.append("</a></td><td class=\"mapping\">");
                 dump.append(am.getMatch_network());
                 dump.append("</td><td class=\"mapping\">");
-                dump.append(am.getTtl());
+                dump.append(am.getTtl_s());
                 dump.append("</td></tr>");
                 version = am.getVersion();
             }
@@ -175,12 +175,12 @@ public class StatusPage {
             dump.append("<tr><td width=\"30%\">");
             dump.append("last updated");
             dump.append("</td><td><b>");
-            dump.append(sreg.getLast_updated());
-            if (sreg.getLast_updated() == 0) {
+            dump.append(sreg.getLast_updated_s());
+            if (sreg.getLast_updated_s() == 0) {
                 dump.append(" (service is offline)");
             } else {
                 dump.append(" (");
-                dump.append(new Date(sreg.getLast_updated() * 1000));
+                dump.append(new Date(sreg.getLast_updated_s() * 1000));
                 dump.append(")");
                 dump.append("</b></td></tr>");
             }
