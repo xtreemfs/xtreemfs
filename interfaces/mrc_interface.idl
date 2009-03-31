@@ -8,7 +8,7 @@ module org
   {
     module interfaces
     {
-      struct stat_
+      struct Stat
       {
         uint32_t mode;
         uint32_t nlink;
@@ -16,9 +16,9 @@ module org
         uint32_t gid;
         int16_t unused_dev;
         uint64_t size;
-        uint64_t atime;
-        uint64_t mtime;
-        uint64_t ctime;
+        uint64_t atime_ns;
+        uint64_t mtime_ns;
+        uint64_t ctime_ns;
 
         // XtreemFS-specific attributes
         string user_id;
@@ -33,13 +33,13 @@ module org
 
       struct DirectoryEntry
       {
-        string        name;
-        stat_         stbuf;
+        string name;
+        Stat stbuf;
       };
 
       typedef sequence<DirectoryEntry> DirectoryEntrySet;
 
-      struct statfs_
+      struct StatVFS
       {
         uint32_t bsize;
         uint64_t bfree;
@@ -47,7 +47,16 @@ module org
         uint32_t namelen;
       };
 
-      typedef sequence<StripingPolicy>  StripingPolicySet;
+      struct Volume
+      {
+        string name;
+        uint32_t mode;
+        uint32_t osd_selection_policy;
+        StripingPolicy default_striping_policy;
+        uint32_t access_control_policy;
+      };
+
+      typedef sequence<Volume> VolumeSet;
 
 
       interface MRCInterface #2
@@ -68,7 +77,7 @@ module org
         void chown( string path, string user_id, string group_id ) # 3;
         void create( string path, uint32_t mode ) # 4;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 30;
-        void getattr( string path, out stat_ stbuf ) # 5;
+        void getattr( string path, out Stat stbuf ) # 5;
         void getxattr( string path, string name, out string value ) # 6;
         void link( string target_path, string link_path ) # 7;
         void listxattr( string path, out StringSet names ) # 8;
@@ -78,12 +87,13 @@ module org
         void removexattr( string path, string name ) # 13;
         void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
         void rmdir( string path ) # 15;
-        void setattr( string path, stat_ stbuf ) # 17;
+        void setattr( string path, Stat stbuf ) # 17;
         void setxattr( string path, string name, string value, int flags ) # 18;
-        void statfs( string volume_name, out statfs_ statfsbuf ) # 19;
+        void statvfs( string volume_name, out StatVFS stbuf ) # 19;
         void symlink( string target_path, string link_path ) # 20;
         void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
-        void utime( string path, uint64_t ctime, uint64_t atime, uint64_t mtime ) # 22;
+        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 22;
+        void utimens_current( string path );
 
 
         // XtreemFS-specific functions
@@ -91,12 +101,13 @@ module org
         void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
         void xtreemfs_dump_database( string dump_file ) # 52;
         void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
-        void xtreemfs_mkvol( string volume_name, uint32_t osd_selection_policy, StripingPolicy default_striping_policy, uint32_t access_control_policy ) # 10;
+        void xtreemfs_lsvol( out VolumeSet volumes ) # 31;
+        void xtreemfs_mkvol( Volume volume ) # 10;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
         void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
         void xtreemfs_replica_remove( string file_id, string osd_uuid ) # 27;
         void xtreemfs_restore_database( string dump_file ) #53;
-        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size) # 28;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 28;
         void xtreemfs_rmvol( string volume_name ) # 16;
         void xtreemfs_shutdown() # 50;
         void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 29;

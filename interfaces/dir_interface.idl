@@ -16,7 +16,7 @@ module org
         string address;
         uint16_t port;
         string match_network;
-        uint32_t ttl;
+        uint32_t ttl_s;
       };
 
       typedef sequence<AddressMapping> AddressMappingSet;
@@ -29,7 +29,7 @@ module org
         uint64_t version;
         uint16_t type;
         string   name;
-        uint64_t last_updated;
+        uint64_t last_updated_s;
         ServiceDataMap data;
       };
 
@@ -49,14 +49,14 @@ module org
 
         void xtreemfs_checkpoint() # 50;
 
-        uint64_t xtreemfs_global_time_get() # 8;
+        uint64_t xtreemfs_global_time_s_get() # 8;
 
         void xtreemfs_service_get_by_type( uint16_t type, out ServiceSet services ) #6;
         void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 7;
 	      void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 9;
         uint64_t xtreemfs_service_register( Service service ) # 4;
         void xtreemfs_service_deregister( string uuid ) # 5;
-	void xtreemfs_service_offline( string uuid ) #10;
+	      void xtreemfs_service_offline( string uuid ) #10;
 
         void xtreemfs_shutdown() # 51;
       };
