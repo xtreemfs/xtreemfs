@@ -12,6 +12,13 @@ module org
         StringSet group_ids;
         string password;
       };
+
+      struct VivaldiCoordinates {
+         double x_coordinate;
+         double y_coordinate;
+         double local_error;
+      };
+
     };
   };
 };
