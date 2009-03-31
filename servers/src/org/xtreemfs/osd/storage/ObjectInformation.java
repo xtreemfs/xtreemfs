@@ -100,7 +100,6 @@ public class ObjectInformation {
             switch (status) {
                 case EXISTS: {
                     final int paddingZeros = getStripeSize()-data.capacity();
-                    System.out.println("capacity: "+data.capacity()+"/"+data.remaining());
                     return new ObjectData(data,0,paddingZeros,checksumInvalidOnOSD);
                 }
                 case DOES_NOT_EXIST:
@@ -163,7 +162,6 @@ public class ObjectInformation {
                 }
             }
         }
-        System.out.println("zero padding: "+tmp.getZero_padding());
         return tmp;
 
 

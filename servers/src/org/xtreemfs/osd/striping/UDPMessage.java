@@ -52,7 +52,9 @@ public class UDPMessage {
 
     public static enum Type {
         GMAX,
-        MPXL
+        MPXL,
+        VIVALDI_COORD_XCHG_REQUEST,
+        VIVALDI_COORD_XCHG_RESPONSE
     };
 
     private final Type msgType;

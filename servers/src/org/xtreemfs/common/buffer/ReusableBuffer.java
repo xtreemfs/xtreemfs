@@ -381,6 +381,17 @@ public final class ReusableBuffer {
         return this;
     }
 
+    public double getDouble() {
+        assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
+        return buffer.getDouble();
+    }
+
+    public ReusableBuffer putDouble(double d) {
+        assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
+        buffer.putDouble(d);
+        return this;
+    }
+
     public String getString() {
         assert(!returned) : "Buffer was already freed and cannot be used anymore"+this.freeStack;
         int length = buffer.getInt();

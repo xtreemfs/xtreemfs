@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
@@ -54,12 +55,14 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.stages.DeletionStage;
@@ -80,6 +83,7 @@ import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.striping.GMAXMessage;
 import org.xtreemfs.osd.striping.UDPCommunicator;
 import org.xtreemfs.osd.striping.UDPMessage;
@@ -122,6 +126,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final long            startupTime;
 
     protected final AtomicLong      numBytesTX, numBytesRX, numObjsTX, numObjsRX;
+
+    protected final VivaldiStage    vStage;
+
+    protected final AtomicReference<VivaldiCoordinates> myCoordinates;
 
     
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
@@ -198,6 +206,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
+
+        myCoordinates = new AtomicReference<VivaldiCoordinates>();
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
             public ServiceSet getServiceData() {
@@ -234,6 +244,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.put("usedRAM", Long.toString(usedRAM));
                 dmap.put("geoCoordinates", config.getGeoCoordinates());
                 dmap.put("proto_version", Integer.toString(OSDInterface.getVersion()));
+                VivaldiCoordinates coord = myCoordinates.get();
+                if (coord != null) {
+                    dmap.put("vivaldi_coordinates",VivaldiStage.coordinatesToString(coord));
+                }
+
                 try {
                     dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getHostName() + ":" + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
@@ -269,6 +284,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         startupTime = System.currentTimeMillis();
 
+        vStage = new VivaldiStage(this);
+        vStage.setLifeCycleListener(this);
+
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID() + " ready");
     }
@@ -287,11 +305,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.start();
             delStage.start();
             stStage.start();
+            vStage.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
             delStage.waitForStartup();
             stStage.waitForStartup();
+            vStage.waitForStartup();
             
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
@@ -326,11 +346,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
+            vStage.shutdown();
 
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
+            vStage.waitForShutdown();
 
             httpServ.stop(0);
             
@@ -356,6 +378,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
+            vStage.shutdown();
 
             httpServ.stop(0);
 
@@ -521,6 +544,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             } catch (Exception ex) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
             }
+        } else if (msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_REQUEST ||
+                   msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_RESPONSE) {
+            //send data to vivaldi stage
+            vStage.receiveVivaldiMessage(msg);
         }
     }
 
@@ -554,6 +581,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public long getBytesSent() {
         return numBytesTX.get();
+    }
+
+    public void updateVivaldiCoordinates(VivaldiCoordinates newVC) {
+        myCoordinates.set(newVC);
     }
     
 }
