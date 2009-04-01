@@ -1,5 +1,5 @@
-#ifndef _55880037354_H
-#define _55880037354_H
+#ifndef _83048408322_H
+#define _83048408322_H
 
 #include "yield/platform.h"
 #include <string>
@@ -60,6 +60,35 @@ namespace org
         std::string user_id;
         org::xtreemfs::interfaces::StringSet group_ids;
         std::string password;
+      };
+  
+      class VivaldiCoordinates : public YIELD::Serializable
+      {
+      public:
+        VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
+        VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) : x_coordinate( x_coordinate ), y_coordinate( y_coordinate ), local_error( local_error ) { }
+        virtual ~VivaldiCoordinates() { }
+  
+        void set_x_coordinate( double x_coordinate ) { this->x_coordinate = x_coordinate; }
+        double get_x_coordinate() const { return x_coordinate; }
+        void set_y_coordinate( double y_coordinate ) { this->y_coordinate = y_coordinate; }
+        double get_y_coordinate() const { return y_coordinate; }
+        void set_local_error( double local_error ) { this->local_error = local_error; }
+        double get_local_error() const { return local_error; }
+  
+        bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
+  
+        // YIELD::RTTI
+        TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::VivaldiCoordinates", 3973037335UL );
+  
+        // YIELD::Serializable
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { x_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "x_coordinate" ) ); y_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "y_coordinate" ) ); local_error = input_stream.readDouble( YIELD::StructuredStream::Declaration( "local_error" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeDouble( YIELD::StructuredStream::Declaration( "x_coordinate" ), x_coordinate ); output_stream.writeDouble( YIELD::StructuredStream::Declaration( "y_coordinate" ), y_coordinate ); output_stream.writeDouble( YIELD::StructuredStream::Declaration( "local_error" ), local_error ); }
+  
+      protected:
+        double x_coordinate;
+        double y_coordinate;
+        double local_error;
       };
   
   

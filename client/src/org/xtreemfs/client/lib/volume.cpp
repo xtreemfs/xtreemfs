@@ -262,6 +262,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
     {
       OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( ( *replica_i ).get_osd_uuids()[0] );
       osd_proxy.unlink( file_credentials, file_id );
+      YIELD::SharedObject::decRef( osd_proxy );
     }
   }
 }

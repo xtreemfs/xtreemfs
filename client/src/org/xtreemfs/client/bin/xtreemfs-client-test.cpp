@@ -1,13 +1,20 @@
 #include "yield/platform/yunit.h"
 using namespace YIELD;
 
+#ifdef _WIN32
+// #include <vld.h>
+#endif
 
-//extern YIELD::TestSuite& VolumeTestSuite();
 extern YIELD::TestSuite& PathTestSuite();
+extern YIELD::TestSuite& VolumeTestSuite();
 
 
 int main( int argc, char** argv )
 {
-//  return TestRunner().run( VolumeTestSuite() );
-  return TestRunner().run( PathTestSuite() );
+  int run_ret = 0;
+
+  run_ret |= TestRunner().run( PathTestSuite() );
+  run_ret |= TestRunner().run( VolumeTestSuite() );
+
+  return run_ret;
 }

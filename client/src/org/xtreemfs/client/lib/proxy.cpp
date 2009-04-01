@@ -80,12 +80,14 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
               for ( uint8_t serialize_tries = 0; serialize_tries < 2; serialize_tries++ ) // Try, allow for one reconnect, then try again
               {
-                oncrpc_req.serialize( *conn );
+                oncrpc_req.serialize( *conn, NULL );
+
                 if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
                 {
                   for ( uint8_t deserialize_tries = 0; deserialize_tries < 2; deserialize_tries++ )
                   {
                     oncrpc_req.deserialize( *conn );
+
                     if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
                     {
                       req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
@@ -97,12 +99,18 @@ void Proxy::handleEvent( YIELD::Event& ev )
                     else
                       YIELD::DebugBreak();
                   }
+
+                  YIELD::SharedObject::decRef( req );
+                  return;
                 }
                 else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
                   reconnect_tries_left = reconnect( reconnect_tries_left );
                 else
                   YIELD::DebugBreak();
               }
+
+              YIELD::SharedObject::decRef( req );
+              return;
             }
             else // Non-blocking/timed
             {
@@ -111,7 +119,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
               bool have_written = false; // Use the variable so the read and write attempt loops can be combined and eliminate some code duplication
 
-              while ( true ) // Loop for read and write attempts
+              for ( ;; ) // Loop for read and write attempts
               {
                 if ( !have_written )
                   oncrpc_req.serialize( *conn );
@@ -124,7 +132,10 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   if ( !have_written )
                     have_written = true;
                   else
-                    break;
+                  {
+                    YIELD::SharedObject::decRef( req );
+                    return;
+                  }
                 }
                 else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
                   reconnect_tries_left = reconnect( reconnect_tries_left );

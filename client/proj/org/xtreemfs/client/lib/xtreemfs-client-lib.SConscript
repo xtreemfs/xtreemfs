@@ -25,7 +25,8 @@ except:
     else:
         # -fPIC (Platform Independent Code) to compile a library as part of a shared object
         # -fno-rtti to disable RTTI
-        build_env["CCFLAGS"] += "-fno-rtti -fPIC "
+        # -Wall for all warnings
+        build_env["CCFLAGS"] += "-fno-rtti -fPIC -Wall "
         if sys.platform == "linux2": build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "; build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
         elif sys.platform == "darwin": build_env["LINKFLAGS"] += "-framework Carbon "; build_env["LIBS"].append( "iconv" )
         elif sys.platform == "freebsd5": build_env["LIBS"].extend( ( "intl", "iconv" ) )
@@ -86,5 +87,6 @@ r"../../../../../src/org/xtreemfs/client/lib/path_test.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/policy_container.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/proxy.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/shared_file.cpp",
-r"../../../../../src/org/xtreemfs/client/lib/volume.cpp"
+r"../../../../../src/org/xtreemfs/client/lib/volume.cpp",
+r"../../../../../src/org/xtreemfs/client/lib/volume_test.cpp"
 ) ) )

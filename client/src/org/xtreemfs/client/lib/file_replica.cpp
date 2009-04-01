@@ -18,7 +18,7 @@ FileReplica::~FileReplica()
     YIELD::SharedObject::decRef( *osd_proxy_i );
 }
 
-uint64_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, uint64_t size, uint64_t offset )
+bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
 {
   char* rbuf_p = static_cast<char*>( rbuf );
   uint64_t file_offset = offset, file_offset_max = offset + size;
@@ -58,7 +58,10 @@ uint64_t FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& fi
       break;
   }
 
-  return file_offset - offset;
+  if ( out_bytes_read )
+    *out_bytes_read = file_offset - offset;
+
+  return true;
 }
 
 void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size )
@@ -69,7 +72,7 @@ void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& fi
    get_mrc_proxy().update_file_size( file_credentials.get_xcap(), osd_write_response );
 }
 
-uint64_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, uint64_t size, uint64_t offset )
+bool FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, uint64_t offset, size_t* out_bytes_written )
 {
   const char* wbuf_p = static_cast<const char*>( wbuf );
   uint64_t file_offset = offset, file_offset_max = offset + size;
@@ -108,7 +111,10 @@ uint64_t FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& f
   if ( !newest_osd_write_response.get_new_file_size().empty() )
     get_mrc_proxy().update_file_size( file_credentials.get_xcap(), newest_osd_write_response );
 
-  return file_offset - offset;
+  if ( out_bytes_written )
+    *out_bytes_written = file_offset - offset;
+
+  return true;
 }
 
 OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )

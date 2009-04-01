@@ -1,0 +1,47 @@
+#include "yield/platform/volume_test.h"
+#include "org/xtreemfs/client/dir_proxy.h"
+#include "org/xtreemfs/client/mrc_proxy.h"
+#include "org/xtreemfs/client/osd_proxy_factory.h"
+#include "org/xtreemfs/client/volume.h"
+
+
+namespace org
+{
+  namespace xtreemfs
+  {
+    namespace client
+    {
+      class VolumeTestSuite : public YIELD::VolumeTestSuite
+      {
+      public:
+        VolumeTestSuite() 
+          : stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
+            dir_proxy( "oncrpc://outtolunch/" ),
+            mrc_proxy( "oncrpc://outtolunch/" ),
+            osd_proxy_factory( dir_proxy, stage_group ),
+            volume( "test", dir_proxy, mrc_proxy, osd_proxy_factory ),
+            YIELD::VolumeTestSuite( volume )
+        {
+          stage_group.createStage( dir_proxy );
+          stage_group.createStage( mrc_proxy );
+        }
+
+        virtual ~VolumeTestSuite()
+        {
+          YIELD::SEDAStageGroup::destroyStageGroup( stage_group );
+        }
+
+      private:
+        YIELD::SEDAStageGroup& stage_group;
+        DIRProxy dir_proxy;
+        MRCProxy mrc_proxy;
+        OSDProxyFactory osd_proxy_factory;
+        org::xtreemfs::client::Volume volume;
+      };
+    };
+  };
+};
+
+TEST_SUITE_EX( Volume, org::xtreemfs::client::VolumeTestSuite )
+
+TEST_MAIN( Volume )

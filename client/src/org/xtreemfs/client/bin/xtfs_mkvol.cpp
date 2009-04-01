@@ -82,64 +82,67 @@ namespace org
         // OptionParser
         void parseOption( int id, char* arg )
         {
-          switch ( id )
+          if ( arg )
           {
-            case XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY:
+            switch ( id )
             {
-              if ( strcmp( arg, "NULL" ) == 0 )
-                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
-              else if ( strcmp( arg, "POSIX" ) == 0 )
-                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
-              else if ( strcmp( arg, "VOLUME" ) == 0 )
-                access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY:
+              {
+                if ( strcmp( arg, "NULL" ) == 0 )
+                  access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
+                else if ( strcmp( arg, "POSIX" ) == 0 )
+                  access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+                else if ( strcmp( arg, "VOLUME" ) == 0 )
+                  access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH:
-            {
-              certificate_file_path = arg;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH:
+              {
+                certificate_file_path = arg;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_MODE:
-            {
-              mode = atoi( arg );
-              if ( mode == 0 )
-                mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_MODE:
+              {
+                mode = atoi( arg );
+                if ( mode == 0 )
+                  mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY:
-            {
-              if ( strcmp( arg, "SIMPLE" ) == 0 )
-                osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY:
+              {
+                if ( strcmp( arg, "SIMPLE" ) == 0 )
+                  osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_STRIPING_POLICY:
-            {
-              if ( strcmp( arg, "NONE" ) == 0 || strcmp( arg, "NULL" ) == 0 )
-                striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_NONE;
-              else if ( strcmp( arg, "RAID0" ) == 0 )
-                striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_STRIPING_POLICY:
+              {
+                if ( strcmp( arg, "NONE" ) == 0 || strcmp( arg, "NULL" ) == 0 )
+                  striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_NONE;
+                else if ( strcmp( arg, "RAID0" ) == 0 )
+                  striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE:
-            {
-              striping_policy_stripe_size = atoi( arg );
-              if ( striping_policy_stripe_size == 0 )
-                striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
-            }
-            break;
+              case XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE:
+              {
+                striping_policy_stripe_size = atoi( arg );
+                if ( striping_policy_stripe_size == 0 )
+                  striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
+              }
+              break;
 
-            case XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH:
-            {
-              striping_policy_width = atoi( arg );
-              if ( striping_policy_width == 0 )
-                striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+              case XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH:
+              {
+                striping_policy_width = atoi( arg );
+                if ( striping_policy_width == 0 )
+                  striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+              }
+              break;
             }
-            break;
           }
         }
 
