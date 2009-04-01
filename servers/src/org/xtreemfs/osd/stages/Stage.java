@@ -26,7 +26,6 @@ package org.xtreemfs.osd.stages;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -136,7 +135,7 @@ public abstract class Stage extends LifeCycleThread {
         public void callback(Exception ex);
     }
 
-    protected static final class StageRequest {
+    public static final class StageRequest {
 
         private int                    stageMethod;
 

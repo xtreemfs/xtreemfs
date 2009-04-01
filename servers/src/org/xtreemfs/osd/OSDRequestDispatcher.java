@@ -24,20 +24,17 @@
 
 package org.xtreemfs.osd;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
-
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
@@ -55,39 +52,45 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.osd.operations.OSDOperation;
-import org.xtreemfs.osd.stages.DeletionStage;
-import org.xtreemfs.osd.stages.PreprocStage;
-import org.xtreemfs.osd.stages.StorageStage;
-import org.xtreemfs.osd.storage.HashStorageLayout;
-import org.xtreemfs.osd.storage.MetadataCache;
-import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
+import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
 import org.xtreemfs.osd.operations.KeepFileOpenOperation;
+import org.xtreemfs.osd.operations.LocalReadOperation;
+import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.stages.DeletionStage;
+import org.xtreemfs.osd.stages.PreprocStage;
+import org.xtreemfs.osd.stages.ReplicationStage;
+import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.storage.HashStorageLayout;
+import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.striping.GMAXMessage;
 import org.xtreemfs.osd.striping.UDPCommunicator;
 import org.xtreemfs.osd.striping.UDPMessage;
 import org.xtreemfs.osd.striping.UDPReceiverInterface;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
 
@@ -118,6 +121,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final StorageStage    stStage;
 
     protected final DeletionStage   delStage;
+
+    protected final ReplicationStage replStage;
 
     protected final UDPCommunicator udpCom;
 
@@ -196,6 +201,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         delStage = new DeletionStage(this, metadataCache, storageLayout);
         delStage.setLifeCycleListener(this);
         
+        replStage = new ReplicationStage(this);
+        replStage.setLifeCycleListener(this);
+
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
@@ -305,6 +313,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.start();
             delStage.start();
             stStage.start();
+            replStage.start();
             vStage.start();
 
             udpCom.waitForStartup();
@@ -346,12 +355,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
+            replStage.shutdown();
             vStage.shutdown();
 
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
+            replStage.waitForShutdown();
             vStage.waitForShutdown();
 
             httpServ.stop(0);
@@ -511,10 +522,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new ShutdownOperation(this);
         operations.put(op.getProcedureId(),op);
 
+        op = new LocalReadOperation(this);
+        operations.put(op.getProcedureId(),op);
+
         //--internal events here--
 
         op = new EventCloseFile(this);
         internalEvents.put(EventCloseFile.class,op);
+
+        op = new EventWriteObject(this);
+        internalEvents.put(EventWriteObject.class,op);
     }
 
     public StorageStage getStorageStage() {
@@ -527,6 +544,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public PreprocStage getPreprocStage() {
         return preprocStage;
+    }
+
+    public ReplicationStage getReplicationStage() {
+        return replStage;
     }
 
     public UDPCommunicator getUdpComStage() {

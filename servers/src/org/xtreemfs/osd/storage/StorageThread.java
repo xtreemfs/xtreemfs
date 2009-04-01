@@ -27,7 +27,7 @@ package org.xtreemfs.osd.storage;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -35,11 +35,11 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage;
@@ -274,6 +274,7 @@ public class StorageThread extends Stage {
             final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[4];
             final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
             final XLocations xloc = (XLocations) rq.getArgs()[6];
+            final boolean gMaxOff = (Boolean) rq.getArgs()[7];
 
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -379,7 +380,7 @@ public class StorageThread extends Stage {
             // if the write refers to the last known object or to an object
             // beyond, i.e. the file size and globalMax are potentially
             // affected:
-            if (objNo >= fi.getLastObjectNumber()) {
+            if (objNo >= fi.getLastObjectNumber() && !gMaxOff) {
 
                 long newObjSize = dataLength + offset;
 

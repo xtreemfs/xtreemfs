@@ -23,10 +23,8 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.operations;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -35,18 +33,20 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
+import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
-import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 
 public final class ReadOperation extends OSDOperation {
 
@@ -99,12 +99,12 @@ public final class ReadOperation extends OSDOperation {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
-                step2(rq, args, result, error);
+                postRead(rq, args, result, error);
             }
         });
     }
 
-    public void step2(final OSDRequest rq, readRequest args, ObjectInformation result, Exception error) {
+    public void postRead(final OSDRequest rq, readRequest args, ObjectInformation result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -112,17 +112,19 @@ public final class ReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
-                //FIXME: read only replication!
-            }
-            if (!rq.getLocationList().getLocalReplica().isStriped()) {
-                //non-striped case
-                nonStripedRead(rq, args, result);
+            if (result.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST
+                    && rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
+                // read only replication!
+                readReplica(rq, args);
             } else {
-                //striped read
-                stripedRead(rq, args, result);
+                if (rq.getLocationList().getLocalReplica().isStriped()) {
+                    // non-striped case
+                    nonStripedRead(rq, args, result);
+                } else {
+                    // striped read
+                    stripedRead(rq, args, result);
+                }
             }
-
         }
 
     }
@@ -206,6 +208,48 @@ public final class ReadOperation extends OSDOperation {
             master.dataSent(data.getData().capacity());
 
         sendResponse(rq, data);
+    }
+    
+    private void readReplica(final OSDRequest rq, final readRequest args) {
+        XLocations xLoc = rq.getLocationList();
+        StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+
+        // check if it is a EOF
+        if (args.getObject_number() > sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1)) {
+            ObjectInformation objectInfo = new ObjectInformation(ObjectStatus.DOES_NOT_EXIST, null, sp
+                    .getStripeSizeForObject(args.getObject_number()));
+            objectInfo.setGlobalLastObjectNo(xLoc.getXLocSet().getRead_only_file_size());
+
+            readFinish(rq, args, objectInfo, true);
+        } else {
+            master.getReplicationStage().fetchObject(args.getFile_id(), args.getObject_number(), xLoc,
+                    rq.getCapability(), rq.getCowPolicy(), rq, new FetchObjectCallback() {
+                        @Override
+                        public void fetchComplete(ObjectInformation objectInfo, Exception error) {
+                            postReadReplica(rq, args, objectInfo, error);
+                        }
+                    });
+        }
+    }
+
+    public void postReadReplica(final OSDRequest rq, readRequest args, ObjectInformation result, Exception error) {
+        XLocations xLoc = rq.getLocationList();
+        StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+
+        if (error != null) {
+            if (error instanceof ONCRPCException) {
+                rq.sendException((ONCRPCException) error);
+            } else {
+                rq.sendInternalServerError(error);
+            }
+        } else {
+            // TODO: check implementation!
+            if (args.getObject_number() == sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1))
+                // last object
+                readFinish(rq, args, result, true);
+            else
+                readFinish(rq, args, result, false);
+        }
     }
 
     public void sendResponse(OSDRequest rq, ObjectData result) {

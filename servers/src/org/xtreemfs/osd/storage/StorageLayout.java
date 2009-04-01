@@ -48,8 +48,6 @@ public abstract class StorageLayout {
 
     public static final String    VERSION_FILENAME = ".version";
 
-    public static final String    LOCAL_KNOWN_FILESIZE_FILENAME = ".filesize";
-
     protected final String        storageDir;
 
     protected final MetadataCache cache;
@@ -300,26 +298,4 @@ public abstract class StorageLayout {
      * @throws IOException if an error occurred
      */
     public abstract ConcurrentFileMap getAllFiles() throws IOException;
-    
-    /**
-     * sets the local known filesize
-     * @param fileId
-     * @param size
-     */
-    public void writeFilesize(String fileId, long size) throws IOException {
-        // try to retrieve metadata from cache
-        FileInfo fi = cache.getFileInfo(fileId);
-
-        // if metadata is cached ...
-        if (fi != null) {
-            fi.setFilesize(size);
-        }
-    }
-    
-    /**
-     * determines, if special disk-file for filesize exists
-     * @return
-     * @throws IOException
-     */
-    public abstract boolean isFilesizeWrittenToDisk(String fileId) throws IOException;
 }

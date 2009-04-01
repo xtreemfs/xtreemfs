@@ -26,6 +26,7 @@
 package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -85,7 +86,16 @@ public class StorageStage extends Stage {
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp,
             int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc,
             OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc}, request, listener);
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,false}, request, listener);
+    }
+
+    /*
+     * currently only used for replication
+     */
+    public void writeObjectWithoutGMax(String fileId, long objNo, StripingPolicyImpl sp,
+            int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc,
+            OSDRequest request, WriteObjectCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,true}, request, listener);
     }
 
     public static interface WriteObjectCallback {
