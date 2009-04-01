@@ -83,10 +83,8 @@ r"../../../../../src/org/xtreemfs/client/lib/open_file.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/osd_proxy.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/osd_proxy_factory.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/path.cpp",
-r"../../../../../src/org/xtreemfs/client/lib/path_test.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/policy_container.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/proxy.cpp",
 r"../../../../../src/org/xtreemfs/client/lib/shared_file.cpp",
-r"../../../../../src/org/xtreemfs/client/lib/volume.cpp",
-r"../../../../../src/org/xtreemfs/client/lib/volume_test.cpp"
+r"../../../../../src/org/xtreemfs/client/lib/volume.cpp"
 ) ) )

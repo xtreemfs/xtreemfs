@@ -351,6 +351,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\platform_exception_event.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\policy_container.h"
     >
 </File>
@@ -387,10 +391,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\path_test.cpp"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\policy_container.cpp"
     >
 </File>
@@ -404,10 +404,6 @@
 </File>
 <File
     RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\volume.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\volume_test.cpp"
     >
 </File>
 

@@ -1,5 +1,6 @@
 #include "org/xtreemfs/client/proxy.h"
 #include "policy_container.h"
+#include "platform_exception_event.h"
 using namespace org::xtreemfs::client;
 
 #include "org/xtreemfs/interfaces/constants.h"
@@ -153,10 +154,10 @@ void Proxy::handleEvent( YIELD::Event& ev )
                       reconnect_tries_left = reconnect( reconnect_tries_left );
                   }
                   else
-                    throwExceptionEvent( new YIELD::PlatformExceptionEvent( ETIMEDOUT ) );
+                    throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
                 }
                 else
-                  throwExceptionEvent( new YIELD::PlatformExceptionEvent( ETIMEDOUT ) );
+                  throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
               }
             }
           }
@@ -183,7 +184,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     if ( peer_ip == 0 && ( strcmp( uri.get_host(), "localhost" ) == 0 || strcmp( uri.get_host(), "127.0.0.1" ) == 0 ) )
       peer_ip = YIELD::SocketLib::resolveHost( YIELD::SocketLib::getLocalHostFQDN() );
     if ( peer_ip == 0 )
-      throw new YIELD::PlatformExceptionEvent();
+      throw new PlatformExceptionEvent();
   }
 
   if ( conn != NULL ) // This is a reconnect, not the first connect
@@ -253,7 +254,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
   unsigned long error_code = YIELD::PlatformException::errno_();
   if ( error_code == 0 )
     error_code = ETIMEDOUT;
-  throw new YIELD::PlatformExceptionEvent( error_code );
+  throw new PlatformExceptionEvent( error_code );
 }
 
 void Proxy::throwExceptionEvent( YIELD::ExceptionEvent* exc_ev )

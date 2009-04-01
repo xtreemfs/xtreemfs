@@ -75,5 +75,8 @@ else:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 AlwaysBuild( build_env.Program( r"../../../../../bin/xtreemfs-client-test", (
-r"../../../../../src/org/xtreemfs/client/bin/xtreemfs-client-test.cpp"
+r"../../../../../src/org/xtreemfs/client/bin/xtreemfs-client-test.cpp",
+r"../../../../../src/org/xtreemfs/client/lib/open_file_test.cpp",
+r"../../../../../src/org/xtreemfs/client/lib/path_test.cpp",
+r"../../../../../src/org/xtreemfs/client/lib/volume_test.cpp"
 ) ) )

@@ -169,6 +169,18 @@
     RelativePath="..\..\..\..\..\src\org\xtreemfs\client\bin\xtreemfs-client-test.cpp"
     >
 </File>
+<File
+    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\open_file_test.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\path_test.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\lib\volume_test.cpp"
+    >
+</File>
 
 		</Filter>
 	</Files>
