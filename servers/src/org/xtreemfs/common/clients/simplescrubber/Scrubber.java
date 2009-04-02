@@ -110,6 +110,8 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
     private final int numThrs;
 
+    private boolean hasFinished;
+
     private String currentDirName = null;
 
     public Scrubber(RPCNIOSocketClient rpcClient, DIRClient dirClient, MRCClient mrcClient,
@@ -127,6 +129,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         numInFlight = 0;
         completeLock = new Object();
         defects = new LinkedList();
+        hasFinished = false;
     }
 
     public int scrub() {
@@ -136,7 +139,8 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         fillQueue();
         synchronized (completeLock) {
             try {
-                completeLock.wait();
+                if (!hasFinished)
+                    completeLock.wait();
             } catch (InterruptedException ex) {
             }
         }
@@ -190,6 +194,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
             if (numInFlight == 0) {
                 synchronized (completeLock) {
                     this.returnCode = returnCode;
+                    this.hasFinished = true;
                     completeLock.notifyAll();
                 }
             }
