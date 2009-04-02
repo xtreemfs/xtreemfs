@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -39,6 +40,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
@@ -64,8 +66,8 @@ public class ObjectDissemination {
      * Encapsulates important infos about a file
      * 01.04.2009
      */
-    private class FileInfo {
-        class ObjectInfo {
+    private static class FileInfo {
+        private static class ObjectInfo {
             List<StageRequest> waitingRequests;
             List<ServiceUUID> availableOSDs;
             ServiceUUID lastOSD;
@@ -216,22 +218,21 @@ public class ObjectDissemination {
                 @Override
                 public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
                     try {
-                        // TODO
-                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo,
-                                r.get().getData().getData()/* , null */); // FIXME
+                        ObjectData data = r.get().getData();
+                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, data);
                     } catch (ONCRPCException e) {
                         // TODO Auto-generated catch block
-                        master.getReplicationStage()
-                                .InternalObjectFetched(fileID, objectNo, null/* , null */); // FIXME
+                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
-                        master.getReplicationStage()
-                                .InternalObjectFetched(fileID, objectNo, null/* , null */); // FIXME
+                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
+                    } finally {
+                        r.freeBuffers();
                     }
                 }
             });
@@ -244,26 +245,36 @@ public class ObjectDissemination {
     /**
      * creates the responses and updates the maps
      */
-    public void objectFetched(String fileID, long objectNo, ReusableBuffer data) {
+    public void objectFetched(String fileID, long objectNo, ObjectData data) {
         FileInfo fileInfo = filesInProgress.get(fileID);
-        StripingPolicyImpl sp = fileInfo.xLoc.getLocalReplica().getStripingPolicy();
 
-        sendResponses(fileInfo, objectNo, data, ObjectStatus.EXISTS);
+        if (!data.getInvalid_checksum_on_osd()) {
+            // correct checksum
+            sendResponses(fileInfo, objectNo, data.getData(), ObjectStatus.EXISTS);
 
-        // write data to disk
-        OSDOperation writeObjectEvent = master.getInternalEvent(EventWriteObject.class);
-        writeObjectEvent.startInternalEvent(new Object[] { fileID, objectNo, data, fileInfo.xLoc,
-                fileInfo.cow });
+            // write data to disk
+            OSDOperation writeObjectEvent = master.getInternalEvent(EventWriteObject.class);
+            // NOTE: "original" buffer is used
+            writeObjectEvent.startInternalEvent(new Object[] { fileID, objectNo, data.getData(), fileInfo.xLoc,
+                    fileInfo.cow });
 
-        // delete object in maps/lists
-        fileInfo.strategy.removeOSDListForObject(objectNo);
-        fileInfo.strategy.removePreferredObject(objectNo);
-        fileInfo.remove(objectNo);
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "object fetched " + fileID + ":" + objectNo);
+            // delete object in maps/lists
+            fileInfo.strategy.removeOSDListForObject(objectNo);
+            fileInfo.strategy.removePreferredObject(objectNo);
+            fileInfo.remove(objectNo);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "object fetched " + fileID + ":" + objectNo);
 
-        if (filesInProgress.isEmpty())
-            fileCompleted(fileID);
+            if (filesInProgress.isEmpty())
+                fileCompleted(fileID);
+        } else {
+            // try next replica
+            fileInfo.strategy.addPreferredObject(objectNo); // TODO: preferred or only requested?
+            prepareRequest(fileInfo, objectNo);
+            
+            // free buffer
+            BufferPool.free(data.getData());
+        }
     }
 
     /**
@@ -271,8 +282,6 @@ public class ObjectDissemination {
      */
     public void objectNotFetched(String fileID, long objectNo) {
         FileInfo fileInfo = filesInProgress.get(fileID);
-        List<StageRequest> reqs = fileInfo.get(objectNo).waitingRequests;
-        StripingPolicyImpl sp = fileInfo.xLoc.getLocalReplica().getStripingPolicy();
 
         // lastOSD could not help => remove it from list for this object
         fileInfo.strategy.removeOSDForObject(objectNo, fileInfo.get(objectNo).lastOSD);

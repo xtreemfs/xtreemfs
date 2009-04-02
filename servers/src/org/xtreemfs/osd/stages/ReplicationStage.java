@@ -26,10 +26,11 @@ package org.xtreemfs.osd.stages;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.include.foundation.json.JSONException;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectDissemination;
@@ -78,16 +79,10 @@ public class ReplicationStage extends Stage {
      * Checks the response from a requested replica.
      * Only for internal use. 
      */
-    public void InternalObjectFetched(String fileId, long objectNo, ReusableBuffer data/*,
-            ObjectInternalFetchedCallback listener*/) { // FIXME
+    public void InternalObjectFetched(String fileId, long objectNo, ObjectData data) {
         this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, data }, null,
-                null/*listener*/);
+                null);
     }
-
-    // FIXME
-/*    public static interface ObjectInternalFetchedCallback {
-        public void fetchComplete(ObjectInformation objectInfo, Exception error);
-    }*/
 
     @Override
     protected void processMethod(StageRequest rq) {
@@ -129,15 +124,16 @@ public class ReplicationStage extends Stage {
     }
 
     private void processInternalObjectFetched(StageRequest rq) {
-//        final ObjectInternalFetchedCallback callback = (ObjectInternalFetchedCallback) rq.getCallback(); // FIXME
         String fileId = (String) rq.getArgs()[0];
         long objectNo = (Long) rq.getArgs()[1];
-        ReusableBuffer data = (ReusableBuffer) rq.getArgs()[2];
+        ObjectData data = (ObjectData) rq.getArgs()[2];
 
-        if(data.limit() != 0)
+        if(data.getData().limit() != 0)
             disseminationLayer.objectFetched(fileId, objectNo, data);
-        else // data could not be fetched
+        else {
+            // data could not be fetched
             disseminationLayer.objectNotFetched(fileId, objectNo);
+            BufferPool.free(data.getData());
+        }
     }
-
 }

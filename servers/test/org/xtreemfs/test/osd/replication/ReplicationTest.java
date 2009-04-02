@@ -31,7 +31,9 @@ import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
@@ -88,7 +90,7 @@ public class ReplicationTest extends TestCase {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
         Logging.start(Logging.LEVEL_TRACE);
 
-        this.stripeSize = 128 * 1024;
+        this.stripeSize = 128 * 1024; // byte
         this.data = SetupUtils.generateData(stripeSize);
 
         // cleanup
@@ -136,15 +138,6 @@ public class ReplicationTest extends TestCase {
         return new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0));
     }
 
-    private ObjectData getObjectData(ReusableBuffer data) {
-        return new ObjectData(data.createViewBuffer(), 0, 0, false);
-    }
-
-    private void setReplicated(long filesize) {
-        xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
-        xLoc.getXLocSet().setRead_only_file_size(filesize);
-    }
-
     /**
      * @throws java.lang.Exception
      */
@@ -154,8 +147,21 @@ public class ReplicationTest extends TestCase {
             osd.shutdown();
 
         testEnv.shutdown();
+        
+        // free buffers
+        BufferPool.free(data);
     }
 
+    private ObjectData getObjectData(ReusableBuffer data) {
+        return new ObjectData(data.createViewBuffer(), 0, 0, false);
+    }
+
+    private void setReplicated(long filesize) {
+        xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
+        xLoc.getXLocSet().setRead_only_file_size(filesize);
+    }
+
+    @Test
     public void testStriped() throws Exception {
         FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
 
@@ -174,6 +180,7 @@ public class ReplicationTest extends TestCase {
         ObjectData rResp = r.get();
         assertTrue(Arrays.equals(data.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read object from replica 2 (object not exists on this OSD) => replication
         r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), fileID, fcred, objectNo, 0, 0,
@@ -181,6 +188,7 @@ public class ReplicationTest extends TestCase {
         rResp = r.get();
         assertTrue(Arrays.equals(data.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read object from replica 4 (object not exists on this OSD) => replication
         r = client.read(xLoc.getOSDsForObject(objectNo).get(3).getAddress(), fileID, fcred, objectNo, 0, 0,
@@ -188,6 +196,7 @@ public class ReplicationTest extends TestCase {
         rResp = r.get();
         assertTrue(Arrays.equals(data.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read part of object from replica 1 (object not exists on this OSD) => replication
         r = client.read(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred, objectNo, 0,
@@ -200,8 +209,10 @@ public class ReplicationTest extends TestCase {
             assertEquals(dataBytes[j++], responseData[i]);
         }
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
     }
 
+    @Test
     public void testHoleAndEOF() throws Exception {
         FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
 
@@ -235,6 +246,7 @@ public class ReplicationTest extends TestCase {
         ObjectData rResp = r.get();
         assertTrue(Arrays.equals(data.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read hole from replica 2
         r = client.read(xLoc.getOSDsForObject(objectNo + 1).get(1).getAddress(), fileID, fcred, objectNo + 1,
@@ -245,6 +257,7 @@ public class ReplicationTest extends TestCase {
             assertEquals(0, b);
         }
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read EOF from replica 2
         r = client.read(xLoc.getOSDsForObject(objectNo + 4).get(1).getAddress(), fileID, fcred, objectNo + 4,
@@ -252,6 +265,7 @@ public class ReplicationTest extends TestCase {
         rResp = r.get();
         assertEquals(0, rResp.getData().limit());
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read hole within an object from replica 2
         r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(1).getAddress(), fileID, fcred, objectNo + 2,
@@ -273,6 +287,7 @@ public class ReplicationTest extends TestCase {
         // last quarter filled with zeros again
         assertEquals(stripeSize / 4, rResp.getZero_padding());
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read EOF within data from replica 2
         r = client.read(xLoc.getOSDsForObject(objectNo + 3).get(1).getAddress(), fileID, fcred, objectNo + 3,
@@ -280,6 +295,7 @@ public class ReplicationTest extends TestCase {
         rResp = r.get();
         assertTrue(Arrays.equals(data2.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
 
         // read hole within an object from replica 2 with offset and length
         r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(2).getAddress(), fileID, fcred, objectNo + 2,
@@ -289,6 +305,10 @@ public class ReplicationTest extends TestCase {
         assertEquals(data2.limit(), rResp.getData().array().length);
         assertTrue(Arrays.equals(data2.array(), rResp.getData().array()));
         r.freeBuffers();
+        BufferPool.free(rResp.getData());
+        
+        // free buffers
+        BufferPool.free(data2);
     }
 
     /*
@@ -297,6 +317,7 @@ public class ReplicationTest extends TestCase {
     /**
      * striped case
      */
+    @Test
     public void testObjectLocalAvailable() throws Exception {
         ServiceUUID serverID = xLoc.getOSDsForObject(objectNo).get(0);
         FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
@@ -315,10 +336,10 @@ public class ReplicationTest extends TestCase {
                 fcred, objectNo, 0, 0, stripeSize);
         InternalReadLocalResponse resp2 = r2.get();
 
-        assertTrue(Arrays.equals(data.array(), resp2.getData().getData()
-                .array()));
+        assertTrue(Arrays.equals(data.array(), resp2.getData().getData().array()));
 
         r2.freeBuffers();
+        BufferPool.free(resp2.getData().getData());
         
         // read only part of data
         r2 = client.internal_read_local(serverID.getAddress(), fileID,
@@ -334,11 +355,13 @@ public class ReplicationTest extends TestCase {
         }
 
         r2.freeBuffers();
+        BufferPool.free(resp2.getData().getData());
     }
 
     /**
      * striped case
      */
+    @Test
     public void testObjectLocalNOTAvailable() throws Exception {
         FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
 
@@ -373,6 +396,7 @@ public class ReplicationTest extends TestCase {
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), resp.getData().getData().array()));
         r.freeBuffers();
+        BufferPool.free(resp.getData().getData());
 
         // read higher object than has been written (EOF)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), fileID,
@@ -380,6 +404,7 @@ public class ReplicationTest extends TestCase {
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
+        BufferPool.free(resp.getData().getData());
 
         // read object that has not been written (hole)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID,
@@ -387,14 +412,17 @@ public class ReplicationTest extends TestCase {
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
+        BufferPool.free(resp.getData().getData());
     }
 
+    @Test
     public void testObjectLocalAvailableNONStriped() throws Exception {
         this.xLoc = createLocations(2, 1);
         // reuse test
         testObjectLocalAvailable();
     }
 
+    @Test
     public void testObjectLocalNOTAvailableNONStriped() throws Exception {
         this.xLoc = createLocations(2, 1);
         // reuse test
