@@ -118,11 +118,11 @@ public final class ReadOperation extends OSDOperation {
                 readReplica(rq, args);
             } else {
                 if (rq.getLocationList().getLocalReplica().isStriped()) {
-                    // non-striped case
-                    nonStripedRead(rq, args, result);
-                } else {
                     // striped read
                     stripedRead(rq, args, result);
+                } else {
+                    // non-striped case
+                    nonStripedRead(rq, args, result);
                 }
             }
         }
