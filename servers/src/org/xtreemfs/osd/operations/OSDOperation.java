@@ -64,6 +64,7 @@ public abstract class OSDOperation {
 
     public void waitForResponses(final RPCResponse[] responses, final ResponsesListener listener) {
 
+        assert(responses.length > 0);
 
         final AtomicInteger count = new AtomicInteger(0);
         final RPCResponseAvailableListener l = new RPCResponseAvailableListener() {

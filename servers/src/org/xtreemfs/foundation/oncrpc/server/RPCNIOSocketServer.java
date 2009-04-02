@@ -36,6 +36,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -105,6 +107,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      */
     private final int bindPort;
 
+    private final List<ClientConnection> connections;
+
     /**
      * maximum number of pending client requests to allow
      */
@@ -140,6 +144,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         this.sslOptions = sslOptions;
 
         this.numConnections = new AtomicInteger(0);
+
+        this.connections = new LinkedList();
 
     }
 
@@ -225,9 +231,19 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 }
             }
 
+            for (ClientConnection con : connections) {
+                try {
+                    con.getChannel().close();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
             //close socket
             selector.close();
             socket.close();
+
+            
 
             Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Server " + bindPort + " shutdown complete");
 
@@ -493,6 +509,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
         //remove the connection from the selector and close socket
         try {
+            connections.remove(con);
             con.setConnectionClosed(true);
             key.cancel();
             channel.close();
@@ -537,6 +554,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             client.socket().setTcpNoDelay(true);
 
             numConnections.incrementAndGet();
+
+            this.connections.add(con);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "connect from client at " + client.socket().getRemoteSocketAddress());
