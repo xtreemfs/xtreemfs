@@ -52,7 +52,7 @@ namespace org
         MRCProxy& mrc_proxy; uint64_t mrc_proxy_operation_timeout_ms;
         OSDProxyFactory& osd_proxy_factory; uint64_t osd_proxy_operation_timeout_ms;
 
-        YIELD::HashMap<SharedFile*> in_use_shared_files;
+        YIELD::STLHashMap<SharedFile*> in_use_shared_files;
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
 
       private:

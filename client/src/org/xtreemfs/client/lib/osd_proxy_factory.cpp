@@ -11,7 +11,7 @@ OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_pr
 OSDProxyFactory::~OSDProxyFactory() 
 { 
   osd_proxy_cache_lock.acquire();
-  for ( YIELD::HashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
+  for ( YIELD::STLHashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
     YIELD::SharedObject::decRef( *osd_proxy_i->second );
   osd_proxy_cache.clear();
   osd_proxy_cache_lock.release();

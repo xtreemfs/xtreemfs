@@ -28,7 +28,7 @@ namespace org
         uint8_t osd_proxy_reconnect_tries_max;
         uint32_t osd_proxy_flags;
 
-        YIELD::HashMap<OSDProxy*> osd_proxy_cache;
+        YIELD::STLHashMap<OSDProxy*> osd_proxy_cache;
         YIELD::Mutex osd_proxy_cache_lock;
 
         OSDProxy& createOSDProxy( const YIELD::URI& uri );

@@ -14,13 +14,13 @@ namespace org
       class OpenFileTestSuite : public YIELD::FileTestSuite
       {
       public:
-        OpenFileTestSuite() 
+        OpenFileTestSuite( const char* test_suite_name ) 
           : stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
             dir_proxy( "oncrpc://outtolunch/" ),
             mrc_proxy( "oncrpc://outtolunch/" ),
             osd_proxy_factory( dir_proxy, stage_group ),
             volume( "test", dir_proxy, mrc_proxy, osd_proxy_factory ),
-            YIELD::FileTestSuite( volume )
+            YIELD::FileTestSuite( test_suite_name, volume )
         {
           stage_group.createStage( dir_proxy );
           stage_group.createStage( mrc_proxy );

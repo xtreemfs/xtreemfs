@@ -45,7 +45,9 @@ Path::Path( const std::string& global_path )
   {
     volume_name = global_path.substr( 0, first_slash );
     if ( DISK_PATH_SEPARATOR == '/' )
-      local_path = YIELD::Path( global_path.substr( first_slash + 1 ), false );
+      // TODO: decode the UTF-8 here? or Path::fromUTF8?
+      // local_path = YIELD::Path( global_path.substr( first_slash + 1 ), false );
+      local_path = YIELD::Path( global_path.substr( first_slash + 1 ) );
     else
     {
       std::string temp_local_path = global_path.substr( first_slash + 1 );
