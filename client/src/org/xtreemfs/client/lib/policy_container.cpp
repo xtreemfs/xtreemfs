@@ -175,7 +175,7 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
 {
   if ( get_user_credentials_from_passwd )
   {
-    size_t user_id_len, group_ids_len;
+    size_t user_id_len = 0, group_ids_len = 0;
     int get_user_credentials_from_passwd_ret = get_user_credentials_from_passwd( uid, gid, NULL, &user_id_len, NULL, &group_ids_len );
     if ( get_user_credentials_from_passwd_ret >= 0 )
     {
