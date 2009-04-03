@@ -1,0 +1,84 @@
+# degub level (0 = error, 1 = warn, 2 = info, 3 = debug, 4 = trace)
+debug_level = 1
+
+# port for the service to listen on
+listen.port = 32636
+
+http_port = 30636
+
+# optional address for network device, "any" if not specified
+#listen.address = 127.0.0.1
+
+# interval for querying the Directory Service for new OSDs
+osd_check_interval = 10
+
+# Directory Service endpoint
+dir_service.host = localhost
+dir_service.port = 32638
+
+# directory for append log
+database.log = /tmp/xtreemfs-test/mrc/
+
+# directory for volume databases
+database.dir = /tmp/xtreemfs-test/mrc/
+
+# specify whether access time stamps are updated
+no_atime = true
+no_fsync = true
+
+# granularity of the local clock (in ms)
+local_clock_renewal = 50
+
+# interval between two remote clock syncs (in ms)
+remote_time_sync = 60000
+
+# specify whether SSL is required
+ssl.enabled = true
+
+# server credentials for SSL handshakes
+ssl.service_creds = test/server2.p12
+ssl.service_creds.pw = passphrase
+ssl.service_creds.container = pkcs12
+
+# trusted certificates for SSL handshakes
+ssl.trusted_certs = test/trust.jks
+ssl.trusted_certs.pw = passphrase
+ssl.trusted_certs.container = jks
+
+# time span between two database checkpoint attempts (in ms)
+database.checkpoint.interval = 1800000
+
+# time span for which no requests must have been received to create a checkpoint (in ms)
+database.checkpoint.idle_interval = 1000
+
+# minimum size in bytes the log file must have to create a checkpoint
+database.checkpoint.logfile_size = 16384
+
+# UUID for the OSD
+# IMPORTANT: replace 'localhost' with a reachable host name/IP address
+#uuid = http://farnsworth.zib.de:32636
+uuid = test-localhost-MRC
+
+# Authentication providers are used to retrieve the user identities
+# from the client or from certificate.
+# The default provider is org.xtreemfs.mrc.auth.NullAuthProvider, which just
+# takes the information provided by the client. The name of a pluggable
+# provider can be used here.
+authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
+
+# Optional directory containing deployable MRC policy implementations.
+# Policies can be directly deployed as .java or .class files in this directory
+# or one of its subdirectories. They will be compiled at startup time and
+# loaded at runtime. Policies may have external dependencies that can be
+# deployed either as .java, .class or .jar files. While Java and Class files
+# may be located in subdirectories, JAR files mustn't. So far, pluggable
+# policies have to inherit from either org.xtreemfs.mrc.ac.FileAccessPolicy,
+# org.xtreemfs.mrc.osdstatus.OSDSelectionPolicy, or
+# org.xtreemfs.common.auth.AuthenticationProvider. Policies identified by
+# policy IDs (OSDSelectionPolicy and FileAccessPolicy) require a public static
+# long field called POLICY_ID that assigns the policy a unique number.
+# policy_dir = /etc/xos/xtreemfs/policies
+
+geographic_coordinates = 52.455483,13.297405
+
+capability_secret = Yagga
