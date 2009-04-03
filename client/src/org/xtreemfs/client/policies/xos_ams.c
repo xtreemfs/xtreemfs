@@ -5,6 +5,7 @@
 #ifndef _WIN32
 #include <errno.h>
 #include <xos_ams.h>
+#include <xos_protocol.h>
 #endif
 
 
@@ -15,13 +16,13 @@ DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char*
   return 0;
 #else
   int ams_fd;
-	AMS_GPASSWD gpwd;
-	AMS_GGROUPS ggrp;
+  AMS_GPASSWD gpwd;
+  AMS_GGROUPS ggrp;
 
   ams_fd = amsclient_connect_open();
   if ( ams_fd != -1 )
   {
-    if ( amsclient_mappinginfo_internal( ams_fd,user_id, group_id, group_id, &gpwd, &ggrp ) >= 0 )
+    if ( amsclient_mappinginfo_internal( ams_fd,user_id, group_ids, group_ids, &gpwd, &ggrp ) >= 0 )
     {
       *uid = gpwd.l_idtoken.g_mappeduid;
       *gid = gpwd.l_idtoken.g_mappedgid;
@@ -46,8 +47,8 @@ DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id,
   ams_group_id = "ams_group_id";
 #else
   int ams_fd;
-	AMS_GPASSWD gpwd;
-	AMS_GGROUPS ggrp;
+  AMS_GPASSWD gpwd;
+  AMS_GGROUPS ggrp;
   
   ams_fd = amsclient_connect_open();
   if ( ams_fd != -1 )
