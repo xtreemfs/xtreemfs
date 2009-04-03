@@ -15,6 +15,7 @@ namespace org
       {
       public:
         OSDProxy( const YIELD::URI& uri );
+        OSDProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
         virtual ~OSDProxy();
 
         void read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data );

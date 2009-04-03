@@ -35,18 +35,22 @@ namespace org
         virtual void handleEvent( YIELD::Event& ev );
 
       protected:
-        Proxy( const YIELD::URI&, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port );
+        Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port );
+        Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase, uint16_t default_oncrpcs_port );
 
         virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 
         YIELD::SerializableFactories serializable_factories;
 
       private:
+        void init();
+
         YIELD::URI uri;
 
         uint32_t flags;
         uint8_t reconnect_tries_max;
         uint64_t operation_timeout_ms;
+        SSL_CTX* ssl_ctx;
 
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;

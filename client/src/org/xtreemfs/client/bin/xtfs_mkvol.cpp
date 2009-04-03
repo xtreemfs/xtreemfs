@@ -20,9 +20,7 @@ namespace org
           addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
           access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
 
-          addOption( XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH, "-c", "--certificate-file-path", "path" );
-
-          addOption( XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH, "-m", "--mode", "n" );
+          addOption( XTFS_MKVOL_OPTION_MODE, "-m", "--mode", "n" );
           mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
 
           addOption( XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY, "-o", "--osd-selection-policy", "SIMPLE" );
@@ -48,7 +46,6 @@ namespace org
         }
 
         uint8_t get_access_control_policy() const { return access_control_policy; }
-        const std::string& get_certificate_file_path() const { return certificate_file_path; }
         uint32_t get_mode() const { return mode; }
         YIELD::URI& get_mrc_uri() const { return *mrc_uri; }
         uint8_t get_osd_selection_policy() const { return osd_selection_policy; }
@@ -61,7 +58,6 @@ namespace org
         enum
         {
          XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY,
-         XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH,
          XTFS_MKVOL_OPTION_MODE,
          XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY,
          XTFS_MKVOL_OPTION_STRIPING_POLICY,
@@ -70,7 +66,6 @@ namespace org
         };
 
         uint8_t access_control_policy;
-        std::string certificate_file_path;
         uint32_t mode;
         YIELD::URI* mrc_uri;
         uint8_t osd_selection_policy;
@@ -94,12 +89,6 @@ namespace org
                   access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
                 else if ( strcmp( arg, "VOLUME" ) == 0 )
                   access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
-              }
-              break;
-
-              case XTFS_MKVOL_OPTION_CERTIFICATE_FILE_PATH:
-              {
-                certificate_file_path = arg;
               }
               break;
 
@@ -137,7 +126,7 @@ namespace org
 
               case XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH:
               {
-                striping_policy_width = atoi( arg );
+                striping_policy_width = static_cast<uint16_t>( atoi( arg ) );
                 if ( striping_policy_width == 0 )
                   striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
               }
@@ -177,12 +166,9 @@ int main( int argc, char** argv )
       options.printUsage();
     else
     {
-      if ( options.get_debug() )
-        YIELD::SocketConnection::setTraceSocketIO( true );
-
-      MRCProxy mrc_proxy( options.get_mrc_uri() );
-      mrc_proxy.set_operation_timeout_ms( options.get_timeout_ms() );
-      mrc_proxy.mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() ) );
+      YIELD::auto_SharedObject<MRCProxy> mrc_proxy = options.createProxy<MRCProxy>( options.get_mrc_uri() );
+      mrc_proxy.get()->set_operation_timeout_ms( options.get_timeout_ms() );
+      mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() ) );
     }
 
     return 0;

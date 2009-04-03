@@ -134,17 +134,17 @@ namespace org
               std::string request_type_name( rpc_uri.get()->get_resource() + 1 );
               request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request != NULL )
-                proxy = new MRCProxy( *rpc_uri.get() );
+                proxy = createProxy<MRCProxy>( *rpc_uri.get() );
               else
               {
                 request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
                 if ( request != NULL )
-                  proxy = new DIRProxy( *rpc_uri.get() );
+                  proxy = createProxy<DIRProxy>( *rpc_uri.get() );
                 else
                 {
                   request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
                   if ( request != NULL )
-                    proxy = new OSDProxy( *rpc_uri.get() );
+                    proxy = createProxy<OSDProxy>( *rpc_uri.get() );
                   else
                     throw YIELD::Exception( "unknown operation" );
                 }

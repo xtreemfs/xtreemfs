@@ -44,7 +44,14 @@ except:
     
     Export( "build_env", "build_conf" )
 
-    
+defines = []
+if sys.platform.startswith( "win" ): defines.extend( [] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
+        
 include_dir_paths = ['../../../../../include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( [] )
 else: include_dir_paths.extend( [] )

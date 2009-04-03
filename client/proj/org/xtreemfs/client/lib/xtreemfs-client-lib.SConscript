@@ -1,7 +1,6 @@
 import sys, os.path
 
-SConscript( '../../../../../share/yieldfs/proj/yieldfs/yieldfs.SConscript' )
-SConscript( '../../../../../share/yieldfs/share/yield/proj/yield/yield.SConscript' )    
+SConscript( '../../../../../share/yieldfs/proj/yieldfs/yieldfs.SConscript' )    
 
 
 try:
@@ -47,7 +46,14 @@ except:
     
     Export( "build_env", "build_conf" )
 
-    
+defines = ["YIELD_HAVE_OPENSSL"]
+if sys.platform.startswith( "win" ): defines.extend( [] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
+        
 include_dir_paths = ['../../../../../include', '../../../../../share/yieldfs/include', '../../../../../share/yieldfs/share/yield/include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( [] )
 else: include_dir_paths.extend( [] )
@@ -55,7 +61,7 @@ for include_dir_path in include_dir_paths:
     include_dir_path = os.path.abspath( include_dir_path )
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
     
-lib_dir_paths = ['../../../../../share/yieldfs/lib', '../../../../../share/yieldfs/share/yield/lib', '../../../../../lib']
+lib_dir_paths = ['../../../../../share/yieldfs/lib', '../../../../../lib']
 if sys.platform.startswith( "win" ): lib_dir_paths.extend( [] )
 else: lib_dir_paths.extend( [] )
 for lib_dir_path in lib_dir_paths:
@@ -69,14 +75,14 @@ for custom_SConscript in ["xtreemfs-client-lib_custom.SConscript"]:
 
     
 # Don't add libs until after xtreemfs-client-lib_custom.SConscript and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in ["yieldfs", "yield"]:
+for lib in ["yieldfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if sys.platform.startswith( "win" ):
-    for lib in []:
+    for lib in ["libeay32.lib", "ssleay32.lib", "libeay32.lib", "ssleay32.lib"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 else:
-    for lib in []:
+    for lib in ["ssl"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 ( build_env.Library( r"../../../../../lib/xtreemfs-client", (

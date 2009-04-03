@@ -3,7 +3,13 @@ using namespace org::xtreemfs::client;
 
 
 OSDProxy::OSDProxy( const YIELD::URI& uri )
-: Proxy( uri, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
+  : Proxy( uri, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPC_PORT )
+{
+  osd_interface.registerSerializableFactories( serializable_factories );
+}
+
+OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
+  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )  
 {
   osd_interface.registerSerializableFactories( serializable_factories );
 }

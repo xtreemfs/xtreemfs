@@ -11,32 +11,90 @@ using namespace org::xtreemfs::client;
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 
+#include <openssl/err.h>
+#include <openssl/pkcs12.h>
+#include <openssl/ssl.h>
 
-Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port, uint16_t default_oncrpcs_port ) : uri( uri )
+
+
+Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port ) 
+  : uri( uri )
 {
-  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 || strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
+  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0  )
   {
     if ( this->uri.get_port() == 0 )
-    {
-      if ( strcmp( this->uri.get_scheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0 )
-        this->uri.set_port( default_oncrpc_port );
-      else if ( strcmp( this->uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
-        this->uri.set_port( default_oncrpcs_port );
-      else
-        YIELD::DebugBreak();
-    }
+      this->uri.set_port( default_oncrpc_port );
 
-    this->flags = PROXY_DEFAULT_FLAGS;
-    this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
-    this->operation_timeout_ms = PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
-    
-    this->peer_ip = 0;
-    this->conn = 0;
-  
-    org::xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
+    ssl_ctx = NULL;
+    init();
   }
   else
-    throw YIELD::Exception( "unknown URI scheme" );
+    throw YIELD::Exception( "invalid URI scheme" );
+}
+
+Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase, uint16_t default_oncrpcs_port )
+: uri( uri )
+{
+  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
+  {
+    if ( this->uri.get_port() == 0 )
+      this->uri.set_port( default_oncrpcs_port );
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms(); // TODO: this should be in a shared main class in the binaries
+
+    BIO* bio = BIO_new_file( pkcs12_file_path.getHostCharsetPath().c_str(), "rb" );
+    if ( bio != NULL )
+    {
+      PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );
+      if ( p12 != NULL )
+      {
+        EVP_PKEY* pkey = NULL;
+        X509* cert = NULL;
+        STACK_OF( X509 )* ca = NULL;
+        PKCS12_parse( p12, pkcs12_passphrase.c_str(), &pkey, &cert, &ca );
+        if ( pkey != NULL && cert != NULL && ca != NULL )
+        {
+          ssl_ctx = SSL_CTX_new( SSLv3_client_method() );
+          if ( ssl_ctx != NULL )
+          {
+            SSL_CTX_use_certificate( ssl_ctx, cert );
+            SSL_CTX_use_PrivateKey( ssl_ctx, pkey );
+
+            X509_STORE* store = SSL_CTX_get_cert_store( ssl_ctx );
+            for ( int i = 0; i < sk_X509_num( ca ); i++ )
+            {
+              X509* store_cert = sk_X509_value( ca, i );
+              X509_STORE_add_cert( store, store_cert );
+            }
+
+            SSL_CTX_set_verify( ssl_ctx, SSL_VERIFY_PEER, NULL );
+
+            init();
+
+            return;
+          }
+        }
+      }
+    }
+
+    SSL_load_error_strings();
+    throw YIELD::Exception( ERR_get_error(), ERR_error_string( ERR_get_error(), NULL ) );
+  }
+  else
+    throw YIELD::Exception( "invalid URI scheme" );
+}
+
+void Proxy::init()
+{
+  this->flags = PROXY_DEFAULT_FLAGS;
+  this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
+  this->operation_timeout_ms = PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+  
+  this->peer_ip = 0;
+  this->conn = 0;
+
+  org::xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
 }
 
 Proxy::~Proxy()
@@ -75,27 +133,27 @@ void Proxy::handleEvent( YIELD::Event& ev )
             if ( conn == NULL )
               reconnect_tries_left = reconnect( reconnect_tries_left );
 
-            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
+            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_ctx != NULL ) // Blocking
             {
-              YIELD::SocketLib::setBlocking( conn->getSocket() );
+              YIELD::SocketLib::setBlocking( conn->get_socket() );
 
               for ( uint8_t serialize_tries = 0; serialize_tries < 2; serialize_tries++ ) // Try, allow for one reconnect, then try again
               {
                 oncrpc_req.serialize( *conn, NULL );
 
-                if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
+                if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
                 {
                   for ( uint8_t deserialize_tries = 0; deserialize_tries < 2; deserialize_tries++ )
                   {
                     oncrpc_req.deserialize( *conn );
 
-                    if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
+                    if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
                     {
                       req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
                       YIELD::SharedObject::decRef( req );
                       return;
                     }
-                    else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
+                    else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
                       reconnect_tries_left = reconnect( reconnect_tries_left );
                     else
                       YIELD::DebugBreak();
@@ -104,7 +162,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   YIELD::SharedObject::decRef( req );
                   return;
                 }
-                else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
+                else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
                   reconnect_tries_left = reconnect( reconnect_tries_left );
                 else
                   YIELD::DebugBreak();
@@ -116,7 +174,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
             else // Non-blocking/timed
             {
               uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
-              YIELD::SocketLib::setNonBlocking( conn->getSocket() );
+              YIELD::SocketLib::setNonBlocking( conn->get_socket() );
 
               bool have_written = false; // Use the variable so the read and write attempt loops can be combined and eliminate some code duplication
 
@@ -128,7 +186,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   oncrpc_req.deserialize( *conn );
 
                 // Use if statements instead of a switch so the break after a successful read will exit the loop
-                if ( conn->getStatus() == YIELD::SocketConnection::SCS_READY )
+                if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
                 {
                   if ( !have_written )
                     have_written = true;
@@ -138,12 +196,12 @@ void Proxy::handleEvent( YIELD::Event& ev )
                     return;
                   }
                 }
-                else if ( conn->getStatus() == YIELD::SocketConnection::SCS_CLOSED )
+                else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
                   reconnect_tries_left = reconnect( reconnect_tries_left );
                 else if ( remaining_operation_timeout_ms > 0 )
                 {
-                  bool enable_read = conn->getStatus() == YIELD::SocketConnection::SCS_BLOCKED_ON_READ;
-                  fd_event_queue.toggleSocketEvent( conn->getSocket(), conn, enable_read, !enable_read );
+                  bool enable_read = conn->get_status() == YIELD::SocketConnection::SCS_BLOCKED_ON_READ;
+                  fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, enable_read, !enable_read );
                   double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
                   YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
                   if ( fd_event )
@@ -189,7 +247,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
 
   if ( conn != NULL ) // This is a reconnect, not the first connect
   {
-    fd_event_queue.detachSocket( conn->getSocket(), conn );
+    fd_event_queue.detachSocket( conn->get_socket(), conn );
     conn->close();
     delete conn;
     conn = NULL;
@@ -200,18 +258,18 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     reconnect_tries_left--;
 
     // Create the conn object based on the URI type
-    if ( strcmp( uri.get_scheme(), "oncrpc" ) == 0 )
+    if ( ssl_ctx == NULL )
       conn = new YIELD::TCPConnection( peer_ip, uri.get_port(), NULL );
     else
-      YIELD::DebugBreak();
+      conn = new YIELD::SSLConnection( peer_ip, uri.get_port(), ssl_ctx );
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
-    fd_event_queue.attachSocket( conn->getSocket(), conn, false, false ); // Attach without read or write notifications enabled
+    fd_event_queue.attachSocket( conn->get_socket(), conn, false, false ); // Attach without read or write notifications enabled
 
     // Now try the actual connect
-    if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) ) // Blocking
+    if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_ctx != NULL ) // Blocking
     {
-      YIELD::SocketLib::setBlocking( conn->getSocket() );
+      YIELD::SocketLib::setBlocking( conn->get_socket() );
 
       if ( conn->connect() == YIELD::SocketConnection::SCS_READY )
         return reconnect_tries_left;
@@ -219,20 +277,20 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     else // Non-blocking/timed
     {
       uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
-      YIELD::SocketLib::setNonBlocking( conn->getSocket() );
+      YIELD::SocketLib::setNonBlocking( conn->get_socket() );
 
       switch ( conn->connect() )
       {
         case YIELD::SocketConnection::SCS_READY: break;
         case YIELD::SocketConnection::SCS_BLOCKED_ON_WRITE:
         {
-          fd_event_queue.toggleSocketEvent( conn->getSocket(), conn, false, true ); // Write readiness = the connect() operation is complete
+          fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, false, true ); // Write readiness = the connect() operation is complete
           double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
           YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
           if ( fd_event && fd_event->error_code == 0 &&
                conn->connect() == YIELD::SocketConnection::SCS_READY )
           {
-            fd_event_queue.toggleSocketEvent( conn->getSocket(), conn, false, false );
+            fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, false, false );
             return reconnect_tries_left;
           }
           else
@@ -245,7 +303,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     }
 
     // Clear the connection state for the next try
-    fd_event_queue.detachSocket( conn->getSocket(), conn );
+    fd_event_queue.detachSocket( conn->get_socket(), conn );
     conn->close();
     delete conn;
     conn = NULL;
@@ -261,7 +319,7 @@ void Proxy::throwExceptionEvent( YIELD::ExceptionEvent* exc_ev )
 {
   if ( conn )
   {
-    fd_event_queue.detachSocket( conn->getSocket(), conn );
+    fd_event_queue.detachSocket( conn->get_socket(), conn );
     conn->close();
     delete conn;
     conn = NULL;

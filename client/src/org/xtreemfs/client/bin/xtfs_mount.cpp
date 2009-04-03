@@ -118,25 +118,22 @@ int main( int argc, char** argv )
       options.printUsage();
     else
     {
-      if ( options.get_debug() )
-        YIELD::SocketConnection::setTraceSocketIO( true );
-
       YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
       // Create the DIRProxy
-      DIRProxy dir_proxy( options.get_dir_uri() );
-      main_stage_group.createStage( dir_proxy );
+      YIELD::auto_SharedObject<DIRProxy> dir_proxy = options.createProxy<DIRProxy>( options.get_dir_uri() );
+      main_stage_group.createStage( *dir_proxy.get() );
 
       // Create the MRCProxy
-      YIELD::URI mrc_uri = dir_proxy.getVolumeURIFromVolumeName( options.get_volume_name() );
-      MRCProxy mrc_proxy( mrc_uri );
-      main_stage_group.createStage( mrc_proxy );
+      YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( options.get_volume_name() );
+      YIELD::auto_SharedObject<MRCProxy> mrc_proxy = options.createProxy<MRCProxy>( mrc_uri );
+      main_stage_group.createStage( *mrc_proxy.get() );
 
       // Create the OSDProxyFactory
-      OSDProxyFactory osd_proxy_factory( dir_proxy, main_stage_group );
+      OSDProxyFactory osd_proxy_factory( *dir_proxy.get(), main_stage_group );
 
       // Start FUSE with an XtreemFS volume
-      Volume xtreemfs_volume( options.get_volume_name(), dir_proxy, mrc_proxy, osd_proxy_factory );
+      Volume xtreemfs_volume( options.get_volume_name(), *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
       uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
       if ( options.get_debug() )

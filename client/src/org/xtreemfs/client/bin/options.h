@@ -28,13 +28,28 @@ namespace org
           addOption( OPTION_HELP, "-h", "--help" );
           help = false;
 
+          addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
+          addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
+
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+
+          addOption( OPTION_TRACE_SOCKET_IO, "--trace-socket-io" );
         }
 
         void addOption( int id, const char* short_arg, const char* long_arg = NULL, const char* default_values = NULL )
         {
           options.push_back( Option( id, short_arg, long_arg, default_values ) );
+        }
+
+        // TODO: this should really be in a singleton class inherited by all binaries
+        template <class ProxyType>
+        ProxyType* createProxy( const YIELD::URI& uri )
+        {
+          if ( !get_pkcs12_file_path().empty() )
+            return new ProxyType( uri, get_pkcs12_file_path(), get_pkcs12_passphrase() );
+          else
+            return new ProxyType( uri );
         }
 
         void printUsage()
@@ -66,14 +81,19 @@ namespace org
         // Accessors for built-in options
         bool get_debug() const { return debug; }
         bool get_help() const { return help; } // Lassie?
+        const std::string& get_pkcs12_file_path() const { return pkcs12_file_path; }
+        const std::string& get_pkcs12_passphrase() const { return pkcs12_passphrase; }
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
       protected:
         enum
         {
-          OPTION_DEBUG = 1,
+          OPTION_DEBUG = 1,          
           OPTION_HELP = 2,
-          OPTION_TIMEOUT_MS = 3
+          OPTION_PKCS12_FILE_PATH = 3,
+          OPTION_PKCS12_PASSPHRASE = 4,
+          OPTION_TIMEOUT_MS = 5,
+          OPTION_TRACE_SOCKET_IO = 6
         };
 
         void parseOptions( int argc, char** argv )
@@ -110,6 +130,8 @@ namespace org
                 {
                   case OPTION_DEBUG: debug = true; break;
                   case OPTION_HELP: help = true; return;
+                  case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = args.OptionArg(); break;
+                  case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = args.OptionArg(); break;
 
                   case OPTION_TIMEOUT_MS:
                   {
@@ -118,6 +140,8 @@ namespace org
                       timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
                   }
                   break;
+
+                  case OPTION_TRACE_SOCKET_IO: YIELD::SocketConnection::setTraceSocketIO( true ); break;
                 }
 
                 if ( !help )
@@ -142,7 +166,13 @@ namespace org
         {
           std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
-            uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
+          {
+            if ( !get_pkcs12_file_path().empty() )
+              uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME + std::string( "://" ) + uri_str;
+            else
+              uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
+          }
+
           return new YIELD::URI( uri_str );
         }
 
@@ -175,6 +205,7 @@ namespace org
 
         // Built-in options
         bool debug, help;
+        std::string pkcs12_file_path, pkcs12_passphrase;
         uint64_t timeout_ms;
       };
     };

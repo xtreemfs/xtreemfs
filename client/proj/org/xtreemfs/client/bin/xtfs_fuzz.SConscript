@@ -46,7 +46,14 @@ except:
     
     Export( "build_env", "build_conf" )
 
-    
+defines = ["YIELD_HAVE_OPENSSL"]
+if sys.platform.startswith( "win" ): defines.extend( [] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
+        
 include_dir_paths = ['../../../../../include', '../../../../../share/yieldfs/include', '../../../../../share/yieldfs/share/yield/include']
 if sys.platform.startswith( "win" ): include_dir_paths.extend( [] )
 else: include_dir_paths.extend( [] )

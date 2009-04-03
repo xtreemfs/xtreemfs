@@ -19,6 +19,7 @@ namespace org
       {
       public:
         MRCProxy( const YIELD::URI& uri );
+        MRCProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
         virtual ~MRCProxy();
 
         bool access( const Path& path, uint32_t mode );

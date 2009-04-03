@@ -4,7 +4,14 @@ using namespace org::xtreemfs::client;
 
 
 MRCProxy::MRCProxy( const YIELD::URI& uri )
-: Proxy( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
+  : Proxy( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT )
+{
+  policies = new PolicyContainer;
+  mrc_interface.registerSerializableFactories( serializable_factories );
+}
+
+MRCProxy::MRCProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
+  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )  
 {
   policies = new PolicyContainer;
   mrc_interface.registerSerializableFactories( serializable_factories );

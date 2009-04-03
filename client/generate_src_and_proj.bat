@@ -7,8 +7,8 @@ set YIDL_PATH=%XTREEMFS_CLIENT_PATH%\..\..\yidl
 set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%YIELDFS_PATH%\share\yield
 
-set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include
-set DEPEND_YIELD_LIB_FLAGS=-L %YIELD_PATH%\lib -l yield_d.lib -c %YIELD_PATH%\proj\yield\yield.SConscript
+set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include -D YIELD_HAVE_OPENSSL
+set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%
 set DEPEND_YIELDFS_LIB_FLAGS=-L %YIELDFS_PATH%\lib -l yieldfs_d.lib -c %YIELDFS_PATH%\proj\yieldfs\yieldfs.SConscript %DEPEND_YIELD_LIB_FLAGS%
 set DEPEND_XTREEMFS_CLIENT_FLAGS=-I %XTREEMFS_CLIENT_PATH%\include -L %XTREEMFS_CLIENT_PATH%\lib -l xtreemfs-client_d.lib -c %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\lib\xtreemfs-client-lib.SConscript %DEPEND_YIELDFS_INCLUDE_FLAGS%
