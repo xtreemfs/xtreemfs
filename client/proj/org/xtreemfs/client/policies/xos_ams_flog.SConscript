@@ -60,12 +60,12 @@ for lib_dir_path in lib_dir_paths:
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
 
-for custom_SConscript in ["xos_ams_custom.SConscript"]:
+for custom_SConscript in ["xos_ams_flog_custom.SConscript"]:
     if FindFile( custom_SConscript, "." ):
         SConscript( custom_SConscript )
 
     
-# Don't add libs until after xos_ams_custom.SConscript and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
+# Don't add libs until after xos_ams_flog_custom.SConscript and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
@@ -73,9 +73,9 @@ if sys.platform.startswith( "win" ):
     for lib in []:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 else:
-    for lib in []:
+    for lib in ["xos_ams"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-AlwaysBuild( build_env.SharedLibrary( r"../../../../../lib/xos_ams", (
-r"../../../../../src/org/xtreemfs/client/policies/xos_ams.c"
+AlwaysBuild( build_env.SharedLibrary( r"../../../../../lib/xos_ams_flog", (
+r"../../../../../src/org/xtreemfs/client/policies/xos_ams_flog.c"
 ) ) )

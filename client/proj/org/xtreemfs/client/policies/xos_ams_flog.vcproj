@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="xos_ams"
+	Name="xos_ams_flog"
 	ProjectGUID="{50C37BB2-2388-41ED-84A2-BDCC488666E0}"
-	RootNamespace="xos_ams"
+	RootNamespace="xos_ams_flog"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"    
 	>
@@ -45,7 +45,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
@@ -56,7 +56,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
 				GenerateDebugInformation="true"
@@ -91,7 +91,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -102,7 +102,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -136,7 +136,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -147,7 +147,7 @@
 				UseLibraryDependencyInputs="true"
 				AdditionalDependencies=""
 				AdditionalLibraryDirectories=""
-				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams.dll"
+				OutputFile="$(ProjectDir)..\..\..\..\..\lib\xos_ams_flog.dll"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -166,7 +166,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\policies\xos_ams.c"
+    RelativePath="..\..\..\..\..\src\org\xtreemfs\client\policies\xos_ams_flog.c"
     >
 </File>
 

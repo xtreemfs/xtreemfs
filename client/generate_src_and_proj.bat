@@ -39,7 +39,7 @@ python %YIDL_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_
 
 REM Policy projects
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\policies
-python %YIDL_PATH%\bin\generate_proj.py -n xos_ams -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\policies\xos_ams.c -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib
+python %YIDL_PATH%\bin\generate_proj.py -n xos_ams_flog -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\policies\xos_ams_flog.c -I %XTREEMFS_CLIENT_PATH%\include --lu xos_ams -o %XTREEMFS_CLIENT_PATH%\lib
 
  
 cd %XTREEMFS_CLIENT_PATH%
