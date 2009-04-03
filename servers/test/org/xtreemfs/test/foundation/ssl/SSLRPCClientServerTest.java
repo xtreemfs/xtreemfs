@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
+
 import junit.framework.TestCase;
+
 import org.junit.Test;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -55,7 +57,7 @@ public class SSLRPCClientServerTest extends TestCase {
 
         System.out.println("loading ssl context");
 
-        srvSSL = createSSLOptions("service1.jks", "passphrase", SSLOptions.JKS_CONTAINER,
+        srvSSL = createSSLOptions("server1.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
             "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER);
 
         clientSSL = createSSLOptions("client1.p12", "passphrase",
