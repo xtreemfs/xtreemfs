@@ -3,5 +3,5 @@ SConscript( "proj/org/xtreemfs/client/bin/xtfs_mount.SConscript" )
 SConscript( "proj/org/xtreemfs/client/bin/xtfs_send.SConscript" )
 
 Import( "build_conf" )
-if build_conf.CheckLibWithHeader( "xos_ams.h", "xos_ams", "c" ):
+if build_conf.CheckCHeader( "xos_ams.h" ):
     SConscript( "proj/org/xtreemfs/client/policies/xos_ams_flog.SConscript" )
