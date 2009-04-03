@@ -33,6 +33,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-test", "pro
 		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams", "proj\org\xtreemfs\client\policies\xos_ams.vcproj", "{50C37BB2-2388-41ED-84A2-BDCC488666E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -67,6 +69,10 @@ Global
 		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Debug|Win32.Build.0 = Debug|Win32
 		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Release|Win32.ActiveCfg = Release|Win32
 		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Release|Win32.Build.0 = Release|Win32
+		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.Build.0 = Debug|Win32
+		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.ActiveCfg = Release|Win32
+		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

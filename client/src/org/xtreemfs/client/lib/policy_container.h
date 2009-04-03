@@ -22,12 +22,12 @@ namespace org
         virtual ~PolicyContainer();
 
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
-        void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
         void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
+        void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
 
       private:        
-        get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
+        get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
 
         void loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path );
         friend class PolicyContainerreaddirCallback;

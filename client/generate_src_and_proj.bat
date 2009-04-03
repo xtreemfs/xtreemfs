@@ -38,8 +38,8 @@ python %YIDL_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s %XTREEMFS_CLIENT_
 python %YIDL_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_fuzz.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\*_fuzzer.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 
 REM Policy projects
-REM cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\policies
-REM python %YIDL_PATH%\bin\generate_proj.py -n win_user_credentials -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\policies\win_user_credentials.cpp -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib
+cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\policies
+python %YIDL_PATH%\bin\generate_proj.py -n xos_ams -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\policies\xos_ams.c -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib
 
  
 cd %XTREEMFS_CLIENT_PATH%

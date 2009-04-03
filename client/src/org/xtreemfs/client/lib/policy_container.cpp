@@ -137,6 +137,40 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
 #endif
 }
 
+void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
+{
+  if ( get_passwd_from_user_credentials )
+  {
+    int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
+    if ( get_passwd_from_user_credentials_ret >= 0 )
+      return;
+    else
+      throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
+  }
+
+#ifdef _WIN32
+  YIELD::DebugBreak();
+#else
+  struct passwd pwd, *pwd_res;
+  char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
+  struct group grp, *grp_res;
+  char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
+
+  if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
+       getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
+  {
+    out_uid = pwd_res->pw_uid;
+    out_gid = grp_res->gr_gid;
+  }
+  else
+  {
+    //    throw YIELD::PlatformException();
+    out_uid = 0;
+    out_gid = 0;
+  }
+#endif
+}
+
 void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
 {
   if ( get_user_credentials_from_passwd )
@@ -163,10 +197,13 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
             group_ids_p += group_ids_ss.back().size() + 1;
           }
           out_user_credentials.set_group_ids( group_ids_ss );
+
+          return;
         }
         else
           throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
       }
+      // else drop down
     }
     else
       throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
@@ -189,34 +226,6 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
     }
     else
       throw YIELD::PlatformException();
-#endif
-}
-
-void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
-{
-  if ( get_passwd_from_user_credentials )
-    YIELD::DebugBreak(); // TODO: implement me
-
-#ifdef _WIN32
-  YIELD::DebugBreak();
-#else
-  struct passwd pwd, *pwd_res;
-  char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
-  struct group grp, *grp_res;
-  char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
-
-  if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
-       getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
-  {
-    out_uid = pwd_res->pw_uid;
-    out_gid = grp_res->gr_gid;
-  }
-  else
-  {
-    //    throw YIELD::PlatformException();
-    out_uid = 0;
-    out_gid = 0;
-  }
 #endif
 }
 
