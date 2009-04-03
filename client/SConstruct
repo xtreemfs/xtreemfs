@@ -1,5 +1,4 @@
-import sys
-
 SConscript( "proj/org/xtreemfs/client/bin/xtfs_mkvol.SConscript" )
 SConscript( "proj/org/xtreemfs/client/bin/xtfs_mount.SConscript" )
 SConscript( "proj/org/xtreemfs/client/bin/xtfs_send.SConscript" )
+SConscript( "proj/org/xtreemfs/client/policies/xos_ams.SConscript" )

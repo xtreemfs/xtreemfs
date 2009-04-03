@@ -1,7 +1,11 @@
 #ifndef ORG_XTREEMFS_CLIENT_POLICY_H
 #define ORG_XTREEMFS_CLIENT_POLICY_H
 
+#ifdef _WIN32
+#include <stdlib.h>
+#else
 #include <sys/types.h> // For size_t
+#endif
 
 
 #ifndef DLLEXPORT

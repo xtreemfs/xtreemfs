@@ -8,22 +8,22 @@ except:
 
     include_dir_paths = os.environ.has_key( "CPPPATH" ) and os.environ["CPPPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
     
-    build_env["CCFLAGS"] = os.environ.get( "CCFLAGS", "" )
+    build_env["CCFLAGS"] = os.environ.get( "CCFLAGS", "" ).strip()
     lib_dir_paths = os.environ.has_key( "LIBPATH" ) and os.environ["LIBPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
-    build_env["LINKFLAGS"] = os.environ.get( "LINKFLAGS", "" )
+    build_env["LINKFLAGS"] = os.environ.get( "LINKFLAGS", "" ).strip()
     build_env["LIBS"] = os.environ.has_key( "LIBS" ) and os.environ["LIBS"].split( " " ) or []
 
     if sys.platform.startswith( "win" ):
         if os.environ.has_key( "INCLUDE" ): include_dir_paths.extend( os.environ["INCLUDE"].split( ';' ) )        
         if os.environ.has_key( "LIB" ): lib_dir_paths.extend( os.environ["LIB"].split( ';' ) )
-        build_env["CCFLAGS"] += '/EHsc /GR- /D "_CRT_DISABLE_PERFCRIT_LOCKS" /D "WIN32" ' # GR- is -fno-rtti, EHsc is to enable exception handling
+        build_env["CCFLAGS"] += ' /EHsc /GR- /D "_CRT_DISABLE_PERFCRIT_LOCKS" /D "WIN32" ' # GR- is -fno-rtti, EHsc is to enable exception handling
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "/MD "
         else: build_env["CCFLAGS"] += "/MDd /ZI /W3 "
     else:
         # -fPIC (Platform Independent Code) to compile a library as part of a shared object
         # -fno-rtti to disable RTTI
         # -Wall for all warnings
-        build_env["CCFLAGS"] += "-fno-rtti -fPIC -Wall "
+        build_env["CCFLAGS"] += " -fno-rtti -fPIC -Wall "
         if sys.platform == "linux2": build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "; build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
         elif sys.platform == "darwin": build_env["LINKFLAGS"] += "-framework Carbon "; build_env["LIBS"].append( "iconv" )
         elif sys.platform == "freebsd5": build_env["LIBS"].extend( ( "intl", "iconv" ) )
@@ -37,7 +37,11 @@ except:
     build_env["CPPPATH"] = list( set( [os.path.abspath( include_dir_path ) for include_dir_path in include_dir_paths] ) )
     build_env["LIBPATH"] = list( set( [os.path.abspath( lib_dir_path ) for lib_dir_path in lib_dir_paths] ) )        
     build_env = Environment( **build_env )
+    
     build_conf = build_env.Configure()
+    if build_conf.CheckDeclaration( "__i386__" ):
+        build_env["CCFLAGS"] += "-march=i386 "    
+    
     Export( "build_env", "build_conf" )
 
     
