@@ -1,5 +1,8 @@
-#ifndef _12137089606_H
-#define _12137089606_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_H
+#define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_H
 
 #include "yield/arch.h"
 #include <string>
@@ -11,7 +14,7 @@ namespace org
   {
     namespace interfaces
     {
-  
+
       #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_INTERFACE_PARENT_CLASS
       #if defined( ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS )
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_INTERFACE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_INTERFACE_PARENT_CLASS
@@ -23,7 +26,7 @@ namespace org
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_INTERFACE_PARENT_CLASS YIELD::EventHandler
       #endif
       #endif
-  
+
       #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_REQUEST_PARENT_CLASS
       #if defined( ORG_XTREEMFS_INTERFACES_REQUEST_PARENT_CLASS )
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_REQUEST_PARENT_CLASS ORG_XTREEMFS_INTERFACES_REQUEST_PARENT_CLASS
@@ -35,7 +38,7 @@ namespace org
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_REQUEST_PARENT_CLASS YIELD::Request
       #endif
       #endif
-  
+
       #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_RESPONSE_PARENT_CLASS
       #if defined( ORG_XTREEMFS_INTERFACES_RESPONSE_PARENT_CLASS )
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_RESPONSE_PARENT_CLASS
@@ -47,7 +50,7 @@ namespace org
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_RESPONSE_PARENT_CLASS YIELD::Response
       #endif
       #endif
-  
+
       #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
       #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS )
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS
@@ -59,15 +62,15 @@ namespace org
       #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS YIELD::ExceptionEvent
       #endif
       #endif
-  
-  
-  
+
+
+
       class Exceptions : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_INTERFACE_PARENT_CLASS
       {
       public:
         Exceptions() { }
         virtual ~Exceptions() { }  // Request/response pair Event type definitions for the operations in Exceptions
-  
+
         class ProtocolException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -76,7 +79,7 @@ namespace org
         ProtocolException( uint32_t accept_stat, uint32_t error_code, const char* stack_trace, size_t stack_trace_len ) : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace, stack_trace_len ) { }
           ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~ProtocolException() throw() { }
-  
+
         void set_accept_stat( uint32_t accept_stat ) { this->accept_stat = accept_stat; }
         uint32_t get_accept_stat() const { return accept_stat; }
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
@@ -84,23 +87,23 @@ namespace org
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
-  
+
           // YIELD::RTTI
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
-  
+
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
           virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
         // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { accept_stat = input_stream.readUint32( YIELD::StructuredStream::Declaration( "accept_stat" ) ); error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "accept_stat" ), accept_stat ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-  
+
       protected:
         uint32_t accept_stat;
         uint32_t error_code;
         std::string stack_trace;
         };
-  
+
         class errnoException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -109,7 +112,7 @@ namespace org
         errnoException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
           errnoException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~errnoException() throw() { }
-  
+
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
         uint32_t get_error_code() const { return error_code; }
         void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
@@ -118,23 +121,23 @@ namespace org
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
-  
+
           // YIELD::RTTI
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
-  
+
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new errnoException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
         // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-  
+
       protected:
         uint32_t error_code;
         std::string error_message;
         std::string stack_trace;
         };
-  
+
         class RedirectException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -143,25 +146,25 @@ namespace org
         RedirectException( const char* to_uuid, size_t to_uuid_len ) : to_uuid( to_uuid, to_uuid_len ) { }
           RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~RedirectException() throw() { }
-  
+
         void set_to_uuid( const std::string& to_uuid ) { set_to_uuid( to_uuid.c_str(), to_uuid.size() ); }
         void set_to_uuid( const char* to_uuid, size_t to_uuid_len = 0 ) { this->to_uuid.assign( to_uuid, ( to_uuid_len != 0 ) ? to_uuid_len : std::strlen( to_uuid ) ); }
         const std::string& get_to_uuid() const { return to_uuid; }
-  
+
           // YIELD::RTTI
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
-  
+
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new RedirectException( to_uuid); }
           virtual void throwStackClone() const { throw RedirectException( to_uuid); }
         // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
-  
+
       protected:
         std::string to_uuid;
         };
-  
+
         class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -170,25 +173,25 @@ namespace org
         ConcurrentModificationException( const char* stack_trace, size_t stack_trace_len ) : stack_trace( stack_trace, stack_trace_len ) { }
           ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~ConcurrentModificationException() throw() { }
-  
+
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
-  
+
           // YIELD::RTTI
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
-  
+
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ConcurrentModificationException( stack_trace); }
           virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
         // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
-  
+
       protected:
         std::string stack_trace;
         };
-  
+
         class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
         {
         public:
@@ -197,27 +200,27 @@ namespace org
         InvalidArgumentException( const char* error_message, size_t error_message_len ) : error_message( error_message, error_message_len ) { }
           InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
           virtual ~InvalidArgumentException() throw() { }
-  
+
         void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
         void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
         const std::string& get_error_message() const { return error_message; }
-  
+
           // YIELD::RTTI
           TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
-  
+
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new InvalidArgumentException( error_message); }
           virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
         // YIELD::Serializable
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
-  
+
       protected:
         std::string error_message;
         };
-  
-  
-  
+
+
+
         void registerSerializableFactories( YIELD::SerializableFactories& serializable_factories )
         {
           serializable_factories.registerSerializableFactory( 1268393568UL, new YIELD::SerializableFactoryImpl<ProtocolException> );;
@@ -226,24 +229,24 @@ namespace org
           serializable_factories.registerSerializableFactory( 769608203UL, new YIELD::SerializableFactoryImpl<ConcurrentModificationException> );;
           serializable_factories.registerSerializableFactory( 690678936UL, new YIELD::SerializableFactoryImpl<InvalidArgumentException> );;
         }
-  
-  
+
+
         // EventHandler
         virtual const char* getEventHandlerName() const { return "Exceptions"; }    virtual void handleEvent( YIELD::Event& ev ) { YIELD::EventHandler::handleUnknownEvent( ev ); }
-  
-  
+
+
       protected:
       };
-  
-  
-  
+
+
+
     };
-  
-  
-  
+
+
+
   };
-  
-  
+
+
 
 };
 

@@ -1,5 +1,8 @@
-#ifndef ORG_XTREEMFS_CLIENT_XTREEMFS_FUSE_H
-#define ORG_XTREEMFS_CLIENT_XTREEMFS_FUSE_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ORG_XTREEMFS_CLIENT_VOLUME_H
+#define ORG_XTREEMFS_CLIENT_VOLUME_H
 
 #include "yield.h"
 

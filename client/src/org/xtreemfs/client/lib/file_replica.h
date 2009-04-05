@@ -1,5 +1,8 @@
-#ifndef ORG_XTREEMFS_CLIENT_FILE_REPLICA_H
-#define ORG_XTREEMFS_CLIENT_FILE_REPLICA_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_LIB_FILE_REPLICA_H
+#define ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_LIB_FILE_REPLICA_H
 
 #include "shared_file.h"
 
@@ -11,7 +14,7 @@ namespace org
     namespace client
     {
       class OSDProxy;
-      class OSDProxyFactory;    
+      class OSDProxyFactory;
 
 
       class FileReplica

@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client/osd_proxy_factory.h"
 #include "org/xtreemfs/client/dir_proxy.h"
 using namespace org::xtreemfs::client;
@@ -8,8 +11,8 @@ OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_pr
   : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group ), osd_proxy_reconnect_tries_max( osd_proxy_reconnect_tries_max ), osd_proxy_flags( osd_proxy_flags )
 { }
 
-OSDProxyFactory::~OSDProxyFactory() 
-{ 
+OSDProxyFactory::~OSDProxyFactory()
+{
   osd_proxy_cache_lock.acquire();
   for ( YIELD::STLHashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
     YIELD::SharedObject::decRef( *osd_proxy_i->second );

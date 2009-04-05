@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client/osd_proxy.h"
 using namespace org::xtreemfs::client;
 
@@ -9,7 +12,7 @@ OSDProxy::OSDProxy( const YIELD::URI& uri )
 }
 
 OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
-  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )  
+  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
 {
   osd_interface.registerSerializableFactories( serializable_factories );
 }

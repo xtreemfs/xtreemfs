@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
 

@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client.h"
 using namespace org::xtreemfs::client;
 
@@ -53,7 +56,7 @@ int main( int argc, char** argv )
     if ( args.FileCount() >= 1 )
     {
       YIELD::URI proxy_uri( args.Files()[0] );
-      uint32_t proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;  
+      uint32_t proxy_flags = debug ? Proxy::PROXY_FLAG_PRINT_OPERATIONS : 0;
 
       if ( dir )
       {
@@ -65,7 +68,7 @@ int main( int argc, char** argv )
         OSDProxy osd_proxy( proxy_uri, 3, proxy_flags );
         org::xtreemfs::interfaces::OSDInterfaceFuzzer( osd_proxy ).fuzz();
       }
-      else 
+      else
       {
         MRCProxy mrc_proxy( proxy_uri, 3, proxy_flags );
         org::xtreemfs::interfaces::MRCInterfaceFuzzer( mrc_proxy ).fuzz();
@@ -78,7 +81,7 @@ int main( int argc, char** argv )
   }
   catch ( std::exception& exc )
   {
-    std::cerr << "Error on fuzz: " << exc.what() << std::endl;  
+    std::cerr << "Error on fuzz: " << exc.what() << std::endl;
     return 1;
-  }  
+  }
 }

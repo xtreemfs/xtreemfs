@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client/proxy.h"
 #include "policy_container.h"
 #include "platform_exception_event.h"
@@ -17,7 +20,7 @@ using namespace org::xtreemfs::client;
 
 
 
-Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port ) 
+Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port )
   : uri( uri )
 {
   if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0  )
@@ -90,7 +93,7 @@ void Proxy::init()
   this->flags = PROXY_DEFAULT_FLAGS;
   this->reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
   this->operation_timeout_ms = PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
-  
+
   this->peer_ip = 0;
   this->conn = 0;
 

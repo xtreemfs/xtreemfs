@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "yield/platform/yunit.h"
 #include "org/xtreemfs/client/path.h"
 using namespace org::xtreemfs::client;
@@ -18,7 +21,7 @@ TEST_SUITE( Path )
 class PathTestCase : public YIELD::TestCase
 {
 public:
-  PathTestCase( const char* short_description, YIELD::TestSuite& __test_suite ) 
+  PathTestCase( const char* short_description, YIELD::TestSuite& __test_suite )
     : YIELD::TestCase( short_description, __test_suite )
   { }
 

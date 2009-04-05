@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #ifndef ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 #define ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 
@@ -56,7 +59,7 @@ namespace org
           double creation_epoch_time_s;
         };
 
-        std::map<std::string, CachedAddressMappingURI*> uuid_to_uri_cache; 
+        std::map<std::string, CachedAddressMappingURI*> uuid_to_uri_cache;
         YIELD::Mutex uuid_to_uri_cache_lock;
       };
     };

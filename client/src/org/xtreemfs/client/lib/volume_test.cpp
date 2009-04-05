@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "yield/platform/volume_test.h"
 #include "org/xtreemfs/client/dir_proxy.h"
 #include "org/xtreemfs/client/mrc_proxy.h"
@@ -14,7 +17,7 @@ namespace org
       class VolumeTestSuite : public YIELD::VolumeTestSuite
       {
       public:
-        VolumeTestSuite( const char* test_suite_name ) 
+        VolumeTestSuite( const char* test_suite_name )
           : stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
             dir_proxy( "oncrpc://outtolunch/" ),
             mrc_proxy( "oncrpc://outtolunch/" ),

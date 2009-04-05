@@ -12,12 +12,13 @@ set DEPEND_YIELDFS_LIB_FLAGS=-L %YIELDFS_PATH%\lib -l yieldfs_d.lib -c %YIELDFS_
 set DEPEND_XTREEMFS_CLIENT_FLAGS=-I %XTREEMFS_CLIENT_PATH%\include -L %XTREEMFS_CLIENT_PATH%\lib -l xtreemfs-client_d.lib -c %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\lib\xtreemfs-client-lib.SConscript %DEPEND_YIELDFS_INCLUDE_FLAGS%
 
 
-REM Generate source from IDL interfaces
-REM Don't include share\yield in the scan here
+REM Generate source
+REM Don't include share\* in the scan here
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces --with-registerSerializableFactories
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include --with-registerSerializableFactories
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src --with-registerSerializableFactories
 python %YIELD_PATH%\bin\generate_test_main_cpp.py
+python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIENT_PATH%\include -s %XTREEMFS_CLIENT_PATH%\proj -s %XTREEMFS_CLIENT_PATH%\src
 python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin
 
 

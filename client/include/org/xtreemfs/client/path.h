@@ -1,5 +1,8 @@
-#ifndef ORG_XTREEMFS_CLIENT_XTREEMFS_PATH_H
-#define ORG_XTREEMFS_CLIENT_XTREEMFS_PATH_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ORG_XTREEMFS_CLIENT_PATH_H
+#define ORG_XTREEMFS_CLIENT_PATH_H
 
 #include "yield.h"
 
@@ -28,7 +31,7 @@ namespace org
 
       private:
         std::string volume_name;
-        std::string global_path; 
+        std::string global_path;
         YIELD::Path local_path;
       };
     };

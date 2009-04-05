@@ -1,9 +1,12 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client/dir_proxy.h"
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::URI& uri ) 
+DIRProxy::DIRProxy( const YIELD::URI& uri )
   : Proxy( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT )
 {
   policies = new PolicyContainer;
@@ -11,7 +14,7 @@ DIRProxy::DIRProxy( const YIELD::URI& uri )
 }
 
 DIRProxy::DIRProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
-  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )  
+  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )
 {
   policies = new PolicyContainer;
   dir_interface.registerSerializableFactories( serializable_factories );
@@ -37,7 +40,7 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
     std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.find( uuid );
     if ( uuid_to_uri_i != uuid_to_uri_cache.end() )
     {
-      CachedAddressMappingURI* uri = uuid_to_uri_i->second;   
+      CachedAddressMappingURI* uri = uuid_to_uri_i->second;
       double uri_age_s = YIELD::Time::getCurrentUnixTimeS()- uri->get_creation_epoch_time_s();
       if ( uri_age_s < uri->get_ttl_s() )
       {
@@ -47,7 +50,7 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
       else
       {
         delete uri;
-        uuid_to_uri_cache.erase( uuid_to_uri_i );        
+        uuid_to_uri_cache.erase( uuid_to_uri_i );
         uuid_to_uri_cache_lock.release();
       }
     }
@@ -62,13 +65,13 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
     const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];
     std::ostringstream uri_str;
     uri_str << address_mapping.get_protocol() << "://" << address_mapping.get_address() << ":" << address_mapping.get_port();
-    CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl_s() );  
+    CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl_s() );
     uuid_to_uri_cache_lock.acquire();
     uuid_to_uri_cache[uuid] = uri;
     uuid_to_uri_cache_lock.release();
     return *uri;
   }
-  else 
+  else
     throw YIELD::Exception( "could not find address mapping for UUID" );
 }
 

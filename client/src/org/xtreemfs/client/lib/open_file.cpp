@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "open_file.h"
 #include "file_replica.h"
 #include "org/xtreemfs/client/volume.h"

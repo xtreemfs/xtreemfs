@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #ifndef ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_EVENT_H
 #define ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_EVENT_H
 
@@ -29,20 +32,20 @@ namespace org
 #ifdef _WIN32
             _snprintf_s( ( char* )&what_buffer, YIELD_PLATFORM_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH, _TRUNCATE,
 #else
-            snprintf( ( char* )&what_buffer, YIELD_PLATFORM_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH, 
+            snprintf( ( char* )&what_buffer, YIELD_PLATFORM_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH,
 #endif
               "ProxyExceptionEvent: error_message = \"%s\", error_code = %u", get_error_message().c_str(), get_error_code() );
 
             return what_buffer;
-          }            
+          }
         }
 
       protected:
-        ProxyExceptionEvent() 
+        ProxyExceptionEvent()
         { }
 
         ProxyExceptionEvent( const char* what ) : YIELD::ExceptionEvent( what )
-        { }       
+        { }
 
       private:
         std::string empty_error_message, empty_stack_trace;

@@ -1,5 +1,8 @@
-#ifndef ORG_XTREEMFS_CLIENT_OPEN_FILE_H
-#define ORG_XTREEMFS_CLIENT_OPEN_FILE_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_LIB_OPEN_FILE_H
+#define ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_LIB_OPEN_FILE_H
 
 #include "file_replica.h"
 

@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
@@ -11,7 +14,7 @@ MRCProxy::MRCProxy( const YIELD::URI& uri )
 }
 
 MRCProxy::MRCProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
-  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )  
+  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
 {
   policies = new PolicyContainer;
   mrc_interface.registerSerializableFactories( serializable_factories );

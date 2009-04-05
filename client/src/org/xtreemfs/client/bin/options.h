@@ -1,5 +1,8 @@
-#ifndef ORG_XTREEMFS_CLIENT_OPTIONS_H
-#define ORG_XTREEMFS_CLIENT_OPTIONS_H
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+#ifndef ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_BIN_OPTIONS_H
+#define ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_BIN_OPTIONS_H
 
 #include "org/xtreemfs/client/proxy.h"
 
@@ -88,7 +91,7 @@ namespace org
       protected:
         enum
         {
-          OPTION_DEBUG = 1,          
+          OPTION_DEBUG = 1,
           OPTION_HELP = 2,
           OPTION_PKCS12_FILE_PATH = 3,
           OPTION_PKCS12_PASSPHRASE = 4,

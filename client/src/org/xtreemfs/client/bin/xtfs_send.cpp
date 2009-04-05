@@ -1,3 +1,6 @@
+// Copyright 2009 Minor Gordon.
+// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
 #include "org/xtreemfs/client.h"
 #include "options.h"
 using namespace org::xtreemfs::client;
@@ -52,7 +55,7 @@ namespace org
           if ( s )
           {
             switch ( s->getGeneralType() )
-            {              
+            {
               case YIELD::RTTI::STRING: readString( decl, static_cast<YIELD::SerializableString&>( *s ) ); break;
               case YIELD::RTTI::STRUCT: s->deserialize( *this ); break;
             }
@@ -113,7 +116,7 @@ namespace org
           YIELD::SharedObject::decRef( request );
           delete proxy;
         }
-        
+
         Proxy& get_proxy() const { return *proxy; }
         YIELD::Request& get_request() const { return *request; }
 
@@ -159,7 +162,7 @@ namespace org
               proxy->set_operation_timeout_ms( get_timeout_ms() );
             }
             else
-              throw YIELD::Exception( "RPC URI must include an operation name" );                       
+              throw YIELD::Exception( "RPC URI must include an operation name" );
           }
           else
             throw YIELD::Exception( "must specify RPC URI" );
