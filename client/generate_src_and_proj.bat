@@ -17,6 +17,7 @@ REM Don't include share\yield in the scan here
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces --with-registerSerializableFactories
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include --with-registerSerializableFactories
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src --with-registerSerializableFactories
+python %YIELD_PATH%\bin\generate_test_main_cpp.py
 python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin
 
 
@@ -24,10 +25,10 @@ REM Generate project files
 REM Library projects
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\lib
 python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\lib -e "*_test.cpp" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\interfaces -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib_test -t exe -s %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\lib\org_xtreemfs_client_lib_test_main.cpp -s "%XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\lib\*_test.cpp" -c xtreemfs-client-lib.SConscript -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 
 REM Binary projects
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\bin
-python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-test -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtreemfs-client-test.cpp -s "%XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\lib\*_test.cpp" -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mount.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\options.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%

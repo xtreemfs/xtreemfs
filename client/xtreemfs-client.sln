@@ -28,12 +28,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mkvol", "proj\org\xtre
 		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-test", "proj\org\xtreemfs\client\bin\xtreemfs-client-test.vcproj", "{EAF1FEFB-7F82-46D7-A513-97BC700737FC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams_flog", "proj\org\xtreemfs\client\policies\xos_ams_flog.vcproj", "{50C37BB2-2388-41ED-84A2-BDCC488666E0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib_test", "proj\org\xtreemfs\client\lib\xtreemfs-client-lib_test.vcproj", "{E663078C-67F9-4518-BF17-1FC2C46F3CC5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams_flog", "proj\org\xtreemfs\client\policies\xos_ams_flog.vcproj", "{50C37BB2-2388-41ED-84A2-BDCC488666E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,14 +65,14 @@ Global
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Debug|Win32.Build.0 = Debug|Win32
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.ActiveCfg = Release|Win32
 		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.Build.0 = Release|Win32
-		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Debug|Win32.ActiveCfg = Debug|Win32
-		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Debug|Win32.Build.0 = Debug|Win32
-		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Release|Win32.ActiveCfg = Release|Win32
-		{EAF1FEFB-7F82-46D7-A513-97BC700737FC}.Release|Win32.Build.0 = Release|Win32
 		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.Build.0 = Debug|Win32
 		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.ActiveCfg = Release|Win32
 		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.Build.0 = Release|Win32
+		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Debug|Win32.Build.0 = Debug|Win32
+		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Release|Win32.ActiveCfg = Release|Win32
+		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
