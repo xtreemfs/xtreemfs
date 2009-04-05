@@ -1,4 +1,4 @@
-import sys, os.path    
+import sys, os.path, platform    
 
 
 try:
@@ -16,7 +16,7 @@ except:
     if sys.platform.startswith( "win" ):
         if os.environ.has_key( "INCLUDE" ): include_dir_paths.extend( os.environ["INCLUDE"].split( ';' ) )        
         if os.environ.has_key( "LIB" ): lib_dir_paths.extend( os.environ["LIB"].split( ';' ) )
-        build_env["CCFLAGS"] += ' /EHsc /GR- /D "_CRT_DISABLE_PERFCRIT_LOCKS" /D "WIN32" ' # GR- is -fno-rtti, EHsc is to enable exception handling
+        build_env["CCFLAGS"] += ' /EHsc /GR- /D "_CRT_DISABLE_PERFCRIT_LOCKS" /D "WIN32" /nologo ' # GR- is -fno-rtti, EHsc is to enable exception handling
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "/MD "
         else: build_env["CCFLAGS"] += "/MDd /ZI /W3 "
     else:
@@ -39,50 +39,23 @@ except:
     build_env = Environment( **build_env )
     
     build_conf = build_env.Configure()
-    if build_conf.CheckDeclaration( "__i386__" ):
-        build_env["CCFLAGS"] += "-march=i386 "    
+    if not sys.platform.startswith( "win" ) and platform.architecture()[0] == "32bit": # build_conf.CheckDeclaration( "__i386__" ):
+        build_env["CCFLAGS"] += "-march=i686 "    
     
     Export( "build_env", "build_conf" )
 
-defines = []
-if sys.platform.startswith( "win" ): defines.extend( [] )
-else: defines.extend( [] )
-for define in defines:
-    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
-    else: define_switch = "-D" + define
-    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
-        
-include_dir_paths = ['../../../../../include']
-if sys.platform.startswith( "win" ): include_dir_paths.extend( [] )
-else: include_dir_paths.extend( [] )
+include_dir_paths = [os.path.abspath( '../../../../../include' )]
 for include_dir_path in include_dir_paths:
-    include_dir_path = os.path.abspath( include_dir_path )
-    if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
-    
-lib_dir_paths = []
-if sys.platform.startswith( "win" ): lib_dir_paths.extend( [] )
-else: lib_dir_paths.extend( [] )
-for lib_dir_path in lib_dir_paths:
-    lib_dir_path = os.path.abspath( lib_dir_path )
-    if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
+    if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )            
 
-
-for custom_SConscript in ["xos_ams_flog_custom.SConscript"]:
-    if FindFile( custom_SConscript, "." ):
-        SConscript( custom_SConscript )
-
-    
-# Don't add libs until after xos_ams_flog_custom.SConscript and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
+# Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
-if sys.platform.startswith( "win" ):
-    for lib in []:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-else:
+if not sys.platform.startswith( "win" ):
     for lib in ["xos_ams"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
+                
 AlwaysBuild( build_env.SharedLibrary( r"../../../../../lib/xos_ams_flog", (
 r"../../../../../src/org/xtreemfs/client/policies/xos_ams_flog.c"
 ) ) )
