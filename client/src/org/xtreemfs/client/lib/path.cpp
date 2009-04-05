@@ -7,31 +7,28 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
 {
   if ( !local_path.getHostCharsetPath().empty() )
   {
-    if ( DISK_PATH_SEPARATOR == '/' )
+#ifdef _WIN32
+    global_path.append( "/", 1 );
+    if ( local_path.getHostCharsetPath()[0] == DISK_PATH_SEPARATOR )
+      global_path.append( this->local_path.getUTF8Path().c_str() + 1, this->local_path.getUTF8Path().size() - 1 );
+    else
+      global_path.append( this->local_path.getUTF8Path() );
+
+    std::string::size_type next_sep = global_path.find( DISK_PATH_SEPARATOR );
+    while ( next_sep != std::string::npos )
     {
-      if ( local_path.getHostCharsetPath()[0] == DISK_PATH_SEPARATOR )
-        global_path.append( this->local_path.getUTF8Path() );
-      else
-      {
-        global_path.append( "/", 1 );
-        global_path.append( this->local_path.getUTF8Path().c_str(), this->local_path.getUTF8Path().size() );
-      }
+      global_path[next_sep] = '/';
+      next_sep = global_path.find( DISK_PATH_SEPARATOR, next_sep );
     }
+#else
+    if ( local_path.getHostCharsetPath()[0] == DISK_PATH_SEPARATOR )
+      global_path.append( this->local_path.getUTF8Path() );
     else
     {
       global_path.append( "/", 1 );
-      if ( local_path.getHostCharsetPath()[0] == DISK_PATH_SEPARATOR )
-        global_path.append( this->local_path.getUTF8Path().c_str() + 1, this->local_path.getUTF8Path().size() -1  );
-      else
-        global_path.append( this->local_path.getUTF8Path() );
-
-      std::string::size_type next_sep = global_path.find( DISK_PATH_SEPARATOR );
-      while ( next_sep != std::string::npos )
-      {
-        global_path[next_sep] = '/';
-        next_sep = global_path.find( DISK_PATH_SEPARATOR, next_sep );
-      }
+      global_path.append( this->local_path.getUTF8Path().c_str(), this->local_path.getUTF8Path().size() );
     }
+#endif
   }
   else
     global_path.append( "/", 1 );
@@ -44,21 +41,20 @@ Path::Path( const std::string& global_path )
   if ( first_slash != -1 )
   {
     volume_name = global_path.substr( 0, first_slash );
-    if ( DISK_PATH_SEPARATOR == '/' )
-      // TODO: decode the UTF-8 here? or Path::fromUTF8?
-      // local_path = YIELD::Path( global_path.substr( first_slash + 1 ), false );
-      local_path = YIELD::Path( global_path.substr( first_slash + 1 ) );
-    else
+#ifdef _WIN32
+    std::string temp_local_path = global_path.substr( first_slash + 1 );
+    std::string::size_type next_slash = temp_local_path.find( '/' );
+    while ( next_slash != std::string::npos )
     {
-      std::string temp_local_path = global_path.substr( first_slash + 1 );
-      std::string::size_type next_slash = temp_local_path.find( '/' );
-      while ( next_slash != std::string::npos )
-      {
-        temp_local_path[next_slash] = DISK_PATH_SEPARATOR;
-        next_slash = temp_local_path.find( '/', next_slash );
-      }
-      local_path = YIELD::Path( temp_local_path );
+      temp_local_path[next_slash] = DISK_PATH_SEPARATOR;
+      next_slash = temp_local_path.find( '/', next_slash );
     }
+    local_path = YIELD::Path( temp_local_path );
+#else
+    // TODO: decode the UTF-8 here? or Path::fromUTF8?
+    // local_path = YIELD::Path( global_path.substr( first_slash + 1 ), false );
+    local_path = YIELD::Path( global_path.substr( first_slash + 1 ) );
+#endif
   }
   else
   {
