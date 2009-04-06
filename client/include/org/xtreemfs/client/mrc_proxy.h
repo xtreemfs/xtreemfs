@@ -38,13 +38,13 @@ namespace org
         void mkdir( const Path& path, uint32_t mode );
         void lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );
         void mkvol( const org::xtreemfs::interfaces::Volume& volume );
-        void rmvol( const std::string& volume_name );
         void open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& credentials );
         void readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );
         void removexattr( const Path& path, const std::string& name );
         void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
         void renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );
         void rmdir( const Path& path );
+        void rmvol( const std::string& volume_name );
         void setattr( const Path& path, const org::xtreemfs::interfaces::Stat& stbuf );
         void setxattr( const Path& path, const std::string& name, const std::string& value, int32_t flags );
         void statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& );
