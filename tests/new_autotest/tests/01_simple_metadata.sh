@@ -20,7 +20,7 @@ echo -n "rmdir..."
 rmdir $DIRNAME/testdir/subdir/moredir || cleanup 1 ; echo "OK"
 
 echo -n "rename dir..."
-mv $DIRNAME/testdir $WKDIR/mnt_1/renamed || cleanup 1 ; echo "OK"
+mv $DIRNAME/testdir $DIRNAME/renamed || cleanup 1 ; echo "OK"
 
 echo -n "touch file..."
 touch $DIRNAME/testfile || cleanup 1 ; echo "OK"

@@ -77,25 +77,25 @@ check_xtreemfsdir() {
 	local XTFSDIR=$1
 	if [ ! -e $XTFSDIR/client/bin/xtfs_mount ]
 	then
-		echo "ERROR: $XTFSDIR does not contain an xtreemfs executable\n"
+		echo "ERROR: $XTFSDIR/client/bin/xtfs_mount does not exist"
 		exit 1
 	fi
 	
 	if [ ! -x $XTFSDIR/client/bin/xtfs_mount ]
 	then
-		echo "ERROR: $XTFSDIR/AL/src/xtreemfs is not executable\n"
+		echo "ERROR: $XTFSDIR/client/bin/xtfs_mount is not executable"
 		exit 1
 	fi
 	
 	if [ ! -e $XTFSDIR/servers/dist/XtreemFS.jar ]
 	then
-		echo "ERROR: $XTFSDIR/java/dist/XtreemFS.jar does not exist\n"
+		echo "ERROR: $XTFSDIR/java/dist/XtreemFS.jar does not exist"
 		exit 1
 	fi
 
         if [ ! -e $XTFSDIR/servers/lib/BabuDB-0.1.0-RC.jar ]
         then
-                echo "ERROR: $XTFSDIR/java/lib/BabuDB-0.1.0-RC.jar does not exist\n"
+                echo "ERROR: $XTFSDIR/java/lib/BabuDB-0.1.0-RC.jar does not exist"
                 exit 1
         fi
 }

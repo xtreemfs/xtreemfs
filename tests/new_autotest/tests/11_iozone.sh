@@ -1,5 +1,6 @@
 #!/bin/bash
 . $TEST_BASEDIR/tests/utilities.inc
+. $TEST_BASEDIR/binaries.sh
 
 echo "running iozone in auto and diagnostic mode..."
 
@@ -8,7 +9,7 @@ do
 	echo "iozone on volume $volume..."
 	dir=`pwd`
 	cd $volume
-	$TEST_BASEDIR/bin/iozone3_283/src/current/iozone -a -+d
+	$IOZONE_BIN -a -+d
 	if [ $? -ne 0 ]
 	then
 		cd $dir

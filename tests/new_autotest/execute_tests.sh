@@ -25,7 +25,6 @@ do
 	if [ $? -ne 0 ]; then
 		result=1
 		echo -e "FAILED: $testfile\n"
-		break;
 	fi
 
 	echo -e "\n-----------------------------------------------------\n"

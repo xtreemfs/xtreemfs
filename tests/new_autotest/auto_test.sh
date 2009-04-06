@@ -1,5 +1,6 @@
 #!/bin/bash
 export LANG=en_GB.UTF-8
+
 sendresult() {
 	local result=$1
 	if [ $result -eq 0 ]
@@ -9,11 +10,12 @@ sendresult() {
 		subject="FAILED: XtreemFS automatic test"
 	fi
 	
-cat $TEST_SUMMARY > $attchmnt
-echo "" >> $attchmnt
-cat $testlog >> $attchmnt
+cat $TEST_DIR/test_summary > $ATTACHMENT
+echo "" >> $ATTACHMENT
+cat $TEST_LOG >> $ATTACHMENT
 
-mailx -a $attchmnt -s "$subject" -r "your friendly XtreemFS test robot <kolbeck@zib.de>" xtreemfs-test@googlegroups.com<< EOF
+mailx -a $ATTACHMENT -s "$subject" -r "your friendly XtreemFS test robot <kolbeck@zib.de>" kolbeck@zib.de<< EOF
+#xtreemfs-test@googlegroups.com<< EOF
 $subject
 
 The logfile of this test run is attached to this email.
@@ -25,26 +27,24 @@ rm $attchmnt
 }
 
 export JAVA_HOME=/opt/jdk1.6.0_13
-export ANT_HOME=`pwd`"/apache-ant-1.7.0/"
 
-rm -rf /scratch/disk1/xtreemfs_test/*
+rm -rf /scratch/disk1/autotest/*
+mkdir -p /scratch/disk1/autotest/
 
-hostname=`hostname -a`
+XTREEMFS_DIR=`mktemp -d /scratch/disk1/autotest/xtreemfssrc_XXXXXXXXXX`
 
-testlog=`mktemp /scratch/disk1/xtreemfs_autotest_XXXXXXXXXX`.txt
+TEST_DIR=`mktemp -d /scratch/disk1/autotest/test_XXXXXXXXXX`
 
-export TEST_SUMMARY=`mktemp /scratch/disk1/xtreemfs_autotest_summary_XXXXXXXXXX`.txt
+TEST_LOG="$TEST_DIR/testlog.txt"
 
-attchmnt=`mktemp /scratch/disk1/xtreemfs_attachmnt_XXXXXXXXXX`.txt
-
-svndir=`mktemp -d /scratch/disk1/xtreemfssrc_XXXXXXXXXX`
-
-#check out sources
-testdir=`pwd`
+ATTACHMENT="$TEST_DIR/summary_and_testlog.txt"
 
 toScreen=0
 revision=""
 usessl=""
+
+tmp=`readlink -f $0`
+TEST_BASEDIR=`dirname $tmp`
 
 
 while getopts “hdsr:” OPTION
@@ -59,7 +59,7 @@ do
 	     echo "results will be printed to screen!"
              ;;
 	 s)
-             usessl=" /home/bjko/test/certs/al/al.p12 "
+             usessl=" -s "
 	     echo "using SSL for all tests!"
              ;;
          r)
@@ -74,47 +74,52 @@ do
 done
 
 
-date >> $testlog
-cd $svndir
-echo "CHECKOUT SVN SOURCES..." >> $testlog
-svn -q $revision co "http://xtreemfs.googlecode.com/svn/trunk" >> $testlog 2>&1
+date >> $TEST_LOG
+cd $XTREEMFS_DIR
+echo "CHECKOUT SVN SOURCES..." >> $TEST_LOG
+svn -q $revision co "http://xtreemfs.googlecode.com/svn/trunk" >> $TEST_LOG 2>&1
 if [ $? -ne 0 ]; then
-	echo "FAILED: cannot checkout sources!" >> $testlog
-	if [ $1 = "x" ]; then
-		cat $testlog
+	echo "FAILED: cannot checkout sources!" >> $TEST_LOG
+	if [ $toScreen = "x" ]; then
+		cat $TEST_LOG
 	else
-		date >> $testlog
+		date >> $TEST_LOG
 		sendresult 1
 	fi
-	rm -rf $svndir
 	exit
 fi
 
 cd trunk
 
-echo "COMPILING..." >> $testlog
-make >> $testlog 2>&1
+echo "COMPILING..." >> $TEST_LOG
+make >> $TEST_LOG 2>&1
 if [ $? -ne 0 ]; then
-	echo "FAILED: cannot make sources!" >> $testlog
+	echo "FAILED: cannot make sources!" >> $TEST_LOG
 	if [ $toScreen -ne 0 ]; then
-		cat $testlog
+		cat $TEST_LOG
 	else
-		date >> $testlog
+		date >> $TEST_LOG
 		sendresult 1
 	fi
-	rm -rf $svndir
 	exit
 fi	
 
-cd $testdir
-
-./tests.sh $svndir/trunk/ $usessl >> $testlog 2>&1
+$TEST_BASEDIR/start_environment.sh $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
 result=$?
+
+if [ $result -eq 0 ]
+then
+	$TEST_BASEDIR/execute_tests.sh $TEST_DIR >> $TEST_LOG 2>&1
+	result=$?
+fi
+
+$TEST_BASEDIR/stop_environment.sh $TEST_DIR >> $TEST_LOG 2>&1
+
+
 if [ $toScreen -ne 0 ]; then
-	cat $testlog
+	cat $TEST_LOG
 else
-	date >> $testlog
+	date >> $TEST_LOG
 	sendresult $result
 fi
 
-#rm -rf $svndir
