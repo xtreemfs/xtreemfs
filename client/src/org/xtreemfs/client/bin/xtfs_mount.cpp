@@ -29,6 +29,9 @@ namespace org
         xtfs_mountOptions( int argc, char** argv )
           : Options( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
         {
+          addOption( XTFS_MOUNT_OPTION_CACHE, "-c", "--cache" );
+          cache = false;
+
           direct_io = false;
 
           addOption( XTFS_MOUNT_OPTION_FOREGROUND, "-f", "--foreground" );
@@ -46,24 +49,28 @@ namespace org
           delete dir_uri;
         }
 
+        const bool get_cache() const { return cache; }
         const bool get_direct_io() const { return direct_io; }
         const YIELD::URI& get_dir_uri() const { return *dir_uri; }
-        const std::string& get_fuse_o_args() const { return fuse_o_args; }
         bool get_foreground() const { return foreground; }
+        const std::string& get_fuse_o_args() const { return fuse_o_args; }
         const std::string& get_mount_point() const { return mount_point; }
         const std::string& get_volume_name() const { return volume_name; }
 
       private:
+        bool cache;
+        bool direct_io;
         YIELD::URI* dir_uri;
-        bool direct_io, foreground;
+        bool foreground;
         std::string fuse_o_args;
         std::string mount_point, volume_name;
 
         enum
         {
-          XTFS_MOUNT_OPTION_DIRECT_IO = 10,
-          XTFS_MOUNT_OPTION_FOREGROUND = 11,
-          XTFS_MOUNT_OPTION_FUSE_OPTION = 12
+          XTFS_MOUNT_OPTION_CACHE = 10,
+          XTFS_MOUNT_OPTION_DIRECT_IO = 11,
+          XTFS_MOUNT_OPTION_FOREGROUND = 12,
+          XTFS_MOUNT_OPTION_FUSE_OPTION = 13
         };
 
         // OptionParser
@@ -71,11 +78,8 @@ namespace org
         {
           switch ( id )
           {
-            case XTFS_MOUNT_OPTION_FOREGROUND:
-            {
-              foreground = true;
-            }
-            break;
+            case XTFS_MOUNT_OPTION_CACHE: cache = true; break;
+            case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
 
             case XTFS_MOUNT_OPTION_FUSE_OPTION:
             {
@@ -136,7 +140,12 @@ int main( int argc, char** argv )
       OSDProxyFactory osd_proxy_factory( *dir_proxy.get(), main_stage_group );
 
       // Start FUSE with an XtreemFS volume
-      Volume xtreemfs_volume( options.get_volume_name(), *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
+      YIELD::Volume* xtreemfs_volume = new Volume( options.get_volume_name(), *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
+
+      if ( options.get_cache() )
+        xtreemfs_volume = new yieldfs::TimeCachedVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
+      if ( options.get_debug() )
+        xtreemfs_volume = new yieldfs::TracingVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
 
       uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
       if ( options.get_debug() )
@@ -146,13 +155,7 @@ int main( int argc, char** argv )
       if ( options.get_foreground() )
     	  fuse_flags |= yieldfs::FUSE::FUSE_FLAG_FOREGROUND;
 
-      YIELD::Volume* fuse_volume;
-      if ( options.get_debug() )
-        fuse_volume = new yieldfs::TracingVolume( xtreemfs_volume );
-      else
-        fuse_volume = &xtreemfs_volume;
-
-      yieldfs::FUSE fuse( *fuse_volume, fuse_flags );
+      yieldfs::FUSE fuse( *xtreemfs_volume, fuse_flags );
       int ret;
 #ifdef _WIN32
       ret = fuse.main( options.get_mount_point().c_str() );
@@ -174,8 +177,7 @@ int main( int argc, char** argv )
       ret = fuse.main( fuse_args_, options.get_mount_point().c_str() );
 #endif
 
-      if ( options.get_debug() )
-        delete fuse_volume;
+      YIELD::SharedObject::decRef( *xtreemfs_volume );
 
       YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 
