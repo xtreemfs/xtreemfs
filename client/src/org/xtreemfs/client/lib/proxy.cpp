@@ -61,6 +61,11 @@ Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const 
           ssl_ctx = SSL_CTX_new( SSLv3_client_method() );
           if ( ssl_ctx != NULL )
           {
+#ifdef SSL_OP_NO_TICKET
+            SSL_CTX_set_options( ssl_ctx, SSL_OP_ALL|SSL_OP_NO_TICKET );
+#else
+            SSL_CTX_set_options( ssl_ctx, SSL_OP_ALL );
+#endif
             SSL_CTX_use_certificate( ssl_ctx, cert );
             SSL_CTX_use_PrivateKey( ssl_ctx, pkey );
 
@@ -71,7 +76,8 @@ Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const 
               X509_STORE_add_cert( store, store_cert );
             }
 
-            SSL_CTX_set_verify( ssl_ctx, SSL_VERIFY_PEER, NULL );
+            // SSL_CTX_set_verify( ssl_ctx, SSL_VERIFY_PEER, NULL );
+            SSL_CTX_set_verify( ssl_ctx, SSL_VERIFY_NONE, NULL );
 
             init();
 
