@@ -371,7 +371,7 @@ public class MRCClient extends ONCRPCClient {
         int osdSelectionPolicy, StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
         xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(volumeName, accessMode, osdSelectionPolicy,
-            defaultStripingPolicy, accessControlPolicy));
+            defaultStripingPolicy, accessControlPolicy, "", "", ""));
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override

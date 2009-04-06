@@ -17,8 +17,7 @@ public interface Constants
     public static final int SERVICE_TYPE_MRC = 1;
     public static final int SERVICE_TYPE_OSD = 2;
     public static final int SERVICE_TYPE_VOLUME = 3;
-    public static final int STRIPING_POLICY_NONE = 0;
-    public static final int STRIPING_POLICY_RAID0 = 1;
+    public static final int STRIPING_POLICY_RAID0 = 0;
     public static final int STRIPING_POLICY_DEFAULT = 0;
     public static final int STRIPING_POLICY_STRIPE_SIZE_DEFAULT = 128;
     public static final int STRIPING_POLICY_WIDTH_DEFAULT = 1;

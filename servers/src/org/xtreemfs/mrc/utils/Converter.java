@@ -256,7 +256,6 @@ public class Converter {
      */
     public static String intToPolicyName(int policy) {
         switch (policy) {
-        case Constants.STRIPING_POLICY_DEFAULT:
         case Constants.STRIPING_POLICY_RAID0:
             return "RAID0";
         default:

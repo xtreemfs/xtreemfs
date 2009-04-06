@@ -34,6 +34,7 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -57,10 +58,12 @@ public class GetLocalVolumesOperation extends MRCOperation {
             
             VolumeSet vSet = new VolumeSet();
             for (VolumeInfo data : volumes) {
+                
                 StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
+                FileMetadata md = sMan.getMetadata(1);                
                 vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), data.getOsdPolicyId(),
                     Converter.stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)), data
-                            .getAcPolicyId()));
+                            .getAcPolicyId(), data.getId(), md.getOwnerId(), md.getOwningGroupId()));
             }
             
             rq.setResponse(new xtreemfs_lsvolResponse(vSet));
