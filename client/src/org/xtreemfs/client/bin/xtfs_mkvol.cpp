@@ -112,9 +112,7 @@ namespace org
 
               case XTFS_MKVOL_OPTION_STRIPING_POLICY:
               {
-                if ( strcmp( arg, "NONE" ) == 0 || strcmp( arg, "NULL" ) == 0 )
-                  striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_NONE;
-                else if ( strcmp( arg, "RAID0" ) == 0 )
+                if ( strcmp( arg, "RAID0" ) == 0 )
                   striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
               }
               break;

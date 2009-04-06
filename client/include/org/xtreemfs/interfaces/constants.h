@@ -27,8 +27,7 @@ namespace org
       const static uint16_t SERVICE_TYPE_MRC = 1;
       const static uint16_t SERVICE_TYPE_OSD = 2;
       const static uint16_t SERVICE_TYPE_VOLUME = 3;
-      const static uint8_t STRIPING_POLICY_NONE = 0;
-      const static uint8_t STRIPING_POLICY_RAID0 = 1;
+      const static uint8_t STRIPING_POLICY_RAID0 = 0;
       const static uint8_t STRIPING_POLICY_DEFAULT = 0;
       const static uint8_t STRIPING_POLICY_STRIPE_SIZE_DEFAULT = 128;
       const static uint8_t STRIPING_POLICY_WIDTH_DEFAULT = 1;

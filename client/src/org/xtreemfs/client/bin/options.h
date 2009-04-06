@@ -144,7 +144,7 @@ namespace org
                   }
                   break;
 
-                  case OPTION_TRACE_SOCKET_IO: YIELD::SocketConnection::setTraceSocketIO( true ); break;
+                  case OPTION_TRACE_SOCKET_IO: YIELD::SocketConnection::set_trace_socket_io_onoff( true ); break;
                 }
 
                 if ( !help )

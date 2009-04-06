@@ -122,15 +122,22 @@ bool FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_
 
 OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )
 {
-  OSDProxy* osd_proxy;
-  size_t osd_i = object_number % striping_policy.get_width();
-  if ( osd_proxies.size() > osd_i )
-    return *osd_proxies[osd_i];
-  else
+  switch ( striping_policy.get_policy() )
   {
-    osd_proxy = &parent_shared_file.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] );
-    osd_proxies.resize( osd_i+1 );
-    osd_proxies[osd_i] = osd_proxy;
-    return *osd_proxy;
+    case org::xtreemfs::interfaces::STRIPING_POLICY_RAID0:
+    {
+      size_t osd_i = object_number % striping_policy.get_width();
+      if ( osd_proxies.size() > osd_i && osd_proxies[osd_i] != NULL )
+        return *osd_proxies[osd_i];
+      else
+      {
+        OSDProxy& osd_proxy = parent_shared_file.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] );
+        osd_proxies.resize( osd_i+1 );
+        osd_proxies[osd_i] = &osd_proxy;
+        return osd_proxy;
+      }
+    }
+
+    default: throw YIELD::NotSupportedException(); break;
   }
 }
