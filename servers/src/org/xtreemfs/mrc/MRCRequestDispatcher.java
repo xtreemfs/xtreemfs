@@ -53,7 +53,6 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
@@ -118,7 +117,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final HttpServer             httpServ;
     
-    public MRCRequestDispatcher(final MRCConfig config) throws IOException, JSONException,
+    public MRCRequestDispatcher(final MRCConfig config) throws IOException,
         ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
         
         this.config = config;

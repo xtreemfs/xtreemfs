@@ -49,6 +49,16 @@ import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_get_resultsRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_get_resultsResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_is_runningRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_is_runningResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_statusRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_statusResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_stopRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_stopResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
@@ -231,6 +241,97 @@ public class OSDClient extends ONCRPCClient {
                 xtreemfs_shutdownResponse resp = new xtreemfs_shutdownResponse();
                 resp.deserialize(data);
                 return null;
+            }
+        },creds);
+        return r;
+    }
+
+    public RPCResponse internal_cleanup_start(InetSocketAddress server, boolean removeZombies,
+            boolean removeDeadVolumes, boolean lostAndFound, String password) {
+
+        xtreemfs_cleanup_startRequest rq = new xtreemfs_cleanup_startRequest(removeZombies, removeDeadVolumes, lostAndFound);
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_cleanup_startResponse resp = new xtreemfs_cleanup_startResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        },creds);
+        return r;
+    }
+
+    public RPCResponse internal_cleanup_stop(InetSocketAddress server, String password) {
+
+        xtreemfs_cleanup_stopRequest rq = new xtreemfs_cleanup_stopRequest();
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_cleanup_stopResponse resp = new xtreemfs_cleanup_stopResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        },creds);
+        return r;
+    }
+
+    public RPCResponse<Boolean> internal_cleanup_is_running(InetSocketAddress server, String password) {
+
+        xtreemfs_cleanup_is_runningRequest rq = new xtreemfs_cleanup_is_runningRequest();
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_cleanup_is_runningResponse resp = new xtreemfs_cleanup_is_runningResponse();
+                resp.deserialize(data);
+                return resp.getIs_running();
+            }
+        },creds);
+        return r;
+    }
+
+    public RPCResponse<String> internal_cleanup_status(InetSocketAddress server, String password) {
+
+        xtreemfs_cleanup_statusRequest rq = new xtreemfs_cleanup_statusRequest();
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_cleanup_statusResponse resp = new xtreemfs_cleanup_statusResponse();
+                resp.deserialize(data);
+                return resp.getStatus();
+            }
+        },creds);
+        return r;
+    }
+
+    public RPCResponse<StringSet> internal_cleanup_get_result(InetSocketAddress server, String password) {
+
+        xtreemfs_cleanup_get_resultsRequest rq = new xtreemfs_cleanup_get_resultsRequest();
+
+        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_cleanup_get_resultsResponse resp = new xtreemfs_cleanup_get_resultsResponse();
+                resp.deserialize(data);
+                return resp.getResults();
             }
         },creds);
         return r;

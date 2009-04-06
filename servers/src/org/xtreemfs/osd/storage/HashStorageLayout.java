@@ -34,6 +34,10 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 
+import java.util.EmptyStackException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.checksums.ChecksumAlgorithm;
@@ -658,4 +662,53 @@ public class HashStorageLayout extends StorageLayout {
             this.checksum = checksum;
         }
     }
+
+    public FileList getFileList(FileList l, int maxNumEntries) {
+
+        if (l == null) {
+            l = new FileList(new Stack(), new LinkedList());
+            l.status.push("");
+        }
+        l.files.clear();
+
+        try {
+            do {
+                String currentDir = l.status.pop();
+                File dir = new File(storageDir+currentDir);
+                for (File ch : dir.listFiles()) {
+                    if (ch.isDirectory()) {
+
+                        final String chFname = ch.getName();
+                        if (chFname.length() == prefixLength) {
+                            //hash dir
+                            l.status.push(currentDir+"/"+chFname);
+                        } else {
+                            //filename dir
+                            l.files.add(chFname);
+                        }
+
+                    }
+                }
+            } while (l.files.size() < maxNumEntries);
+            l.hasMore = true;
+            return l;
+            
+        } catch (EmptyStackException ex) {
+            //done
+            l.hasMore = false;
+            return l;
+        }
+    }
+    
+    public static final class FileList {
+        final Stack<String> status;
+        final List<String>  files;
+        boolean             hasMore;
+
+        public FileList(Stack<String> status, List<String> files) {
+            this.status = status;
+            this.files = files;
+        }
+    }
+
 }

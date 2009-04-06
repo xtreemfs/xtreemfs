@@ -99,12 +99,25 @@ public class XLocations {
      * @param objectNo
      * @return
      */
-    public List<ServiceUUID> getOSDsForObject(long objectNo){
+    public List<ServiceUUID> getOSDsForObject(long objectNo, ServiceUUID myUUID){
         List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
-        for(Replica replica : replicas){
-            osds.add(replica.getOSDForObject(objectNo));
+        if (myUUID == null) {
+            for(Replica replica : replicas){
+                osds.add(replica.getOSDForObject(objectNo));
+            }
+        } else {
+            for(Replica replica : replicas){
+                final ServiceUUID osd = replica.getOSDForObject(objectNo);
+                if (osd.equals(myUUID))
+                    continue;
+                osds.add(osd);
+            }
         }
         return osds;
+    }
+
+    public List<ServiceUUID> getOSDsForObject(long objectNo) {
+        return getOSDsForObject(objectNo, null);
     }
 
     /**

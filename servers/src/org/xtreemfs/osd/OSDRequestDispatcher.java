@@ -91,6 +91,12 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.osd.operations.CleanupGetResultsOperation;
+import org.xtreemfs.osd.operations.CleanupGetStatusOperation;
+import org.xtreemfs.osd.operations.CleanupIsRunningOperation;
+import org.xtreemfs.osd.operations.CleanupStartOperation;
+import org.xtreemfs.osd.operations.CleanupStopOperation;
+import org.xtreemfs.osd.storage.CleanupThread;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
 
@@ -135,6 +141,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final VivaldiStage    vStage;
 
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
+
+    protected final CleanupThread   cThread;
 
     
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
@@ -295,8 +303,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         vStage = new VivaldiStage(this);
         vStage.setLifeCycleListener(this);
 
+        cThread = new CleanupThread(this, (HashStorageLayout)storageLayout);
+        cThread.setLifeCycleListener(this);
+
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID() + " ready");
+    }
+
+    public CleanupThread getCleanupThread() {
+        return cThread;
     }
     
     public void start() {
@@ -315,12 +330,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.start();
             replStage.start();
             vStage.start();
+            cThread.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
             delStage.waitForStartup();
             stStage.waitForStartup();
             vStage.waitForStartup();
+            cThread.waitForStartup();
             
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
@@ -357,6 +374,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.shutdown();
             replStage.shutdown();
             vStage.shutdown();
+            cThread.shutdown();
 
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
@@ -364,6 +382,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.waitForShutdown();
             replStage.waitForShutdown();
             vStage.waitForShutdown();
+            cThread.waitForShutdown();
 
             httpServ.stop(0);
             
@@ -390,6 +409,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.shutdown();
             stStage.shutdown();
             vStage.shutdown();
+            cThread.cleanupStop();
 
             httpServ.stop(0);
 
@@ -421,6 +441,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public OSDClient getOSDClient() {
         return osdClient;
+    }
+
+    public RPCNIOSocketClient getRPCClient() {
+        return rpcClient;
     }
     
     public void startupPerformed() {
@@ -463,23 +487,28 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
-        OSDRequest request = new OSDRequest(rq);
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received new request: "+rq);
-        preprocStage.prepareRequest(request, new PreprocStage.ParseCompleteCallback() {
+        try {
+            OSDRequest request = new OSDRequest(rq);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"received new request: "+rq);
+            preprocStage.prepareRequest(request, new PreprocStage.ParseCompleteCallback() {
 
-            @Override
-            public void parseComplete(OSDRequest result, Exception error) {
-                if (error == null) {
-                    result.getOperation().startRequest(result);
-                } else {
-                    if (error instanceof ONCRPCException)
-                        result.sendException((ONCRPCException)error);
-                    else
-                        result.sendInternalServerError(error);
+                @Override
+                public void parseComplete(OSDRequest result, Exception error) {
+                    if (error == null) {
+                        result.getOperation().startRequest(result);
+                    } else {
+                        if (error instanceof ONCRPCException)
+                            result.sendException((ONCRPCException)error);
+                        else
+                            result.sendInternalServerError(error);
+                    }
                 }
-            }
-        });
+            });
+        } catch (Exception ex) {
+            rq.sendInternalServerError(ex);
+            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+        }
     }
 
     int getNumClientConnections() {
@@ -523,6 +552,21 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(),op);
 
         op = new LocalReadOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CleanupStartOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CleanupIsRunningOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CleanupStopOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CleanupGetStatusOperation(this);
+        operations.put(op.getProcedureId(),op);
+
+        op = new CleanupGetResultsOperation(this);
         operations.put(op.getProcedureId(),op);
 
         //--internal events here--

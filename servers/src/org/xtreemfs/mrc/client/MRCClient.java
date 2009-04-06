@@ -96,6 +96,8 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
@@ -593,6 +595,22 @@ public class MRCClient extends ONCRPCClient {
                     final xtreemfs_check_file_existsResponse resp = new xtreemfs_check_file_existsResponse();
                     resp.deserialize(data);
                     return resp.getBitmap();
+                }
+            });
+        return r;
+    }
+
+    public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, String cmd) {
+
+        xtreemfs_internal_debugRequest rq = new xtreemfs_internal_debugRequest(cmd);
+        RPCResponse<String> r = sendRequest(server, rq.getOperationNumber(), rq,
+            new RPCResponseDecoder<String>() {
+
+                @Override
+                public String getResult(ReusableBuffer data) {
+                    final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
+                    resp.deserialize(data);
+                    return resp.getResult();
                 }
             });
         return r;

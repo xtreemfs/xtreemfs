@@ -43,7 +43,8 @@ public class XDRUtils {
      * Maximum number of elements in an array that the parser
      * accepts
      */
-    public static final int MAX_ARRAY_ELEMS = 8*1024;
+    //public static final int MAX_ARRAY_ELEMS = 8*1024;
+    public static final int MAX_ARRAY_ELEMS = 1024*1024;
 
 
     public static ReusableBuffer deserializeSerializableBuffer(ReusableBuffer data) {

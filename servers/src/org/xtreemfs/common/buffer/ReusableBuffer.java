@@ -599,8 +599,14 @@ public final class ReusableBuffer {
         if (!returned && reusable) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,
                 "buffer was finalized but not freed before! this=" + this);
-            
-            String content = new String(this.array());
+
+
+            byte[] data = new byte[(this.capacity() > 128) ? 128 : this.capacity()];
+
+            this.position(0);
+            this.limit(this.capacity());
+            this.get(data);
+            String content = new String(data);
             
             Logging.logMessage(Logging.LEVEL_ERROR, this, "content: " + content);
             Logging.logMessage(Logging.LEVEL_ERROR, this, "stacktrace: " + allocStack);
