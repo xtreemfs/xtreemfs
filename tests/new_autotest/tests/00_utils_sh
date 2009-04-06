@@ -1,0 +1,30 @@
+#!/bin/bash
+. tests/utilities.inc.sh
+
+echo "XtreemFS Util-tests"
+
+for (( i=0 ; i<$NUM_OSDS ; i++ )) ; do
+	listen_port=(( 32640+i ))
+
+	echo "cleaning osd with UUID OSD-autotest-localhost-$listen_port ..."
+	$XTREEMFS/bin/xtfs_cleanup -e -v -d http://localhost:32638 uuid:OSD-autotest-localhost-$listen_port
+	
+	if [ $? -ne 0 ]; then
+                print_summary_message "OSD cleanup" "localhost:$listen_port" "FAILED"
+                exit 1;
+        fi
+	
+	print_summary_message 0 "OSD cleanup" "localhost:$listen_port" "ok"
+
+
+
+        echo "scrubbing volume test_$i ..."
+        $XTREEMFS/bin/xtfs_scrub -dir http://localhost:32638 test_$i
+
+        if [ $? -ne 0 ]; then
+                print_summary_message 1 "scrub" test_$i "FAILED"
+                exit 1;
+        fi
+
+        print_summary_message 0 "scrub" test_$i "ok"
+done
