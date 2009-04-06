@@ -6,12 +6,14 @@
 package org.xtreemfs.test;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -23,6 +25,7 @@ import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
 
 /**
@@ -30,6 +33,10 @@ import org.xtreemfs.osd.client.OSDClient;
  * @author bjko
  */
 public class TestEnvironment {
+
+    public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
+        return mrc.getConfig().getUUID().getAddress();
+    }
     
     /**
      * @return the rpcClient
@@ -55,6 +62,10 @@ public class TestEnvironment {
     public OSDClient getOSDClient() {
         return osdClient;
     }
+
+    public InetSocketAddress getOSDAddress() throws UnknownUUIDException {
+        return osd.getConfig().getUUID().getAddress();
+    }
     
     /**
      * @return the osdClient
@@ -72,7 +83,8 @@ public class TestEnvironment {
             OSD_CLIENT, // OSD client
             DIR_SERVICE, // Directory Service
             MRC, // MRC
-            MOCKUP_OSD // mock-up OSD: registers a non-existing OSD at the DIR
+            MOCKUP_OSD, // mock-up OSD: registers a non-existing OSD at the DIR
+            OSD // an OSD
     };
     
     private RPCNIOSocketClient   rpcClient;
@@ -86,6 +98,8 @@ public class TestEnvironment {
     private DIRRequestDispatcher dirService;
     
     private MRCRequestDispatcher mrc;
+
+    private OSDRequestDispatcher osd;
     
     private final List<Services> enabledServs;
     
@@ -140,12 +154,20 @@ public class TestEnvironment {
             response.get();
             response.freeBuffers();
         }
+
+        if (enabledServs.contains(Services.OSD)) {
+            osd = new OSDRequestDispatcher(SetupUtils.createOSD1Config());
+            osd.start();
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD running");
+        }
         
         if (enabledServs.contains(Services.MRC)) {
             mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
             mrc.startup();
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
         }
+
+
         
         if (enabledServs.contains(Services.MRC_CLIENT)) {
             mrcClient = new MRCClient(rpcClient, null);
@@ -169,6 +191,14 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.MRC)) {
             try {
                 mrc.shutdown();
+            } catch (Throwable th) {
+                th.printStackTrace();
+            }
+        }
+
+        if (enabledServs.contains(Services.OSD)) {
+            try {
+                osd.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }
@@ -201,7 +231,7 @@ public class TestEnvironment {
         
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
-        FSUtils.delTree(testDir);
+        //FSUtils.delTree(testDir);
     }
     
 }

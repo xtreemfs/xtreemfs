@@ -50,9 +50,9 @@ public class SetupUtils {
     
     public static final String TEST_DIR    = "/tmp/xtreemfs-test";
     
-    public static final String CERT_DIR    = "test/";
+    public static final String CERT_DIR    = "test/certs/";
     
-    public static boolean      SSL_ON      = false;
+    public static boolean      SSL_ON      = true;
     
     public static final int    DEBUG_LEVEL = Logging.LEVEL_ERROR;
     
@@ -68,10 +68,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server2.p12");
+        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
@@ -95,10 +95,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server2.p12");
+        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
@@ -122,10 +122,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server2.p12");
-        props.setProperty("ssl.service_creds_pw", "passphrase");
-        props.setProperty("ssl.service_creds_container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "pkcs12");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
@@ -149,10 +149,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server2.p12");
-        props.setProperty("ssl.service_creds_pw", "passphrase");
-        props.setProperty("ssl.service_creds_container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "pkcs12");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
@@ -180,10 +180,10 @@ public class SetupUtils {
             props.setProperty("local_clock_renewal", "50");
             props.setProperty("remote_time_sync", "60000");
             props.setProperty("ssl.enabled", "" + SSL_ON);
-            props.setProperty("ssl.service_creds", CERT_DIR + "server2.p12");
-            props.setProperty("ssl.service_creds_pw", "passphrase");
-            props.setProperty("ssl.service_creds_container", "pkcs12");
-            props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+            props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
+            props.setProperty("ssl.service_creds.pw", "passphrase");
+            props.setProperty("ssl.service_creds.container", "pkcs12");
+            props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
             props.setProperty("ssl.trusted_certs.pw", "passphrase");
             props.setProperty("ssl.trusted_certs.container", "jks");
             props.setProperty("report_free_space", "true");
@@ -205,10 +205,10 @@ public class SetupUtils {
         props.setProperty("listen.port", "33638");
         props.setProperty("http_port", "30638");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server3.p12");
+        props.setProperty("ssl.service_creds", CERT_DIR + "DIR.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
@@ -231,10 +231,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server1.p12");
+        props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("database.checkpoint.interval", "1800000");
@@ -262,10 +262,10 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "server1.p12");
+        props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trust.jks");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("database.checkpoint.interval", "1800000");
@@ -351,8 +351,8 @@ public class SetupUtils {
     }
     
     static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
-        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "client1.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trust.jks"),
+        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
+            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"),
             "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
     }

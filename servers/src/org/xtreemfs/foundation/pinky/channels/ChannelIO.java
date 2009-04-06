@@ -44,7 +44,6 @@ public class ChannelIO {
     protected Object        attachment;
 
     public ChannelIO(SocketChannel channel) {
-        super();
         this.channel = channel;
         this.certs = null;
         attachment = null;

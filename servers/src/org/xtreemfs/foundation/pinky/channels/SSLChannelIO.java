@@ -136,7 +136,7 @@ public class SSLChannelIO extends ChannelIO {
 
         int netBufSize = sslEngine.getSession().getPacketBufferSize();
         inNetBuffer = BufferPool.allocate(netBufSize);
-        inReadBuffer = BufferPool.allocate(sslEngine.getSession().getApplicationBufferSize());
+        inReadBuffer = BufferPool.allocate(sslEngine.getSession().getApplicationBufferSize()*2);
         outNetBuffer = BufferPool.allocate(netBufSize);
         dummyBuffer = BufferPool.allocate(netBufSize);
 
@@ -178,7 +178,7 @@ public class SSLChannelIO extends ChannelIO {
             if (handshakeComplete) {
                 if (inReadBuffer.remaining() == inReadBuffer.capacity()) {
                     if (channel.read(inNetBuffer.getBuffer()) == -1) {
-                        throw new IOException("End of stream has reached.");
+                        return -1;
                     }
                     inNetBuffer.flip(); // ready for being read
                     inDataAvail:
@@ -198,7 +198,7 @@ public class SSLChannelIO extends ChannelIO {
                             }
                             case BUFFER_UNDERFLOW: {
                                 // needed more data in inNetBuffer, maybe nexttime
-                                inNetBuffer.compact();
+                                //inNetBuffer.compact();
                                 break inDataAvail;
                                 //return returnValue;
                             }
@@ -211,7 +211,7 @@ public class SSLChannelIO extends ChannelIO {
                                 throw new IOException("The SSLEngine is already closed.");
                             }
                             default: {
-                                throw new IOException("The SSLEngine is in a undefined state.");
+                                throw new IOException("The SSLEngine is in an undefined state.");
                             }
                         }
                     }
@@ -419,7 +419,7 @@ public class SSLChannelIO extends ChannelIO {
         // if (outNetBuffer.hasRemaining()) { // flush the buffer
         channel.write(outNetBuffer.getBuffer());
         if (outNetBuffer.hasRemaining()) {
-            outNetBuffer.compact(); // ready for add new data
+            outNetBuffer.compact();
             return false;
         } else {
             outNetBuffer.compact();
