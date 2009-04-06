@@ -119,9 +119,9 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
             
             ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
             short osdListStart = tmp.getShort(offset);
-            assert (osdListStart >= offset);
+            assert (osdListStart >= 0);
             
-            if (osdListStart == offset + 2)
+            if (osdListStart == 2)
                 return null;
             
             // create the target object from a view buffer (skip the len bytes)

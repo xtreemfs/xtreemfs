@@ -121,11 +121,11 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public XLocList createXLocList(XLoc[] replicas, int version) {
+    public XLocList createXLocList(XLoc[] replicas, String replUpdatePolicy, int version) {
         BufferBackedXLoc[] tmp = new BufferBackedXLoc[replicas.length];
         for (int i = 0; i < replicas.length; i++)
             tmp[i] = (BufferBackedXLoc) replicas[i];
-        return new BufferBackedXLocList(tmp, version);
+        return new BufferBackedXLocList(tmp, replUpdatePolicy, version);
     }
     
     @Override

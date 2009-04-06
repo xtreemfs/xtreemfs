@@ -35,6 +35,7 @@ import java.util.Map;
 import org.xml.sax.Attributes;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.include.foundation.json.JSONException;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -62,6 +63,8 @@ public class DBAdminHelper {
         public FileMetadata        currentEntity;
         
         public int                 currentXLocVersion;
+        
+        public String              currentReplUpdatePolicy;
         
         public StripingPolicy      currentXLocSp;
         
@@ -229,13 +232,19 @@ public class DBAdminHelper {
         
         StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
         
-        if (openTag)
+        if (openTag) {
             state.currentXLocVersion = Integer.parseInt(attrs.getValue(attrs.getIndex("version")));
-        
+            if (attrs.getIndex("ruPolicy") != -1)
+                state.currentReplUpdatePolicy = attrs.getValue(attrs.getIndex("ruPolicy"));
+            else
+                state.currentReplUpdatePolicy = Constants.REPL_UPDATE_PC_NONE;
+        }
+
         else {
             
             state.currentEntity.setXLocList(sMan.createXLocList(state.currentReplicaList
-                    .toArray(new XLoc[state.currentReplicaList.size()]), state.currentXLocVersion));
+                    .toArray(new XLoc[state.currentReplicaList.size()]), state.currentReplUpdatePolicy,
+                state.currentXLocVersion));
             state.currentReplicaList.clear();
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
@@ -389,7 +398,8 @@ public class DBAdminHelper {
         // serialize the file's xLoc list
         XLocList xloc = file.getXLocList();
         if (xloc != null) {
-            xmlWriter.write("<xlocList version=\"" + xloc.getVersion() + "\">\n");
+            xmlWriter.write("<xlocList version=\"" + xloc.getVersion() + "\" ruPolicy=\""
+                + xloc.getReplUpdatePolicy() + "\">\n");
             for (int i = 0; i < xloc.getReplicaCount(); i++) {
                 XLoc repl = xloc.getReplica(i);
                 xmlWriter.write("<xloc pattern=\""

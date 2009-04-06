@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
@@ -187,10 +188,8 @@ public class OpenOperation extends MRCOperation {
                 
                 ReplicaSet replicas = new ReplicaSet();
                 replicas.add(replica);
-                
-                // TODO: include proper replica update policy in MRC
-                // database design
-                xLocSet = new XLocSet(replicas, 0, "", 0);
+
+                xLocSet = new XLocSet(replicas, 0, Constants.REPL_UPDATE_PC_NONE, 0);
                 
                 file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);

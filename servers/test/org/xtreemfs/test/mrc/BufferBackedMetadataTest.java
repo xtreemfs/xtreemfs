@@ -112,8 +112,7 @@ public class BufferBackedMetadataTest extends TestCase {
             final int width = 5;
             
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize,
-                width);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width);
             checkSP(pattern, stripeSize, width, sp1);
             
             // copy striping policy
@@ -127,8 +126,7 @@ public class BufferBackedMetadataTest extends TestCase {
             final int width = 1;
             
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize,
-                width);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width);
             checkSP(pattern, stripeSize, width, sp1);
             
             // copy striping policy
@@ -209,23 +207,24 @@ public class BufferBackedMetadataTest extends TestCase {
     public void testBufferBackedXLocList() throws Exception {
         
         {
-            final List<BufferBackedStripingPolicy> sp = generateSPList(
-                new BufferBackedStripingPolicy("RAID0", 5, 1), new BufferBackedStripingPolicy(
-                    "RAID5", 99, 33), new BufferBackedStripingPolicy("asfd", 34, -1));
+            final List<BufferBackedStripingPolicy> sp = generateSPList(new BufferBackedStripingPolicy(
+                "RAID0", 5, 1), new BufferBackedStripingPolicy("RAID5", 99, 33),
+                new BufferBackedStripingPolicy("asfd", 34, -1));
             
-            final List<BufferBackedXLoc> replicas = generateXLocList(new BufferBackedXLoc(
-                sp.get(0), new String[] { "11111", "22222", "33333" }), new BufferBackedXLoc(sp
-                    .get(1), new String[] { "fdsay", "34", "4" }), new BufferBackedXLoc(sp.get(2),
-                new String[] { "354", ",mn", "asdf" }));
+            final List<BufferBackedXLoc> replicas = generateXLocList(new BufferBackedXLoc(sp.get(0),
+                new String[] { "11111", "22222", "33333" }), new BufferBackedXLoc(sp.get(1), new String[] {
+                "fdsay", "34", "4" }), new BufferBackedXLoc(sp.get(2), new String[] { "354", ",mn", "asdf" }));
             int version = 37;
+            String updatePolicy = "bla";
             
             // create XLocList
-            BufferBackedXLocList xlocList1 = new BufferBackedXLocList(toArray(replicas), version);
-            checkXLocList(replicas, version, xlocList1);
+            BufferBackedXLocList xlocList1 = new BufferBackedXLocList(toArray(replicas), updatePolicy,
+                version);
+            checkXLocList(replicas, version, updatePolicy, xlocList1);
             
             // copy XLocList
             BufferBackedXLocList xlocList2 = new BufferBackedXLocList(xlocList1.getBuffer());
-            checkXLocList(replicas, version, xlocList2);
+            checkXLocList(replicas, version, updatePolicy, xlocList2);
             
             // test iterator
             Iterator<XLoc> it = xlocList2.iterator();
@@ -250,8 +249,8 @@ public class BufferBackedMetadataTest extends TestCase {
             String group = "somegroup";
             
             // create dir object
-            BufferBackedFileMetadata dirObj = new BufferBackedFileMetadata(parentId, dirName,
-                owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1, (short) 0);
+            BufferBackedFileMetadata dirObj = new BufferBackedFileMetadata(parentId, dirName, owner, group,
+                fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1, (short) 0);
             checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, dirObj);
             
             fileId = 77;
@@ -291,11 +290,11 @@ public class BufferBackedMetadataTest extends TestCase {
             String owner = "vyxcvcxy";
             String group = "afdsafdsafds";
             // create file object
-            BufferBackedFileMetadata fileObj = new BufferBackedFileMetadata(parentId, fileName,
-                owner, group, fileId, atime, ctime, mtime, size, perms, w32Attrs, linkcount, epoch,
-                issuedEpoch, readonly, (short) 0);
-            checkFileObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, size,
-                linkcount, epoch, issuedEpoch, readonly, fileObj);
+            BufferBackedFileMetadata fileObj = new BufferBackedFileMetadata(parentId, fileName, owner, group,
+                fileId, atime, ctime, mtime, size, perms, w32Attrs, linkcount, epoch, issuedEpoch, readonly,
+                (short) 0);
+            checkFileObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, size, linkcount,
+                epoch, issuedEpoch, readonly, fileObj);
         }
         
     }
@@ -331,18 +330,19 @@ public class BufferBackedMetadataTest extends TestCase {
             assertEquals(osds[i], xloc.getOSD(i).toString());
     }
     
-    private void checkXLocList(List<BufferBackedXLoc> replicas, int version,
+    private void checkXLocList(List<BufferBackedXLoc> replicas, int version, String updatePolicy,
         BufferBackedXLocList xlocList) {
         
         assertEquals(version, xlocList.getVersion());
+        assertEquals(updatePolicy, xlocList.getReplUpdatePolicy());
         assertEquals(replicas.size(), xlocList.getReplicaCount());
-        
+                
         for (int i = 0; i < replicas.size(); i++)
             assertEquals(replicas.get(i).toString(), xlocList.getReplica(i).toString());
     }
     
-    private void checkDirObject(String owner, String group, long fileId, int atime, int ctime,
-        int mtime, short perms, long w32Attrs, FileMetadata obj) {
+    private void checkDirObject(String owner, String group, long fileId, int atime, int ctime, int mtime,
+        short perms, long w32Attrs, FileMetadata obj) {
         
         assertEquals(fileId, obj.getId());
         assertEquals(atime, obj.getAtime());
@@ -355,9 +355,9 @@ public class BufferBackedMetadataTest extends TestCase {
         
     }
     
-    private void checkFileObject(String owner, String group, long fileId, int atime, int ctime,
-        int mtime, short perms, long w32Attrs, long size, short linkcount, int epoch,
-        int issuedEpoch, boolean readonly, FileMetadata obj) {
+    private void checkFileObject(String owner, String group, long fileId, int atime, int ctime, int mtime,
+        short perms, long w32Attrs, long size, short linkcount, int epoch, int issuedEpoch, boolean readonly,
+        FileMetadata obj) {
         
         assertEquals(fileId, obj.getId());
         assertEquals(atime, obj.getAtime());
@@ -387,8 +387,7 @@ public class BufferBackedMetadataTest extends TestCase {
     }
     
     public List<BufferBackedStripingPolicy> generateSPList(BufferBackedStripingPolicy... arr) {
-        List<BufferBackedStripingPolicy> list = new ArrayList<BufferBackedStripingPolicy>(
-            arr.length);
+        List<BufferBackedStripingPolicy> list = new ArrayList<BufferBackedStripingPolicy>(arr.length);
         for (BufferBackedStripingPolicy s : arr)
             list.add(s);
         

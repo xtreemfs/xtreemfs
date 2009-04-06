@@ -80,8 +80,7 @@ public class MRCHelper {
         ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("mrc", mrcUUID);
         dmap.put("free", free);
-        Service sreg = new Service(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol
-                .getName(), 0, dmap);
+        Service sreg = new Service(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol.getName(), 0, dmap);
         
         return sreg;
     }
@@ -263,32 +262,34 @@ public class MRCHelper {
         
         switch (key) {
         
-//        case locations:
-//
-//            // explicitly setting X-Locations lists is only permitted for files
-//            // that haven't yet been assigned an X-Locations list!
-//            if (file.getXLocList() != null)
-//                throw new UserException(ErrNo.EPERM,
-//                    "cannot set X-Locations: OSDs have been assigned already");
-//            
-//            try {
-//                // parse the X-Locations list, ensure that it is correctly
-//                // formatted and consistent
-//                
-//                XLocList newXLoc = Converter.stringToXLocList(sMan, value);
-//                
-//                if (!MRCHelper.isConsistent(newXLoc))
-//                    throw new UserException(ErrNo.EINVAL, "inconsistent X-Locations list:"
-//                        + "at least one OSD occurs more than once");
-//                
-//                file.setXLocList(newXLoc);
-//                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-//                
-//            } catch (MRCException exc) {
-//                throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " + value);
-//            }
-//            
-//            break;
+        // case locations:
+        //
+        // // explicitly setting X-Locations lists is only permitted for files
+        // // that haven't yet been assigned an X-Locations list!
+        // if (file.getXLocList() != null)
+        // throw new UserException(ErrNo.EPERM,
+        // "cannot set X-Locations: OSDs have been assigned already");
+        //            
+        // try {
+        // // parse the X-Locations list, ensure that it is correctly
+        // // formatted and consistent
+        //                
+        // XLocList newXLoc = Converter.stringToXLocList(sMan, value);
+        //                
+        // if (!MRCHelper.isConsistent(newXLoc))
+        // throw new UserException(ErrNo.EINVAL,
+        // "inconsistent X-Locations list:"
+        // + "at least one OSD occurs more than once");
+        //                
+        // file.setXLocList(newXLoc);
+        // sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        //                
+        // } catch (MRCException exc) {
+        // throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " +
+        // value);
+        // }
+        //            
+        // break;
         
         case default_sp:
 
@@ -352,6 +353,21 @@ public class MRCHelper {
                 throw new UserException(ErrNo.EPERM,
                     "read-only flag cannot be removed from files with multiple replicas");
             
+            // set the update policy string in the X-Locations list to 'read
+            // only replication'
+            if (file.getXLocList() != null) {
+                XLocList xLoc = file.getXLocList();
+                XLoc[] replicas = new XLoc[xLoc.getReplicaCount()];
+                for (int i = 0; i < replicas.length; i++)
+                    replicas[i] = xLoc.getReplica(i);
+                
+                XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
+                    : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());
+                file.setXLocList(newXLoc);
+                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+            }
+            
+            // set the read-only flag
             file.setReadOnly(readOnly);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             

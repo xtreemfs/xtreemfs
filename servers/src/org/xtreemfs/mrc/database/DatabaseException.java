@@ -26,7 +26,7 @@ package org.xtreemfs.mrc.database;
 public class DatabaseException extends Exception {
     
     public enum ExceptionType {
-        INTERNAL_DB_ERROR, FILE_EXISTS
+        INTERNAL_DB_ERROR, FILE_EXISTS, WRONG_DB_VERSION
     }
     
     private ExceptionType type;

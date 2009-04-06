@@ -130,7 +130,7 @@ public class Converter {
                 sb.append(repl.getOSD(j)).append(j == repl.getOSDCount() - 1 ? "" : ", ");
             sb.append(")]").append(i == xLocList.getReplicaCount() - 1 ? "" : ", ");
         }
-        sb.append(", ").append(xLocList.getVersion()).append("]");
+        sb.append(", ").append(xLocList.getVersion()).append(", ").append(xLocList.getReplUpdatePolicy()).append("]");
         
         return sb.toString();
     }
@@ -139,7 +139,7 @@ public class Converter {
         BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 256, 2);
         BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1", "osd2" });
         BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4" });
-        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, 3);
+        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, "policy", 3);
         
         System.out.println(xLocListToString(xLocList));
     }
@@ -166,7 +166,7 @@ public class Converter {
                 new String[repl.getOsd_uuids().size()]));
         }
         
-        return sMan.createXLocList(replicas, xLocSet.getVersion());
+        return sMan.createXLocList(replicas, xLocSet.getRepUpdatePolicy(), xLocSet.getVersion());
     }
     
     /**
@@ -201,7 +201,7 @@ public class Converter {
         
         XLocSet xLocSet = new XLocSet();
         xLocSet.setReplicas(replicas);
-        xLocSet.setRepUpdatePolicy(""); // TODO
+        xLocSet.setRepUpdatePolicy(xLocList.getReplUpdatePolicy());
         xLocSet.setVersion(xLocList.getVersion());
         
         return xLocSet;

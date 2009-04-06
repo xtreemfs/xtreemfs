@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.volumes;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,6 +40,7 @@ import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.ErrNo;
@@ -50,6 +52,7 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.volumes.metadata.BufferBackedVolumeInfo;
@@ -59,9 +62,13 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private static final String               VOLUME_DB_NAME = "V";
     
-    private static final int                  VOL_INDEX      = 0;
+    private static final int                  VERSION_INDEX  = 0;
     
-    private static final int                  VOL_NAME_INDEX = 1;
+    private static final int                  VOL_INDEX      = 1;
+    
+    private static final int                  VOL_NAME_INDEX = 2;
+    
+    private static final String               VERSION_KEY    = "v";
     
     /** the volume database */
     private BabuDB                            database;
@@ -101,17 +108,61 @@ public class BabuDBVolumeManager implements VolumeManager {
     public void init() throws DatabaseException {
         
         try {
+            
+            // try to create a new database
             database = BabuDBFactory.getBabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60, SyncMode.ASYNC,
                 0, 1000);
+            
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
         
         try {
-            database.createDatabase(VOLUME_DB_NAME, 2);
+            database.createDatabase(VOLUME_DB_NAME, 3);
+            
+            // if the creation succeeds, set the version number to the current
+            // MRC DB version
+            byte[] verBytes = ByteBuffer.wrap(new byte[4])
+                    .putInt((int) VersionManagement.getMrcDataVersion()).array();
+            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
+            database.directInsert(ig);
+            
         } catch (BabuDBException e) {
+            
             // database already exists
             Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
+            
+            try {
+                
+                // retrieve the database version number
+                byte[] verBytes = database
+                        .directLookup(VOLUME_DB_NAME, VERSION_INDEX, VERSION_KEY.getBytes());
+                int ver = ByteBuffer.wrap(verBytes).getInt();
+                
+                // check the database version number
+                if (ver != VersionManagement.getMrcDataVersion()) {
+                    
+                    String errMsg = "Wrong database version. Expected version = "
+                        + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
+                    
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, errMsg);
+                    if (VersionManagement.getMrcDataVersion() > ver)
+                        Logging
+                                .logMessage(
+                                    Logging.LEVEL_ERROR,
+                                    this,
+                                    "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
+                    
+                    throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
+                }
+                
+            } catch (BabuDBException exc) {
+                Logging.logMessage(Logging.LEVEL_ERROR, this,
+                    "The MRC database is either corrupted or outdated. The expected database version for this server is "
+                        + VersionManagement.getMrcDataVersion());
+                throw new DatabaseException(exc);
+            }
             
             try {
                 

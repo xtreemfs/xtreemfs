@@ -63,4 +63,11 @@ public interface XLocList {
      */
     public Iterator<XLoc> iterator();
     
+    /**
+     * Returns the replica update policy.
+     * 
+     * @return the replica update policy
+     */
+    public String getReplUpdatePolicy();
+    
 }

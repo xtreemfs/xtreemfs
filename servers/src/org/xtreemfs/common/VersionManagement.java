@@ -41,7 +41,7 @@ public class VersionManagement {
 
     private static final long[] supportedProtocolVersions = { 39, 42 };
 
-    private static final long   mrcDataVersion            = 3;
+    private static final long   mrcDataVersion            = 4;
 
     private static final long   osdDataVersion            = 1;
 

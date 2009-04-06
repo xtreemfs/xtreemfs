@@ -66,7 +66,7 @@ public class RemoveReplicaOperation extends MRCOperation {
             
             final FileAccessManager faMan = master.getFileAccessManager();
             final VolumeManager vMan = master.getVolumeManager();
-
+            
             validateContext(rq);
             
             // parse volume and file ID from global file ID
@@ -97,8 +97,8 @@ public class RemoveReplicaOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
                     return;
                 }
                 
@@ -137,7 +137,8 @@ public class RemoveReplicaOperation extends MRCOperation {
             for (int j = 0, count = 0; j < xLocList.getReplicaCount(); j++)
                 if (j != i)
                     newReplList[count++] = xLocList.getReplica(j);
-            xLocList = sMan.createXLocList(newReplList, xLocList.getVersion() + 1);
+            xLocList = sMan.createXLocList(newReplList, xLocList.getReplUpdatePolicy(),
+                xLocList.getVersion() + 1);
             file.setXLocList(xLocList);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);

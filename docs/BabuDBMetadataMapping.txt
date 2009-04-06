@@ -219,8 +219,11 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
 
 xLocList - represents an X-Locations list of a file
 |----------------------------------------------------------------------------|
-|version  numReplicas  replica1Offs ... replicaNOffs   xLoc1 ... xLocN       |
-|4        4            4                4              var       var         |
+|version  numReplicas  replUpdPolOffs  repl1Offs ... replNOffs               |
+|4        4            4               4             4                       |
+|                                                                            |
+|xLoc1  ...  xLocN    replUpdPolOffs                                         |
+|var         var      var                                                    |
 |----------------------------------------------------------------------------|
 
 xLoc - represents a single replica in an X-Locations list

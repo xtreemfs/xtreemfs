@@ -71,7 +71,7 @@ public interface StorageManager {
     
     public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds);
     
-    public XLocList createXLocList(XLoc[] replicas, int version);
+    public XLocList createXLocList(XLoc[] replicas, String replUpdatePolicy, int version);
     
     public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width);
     

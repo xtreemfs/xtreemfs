@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
@@ -70,7 +71,7 @@ public class AddReplicaOperation extends MRCOperation {
             
             final FileAccessManager faMan = master.getFileAccessManager();
             final VolumeManager vMan = master.getVolumeManager();
-
+            
             validateContext(rq);
             
             // parse volume and file ID from global file ID
@@ -101,8 +102,8 @@ public class AddReplicaOperation extends MRCOperation {
                 
                 // if the local MRC is not responsible, send a redirect
                 if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
                     return;
                 }
                 
@@ -143,14 +144,16 @@ public class AddReplicaOperation extends MRCOperation {
             // (this will automatically increment the X-Locations list version)
             XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]));
             if (xLocList == null)
-                xLocList = sMan.createXLocList(new XLoc[] { replica }, 1);
+                xLocList = sMan.createXLocList(new XLoc[] { replica },
+                    file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : Constants.REPL_UPDATE_PC_NONE, 1);
             else {
                 XLoc[] repls = new XLoc[xLocList.getReplicaCount() + 1];
                 for (int i = 0; i < xLocList.getReplicaCount(); i++)
                     repls[i] = xLocList.getReplica(i);
                 
                 repls[repls.length - 1] = replica;
-                xLocList = sMan.createXLocList(repls, xLocList.getVersion() + 1);
+                xLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(),
+                    xLocList.getVersion() + 1);
             }
             
             file.setXLocList(xLocList);
