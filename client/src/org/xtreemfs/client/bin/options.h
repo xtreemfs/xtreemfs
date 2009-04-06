@@ -49,10 +49,15 @@ namespace org
         template <class ProxyType>
         ProxyType* createProxy( const YIELD::URI& uri )
         {
+          ProxyType* proxy;
           if ( !get_pkcs12_file_path().empty() )
-            return new ProxyType( uri, get_pkcs12_file_path(), get_pkcs12_passphrase() );
+            proxy = new ProxyType( uri, get_pkcs12_file_path(), get_pkcs12_passphrase() );
           else
-            return new ProxyType( uri );
+            proxy = new ProxyType( uri );
+
+          proxy->set_operation_timeout_ms( get_timeout_ms() );
+
+          return proxy;
         }
 
         void printUsage()

@@ -143,13 +143,9 @@ namespace org
             mrc_uri = parseURI( files[0] );
             if ( strlen( mrc_uri->get_resource() ) > 1 )
               volume_name = mrc_uri->get_resource() + 1;
-            else if ( files_count >= 2 )
-              volume_name = files[1];
-            else
-              throw YIELD::URI( "must specify a volume name, either as part of the MRC URI or as a separate parameter" );
           }
           else
-            throw YIELD::Exception( "must specify a volume URI" );
+            throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
         }
       };
     };
@@ -168,8 +164,7 @@ int main( int argc, char** argv )
     else
     {
       YIELD::auto_SharedObject<MRCProxy> mrc_proxy = options.createProxy<MRCProxy>( options.get_mrc_uri() );
-      mrc_proxy.get()->set_operation_timeout_ms( options.get_timeout_ms() );
-      mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy() ) );
+      mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy(), std::string(), std::string(), std::string() ) );
     }
 
     return 0;

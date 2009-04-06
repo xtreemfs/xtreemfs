@@ -93,6 +93,11 @@ void MRCProxy::listxattr( const Path& path, org::xtreemfs::interfaces::StringSet
   mrc_interface.listxattr( path, names, this );
 }
 
+void MRCProxy::lsvol( org::xtreemfs::interfaces::VolumeSet& volumes )
+{
+  mrc_interface.xtreemfs_lsvol( volumes, this );
+}
+
 void MRCProxy::mkdir( const Path& path, uint32_t mode )
 {
   mrc_interface.mkdir( path, mode, this );

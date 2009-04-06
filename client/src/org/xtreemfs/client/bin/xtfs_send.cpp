@@ -158,8 +158,6 @@ namespace org
                 argvInputStream argv_input_stream( files_count - 1, files+1 );
                 request->deserialize( argv_input_stream );
               }
-
-              proxy->set_operation_timeout_ms( get_timeout_ms() );
             }
             else
               throw YIELD::Exception( "RPC URI must include an operation name" );

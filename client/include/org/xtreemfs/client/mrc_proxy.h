@@ -36,6 +36,7 @@ namespace org
         void link( const std::string& target_path, const std::string& link_path );
         void listxattr( const Path& path, org::xtreemfs::interfaces::StringSet& names );
         void mkdir( const Path& path, uint32_t mode );
+        void lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );
         void mkvol( const org::xtreemfs::interfaces::Volume& volume );
         void rmvol( const std::string& volume_name );
         void open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& credentials );
