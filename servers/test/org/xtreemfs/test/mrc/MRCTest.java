@@ -109,7 +109,7 @@ public class MRCTest extends TestCase {
         
         // create and delete a volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
+            POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         // Map<String, String> localVols = client.getLocalVolumes(mrc1Address);
         // assertEquals(1, localVols.size());
@@ -120,32 +120,39 @@ public class MRCTest extends TestCase {
         
         // create a volume (no access control)
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
-            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
+            POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         // create some files and directories
-        invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/myDir", 0));
-        invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/anotherDir", 0));
+        invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/myDir", 0775));
+        invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/anotherDir", 0775));
         
         for (int i = 0; i < 10; i++)
-            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test" + i + ".txt", 0));
+            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test" + i + ".txt", 0775));
         
         // try to create a file w/o a name
         try {
-            invokeSync(client.create(mrcAddress, uc, volumeName, 0));
+            invokeSync(client.create(mrcAddress, uc, volumeName, 0775));
             fail("missing filename");
         } catch (MRCException exc) {
         }
         
         try {
-            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test0.txt", 0));
+            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test0.txt", 0775));
             fail("duplicate file creation");
         } catch (MRCException exc) {
         }
         
         try {
-            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test0.txt/bla.txt", 0));
+            invokeSync(client.create(mrcAddress, uc, volumeName + "/myDir/test0.txt/bla.txt", 0775));
             fail("file in file creation");
         } catch (MRCException exc) {
+        }
+        
+        try {
+            invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/", 0));
+            fail("directory already exists");
+        } catch(MRCException exc) {
+            
         }
         
         // test 'readDir' and 'stat'

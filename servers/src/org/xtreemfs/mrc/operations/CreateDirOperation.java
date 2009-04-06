@@ -28,6 +28,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -71,6 +72,11 @@ public class CreateDirOperation extends MRCOperation {
             final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
             final StorageManager sMan = vMan.getStorageManager(volume.getId());
             final PathResolver res = new PathResolver(sMan, p);
+            
+            // check if dir == volume
+            if (res.getParentDir() == null)
+                throw new UserException(ErrNo.EEXIST, "file or directory '" + res.getFileName()
+                    + "' exists already");
             
             // check whether the path prefix is searchable
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
