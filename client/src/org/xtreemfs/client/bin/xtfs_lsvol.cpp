@@ -43,7 +43,7 @@ namespace org
       private:
         enum
         {
-          XTFS_LSVOL_OPTION_LONG_LISTING,
+          XTFS_LSVOL_OPTION_LONG_LISTING = 10
         };
 
         bool long_listing;
