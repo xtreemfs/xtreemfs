@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
 
 import org.junit.Test;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
@@ -27,6 +28,7 @@ import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -57,11 +59,11 @@ public class SSLRPCClientServerTest extends TestCase {
 
         System.out.println("loading ssl context");
 
-        srvSSL = createSSLOptions("server1.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
-            "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        srvSSL = createSSLOptions("certs/DIR.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
+            "certs/trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
 
-        clientSSL = createSSLOptions("client1.p12", "passphrase",
-            SSLOptions.PKCS12_CONTAINER, "trust.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        clientSSL = createSSLOptions("certs/Client.p12", "passphrase",
+            SSLOptions.PKCS12_CONTAINER, "certs/trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
 
         System.out.println("setup done");
     }
@@ -132,9 +134,9 @@ public class SSLRPCClientServerTest extends TestCase {
             }
 
         };
-        
+
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
-        
+
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
                 amr.getOperationNumber(),amr);
 
@@ -305,6 +307,91 @@ public class SSLRPCClientServerTest extends TestCase {
         Exception ex = result.get();
         System.out.println("got exception as expected: "+ex);
         assertTrue(ex instanceof IOException);
+
+
+        client.shutdown();
+        client.waitForShutdown();
+
+
+        server.shutdown();
+        server.waitForShutdown();
+
+    }
+
+    @Test
+    public void testLargeMessage() throws Exception {
+        RPCServerRequestListener listener = new RPCServerRequestListener() {
+
+            @Override
+            public void receiveRecord(org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest rq) {
+                try {
+                    System.out.println("request received");
+                    ReusableBuffer buf = rq.getRequestFragment();
+
+                    ObjectData od = new ObjectData();
+                    od.deserialize(buf);
+                    BufferPool.free(od.getData());
+
+                    ReusableBuffer buf2 = BufferPool.allocate(1024*128);
+                    buf2.limit(buf2.capacity());
+
+                    od.setData(buf2);
+                    rq.sendResponse(od);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    fail();
+                }
+
+
+            }
+
+        };
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL);
+        server.start();
+        server.waitForStartup();
+
+        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000);
+        client.start();
+        client.waitForStartup();
+
+        final AtomicReference<ONCRPCRequest> result = new AtomicReference<ONCRPCRequest>();
+        RPCResponseListener rListener = new RPCResponseListener() {
+
+            @Override
+            public void responseAvailable(ONCRPCRequest request) {
+                synchronized (result) {
+                    result.set(request);
+                    result.notifyAll();
+                }
+            }
+
+            @Override
+            public void requestFailed(ONCRPCRequest request, IOException reason) {
+                reason.printStackTrace();
+                fail();
+            }
+
+            @Override
+            public void remoteExceptionThrown(ONCRPCRequest rquest, ONCRPCException exception) {
+                fail();
+            }
+
+        };
+
+        ReusableBuffer buf = BufferPool.allocate(1024*64);
+        ObjectData od = new ObjectData();
+        buf.limit(buf.capacity());
+        od.setData(buf);
+
+        client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
+                0,od);
+
+        synchronized (result) {
+            if (result.get() == null)
+                result.wait();
+        }
+
+
 
 
         client.shutdown();
