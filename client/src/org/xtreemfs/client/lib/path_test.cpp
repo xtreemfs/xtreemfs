@@ -28,10 +28,10 @@ public:
 protected:
   void checkPath( const Path& path )
   {
-    ASSERT_EQUAL( path.getVolumeName(), TEST_VOLUME_NAME );
-    ASSERT_EQUAL( path.getGlobalPath(), std::string( TEST_VOLUME_NAME ) + "/" + TEST_UNIX_PATH );
-    ASSERT_EQUAL( path.getLocalPath(), TEST_LOCAL_PATH );
-    ASSERT_EQUAL( path.getLocalPath().split().second, TEST_FILE_NAME );
+    ASSERT_EQUAL( path.get_volume_name(), TEST_VOLUME_NAME );
+    ASSERT_EQUAL( path.get_global_path(), std::string( TEST_VOLUME_NAME ) + "/" + TEST_UNIX_PATH );
+    ASSERT_EQUAL( path.get_local_path(), TEST_LOCAL_PATH );
+    ASSERT_EQUAL( path.get_local_path().split().second, TEST_FILE_NAME );
   }
 };
 
@@ -48,9 +48,9 @@ TEST_EX( Path_fromlocal, PathTestCase, Path )
 TEST_EX( Path_emptylocal, PathTestCase, Path )
 {
   Path path( TEST_VOLUME_NAME, "" );
-  ASSERT_EQUAL( path.getVolumeName(), TEST_VOLUME_NAME );
-  ASSERT_EQUAL( path.getGlobalPath(), std::string( TEST_VOLUME_NAME ) + "/" );
-  ASSERT_TRUE( path.getLocalPath().empty() );
+  ASSERT_EQUAL( path.get_volume_name(), TEST_VOLUME_NAME );
+  ASSERT_EQUAL( path.get_global_path(), std::string( TEST_VOLUME_NAME ) + "/" );
+  ASSERT_TRUE( path.get_local_path().empty() );
 }
 
 TEST_MAIN( Path )

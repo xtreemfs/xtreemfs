@@ -412,6 +412,10 @@ namespace org
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, YIELD::EventTarget* send_target ) { xtreemfs_replica_add( file_id, new_replica, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_replica_add( file_id, new_replica, NULL, response_timeout_ns ); }
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_replica_addSyncRequest* __req = new xtreemfs_replica_addSyncRequest( file_id, new_replica ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); try { xtreemfs_replica_addResponse& __resp = ( xtreemfs_replica_addResponse& )__req->waitForDefaultResponse( response_timeout_ns );  YIELD::SharedObject::decRef( __resp ); YIELD::SharedObject::decRef( *__req ); } catch ( ... ) { YIELD::SharedObject::decRef( *__req ); throw; } }
+        virtual void xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas ) { xtreemfs_replica_list( file_id, replicas, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas, YIELD::EventTarget* send_target ) { xtreemfs_replica_list( file_id, replicas, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_replica_list( file_id, replicas, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_replica_listSyncRequest* __req = new xtreemfs_replica_listSyncRequest( file_id, replicas ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::SharedObject::incRef( *__req ) ); try { xtreemfs_replica_listResponse& __resp = ( xtreemfs_replica_listResponse& )__req->waitForDefaultResponse( response_timeout_ns );  YIELD::SharedObject::decRef( __resp ); YIELD::SharedObject::decRef( *__req ); } catch ( ... ) { YIELD::SharedObject::decRef( *__req ); throw; } }
         virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid ) { xtreemfs_replica_remove( file_id, osd_uuid, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, YIELD::EventTarget* send_target ) { xtreemfs_replica_remove( file_id, osd_uuid, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_replica_remove( file_id, osd_uuid, NULL, response_timeout_ns ); }
@@ -2504,6 +2508,74 @@ namespace org
         YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
       };
 
+      class xtreemfs_replica_listResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_replica_listResponse() { }
+        virtual ~xtreemfs_replica_listResponse() { }
+
+        bool operator==( const xtreemfs_replica_listResponse& ) const { return true; }
+
+        // YIELD::RTTI
+        TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse", 1736837504UL );
+
+      };
+
+      class xtreemfs_replica_listRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_replica_listRequest() { }
+        xtreemfs_replica_listRequest( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas ) : file_id( file_id ), replicas( replicas ) { }
+        xtreemfs_replica_listRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::ReplicaSet& replicas ) : file_id( file_id, file_id_len ), replicas( replicas ) { }
+        virtual ~xtreemfs_replica_listRequest() { }
+
+        void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+        void set_file_id( const char* file_id, size_t file_id_len = 0 ) { this->file_id.assign( file_id, ( file_id_len != 0 ) ? file_id_len : std::strlen( file_id ) ); }
+        const std::string& get_file_id() const { return file_id; }
+        void set_replicas( const org::xtreemfs::interfaces::ReplicaSet&  replicas ) { this->replicas = replicas; }
+        const org::xtreemfs::interfaces::ReplicaSet& get_replicas() const { return replicas; }
+
+        bool operator==( const xtreemfs_replica_listRequest& other ) const { return file_id == other.file_id && replicas == other.replicas; }
+
+        // YIELD::RTTI
+        TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest", 3179071099UL );
+
+        // YIELD::Serializable
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); input_stream.readSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ReplicaSet", "replicas" ), &replicas ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "file_id" ), file_id ); output_stream.writeSerializable( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ReplicaSet", "replicas" ), replicas ); }
+
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 2; }
+        virtual uint32_t getOperationNumber() const { return 0; }
+
+        virtual uint32_t getDefaultResponseTypeId() const { return 1736837504UL; }
+        virtual Event* createDefaultResponse() { return new xtreemfs_replica_listResponse; }
+
+
+      protected:
+        std::string file_id;
+        org::xtreemfs::interfaces::ReplicaSet replicas;
+      };
+
+      class xtreemfs_replica_listSyncRequest : public xtreemfs_replica_listRequest
+      {
+      public:
+        xtreemfs_replica_listSyncRequest() : xtreemfs_replica_listRequest( std::string(), org::xtreemfs::interfaces::ReplicaSet() ) { }
+        xtreemfs_replica_listSyncRequest( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas ) : xtreemfs_replica_listRequest( file_id, replicas ) { }
+        xtreemfs_replica_listSyncRequest( const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::ReplicaSet& replicas ) : xtreemfs_replica_listRequest( file_id, file_id_len, replicas ) { }
+        virtual ~xtreemfs_replica_listSyncRequest() { }
+
+        bool operator==( const xtreemfs_replica_listSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
+        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse>( timeout_ns ); }
+
+      private:
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+      };
+
       class xtreemfs_replica_removeResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
       {
       public:
@@ -2965,6 +3037,7 @@ namespace org
           serializable_factories.registerSerializableFactory( 1895169082UL, new YIELD::SerializableFactoryImpl<xtreemfs_mkvolRequest> ); serializable_factories.registerSerializableFactory( 257131742UL, new YIELD::SerializableFactoryImpl<xtreemfs_mkvolSyncRequest> ); serializable_factories.registerSerializableFactory( 3778316902UL, new YIELD::SerializableFactoryImpl<xtreemfs_mkvolResponse> );
           serializable_factories.registerSerializableFactory( 526231386UL, new YIELD::SerializableFactoryImpl<xtreemfs_renew_capabilityRequest> ); serializable_factories.registerSerializableFactory( 2840337294UL, new YIELD::SerializableFactoryImpl<xtreemfs_renew_capabilitySyncRequest> ); serializable_factories.registerSerializableFactory( 137996173UL, new YIELD::SerializableFactoryImpl<xtreemfs_renew_capabilityResponse> );
           serializable_factories.registerSerializableFactory( 3822735046UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_addRequest> ); serializable_factories.registerSerializableFactory( 3351137176UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_addSyncRequest> ); serializable_factories.registerSerializableFactory( 112572185UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_addResponse> );
+          serializable_factories.registerSerializableFactory( 3179071099UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_listRequest> ); serializable_factories.registerSerializableFactory( 135992135UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_listSyncRequest> ); serializable_factories.registerSerializableFactory( 1736837504UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_listResponse> );
           serializable_factories.registerSerializableFactory( 992591294UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_removeRequest> ); serializable_factories.registerSerializableFactory( 2117462941UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_removeSyncRequest> ); serializable_factories.registerSerializableFactory( 1412849496UL, new YIELD::SerializableFactoryImpl<xtreemfs_replica_removeResponse> );
           serializable_factories.registerSerializableFactory( 576859361UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_databaseRequest> ); serializable_factories.registerSerializableFactory( 3542459549UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_databaseSyncRequest> ); serializable_factories.registerSerializableFactory( 1807651157UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_databaseResponse> );
           serializable_factories.registerSerializableFactory( 1511356569UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_fileRequest> ); serializable_factories.registerSerializableFactory( 763347303UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_fileSyncRequest> ); serializable_factories.registerSerializableFactory( 3701413834UL, new YIELD::SerializableFactoryImpl<xtreemfs_restore_fileResponse> );
@@ -3014,6 +3087,7 @@ namespace org
               case 1895169082UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
               case 526231386UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
               case 3822735046UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
+              case 3179071099UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( ev ) ); return;
               case 992591294UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( ev ) ); return;
               case 576859361UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( ev ) ); return;
               case 1511356569UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( ev ) ); return;
@@ -3070,6 +3144,7 @@ namespace org
         virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req ) { xtreemfs_mkvolResponse* resp = NULL; try { resp = new xtreemfs_mkvolResponse; _xtreemfs_mkvol( req.get_volume() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req ) { xtreemfs_renew_capabilityResponse* resp = NULL; try { resp = new xtreemfs_renew_capabilityResponse; org::xtreemfs::interfaces::XCap renewed_xcap; _xtreemfs_renew_capability( req.get_old_xcap(), renewed_xcap ); resp->set_renewed_xcap( renewed_xcap ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { xtreemfs_replica_addResponse* resp = NULL; try { resp = new xtreemfs_replica_addResponse; _xtreemfs_replica_add( req.get_file_id(), req.get_new_replica() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& req ) { xtreemfs_replica_listResponse* resp = NULL; try { resp = new xtreemfs_replica_listResponse; _xtreemfs_replica_list( req.get_file_id(), req.get_replicas() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req ) { xtreemfs_replica_removeResponse* resp = NULL; try { resp = new xtreemfs_replica_removeResponse; _xtreemfs_replica_remove( req.get_file_id(), req.get_osd_uuid() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_restore_databaseRequest( xtreemfs_restore_databaseRequest& req ) { xtreemfs_restore_databaseResponse* resp = NULL; try { resp = new xtreemfs_restore_databaseResponse; _xtreemfs_restore_database( req.get_dump_file() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req ) { xtreemfs_restore_fileResponse* resp = NULL; try { resp = new xtreemfs_restore_fileResponse; _xtreemfs_restore_file( req.get_file_path(), req.get_file_id(), req.get_file_size(), req.get_osd_uuid(), req.get_stripe_size() ); req.respond( *resp ); YIELD::SharedObject::decRef( req ); } catch ( ... ) { throw; }; }
@@ -3106,6 +3181,7 @@ namespace org
         virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume ) { }
         virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap ) { }
         virtual void _xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { }
+        virtual void _xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas ) { }
         virtual void _xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid ) { }
         virtual void _xtreemfs_restore_database( const std::string& dump_file ) { }
         virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size ) { }
@@ -3145,6 +3221,7 @@ namespace org
       virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume );\
       virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );\
       virtual void _xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica );\
+      virtual void _xtreemfs_replica_list( const std::string& file_id, const org::xtreemfs::interfaces::ReplicaSet& replicas );\
       virtual void _xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid );\
       virtual void _xtreemfs_restore_database( const std::string& dump_file );\
       virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size );\
@@ -3182,6 +3259,7 @@ namespace org
       virtual void handlextreemfs_mkvolRequestRequest( xtreemfs_mkvolRequest& req );\
       virtual void handlextreemfs_renew_capabilityRequestRequest( xtreemfs_renew_capabilityRequest& req );\
       virtual void handlextreemfs_replica_addRequestRequest( xtreemfs_replica_addRequest& req );\
+      virtual void handlextreemfs_replica_listRequestRequest( xtreemfs_replica_listRequest& req );\
       virtual void handlextreemfs_replica_removeRequestRequest( xtreemfs_replica_removeRequest& req );\
       virtual void handlextreemfs_restore_databaseRequestRequest( xtreemfs_restore_databaseRequest& req );\
       virtual void handlextreemfs_restore_fileRequestRequest( xtreemfs_restore_fileRequest& req );\

@@ -144,6 +144,11 @@ void MRCProxy::renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap
   mrc_interface.xtreemfs_renew_capability( old_xcap, renewed_xcap, this );
 }
 
+void MRCProxy::replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas )
+{
+  mrc_interface.xtreemfs_replica_list( file_id, replicas, this );
+}
+
 void MRCProxy::rmdir( const Path& path )
 {
   mrc_interface.rmdir( path, this );

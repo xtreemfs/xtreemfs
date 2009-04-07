@@ -43,6 +43,7 @@ namespace org
         void removexattr( const Path& path, const std::string& name );
         void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
         void renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );
+        void replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas );
         void rmdir( const Path& path );
         void rmvol( const std::string& volume_name );
         void setattr( const Path& path, const org::xtreemfs::interfaces::Stat& stbuf );

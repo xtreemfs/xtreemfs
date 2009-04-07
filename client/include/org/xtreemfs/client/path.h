@@ -20,15 +20,15 @@ namespace org
         Path( const std::string& volume_name, const YIELD::Path& local_path );
         Path( const std::string& global_path );
 
-        operator const std::string&() const { return getGlobalPath(); }
-        operator const YIELD::Path&() const { return getLocalPath(); }
-        operator const char*() const { return getGlobalPath().c_str(); }
-
+        operator const std::string&() const { return get_global_path(); }
+        operator const YIELD::Path&() const { return get_local_path(); }
+        operator const char*() const { return get_global_path().c_str(); }
         // strings are all in UTF-8
-        const std::string& getVolumeName() const { return volume_name; }
-        const YIELD::Path& getLocalPath() const { return local_path; }
-        const std::string& getGlobalPath() const { return global_path; } // Volume + /-separated local path
-
+        const std::string& get_volume_name() const { return volume_name; }
+        const YIELD::Path& get_local_path() const { return local_path; }
+        const std::string& get_global_path() const { return global_path; } // Volume + /-separated local path
+        size_t size() const { return get_global_path().size(); }
+        
       private:
         std::string volume_name;
         std::string global_path;

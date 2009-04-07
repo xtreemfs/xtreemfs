@@ -141,7 +141,8 @@ namespace org
         xtfs_bin( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
-          std::ostringstream debug_level_default_ss; debug_level_default_ss << DEBUG_LEVEL_DEFAULT;
+          std::ostringstream debug_level_default_ss; 
+          debug_level_default_ss << static_cast<uint16_t>( DEBUG_LEVEL_DEFAULT );
           debug_level_default_str = debug_level_default_ss.str();
           addOption( OPTION_DEBUG_LEVEL, "-d", "--debug", debug_level_default_str.c_str() );
           addOption( OPTION_DEBUG_LEVEL, "--debug-level", "--debug_level", debug_level_default_str.c_str() );
