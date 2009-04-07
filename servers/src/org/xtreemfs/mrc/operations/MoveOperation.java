@@ -72,7 +72,7 @@ public class MoveOperation extends MRCOperation {
             
             final VolumeManager vMan = master.getVolumeManager();
             final FileAccessManager faMan = master.getFileAccessManager();
-
+            
             validateContext(rq);
             
             final Path sp = new Path(rqArgs.getSource_path());
@@ -149,7 +149,7 @@ public class MoveOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-                        
+            
             switch (sourceType) {
             
             // source is a directory
@@ -167,7 +167,7 @@ public class MoveOperation extends MRCOperation {
                 {
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -192,7 +192,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -220,7 +220,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
@@ -258,7 +258,7 @@ public class MoveOperation extends MRCOperation {
                     
                     // relink the metadata object to the parent directory of
                     // the target path and remove the former link
-                    short newLinkCount = sMan.delete(sRes.getParentDirId(), sRes.getFileName(), update);
+                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
                     source.setLinkCount(newLinkCount);
                     source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
                     sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);

@@ -102,17 +102,16 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param readOnly
      */
     public BufferBackedFileMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, long size, int perms, long w32Atrrs,
-        short linkCount, int epoch, int issEpoch, boolean readOnly, short collCount) {
+        long fileId, int atime, int ctime, int mtime, long size, int perms, long w32Atrrs, short linkCount,
+        int epoch, int issEpoch, boolean readOnly, short collCount) {
         
         // frequently changed metadata
         fcKeyBuf = generateKeyBuf(parentId, fileName, FC_METADATA, collCount);
-        fcValBuf = ByteBuffer.wrap(new byte[20]).putInt(atime).putInt(ctime).putInt(mtime).putLong(
-            size);
+        fcValBuf = ByteBuffer.wrap(new byte[20]).putInt(atime).putInt(ctime).putInt(mtime).putLong(size);
         
         // rarely changed metadata
-        rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId,
-            perms, w32Atrrs, linkCount, epoch, issEpoch, readOnly, collCount);
+        rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId, perms,
+            w32Atrrs, linkCount, epoch, issEpoch, readOnly, collCount);
         
         // xLocList metadata
         xLocList = null;
@@ -140,8 +139,8 @@ public class BufferBackedFileMetadata implements FileMetadata {
         fcValBuf = ByteBuffer.wrap(new byte[12]).putInt(atime).putInt(ctime).putInt(mtime);
         
         // rarely changed metadata
-        rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms,
-            w32Attrs, linkCount, collCount);
+        rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms, w32Attrs,
+            linkCount, collCount);
         
         // xLocList metadata
         xLocList = null;
@@ -301,15 +300,15 @@ public class BufferBackedFileMetadata implements FileMetadata {
     @Override
     public void setOwnerAndGroup(String owner, String group) {
         
-        BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata
-                .getFileName(), owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata
-                .getW32Attrs(), rcMetadata.getLinkCount(), (short) 0) : new BufferBackedRCMetadata(
-            0, rcMetadata.getFileName(), owner, group, rcMetadata.getId(), rcMetadata.getPerms(),
-            rcMetadata.getW32Attrs(), rcMetadata.getLinkCount(), rcMetadata.getEpoch(), rcMetadata
-                    .getIssuedEpoch(), rcMetadata.isReadOnly(), (short) 0);
+        BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
+            owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
+                    .getLinkCount(), (short) 0) : new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
+            owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
+                    .getLinkCount(), rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata
+                    .isReadOnly(), (short) 0);
         
-        rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(),
-            tmp.getValue());
+        rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(), tmp
+                .getValue());
     }
     
     public byte[] getFCMetadataKey() {
@@ -363,6 +362,17 @@ public class BufferBackedFileMetadata implements FileMetadata {
     public int getIndexId() {
         return indexId;
     }
+    
+//    public String toString() {
+//        
+//        String s = isDirectory() ? "dir" : "file" + " id=" + getId() + " name=" + getFileName() + " mode="
+//            + getPerms() + " w32Attrs=" + getW32Attrs() + " atime=" + getAtime() + " mtime=" + getMtime()
+//            + " ctime=" + getCtime() + " owner=" + getOwnerId() + " group=" + getOwningGroupId();
+//        if (!isDirectory())
+//            s += " size=" + getSize() + " epoch=" + getEpoch() + " issEpoch=" + getIssuedEpoch();
+//        
+//        return s;
+//    }
     
     private ByteBuffer generateKeyBuf(long parentId, String fileName, int type, short collCount) {
         

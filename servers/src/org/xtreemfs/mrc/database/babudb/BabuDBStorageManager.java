@@ -26,7 +26,9 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -299,6 +301,53 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public short unlink(final long parentId, final String fileName, final AtomicDBUpdate update)
+        throws DatabaseException {
+        
+        try {
+            
+            // check whether the file refers to a hard link
+            BufferBackedFileMetadata file = BabuDBStorageHelper.getMetadata(database, dbName, parentId,
+                fileName);
+            
+            boolean lastLink = file.getLinkCount() == 1;
+            
+            // decrement the link count
+            file.setLinkCount((short) (file.getLinkCount() - 1));
+            
+            short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, dbName, parentId,
+                fileName);
+            
+            List<byte[]> fileKeys = new LinkedList<byte[]>();
+            
+            byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) -1);
+            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName,
+                BabuDBStorageManager.FILE_INDEX, prefix);
+            
+            while (it.hasNext()) {
+                byte[] key = it.next().getKey();
+                if (BabuDBStorageHelper.getFileCollisionNumber(key) == collNumber)
+                    fileKeys.add(key);
+            }
+            
+            // if there are links remaining after the deletion, update
+            // the link count
+            if (!lastLink)
+                update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file.getId(),
+                    FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
+            
+            for (byte[] key : fileKeys)
+                update.addUpdate(FILE_INDEX, key, null);
+            
+            return file.getLinkCount();
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+        
+    }
+    
+    @Override
     public short delete(final long parentId, final String fileName, final AtomicDBUpdate update)
         throws DatabaseException {
         
@@ -494,6 +543,10 @@ public class BabuDBStorageManager implements StorageManager {
                 if (uid.equals(xattr.getOwner()) && key.equals(xattr.getKey()))
                     return xattr.getValue();
             }
+            
+            it = database.directPrefixLookup(dbName, XATTRS_INDEX, new byte[0]);
+            while (it.hasNext())
+                System.out.println(Arrays.toString(it.next().getKey()));
             
             return null;
             

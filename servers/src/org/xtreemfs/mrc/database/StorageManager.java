@@ -120,6 +120,8 @@ public interface StorageManager {
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
+    public short unlink(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
+    
     public short delete(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
     
     // getting metadata
