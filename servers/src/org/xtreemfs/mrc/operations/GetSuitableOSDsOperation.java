@@ -67,7 +67,7 @@ public class GetSuitableOSDsOperation extends MRCOperation {
             
             ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(volumeId);
             StringSet uuids = new StringSet();
-            for (int i = 0; i < usableOSDs.calculateSize(); i++)
+            for (int i = 0; i < usableOSDs.size(); i++)
                 uuids.add(usableOSDs.get(i).getUuid());
             
             // set the response

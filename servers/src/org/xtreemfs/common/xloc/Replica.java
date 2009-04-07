@@ -102,4 +102,19 @@ public class Replica {
     public ServiceUUID getOSDForOffset(long offset) {
         return getOSDs().get(getStripingPolicy().getOSDforOffset(offset));
     }
+
+    /**
+     * Checks if the given OSD is part of this Replica.
+     * @param osd
+     * @return
+     */
+    public boolean containsOSD(ServiceUUID osd) {
+        boolean contained = false;
+        for(ServiceUUID o : getOSDs()) {
+            contained = osd.equals(o);
+            if(contained)
+                break;
+        }
+        return contained;
+    }
 }

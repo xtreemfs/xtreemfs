@@ -92,6 +92,21 @@ public class XLocations {
     public Replica getReplica(int replicaNo) {
         return replicas.get(replicaNo);
     }
+    
+    /**
+     * Checks if the given OSD is already used for this file.
+     * @param osd
+     * @return
+     */
+    public boolean containsOSD(ServiceUUID osd) {
+        boolean contained = false;
+        for(Replica r : getReplicas()) {
+            contained = r.containsOSD(osd);
+            if(contained)
+                break;
+        }
+        return contained;
+    }
 
     /**
      * Provides a list of OSDs which are containing replicas of the given object.

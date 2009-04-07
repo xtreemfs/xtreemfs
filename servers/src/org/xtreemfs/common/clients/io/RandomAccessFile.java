@@ -455,13 +455,13 @@ public class RandomAccessFile implements ObjectStore {
         try {
             if (mode) {
                 flush();
-                
+
                 // set read only
                 RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, pathName,
-                        "read_only", "true", 0);
+                        "xtreemfs.read_only", "true", 0);
                 r.get();
                 r.freeBuffers();
-                
+
                 forceXCapUpdate();
 
                 // get correct filesize
@@ -482,10 +482,10 @@ public class RandomAccessFile implements ObjectStore {
                 else {
                     // set read only
                     RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, pathName,
-                            "read_only", "false", 0);
+                            "xtreemfs.read_only", "false", 0);
                     r.get();
                     r.freeBuffers();
-                    
+
                     forceFileCredentialsUpdate(this.mode);
                 }
             }
@@ -497,30 +497,47 @@ public class RandomAccessFile implements ObjectStore {
     }
 
     public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy) throws Exception {
-        if(isReadOnly){
+        XLocations xLoc = new XLocations(fileCredentials.getXlocs());
+
+        // check correct parameters
+        if (osds.size() != spPolicy.getWidth())
+            throw new IllegalArgumentException("Too many or less OSDs in list.");
+        for (ServiceUUID osd : osds) {
+            if (xLoc.containsOSD(osd)) // OSD is used for any replica so far
+                throw new IllegalArgumentException(
+                        "At least one OSD from list is already used for this file.");
+        }
+
+        if (isReadOnly) {
             StringSet osdSet = new StringSet();
             for (ServiceUUID osd : osds) {
                 osdSet.add(osd.toString());
             }
-            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy, 0, osdSet);
-            mrcClient.xtreemfs_replica_add(mrcAddress, credentials, fileId, newReplica);
-    
-            forceXCapUpdate();
+
+            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy, 0,
+                    osdSet);
+            RPCResponse r = mrcClient.xtreemfs_replica_add(mrcAddress, credentials, fileId, newReplica);
+            r.get();
+            r.freeBuffers();
+
+            forceFileCredentialsUpdate(translateMode("r"));
         } else
             throw new IOException("file is not marked as read-only.");
     }
-    
+
     public void removeReplica(Replica replica) throws Exception {
-        if(isReadOnly)
+        if (isReadOnly)
             removeReplica(replica.getHeadOsd());
         else
             throw new IOException("file is not marked as read-only.");
     }
 
     public void removeReplica(ServiceUUID osd) throws Exception {
-        mrcClient.xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd.toString());
+        RPCResponse r = mrcClient.xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd.toString());
+        r.get();
+        r.freeBuffers();
 
-        forceXCapUpdate();
+        forceFileCredentialsUpdate(translateMode("r"));
     }
 
     /**
@@ -529,17 +546,23 @@ public class RandomAccessFile implements ObjectStore {
     public void removeAllReplicas() throws Exception {
         XLocations xLoc = new XLocations(fileCredentials.getXlocs());
         List<Replica> replicas = xLoc.getReplicas();
-        for(int i=1; i<replicas.size(); i++) {
+        for (int i = 1; i < replicas.size(); i++) {
             removeReplica(replicas.get(i));
         }
     }
 
-    public List<ServiceUUID> getSuitableOSDs() throws Exception {
+    public List<ServiceUUID> getSuitableOSDsForAReplica() throws Exception {
+        XLocations xLoc = new XLocations(fileCredentials.getXlocs());
+
         RPCResponse<StringSet> r = mrcClient.xtreemfs_get_suitable_osds(mrcAddress, fileId);
         StringSet osds = r.get();
+        r.freeBuffers();
+
         ArrayList<ServiceUUID> osdList = new ArrayList<ServiceUUID>();
         for (String osd : osds) {
-            osdList.add(new ServiceUUID(osd));
+           ServiceUUID uuid = new ServiceUUID(osd);
+           if (!xLoc.containsOSD(uuid)) // OSD is not used for any replica so far
+               osdList.add(uuid);
         }
         return osdList;
     }

@@ -58,11 +58,11 @@ public class RandomAccessFileTest extends TestCase {
 
     private MRCConfig mrcCfg1;
 
-    private OSDConfig osdConfig1, osdConfig2;
+    private OSDConfig osdConfig1, osdConfig2, osdConfig3, osdConfig4;
 
     private DIRConfig dsCfg;
 
-    private OSD osd1, osd2;
+    private OSD osd1, osd2, osd3, osd4;
 
     private InetSocketAddress mrc1Address;
 
@@ -102,6 +102,8 @@ public class RandomAccessFileTest extends TestCase {
 
         osdConfig1 = SetupUtils.createOSD1Config();
         osdConfig2 = SetupUtils.createOSD2Config();
+        osdConfig3 = SetupUtils.createOSD3Config();
+        osdConfig4 = SetupUtils.createOSD4Config();
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
 
@@ -112,6 +114,8 @@ public class RandomAccessFileTest extends TestCase {
         // start the OSDs
         osd1 = new OSD(osdConfig1);
         osd2 = new OSD(osdConfig2);
+        osd3 = new OSD(osdConfig3);
+        osd4 = new OSD(osdConfig4);
 
         // start MRC
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
@@ -143,6 +147,8 @@ public class RandomAccessFileTest extends TestCase {
         mrc1.shutdown();
         osd1.shutdown();
         osd2.shutdown();
+        osd3.shutdown();
+        osd4.shutdown();
         
         testEnv.shutdown();
 
@@ -237,11 +243,8 @@ public class RandomAccessFileTest extends TestCase {
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs().getRepUpdatePolicy());
 
         // get OSDs for a replica
-        List<ServiceUUID> replica1 = randomAccessFile.getSuitableOSDs();
-        for (int i = 0; i < replica1.size(); i++) {
-            if (i >= randomAccessFile.getStripingPolicy().getWidth())
-                replica1.remove(i);
-        }
+        List<ServiceUUID> replica1 = randomAccessFile.getSuitableOSDsForAReplica();
+        replica1 = replica1.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a replica
         randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy());
@@ -251,11 +254,8 @@ public class RandomAccessFileTest extends TestCase {
         // TODO: check if the correct OSDs are in the list as a replica
 
         // get OSDs for a replica
-        List<ServiceUUID> replica2 = randomAccessFile.getSuitableOSDs();
-        for (int i = 0; i < replica1.size(); i++) {
-            if (i >= randomAccessFile.getStripingPolicy().getWidth())
-                replica1.remove(i);
-        }
+        List<ServiceUUID> replica2 = randomAccessFile.getSuitableOSDsForAReplica();
+        replica2 = replica2.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a second replica
         randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy());
