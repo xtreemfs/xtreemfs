@@ -24,7 +24,7 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
       next_sep = global_path.find( DISK_PATH_SEPARATOR, next_sep );
     }
 #else
-    if ( local_path.getHostCharsetPath()[0] == DISK_PATH_SEPARATOR )
+    if ( local_path.get_host_charset_path()[0] == DISK_PATH_SEPARATOR )
       global_path.append( this->local_path.get_utf8_path() );
     else
     {
