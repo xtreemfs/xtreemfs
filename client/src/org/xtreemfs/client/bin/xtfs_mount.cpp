@@ -99,17 +99,17 @@ namespace org
     //      argvv.push_back( argv[0] );
           if ( get_debug() )
             argvv.push_back( const_cast<char*>( "-d" ) );
-          if ( get_foreground() )
+          if ( foreground )
             argvv.push_back( const_cast<char*>( "-f" ) );
-          if ( !get_fuse_o_args().empty() )
+          if ( !fuse_o_args.empty() )
           {
             std::string fuse_o_args( "-o" );
-            fuse_o_args.append( get_fuse_o_args() );
+            fuse_o_args.append( this->fuse_o_args );
             argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
           }
           argvv.push_back( NULL );
           struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-          ret = fuse.main( fuse_args_, get_mount_point().c_str() );
+          ret = fuse.main( fuse_args_, mount_point.c_str() );
 #endif
 
           YIELD::SharedObject::decRef( *xtreemfs_volume );
