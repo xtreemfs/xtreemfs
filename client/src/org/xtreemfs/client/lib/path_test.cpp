@@ -50,7 +50,7 @@ TEST_EX( Path_emptylocal, PathTestCase, Path )
   Path path( TEST_VOLUME_NAME, "" );
   ASSERT_EQUAL( path.getVolumeName(), TEST_VOLUME_NAME );
   ASSERT_EQUAL( path.getGlobalPath(), std::string( TEST_VOLUME_NAME ) + "/" );
-  ASSERT_TRUE( path.getLocalPath().getHostCharsetPath().empty() );
+  ASSERT_TRUE( path.getLocalPath().empty() );
 }
 
 TEST_MAIN( Path )

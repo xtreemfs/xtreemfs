@@ -46,7 +46,7 @@ Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const 
     SSL_library_init();
     OpenSSL_add_all_algorithms(); // TODO: this should be in a shared main class in the binaries
 
-    BIO* bio = BIO_new_file( pkcs12_file_path.getHostCharsetPath().c_str(), "rb" );
+    BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
     if ( bio != NULL )
     {
       PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );

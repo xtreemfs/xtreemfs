@@ -143,7 +143,7 @@ int main( int argc, char** argv )
       YIELD::Volume* xtreemfs_volume = new Volume( options.get_volume_name(), *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
       if ( options.get_cache() )
-        xtreemfs_volume = new yieldfs::TimeCachedVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
+        xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
       if ( options.get_debug() )
         xtreemfs_volume = new yieldfs::TracingVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
 
