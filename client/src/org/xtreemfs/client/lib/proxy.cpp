@@ -98,7 +98,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
             if ( conn == NULL )
               reconnect_tries_left = reconnect( reconnect_tries_left );
 
-            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_ctx != NULL ) // Blocking
+            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL ) // Blocking
             {
               YIELD::SocketLib::setBlocking( conn->get_socket() );
 
@@ -223,7 +223,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     reconnect_tries_left--;
 
     // Create the conn object based on the URI type
-    if ( ssl_ctx == NULL )
+    if ( ssl_context == NULL )
       conn = new YIELD::TCPConnection( peer_ip, uri.get_port(), NULL );
     else
       conn = new YIELD::SSLConnection( peer_ip, uri.get_port(), ssl_context );
@@ -232,7 +232,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     fd_event_queue.attachSocket( conn->get_socket(), conn, false, false ); // Attach without read or write notifications enabled
 
     // Now try the actual connect
-    if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_ctx != NULL ) // Blocking
+    if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL ) // Blocking
     {
       YIELD::SocketLib::setBlocking( conn->get_socket() );
 

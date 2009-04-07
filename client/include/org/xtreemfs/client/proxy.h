@@ -56,7 +56,6 @@ namespace org
         uint32_t flags;
         uint8_t reconnect_tries_max;
         uint64_t operation_timeout_ms;
-        SSL_CTX* ssl_ctx;
 
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
