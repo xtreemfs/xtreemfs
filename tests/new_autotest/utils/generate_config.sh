@@ -24,10 +24,10 @@ osd_config() {
 		echo "ssl.enabled = false" >> $OUTPUT
 	else
 		echo "ssl.enabled = true" >> $OUTPUT
-		echo "ssl.service_creds = ".$CERT_DIR."OSD.p12" >> $OUTPUT
+		echo "ssl.service_creds = $CERT_DIR/OSD.p12" >> $OUTPUT
 		echo "ssl.service_creds.pw = passphrase" >> $OUTPUT
 		echo "ssl.service_creds.container = PKCS12" >> $OUTPUT
-		echo "ssl.trusted_certs = ".$CERT_DIR."trusted.jks" >> $OUTPUT
+		echo "ssl.trusted_certs = $CERT_DIR/trusted.jks" >> $OUTPUT
 		echo "ssl.trusted_certs.pw = passphrase" >> $OUTPUT
 		echo "ssl.trusted_certs.container = JKS" >> $OUTPUT
 	fi
@@ -60,10 +60,10 @@ mrc_config() {
 		echo "ssl.enabled = false" >> $OUTPUT
 	else
 		echo "ssl.enabled = true" >> $OUTPUT
-		echo "ssl.service_creds = ".$CERT_DIR."MRC.p12" >> $OUTPUT
+		echo "ssl.service_creds = $CERT_DIR/MRC.p12" >> $OUTPUT
 		echo "ssl.service_creds.pw = passphrase" >> $OUTPUT
 		echo "ssl.service_creds.container = PKCS12" >> $OUTPUT
-		echo "ssl.trusted_certs = ".$CERT_DIR."trusted.jks" >> $OUTPUT
+		echo "ssl.trusted_certs = $CERT_DIR/trusted.jks" >> $OUTPUT
 		echo "ssl.trusted_certs.pw = passphrase" >> $OUTPUT
 		echo "ssl.trusted_certs.container = JKS" >> $OUTPUT
 	fi
@@ -85,10 +85,10 @@ dir_config() {
 		echo "ssl.enabled = false" >> $OUTPUT
 	else
 		echo "ssl.enabled = true" >> $OUTPUT
-		echo "ssl.service_creds = ".$CERT_DIR."DIR.p12" >> $OUTPUT
+		echo "ssl.service_creds = $CERT_DIR/DIR.p12" >> $OUTPUT
 		echo "ssl.service_creds.pw = passphrase" >> $OUTPUT
 		echo "ssl.service_creds.container = PKCS12" >> $OUTPUT
-		echo "ssl.trusted_certs = ".$CERT_DIR."trusted.jks" >> $OUTPUT
+		echo "ssl.trusted_certs = $CERT_DIR/trusted.jks" >> $OUTPUT
 		echo "ssl.trusted_certs.pw = passphrase" >> $OUTPUT
 		echo "ssl.trusted_certs.container = JKS" >> $OUTPUT
 	fi

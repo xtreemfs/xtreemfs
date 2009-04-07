@@ -6,7 +6,7 @@ create_config() {
 	flags="-d $DEBUG "
 	if [ $SSL_ENABLED -ne 0 ]
 	then
-		flags="$flags -s -c $XTREEMFS_DIR/servers/test/certs/ "
+		flags="$flags -s -c $XTREEMFS_DIR/servers/test/certs "
 	fi
 
 	#create configs
@@ -123,7 +123,7 @@ do_mount() {
 
 		echo "mounting volume test_$i in $i..."
 
-		echo "mouting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
+		echo "mounting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
 		$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i > $TEST_DIR/log/client_$i.log 2>&1 &
 
 		if [ $? -ne 0 ]; then
@@ -142,11 +142,9 @@ do_mount() {
 		echo "mounting volume test_$i in nondirect_$i..."
 
 		mkdir $TEST_DIR/mnt/nondirect_$i
-		#$XTREEMFS/bin/xtfs_mount -f $CLIENT_DEBUG $sslmnt\
-		#-o volume_url=${schema}localhost/test_$i \
-		#-o logfile=/dev/null,debug=$CLIENT_DEBUG_LEVEL \
-		#$WKDIR/mnt_nondirect$i > $WKDIR/log/fuse_nondirect$i.log 2>&1 &
-		$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslmnt ${schema}localhost:32638/test_$i \
+		echo "mounting: XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
+		$TEST_DIR/mnt/nondirect_$i"
+		$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
 		$TEST_DIR/mnt/nondirect_$i > $TEST_DIR/log/client_nondirect$i.log 2>&1 &
 
 		if [ $? -ne 0 ]; then
@@ -207,7 +205,7 @@ do
 	;;
     d ) DEBUG=$OPTARG
 	;;
-    o ) NUM_OSD=$OPTARG
+    o ) NUM_OSDS=$OPTARG
 	;;
     w ) STRIPE_WIDTH=$OPTARG
 	;;
@@ -255,4 +253,5 @@ echo "export TEST_BASEDIR=\"$TEST_BASEDIR\"" >> $TEST_DIR/globals.sh
 echo "export TEST_SUMMARY=\"$TEST_DIR/test_summary\"" >> $TEST_DIR/globals.sh
 echo "export MOUNT_DIR=\"$TEST_DIR/mnt\"" >> $TEST_DIR/globals.sh
 echo "export XTREEMFS_DIR=\"$XTREEMFS_DIR\"" >> $TEST_DIR/globals.sh
+echo "export SSL_ENABLED=$SSL_ENABLED" >> $TEST_DIR/globals.sh
 

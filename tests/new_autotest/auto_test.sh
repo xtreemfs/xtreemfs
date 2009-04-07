@@ -14,8 +14,7 @@ cat $TEST_DIR/test_summary > $ATTACHMENT
 echo "" >> $ATTACHMENT
 cat $TEST_LOG >> $ATTACHMENT
 
-mailx -a $ATTACHMENT -s "$subject" -r "your friendly XtreemFS test robot <kolbeck@zib.de>" kolbeck@zib.de<< EOF
-#xtreemfs-test@googlegroups.com<< EOF
+mailx -a $ATTACHMENT -s "$subject" -r "your friendly XtreemFS test robot <kolbeck@zib.de>" xtreemfs-test@googlegroups.com<< EOF
 $subject
 
 The logfile of this test run is attached to this email.
@@ -23,7 +22,7 @@ Logfiles and databases can be found in $WKDIR on $hostname.
 
 EOF
 
-rm $attchmnt
+rm $ATTACHMENT
 }
 
 export JAVA_HOME=/opt/jdk1.6.0_13
@@ -42,12 +41,13 @@ ATTACHMENT="$TEST_DIR/summary_and_testlog.txt"
 toScreen=0
 revision=""
 usessl=""
+optionalFlags=""
 
 tmp=`readlink -f $0`
 TEST_BASEDIR=`dirname $tmp`
 
 
-while getopts “hdsr:” OPTION
+while getopts “hdsr:f:” OPTION
 do
      case $OPTION in
          h)
@@ -66,6 +66,9 @@ do
              revision=" -r ${OPTARG} "
 	     echo "using revision $revision"
              ;;
+	 f)
+	     optionalFlags=$OPTARG
+	     ;;
          ?)
              usage
              exit
@@ -104,7 +107,7 @@ if [ $? -ne 0 ]; then
 	exit
 fi	
 
-$TEST_BASEDIR/start_environment.sh $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
+$TEST_BASEDIR/start_environment.sh $optionalFlags -d 3 -o 3 $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
 result=$?
 
 if [ $result -eq 0 ]

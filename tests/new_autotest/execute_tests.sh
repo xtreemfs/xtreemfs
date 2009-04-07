@@ -35,3 +35,4 @@ if [ $result -eq 0 ]; then
 else
 	echo -e "\n\n=================== F A I L E D =====================\n\n"
 fi
+exit $result
