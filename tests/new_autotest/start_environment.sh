@@ -121,59 +121,70 @@ do_mount() {
 			exit 1
 		fi
 
-		echo "mounting volume test_$i in $i..."
-
-		echo "mounting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
-		$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i > $TEST_DIR/log/client_$i.log 2>&1 &
-
-		if [ $? -ne 0 ]; then
-			echo "FAILED: cannot mount volume test_$i to $TEST_DIR/mnt/$i"
-			$TEST_BASEDIR/stop_environment.sh $TEST_DIR
-			exit 1
-		fi
 		VOLUMES="$VOLUMES $TEST_DIR/mnt/$i"
 		VOLNAMES="$VOLNAMES test_$i"
-	done
-	export VOLUMES
-	export VOLNAMES
-
-	NONDIRECT_VOLUMES=""
-	for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
-		echo "mounting volume test_$i in nondirect_$i..."
-
-		mkdir $TEST_DIR/mnt/nondirect_$i
-		echo "mounting: XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
-		$TEST_DIR/mnt/nondirect_$i"
-		$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
-		$TEST_DIR/mnt/nondirect_$i > $TEST_DIR/log/client_nondirect$i.log 2>&1 &
-
-		if [ $? -ne 0 ]; then
-			echo "FAILED: cannot mount volume test_$i to $TEST_DIR/mnt/nondirect_$i"
-			$TEST_BASEDIR/stop_environment.sh $TEST_DIR
-			exit 1
-		fi
 		NONDIRECT_VOLUMES="$NONDIRECT_VOLUMES $TEST_DIR/mnt/nondirect_$i"
 	done
+
+	export VOLUMES
+	export VOLNAMES
 	export NONDIRECT_VOLUMES
+	
+	if [ $NO_CLIENT -eq 0 ]
+	then
+		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
+			echo "mounting volume test_$i in $i..."
+	
+			echo "mounting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
+			$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i > $TEST_DIR/log/client_$i.log 2>&1 &
+	
+			if [ $? -ne 0 ]; then
+				echo "FAILED: cannot mount volume test_$i to $TEST_DIR/mnt/$i"
+				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
+				exit 1
+			fi
+			
+		done
+		
+		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
+			echo "mounting volume test_$i in nondirect_$i..."
+	
+			mkdir $TEST_DIR/mnt/nondirect_$i
+			echo "mounting: XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
+			$TEST_DIR/mnt/nondirect_$i"
+			$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
+			$TEST_DIR/mnt/nondirect_$i > $TEST_DIR/log/client_nondirect$i.log 2>&1 &
+	
+			if [ $? -ne 0 ]; then
+				echo "FAILED: cannot mount volume test_$i to $TEST_DIR/mnt/nondirect_$i"
+				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
+				exit 1
+			fi
+			
+		done
+	fi
 }
 
 check_mount() {
 
-	for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
-
-		if [ `grep -c "$TEST_DIR/mnt/$i" /proc/mounts` -eq 0 ]; then
-			echo "FAILED: volume test_$i not mounted in $TEST_DIR/mnt/$i, probably crashed"
-			$TEST_BASEDIR/stop_environment.sh $TEST_DIR
-			exit 1
-		fi
-
-		if [ `grep -c "$TEST_DIR/mnt/nondirect_$i" /proc/mounts` -eq 0 ]; then
-			echo "FAILED: volume test_$i (nondirect) not mounted in $TEST_DIR/mnt/nondirect_$i, probably crashed"
-			$TEST_BASEDIR/stop_environment.sh $TEST_DIR
-			exit 1
-		fi
-
-	done
+	if [ $NO_CLIENT -eq 0 ]
+	then
+		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
+	
+			if [ `grep -c "$TEST_DIR/mnt/$i" /proc/mounts` -eq 0 ]; then
+				echo "FAILED: volume test_$i not mounted in $TEST_DIR/mnt/$i, probably crashed"
+				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
+				exit 1
+			fi
+	
+			if [ `grep -c "$TEST_DIR/mnt/nondirect_$i" /proc/mounts` -eq 0 ]; then
+				echo "FAILED: volume test_$i (nondirect) not mounted in $TEST_DIR/mnt/nondirect_$i, probably crashed"
+				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
+				exit 1
+			fi
+	
+		done
+	fi
 
 }
 
@@ -185,6 +196,8 @@ usage() {
 	echo "-s enables SSL (using certs from trunk/servers/test/certs)"
 	echo "-o <num_osds> sets the number of OSDs to use"
 	echo "-w <width> sets the striping with in kB"
+        echo "-f <args> pass extra arguments to xtfs_mount"
+        echo "-n do not mount volumes"
 	echo ""
 }
 
@@ -194,8 +207,9 @@ DEBUG=1
 NUM_OSDS=1
 STRIPE_WIDTH=128
 CLIENT_FLAGS=""
+NO_CLIENT=0
 
-while getopts ":sc:d:w:o:f:" Option
+while getopts ":snc:d:w:o:f:" Option
 # Initial declaration.
 # a, b, c, d, e, f, and g are the options (flags) expected.
 # The : after option 'e' shows it will have an argument passed with it.
@@ -210,6 +224,9 @@ do
     w ) STRIPE_WIDTH=$OPTARG
 	;;
     f ) CLIENT_FLAGS=$OPTARG
+        ;;
+    n ) NO_CLIENT=1
+        ;;
   esac
 done
 shift $(($OPTIND - 1))
