@@ -6,10 +6,11 @@
 
 #include "org/xtreemfs/client/proxy.h"
 
-#include <string>
-#include <vector>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "SimpleOpt.h"
 
@@ -140,8 +141,10 @@ namespace org
         xtfs_bin( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
-          addOption( OPTION_DEBUG_LEVEL, "-d", "--debug" );
-          addOption( OPTION_DEBUG_LEVEL, "--debug-level", "--debug_level" );
+          std::ostringstream debug_level_default_ss; debug_level_default_ss << DEBUG_LEVEL_DEFAULT;
+          debug_level_default_str = debug_level_default_ss.str();
+          addOption( OPTION_DEBUG_LEVEL, "-d", "--debug", debug_level_default_str.c_str() );
+          addOption( OPTION_DEBUG_LEVEL, "--debug-level", "--debug_level", debug_level_default_str.c_str() );
           debug_level = 0;
 
           addOption( OPTION_HELP, "-h", "--help" );
@@ -213,7 +216,7 @@ namespace org
         const char *program_name, *program_description, *files_usage;
 
         // Built-in options
-        uint8_t debug_level;
+        uint8_t debug_level; std::string debug_level_default_str;
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
         YIELD::SSLContext* ssl_context;
