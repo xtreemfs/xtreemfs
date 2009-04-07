@@ -115,7 +115,7 @@ do_mount() {
 		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
 			echo "creating volume test_$i ..."
 	
-			$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -m 0666 -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
+			$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
 			if [ $? -ne 0 ]; then
 				echo "FAILED: cannot create volume test_$i"
 				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
