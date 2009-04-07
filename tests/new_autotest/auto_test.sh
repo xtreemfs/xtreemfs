@@ -107,7 +107,7 @@ if [ $? -ne 0 ]; then
 	exit
 fi	
 
-$TEST_BASEDIR/start_environment.sh $optionalFlags -d 3 -o 3 $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
+$TEST_BASEDIR/start_environment.sh $optionalFlags -d 2 -o 3 $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
 result=$?
 
 if [ $result -eq 0 ]

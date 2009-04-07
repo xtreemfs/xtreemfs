@@ -139,7 +139,7 @@ do_mount() {
 			echo "mounting volume test_$i in $i..."
 	
 			echo "mounting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
-			$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i > $TEST_DIR/log/client_$i.log 2>&1 &
+			$XTREEMFS_DIR/client/bin/xtfs_mount -d $DEBUG $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i > $TEST_DIR/log/client_$i.log 2>&1 &
 	
 			if [ $? -ne 0 ]; then
 				echo "FAILED: cannot mount volume test_$i to $TEST_DIR/mnt/$i"
@@ -155,7 +155,7 @@ do_mount() {
 			mkdir $TEST_DIR/mnt/nondirect_$i
 			echo "mounting: XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
 			$TEST_DIR/mnt/nondirect_$i"
-			$XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
+			$XTREEMFS_DIR/client/bin/xtfs_mount -d $DEBUG $CLIENT_FLAGS $sslflags  ${schema}localhost:32638/test_$i \
 			$TEST_DIR/mnt/nondirect_$i > $TEST_DIR/log/client_nondirect$i.log 2>&1 &
 	
 			if [ $? -ne 0 ]; then
