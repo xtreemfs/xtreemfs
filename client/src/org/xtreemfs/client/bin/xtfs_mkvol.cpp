@@ -86,7 +86,7 @@ namespace org
 
               case XTFS_MKVOL_OPTION_MODE:
               {
-                mode = atoi( arg );
+                mode = strtol( arg, NULL, 0 );
                 if ( mode == 0 )
                   mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
               }
