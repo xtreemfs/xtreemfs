@@ -24,6 +24,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.osd.operations;
 
 import java.util.List;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -31,7 +32,6 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.utils.Serializable;
@@ -96,7 +96,7 @@ public final class DeleteOperation extends OSDOperation {
 
     public void disseminateDeletes(final OSDRequest rq, final unlinkRequest args) {
         final Replica localReplica = rq.getLocationList().getLocalReplica();
-        if (localReplica.isStriped() && localReplica.isHeadOsd(localUUID)) {
+        if (localReplica.isStriped() && localReplica.getHeadOsd().equals(localUUID)) {
             //striped replica, dissmeninate unlink requests
             try {
                 final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();

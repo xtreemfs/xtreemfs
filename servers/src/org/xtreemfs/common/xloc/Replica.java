@@ -70,8 +70,12 @@ public class Replica {
         return this.osds.size() > 1;
     }
 
-    public boolean isHeadOsd(ServiceUUID localOSD) {
+/*    public boolean isHeadOsd(ServiceUUID localOSD) {
         return this.osds.get(0).equals(localOSD);
+    }*/
+
+    public ServiceUUID getHeadOsd() {
+        return this.osds.get(0);
     }
 
     public String toString() {

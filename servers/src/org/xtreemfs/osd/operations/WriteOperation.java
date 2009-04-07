@@ -26,14 +26,14 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.writeResponse;
-import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
@@ -80,21 +80,25 @@ public final class WriteOperation extends OSDOperation {
             rq.sendOSDException(ErrorCodes.INVALID_PARAMS, "offset must be < stripe size");
             return;
         }
+        
+        if (rq.getLocationList().getReplicaUpdatePolicy() == Constants.REPL_UPDATE_PC_RONLY) {
+            // file is read only
+            rq.sendException(new OSDException(ErrorCodes.FILE_IS_READ_ONLY,
+                    "Cannot write on read-only files.", ""));
+        } else {
+            master.objectReceived();
+            master.dataReceived(args.getObject_data().getData().capacity());
 
-        master.objectReceived();
-        master.dataReceived(args.getObject_data().getData().capacity());
+            master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), sp,
+                    args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
+                    rq.getLocationList(), rq, new WriteObjectCallback() {
 
-        master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), 
-                sp,
-                args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
-                rq.getLocationList(), rq,
-                new WriteObjectCallback() {
-
-            @Override
-            public void writeComplete(OSDWriteResponse result, Exception error) {
-                step2(rq,result,error);
-            }
-        } );
+                        @Override
+                        public void writeComplete(OSDWriteResponse result, Exception error) {
+                            step2(rq, result, error);
+                        }
+                    });
+        }
     }
 
     public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {

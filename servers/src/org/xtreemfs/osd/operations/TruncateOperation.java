@@ -25,16 +25,16 @@
 package org.xtreemfs.osd.operations;
 
 import java.util.List;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
-import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
@@ -70,7 +70,7 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if (!rq.getLocationList().getLocalReplica().isHeadOsd(localUUID)) {
+        if (!rq.getLocationList().getLocalReplica().getHeadOsd().equals(localUUID)) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "truncate must be executed at the head OSD (first OSD in replica)", ""));
             return;
         }

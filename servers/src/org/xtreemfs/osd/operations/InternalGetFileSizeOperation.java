@@ -23,10 +23,8 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.operations;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -34,22 +32,14 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
-import org.xtreemfs.interfaces.OSDInterface.readRequest;
-import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
-import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
-import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
-import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
-import org.xtreemfs.osd.storage.ObjectInformation;
 
 public final class InternalGetFileSizeOperation extends OSDOperation {
 
@@ -85,7 +75,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
 
             @Override
             public void getFileSizeComplete(long fileSize, Exception error) {
-
+                step2(rq, args, fileSize, error);
             }
         });
     }
@@ -98,23 +88,17 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
-                //FIXME: read only replication!
-            }
             if (rq.getLocationList().getLocalReplica().isStriped()) {
-                //non-striped case
-                sendResponse(rq, localFS);
-            } else {
                 //striped read
                 stripedGetFS(rq, args, localFS);
+            } else {
+                //non-striped case
+                sendResponse(rq, localFS);
             }
-
         }
-
     }
 
     private void stripedGetFS(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args, final long localFS) {
-        
         try {
             final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
             final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
@@ -157,7 +141,6 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
             for (RPCResponse r : gmaxRPCs)
                 r.freeBuffers();
         }
-
     }
 
     public void sendResponse(OSDRequest rq, long fileSize) {

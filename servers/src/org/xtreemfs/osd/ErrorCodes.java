@@ -90,6 +90,7 @@ public final class ErrorCodes {
     public static final int LEASE_TIMED_OUT = 31;
     
     public static final int NO_REPLICA_AVAIL = 50;
-    public static int EPOCH_OUTDATED = 14;
+    public static final int EPOCH_OUTDATED = 14;
 
+    public static final int FILE_IS_READ_ONLY = 15;
 }

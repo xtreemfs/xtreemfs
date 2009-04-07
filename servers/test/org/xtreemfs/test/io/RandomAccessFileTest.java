@@ -221,85 +221,77 @@ public class RandomAccessFileTest extends TestCase {
     }
 
     public void testReplicaCreationAndRemoval() throws Exception {
-        //randomAccessFile = new RandomAccessFile("rw", mrc1Address, volumeName + "/myDir/test2.txt", testEnv.getRpcClient(), userID, groupIDs);
+        randomAccessFile = new RandomAccessFile("rw", mrc1Address, volumeName + "/myDir/test2.txt", testEnv
+                .getRpcClient(), userID, groupIDs);
 
-        // // set file read-only
-        // randomAccessFile.setReadOnly(true);
-        //        
-        // // add a replica
-        // List<ServiceUUID> replica1 = new ArrayList<ServiceUUID>();
-        // while (true) {
-        // // TODO: get a list of "free" OSDs
-        // try {
-        // randomAccessFile.addReplica(replica1);
-        // break;
-        // } catch (Exception e) {
-        // wait(1000);
-        // }
-        // }
-        // // check
-        // assertEquals(2, randomAccessFile.getLocations().getNumberOfReplicas());
-        // if(!findReplicaInLocations(replica1))
-        // fail("Added OSD-list not found in location-list.");
-        //        
-        // // add a second replica
-        // List<ServiceUUID> replica2 = new ArrayList<ServiceUUID>();
-        // // TODO: get a list of "free" OSDs
-        // randomAccessFile.addReplica(replica2);
-        // // check
-        // assertEquals(3, randomAccessFile.getLocations().getNumberOfReplicas());
-        // if(!findReplicaInLocations(replica1))
-        // fail("Added 'old' OSD-list not found in location-list.");
-        // if(!findReplicaInLocations(replica2))
-        // fail("Added OSD-list not found in location-list.");
-        //
-        // // remove the first replica
-        // randomAccessFile.removeReplica(replica1);
-        // // check
-        // assertEquals(2, randomAccessFile.getLocations().getNumberOfReplicas());
-        // if(findReplicaInLocations(replica1))
-        // fail("Removed OSD-list found in location-list.");
-        // if(!findReplicaInLocations(replica2))
-        // fail("Added OSD-list not found in location-list.");
-        //        
-        // // try to remove read-only flag
-        // try {
-        // randomAccessFile.setReadOnly(false);
-        // fail("File must not marked as read-only, because replicas exists.");
-        // } catch (Exception e) {
-        // // do nothing
-        // }
-        //
-        // // remove the last replica
-        // randomAccessFile.removeReplica(replica2);
-        // // check
-        // assertEquals(1, randomAccessFile.getLocations().getNumberOfReplicas());
-        // if(findReplicaInLocations(replica2))
-        // fail("Removed OSD-list found in location-list.");
-        //        
-        // // try to remove read-only flag
-        // try {
-        // randomAccessFile.setReadOnly(false);
-        // } catch (Exception e) {
-        // fail("File should be able to marked as read-only, because replicas exists.");
-        // }
+        // write something
+        byte[] bytesIn = new String("Hallo").getBytes();
+        int length = bytesIn.length;
+        ReusableBuffer data = ReusableBuffer.wrap(bytesIn);
+        randomAccessFile.writeObject(0, 0, data);
+
+        // set file read-only
+        randomAccessFile.setReadOnly(true);
+
+        // check
+        assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs().getRepUpdatePolicy());
+
+        // get OSDs for a replica
+        List<ServiceUUID> replica1 = randomAccessFile.getSuitableOSDs();
+        for (int i = 0; i < replica1.size(); i++) {
+            if (i >= randomAccessFile.getStripingPolicy().getWidth())
+                replica1.remove(i);
+        }
+
+        // add a replica
+        randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy());
+        
+        // check
+        assertEquals(2, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
+        // TODO: check if the correct OSDs are in the list as a replica
+
+        // get OSDs for a replica
+        List<ServiceUUID> replica2 = randomAccessFile.getSuitableOSDs();
+        for (int i = 0; i < replica1.size(); i++) {
+            if (i >= randomAccessFile.getStripingPolicy().getWidth())
+                replica1.remove(i);
+        }
+
+        // add a second replica
+        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy());
+        // check
+        // check
+        assertEquals(3, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
+        // TODO: check if the correct OSDs are in the list as a replica
+
+        // remove the first replica
+        randomAccessFile.removeReplica(replica1.get(0));
+        // check
+        assertEquals(2, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
+        // TODO: check if the correct OSDs are in the list as a replica
+
+        // try to remove read-only flag
+        try {
+            randomAccessFile.setReadOnly(false);
+            fail("File must not marked as read-only, because replicas exists.");
+        } catch (Exception e) {
+            // correct
+        }
+
+        // remove the last replica
+        randomAccessFile.removeReplica(replica2.get(0));
+        // check
+        assertEquals(1, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
+        // TODO: check if the correct OSDs are in the list as a replica
+
+        // try to remove read-only flag
+        try {
+            randomAccessFile.setReadOnly(false);
+        } catch (Exception e) {
+            fail("File should be able to marked as read-only, because replicas exists.");
+        }
     }
 
-    /**
-     * @param osds
-     */
-    /*private boolean findReplicaInLocations(List<ServiceUUID> osds) {
-        boolean found = false;
-        for (Location loc : randomAccessFile.getLocations()) {
-            if (osds.equals(loc.getOSDs())) {
-                assertEquals(osds, loc.getOSDs());
-                found = true;
-                break;
-            }
-        }
-        return found;
-    }*/
-    
     public static void main(String[] args) {
         TestRunner.run(RandomAccessFileTest.class);
     }
