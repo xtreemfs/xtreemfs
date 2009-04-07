@@ -63,9 +63,9 @@ public class TortureXtreemFS {
             options.put("v", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("cp", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("mkvol", new CliOption(CliOption.OPTIONTYPE.SWITCH));
 
             CLIParser.parseCLI(args, options, arguments);
@@ -100,9 +100,9 @@ public class TortureXtreemFS {
 
                 useSSL = true;
                 serviceCredsFile = options.get("c").stringValue;
-                serviceCredsPass = options.get("cp").stringValue;
+                serviceCredsPass = options.get("cpass").stringValue;
                 trustedCAsFile = options.get("t").stringValue;
-                trustedCAsPass = options.get("tp").stringValue;
+                trustedCAsPass = options.get("tpass").stringValue;
 
                 sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
                         SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile), trustedCAsPass,
@@ -222,11 +222,11 @@ public class TortureXtreemFS {
         System.out
                 .println("              -c  <creds_file>         a PKCS#12 file containing user credentials");
         System.out
-                .println("              -cp <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
+                .println("              -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
         System.out
                 .println("              -t  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs");
         System.out
-                .println("              -tp <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
+                .println("              -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
         System.out.println("  -h        show usage info");
     }
 
