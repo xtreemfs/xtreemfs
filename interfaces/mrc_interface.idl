@@ -107,6 +107,7 @@ module org
         void xtreemfs_mkvol( Volume volume ) # 10;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
         void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
+        void xtreemfs_replica_list( string file_id, ReplicaSet replicas ) # 32;
         void xtreemfs_replica_remove( string file_id, string osd_uuid ) # 27;
         void xtreemfs_restore_database( string dump_file ) #53;
         void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 28;

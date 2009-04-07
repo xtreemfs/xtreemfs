@@ -2546,7 +2546,7 @@ namespace org
 
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 2; }
-        virtual uint32_t getOperationNumber() const { return 0; }
+        virtual uint32_t getOperationNumber() const { return 32; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1736837504UL; }
         virtual Event* createDefaultResponse() { return new xtreemfs_replica_listResponse; }
