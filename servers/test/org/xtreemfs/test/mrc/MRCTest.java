@@ -183,12 +183,11 @@ public class MRCTest extends TestCase {
         invokeSync(client.rmdir(mrcAddress, uc, volumeName + "/anotherDir"));
     }
     
-    public void testUserAttributes() throws Exception {
+    public void testXAttrs() throws Exception {
         
         final String uid = "userXY";
         final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-        final long accessMode = 511; // rwxrwxrwx
         final UserCredentials uc = MRCClient.getCredentials(uid, gids);
         
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
@@ -251,6 +250,16 @@ public class MRCTest extends TestCase {
         // retrieve a system attribute
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test.txt", "xtreemfs.object_type"));
         assertEquals("1", val);
+        
+        // check read-only replication
+        FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0));
+        assertEquals(Constants.REPL_UPDATE_PC_NONE, creds.getXlocs().getRepUpdatePolicy());
+        
+        invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only", "true", 0));
+        val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only"));
+        assertEquals("true", val);
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0));
+        assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getRepUpdatePolicy());
     }
     
     public void testSymlink() throws Exception {

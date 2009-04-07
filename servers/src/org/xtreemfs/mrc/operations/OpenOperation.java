@@ -188,8 +188,9 @@ public class OpenOperation extends MRCOperation {
                 
                 ReplicaSet replicas = new ReplicaSet();
                 replicas.add(replica);
-
-                xLocSet = new XLocSet(replicas, 0, Constants.REPL_UPDATE_PC_NONE, 0);
+                
+                xLocSet = new XLocSet(replicas, 0, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+                    : Constants.REPL_UPDATE_PC_NONE, 0);
                 
                 file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
