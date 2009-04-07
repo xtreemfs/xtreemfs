@@ -29,7 +29,7 @@ except:
         build_env["CCFLAGS"] += " -fno-rtti -fPIC -Wall "
         if sys.platform == "linux2": build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "; build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
         elif sys.platform == "darwin": build_env["LINKFLAGS"] += "-framework Carbon "; build_env["LIBS"].append( "iconv" )
-        elif sys.platform == "freebsd5": build_env["LIBS"].extend( ( "intl", "iconv" ) )
+        elif sys.platform.startswith( "freebsd" ): build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "; build_env["LIBS"].extend( ( "pthread", "intl", "iconv" ) )
         elif sys.platform == "openbsd4": build_env["LIBS"].extend( ( "m", "pthread", "util", "iconv" ) )
         elif sys.platform == "sunos5": build_env["tools"] = ["gcc", "g++", "gnulink", "ar"]; build_env["CCFLAGS"] += "-Dupgrade_the_compiler_to_use_STL=1 -D_REENTRANT "; build_env["LIBS"].extend( ( "stdc++", "m", "socket", "nsl", "kstat", "rt", "iconv", "cpc" ) )
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "

@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "options.h"
+#include "xtfs_bin.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
@@ -14,11 +14,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_mkvolOptions : public Options
+      class xtfs_mkvol : public xtfs_bin
       {
       public:
-        xtfs_mkvolOptions( int argc, char** argv )
-          : Options( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+        xtfs_mkvol()
+          : xtfs_bin( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         {
           addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
           access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
@@ -37,25 +37,7 @@ namespace org
 
           addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH, "-w", "--striping-policy-width", "n" );
           striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
-
-          mrc_uri = NULL;
-
-          parseOptions( argc, argv );
         }
-
-        ~xtfs_mkvolOptions()
-        {
-          delete mrc_uri;
-        }
-
-        uint8_t get_access_control_policy() const { return access_control_policy; }
-        uint32_t get_mode() const { return mode; }
-        YIELD::URI& get_mrc_uri() const { return *mrc_uri; }
-        uint8_t get_osd_selection_policy() const { return osd_selection_policy; }
-        uint8_t get_striping_policy() const { return striping_policy; }
-        uint32_t get_striping_policy_stripe_size() const { return striping_policy_stripe_size; }
-        uint16_t get_striping_policy_width() const { return striping_policy_width; }
-        const std::string& get_volume_name() const { return volume_name; }
 
       private:
         enum
@@ -70,14 +52,21 @@ namespace org
 
         uint8_t access_control_policy;
         uint32_t mode;
-        YIELD::URI* mrc_uri;
+        std::auto_ptr<YIELD::URI> mrc_uri;
         uint8_t osd_selection_policy;
         uint8_t striping_policy;
         uint32_t striping_policy_stripe_size;
         uint16_t striping_policy_width;
         std::string volume_name;
 
-        // OptionParser
+        // xtfs_bin
+        int _main()
+        {
+          YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
+          mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), std::string(), std::string() ) );
+          return 0;
+        }
+
         void parseOption( int id, char* arg )
         {
           if ( arg )
@@ -141,7 +130,7 @@ namespace org
           if ( files_count >= 1 )
           {
             mrc_uri = parseURI( files[0] );
-            if ( strlen( mrc_uri->get_resource() ) > 1 )
+            if ( strlen( mrc_uri.get()->get_resource() ) > 1 )
               volume_name = mrc_uri->get_resource() + 1;
           }
           else
@@ -155,27 +144,5 @@ namespace org
 
 int main( int argc, char** argv )
 {
-  try
-  {
-    xtfs_mkvolOptions options( argc, argv );
-
-    if ( options.get_help() )
-      options.printUsage();
-    else
-    {
-      YIELD::auto_SharedObject<MRCProxy> mrc_proxy = options.createProxy<MRCProxy>( options.get_mrc_uri() );
-      mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( options.get_volume_name(), options.get_mode(), options.get_osd_selection_policy(), org::xtreemfs::interfaces::StripingPolicy( options.get_striping_policy(), options.get_striping_policy_stripe_size(), options.get_striping_policy_width() ), options.get_access_control_policy(), std::string(), std::string(), std::string() ) );
-    }
-
-    return 0;
-  }
-  catch ( YIELD::Exception& exc )
-  {
-    std::cerr << "Error creating volume: " << exc.what() << std::endl;
-
-    if ( exc.get_error_code() > 0 )
-      return exc.get_error_code();
-    else
-      return 1;
-  }
+  return xtfs_mkvol().main( argc, argv );
 }

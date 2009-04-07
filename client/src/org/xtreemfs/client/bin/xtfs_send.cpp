@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "options.h"
+#include "xtfs_bin.h"
 using namespace org::xtreemfs::client;
 
 #include "yield.h"
@@ -95,11 +95,11 @@ namespace org
       };
 
 
-      class xtfs_sendOptions : public Options
+      class xtfs_send : public xtfs_bin
       {
       public:
-        xtfs_sendOptions( int argc, char** argv )
-          : Options( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
+        xtfs_send()
+          : xtfs_bin( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
         {
           org::xtreemfs::interfaces::DIRInterface().registerSerializableFactories( serializable_factories );
           org::xtreemfs::interfaces::MRCInterface().registerSerializableFactories( serializable_factories );
@@ -107,30 +107,40 @@ namespace org
 
           request = NULL;
           proxy = NULL;
-
-          parseOptions( argc, argv );
         }
 
-        ~xtfs_sendOptions()
+        ~xtfs_send()
         {
           YIELD::SharedObject::decRef( request );
           delete proxy;
         }
-
-        Proxy& get_proxy() const { return *proxy; }
-        YIELD::Request& get_request() const { return *request; }
 
       private:
         YIELD::SerializableFactories serializable_factories;
         YIELD::Request* request;
         Proxy* proxy;
 
-        // OptionParser
+        // xtfs_bin
+        int _main()
+        {
+          YIELD::SharedObject::incRef( *request );
+          proxy->send( *request );
+
+          YIELD::Event& resp = request->waitForDefaultResponse( get_timeout_ms() );
+          std::cout << resp.getTypeName() << "( ";
+          YIELD::PrettyPrintOutputStream output_stream( std::cout );
+          resp.serialize( output_stream );
+          std::cout << " )" << std::endl;
+          YIELD::SharedObject::decRef( resp );
+
+          return 0;
+        }
+
         void parseFiles( int files_count, char** files )
         {
           if ( files_count >= 1 )
           {
-            std::auto_ptr<YIELD::URI> rpc_uri( parseURI( files[0] ) );
+            std::auto_ptr<YIELD::URI> rpc_uri = parseURI( files[0] );
 
             if ( strlen( rpc_uri.get()->get_resource() ) > 1 )
             {
@@ -170,38 +180,8 @@ namespace org
   };
 };
 
+
 int main( int argc, char** argv )
 {
-  try
-  {
-    xtfs_sendOptions options( argc, argv );
-
-    if ( options.get_help() )
-      options.printUsage();
-    else
-    {
-      Proxy& proxy = options.get_proxy();
-      YIELD::Request& req = options.get_request();
-      YIELD::SharedObject::incRef( req );
-      proxy.send( req );
-
-      YIELD::Event& resp = req.waitForDefaultResponse( options.get_timeout_ms() );
-      std::cout << resp.getTypeName() << "( ";
-      YIELD::PrettyPrintOutputStream output_stream( std::cout );
-      resp.serialize( output_stream );
-      std::cout << " )" << std::endl;
-      YIELD::SharedObject::decRef( resp );
-    }
-
-    return 0;
-  }
-  catch ( YIELD::Exception& exc )
-  {
-    std::cerr << "Error on request: " << exc.what() << std::endl;
-
-    if ( exc.get_error_code() > 0 )
-      return exc.get_error_code();
-    else
-      return 1;
-  }
+  return xtfs_send().main( argc, argv );
 }
