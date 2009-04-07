@@ -115,8 +115,7 @@ do_mount() {
 		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
 			echo "creating volume test_$i ..."
 	
-			mkdir $TEST_DIR/mnt/$i
-			$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
+			$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -m 0666 -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
 			if [ $? -ne 0 ]; then
 				echo "FAILED: cannot create volume test_$i"
 				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
@@ -136,6 +135,7 @@ do_mount() {
 	if [ $NO_CLIENT -eq 0 ]
 	then
 		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
+			mkdir $TEST_DIR/mnt/$i
 			echo "mounting volume test_$i in $i..."
 	
 			echo "mounting: $XTREEMFS_DIR/client/bin/xtfs_mount $CLIENT_FLAGS $sslflags -o direct_io   ${schema}localhost:32638/test_$i $TEST_DIR/mnt/$i"
@@ -195,13 +195,13 @@ usage() {
 
 	myname=`basename $1`
 	echo "$myname -d -s -o -w <xtreemfs source> <test directory>"
-	echo "-d enabled debug"
+	echo "-d set debug level for servers (deafult is 1)"
 	echo "-s enables SSL (using certs from trunk/servers/test/certs)"
 	echo "-o <num_osds> sets the number of OSDs to use"
 	echo "-w <width> sets the striping with in kB"
         echo "-f <args> pass extra arguments to xtfs_mount"
         echo "-n do not mount volumes"
-        echo "-n do not create (mkvol) volumes"
+        echo "-m do not create (mkvol) volumes"
 	echo ""
 }
 
@@ -255,6 +255,7 @@ fi
 
 XTREEMFS_DIR=$1
 TEST_DIR=$2
+TEST_DIR=${TEST_DIR%/}
 
 prepare_test_directory $TEST_DIR
 

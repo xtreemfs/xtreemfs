@@ -1,5 +1,12 @@
 #!/bin/bash
 
+usage() {
+	myname=`basename $1`
+	echo "$myname <test directory>"
+	echo "runs all tests"
+	echo ""
+}
+
 if [ $# -ne 1 ]
 then
 	usage $0;

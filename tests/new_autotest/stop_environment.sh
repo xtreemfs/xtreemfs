@@ -1,5 +1,12 @@
 #!/bin/bash
 
+usage() {
+	myname=`basename $1`
+	echo "$myname <test directory>"
+	echo "unmounts all clients and shuts down the servers."
+	echo ""
+}
+
 shutdown_services() {
 	$TEST_BASEDIR/utils/service.sh ignoreme $TEST_DIR dir stop
 	$TEST_BASEDIR/utils/service.sh ignoreme $TEST_DIR mrc stop
@@ -39,6 +46,7 @@ tmp=`readlink -f $0`
 export TEST_BASEDIR=`dirname $tmp`
 
 TEST_DIR=$1
+TEST_DIR=${TEST_DIR%/}
 
 NUM_OSDS=`ls $TEST_DIR/run/osd* | wc -l`
 
