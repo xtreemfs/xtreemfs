@@ -34,14 +34,19 @@ namespace org
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_PASSPHRASE, "--pass", "--pem-private-key-passphrase", "PEM private key passphrase" );
-
           addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
+          ssl_context = NULL;
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
 
           addOption( OPTION_TRACE_SOCKET_IO, "--trace-socket-io" );
+        }
+
+        virtual ~Options()
+        {
+          delete ssl_context;
         }
 
         void addOption( int id, const char* short_arg, const char* long_arg = NULL, const char* default_values = NULL )
@@ -53,15 +58,21 @@ namespace org
         template <class ProxyType>
         ProxyType* createProxy( const YIELD::URI& uri )
         {
+          if ( ssl_context == NULL )
+          {
+            if ( !pkcs12_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
+            else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+          }
+
           ProxyType* proxy;
-          if ( !get_pkcs12_file_path().empty() )
-            proxy = new ProxyType( uri, get_pkcs12_file_path(), get_pkcs12_passphrase() );
-          else if ( !get_pem_certificate_file_path().empty() && !get_pem_private_key_file_path().empty() )
-            proxy = new ProxyType( uri, get_pem_certificate_file_path(), get_pem_private_key_file_path(), get_pem_private_key_passphrase() );
+          if ( ssl_context != NULL )          
+            proxy = new ProxyType( uri, *ssl_context );
           else
             proxy = new ProxyType( uri );
 
-          proxy->set_operation_timeout_ms( get_timeout_ms() );
+          proxy->set_operation_timeout_ms( timeout_ms );
 
           return proxy;
         }
@@ -94,12 +105,7 @@ namespace org
 
         // Accessors for built-in options
         bool get_debug() const { return debug; }
-        bool get_help() const { return help; } // Lassie?
-        const std::string& get_pkcs12_file_path() const { return pkcs12_file_path; }
-        const std::string& get_pkcs12_passphrase() const { return pkcs12_passphrase; }
-        const std::string& get_pem_certificate_file_path() const { return pem_certificate_file_path; }
-        const std::string& get_pem_private_key_file_path() const { return pem_private_key_file_path; }
-        const std::string& get_pem_private_key_passphrase() const { return pem_private_key_passphrase; }
+        bool get_help() const { return help; }
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
       protected:
@@ -190,7 +196,7 @@ namespace org
           std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
           {
-            if ( !get_pkcs12_file_path().empty() || ( !get_pem_certificate_file_path().empty() && !get_pem_private_key_file_path().empty() ) )
+            if ( !pkcs12_file_path.empty() || ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() ) )
               uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME + std::string( "://" ) + uri_str;
             else
               uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
@@ -230,6 +236,7 @@ namespace org
         bool debug, help;
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
+        YIELD::SSLContext* ssl_context;
         uint64_t timeout_ms;
       };
     };

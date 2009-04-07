@@ -11,14 +11,8 @@ OSDProxy::OSDProxy( const YIELD::URI& uri )
   osd_interface.registerSerializableFactories( serializable_factories );
 }
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
-  : Proxy( uri, pkcs12_file_path, pkcs12_passphrase, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
-{
-  osd_interface.registerSerializableFactories( serializable_factories );
-}
-
-OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
-  : Proxy( uri, pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
+OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context )
+  : Proxy( uri, ssl_context, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
 {
   osd_interface.registerSerializableFactories( serializable_factories );
 }

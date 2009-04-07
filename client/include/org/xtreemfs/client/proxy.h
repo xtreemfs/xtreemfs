@@ -28,19 +28,20 @@ namespace org
         virtual ~Proxy();
 
         uint32_t get_flags() const { return flags; }
-        void set_flags( uint32_t flags ) { this->flags = flags; }
-        uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
-        void set_reconnect_tries_max( uint8_t reconnect_tries_max ) { this->reconnect_tries_max = reconnect_tries_max; }
         uint64_t get_operation_timeout_ms() const { return operation_timeout_ms; }
+        const YIELD::SSLContext* get_ssl_context() const { return ssl_context; }
+        uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
+        const YIELD::URI& get_uri() const { return uri; }
+        void set_flags( uint32_t flags ) { this->flags = flags; }
         void set_operation_timeout_ms( uint64_t operation_timeout_ms ) { this->operation_timeout_ms = operation_timeout_ms; }
+        void set_reconnect_tries_max( uint8_t reconnect_tries_max ) { this->reconnect_tries_max = reconnect_tries_max; }
 
         // EventHandler
         virtual void handleEvent( YIELD::Event& ev );
 
       protected:
         Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port );
-        Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase, uint16_t default_oncrpcs_port );
-        Proxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase, uint16_t default_oncrpcs_port );
+        Proxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port );
 
         virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 
@@ -50,7 +51,7 @@ namespace org
         void init();
 
         YIELD::URI uri;
-        std::string pem_private_key_passphrase;
+        YIELD::SSLContext* ssl_context;
 
         uint32_t flags;
         uint8_t reconnect_tries_max;
@@ -60,7 +61,6 @@ namespace org
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
 
-        static int pem_password_callback( char*, int, int, void* );  
         uint8_t reconnect( uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
         void throwExceptionEvent( YIELD::ExceptionEvent* );
       };
