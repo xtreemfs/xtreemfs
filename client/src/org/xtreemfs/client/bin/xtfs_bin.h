@@ -13,6 +13,15 @@
 
 #include "SimpleOpt.h"
 
+#include "org/xtreemfs/interfaces/constants.h"
+using org::xtreemfs::interfaces::DEBUG_LEVEL_ERROR;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_WARN;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_INFO;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_DEBUG;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_TRACE;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_DEFAULT;
+using org::xtreemfs::interfaces::DEBUG_LEVEL_MAX;
+
 
 namespace org
 {
@@ -55,7 +64,17 @@ namespace org
               {
                 switch ( args.OptionId() )
                 {
-                  case OPTION_DEBUG: debug = true; break;
+                  case OPTION_DEBUG_LEVEL:
+                  {
+                    debug_level = static_cast<uint8_t>( atoi( args.OptionArg() ) );
+                    if ( debug_level > DEBUG_LEVEL_MAX )
+                      debug_level = DEBUG_LEVEL_MAX;
+
+                    if ( debug_level >= DEBUG_LEVEL_TRACE )
+                      YIELD::SocketConnection::set_trace_socket_io_onoff( true );
+                  }
+                  break;
+                    
                   case OPTION_HELP: printUsage(); return 0;
                   case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;                  
                   case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = args.OptionArg(); break;
@@ -70,17 +89,13 @@ namespace org
                       timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
                   }
                   break;
-
-                  case OPTION_TRACE_SOCKET_IO: YIELD::SocketConnection::set_trace_socket_io_onoff( true ); break;
                 }
 
-                if ( !help )
-                  parseOption( args.OptionId(), args.OptionArg() );
+                parseOption( args.OptionId(), args.OptionArg() );
               }
             }
 
-            if ( !help )
-              parseFiles( args.FileCount(), args.Files() );
+            parseFiles( args.FileCount(), args.Files() );
           }
           else
             parseFiles( argc - 1, argv+1 );
@@ -111,25 +126,25 @@ namespace org
       protected:
         enum
         {
-          OPTION_DEBUG = 1,
+          OPTION_DEBUG_LEVEL = 1,
           OPTION_HELP = 2,
           OPTION_PKCS12_FILE_PATH = 3,
           OPTION_PKCS12_PASSPHRASE = 4,
           OPTION_PEM_CERTIFICATE_FILE_PATH = 5,
           OPTION_PEM_PRIVATE_KEY_FILE_PATH = 6,
           OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
-          OPTION_TIMEOUT_MS = 8,
-          OPTION_TRACE_SOCKET_IO = 9
+          OPTION_TIMEOUT_MS = 8
         };
+       
 
         xtfs_bin( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
-          addOption( OPTION_DEBUG, "-d", "--debug" );
-          debug = false;
+          addOption( OPTION_DEBUG_LEVEL, "-d", "--debug" );
+          addOption( OPTION_DEBUG_LEVEL, "--debug-level", "--debug_level" );
+          debug_level = 0;
 
           addOption( OPTION_HELP, "-h", "--help" );
-          help = false;
 
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
@@ -140,8 +155,6 @@ namespace org
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
-
-          addOption( OPTION_TRACE_SOCKET_IO, "--trace-socket-io" );
         }
 
         virtual ~xtfs_bin()
@@ -177,7 +190,7 @@ namespace org
         }
 
         // Accessors for built-in options
-        bool get_debug() const { return debug; }
+        uint8_t get_debug_level() const { return debug_level; }
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
         virtual int _main() = 0;
@@ -198,6 +211,13 @@ namespace org
 
       private:
         const char *program_name, *program_description, *files_usage;
+
+        // Built-in options
+        uint8_t debug_level;
+        std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
+        std::string pkcs12_file_path, pkcs12_passphrase;
+        YIELD::SSLContext* ssl_context;
+        uint64_t timeout_ms;
 
         class Option
         {
@@ -222,13 +242,6 @@ namespace org
         };
 
         std::vector<Option> options;
-
-        // Built-in options
-        bool debug, help;
-        std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
-        std::string pkcs12_file_path, pkcs12_passphrase;
-        YIELD::SSLContext* ssl_context;
-        uint64_t timeout_ms;
 
 
         virtual void parseOption( int id, char* sep_arg )

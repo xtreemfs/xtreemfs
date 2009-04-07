@@ -79,11 +79,11 @@ namespace org
 
           if ( cache )
             xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
-          if ( get_debug() )
+          if ( get_debug_level() >= DEBUG_LEVEL_TRACE )
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
-          if ( get_debug() )
+          if ( get_debug_level() >= DEBUG_LEVEL_DEBUG )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           if ( direct_io )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
@@ -97,7 +97,7 @@ namespace org
 #else
           std::vector<char*> argvv;
     //      argvv.push_back( argv[0] );
-          if ( get_debug() )
+          if ( get_debug_level() >= DEBUG_LEVEL_DEBUG )
             argvv.push_back( const_cast<char*>( "-d" ) );
           if ( foreground )
             argvv.push_back( const_cast<char*>( "-f" ) );

@@ -17,6 +17,13 @@ namespace org
       const static uint8_t ACCESS_CONTROL_POLICY_POSIX = 2;
       const static uint8_t ACCESS_CONTROL_POLICY_VOLUME = 3;
       const static uint8_t ACCESS_CONTROL_POLICY_DEFAULT = 2;
+      const static uint8_t DEBUG_LEVEL_ERROR = 0;
+      const static uint8_t DEBUG_LEVEL_WARN = 1;
+      const static uint8_t DEBUG_LEVEL_INFO = 2;
+      const static uint8_t DEBUG_LEVEL_DEBUG = 3;
+      const static uint8_t DEBUG_LEVEL_TRACE = 4;
+      const static uint8_t DEBUG_LEVEL_DEFAULT = 0;
+      const static uint8_t DEBUG_LEVEL_MAX = 4;
       const static char* ONCRPC_SCHEME = "oncrpc";
       const static char* ONCRPCS_SCHEME = "oncrpcs";
       const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;
