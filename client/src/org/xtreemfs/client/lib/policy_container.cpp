@@ -66,6 +66,20 @@ PolicyContainer::~PolicyContainer()
 {
   for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
     delete *policy_shared_library_i;
+
+  for ( YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
+  {
+    for ( YIELD::STLHashMap<std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )      
+      delete j->second;
+    delete i->second;
+  }
+
+  for ( YIELD::STLHashMap<YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>*>::iterator i = passwd_to_user_credentials_cache.begin(); i != passwd_to_user_credentials_cache.end(); i++ )
+  {
+    for ( YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
+      delete j->second;
+    delete i->second;
+  }
 }
 
 void PolicyContainer::loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path )
@@ -91,7 +105,7 @@ void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_
   }
 }
 
-void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
+void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
 #ifdef _WIN32
   if ( get_user_credentials_from_passwd )
@@ -142,40 +156,77 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
 
 void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
 {
+  out_uid = 0;
+  out_gid = 0;
+
+  uint32_t user_id_hash = YIELD::string_hash( user_id.c_str() );
+  uint32_t group_id_hash = YIELD::string_hash( group_id.c_str() );
+
+  YIELD::STLHashMap<std::pair<int, int>*>* user_id_to_passwd_cache = user_credentials_to_passwd_cache.find( group_id_hash );
+  if ( user_id_to_passwd_cache != NULL )
+  {
+    std::pair<int,int>* passwd = user_id_to_passwd_cache->find( user_id_hash );
+    if ( passwd != NULL )
+    {
+      out_uid = passwd->first;
+      out_gid = passwd->second;
+      return;
+    }
+  }
+
   if ( get_passwd_from_user_credentials )
   {
     int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
-    if ( get_passwd_from_user_credentials_ret >= 0 )
-      return;
-    else
+    if ( get_passwd_from_user_credentials_ret < 0 )      
       throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
-  }
-
-#ifdef _WIN32
-  YIELD::DebugBreak();
-#else
-  struct passwd pwd, *pwd_res;
-  char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
-  struct group grp, *grp_res;
-  char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
-
-  if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
-       getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
-  {
-    out_uid = pwd_res->pw_uid;
-    out_gid = grp_res->gr_gid;
   }
   else
   {
-    //    throw YIELD::PlatformException();
-    out_uid = 0;
-    out_gid = 0;
-  }
+#ifdef _WIN32
+    YIELD::DebugBreak();
+#else
+    struct passwd pwd, *pwd_res;
+    char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
+    struct group grp, *grp_res;
+    char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
+
+    if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
+         getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
+    {
+      out_uid = pwd_res->pw_uid;
+      out_gid = grp_res->gr_gid;
+    }
+    else
+    {
+      //    throw YIELD::PlatformException();
+      out_uid = 0;
+      out_gid = 0;
+    }
 #endif
+  }
+
+  if ( user_id_to_passwd_cache == NULL )
+  {
+    user_id_to_passwd_cache = new YIELD::STLHashMap<std::pair<int,int>*>;
+    user_credentials_to_passwd_cache.insert( group_id_hash, user_id_to_passwd_cache );
+  }
+
+  user_id_to_passwd_cache->insert( user_id_hash, new std::pair<int,int>( out_uid, out_gid ) );
 }
 
-void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
+void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
+  YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>* uid_to_user_credentials_cache = passwd_to_user_credentials_cache.find( static_cast<uint32_t>( gid ) );
+  if ( uid_to_user_credentials_cache != NULL )
+  {
+    org::xtreemfs::interfaces::UserCredentials* user_credentials = uid_to_user_credentials_cache->find( static_cast<uint32_t>( uid ) );
+    if ( user_credentials != NULL )
+    {
+      out_user_credentials = *user_credentials;
+      return;
+    }
+  }
+
   if ( get_user_credentials_from_passwd )
   {
     size_t user_id_len = 0, group_ids_len = 0;
@@ -200,20 +251,18 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
             group_ids_p += group_ids_ss.back().size() + 1;
           }
           out_user_credentials.set_group_ids( group_ids_ss );
-
-          return;
         }
         else
           throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
       }
-      // else drop down
     }
     else
       throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
   }
-
+  else
+  {
 #ifdef _WIN32
-  YIELD::DebugBreak();
+    YIELD::DebugBreak();
 #else
     struct passwd pwd, *pwd_res;
     char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
@@ -225,10 +274,18 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
     {
       out_user_credentials.set_user_id( pwd_res->pw_name );
       out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
-      return;
     }
     else
       throw YIELD::PlatformException();
 #endif
+  }
+
+  if ( uid_to_user_credentials_cache == NULL )
+  {
+    uid_to_user_credentials_cache = new YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>;
+    passwd_to_user_credentials_cache.insert( static_cast<uint32_t>( gid ), uid_to_user_credentials_cache );
+  }
+
+  uid_to_user_credentials_cache->insert( static_cast<uint32_t>( uid ), new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) );
 }
 
