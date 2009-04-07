@@ -20,6 +20,13 @@ MRCProxy::MRCProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, 
   mrc_interface.registerSerializableFactories( serializable_factories );
 }
 
+MRCProxy::MRCProxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
+  : Proxy( uri, pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
+{
+  policies = new PolicyContainer;
+  mrc_interface.registerSerializableFactories( serializable_factories );
+}
+
 MRCProxy::~MRCProxy()
 {
   delete policies;

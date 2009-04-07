@@ -40,6 +40,7 @@ namespace org
       protected:
         Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port );
         Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase, uint16_t default_oncrpcs_port );
+        Proxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase, uint16_t default_oncrpcs_port );
 
         virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 
@@ -49,6 +50,7 @@ namespace org
         void init();
 
         YIELD::URI uri;
+        std::string pem_private_key_passphrase;
 
         uint32_t flags;
         uint8_t reconnect_tries_max;
@@ -58,6 +60,7 @@ namespace org
         YIELD::FDEventQueue fd_event_queue;
         unsigned int peer_ip; YIELD::SocketConnection* conn;
 
+        static int pem_password_callback( char*, int, int, void* );  
         uint8_t reconnect( uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
         void throwExceptionEvent( YIELD::ExceptionEvent* );
       };

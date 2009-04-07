@@ -94,6 +94,52 @@ Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const 
     throw YIELD::Exception( "invalid URI scheme" );
 }
 
+Proxy::Proxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase, uint16_t default_oncrpcs_port )
+  : uri( uri )
+{
+  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
+  {
+    if ( this->uri.get_port() == 0 )
+      this->uri.set_port( default_oncrpcs_port );
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms(); // TODO: this should be in a shared main class in the binaries
+
+    ssl_ctx = SSL_CTX_new( SSLv3_client_method() );
+    if ( ssl_ctx != NULL )
+    {
+#ifdef SSL_OP_NO_TICKET
+      SSL_CTX_set_options( ssl_ctx, SSL_OP_ALL|SSL_OP_NO_TICKET );
+#else
+      SSL_CTX_set_options( ssl_ctx, SSL_OP_ALL );
+#endif
+
+      if ( SSL_CTX_use_certificate_file( ssl_ctx, pem_certificate_file_path, SSL_FILETYPE_PEM ) > 0 )
+      {
+        if ( !pem_private_key_passphrase.empty() )
+        {
+          SSL_CTX_set_default_passwd_cb( ssl_ctx, pem_password_callback );
+          SSL_CTX_set_default_passwd_cb_userdata( ssl_ctx, this );
+        }
+
+        if ( SSL_CTX_use_PrivateKey_file( ssl_ctx, pem_private_key_file_path, SSL_FILETYPE_PEM ) > 0 )
+        {
+          SSL_CTX_set_verify( ssl_ctx, SSL_VERIFY_NONE, NULL );
+
+          init();
+
+          return;          
+        }
+      }
+    }
+
+    SSL_load_error_strings();
+    throw YIELD::Exception( ERR_get_error(), ERR_error_string( ERR_get_error(), NULL ) );
+  }
+  else
+    throw YIELD::Exception( "invalid URI scheme" );
+}
+
 void Proxy::init()
 {
   this->flags = PROXY_DEFAULT_FLAGS;
@@ -241,6 +287,15 @@ void Proxy::handleEvent( YIELD::Event& ev )
     }
     break;
   }
+}
+
+int Proxy::pem_password_callback( char *buf, int size, int rwflag, void *userdata )
+{
+  Proxy* this_ = static_cast<Proxy*>( userdata );
+  if ( size > static_cast<int>( this_->pem_private_key_passphrase.size() ) )
+    size = static_cast<int>( this_->pem_private_key_passphrase.size() );
+  std::memcpy( buf, this_->pem_private_key_passphrase.c_str(), size );
+  return size;
 }
 
 uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )

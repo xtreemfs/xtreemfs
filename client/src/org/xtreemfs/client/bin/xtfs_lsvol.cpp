@@ -58,7 +58,6 @@ namespace org
           }
         }
 
-
         // OptionParser
         void parseFiles( int files_count, char** files )
         {
@@ -116,10 +115,13 @@ int main( int argc, char** argv )
 
     return 0;
   }
-  catch ( std::exception& exc )
+  catch ( YIELD::Exception& exc )
   {
     std::cerr << "Error listing volumes: " << exc.what() << std::endl;
 
-    return 1;
+    if ( exc.get_error_code() > 0 )
+      return exc.get_error_code();
+    else
+      return 1;
   }
 }

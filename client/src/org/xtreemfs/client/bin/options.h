@@ -31,6 +31,10 @@ namespace org
           addOption( OPTION_HELP, "-h", "--help" );
           help = false;
 
+          addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
+          addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
+          addOption( OPTION_PEM_PRIVATE_KEY_PASSPHRASE, "--pass", "--pem-private-key-passphrase", "PEM private key passphrase" );
+
           addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
 
@@ -52,6 +56,8 @@ namespace org
           ProxyType* proxy;
           if ( !get_pkcs12_file_path().empty() )
             proxy = new ProxyType( uri, get_pkcs12_file_path(), get_pkcs12_passphrase() );
+          else if ( !get_pem_certificate_file_path().empty() && !get_pem_private_key_file_path().empty() )
+            proxy = new ProxyType( uri, get_pem_certificate_file_path(), get_pem_private_key_file_path(), get_pem_private_key_passphrase() );
           else
             proxy = new ProxyType( uri );
 
@@ -91,6 +97,9 @@ namespace org
         bool get_help() const { return help; } // Lassie?
         const std::string& get_pkcs12_file_path() const { return pkcs12_file_path; }
         const std::string& get_pkcs12_passphrase() const { return pkcs12_passphrase; }
+        const std::string& get_pem_certificate_file_path() const { return pem_certificate_file_path; }
+        const std::string& get_pem_private_key_file_path() const { return pem_private_key_file_path; }
+        const std::string& get_pem_private_key_passphrase() const { return pem_private_key_passphrase; }
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
       protected:
@@ -100,8 +109,11 @@ namespace org
           OPTION_HELP = 2,
           OPTION_PKCS12_FILE_PATH = 3,
           OPTION_PKCS12_PASSPHRASE = 4,
-          OPTION_TIMEOUT_MS = 5,
-          OPTION_TRACE_SOCKET_IO = 6
+          OPTION_PEM_CERTIFICATE_FILE_PATH = 5,
+          OPTION_PEM_PRIVATE_KEY_FILE_PATH = 6,
+          OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
+          OPTION_TIMEOUT_MS = 8,
+          OPTION_TRACE_SOCKET_IO = 9
         };
 
         void parseOptions( int argc, char** argv )
@@ -138,6 +150,9 @@ namespace org
                 {
                   case OPTION_DEBUG: debug = true; break;
                   case OPTION_HELP: help = true; return;
+                  case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;                  
+                  case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = args.OptionArg(); break;
+                  case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = args.OptionArg(); break;
                   case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = args.OptionArg(); break;
                   case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = args.OptionArg(); break;
 
@@ -157,7 +172,7 @@ namespace org
               }
             }
 
-            if ( !help && args.FileCount() > 0 )
+            if ( !help )
               parseFiles( args.FileCount(), args.Files() );
           }
           else
@@ -175,7 +190,7 @@ namespace org
           std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
           {
-            if ( !get_pkcs12_file_path().empty() )
+            if ( !get_pkcs12_file_path().empty() || ( !get_pem_certificate_file_path().empty() && !get_pem_private_key_file_path().empty() ) )
               uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME + std::string( "://" ) + uri_str;
             else
               uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
@@ -213,6 +228,7 @@ namespace org
 
         // Built-in options
         bool debug, help;
+        std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
         uint64_t timeout_ms;
       };

@@ -23,6 +23,7 @@ namespace org
       public:
         MRCProxy( const YIELD::URI& uri );
         MRCProxy( const YIELD::URI& uri, const YIELD::Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
+        MRCProxy( const YIELD::URI& uri, const YIELD::Path& pem_certificate_file_path, const YIELD::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );
         virtual ~MRCProxy();
 
         bool access( const Path& path, uint32_t mode );
