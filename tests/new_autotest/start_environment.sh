@@ -110,21 +110,24 @@ do_mount() {
 		sslflags=""
 		schema="oncrpc://"
 	fi
-	for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
-		echo "creating volume test_$i ..."
-
-		mkdir $TEST_DIR/mnt/$i
-		$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
-		if [ $? -ne 0 ]; then
-			echo "FAILED: cannot create volume test_$i"
-			$TEST_BASEDIR/stop_environment.sh $TEST_DIR
-			exit 1
-		fi
-
-		VOLUMES="$VOLUMES $TEST_DIR/mnt/$i"
-		VOLNAMES="$VOLNAMES test_$i"
-		NONDIRECT_VOLUMES="$NONDIRECT_VOLUMES $TEST_DIR/mnt/nondirect_$i"
-	done
+	if [ $NO_MKVOL -eq 0 ]
+	then
+		for (( i=1 ; i<=$NUM_OSDS ; i++ )) ; do
+			echo "creating volume test_$i ..."
+	
+			mkdir $TEST_DIR/mnt/$i
+			$XTREEMFS_DIR/client/bin/xtfs_mkvol $sslflags -p RAID0 -s $STRIPE_WIDTH -w $i ${schema}localhost/test_$i
+			if [ $? -ne 0 ]; then
+				echo "FAILED: cannot create volume test_$i"
+				$TEST_BASEDIR/stop_environment.sh $TEST_DIR
+				exit 1
+			fi
+	
+			VOLUMES="$VOLUMES $TEST_DIR/mnt/$i"
+			VOLNAMES="$VOLNAMES test_$i"
+			NONDIRECT_VOLUMES="$NONDIRECT_VOLUMES $TEST_DIR/mnt/nondirect_$i"
+		done
+	fi
 
 	export VOLUMES
 	export VOLNAMES
@@ -198,6 +201,7 @@ usage() {
 	echo "-w <width> sets the striping with in kB"
         echo "-f <args> pass extra arguments to xtfs_mount"
         echo "-n do not mount volumes"
+        echo "-n do not create (mkvol) volumes"
 	echo ""
 }
 
@@ -208,8 +212,9 @@ NUM_OSDS=1
 STRIPE_WIDTH=128
 CLIENT_FLAGS=""
 NO_CLIENT=0
+NO_MKVOL=0
 
-while getopts ":snc:d:w:o:f:" Option
+while getopts ":smnc:d:w:o:f:" Option
 # Initial declaration.
 # a, b, c, d, e, f, and g are the options (flags) expected.
 # The : after option 'e' shows it will have an argument passed with it.
@@ -226,6 +231,8 @@ do
     f ) CLIENT_FLAGS=$OPTARG
         ;;
     n ) NO_CLIENT=1
+        ;;
+    m ) NO_MKVOL=1
         ;;
   esac
 done
