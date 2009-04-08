@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_checkpointResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugResponse;
 import org.xtreemfs.mrc.ErrorRecord;

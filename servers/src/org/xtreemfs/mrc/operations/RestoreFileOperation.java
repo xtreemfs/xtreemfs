@@ -44,6 +44,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Path;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
@@ -71,20 +72,11 @@ public class RestoreFileOperation extends MRCOperation {
             final VolumeManager vMan = master.getVolumeManager();
             
             // parse volume and file ID from global file ID
-            long fileId = 0;
-            String volumeId = null;
-            try {
-                String globalFileId = rqArgs.getFile_id();
-                int i = globalFileId.indexOf(':');
-                volumeId = rqArgs.getFile_id().substring(0, i);
-                fileId = Long.parseLong(rqArgs.getFile_id().substring(i + 1));
-            } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + rqArgs.getFile_id()
-                    + "; expected pattern: <volume_ID>:<local_file_ID>");
-            }
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
             
-            final Path p = new Path(vMan.getVolumeById(volumeId).getName() + "/" + rqArgs.getFile_path());
-            final StorageManager sMan = vMan.getStorageManager(volumeId);
+            final Path p = new Path(vMan.getVolumeById(idRes.getVolumeId()).getName() + "/"
+                + rqArgs.getFile_path());
+            final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
             
             // prepare file creation in database
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
@@ -115,9 +107,9 @@ public class RestoreFileOperation extends MRCOperation {
                 }
             
             // create the metadata object
-            FileMetadata file = sMan.createFile(fileId, parentId, rqArgs.getFile_id(), time, time, time, rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), 511, 0, rqArgs.getFile_size(),
-                false, 0, 0, update);
+            FileMetadata file = sMan.createFile(idRes.getLocalFileId(), parentId, rqArgs.getFile_id(), time,
+                time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0), 511, 0, rqArgs
+                        .getFile_size(), false, 0, 0, update);
             
             int size = (rqArgs.getStripe_size() < 1024 ? 1 : (rqArgs.getStripe_size() % 1024 != 0) ? rqArgs
                     .getStripe_size() / 1024 + 1 : rqArgs.getStripe_size() / 1024);

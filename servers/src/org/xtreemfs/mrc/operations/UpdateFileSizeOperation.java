@@ -40,6 +40,7 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
 /**
  * 
@@ -72,22 +73,13 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 throw new UserException(cap + " has expired");
             
             // parse volume and file ID from global file ID
-            long fileId = 0;
-            String volumeId = null;
-            try {
-                String globalFileId = cap.getFileId();
-                int i = globalFileId.indexOf(':');
-                volumeId = globalFileId.substring(0, i);
-                fileId = Long.parseLong(globalFileId.substring(i + 1));
-            } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + cap.getFileId()
-                    + "; expected pattern: <volume_ID>:<local_file_ID>");
-            }
-            StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
             
-            FileMetadata file = sMan.getMetadata(fileId);
+            StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+            
+            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
             if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
+                throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
             
             NewFileSizeSet newFSSet = rqArgs.getOsd_write_response().getNew_file_size();
             

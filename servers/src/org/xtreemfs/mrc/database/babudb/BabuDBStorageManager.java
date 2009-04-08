@@ -544,10 +544,6 @@ public class BabuDBStorageManager implements StorageManager {
                     return xattr.getValue();
             }
             
-            it = database.directPrefixLookup(dbName, XATTRS_INDEX, new byte[0]);
-            while (it.hasNext())
-                System.out.println(Arrays.toString(it.next().getKey()));
-            
             return null;
             
         } catch (BabuDBException exc) {

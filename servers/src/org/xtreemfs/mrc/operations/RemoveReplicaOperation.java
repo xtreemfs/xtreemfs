@@ -41,6 +41,7 @@ import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -70,24 +71,14 @@ public class RemoveReplicaOperation extends MRCOperation {
             validateContext(rq);
             
             // parse volume and file ID from global file ID
-            long fileId = 0;
-            String volumeId = null;
-            try {
-                String globalFileId = rqArgs.getFile_id();
-                int i = globalFileId.indexOf(':');
-                volumeId = rqArgs.getFile_id().substring(0, i);
-                fileId = Long.parseLong(rqArgs.getFile_id().substring(i + 1));
-            } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + rqArgs.getFile_id()
-                    + "; expected pattern: <volume_ID>:<local_file_ID>");
-            }
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
             
-            StorageManager sMan = vMan.getStorageManager(volumeId);
+            StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
             
             // retrieve the file metadata
-            FileMetadata file = sMan.getMetadata(fileId);
+            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
             if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
+                throw new UserException(ErrNo.ENOENT, "file '" + rqArgs.getFile_id() + "' does not exist");
             
             // if the file refers to a symbolic link, resolve the link
             String target = sMan.getSoftlinkTarget(file.getId());

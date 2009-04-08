@@ -54,6 +54,33 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public class MRCHelper {
     
+    public static class GlobalFileIdResolver {
+        
+        final String volumeId;
+        
+        final long   localFileId;
+        
+        public GlobalFileIdResolver(String globalFileId) throws UserException {
+            
+            try {
+                int i = globalFileId.indexOf(':');
+                volumeId = globalFileId.substring(0, i);
+                localFileId = Long.parseLong(globalFileId.substring(i + 1));
+            } catch (Exception exc) {
+                throw new UserException("invalid global file ID: " + globalFileId
+                    + "; expected pattern: <volume_ID>:<local_file_ID>");
+            }
+        }
+        
+        public String getVolumeId() {
+            return volumeId;
+        }
+        
+        public long getLocalFileId() {
+            return localFileId;
+        }
+    }
+    
     public enum SysAttrs {
             locations,
             file_id,

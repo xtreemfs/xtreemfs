@@ -25,26 +25,30 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.interfaces.StringSet;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listResponse;
+import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
+import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
  * 
  * @author stender
  */
-public class GetSuitableOSDsOperation extends MRCOperation {
+public class GetXLocListRequest extends MRCOperation {
     
-    public static final int OP_ID = 24;
+    public static final int OP_ID = 32;
     
-    public GetSuitableOSDsOperation(MRCRequestDispatcher master) {
+    public GetXLocListRequest(MRCRequestDispatcher master) {
         super(master);
     }
     
@@ -53,19 +57,26 @@ public class GetSuitableOSDsOperation extends MRCOperation {
         
         try {
             
-            final xtreemfs_get_suitable_osdsRequest rqArgs = (xtreemfs_get_suitable_osdsRequest) rq
-                    .getRequestArgs();
+            final xtreemfs_replica_listRequest rqArgs = (xtreemfs_replica_listRequest) rq.getRequestArgs();
+            
+            final VolumeManager vMan = master.getVolumeManager();
+            
+            validateContext(rq);
             
             // parse volume and file ID from global file ID
             GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
             
-            ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(idRes.getVolumeId());
-            StringSet uuids = new StringSet();
-            for (int i = 0; i < usableOSDs.size(); i++)
-                uuids.add(usableOSDs.get(i).getUuid());
+            StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+            
+            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+            if (file == null)
+                throw new UserException(ErrNo.ENOENT, "file '" + idRes.getLocalFileId() + "' does not exist");
+            
+            // get the replicas from the X-Loc list
+            ReplicaSet replicas = Converter.xLocListToXLocSet(file.getXLocList()).getReplicas();
             
             // set the response
-            rq.setResponse(new xtreemfs_get_suitable_osdsResponse(uuids));
+            rq.setResponse(new xtreemfs_replica_listResponse(replicas));
             finishRequest(rq);
             
         } catch (UserException exc) {

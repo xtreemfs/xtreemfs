@@ -41,6 +41,7 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
 /**
  * 
@@ -77,22 +78,13 @@ public class TruncateOperation extends MRCOperation {
                 throw new UserException(ErrNo.EACCES, writeCap + " is not a write capability");
             
             // parse volume and file ID from global file ID
-            long fileId = 0;
-            String volumeId = null;
-            try {
-                String globalFileId = writeCap.getFileId();
-                int i = globalFileId.indexOf(':');
-                volumeId = globalFileId.substring(0, i);
-                fileId = Long.parseLong(globalFileId.substring(i + 1));
-            } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + writeCap.getFileId()
-                    + "; expected pattern: <volume_ID>:<local_file_ID>");
-            }
-            StorageManager sMan = master.getVolumeManager().getStorageManager(volumeId);
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(writeCap.getFileId());
             
-            FileMetadata file = sMan.getMetadata(fileId);
+            StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+            
+            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
             if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + fileId + "' does not exist");
+                throw new UserException(ErrNo.ENOENT, "file '" + writeCap.getFileId() + "' does not exist");
             
             // get the current epoch, use (and increase) the truncate number if
             // the open mode is truncate
@@ -103,7 +95,7 @@ public class TruncateOperation extends MRCOperation {
             file.setIssuedEpoch(newEpoch);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
-            Capability truncCap = new Capability(volumeId + ":" + file.getId(), writeCap.getAccessMode()
+            Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
                 | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
                 ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
                 newEpoch, master.getConfig().getCapabilitySecret());
