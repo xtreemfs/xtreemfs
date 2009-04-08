@@ -336,6 +336,7 @@ public class SetupUtils {
         UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON);
         UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON);
         UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON);
+        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON);
     }
     
     private static ServiceUUID getOSDUUID(String listenAddress, int port) {

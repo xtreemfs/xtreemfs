@@ -25,12 +25,15 @@
 package org.xtreemfs.dir.client;
 
 import java.net.InetSocketAddress;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
@@ -42,6 +45,8 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidRequest;
@@ -50,8 +55,6 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceSet;
 
 /**
  *
@@ -160,6 +163,21 @@ public class DIRClient extends ONCRPCClient {
                 final xtreemfs_service_offlineResponse resp = new xtreemfs_service_offlineResponse();
                 resp.deserialize(data);
                 return null;
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse<ServiceSet> xtreemfs_service_get_by_name(InetSocketAddress server, String volumeName) {
+        xtreemfs_service_get_by_nameRequest rq = new xtreemfs_service_get_by_nameRequest(volumeName);
+        
+        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ServiceSet>() {
+
+            @Override
+            public ServiceSet getResult(ReusableBuffer data) {
+                final xtreemfs_service_get_by_nameResponse resp = new xtreemfs_service_get_by_nameResponse();
+                resp.deserialize(data);
+                return resp.getServices();
             }
         });
         return r;

@@ -452,6 +452,9 @@ public class RandomAccessFile implements ObjectStore {
     }
 
     public void setReadOnly(boolean mode) throws Exception {
+        if (isReadOnly == mode)
+            return;
+
         try {
             if (mode) {
                 flush();
@@ -526,18 +529,19 @@ public class RandomAccessFile implements ObjectStore {
     }
 
     public void removeReplica(Replica replica) throws Exception {
-        if (isReadOnly)
             removeReplica(replica.getHeadOsd());
-        else
-            throw new IOException("file is not marked as read-only.");
     }
 
     public void removeReplica(ServiceUUID osd) throws Exception {
-        RPCResponse r = mrcClient.xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd.toString());
-        r.get();
-        r.freeBuffers();
+        if (isReadOnly) {
+            RPCResponse r = mrcClient
+                    .xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd.toString());
+            r.get();
+            r.freeBuffers();
 
-        forceFileCredentialsUpdate(translateMode("r"));
+            forceFileCredentialsUpdate(translateMode("r"));
+        } else
+            throw new IOException("file is not marked as read-only.");
     }
 
     /**
@@ -582,6 +586,10 @@ public class RandomAccessFile implements ObjectStore {
 
     public XLocations getXLoc() {
         return new XLocations(fileCredentials.getXlocs());
+    }
+    
+    public boolean isReadOnly() {
+        return isReadOnly;
     }
 
     public long noOfObjects() throws Exception {

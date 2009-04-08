@@ -67,7 +67,7 @@ public class Replica {
     }
 
     public boolean isStriped() {
-        return this.osds.size() > 1;
+        return stripingPolicy.getWidth() > 1;
     }
 
 /*    public boolean isHeadOsd(ServiceUUID localOSD) {
@@ -75,7 +75,7 @@ public class Replica {
     }*/
 
     public ServiceUUID getHeadOsd() {
-        return this.osds.get(0);
+        return new ServiceUUID(replica.getOsd_uuids().get(0));
     }
 
     public String toString() {

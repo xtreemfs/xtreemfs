@@ -25,6 +25,7 @@
 package org.xtreemfs.test.io;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -242,6 +243,14 @@ public class RandomAccessFileTest extends TestCase {
         // check
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs().getRepUpdatePolicy());
 
+        // try to write something
+        try {
+            randomAccessFile.writeObject(0, 1, data.createViewBuffer());
+            fail("file is read-only. file is not writable");
+        } catch (IOException e1) {
+            // correct
+        }
+        
         // get OSDs for a replica
         List<ServiceUUID> replica1 = randomAccessFile.getSuitableOSDsForAReplica();
         replica1 = replica1.subList(0, randomAccessFile.getStripingPolicy().getWidth());
@@ -289,6 +298,13 @@ public class RandomAccessFileTest extends TestCase {
             randomAccessFile.setReadOnly(false);
         } catch (Exception e) {
             fail("File should be able to marked as read-only, because replicas exists.");
+        }
+
+        // try to write something
+        try {
+            randomAccessFile.writeObject(0, 1, data.createViewBuffer());
+        } catch (IOException e1) {
+            fail("file must be writable after deleting read-only flag");
         }
     }
 
