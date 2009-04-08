@@ -155,7 +155,8 @@ public class DeletionStage extends Stage {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"DeleteThread started");
                     final String fileID = files.take();
                     try {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"deleting objects for "+fileID);
+                        if (Logging.isDebug())
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"deleting objects for "+fileID);
                         layout.deleteFile(fileID);
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,ex);

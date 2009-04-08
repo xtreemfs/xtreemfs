@@ -159,7 +159,9 @@ public class PreprocStage extends Stage {
         final DeleteOnCloseCallback callback = (DeleteOnCloseCallback)m.getCallback();
 
         final boolean deleteOnClose = oft.contains(fileId);
-
+        if (deleteOnClose)
+            oft.setDeleteOnClose(fileId);
+       
         callback.deleteOnCloseResult(deleteOnClose, null);
     }
 
