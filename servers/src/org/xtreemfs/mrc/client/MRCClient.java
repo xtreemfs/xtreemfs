@@ -107,6 +107,7 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
@@ -664,17 +665,17 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse xtreemfs_replica_remove(InetSocketAddress server, UserCredentials credentials,
+    public RPCResponse<XCap> xtreemfs_replica_remove(InetSocketAddress server, UserCredentials credentials,
         String fileId, String osdUUID) {
         
         xtreemfs_replica_removeRequest rq = new xtreemfs_replica_removeRequest(fileId, osdUUID);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse<XCap> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final xtreemfs_replica_addResponse resp = new xtreemfs_replica_addResponse();
+                final xtreemfs_replica_removeResponse resp = new xtreemfs_replica_removeResponse();
                 resp.deserialize(data);
-                return null;
+                return resp.getDelete_xcap();
             }
         }, credentials);
         return r;

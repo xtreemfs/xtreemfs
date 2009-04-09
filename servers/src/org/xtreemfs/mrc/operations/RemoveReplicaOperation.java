@@ -147,7 +147,7 @@ public class RemoveReplicaOperation extends MRCOperation {
                 master.getConfig().getCapabilitySecret());
             
             // set the response
-            rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap));
+            rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap.getXCap()));
             
             update.execute();
             
