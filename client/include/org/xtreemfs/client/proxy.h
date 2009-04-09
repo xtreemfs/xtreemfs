@@ -57,8 +57,9 @@ namespace org
         uint8_t reconnect_tries_max;
         uint64_t operation_timeout_ms;
 
+        YIELD::SocketAddress peer_sockaddr; 
+        YIELD::TCPConnection* conn;
         YIELD::FDEventQueue fd_event_queue;
-        unsigned int peer_ip; YIELD::SocketConnection* conn;
 
         uint8_t reconnect( uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left
         void throwExceptionEvent( YIELD::ExceptionEvent* );
