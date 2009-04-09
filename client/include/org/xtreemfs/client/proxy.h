@@ -20,7 +20,7 @@ namespace org
       class Proxy : public YIELD::EventHandler, public YIELD::SharedObject
       {
       public:
-        const static uint8_t PROXY_DEFAULT_RECONNECT_TRIES_MAX = 3;
+        const static uint8_t PROXY_DEFAULT_RECONNECT_TRIES_MAX = static_cast<uint8_t>( -1 );
         const static uint32_t PROXY_FLAG_PRINT_OPERATIONS = 1;
         const static uint32_t PROXY_DEFAULT_FLAGS = 0;
         const static uint64_t PROXY_DEFAULT_OPERATION_TIMEOUT_MS = static_cast<uint64_t>( -1 );

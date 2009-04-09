@@ -218,10 +218,9 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     conn = NULL;
   }
 
-  while ( reconnect_tries_left > 0 )
+  while( reconnect_tries_left == static_cast<uint8_t>( -1 ) ||
+         --reconnect_tries_left > 0 )
   {
-    reconnect_tries_left--;
-
     // Create the conn object based on the URI type
     if ( ssl_context == NULL )
       conn = new YIELD::TCPConnection( peer_ip, uri.get_port(), NULL );
