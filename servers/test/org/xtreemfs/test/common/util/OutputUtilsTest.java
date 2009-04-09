@@ -54,12 +54,13 @@ public class OutputUtilsTest extends TestCase {
         final int trepo = 1;
         final long checksum = 843349439598l;
 
-        final StringBuffer sb = new StringBuffer(Integer.SIZE/8*3+Long.SIZE/8);
+        final StringBuffer sb = new StringBuffer(Integer.SIZE/8*3+2*Long.SIZE/8);
         OutputUtils.writeHexInt(sb,objno);
         OutputUtils.writeHexInt(sb,objver);
         OutputUtils.writeHexInt(sb,trepo);
         OutputUtils.writeHexInt(sb,(int) (checksum >> 32));
         OutputUtils.writeHexInt(sb,(int) (checksum & 0xFFFFFFFF));
+        OutputUtils.writeHexLong(sb, checksum);
         final String result = sb.toString();
         System.out.println("result: "+result);
 
@@ -74,7 +75,8 @@ public class OutputUtilsTest extends TestCase {
         tmp = OutputUtils.readHexInt(result, 32);
         tmp2 += tmp;
         assertEquals(checksum,tmp2);
-
+        tmp2 = OutputUtils.readHexLong(result, 40);
+        assertEquals(checksum,tmp2);
     }
 
 }

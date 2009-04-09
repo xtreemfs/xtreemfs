@@ -212,8 +212,8 @@ public final class OutputUtils {
     }
 
     public static long readHexLong(final String str, int position) {
-        long value = OutputUtils.readHexInt(str, position+8);
-        int tmp = OutputUtils.readHexInt(str, position);
+        long value = OutputUtils.readHexInt(str, position);
+        int tmp = OutputUtils.readHexInt(str, position+8);
         value += ((long)tmp)<< 32;
         return value;
     }
