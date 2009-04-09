@@ -108,7 +108,7 @@ if [ $? -ne 0 ]; then
 fi	
 
 $TEST_BASEDIR/start_environment.sh $optionalFlags -d 2 -o 3 $usessl $XTREEMFS_DIR/trunk/ $TEST_DIR >> $TEST_LOG 2>&1
-result=$?
+result=$? 2>&1
 
 if [ $result -eq 0 ]
 then

@@ -11,8 +11,10 @@ do
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: bonnie failed on $volume!"
+		rm -rf $volume/*
 		print_summary_message 1 "bonnie64" $volume
 		exit 1
 	fi
+	rm -rf $volume/*
 	print_summary_message 0 "bonnie64" $volume
 done

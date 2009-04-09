@@ -12,9 +12,11 @@ do
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: dbench failed on $volume!"
+		rm -rf $volume/*
 		print_summary_message 1 "DBench" $volume
 		exit 1
 	fi
+	rm -rf $volume/*
 	print_summary_message 0 "DBench" $volume
 done
 exit 0

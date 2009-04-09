@@ -10,8 +10,10 @@ do
 	--group=10 --base=$volume/integritytest
 	if [ $? -ne 0 ]; then
 		echo "test failed!"
+		rm -rf $volume/*
 		print_summary_message 1 'data_integrity' $volume
 		exit 1;
 	fi
+	rm -rf $volume/*
 	print_summary_message 0 'data_integrity' $volume
 done

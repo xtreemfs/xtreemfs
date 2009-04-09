@@ -12,9 +12,10 @@ do
 		if [ $? -ne 0 ]; then
 			echo "test failed!"
 			print_summary_message 1 'dd_write' $volume
-			rm -rf $volume*
+			rm -rf $volume/*
 			exit 1;
 		fi
 	done
+	rm -rf $volume/*
 	print_summary_message 0 'dd_write' $volume
 done
