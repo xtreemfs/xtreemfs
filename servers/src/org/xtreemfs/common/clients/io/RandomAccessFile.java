@@ -534,10 +534,15 @@ public class RandomAccessFile implements ObjectStore {
 
     public void removeReplica(ServiceUUID osd) throws Exception {
         if (isReadOnly) {
-            RPCResponse r = mrcClient
+            RPCResponse<XCap> r = mrcClient
                     .xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd.toString());
-            r.get();
+            XCap deleteCap = r.get();
             r.freeBuffers();
+            
+            RPCResponse r2 = osdClient.unlink(osd.getAddress(), fileId, new FileCredentials(fileCredentials.getXlocs(),
+                    deleteCap));
+            r2.get();
+            r2.freeBuffers();
 
             forceFileCredentialsUpdate(translateMode("r"));
         } else
