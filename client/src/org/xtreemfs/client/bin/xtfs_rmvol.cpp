@@ -21,13 +21,13 @@ namespace org
           : xtfs_bin( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         { }
 
-      private: 
+      private:
         std::auto_ptr<YIELD::URI> mrc_uri;
         std::string volume_name;
 
 
         // xtfs_bin
-        int _main()
+        int _main( int, char** )
         {
           YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
           mrc_proxy.get()->rmvol( volume_name );

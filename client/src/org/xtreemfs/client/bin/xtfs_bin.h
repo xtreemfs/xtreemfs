@@ -75,9 +75,9 @@ namespace org
                       YIELD::SocketConnection::set_trace_socket_io_onoff( true );
                   }
                   break;
-                    
+
                   case OPTION_HELP: printUsage(); return 0;
-                  case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;                  
+                  case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;
                   case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = args.OptionArg(); break;
                   case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = args.OptionArg(); break;
                   case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = args.OptionArg(); break;
@@ -103,7 +103,7 @@ namespace org
 
           try
           {
-            _main();
+            _main( argc, argv );
 
             return 0;
           }
@@ -136,12 +136,12 @@ namespace org
           OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
           OPTION_TIMEOUT_MS = 8
         };
-       
+
 
         xtfs_bin( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
-          std::ostringstream debug_level_default_ss; 
+          std::ostringstream debug_level_default_ss;
           debug_level_default_ss << static_cast<uint16_t>( DEBUG_LEVEL_DEFAULT );
           debug_level_default_str = debug_level_default_ss.str();
           addOption( OPTION_DEBUG_LEVEL, "-d", "--debug", debug_level_default_str.c_str() );
@@ -165,7 +165,7 @@ namespace org
         {
           delete ssl_context;
         }
-      
+
         void addOption( int id, const char* short_arg, const char* long_arg = NULL, const char* default_values = NULL )
         {
           options.push_back( Option( id, short_arg, long_arg, default_values ) );
@@ -183,7 +183,7 @@ namespace org
           }
 
           ProxyType* proxy;
-          if ( ssl_context != NULL )          
+          if ( ssl_context != NULL )
             proxy = new ProxyType( uri, *ssl_context );
           else
             proxy = new ProxyType( uri );
@@ -197,7 +197,7 @@ namespace org
         uint8_t get_debug_level() const { return debug_level; }
         uint64_t get_timeout_ms() const { return timeout_ms; }
 
-        virtual int _main() = 0;
+        virtual int _main( int argc, char** argv ) = 0;
 
         std::auto_ptr<YIELD::URI> parseURI( const char* uri_c_str )
         {

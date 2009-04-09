@@ -121,7 +121,7 @@ namespace org
         Proxy* proxy;
 
         // xtfs_bin
-        int _main()
+        int _main( int, char** )
         {
           YIELD::SharedObject::incRef( *request );
           proxy->send( *request );

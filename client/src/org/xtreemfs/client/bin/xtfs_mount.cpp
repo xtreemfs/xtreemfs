@@ -14,6 +14,7 @@ using namespace org::xtreemfs::client;
 #ifndef _WIN32
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+#include <unistd.h>
 #endif
 
 
@@ -58,8 +59,16 @@ namespace org
 
 
         // xtfs_bin
-        int _main()
+        int _main( int argc, char** argv )
         {
+          if ( !foreground )
+          {
+#ifndef _WIN32
+            if ( daemon( 1, 0 ) == -1 )
+              return errno;
+#endif
+          }
+
           YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
           // Create the DIRProxy
@@ -87,29 +96,24 @@ namespace org
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           if ( direct_io )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-          if ( foreground )
-    	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_FOREGROUND;
 
           yieldfs::FUSE fuse( *xtreemfs_volume, fuse_flags );
           int ret;
 #ifdef _WIN32
           ret = fuse.main( mount_point.c_str() );
 #else
-          std::vector<char*> argvv;
-    //      argvv.push_back( argv[0] );
-          if ( get_debug_level() >= DEBUG_LEVEL_DEBUG )
-            argvv.push_back( const_cast<char*>( "-d" ) );
-          if ( foreground )
-            argvv.push_back( const_cast<char*>( "-f" ) );
-          if ( !fuse_o_args.empty() )
+          if ( fuse_o_args.empty() )
+            ret = fuse.main( argv[0], mount_point.c_str() );
+          else
           {
+            std::vector<char*> argvv;
             std::string fuse_o_args( "-o" );
             fuse_o_args.append( this->fuse_o_args );
             argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+            argvv.push_back( NULL );
+            struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
+            ret = fuse.main( fuse_args_, mount_point.c_str() );
           }
-          argvv.push_back( NULL );
-          struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-          ret = fuse.main( fuse_args_, mount_point.c_str() );
 #endif
 
           YIELD::SharedObject::decRef( *xtreemfs_volume );

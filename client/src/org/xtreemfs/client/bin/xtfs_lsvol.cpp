@@ -38,7 +38,7 @@ namespace org
         std::string volume_name;
 
         // xtfs_bin
-        int _main()
+        int _main( int, char** )
         {
           YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
           org::xtreemfs::interfaces::VolumeSet volumes;

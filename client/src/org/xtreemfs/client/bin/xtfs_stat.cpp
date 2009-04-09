@@ -28,21 +28,21 @@ namespace org
         Path path;
 
         // xtfs_bin
-        int _main()
+        int _main( int, char** )
         {
           YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
           org::xtreemfs::interfaces::Stat stbuf;
-          mrc_proxy.get()->getattr( path, stbuf ); 
-          
+          mrc_proxy.get()->getattr( path, stbuf );
+
           std::cout << path << std::endl;
-          size_t path_len = path.size();          
+          size_t path_len = path.size();
           for ( size_t dash_i = 0; dash_i < path_len; dash_i++ ) std::cout << '-';
           std::cout << std::endl;
-       
+
           std::cout << "  type           = ";
           if ( ( stbuf.get_mode() & org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFREG ) == org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFREG )
             std::cout << "file";
-          else if ( ( stbuf.get_mode() & org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFDIR ) == org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFDIR )            
+          else if ( ( stbuf.get_mode() & org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFDIR ) == org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFDIR )
             std::cout << "directory";
           else if ( ( stbuf.get_mode() & org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFLNK ) == org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_S_IFLNK )
             std::cout << "symlink";
@@ -67,11 +67,11 @@ namespace org
           if ( !stbuf.get_link_target().empty() )
             std::cout << "  link target    = " << stbuf.get_link_target() << std::endl;
           std::cout << "  truncate epoch = " << stbuf.get_truncate_epoch() << std::endl;
-          
+
           org::xtreemfs::interfaces::ReplicaSet replicas;
           try
           {
-            mrc_proxy.get()->replica_list( stbuf.get_file_id(), replicas );              
+            mrc_proxy.get()->replica_list( stbuf.get_file_id(), replicas );
           }
           catch ( YIELD::Exception& )
           { }
@@ -85,7 +85,7 @@ namespace org
               const org::xtreemfs::interfaces::StringSet& osd_uuids = replicas[replica_i].get_osd_uuids();
               for ( org::xtreemfs::interfaces::StringSet::const_iterator osd_uuid_i = osd_uuids.begin(); osd_uuid_i != osd_uuids.end(); osd_uuid_i++ )
                 std::cout << *osd_uuid_i << " ";
-              std::cout << std::endl;              
+              std::cout << std::endl;
             }
           }
 
