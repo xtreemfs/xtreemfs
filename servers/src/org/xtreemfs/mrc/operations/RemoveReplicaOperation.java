@@ -24,6 +24,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.net.InetSocketAddress;
+
+import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
@@ -137,8 +140,14 @@ public class RemoveReplicaOperation extends MRCOperation {
             // update the X-Locations list
             sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             
+            // create a deletion capability for the replica
+            Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),
+                FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
+                        .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(),
+                master.getConfig().getCapabilitySecret());
+            
             // set the response
-            rq.setResponse(new xtreemfs_replica_removeResponse());
+            rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap));
             
             update.execute();
             
