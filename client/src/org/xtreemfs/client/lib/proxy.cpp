@@ -94,93 +94,68 @@ void Proxy::handleEvent( YIELD::Event& ev )
             YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, have_user_credentials ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, &user_credentials );
 
             uint8_t reconnect_tries_left = reconnect_tries_max;
-
             if ( conn == NULL )
               reconnect_tries_left = reconnect( reconnect_tries_left );
 
-            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL ) // Blocking
-            {
+            uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
+            if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL )
               YIELD::SocketLib::setBlocking( conn->get_socket() );
-
-              for ( uint8_t serialize_tries = 0; serialize_tries < 2; serialize_tries++ ) // Try, allow for one reconnect, then try again
-              {
-                oncrpc_req.serialize( *conn, NULL );
-
-                if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
-                {
-                  for ( uint8_t deserialize_tries = 0; deserialize_tries < 2; deserialize_tries++ )
-                  {
-                    oncrpc_req.deserialize( *conn );
-
-                    if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
-                    {
-                      req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
-                      YIELD::SharedObject::decRef( req );
-                      return;
-                    }
-                    else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
-                      reconnect_tries_left = reconnect( reconnect_tries_left );
-                    else
-                      YIELD::DebugBreak();
-                  }
-
-                  YIELD::SharedObject::decRef( req );
-                  return;
-                }
-                else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
-                  reconnect_tries_left = reconnect( reconnect_tries_left );
-                else
-                  YIELD::DebugBreak();
-              }
-
-              YIELD::SharedObject::decRef( req );
-              return;
-            }
-            else // Non-blocking/timed
-            {
-              uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
+            else
               YIELD::SocketLib::setNonBlocking( conn->get_socket() );
 
-              bool have_written = false; // Use the variable so the read and write attempt loops can be combined and eliminate some code duplication
+            bool have_written = false;
 
-              for ( ;; ) // Loop for read and write attempts
+            for ( ;; )
+            {
+              if ( !have_written )
+                oncrpc_req.serialize( *conn );
+              else
+                oncrpc_req.deserialize( *conn );
+
+              switch ( conn->get_status() )
               {
-                if ( !have_written )
-                  oncrpc_req.serialize( *conn );
-                else
-                  oncrpc_req.deserialize( *conn );
-
-                // Use if statements instead of a switch so the break after a successful read will exit the loop
-                if ( conn->get_status() == YIELD::SocketConnection::SCS_READY )
+                case YIELD::SocketConnection::SCS_READY:
                 {
                   if ( !have_written )
                     have_written = true;
                   else
                   {
+                    req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
                     YIELD::SharedObject::decRef( req );
                     return;
                   }
                 }
-                else if ( conn->get_status() == YIELD::SocketConnection::SCS_CLOSED )
-                  reconnect_tries_left = reconnect( reconnect_tries_left );
-                else if ( remaining_operation_timeout_ms > 0 )
+                break;
+
+                case YIELD::SocketConnection::SCS_BLOCKED_ON_READ:
+                case YIELD::SocketConnection::SCS_BLOCKED_ON_WRITE:
                 {
-                  bool enable_read = conn->get_status() == YIELD::SocketConnection::SCS_BLOCKED_ON_READ;
-                  fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, enable_read, !enable_read );
-                  double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
-                  YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
-                  if ( fd_event )
+                  if ( remaining_operation_timeout_ms > 0 )
                   {
-                    if ( fd_event->error_code == 0 )
-                      remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentUnixTimeMS() - start_epoch_time_ms ), remaining_operation_timeout_ms );
+                    bool enable_read = conn->get_status() == YIELD::SocketConnection::SCS_BLOCKED_ON_READ;
+                    fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, enable_read, !enable_read );
+                    double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
+                    YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
+                    if ( fd_event )
+                    {
+                      if ( fd_event->error_code == 0 )
+                        remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentUnixTimeMS() - start_epoch_time_ms ), remaining_operation_timeout_ms );
+                      else
+                        reconnect_tries_left = reconnect( reconnect_tries_left );
+                    }
                     else
-                      reconnect_tries_left = reconnect( reconnect_tries_left );
+                      throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
                   }
                   else
                     throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
                 }
-                else
-                  throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
+                break;
+
+                case YIELD::SocketConnection::SCS_CLOSED:
+                {
+                  reconnect_tries_left = reconnect( reconnect_tries_left );
+                }
+                break;
               }
             }
           }
