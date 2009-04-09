@@ -67,7 +67,7 @@ public class Replica {
     }
 
     public boolean isStriped() {
-        return stripingPolicy.getWidth() > 1;
+        return getStripingPolicy().getWidth() > 1;
     }
 
 /*    public boolean isHeadOsd(ServiceUUID localOSD) {
