@@ -23,7 +23,7 @@ then
 fi
 	
 echo -n "rmdir..."
-rmdir $DIRNAME/testdir/subdir/moredir || cleanup 1 ; echo "OK"
+rmdir $DIRNAME/testdir/subdir/moredir || cleanup 1; echo "OK"
 
 if [ -e $DIRNAME/testdir/subdir/moredir ]
 then
@@ -125,10 +125,10 @@ mv $DIRNAME/softlink $DIRNAME/softlink2
 
 target=`readlink $DIRNAME/softlink2`
 target=`basename $target`
-if [ $target != "softlink" ]
+if [ $target != "testfile2" ]
 then
 	echo "FAILED. softlink2 has wrong target after rename: $target!"
-	cleanup1;
+	cleanup 1;
 fi
 
 echo -n "create hardlink..."
