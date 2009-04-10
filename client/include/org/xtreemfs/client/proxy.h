@@ -58,7 +58,7 @@ namespace org
         uint64_t operation_timeout_ms;
 
         YIELD::SocketAddress peer_sockaddr; 
-        YIELD::TCPConnection* conn;
+        YIELD::TCPSocket* conn;
         YIELD::FDEventQueue fd_event_queue;
 
         uint8_t reconnect( uint8_t reconnect_tries_left ); // Returns the new value of reconnect_tries_left

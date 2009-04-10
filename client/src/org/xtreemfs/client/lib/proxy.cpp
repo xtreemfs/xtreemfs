@@ -101,9 +101,9 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
             uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
             if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL )
-              conn->get_socket().setBlocking();
+              conn->setBlocking();
             else
-              conn->get_socket().setBlocking();
+              conn->setBlocking();
 
             bool have_written = false;
 
@@ -131,7 +131,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
               {
                 if ( remaining_operation_timeout_ms > 0 )
                 {
-                  fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, have_written, !have_written );
+                  fd_event_queue.toggleSocketEvent( *conn, conn, have_written, !have_written );
                   double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
                   YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
                   if ( fd_event )
@@ -170,7 +170,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
 {
   if ( conn != NULL ) // This is a reconnect, not the first connect
   {
-    fd_event_queue.detachSocket( conn->get_socket(), conn );
+    fd_event_queue.detachSocket( *conn, conn );
     conn->close();
     delete conn;
     conn = NULL;
@@ -181,18 +181,18 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
   {
     // Create the conn object based on the URI type
     if ( ssl_context == NULL )
-      conn = new YIELD::TCPConnection( peer_sockaddr );
+      conn = new YIELD::TCPSocket;
     else
-      conn = new YIELD::SSLConnection( peer_sockaddr, ssl_context );
+      conn = new YIELD::SSLSocket( *ssl_context );
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
-    fd_event_queue.attachSocket( conn->get_socket(), conn, false, false ); // Attach without read or write notifications enabled
+    fd_event_queue.attachSocket( *conn, conn, false, false ); // Attach without read or write notifications enabled
 
     // Now try the actual connect
     if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL ) // Blocking
     {
       conn->setBlocking();
-      if ( conn->connect() )
+      if ( conn->connect( peer_sockaddr ) )
         return reconnect_tries_left;
     }
     else // Non-blocking/timed
@@ -200,16 +200,16 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
       uint64_t remaining_operation_timeout_ms = operation_timeout_ms;
       conn->setNonBlocking();
 
-      if ( conn->connect() )
+      if ( conn->connect( peer_sockaddr ) )
         break;
       else if ( YIELD::Socket::WOULDBLOCK() )
       {
-        fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, false, true ); // Write readiness = the connect() operation is complete
+        fd_event_queue.toggleSocketEvent( *conn, conn, false, true ); // Write readiness = the connect() operation is complete
         double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
         YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
-        if ( fd_event && fd_event->error_code == 0 && conn->connect() )
+        if ( fd_event && fd_event->error_code == 0 && conn->connect( peer_sockaddr ) )
         {
-          fd_event_queue.toggleSocketEvent( conn->get_socket(), conn, false, false );
+          fd_event_queue.toggleSocketEvent( *conn, conn, false, false );
           return reconnect_tries_left;
         }
         else
@@ -221,7 +221,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     }
 
     // Clear the connection state for the next try
-    fd_event_queue.detachSocket( conn->get_socket(), conn );
+    fd_event_queue.detachSocket( *conn, conn );
     conn->close();
     delete conn;
     conn = NULL;
@@ -237,7 +237,7 @@ void Proxy::throwExceptionEvent( YIELD::ExceptionEvent* exc_ev )
 {
   if ( conn )
   {
-    fd_event_queue.detachSocket( conn->get_socket(), conn );
+    fd_event_queue.detachSocket( *conn, conn );
     conn->close();
     delete conn;
     conn = NULL;

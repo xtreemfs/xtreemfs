@@ -72,7 +72,7 @@ namespace org
                       debug_level = DEBUG_LEVEL_MAX;
 
                     if ( debug_level >= DEBUG_LEVEL_TRACE )
-                      YIELD::TCPConnection::set_trace_socket_io_onoff( true );
+                      YIELD::TCPSocket::set_trace_socket_io_onoff( true );
                   }
                   break;
 
