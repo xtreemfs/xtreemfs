@@ -28,6 +28,9 @@ namespace org
 
       class SharedFileCallbackInterface
       {
+      public:
+        virtual ~SharedFileCallbackInterface() { }
+
       private:
         friend class SharedFile;
 
