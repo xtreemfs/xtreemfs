@@ -6,7 +6,7 @@
 	ProjectGUID="{166A359D-F1E0-4B51-AF73-C40C96711397}"
 	RootNamespace="xtfs_lsvol"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"    
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -27,7 +27,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\share\yield\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\..\..\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -50,7 +50,7 @@
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-			/>			
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
@@ -75,7 +75,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\share\yield\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\..\..\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
 				StringPooling="false"
 				RuntimeLibrary="2"
@@ -108,7 +108,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
                 SubSystem="0"
-			/>			
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -120,7 +120,7 @@
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\share\yield\include"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)..\..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\..\..\..\yield\include"
 				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
 				StringPooling="false"
 				RuntimeLibrary="2"
@@ -153,7 +153,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
                 SubSystem="0"
-			/>			
+			/>
 		</Configuration>
 	</Configurations>
 	<References>

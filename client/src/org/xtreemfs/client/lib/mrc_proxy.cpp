@@ -10,14 +10,14 @@ MRCProxy::MRCProxy( const YIELD::URI& uri )
   : Proxy( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT )
 {
   policies = new PolicyContainer;
-  mrc_interface.registerSerializableFactories( serializable_factories );
+  mrc_interface.registerObjectFactories( object_factories );
 }
 
 MRCProxy::MRCProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context )
   : Proxy( uri, ssl_context, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
 {
   policies = new PolicyContainer;
-  mrc_interface.registerSerializableFactories( serializable_factories );
+  mrc_interface.registerObjectFactories( object_factories );
 }
 
 MRCProxy::~MRCProxy()

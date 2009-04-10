@@ -62,7 +62,7 @@ namespace org
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
           mrc_proxy.get()->mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), std::string(), std::string() ) );
           return 0;
         }

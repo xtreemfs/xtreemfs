@@ -14,7 +14,7 @@ OSDProxyFactory::~OSDProxyFactory()
 {
   osd_proxy_cache_lock.acquire();
   for ( YIELD::STLHashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
-    YIELD::SharedObject::decRef( *osd_proxy_i->second );
+    YIELD::Object::decRef( *osd_proxy_i->second );
   osd_proxy_cache.clear();
   osd_proxy_cache_lock.release();
 }
@@ -31,7 +31,7 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
   OSDProxy* osd_proxy = osd_proxy_cache.find( uri_hash );
   osd_proxy_cache_lock.release();
   if ( osd_proxy != NULL )
-    return YIELD::SharedObject::incRef( *osd_proxy );
+    return YIELD::Object::incRef( *osd_proxy );
   else
   {
     OSDProxy* osd_proxy;
@@ -40,7 +40,7 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
     else
       osd_proxy = new OSDProxy( uri );
     osd_proxy_stage_group.createStage( *osd_proxy );
-    YIELD::SharedObject::incRef( *osd_proxy ); // For the cache
+    YIELD::Object::incRef( *osd_proxy ); // For the cache
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();

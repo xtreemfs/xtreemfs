@@ -50,14 +50,14 @@ namespace org
             return 0;
         }
 
-        YIELD::Serializable* readSerializable( const Declaration& decl, YIELD::Serializable* s = NULL )
+        YIELD::Object* readObject( const Declaration& decl, YIELD::Object* s = NULL )
         {
           if ( s )
           {
-            switch ( s->getGeneralType() )
+            switch ( s->get_general_type() )
             {
-              case YIELD::RTTI::STRING: readString( decl, static_cast<YIELD::SerializableString&>( *s ) ); break;
-              case YIELD::RTTI::STRUCT: s->deserialize( *this ); break;
+              case YIELD::Object::STRING: readString( decl, static_cast<YIELD::String&>( *s ) ); break;
+              case YIELD::Object::STRUCT: s->deserialize( *this ); break;
             }
           }
 
@@ -101,9 +101,9 @@ namespace org
         xtfs_send()
           : xtfs_bin( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
         {
-          org::xtreemfs::interfaces::DIRInterface().registerSerializableFactories( serializable_factories );
-          org::xtreemfs::interfaces::MRCInterface().registerSerializableFactories( serializable_factories );
-          org::xtreemfs::interfaces::OSDInterface().registerSerializableFactories( serializable_factories );
+          org::xtreemfs::interfaces::DIRInterface().registerObjectFactories( object_factories );
+          org::xtreemfs::interfaces::MRCInterface().registerObjectFactories( object_factories );
+          org::xtreemfs::interfaces::OSDInterface().registerObjectFactories( object_factories );
 
           request = NULL;
           proxy = NULL;
@@ -111,27 +111,27 @@ namespace org
 
         ~xtfs_send()
         {
-          YIELD::SharedObject::decRef( request );
+          YIELD::Object::decRef( request );
           delete proxy;
         }
 
       private:
-        YIELD::SerializableFactories serializable_factories;
+        YIELD::ObjectFactories object_factories;
         YIELD::Request* request;
         Proxy* proxy;
 
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::SharedObject::incRef( *request );
+          YIELD::Object::incRef( *request );
           proxy->send( *request );
 
           YIELD::Event& resp = request->waitForDefaultResponse( get_timeout_ms() );
-          std::cout << resp.getTypeName() << "( ";
+          std::cout << resp.get_type_name() << "( ";
           YIELD::PrettyPrintOutputStream output_stream( std::cout );
           resp.serialize( output_stream );
           std::cout << " )" << std::endl;
-          YIELD::SharedObject::decRef( resp );
+          YIELD::Object::decRef( resp );
 
           return 0;
         }
@@ -145,17 +145,17 @@ namespace org
             if ( strlen( rpc_uri.get()->get_resource() ) > 1 )
             {
               std::string request_type_name( rpc_uri.get()->get_resource() + 1 );
-              request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
+              request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request != NULL )
                 proxy = createProxy<MRCProxy>( *rpc_uri.get() );
               else
               {
-                request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
+                request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
                 if ( request != NULL )
                   proxy = createProxy<DIRProxy>( *rpc_uri.get() );
                 else
                 {
-                  request = static_cast<YIELD::Request*>( serializable_factories.createSerializable( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
+                  request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
                   if ( request != NULL )
                     proxy = createProxy<OSDProxy>( *rpc_uri.get() );
                   else

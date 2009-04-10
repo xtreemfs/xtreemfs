@@ -4,6 +4,7 @@ set XTREEMFS_PATH=%CD%\..
 set XTREEMFS_CLIENT_PATH=%CD%
 set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%YIELDFS_PATH%\share\yield
+REM set YIELD_PATH=%CD%\..\..\yield
 
 set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include -D YIELD_HAVE_OPENSSL
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
@@ -14,9 +15,9 @@ set DEPEND_XTREEMFS_CLIENT_FLAGS=-I %XTREEMFS_CLIENT_PATH%\include -L %XTREEMFS_
 
 REM Generate source
 REM Don't include share\* in the scan here
-python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces --with-registerSerializableFactories
-python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include --with-registerSerializableFactories
-python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src --with-registerSerializableFactories
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\include
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src
 python %YIELD_PATH%\bin\generate_test_main_cpp.py
 python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIENT_PATH%\include -s %XTREEMFS_CLIENT_PATH%\proj -s %XTREEMFS_CLIENT_PATH%\src
 python %CD%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin

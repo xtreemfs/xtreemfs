@@ -61,7 +61,7 @@ void Proxy::init()
 
   conn = NULL;
 
-  org::xtreemfs::interfaces::Exceptions().registerSerializableFactories( serializable_factories );
+  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( object_factories );
 }
 
 Proxy::~Proxy()
@@ -71,29 +71,29 @@ Proxy::~Proxy()
 
 void Proxy::handleEvent( YIELD::Event& ev )
 {
-  switch ( ev.getTypeId() )
+  switch ( ev.get_type_id() )
   {
-    case TYPE_ID( YIELD::StageStartupEvent ):
-    case TYPE_ID( YIELD::StageShutdownEvent ): YIELD::SharedObject::decRef( ev ); break;
+    case YIELD_OBJECT_TYPE_ID( YIELD::StageStartupEvent ):
+    case YIELD_OBJECT_TYPE_ID( YIELD::StageShutdownEvent ): YIELD::Object::decRef( ev ); break;
 
     default:
     {
-      switch ( ev.getGeneralType() )
+      switch ( ev.get_general_type() )
       {
-        case YIELD::RTTI::REQUEST:
+        case YIELD::Object::REQUEST:
         {
           YIELD::Request& req = static_cast<YIELD::Request&>( ev );
           if ( ( flags & PROXY_FLAG_PRINT_OPERATIONS ) == PROXY_FLAG_PRINT_OPERATIONS )
           {
             YIELD::PrettyPrintOutputStream pretty_print_output_stream( std::cout );
-            pretty_print_output_stream.writeSerializable( YIELD::PrettyPrintOutputStream::Declaration( req.getTypeName() ), req );
+            pretty_print_output_stream.writeObject( YIELD::PrettyPrintOutputStream::Declaration( req.get_type_name() ), req );
           }
 
           try
           {
             org::xtreemfs::interfaces::UserCredentials user_credentials;
             bool have_user_credentials = getCurrentUserCredentials( user_credentials );
-            YIELD::ONCRPCRequest oncrpc_req( YIELD::SharedObject::incRef( req ), serializable_factories, have_user_credentials ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, &user_credentials );
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::Object::incRef( req ), object_factories, have_user_credentials ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, &user_credentials );
 
             uint8_t reconnect_tries_left = reconnect_tries_max;
             if ( conn == NULL )
@@ -121,8 +121,8 @@ void Proxy::handleEvent( YIELD::Event& ev )
               {
                 if ( oncrpc_req.deserialize( *conn ) )
                 {
-                  req.respond( static_cast<YIELD::Event&>( YIELD::SharedObject::incRef( *oncrpc_req.getInBody() ) ) );
-                  YIELD::SharedObject::decRef( req );
+                  req.respond( static_cast<YIELD::Event&>( YIELD::Object::incRef( *oncrpc_req.getInBody() ) ) );
+                  YIELD::Object::decRef( req );
                   return;
                 }
               }
@@ -154,7 +154,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
           catch ( YIELD::ExceptionEvent* exc_ev )
           {
             req.respond( *exc_ev );
-            YIELD::SharedObject::decRef( req );
+            YIELD::Object::decRef( req );
           }
         }
         break;

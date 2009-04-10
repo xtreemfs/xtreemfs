@@ -38,12 +38,12 @@ bool Volume::chown( const YIELD::Path& path, int uid, int gid )
   return true;
 }
 
-YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
+YIELD::auto_Object<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
 {
   return getattr( Path( this->name, path ) );
 }
 
-YIELD::auto_SharedObject<YIELD::Stat> Volume::getattr( const Path& path )
+YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy.getattr( path, stbuf );
@@ -80,7 +80,7 @@ bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
   return true;
 }
 
-YIELD::auto_SharedObject<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode )
+YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode )
 {
   Path path( this->name, _path );
 
@@ -131,7 +131,7 @@ YIELD::auto_SharedObject<YIELD::File> Volume::open( const YIELD::Path& _path, ui
     shared_file = new SharedFile( *this, path, file_credentials.get_xlocs() );
     in_use_shared_files.insert( path_hash, shared_file );
     OpenFile& open_file = shared_file->open( file_credentials );
-    YIELD::SharedObject::decRef( *shared_file ); // every open creates a new reference to the SharedFile; decRef the original reference here so that the last released'd OpenFile will delete the SharedFile
+    YIELD::Object::decRef( *shared_file ); // every open creates a new reference to the SharedFile; decRef the original reference here so that the last released'd OpenFile will delete the SharedFile
     return &open_file;
   }
   else
@@ -225,7 +225,7 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
   YIELD::File* file = this->open( path, O_TRUNC, 0 ).release();
   file->truncate( new_size );
-  YIELD::SharedObject::decRef( file );
+  YIELD::Object::decRef( file );
   return true;
 }
 
@@ -265,7 +265,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
     {
       OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( ( *replica_i ).get_osd_uuids()[0] );
       osd_proxy.unlink( file_credentials, file_id );
-      YIELD::SharedObject::decRef( osd_proxy );
+      YIELD::Object::decRef( osd_proxy );
     }
   }
 }

@@ -47,7 +47,7 @@ namespace org
 
         YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
-        YIELD::auto_SharedObject<YIELD::Stat> getattr( const Path& path );
+        YIELD::auto_Object<YIELD::Stat> getattr( const Path& path );
 
       private:
         std::string name;

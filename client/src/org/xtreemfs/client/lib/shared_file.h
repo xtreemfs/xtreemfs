@@ -24,7 +24,7 @@ namespace org
       class Volume;
 
 
-      class SharedFile : public YIELD::SharedObject
+      class SharedFile : public YIELD::Object
       {
       public:
         SharedFile( Volume& parent_volume, const Path& path, const org::xtreemfs::interfaces::XLocSet& xlocs );

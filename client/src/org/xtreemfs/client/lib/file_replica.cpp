@@ -18,7 +18,7 @@ FileReplica::FileReplica( SharedFile& parent_shared_file, const org::xtreemfs::i
 FileReplica::~FileReplica()
 {
   for ( std::vector<OSDProxy*>::iterator osd_proxy_i = osd_proxies.begin(); osd_proxy_i != osd_proxies.end(); osd_proxy_i++ )
-    YIELD::SharedObject::decRef( *osd_proxy_i );
+    YIELD::Object::decRef( *osd_proxy_i );
 }
 
 bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
@@ -39,7 +39,7 @@ bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_c
     org::xtreemfs::interfaces::ObjectData object_data;
     osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
-    YIELD::SerializableString* data = static_cast<YIELD::SerializableString*>( object_data.get_data().get() );
+    YIELD::String* data = static_cast<YIELD::String*>( object_data.get_data().get() );
     if ( data && !data->empty() )
     {
       memcpy( rbuf_p, data->c_str(), data->size() );
@@ -89,7 +89,7 @@ bool FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_
     uint64_t object_size = file_offset_max - file_offset;
     if ( object_offset + object_size > stripe_size )
       object_size = stripe_size - object_offset;
-    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::SerializableString( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
+    org::xtreemfs::interfaces::ObjectData object_data( new YIELD::String( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
     org::xtreemfs::interfaces::OSDWriteResponse temp_osd_write_response;

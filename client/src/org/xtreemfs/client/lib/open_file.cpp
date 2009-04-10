@@ -13,7 +13,7 @@ OpenFile::OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_crede
 
 OpenFile::~OpenFile()
 {
-  SharedObject::decRef( attached_to_file_replica.get_parent_shared_file() );
+  Object::decRef( attached_to_file_replica.get_parent_shared_file() );
 }
 
 bool OpenFile::close()
@@ -22,7 +22,7 @@ bool OpenFile::close()
   return false;
 }
 
-YIELD::auto_SharedObject<YIELD::Stat> OpenFile::getattr()
+YIELD::auto_Object<YIELD::Stat> OpenFile::getattr()
 {
   return get_parent_volume().getattr( get_path() );
 }

@@ -72,12 +72,12 @@ namespace org
           YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
           // Create the DIRProxy
-          YIELD::auto_SharedObject<DIRProxy> dir_proxy = createProxy<DIRProxy>( *dir_uri.get() );
+          YIELD::auto_Object<DIRProxy> dir_proxy = createProxy<DIRProxy>( *dir_uri.get() );
           main_stage_group.createStage( *dir_proxy.get() );
 
           // Create the MRCProxy
           YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
-          YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( mrc_uri );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( mrc_uri );
           main_stage_group.createStage( *mrc_proxy.get() );
 
           // Create the OSDProxyFactory
@@ -87,9 +87,9 @@ namespace org
           YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
           if ( cache )
-            xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
+            xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
           if ( get_debug_level() >= DEBUG_LEVEL_TRACE )
-            xtreemfs_volume = new yieldfs::TracingVolume( YIELD::SharedObject::incRef( *xtreemfs_volume ) );
+            xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
           if ( get_debug_level() >= DEBUG_LEVEL_DEBUG )
@@ -116,7 +116,7 @@ namespace org
           }
 #endif
 
-          YIELD::SharedObject::decRef( *xtreemfs_volume );
+          YIELD::Object::decRef( *xtreemfs_volume );
 
           YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 

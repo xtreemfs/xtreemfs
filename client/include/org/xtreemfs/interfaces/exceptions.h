@@ -88,13 +88,13 @@ namespace org
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
 
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
+          // YIELD::Object
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
 
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
           virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
-        // YIELD::Serializable
+        // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { accept_stat = input_stream.readUint32( YIELD::StructuredStream::Declaration( "accept_stat" ) ); error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "accept_stat" ), accept_stat ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
 
@@ -122,13 +122,13 @@ namespace org
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
 
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
+          // YIELD::Object
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
 
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new errnoException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
-        // YIELD::Serializable
+        // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint32( YIELD::StructuredStream::Declaration( "error_code" ), error_code ); output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
 
@@ -151,13 +151,13 @@ namespace org
         void set_to_uuid( const char* to_uuid, size_t to_uuid_len = 0 ) { this->to_uuid.assign( to_uuid, ( to_uuid_len != 0 ) ? to_uuid_len : std::strlen( to_uuid ) ); }
         const std::string& get_to_uuid() const { return to_uuid; }
 
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
+          // YIELD::Object
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
 
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new RedirectException( to_uuid); }
           virtual void throwStackClone() const { throw RedirectException( to_uuid); }
-        // YIELD::Serializable
+        // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
 
@@ -178,13 +178,13 @@ namespace org
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
 
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
+          // YIELD::Object
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
 
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new ConcurrentModificationException( stack_trace); }
           virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
-        // YIELD::Serializable
+        // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
 
@@ -205,13 +205,13 @@ namespace org
         void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
         const std::string& get_error_message() const { return error_message; }
 
-          // YIELD::RTTI
-          TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
+          // YIELD::Object
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
 
           // YIELD::ExceptionEvent
           virtual ExceptionEvent* clone() const { return new InvalidArgumentException( error_message); }
           virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
-        // YIELD::Serializable
+        // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
 
@@ -221,15 +221,14 @@ namespace org
 
 
 
-        void registerSerializableFactories( YIELD::SerializableFactories& serializable_factories )
+        void registerObjectFactories( YIELD::ObjectFactories& object_factories )
         {
-          serializable_factories.registerSerializableFactory( 1268393568UL, new YIELD::SerializableFactoryImpl<ProtocolException> );;
-          serializable_factories.registerSerializableFactory( 405273943UL, new YIELD::SerializableFactoryImpl<errnoException> );;
-          serializable_factories.registerSerializableFactory( 3273969329UL, new YIELD::SerializableFactoryImpl<RedirectException> );;
-          serializable_factories.registerSerializableFactory( 769608203UL, new YIELD::SerializableFactoryImpl<ConcurrentModificationException> );;
-          serializable_factories.registerSerializableFactory( 690678936UL, new YIELD::SerializableFactoryImpl<InvalidArgumentException> );;
+          object_factories.registerObjectFactory( 1268393568UL, new YIELD::ObjectFactoryImpl<ProtocolException> );;
+          object_factories.registerObjectFactory( 405273943UL, new YIELD::ObjectFactoryImpl<errnoException> );;
+          object_factories.registerObjectFactory( 3273969329UL, new YIELD::ObjectFactoryImpl<RedirectException> );;
+          object_factories.registerObjectFactory( 769608203UL, new YIELD::ObjectFactoryImpl<ConcurrentModificationException> );;
+          object_factories.registerObjectFactory( 690678936UL, new YIELD::ObjectFactoryImpl<InvalidArgumentException> );;
         }
-
 
         // EventHandler
         virtual const char* getEventHandlerName() const { return "Exceptions"; }    virtual void handleEvent( YIELD::Event& ev ) { YIELD::EventHandler::handleUnknownEvent( ev ); }

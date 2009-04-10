@@ -27,6 +27,6 @@ SharedFile::~SharedFile()
 OpenFile& SharedFile::open( const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
   OpenFile* open_file = new OpenFile( file_credentials, *file_replicas[0] );
-  SharedObject::incRef( *this );
+  Object::incRef( *this );
   return *open_file;
 }

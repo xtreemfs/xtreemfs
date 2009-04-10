@@ -20,10 +20,10 @@ namespace org
         PlatformExceptionEvent( unsigned long error_code ) : YIELD::ExceptionEvent( error_code ) { }
         virtual ~PlatformExceptionEvent() throw() { }
 
-        // RTTI
-        TYPE_INFO( EXCEPTION_EVENT, "PlatformExceptionEvent", 2506799510UL )
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "PlatformExceptionEvent", 2506799510UL )
 
-        // ExceptionEvent
+        // YIELD::ExceptionEvent
         virtual ExceptionEvent* clone() const { return new PlatformExceptionEvent( error_code ); }
         virtual void throwStackClone() const { throw PlatformExceptionEvent( error_code ); }
 

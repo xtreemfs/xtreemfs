@@ -40,7 +40,7 @@ namespace org
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::auto_SharedObject<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
           org::xtreemfs::interfaces::VolumeSet volumes;
           mrc_proxy.get()->lsvol( volumes );
 

@@ -17,7 +17,7 @@ namespace org
   {
     namespace client
     {
-      class Proxy : public YIELD::EventHandler, public YIELD::SharedObject
+      class Proxy : public YIELD::EventHandler
       {
       public:
         const static uint8_t PROXY_DEFAULT_RECONNECT_TRIES_MAX = static_cast<uint8_t>( -1 );
@@ -45,7 +45,7 @@ namespace org
 
         virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 
-        YIELD::SerializableFactories serializable_factories;
+        YIELD::ObjectFactories object_factories;
 
       private:
         void init();
