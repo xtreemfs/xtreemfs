@@ -79,6 +79,8 @@ public class XDRUtils {
     }
 
     public static int serializableBufferLength(ReusableBuffer data) {
+        if (data == null)
+            return Integer.SIZE/8;
         int len = data.remaining()+Integer.SIZE/8;
         if (len % 4 > 0)
             len += 4 - (len % 4);
@@ -86,7 +88,16 @@ public class XDRUtils {
     }
 
     public static int stringLengthPadded(String str) {
+        if (str == null)
+            return Integer.SIZE/8;
         int len = str.getBytes().length+Integer.SIZE/8;
+        if (len % 4 > 0)
+            len += 4 - (len % 4);
+        return len;
+    }
+
+    public static int stringLengthPadded(byte[] str) {
+        int len = str.length+Integer.SIZE/8;
         if (len % 4 > 0)
             len += 4 - (len % 4);
         return len;
@@ -113,6 +124,10 @@ public class XDRUtils {
             return;
         }
         final byte[] bytes = str.getBytes();
+        serializeString(bytes, writer);
+    }
+
+    public static void serializeString(byte[] bytes, ONCRPCBufferWriter writer) {
         final int strlen = bytes.length;
         if (strlen > MAX_STRLEN)
             throw new IllegalArgumentException("string is too large ("+strlen+"), maximum allowed is "+MAX_STRLEN+" bytes");
@@ -124,6 +139,7 @@ public class XDRUtils {
             }
         }
     }
+
 
 
 }

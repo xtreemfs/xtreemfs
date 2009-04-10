@@ -373,7 +373,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
                     while (true) {
 
-                        final ByteBuffer fragmentHeader = con.getSendFragHdr();
+                        //final ByteBuffer fragmentHeader = con.getSendFragHdr();
 
                         ONCRPCRecord rq = con.getSend();
                         if (rq == null) {
@@ -387,17 +387,17 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 con.setSend(rq);
                             }
                             //create fragment header
-                            fragmentHeader.position(0);
+                            /*fragmentHeader.position(0);
                             final int fragmentSize = rq.getResponseSize();
                             final boolean isLastFragment = true;
                             final int fragmentHeaderInt = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
                             fragmentHeader.putInt(fragmentHeaderInt);
-                            fragmentHeader.position(0);
+                            fragmentHeader.position(0);*/
                         }
 
 
 
-                        if (fragmentHeader.hasRemaining()) {
+                        /*if (fragmentHeader.hasRemaining()) {
                             final int numBytesWritten = writeData(key, channel, fragmentHeader);
                             if (numBytesWritten == -1) {
                                 //connection closed
@@ -409,7 +409,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 break;
                             }
                         //finished sending... send fragment data now...
-                        } else {
+                        } else {*/
                             //send fragment data
                             final ReusableBuffer currentBuf = rq.getCurrentResponseBuffer();
                             final int numBytesWritten = writeData(key, channel, currentBuf.getBuffer());
@@ -447,7 +447,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 rq.nextResponseBuffer();
                             }
 
-                        }
+                        //}
                     }
                 }
             }

@@ -91,7 +91,7 @@ public class TortureXtreemFS {
 
             final SSLOptions sslOptions;
 
-            if (dirURL.getProtocol().equalsIgnoreCase("onrpcs")) {
+            if (dirURL.getProtocol().equalsIgnoreCase("oncrpcs")) {
                 //require credentials!
                 String serviceCredsFile = null;
                 String serviceCredsPass = null;
@@ -107,6 +107,7 @@ public class TortureXtreemFS {
                 sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
                         SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile), trustedCAsPass,
                         SSLOptions.JKS_CONTAINER, false);
+                System.out.println("USING SSL");
             } else {
                 sslOptions = null;
             }

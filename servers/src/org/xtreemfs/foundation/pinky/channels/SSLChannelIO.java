@@ -218,9 +218,14 @@ public class SSLChannelIO extends ChannelIO {
                     inNetBuffer.compact(); // ready for reading from channel
                 }
                 inReadBuffer.flip();
-                while (inReadBuffer.hasRemaining() && dst.hasRemaining()) {
-                    dst.put(inReadBuffer.get());
-                    returnValue++;
+                if (dst.remaining() >= inReadBuffer.remaining()) {
+                    returnValue += inReadBuffer.remaining();
+                    dst.put(inReadBuffer.getBuffer());
+                } else {
+                    while (inReadBuffer.hasRemaining() && dst.hasRemaining()) {
+                        dst.put(inReadBuffer.get());
+                        returnValue++;
+                    }
                 }
                 inReadBuffer.compact();
             }

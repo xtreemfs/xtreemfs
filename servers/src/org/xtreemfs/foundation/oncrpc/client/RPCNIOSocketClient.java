@@ -316,6 +316,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                                 final int fragHdrInt = respFragHdr.getInt();
                                 final int fragmentSize = ONCRPCRecordFragmentHeader.getFragmentLength(fragHdrInt);
                                 final boolean isLastFragment = ONCRPCRecordFragmentHeader.isLastFragment(fragHdrInt);
+                                assert (fragmentSize > 0) : "fragment has wrong size: "+fragmentSize;
                                 ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
                                 con.addResponseFragment(fragment);
                                 con.setLastResponseFragReceived(isLastFragment);
