@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
@@ -14,11 +14,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_rmvol : public xtfs_bin
+      class xtfs_rmvol : public Main
       {
       public:
         xtfs_rmvol()
-          : xtfs_bin( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+          : Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         { }
 
       private:

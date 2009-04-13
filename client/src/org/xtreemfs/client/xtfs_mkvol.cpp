@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
@@ -14,11 +14,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_mkvol : public xtfs_bin
+      class xtfs_mkvol : public Main
       {
       public:
         xtfs_mkvol()
-          : xtfs_bin( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+          : Main( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         {
           addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
           access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
@@ -121,6 +121,8 @@ namespace org
                   striping_policy_width = new_striping_policy_width;
               }
               break;
+
+              default: Main::parseOption( id, arg ); break;
             }
           }
         }

@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
@@ -17,11 +17,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_lsvol : public xtfs_bin
+      class xtfs_lsvol : public Main
       {
       public:
         xtfs_lsvol()
-          : xtfs_bin( "xtfs_lsvol", "list volumes on a specified MRC", "[oncrpc[s]://]<mrc host>[:port][/<volume name>]" )
+          : Main( "xtfs_lsvol", "list volumes on a specified MRC", "[oncrpc[s]://]<mrc host>[:port][/<volume name>]" )
         {
           addOption( XTFS_LSVOL_OPTION_LONG_LISTING, "-l" );
           long_listing = false;
@@ -75,6 +75,7 @@ namespace org
           switch ( id )
           {
             case XTFS_LSVOL_OPTION_LONG_LISTING: long_listing = true; break;
+            default: Main::parseOption( id, arg ); break;
           }
         }
 

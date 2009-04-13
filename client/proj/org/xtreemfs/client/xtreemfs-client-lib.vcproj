@@ -347,6 +347,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\open_file.h"
     >
 </File>
@@ -360,10 +364,6 @@
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\shared_file.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\xtfs_bin.h"
     >
 </File>
 <File

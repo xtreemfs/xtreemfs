@@ -2,8 +2,10 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
+
+#include "org/xtreemfs/interfaces/constants.h"
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -24,11 +26,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_mount : public xtfs_bin
+      class xtfs_mount : public Main
       {
       public:
         xtfs_mount()
-          : xtfs_bin( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
+          : Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
         {
           addOption( XTFS_MOUNT_OPTION_CACHE, "-c", "--cache" );
           cache = false;
@@ -88,11 +90,11 @@ namespace org
 
           if ( cache )
             xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
-          if ( get_debug_level() >= DEBUG_LEVEL_TRACE )
+          if ( get_debug_level() >= org::xtreemfs::interfaces::DEBUG_LEVEL_TRACE )
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
-          if ( get_debug_level() >= DEBUG_LEVEL_DEBUG )
+          if ( get_debug_level() >= org::xtreemfs::interfaces::DEBUG_LEVEL_DEBUG )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           if ( direct_io )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
@@ -140,6 +142,8 @@ namespace org
                 direct_io = true;
             }
             break;
+
+            default: Main::parseOption( id, arg ); break;
           }
         }
 

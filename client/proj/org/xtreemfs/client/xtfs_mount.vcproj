@@ -165,7 +165,7 @@
             UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
             >
             <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\xtfs_bin.h"
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
     >
 </File>
 

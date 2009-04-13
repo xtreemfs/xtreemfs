@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "yield.h"
@@ -95,11 +95,11 @@ namespace org
       };
 
 
-      class xtfs_send : public xtfs_bin
+      class xtfs_send : public Main
       {
       public:
         xtfs_send()
-          : xtfs_bin( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
+          : Main( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
         {
           org::xtreemfs::interfaces::DIRInterface().registerObjectFactories( object_factories );
           org::xtreemfs::interfaces::MRCInterface().registerObjectFactories( object_factories );

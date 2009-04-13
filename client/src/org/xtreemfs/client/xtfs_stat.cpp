@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client.h"
-#include "xtfs_bin.h"
+#include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "yield/platform.h"
@@ -16,11 +16,11 @@ namespace org
   {
     namespace client
     {
-      class xtfs_stat : public xtfs_bin
+      class xtfs_stat : public Main
       {
       public:
-        xtfs_stat()
-          : xtfs_bin( "xtfs_stat", "show information on a directory, file, or volume", "[oncrpc[s]://]<mrc host>[:port]/volume_name[/file]" )
+        xtfs_stat() 
+          : Main( "xtfs_stat", "show information on a directory, file, or volume", "[oncrpc[s]://]<mrc host>[:port]/volume_name[/file]" )
         { }
 
       private:
