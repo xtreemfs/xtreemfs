@@ -4,7 +4,7 @@
 #ifndef ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_BIN_OPTIONS_H
 #define ECTS_XTREEMFS_CLIENT_SRC_ORG_XTREEMFS_CLIENT_BIN_OPTIONS_H
 
-#include "yield.h"
+#include "yield/main.h"
 
 #include "org/xtreemfs/interfaces/constants.h"
 
