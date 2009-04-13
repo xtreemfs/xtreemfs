@@ -50,12 +50,12 @@ namespace org
       {
       public:
         ObjectData() : data( NULL ), checksum( 0 ), zero_padding( 0 ), invalid_checksum_on_osd( false ) { }
-        ObjectData( const YIELD::auto_Object<YIELD::Object>& data, uint32_t checksum, uint32_t zero_padding, bool invalid_checksum_on_osd ) : data( data ), checksum( checksum ), zero_padding( zero_padding ), invalid_checksum_on_osd( invalid_checksum_on_osd ) { }
+        ObjectData( const YIELD::auto_Object<YIELD::String>& data, uint32_t checksum, uint32_t zero_padding, bool invalid_checksum_on_osd ) : data( data ), checksum( checksum ), zero_padding( zero_padding ), invalid_checksum_on_osd( invalid_checksum_on_osd ) { }
         virtual ~ObjectData() { }
 
-        void set_data( YIELD::Object* data ) { this->data.reset( data ); }
-        void set_data( YIELD::auto_Object<YIELD::Object>& data ) { this->data = data; }
-        YIELD::auto_Object<Object> get_data() const { return YIELD::Object::incRef( data.get() ); }
+        void set_data( YIELD::String* data ) { this->data.reset( data ); }
+        void set_data( YIELD::auto_Object<YIELD::String>& data ) { this->data = data; }
+        YIELD::auto_Object<YIELD::String> get_data() const { return YIELD::Object::incRef( data.get() ); }
         void set_checksum( uint32_t checksum ) { this->checksum = checksum; }
         uint32_t get_checksum() const { return checksum; }
         void set_zero_padding( uint32_t zero_padding ) { this->zero_padding = zero_padding; }
@@ -69,11 +69,11 @@ namespace org
         YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::ObjectData", 1049653481UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { data = input_stream.readObject( YIELD::StructuredStream::Declaration( "data" ) ); checksum = input_stream.readUint32( YIELD::StructuredStream::Declaration( "checksum" ) ); zero_padding = input_stream.readUint32( YIELD::StructuredStream::Declaration( "zero_padding" ) ); invalid_checksum_on_osd = input_stream.readBool( YIELD::StructuredStream::Declaration( "invalid_checksum_on_osd" ) ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { data = static_cast<YIELD::String*>( input_stream.readObject( YIELD::StructuredStream::Declaration( "data" ) ) ); checksum = input_stream.readUint32( YIELD::StructuredStream::Declaration( "checksum" ) ); zero_padding = input_stream.readUint32( YIELD::StructuredStream::Declaration( "zero_padding" ) ); invalid_checksum_on_osd = input_stream.readBool( YIELD::StructuredStream::Declaration( "invalid_checksum_on_osd" ) ); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { if ( data.get() ) output_stream.writeObject( YIELD::StructuredStream::Declaration( "data" ), *data.get() ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "checksum" ), checksum ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "zero_padding" ), zero_padding ); output_stream.writeBool( YIELD::StructuredStream::Declaration( "invalid_checksum_on_osd" ), invalid_checksum_on_osd ); }
 
       protected:
-        YIELD::auto_Object<YIELD::Object> data;
+        YIELD::auto_Object<YIELD::String> data;
         uint32_t checksum;
         uint32_t zero_padding;
         bool invalid_checksum_on_osd;

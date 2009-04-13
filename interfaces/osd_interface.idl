@@ -17,7 +17,7 @@ module org
 
       struct ObjectData
       {
-        Serializable data;
+        buffer data;
         uint32_t checksum;
         uint32_t zero_padding;
         boolean invalid_checksum_on_osd;

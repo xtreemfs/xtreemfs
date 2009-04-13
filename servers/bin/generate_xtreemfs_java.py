@@ -96,6 +96,13 @@ class XtreemFSJavaBoolType(JavaBoolType, XtreemFSJavaType):
     def getSize( self, identifier ): return "4"
 
 
+class XtreemFSJavaBufferType(JavaBufferType, XtreemFSJavaType):
+    def getDeclarationTypeName( self ): return "ReusableBuffer"
+    def getBufferDeserializeCall( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer( buf ); }" % locals()
+    def getBufferSerializeCall( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer( %(identifier)s, writer ); }" % locals()
+    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength( %(identifier)s )" % locals()
+
+
 class XtreemFSJavaCompoundType(XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = new %(name)s(); %(identifier)s.deserialize( buf );" % locals()    
     def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
@@ -230,14 +237,7 @@ class XtreemFSJavaSequenceType(JavaSequenceType, XtreemFSJavaCompoundType):
         }
     }        
 """ % locals()    
-
-
-class XtreemFSJavaSerializableType(JavaSerializableType, XtreemFSJavaType):
-    def getDeclarationTypeName( self ): return "ReusableBuffer"
-    def getBufferDeserializeCall( self, identifier ): return "{ %(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeSerializableBuffer( buf ); }" % locals()
-    def getBufferSerializeCall( self, identifier ): return "{ org.xtreemfs.interfaces.utils.XDRUtils.serializeSerializableBuffer( %(identifier)s, writer ); }" % locals()
-    def getSize( self, identifier ): return "org.xtreemfs.interfaces.utils.XDRUtils.serializableBufferLength( %(identifier)s )" % locals()
-        
+       
 
 class XtreemFSJavaStringType(JavaStringType, XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );" % locals()
