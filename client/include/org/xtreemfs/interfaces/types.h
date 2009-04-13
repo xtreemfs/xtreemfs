@@ -15,6 +15,8 @@ namespace org
   {
     namespace interfaces
     {
+      enum DebugLevel { DEBUG_LEVEL_ERROR = 0, DEBUG_LEVEL_WARN = 1, DEBUG_LEVEL_INFO = 2, DEBUG_LEVEL_DEBUG = 3, DEBUG_LEVEL_TRACE = 4 };
+
 
       class StringSet : public std::vector<std::string>, public YIELD::Object
       {

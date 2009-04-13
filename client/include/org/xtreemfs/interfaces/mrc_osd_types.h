@@ -15,6 +15,10 @@ namespace org
   {
     namespace interfaces
     {
+      enum AccessControlPolicyType { ACCESS_CONTROL_POLICY_NULL = 1, ACCESS_CONTROL_POLICY_POSIX = 2, ACCESS_CONTROL_POLICY_VOLUME = 3 };
+      enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_SIMPLE = 1 };
+      enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
+
 
       class NewFileSize : public YIELD::Object
       {
@@ -129,28 +133,28 @@ namespace org
       class StripingPolicy : public YIELD::Object
       {
       public:
-        StripingPolicy() : policy( 0 ), stripe_size( 0 ), width( 0 ) { }
-        StripingPolicy( uint8_t policy, uint32_t stripe_size, uint32_t width ) : policy( policy ), stripe_size( stripe_size ), width( width ) { }
+        StripingPolicy() : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 ) { }
+        StripingPolicy( org::xtreemfs::interfaces::StripingPolicyType type, uint32_t stripe_size, uint32_t width ) : type( type ), stripe_size( stripe_size ), width( width ) { }
         virtual ~StripingPolicy() { }
 
-        void set_policy( uint8_t policy ) { this->policy = policy; }
-        uint8_t get_policy() const { return policy; }
+        void set_type( org::xtreemfs::interfaces::StripingPolicyType type ) { this->type = type; }
+        org::xtreemfs::interfaces::StripingPolicyType get_type() const { return type; }
         void set_stripe_size( uint32_t stripe_size ) { this->stripe_size = stripe_size; }
         uint32_t get_stripe_size() const { return stripe_size; }
         void set_width( uint32_t width ) { this->width = width; }
         uint32_t get_width() const { return width; }
 
-        bool operator==( const StripingPolicy& other ) const { return policy == other.policy && stripe_size == other.stripe_size && width == other.width; }
+        bool operator==( const StripingPolicy& other ) const { return type == other.type && stripe_size == other.stripe_size && width == other.width; }
 
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::StripingPolicy", 2678528403UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { policy = input_stream.readUint8( YIELD::StructuredStream::Declaration( "policy" ) ); stripe_size = input_stream.readUint32( YIELD::StructuredStream::Declaration( "stripe_size" ) ); width = input_stream.readUint32( YIELD::StructuredStream::Declaration( "width" ) ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint8( YIELD::StructuredStream::Declaration( "policy" ), policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "stripe_size" ), stripe_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "width" ), width ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )input_stream.readInt32( YIELD::StructuredStream::Declaration( "type" ) ); stripe_size = input_stream.readUint32( YIELD::StructuredStream::Declaration( "stripe_size" ) ); width = input_stream.readUint32( YIELD::StructuredStream::Declaration( "width" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeInt32( YIELD::StructuredStream::Declaration( "type" ), type ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "stripe_size" ), stripe_size ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "width" ), width ); }
 
       protected:
-        uint8_t policy;
+        org::xtreemfs::interfaces::StripingPolicyType type;
         uint32_t stripe_size;
         uint32_t width;
       };

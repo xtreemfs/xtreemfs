@@ -21,22 +21,22 @@ namespace org
           : xtfs_bin( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
         {
           addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
-          access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_DEFAULT;
+          access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
 
           addOption( XTFS_MKVOL_OPTION_MODE, "-m", "--mode", "n" );
           mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
 
           addOption( XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY, "-o", "--osd-selection-policy", "SIMPLE" );
-          osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_DEFAULT;
+          osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
 
           addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY, "-p", "--striping-policy", "NONE|RAID0" );
-          striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_DEFAULT;
+          striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
 
           addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE, "-s", "--striping-policy-stripe-size", "n" );
-          striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
+          striping_policy_stripe_size = 128;
 
           addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH, "-w", "--striping-policy-width", "n" );
-          striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+          striping_policy_width = 1;
         }
 
       private:
@@ -50,13 +50,13 @@ namespace org
           XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH = 15
         };
 
-        uint8_t access_control_policy;
+        org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
         uint32_t mode;
         std::auto_ptr<YIELD::URI> mrc_uri;
-        uint8_t osd_selection_policy;
-        uint8_t striping_policy;
+        org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy;
+        org::xtreemfs::interfaces::StripingPolicyType striping_policy;
         uint32_t striping_policy_stripe_size;
-        uint16_t striping_policy_width;
+        uint32_t striping_policy_width;
         std::string volume_name;
 
         // xtfs_bin
@@ -108,17 +108,17 @@ namespace org
 
               case XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE:
               {
-                striping_policy_stripe_size = atoi( arg );
-                if ( striping_policy_stripe_size == 0 )
-                  striping_policy_stripe_size = org::xtreemfs::interfaces::STRIPING_POLICY_STRIPE_SIZE_DEFAULT;
+                uint32_t new_striping_policy_stripe_size = atoi( arg );
+                if ( new_striping_policy_stripe_size != 0 )
+                  striping_policy_stripe_size = new_striping_policy_stripe_size;
               }
               break;
 
               case XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH:
               {
-                striping_policy_width = static_cast<uint16_t>( atoi( arg ) );
-                if ( striping_policy_width == 0 )
-                  striping_policy_width = org::xtreemfs::interfaces::STRIPING_POLICY_WIDTH_DEFAULT;
+                uint32_t new_striping_policy_width = static_cast<uint16_t>( atoi( arg ) );
+                if ( new_striping_policy_width != 0 )
+                  striping_policy_width = new_striping_policy_width;
               }
               break;
             }

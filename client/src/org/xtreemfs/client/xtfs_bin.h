@@ -20,8 +20,6 @@ using org::xtreemfs::interfaces::DEBUG_LEVEL_WARN;
 using org::xtreemfs::interfaces::DEBUG_LEVEL_INFO;
 using org::xtreemfs::interfaces::DEBUG_LEVEL_DEBUG;
 using org::xtreemfs::interfaces::DEBUG_LEVEL_TRACE;
-using org::xtreemfs::interfaces::DEBUG_LEVEL_DEFAULT;
-using org::xtreemfs::interfaces::DEBUG_LEVEL_MAX;
 
 
 namespace org
@@ -70,10 +68,10 @@ namespace org
                     case OPTION_DEBUG_LEVEL:
                     {
                       debug_level = static_cast<uint8_t>( atoi( args.OptionArg() ) );
-                      if ( debug_level > DEBUG_LEVEL_MAX )
-                        debug_level = DEBUG_LEVEL_MAX;
+                      if ( debug_level > DEBUG_LEVEL_TRACE )
+                        debug_level = DEBUG_LEVEL_TRACE;
 
-                      if ( debug_level >= DEBUG_LEVEL_TRACE )
+                      if ( debug_level == DEBUG_LEVEL_TRACE )
                         YIELD::TCPSocket::set_trace_socket_io_onoff( true );
                     }
                     break;
@@ -142,7 +140,7 @@ namespace org
           : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
         {
           std::ostringstream debug_level_default_ss;
-          debug_level_default_ss << static_cast<uint16_t>( DEBUG_LEVEL_DEFAULT );
+          debug_level_default_ss << static_cast<uint16_t>( DEBUG_LEVEL_ERROR );
           debug_level_default_str = debug_level_default_ss.str();
           addOption( OPTION_DEBUG_LEVEL, "-d", "--debug", debug_level_default_str.c_str() );
           addOption( OPTION_DEBUG_LEVEL, "--debug-level", "--debug_level", debug_level_default_str.c_str() );

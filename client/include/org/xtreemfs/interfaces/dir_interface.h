@@ -18,6 +18,8 @@ namespace org
   {
     namespace interfaces
     {
+      enum ServiceType { SERVICE_TYPE_MRC = 1, SERVICE_TYPE_OSD = 2, SERVICE_TYPE_VOLUME = 3 };
+
 
       class AddressMapping : public YIELD::Object
       {
@@ -95,18 +97,18 @@ namespace org
       class Service : public YIELD::Object
       {
       public:
-        Service() : version( 0 ), type( 0 ), last_updated_s( 0 ) { }
-        Service( const std::string& uuid, uint64_t version, uint16_t type, const std::string& name, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : uuid( uuid ), version( version ), type( type ), name( name ), last_updated_s( last_updated_s ), data( data ) { }
-        Service( const char* uuid, size_t uuid_len, uint64_t version, uint16_t type, const char* name, size_t name_len, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : uuid( uuid, uuid_len ), version( version ), type( type ), name( name, name_len ), last_updated_s( last_updated_s ), data( data ) { }
+        Service() : type( SERVICE_TYPE_MRC ), version( 0 ), last_updated_s( 0 ) { }
+        Service( org::xtreemfs::interfaces::ServiceType type, const std::string& uuid, uint64_t version, const std::string& name, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : type( type ), uuid( uuid ), version( version ), name( name ), last_updated_s( last_updated_s ), data( data ) { }
+        Service( org::xtreemfs::interfaces::ServiceType type, const char* uuid, size_t uuid_len, uint64_t version, const char* name, size_t name_len, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : type( type ), uuid( uuid, uuid_len ), version( version ), name( name, name_len ), last_updated_s( last_updated_s ), data( data ) { }
         virtual ~Service() { }
 
+        void set_type( org::xtreemfs::interfaces::ServiceType type ) { this->type = type; }
+        org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
         void set_uuid( const std::string& uuid ) { set_uuid( uuid.c_str(), uuid.size() ); }
         void set_uuid( const char* uuid, size_t uuid_len = 0 ) { this->uuid.assign( uuid, ( uuid_len != 0 ) ? uuid_len : std::strlen( uuid ) ); }
         const std::string& get_uuid() const { return uuid; }
         void set_version( uint64_t version ) { this->version = version; }
         uint64_t get_version() const { return version; }
-        void set_type( uint16_t type ) { this->type = type; }
-        uint16_t get_type() const { return type; }
         void set_name( const std::string& name ) { set_name( name.c_str(), name.size() ); }
         void set_name( const char* name, size_t name_len = 0 ) { this->name.assign( name, ( name_len != 0 ) ? name_len : std::strlen( name ) ); }
         const std::string& get_name() const { return name; }
@@ -115,19 +117,19 @@ namespace org
         void set_data( const org::xtreemfs::interfaces::ServiceDataMap&  data ) { this->data = data; }
         const org::xtreemfs::interfaces::ServiceDataMap& get_data() const { return data; }
 
-        bool operator==( const Service& other ) const { return uuid == other.uuid && version == other.version && type == other.type && name == other.name && last_updated_s == other.last_updated_s && data == other.data; }
+        bool operator==( const Service& other ) const { return type == other.type && uuid == other.uuid && version == other.version && name == other.name && last_updated_s == other.last_updated_s && data == other.data; }
 
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::Service", 2906886611UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "name" ), name ); last_updated_s = input_stream.readUint64( YIELD::StructuredStream::Declaration( "last_updated_s" ) ); input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceDataMap", "data" ), &data ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeUint16( YIELD::StructuredStream::Declaration( "type" ), type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "name" ), name ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "last_updated_s" ), last_updated_s ); output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceDataMap", "data" ), data ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { type = ( org::xtreemfs::interfaces::ServiceType )input_stream.readInt32( YIELD::StructuredStream::Declaration( "type" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); version = input_stream.readUint64( YIELD::StructuredStream::Declaration( "version" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "name" ), name ); last_updated_s = input_stream.readUint64( YIELD::StructuredStream::Declaration( "last_updated_s" ) ); input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceDataMap", "data" ), &data ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeInt32( YIELD::StructuredStream::Declaration( "type" ), type ); output_stream.writeString( YIELD::StructuredStream::Declaration( "uuid" ), uuid ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "version" ), version ); output_stream.writeString( YIELD::StructuredStream::Declaration( "name" ), name ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "last_updated_s" ), last_updated_s ); output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::ServiceDataMap", "data" ), data ); }
 
       protected:
+        org::xtreemfs::interfaces::ServiceType type;
         std::string uuid;
         uint64_t version;
-        uint16_t type;
         std::string name;
         uint64_t last_updated_s;
         org::xtreemfs::interfaces::ServiceDataMap data;
@@ -231,10 +233,10 @@ namespace org
         virtual uint64_t xtreemfs_global_time_s_get( YIELD::EventTarget* send_target ) { return xtreemfs_global_time_s_get( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual uint64_t xtreemfs_global_time_s_get( YIELD::timeout_ns_t response_timeout_ns ) { return xtreemfs_global_time_s_get( NULL, response_timeout_ns ); }
         virtual uint64_t xtreemfs_global_time_s_get( YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_global_time_s_getSyncRequest* __req = new xtreemfs_global_time_s_getSyncRequest(); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { xtreemfs_global_time_s_getResponse& __resp = ( xtreemfs_global_time_s_getResponse& )__req->waitForDefaultResponse( response_timeout_ns ); uint64_t _return_value = __resp.get__return_value(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); return _return_value; } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
-        virtual void xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services ) { xtreemfs_service_get_by_type( type, services, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::EventTarget* send_target ) { xtreemfs_service_get_by_type( type, services, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_service_get_by_type( type, services, NULL, response_timeout_ns ); }
-        virtual void xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_service_get_by_typeSyncRequest* __req = new xtreemfs_service_get_by_typeSyncRequest( type ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { xtreemfs_service_get_by_typeResponse& __resp = ( xtreemfs_service_get_by_typeResponse& )__req->waitForDefaultResponse( response_timeout_ns ); services = __resp.get_services(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
+        virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services ) { xtreemfs_service_get_by_type( type, services, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::EventTarget* send_target ) { xtreemfs_service_get_by_type( type, services, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_service_get_by_type( type, services, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_service_get_by_typeSyncRequest* __req = new xtreemfs_service_get_by_typeSyncRequest( type ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { xtreemfs_service_get_by_typeResponse& __resp = ( xtreemfs_service_get_by_typeResponse& )__req->waitForDefaultResponse( response_timeout_ns ); services = __resp.get_services(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
         virtual void xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services ) { xtreemfs_service_get_by_uuid( uuid, services, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services, YIELD::EventTarget* send_target ) { xtreemfs_service_get_by_uuid( uuid, services, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_service_get_by_uuid( uuid, services, NULL, response_timeout_ns ); }
@@ -610,12 +612,12 @@ namespace org
       class xtreemfs_service_get_by_typeRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
-        xtreemfs_service_get_by_typeRequest() : type( 0 ) { }
-        xtreemfs_service_get_by_typeRequest( uint16_t type ) : type( type ) { }
+        xtreemfs_service_get_by_typeRequest() : type( SERVICE_TYPE_MRC ) { }
+        xtreemfs_service_get_by_typeRequest( org::xtreemfs::interfaces::ServiceType type ) : type( type ) { }
         virtual ~xtreemfs_service_get_by_typeRequest() { }
 
-        void set_type( uint16_t type ) { this->type = type; }
-        uint16_t get_type() const { return type; }
+        void set_type( org::xtreemfs::interfaces::ServiceType type ) { this->type = type; }
+        org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
 
         bool operator==( const xtreemfs_service_get_by_typeRequest& other ) const { return type == other.type; }
 
@@ -623,8 +625,8 @@ namespace org
         YIELD_OBJECT_TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest", 1132616721UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { type = input_stream.readUint16( YIELD::StructuredStream::Declaration( "type" ) ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeUint16( YIELD::StructuredStream::Declaration( "type" ), type ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { type = ( org::xtreemfs::interfaces::ServiceType )input_stream.readInt32( YIELD::StructuredStream::Declaration( "type" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeInt32( YIELD::StructuredStream::Declaration( "type" ), type ); }
 
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 1; }
@@ -635,14 +637,14 @@ namespace org
 
 
       protected:
-        uint16_t type;
+        org::xtreemfs::interfaces::ServiceType type;
       };
 
       class xtreemfs_service_get_by_typeSyncRequest : public xtreemfs_service_get_by_typeRequest
       {
       public:
-        xtreemfs_service_get_by_typeSyncRequest() : xtreemfs_service_get_by_typeRequest( 0 ) { }
-        xtreemfs_service_get_by_typeSyncRequest( uint16_t type ) : xtreemfs_service_get_by_typeRequest( type ) { }
+        xtreemfs_service_get_by_typeSyncRequest() : xtreemfs_service_get_by_typeRequest( SERVICE_TYPE_MRC ) { }
+        xtreemfs_service_get_by_typeSyncRequest( org::xtreemfs::interfaces::ServiceType type ) : xtreemfs_service_get_by_typeRequest( type ) { }
         virtual ~xtreemfs_service_get_by_typeSyncRequest() { }
 
         bool operator==( const xtreemfs_service_get_by_typeSyncRequest& ) const { return true; }
@@ -1138,7 +1140,7 @@ namespace org
         virtual uint64_t _xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { return 0; }
         virtual void _xtreemfs_checkpoint() { }
         virtual uint64_t _xtreemfs_global_time_s_get() { return 0; }
-        virtual void _xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services ) { }
+        virtual void _xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual void _xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual void _xtreemfs_service_get_by_name( const std::string& name, org::xtreemfs::interfaces::ServiceSet& services ) { }
         virtual uint64_t _xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service ) { return 0; }
@@ -1154,7 +1156,7 @@ namespace org
       virtual uint64_t _xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings );\
       virtual void _xtreemfs_checkpoint();\
       virtual uint64_t _xtreemfs_global_time_s_get();\
-      virtual void _xtreemfs_service_get_by_type( uint16_t type, org::xtreemfs::interfaces::ServiceSet& services );\
+      virtual void _xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual void _xtreemfs_service_get_by_uuid( const std::string& uuid, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual void _xtreemfs_service_get_by_name( const std::string& name, org::xtreemfs::interfaces::ServiceSet& services );\
       virtual uint64_t _xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service );\

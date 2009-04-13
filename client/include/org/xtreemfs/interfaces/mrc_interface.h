@@ -168,9 +168,9 @@ namespace org
       class Volume : public YIELD::Object
       {
       public:
-        Volume() : mode( 0 ), osd_selection_policy( 0 ), access_control_policy( 0 ) { }
-        Volume( const std::string& name, uint32_t mode, uint32_t osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, uint32_t access_control_policy, const std::string& id, const std::string& owner_user_id, const std::string& owner_group_id ) : name( name ), mode( mode ), osd_selection_policy( osd_selection_policy ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id ), owner_user_id( owner_user_id ), owner_group_id( owner_group_id ) { }
-        Volume( const char* name, size_t name_len, uint32_t mode, uint32_t osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, uint32_t access_control_policy, const char* id, size_t id_len, const char* owner_user_id, size_t owner_user_id_len, const char* owner_group_id, size_t owner_group_id_len ) : name( name, name_len ), mode( mode ), osd_selection_policy( osd_selection_policy ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id, id_len ), owner_user_id( owner_user_id, owner_user_id_len ), owner_group_id( owner_group_id, owner_group_id_len ) { }
+        Volume() : mode( 0 ), osd_selection_policy( OSD_SELECTION_POLICY_SIMPLE ), access_control_policy( ACCESS_CONTROL_POLICY_NULL ) { }
+        Volume( const std::string& name, uint32_t mode, org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const std::string& id, const std::string& owner_user_id, const std::string& owner_group_id ) : name( name ), mode( mode ), osd_selection_policy( osd_selection_policy ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id ), owner_user_id( owner_user_id ), owner_group_id( owner_group_id ) { }
+        Volume( const char* name, size_t name_len, uint32_t mode, org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const char* id, size_t id_len, const char* owner_user_id, size_t owner_user_id_len, const char* owner_group_id, size_t owner_group_id_len ) : name( name, name_len ), mode( mode ), osd_selection_policy( osd_selection_policy ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id, id_len ), owner_user_id( owner_user_id, owner_user_id_len ), owner_group_id( owner_group_id, owner_group_id_len ) { }
         virtual ~Volume() { }
 
         void set_name( const std::string& name ) { set_name( name.c_str(), name.size() ); }
@@ -178,12 +178,12 @@ namespace org
         const std::string& get_name() const { return name; }
         void set_mode( uint32_t mode ) { this->mode = mode; }
         uint32_t get_mode() const { return mode; }
-        void set_osd_selection_policy( uint32_t osd_selection_policy ) { this->osd_selection_policy = osd_selection_policy; }
-        uint32_t get_osd_selection_policy() const { return osd_selection_policy; }
+        void set_osd_selection_policy( org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy ) { this->osd_selection_policy = osd_selection_policy; }
+        org::xtreemfs::interfaces::OSDSelectionPolicyType get_osd_selection_policy() const { return osd_selection_policy; }
         void set_default_striping_policy( const org::xtreemfs::interfaces::StripingPolicy&  default_striping_policy ) { this->default_striping_policy = default_striping_policy; }
         const org::xtreemfs::interfaces::StripingPolicy& get_default_striping_policy() const { return default_striping_policy; }
-        void set_access_control_policy( uint32_t access_control_policy ) { this->access_control_policy = access_control_policy; }
-        uint32_t get_access_control_policy() const { return access_control_policy; }
+        void set_access_control_policy( org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy ) { this->access_control_policy = access_control_policy; }
+        org::xtreemfs::interfaces::AccessControlPolicyType get_access_control_policy() const { return access_control_policy; }
         void set_id( const std::string& id ) { set_id( id.c_str(), id.size() ); }
         void set_id( const char* id, size_t id_len = 0 ) { this->id.assign( id, ( id_len != 0 ) ? id_len : std::strlen( id ) ); }
         const std::string& get_id() const { return id; }
@@ -200,15 +200,15 @@ namespace org
         YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::Volume", 2968800897UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "name" ), name ); mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); osd_selection_policy = input_stream.readUint32( YIELD::StructuredStream::Declaration( "osd_selection_policy" ) ); input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "default_striping_policy" ), &default_striping_policy ); access_control_policy = input_stream.readUint32( YIELD::StructuredStream::Declaration( "access_control_policy" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "id" ), id ); input_stream.readString( YIELD::StructuredStream::Declaration( "owner_user_id" ), owner_user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "owner_group_id" ), owner_group_id ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "name" ), name ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "osd_selection_policy" ), osd_selection_policy ); output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "default_striping_policy" ), default_striping_policy ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "access_control_policy" ), access_control_policy ); output_stream.writeString( YIELD::StructuredStream::Declaration( "id" ), id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "owner_user_id" ), owner_user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "owner_group_id" ), owner_group_id ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "name" ), name ); mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); osd_selection_policy = ( org::xtreemfs::interfaces::OSDSelectionPolicyType )input_stream.readInt32( YIELD::StructuredStream::Declaration( "osd_selection_policy" ) ); input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "default_striping_policy" ), &default_striping_policy ); access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )input_stream.readInt32( YIELD::StructuredStream::Declaration( "access_control_policy" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "id" ), id ); input_stream.readString( YIELD::StructuredStream::Declaration( "owner_user_id" ), owner_user_id ); input_stream.readString( YIELD::StructuredStream::Declaration( "owner_group_id" ), owner_group_id ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "name" ), name ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeInt32( YIELD::StructuredStream::Declaration( "osd_selection_policy" ), osd_selection_policy ); output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StripingPolicy", "default_striping_policy" ), default_striping_policy ); output_stream.writeInt32( YIELD::StructuredStream::Declaration( "access_control_policy" ), access_control_policy ); output_stream.writeString( YIELD::StructuredStream::Declaration( "id" ), id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "owner_user_id" ), owner_user_id ); output_stream.writeString( YIELD::StructuredStream::Declaration( "owner_group_id" ), owner_group_id ); }
 
       protected:
         std::string name;
         uint32_t mode;
-        uint32_t osd_selection_policy;
+        org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy;
         org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
-        uint32_t access_control_policy;
+        org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
         std::string id;
         std::string owner_user_id;
         std::string owner_group_id;

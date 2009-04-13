@@ -112,8 +112,8 @@ class XtreemFSJavaCompoundType(XtreemFSJavaType):
 
 
 class XtreemFSJavaEnumeratedType(JavaEnumeratedType, XtreemFSJavaType):
-    def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
-    def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
+    def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = %(name)s.parseInt( buf.getInt() );" % locals()
+    def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s.intValue() );" % locals()
     def getSize( self, identifier ): return "4"
     
 

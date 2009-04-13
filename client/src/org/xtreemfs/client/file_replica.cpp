@@ -122,7 +122,7 @@ bool FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_
 
 OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )
 {
-  switch ( striping_policy.get_policy() )
+  switch ( striping_policy.get_type() )
   {
     case org::xtreemfs::interfaces::STRIPING_POLICY_RAID0:
     {

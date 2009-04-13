@@ -51,9 +51,9 @@ module org
       {
         string name;
         uint32_t mode;
-        uint32_t osd_selection_policy;
+        OSDSelectionPolicyType osd_selection_policy;
         StripingPolicy default_striping_policy;
-        uint32_t access_control_policy;
+        AccessControlPolicyType access_control_policy;
         string id;
         string owner_user_id;
         string owner_group_id;
