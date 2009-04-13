@@ -13,6 +13,7 @@ except ImportError:
     
 from yidl.java_target import *
 from yidl.generator import *
+from yidl.string_utils import *
 
 
 __all__ = []
@@ -35,10 +36,11 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
     def generate( self ):                            
         JavaInterface.generate( self ) 
            
-        class_header = self.getClassHeader()
+        class_header = self.getClassHeader()        
+        constants = pad( "\n" + INDENT_SPACES, ( "\n" + INDENT_SPACES ).join( [repr( constant ) for constant in self.getConstants()] ), "\n\n" )        
         uid = self.getUID()            
         out = """\
-%(class_header)s        
+%(class_header)s%(constants)s
     public static int getVersion() { return %(uid)s; }
 """ % locals()
                             
@@ -108,6 +110,12 @@ class XtreemFSJavaCompoundType(XtreemFSJavaType):
     def getBufferSerializeCall( self, identifier ): return "%(identifier)s.serialize( writer );" % locals()
     def getSize( self, identifier ): return "%(identifier)s.calculateSize()" % locals()
 
+
+class XtreemFSJavaEnumeratedType(JavaEnumeratedType, XtreemFSJavaType):
+    def getBufferDeserializeCall( self, identifier ): return "%(identifier)s = buf.getInt() != 0;" % locals()
+    def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s ? 1 : 0 );" % locals()
+    def getSize( self, identifier ): return "4"
+    
 
 class XtreemFSJavaMapType(JavaMapType, XtreemFSJavaCompoundType):
     def getDeserializeMethods( self ):
@@ -259,7 +267,8 @@ class XtreemFSJavaStructType(JavaStructType, XtreemFSJavaCompoundType):
     def getImports( self ):
         return JavaStructType.getImports( self ) + XTREEMFS_COMMON_IMPORTS    
     
-    def getOtherMethods( self ): return JavaStructType.getOtherMethods( self ) + """\
+    def getOtherMethods( self ):
+        return JavaStructType.getOtherMethods( self ) + """\
     public int calculateSize()
     {
         int my_size = 0;

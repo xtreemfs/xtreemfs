@@ -9,7 +9,12 @@ import org.xtreemfs.interfaces.Exceptions.*;
 
 
 public class DIRInterface
-{        
+{
+    public static final int DEFAULT_ONCRPC_PORT = 32638;
+    public static final int DEFAULT_ONCRPCS_PORT = 32638;
+    public static final int DEFAULT_HTTP_PORT = 30638;
+
+
     public static int getVersion() { return 1; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception

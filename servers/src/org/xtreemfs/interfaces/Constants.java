@@ -7,13 +7,6 @@ public interface Constants
     public static final int ACCESS_CONTROL_POLICY_POSIX = 2;
     public static final int ACCESS_CONTROL_POLICY_VOLUME = 3;
     public static final int ACCESS_CONTROL_POLICY_DEFAULT = 2;
-    public static final int DEBUG_LEVEL_ERROR = 0;
-    public static final int DEBUG_LEVEL_WARN = 1;
-    public static final int DEBUG_LEVEL_INFO = 2;
-    public static final int DEBUG_LEVEL_DEBUG = 3;
-    public static final int DEBUG_LEVEL_TRACE = 4;
-    public static final int DEBUG_LEVEL_DEFAULT = 0;
-    public static final int DEBUG_LEVEL_MAX = 4;
     public static final String ONCRPC_SCHEME = "oncrpc";
     public static final String ONCRPCS_SCHEME = "oncrpcs";
     public static final int ONCRPC_AUTH_FLAVOR = 1326;
@@ -38,4 +31,5 @@ public interface Constants
     public static final int SYSTEM_V_FCNTL_H_S_IFREG = 0x8000;
     public static final int SYSTEM_V_FCNTL_H_S_IFDIR = 0x4000;
     public static final int SYSTEM_V_FCNTL_H_S_IFLNK = 0xA000;
+    public enum DebugLevel { DEBUG_LEVEL_ERROR, DEBUG_LEVEL_WARN, DEBUG_LEVEL_INFO, DEBUG_LEVEL_DEBUG, DEBUG_LEVEL_TRACE, DEBUG_LEVEL_DEFAULT, DEBUG_LEVEL_MAX };
 };

@@ -9,7 +9,12 @@ import org.xtreemfs.interfaces.Exceptions.*;
 
 
 public class MRCInterface
-{        
+{
+    public static final int DEFAULT_ONCRPC_PORT = 32636;
+    public static final int DEFAULT_ONCRPCS_PORT = 32636;
+    public static final int DEFAULT_HTTP_PORT = 30636;
+
+
     public static int getVersion() { return 2; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception

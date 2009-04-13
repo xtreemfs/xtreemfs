@@ -9,7 +9,12 @@ import org.xtreemfs.interfaces.Exceptions.*;
 
 
 public class OSDInterface
-{        
+{
+    public static final int DEFAULT_ONCRPC_PORT = 32640;
+    public static final int DEFAULT_ONCRPCS_PORT = 32640;
+    public static final int DEFAULT_HTTP_PORT = 30640;
+
+
     public static int getVersion() { return 3; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
