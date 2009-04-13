@@ -35,74 +35,74 @@ namespace org
       public:
         int main( int argc, char** argv )
         {
-          if ( argc == 1 )
-          {
-            printUsage();
-            return 0;
-          }
-          else if ( !options.empty() )
-          {
-            std::vector<CSimpleOpt::SOption> simpleopt_options;
-            for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
-            {
-              const Option& option = *option_i;
-              CSimpleOpt::SOption short_simpleopt_option = { option.get_id(), option.get_short_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
-              simpleopt_options.push_back( short_simpleopt_option );
-              if ( option.get_long_arg() )
-              {
-                CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
-                simpleopt_options.push_back( long_simpleopt_option );
-              }
-            }
-            CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
-            simpleopt_options.push_back( sentinel_simpleopt_option );
-
-            CSimpleOpt args( argc, argv, &simpleopt_options[0] );
-
-            while ( args.Next() )
-            {
-              if ( args.LastError() == SO_SUCCESS )
-              {
-                switch ( args.OptionId() )
-                {
-                  case OPTION_DEBUG_LEVEL:
-                  {
-                    debug_level = static_cast<uint8_t>( atoi( args.OptionArg() ) );
-                    if ( debug_level > DEBUG_LEVEL_MAX )
-                      debug_level = DEBUG_LEVEL_MAX;
-
-                    if ( debug_level >= DEBUG_LEVEL_TRACE )
-                      YIELD::TCPSocket::set_trace_socket_io_onoff( true );
-                  }
-                  break;
-
-                  case OPTION_HELP: printUsage(); return 0;
-                  case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;
-                  case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = args.OptionArg(); break;
-                  case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = args.OptionArg(); break;
-                  case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = args.OptionArg(); break;
-                  case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = args.OptionArg(); break;
-
-                  case OPTION_TIMEOUT_MS:
-                  {
-                    timeout_ms = atol( args.OptionArg() );
-                    if ( timeout_ms == 0 )
-                      timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
-                  }
-                  break;
-                }
-
-                parseOption( args.OptionId(), args.OptionArg() );
-              }
-            }
-
-            parseFiles( args.FileCount(), args.Files() );
-          }
-          else
-            parseFiles( argc - 1, argv+1 );
-
           try
           {
+            if ( argc == 1 )
+            {
+              printUsage();
+              return 0;
+            }
+            else if ( !options.empty() )
+            {
+              std::vector<CSimpleOpt::SOption> simpleopt_options;
+              for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
+              {
+                const Option& option = *option_i;
+                CSimpleOpt::SOption short_simpleopt_option = { option.get_id(), option.get_short_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+                simpleopt_options.push_back( short_simpleopt_option );
+                if ( option.get_long_arg() )
+                {
+                  CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+                  simpleopt_options.push_back( long_simpleopt_option );
+                }
+              }
+              CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
+              simpleopt_options.push_back( sentinel_simpleopt_option );
+
+              CSimpleOpt args( argc, argv, &simpleopt_options[0] );
+
+              while ( args.Next() )
+              {
+                if ( args.LastError() == SO_SUCCESS )
+                {
+                  switch ( args.OptionId() )
+                  {
+                    case OPTION_DEBUG_LEVEL:
+                    {
+                      debug_level = static_cast<uint8_t>( atoi( args.OptionArg() ) );
+                      if ( debug_level > DEBUG_LEVEL_MAX )
+                        debug_level = DEBUG_LEVEL_MAX;
+
+                      if ( debug_level >= DEBUG_LEVEL_TRACE )
+                        YIELD::TCPSocket::set_trace_socket_io_onoff( true );
+                    }
+                    break;
+
+                    case OPTION_HELP: printUsage(); return 0;
+                    case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = args.OptionArg(); break;
+                    case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = args.OptionArg(); break;
+                    case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = args.OptionArg(); break;
+                    case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = args.OptionArg(); break;
+                    case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = args.OptionArg(); break;
+
+                    case OPTION_TIMEOUT_MS:
+                    {
+                      timeout_ms = atol( args.OptionArg() );
+                      if ( timeout_ms == 0 )
+                        timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+                    }
+                    break;
+                  }
+
+                  parseOption( args.OptionId(), args.OptionArg() );
+                }
+              }
+
+              parseFiles( args.FileCount(), args.Files() );
+            }
+            else
+              parseFiles( argc - 1, argv+1 );
+
             _main( argc, argv );
 
             return 0;
