@@ -20,14 +20,14 @@ python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\include 
 python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_CLIENT_PATH%\src -o %XTREEMFS_CLIENT_PATH%\src
 python %YIELD_PATH%\bin\generate_test_main_cpp.py
 python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIENT_PATH%\include -s %XTREEMFS_CLIENT_PATH%\proj -s %XTREEMFS_CLIENT_PATH%\src
-python %XTREEMFS_CLIENT_PATH%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\bin
+python %XTREEMFS_CLIENT_PATH%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client
 
 
 REM Generate project files 
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client
 REM Library projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client -e "*_test.cpp" -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\interfaces -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib_test -t exe -s %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\org_xtreemfs_client_lib_test_main.cpp -s "%XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\*_test.cpp" -c xtreemfs-client-lib.SConscript -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib_test -t exe -s %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client\org_xtreemfs_client_test_main.cpp -s "%XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\*_test.cpp" -c xtreemfs-client-lib.SConscript -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
 
 REM Binary projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_fuzz.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\*_fuzzer.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%

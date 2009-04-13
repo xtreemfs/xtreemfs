@@ -8,46 +8,46 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yieldfs", "share\yieldfs\pr
 		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7} = {2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib", "proj\org\xtreemfs\client\lib\xtreemfs-client-lib.vcproj", "{C9D23773-253D-46DB-A2FF-9D17A2BE659F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams_flog", "proj\org\xtreemfs\client\xos_ams_flog.vcproj", "{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_lsvol", "proj\org\xtreemfs\client\xtfs_lsvol.vcproj", "{02C4D457-D09C-4097-B3B4-13F1086EA10F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mkvol", "proj\org\xtreemfs\client\xtfs_mkvol.vcproj", "{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mount", "proj\org\xtreemfs\client\xtfs_mount.vcproj", "{9323E77E-EE3C-4B13-A763-921F6A7F52A5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_rmvol", "proj\org\xtreemfs\client\xtfs_rmvol.vcproj", "{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_send", "proj\org\xtreemfs\client\xtfs_send.vcproj", "{9AB17132-CA0D-4679-85B8-9A3BD63853E7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_stat", "proj\org\xtreemfs\client\xtfs_stat.vcproj", "{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib", "proj\org\xtreemfs\client\xtreemfs-client-lib.vcproj", "{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E} = {45E2EA96-EB95-488D-BEBF-658DB15BFF3E}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_send", "proj\org\xtreemfs\client\bin\xtfs_send.vcproj", "{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib_test", "proj\org\xtreemfs\client\xtreemfs-client-lib_test.vcproj", "{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}"
 	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mount", "proj\org\xtreemfs\client\bin\xtfs_mount.vcproj", "{C58BE937-9DEB-46AA-AA5F-5DD123606878}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_mkvol", "proj\org\xtreemfs\client\bin\xtfs_mkvol.vcproj", "{63D0BF95-99FA-42C7-969F-4E0EE69056F3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams_flog", "proj\org\xtreemfs\client\policies\xos_ams_flog.vcproj", "{50C37BB2-2388-41ED-84A2-BDCC488666E0}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib_test", "proj\org\xtreemfs\client\lib\xtreemfs-client-lib_test.vcproj", "{E663078C-67F9-4518-BF17-1FC2C46F3CC5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_lsvol", "proj\org\xtreemfs\client\bin\xtfs_lsvol.vcproj", "{166A359D-F1E0-4B51-AF73-C40C96711397}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_rmvol", "proj\org\xtreemfs\client\bin\xtfs_rmvol.vcproj", "{44411DEE-129F-44E6-AD60-706F997BE645}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_stat", "proj\org\xtreemfs\client\bin\xtfs_stat.vcproj", "{0A6148E9-86D2-464F-A722-8CAF343365E7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F} = {C9D23773-253D-46DB-A2FF-9D17A2BE659F}
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
 	EndProjectSection
 EndProject
 Global
@@ -64,42 +64,42 @@ Global
 		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Debug|Win32.Build.0 = Debug|Win32
 		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Release|Win32.ActiveCfg = Release|Win32
 		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Release|Win32.Build.0 = Release|Win32
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F}.Debug|Win32.Build.0 = Debug|Win32
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F}.Release|Win32.ActiveCfg = Release|Win32
-		{C9D23773-253D-46DB-A2FF-9D17A2BE659F}.Release|Win32.Build.0 = Release|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.ActiveCfg = Debug|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.Build.0 = Debug|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.ActiveCfg = Release|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.Build.0 = Release|Win32
-		{C58BE937-9DEB-46AA-AA5F-5DD123606878}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C58BE937-9DEB-46AA-AA5F-5DD123606878}.Debug|Win32.Build.0 = Debug|Win32
-		{C58BE937-9DEB-46AA-AA5F-5DD123606878}.Release|Win32.ActiveCfg = Release|Win32
-		{C58BE937-9DEB-46AA-AA5F-5DD123606878}.Release|Win32.Build.0 = Release|Win32
-		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Debug|Win32.ActiveCfg = Debug|Win32
-		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Debug|Win32.Build.0 = Debug|Win32
-		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.ActiveCfg = Release|Win32
-		{63D0BF95-99FA-42C7-969F-4E0EE69056F3}.Release|Win32.Build.0 = Release|Win32
-		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Debug|Win32.Build.0 = Debug|Win32
-		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.ActiveCfg = Release|Win32
-		{50C37BB2-2388-41ED-84A2-BDCC488666E0}.Release|Win32.Build.0 = Release|Win32
-		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Debug|Win32.Build.0 = Debug|Win32
-		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Release|Win32.ActiveCfg = Release|Win32
-		{E663078C-67F9-4518-BF17-1FC2C46F3CC5}.Release|Win32.Build.0 = Release|Win32
-		{166A359D-F1E0-4B51-AF73-C40C96711397}.Debug|Win32.ActiveCfg = Debug|Win32
-		{166A359D-F1E0-4B51-AF73-C40C96711397}.Debug|Win32.Build.0 = Debug|Win32
-		{166A359D-F1E0-4B51-AF73-C40C96711397}.Release|Win32.ActiveCfg = Release|Win32
-		{166A359D-F1E0-4B51-AF73-C40C96711397}.Release|Win32.Build.0 = Release|Win32
-		{44411DEE-129F-44E6-AD60-706F997BE645}.Debug|Win32.ActiveCfg = Debug|Win32
-		{44411DEE-129F-44E6-AD60-706F997BE645}.Debug|Win32.Build.0 = Debug|Win32
-		{44411DEE-129F-44E6-AD60-706F997BE645}.Release|Win32.ActiveCfg = Release|Win32
-		{44411DEE-129F-44E6-AD60-706F997BE645}.Release|Win32.Build.0 = Release|Win32
-		{0A6148E9-86D2-464F-A722-8CAF343365E7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0A6148E9-86D2-464F-A722-8CAF343365E7}.Debug|Win32.Build.0 = Debug|Win32
-		{0A6148E9-86D2-464F-A722-8CAF343365E7}.Release|Win32.ActiveCfg = Release|Win32
-		{0A6148E9-86D2-464F-A722-8CAF343365E7}.Release|Win32.Build.0 = Release|Win32
+		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Debug|Win32.Build.0 = Debug|Win32
+		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Release|Win32.ActiveCfg = Release|Win32
+		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Release|Win32.Build.0 = Release|Win32
+		{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}.Debug|Win32.Build.0 = Debug|Win32
+		{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}.Release|Win32.ActiveCfg = Release|Win32
+		{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}.Release|Win32.Build.0 = Release|Win32
+		{9323E77E-EE3C-4B13-A763-921F6A7F52A5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9323E77E-EE3C-4B13-A763-921F6A7F52A5}.Debug|Win32.Build.0 = Debug|Win32
+		{9323E77E-EE3C-4B13-A763-921F6A7F52A5}.Release|Win32.ActiveCfg = Release|Win32
+		{9323E77E-EE3C-4B13-A763-921F6A7F52A5}.Release|Win32.Build.0 = Release|Win32
+		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Debug|Win32.Build.0 = Debug|Win32
+		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.ActiveCfg = Release|Win32
+		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.Build.0 = Release|Win32
+		{9AB17132-CA0D-4679-85B8-9A3BD63853E7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9AB17132-CA0D-4679-85B8-9A3BD63853E7}.Debug|Win32.Build.0 = Debug|Win32
+		{9AB17132-CA0D-4679-85B8-9A3BD63853E7}.Release|Win32.ActiveCfg = Release|Win32
+		{9AB17132-CA0D-4679-85B8-9A3BD63853E7}.Release|Win32.Build.0 = Release|Win32
+		{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}.Debug|Win32.Build.0 = Debug|Win32
+		{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}.Release|Win32.ActiveCfg = Release|Win32
+		{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}.Release|Win32.Build.0 = Release|Win32
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Debug|Win32.Build.0 = Debug|Win32
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.ActiveCfg = Release|Win32
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.Build.0 = Release|Win32
+		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Debug|Win32.Build.0 = Debug|Win32
+		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Release|Win32.ActiveCfg = Release|Win32
+		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
