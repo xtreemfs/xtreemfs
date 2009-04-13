@@ -31,8 +31,8 @@ namespace org
         
       private:
         std::string volume_name;
-        std::string global_path;
         YIELD::Path local_path;
+        std::string global_path;
       };
     };
   };

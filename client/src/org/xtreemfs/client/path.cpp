@@ -41,7 +41,7 @@ Path::Path( const std::string& global_path )
 : global_path( global_path )
 {
   std::string::size_type first_slash = global_path.find( '/' );
-  if ( first_slash != -1 )
+  if ( first_slash != std::string::npos )
   {
     volume_name = global_path.substr( 0, first_slash );
 #ifdef _WIN32
