@@ -53,13 +53,9 @@ namespace org
           std::cout << "  nlink          = " << stbuf.get_nlink() << std::endl;
           std::cout << "  size           = " << stbuf.get_size() << std::endl;
 
-          char iso_date_time[64];
-          YIELD::Time::getISODateTime( stbuf.get_atime_ns(), iso_date_time, 64 );
-          std::cout << "  atime          = " << iso_date_time << std::endl;
-          YIELD::Time::getISODateTime( stbuf.get_mtime_ns(), iso_date_time, 64 );
-          std::cout << "  mtime          = " << iso_date_time << std::endl;
-          YIELD::Time::getISODateTime( stbuf.get_ctime_ns(), iso_date_time, 64 );
-          std::cout << "  ctime          = " << iso_date_time << std::endl;
+          std::cout << "  atime          = " << YIELD::Time( stbuf.get_atime_ns() ) << std::endl;
+          std::cout << "  mtime          = " << YIELD::Time( stbuf.get_mtime_ns() ) << std::endl;
+          std::cout << "  ctime          = " << YIELD::Time( stbuf.get_ctime_ns() ) << std::endl;
 
           std::cout << "  owner user id  = " << stbuf.get_user_id() << std::endl;
           std::cout << "  owner group id = " << stbuf.get_group_id() << std::endl;

@@ -237,9 +237,9 @@ bool Volume::unlink( const YIELD::Path& path )
   return true;
 }
 
-bool Volume::utimens( const YIELD::Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns )
+bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
-  mrc_proxy.utimens( Path( this->name, path ), atime_ns, mtime_ns, ctime_ns );
+  mrc_proxy.utimens( Path( this->name, path ), atime, mtime, ctime );
   return true;
 }
 
