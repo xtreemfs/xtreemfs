@@ -87,7 +87,7 @@ namespace org
         }
 
         // YIELD::Main
-        virtual void parseOption( int id, char* sep_arg )
+        virtual void parseOption( int id, char* arg )
         {
           switch ( id )
           {
@@ -97,6 +97,22 @@ namespace org
                 YIELD::TCPSocket::set_trace_socket_io_onoff( true );
             }
             break;
+
+            case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;                  
+            case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = arg; break;
+            case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = arg; break;
+            case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = arg; break;
+            case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = arg; break;
+
+            case OPTION_TIMEOUT_MS:
+            {
+              timeout_ms = atol( arg );
+              if ( timeout_ms == 0 )
+                timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+            }
+            break;
+
+            default: YIELD::Main::parseOption( id, arg ); break;
           }
         }
 
