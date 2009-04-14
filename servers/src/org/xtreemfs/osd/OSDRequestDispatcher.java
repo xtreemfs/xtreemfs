@@ -57,6 +57,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -270,8 +271,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 } catch (UnknownUUIDException ex) {
                     //should never happen
                 }
-                Service me = new Service(config.getUUID().toString(), 0
-                        , Constants.SERVICE_TYPE_OSD, "OSD @ "+config.getUUID(), 0, dmap);
+                Service me = new Service(ServiceType.SERVICE_TYPE_OSD, config.getUUID().toString(), 0
+                        , "OSD @ "+config.getUUID(), 0, dmap);
                 data.add(me);
 
                 return data;

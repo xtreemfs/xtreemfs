@@ -76,7 +76,7 @@ public class GetServicesByTypeOperation extends DIROperation {
                 final Service servEntry = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
                 servEntry.deserialize(buf);
-                if ((request.getType() == 0) || (servEntry.getType() == request.getType()))
+                if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType()))
                     services.add(servEntry);
 
                 long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();

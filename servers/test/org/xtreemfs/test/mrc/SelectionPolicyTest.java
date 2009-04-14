@@ -36,6 +36,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
 
 public class SelectionPolicyTest extends TestCase {
@@ -61,32 +62,32 @@ public class SelectionPolicyTest extends TestCase {
         ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://itu.dk");
-        Service attr1 = new Service("attr1",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr1 = new Service(ServiceType.SERVICE_TYPE_OSD,"attr1",0,"",0,dmap);
         osdMap.add(attr1);
 
         dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://wiut.uz");
-        Service attr2 = new Service("attr2",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr2 = new Service(ServiceType.SERVICE_TYPE_OSD,"attr2",0,"",0,dmap);
         osdMap.add(attr2);
          
         dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://pku.edu.cn");
-        Service attr3 = new Service("attr3",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr3 = new Service(ServiceType.SERVICE_TYPE_OSD,"attr3",0,"",0,dmap);
         osdMap.add(attr3);
 
         dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://xtreemfs2.zib.de");
-        Service attr4 = new Service("attr4",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr4 = new Service(ServiceType.SERVICE_TYPE_OSD,"attr4",0,"",0,dmap);
         osdMap.add(attr4);
 
 
         dmap = new ServiceDataMap();
         dmap.put("free",Long.toString(MIN_FREE_CAPACITY + 1));
         dmap.put("uri", "http://xtreemfs2.zib.de");
-        Service attr5 = new Service("attr5",0,Constants.SERVICE_TYPE_OSD,"",0,dmap);
+        Service attr5 = new Service(ServiceType.SERVICE_TYPE_OSD,"attr5",0,"",0,dmap);
         osdMap.add(attr5);
         
     }

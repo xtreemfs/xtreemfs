@@ -116,8 +116,8 @@ public class AddReplicaOperation extends MRCOperation {
             org.xtreemfs.interfaces.StripingPolicy sp = newRepl.getStriping_policy();
             StringSet osds = newRepl.getOsd_uuids();
             
-            StripingPolicy sPol = sMan.createStripingPolicy(Converter.intToPolicyName(sp.getPolicy()), sp
-                    .getStripe_size(), sp.getWidth());
+            StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripe_size(), sp
+                    .getWidth());
             
             if (!file.isReadOnly())
                 throw new UserException(ErrNo.EPERM,

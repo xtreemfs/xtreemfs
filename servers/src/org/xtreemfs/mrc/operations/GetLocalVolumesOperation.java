@@ -26,6 +26,8 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
 
+import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
@@ -60,10 +62,12 @@ public class GetLocalVolumesOperation extends MRCOperation {
             for (VolumeInfo data : volumes) {
                 
                 StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
-                FileMetadata md = sMan.getMetadata(1);                
-                vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), data.getOsdPolicyId(),
-                    Converter.stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)), data
-                            .getAcPolicyId(), data.getId(), md.getOwnerId(), md.getOwningGroupId()));
+                FileMetadata md = sMan.getMetadata(1);
+                vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), OSDSelectionPolicyType
+                        .parseInt(data.getOsdPolicyId()), Converter.stripingPolicyToStripingPolicy(sMan
+                        .getDefaultStripingPolicy(1)),
+                    AccessControlPolicyType.parseInt(data.getAcPolicyId()), data.getId(), md.getOwnerId(), md
+                            .getOwningGroupId()));
             }
             
             rq.setResponse(new xtreemfs_lsvolResponse(vSet));

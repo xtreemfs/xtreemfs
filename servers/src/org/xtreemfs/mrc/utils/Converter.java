@@ -35,10 +35,10 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
@@ -130,7 +130,8 @@ public class Converter {
                 sb.append(repl.getOSD(j)).append(j == repl.getOSDCount() - 1 ? "" : ", ");
             sb.append(")]").append(i == xLocList.getReplicaCount() - 1 ? "" : ", ");
         }
-        sb.append(", ").append(xLocList.getVersion()).append(", ").append(xLocList.getReplUpdatePolicy()).append("]");
+        sb.append(", ").append(xLocList.getVersion()).append(", ").append(xLocList.getReplUpdatePolicy())
+                .append("]");
         
         return sb.toString();
     }
@@ -161,7 +162,7 @@ public class Converter {
             Replica repl = xLocSet.getReplicas().get(i);
             org.xtreemfs.interfaces.StripingPolicy sp = repl.getStriping_policy();
             
-            replicas[i] = sMan.createXLoc(sMan.createStripingPolicy(intToPolicyName(sp.getPolicy()), sp
+            replicas[i] = sMan.createXLoc(sMan.createStripingPolicy(sp.getType().toString(), sp
                     .getStripe_size(), sp.getWidth()), repl.getOsd_uuids().toArray(
                 new String[repl.getOsd_uuids().size()]));
         }
@@ -193,7 +194,7 @@ public class Converter {
                 osds.add(xRepl.getOSD(j));
             
             org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
-                policyNameToInt(xSP.getPattern()), xSP.getStripeSize(), xSP.getWidth());
+                StripingPolicyType.valueOf(xSP.getPattern()), xSP.getStripeSize(), xSP.getWidth());
             
             Replica repl = new Replica(sp, 0, osds); // TODO: replication flags
             replicas.add(repl);
@@ -244,29 +245,7 @@ public class Converter {
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
         
-        return new org.xtreemfs.interfaces.StripingPolicy(Converter.policyNameToInt(policy), size, width);
-    }
-    
-    /**
-     * Converts an integer to a striping policy name.
-     * 
-     * @param policy
-     *            the integer for the policy
-     * @return the name of the policy
-     */
-    public static String intToPolicyName(int policy) {
-        switch (policy) {
-        case Constants.STRIPING_POLICY_RAID0:
-            return "RAID0";
-        default:
-            return "";
-        }
-    }
-    
-    public static int policyNameToInt(String policyName) {
-        if (policyName.equals("RAID0"))
-            return Constants.STRIPING_POLICY_RAID0;
-        return Constants.STRIPING_POLICY_DEFAULT;
+        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(policy), size, width);
     }
     
     /**
@@ -288,11 +267,11 @@ public class Converter {
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(org.xtreemfs.interfaces.StripingPolicy sp) {
-        return Converter.intToPolicyName(sp.getPolicy()) + ", " + sp.getStripe_size() + ", " + sp.getWidth();
+        return sp.getType().toString() + ", " + sp.getStripe_size() + ", " + sp.getWidth();
     }
     
     public static org.xtreemfs.interfaces.StripingPolicy stripingPolicyToStripingPolicy(StripingPolicy sp) {
-        return new org.xtreemfs.interfaces.StripingPolicy(policyNameToInt(sp.getPattern()), sp
+        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(sp.getPattern()), sp
                 .getStripeSize(), sp.getWidth());
     }
     

@@ -41,6 +41,7 @@ import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -142,7 +143,7 @@ public class DIRTest extends TestCase {
 
         ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("bla", "yagga");
-        Service sr = new Service("uuid1", 0, Constants.SERVICE_TYPE_MRC, "mrc @ farnsworth", 0,dmap);
+        Service sr = new Service(ServiceType.SERVICE_TYPE_MRC,"uuid1", 0, "mrc @ farnsworth", 0,dmap);
 
         RPCResponse<Long> r1 = client.xtreemfs_service_register(null, sr);
         r1.get();

@@ -38,10 +38,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -82,7 +82,7 @@ public class StorageLayoutTest extends TestCase {
      */
     private void basicTests(StorageLayout layout) throws IOException {
         final String fileId = "ABCDEFG:0001";
-	    StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));//new RAID0(64, 1);
+	    StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));//new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
 

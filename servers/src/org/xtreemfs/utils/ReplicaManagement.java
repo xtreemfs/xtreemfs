@@ -43,10 +43,12 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -413,9 +415,9 @@ public class ReplicaManagement {
 
         // create a volume (no access control)
         RPCResponse r = mrcClient.mkvol(mrcAddress, credentials, "test",
-                Constants.OSD_SELECTION_POLICY_SIMPLE,
-                new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1),
-                Constants.ACCESS_CONTROL_POLICY_NULL, 0);
+                OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(),
+                new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
         r.get();
         r.freeBuffers();
 

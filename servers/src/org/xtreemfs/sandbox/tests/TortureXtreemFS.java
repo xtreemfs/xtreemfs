@@ -27,7 +27,6 @@ package org.xtreemfs.sandbox.tests;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +41,10 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
@@ -137,8 +138,10 @@ public class TortureXtreemFS {
 
             if (options.get("mkvol").switchValue) {
                 MRCClient mrcClient = new MRCClient(rpcClient, mrcAddr);
-                StripingPolicy sp = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 1);
-                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname, Constants.OSD_SELECTION_POLICY_SIMPLE, sp, Constants.ACCESS_CONTROL_POLICY_POSIX, 0775);
+                StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1);
+                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname,
+                    OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(), sp,
+                    AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(), 0775);
                 r.get();
                 r.freeBuffers();
             }

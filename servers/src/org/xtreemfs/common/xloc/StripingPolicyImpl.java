@@ -5,9 +5,9 @@
 
 package org.xtreemfs.common.xloc;
 
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 
 /**
  *
@@ -26,7 +26,7 @@ public abstract class StripingPolicyImpl {
     }
 
     public int getPolicyId() {
-        return policy.getPolicy();
+        return policy.getType().intValue();
     }
 
     public StripingPolicy getPolicy() {
@@ -48,7 +48,7 @@ public abstract class StripingPolicyImpl {
     public abstract int  getStripeSizeForObject(long objectNo);
 
     public static StripingPolicyImpl getPolicy(Replica replica) {
-        if (replica.getStriping_policy().getPolicy() == Constants.STRIPING_POLICY_RAID0) {
+        if (replica.getStriping_policy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica);
         } else {
             throw new IllegalArgumentException("unknown striping polciy requested");

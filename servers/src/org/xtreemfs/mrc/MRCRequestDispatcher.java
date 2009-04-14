@@ -57,6 +57,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
@@ -179,7 +180,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     // should never happen
                 }
                 
-                Service mrcReg = new Service(uuid, 0, Constants.SERVICE_TYPE_MRC, "MRC @ " + uuid, 0, dmap);
+                Service mrcReg = new Service(ServiceType.SERVICE_TYPE_MRC, uuid, 0, "MRC @ " + uuid, 0, dmap);
                 sregs.add(mrcReg);
                 
                 try {

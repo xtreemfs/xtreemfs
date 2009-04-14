@@ -48,6 +48,7 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -132,7 +133,7 @@ public class ReplicationTest extends TestCase {
                 osdset.add(configs[startOSD + stripe].getUUID().toString());
             }
             Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    Constants.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
             replicas.add(r);
         }
         return new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0));

@@ -25,12 +25,12 @@
 
 package org.xtreemfs.common.clients.io;
 
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.StripingPolicyType;
 
 public class ByteMapperFactory {
 
     public static ByteMapper createByteMapper(int policy, int stripeSize, ObjectStore store) {
-        if( policy == Constants.STRIPING_POLICY_RAID0)
+        if( StripingPolicyType.parseInt(policy) == StripingPolicyType.STRIPING_POLICY_RAID0)
             return new ByteMapperRAID0(stripeSize, store);
         throw new IllegalArgumentException("Unknown striping policy ID");
    }

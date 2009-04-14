@@ -32,9 +32,9 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.volumes.VolumeChangeListener;
@@ -54,22 +54,22 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         /**
          * volume ID
          */
-        public String             volID;
+        public String     volID;
         
         /**
          * policyID used by the volume.
          */
-        public short              selectionPolicyID;
+        public short      selectionPolicyID;
         
         /**
          * OSD policy arguments used by the volume
          */
-        public String             selectionPolicyArgs;
+        public String     selectionPolicyArgs;
         
         /**
          * Map of suitable OSDs for that volume. Can be empty.
          */
-        public ServiceSet         usableOSDs;
+        public ServiceSet usableOSDs;
     }
     
     /**
@@ -203,7 +203,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         // initially fetch the list of OSDs from the Directory Service
         RPCResponse<ServiceSet> r = null;
         try {
-            r = client.xtreemfs_service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
+            r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
             knownOSDs = r.get();
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
@@ -226,7 +226,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             try {
                 // request list of registered OSDs from Directory
                 // Service
-                r = client.xtreemfs_service_get_by_type(null, Constants.SERVICE_TYPE_OSD);
+                r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
                 knownOSDs = r.get();
                 
                 evaluateResponse(knownOSDs);

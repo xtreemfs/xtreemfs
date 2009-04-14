@@ -52,6 +52,7 @@ import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -328,7 +329,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         TimeSync.initialize(dirClient, 100000, 50).waitForStartup();
 
 
-        RPCResponse<ServiceSet> resp = dirClient.xtreemfs_service_get_by_type(null,Constants.SERVICE_TYPE_VOLUME);
+        RPCResponse<ServiceSet> resp = dirClient.xtreemfs_service_get_by_type(null,ServiceType.SERVICE_TYPE_VOLUME);
         ServiceSet result = resp.get();
         resp.freeBuffers();
 

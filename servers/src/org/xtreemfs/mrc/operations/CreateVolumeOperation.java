@@ -32,10 +32,10 @@ import java.util.Map;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
@@ -70,11 +70,13 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // first, check whether the given policies are supported
             
-            if (master.getOSDStatusManager().getOSDSelectionPolicy((short) volData.getOsd_selection_policy()) == null)
+            if (master.getOSDStatusManager().getOSDSelectionPolicy(
+                (short) volData.getOsd_selection_policy().intValue()) == null)
                 throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
                     + volData.getOsd_selection_policy());
             
-            if (master.getFileAccessManager().getFileAccessPolicy((short) volData.getAccess_control_policy()) == null)
+            if (master.getFileAccessManager().getFileAccessPolicy(
+                (short) volData.getAccess_control_policy().intValue()) == null)
                 throw new UserException(ErrNo.EINVAL, "invalid file access policy ID: "
                     + volData.getAccess_control_policy());
             
@@ -96,7 +98,7 @@ public class CreateVolumeOperation extends MRCOperation {
             attrs.add("version");
             
             RPCResponse<ServiceSet> response = master.getDirClient().xtreemfs_service_get_by_type(null,
-                Constants.SERVICE_TYPE_VOLUME);
+                ServiceType.SERVICE_TYPE_VOLUME);
             response.registerListener(new RPCResponseAvailableListener<ServiceSet>() {
                 
                 @Override
@@ -138,7 +140,8 @@ public class CreateVolumeOperation extends MRCOperation {
             ServiceDataMap dmap = new ServiceDataMap();
             dmap.put("mrc", master.getConfig().getUUID().toString());
             dmap.put("free", "0");
-            Service vol = new Service(volumeId, 0, Constants.SERVICE_TYPE_VOLUME, volData.getName(), 0, dmap);
+            Service vol = new Service(ServiceType.SERVICE_TYPE_VOLUME, volumeId, 0, volData.getName(), 0,
+                dmap);
             
             RPCResponse<Long> rpcResponse2 = master.getDirClient().xtreemfs_service_register(null, vol);
             rpcResponse2.registerListener(new RPCResponseAvailableListener<Long>() {
@@ -173,8 +176,8 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // create the volume and its database
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
-                volData.getName(), (short) volData.getAccess_control_policy(),
-                (short) volData.getOsd_selection_policy(), null, rq.getDetails().userId,
+                volData.getName(), (short) volData.getAccess_control_policy().intValue(),
+                (short) volData.getOsd_selection_policy().intValue(), null, rq.getDetails().userId,
                 rq.getDetails().groupIds.get(0), volData.getDefault_striping_policy(), volData.getMode());
             
             // set the response

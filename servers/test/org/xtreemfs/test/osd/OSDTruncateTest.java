@@ -36,13 +36,13 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -83,7 +83,7 @@ public class OSDTruncateTest extends TestCase {
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();
         osdset.add(serverID.toString());
-        Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(Constants.STRIPING_POLICY_RAID0, 2, 1), 0, osdset);
+        Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 2, 1), 0, osdset);
         replicas.add(r);
         XLocSet xloc = new XLocSet(replicas, 1, "",0);
 

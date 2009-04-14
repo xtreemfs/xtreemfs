@@ -25,34 +25,35 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 
-import java.util.Map;
-import java.net.URI;
-import java.net.UnknownHostException;
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 
-public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
-
-    public static final short POLICY_ID = 2;
-
-    private byte[] clientAddress;
-    private long clientAddressLong;
-
-    public String[] getOSDsForNewFile(ServiceSet osdSet,
-            InetAddress clientAddress, int amount, String args) {
-
+public class ProximitySelectionPolicy extends AbstractSelectionPolicy {
+    
+    public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_PROXIMITY
+                                                .intValue();
+    
+    private byte[]            clientAddress;
+    
+    private long              clientAddressLong;
+    
+    public String[] getOSDsForNewFile(ServiceSet osdSet, InetAddress clientAddress, int amount, String args) {
+        
         this.clientAddress = clientAddress.getAddress();
         clientAddressLong = inetAddressToLong(this.clientAddress);
-
+        
         // sort all OSDs with sufficient free capacity according to the value
         // returned by the method distance
         String[] osds = new String[amount];
         PriorityQueue<Pair> queue = new PriorityQueue<Pair>();
         LinkedList<String> list = new LinkedList<String>();
-
+        
         for (Service osd : osdSet) {
             if (hasFreeCapacity(osd)) {
                 try {
@@ -61,43 +62,40 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
                 }
             }
         }
-
-        for (int i = 0; !queue.isEmpty()
-                && (queue.peek().getDistance() == 0 || i < amount); i++)
+        
+        for (int i = 0; !queue.isEmpty() && (queue.peek().getDistance() == 0 || i < amount); i++)
             list.add(queue.poll().getOsd().getUuid());
-
+        
         for (int i = 0; !list.isEmpty() && i < amount; i++)
             osds[i] = list.remove((int) (Math.random() * list.size()));
-
+        
         return osds;
-
+        
     }
-
+    
     private long distance(Service osd) throws UnknownHostException {
-
+        
         String osduri = osd.getData().get("uri");
-
+        
         if (osduri == null)
             return 10000000;
-
-        byte[] osdAddress = InetAddress.getByName(
-                (URI.create(osduri).getHost())).getAddress();
-
+        
+        byte[] osdAddress = InetAddress.getByName((URI.create(osduri).getHost())).getAddress();
+        
         // if osd in same subnet as client
-        if (osdAddress[0] == clientAddress[0]
-                && osdAddress[1] == clientAddress[1]
-                && osdAddress[2] == clientAddress[2])
+        if (osdAddress[0] == clientAddress[0] && osdAddress[1] == clientAddress[1]
+            && osdAddress[2] == clientAddress[2])
             return 0;
-
+        
         return Math.abs(inetAddressToLong(osdAddress) - clientAddressLong);
     }
-
+    
     public long inetAddressToLong(byte[] address) {
-
+        
         StringBuffer sb = new StringBuffer();
-
+        
         for (int i = 0; i < address.length; i++) {
-
+            
             if (address[i] < 0)
                 sb.append(256 + address[i]);
             else if (address[i] < 10)
@@ -109,29 +107,30 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
         }
         return Long.parseLong(sb.toString());
     }
-
+    
     class Pair implements Comparable<Pair> {
-
+        
         private Service osd;
-        private long distance;
-
+        
+        private long    distance;
+        
         Pair(Service osd, long distance) {
             this.osd = osd;
             this.distance = distance;
         }
-
+        
         public String toString() {
             return "(" + osd + ", " + distance + ")";
         }
-
+        
         public long getDistance() {
             return distance;
         }
-
+        
         public Service getOsd() {
             return osd;
         }
-
+        
         public int compareTo(Pair other) {
             if (this.distance < other.distance)
                 return -1;
@@ -141,5 +140,5 @@ public class ProximitySelectionPolicy extends AbstractSelectionPolicy{
                 return 0;
         }
     }
-
+    
 }

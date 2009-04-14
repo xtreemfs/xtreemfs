@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
@@ -27,25 +27,27 @@ package org.xtreemfs.mrc.osdselection;
 import java.net.InetAddress;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 
 /**
  * A very simple policy that accepts all osds!
- *
+ * 
  * @author bjko
  */
-public class RandomSelectionPolicy extends AbstractSelectionPolicy{
-
-    public static final short  POLICY_ID         = 1;
-
+public class RandomSelectionPolicy extends AbstractSelectionPolicy {
+    
+    public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE
+                                                .intValue();
+    
     /** Creates a new instance of SimpleSelectionPolicy */
     public RandomSelectionPolicy() {
     }
-
-    public String[] getOSDsForNewFile(ServiceSet osdMap,
-        InetAddress clientAddress, int amount, String args) {
-
+    
+    public String[] getOSDsForNewFile(ServiceSet osdMap, InetAddress clientAddress, int amount, String args) {
+        
         // first, sort out all OSDs with insufficient free capacity
         String[] osds = new String[amount];
         List<String> list = new LinkedList<String>();
@@ -53,12 +55,12 @@ public class RandomSelectionPolicy extends AbstractSelectionPolicy{
             if (hasFreeCapacity(osd))
                 list.add(osd.getUuid());
         }
-
+        
         // from the remaining set, take a random subset of OSDs
         for (int i = 0; i < amount; i++)
             osds[i] = list.remove((int) (Math.random() * list.size()));
-
+        
         return osds;
     }
-
+    
 }

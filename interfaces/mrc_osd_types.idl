@@ -32,7 +32,8 @@ module org
 
       enum OSDSelectionPolicyType
       {
-        OSD_SELECTION_POLICY_SIMPLE = 1        
+        OSD_SELECTION_POLICY_SIMPLE = 1,
+        OSD_SELECTION_POLICY_PROXIMITY = 2
       };
 
       struct OSDWriteResponse 

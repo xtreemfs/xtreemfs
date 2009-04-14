@@ -41,6 +41,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.replication.RandomStrategy;
 import org.xtreemfs.osd.replication.SimpleStrategy;
@@ -101,7 +102,7 @@ public class TransferStrategiesTest extends TestCase {
                 osdset.add(new ServiceUUID("UUID:localhost:"+(port++)).toString());
             }
             Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    Constants.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
             replicas.add(r);
         }
         // set the first replica as current replica

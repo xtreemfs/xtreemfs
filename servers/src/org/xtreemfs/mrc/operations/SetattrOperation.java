@@ -114,7 +114,7 @@ public class SetattrOperation extends MRCOperation {
             
             
             // update POSIX timestamps
-            sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // set the response
             rq.setResponse(new setattrResponse());

@@ -45,6 +45,7 @@ import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
@@ -547,6 +548,10 @@ public class MRCTest extends TestCase {
         }
         
         assertTree(mrcAddress, uid, gids, volumeName, volumeName + "/mainDir", volumeName + "/mainDir/newDir");
+        
+        invokeSync(client.symlink(mrcAddress, uc, volumeName + "/mainDir", volumeName + "/link"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName + "/link", volumeName + "/newlink"));
+        
     }
     
     public void testAccessControl() throws Exception {
@@ -824,8 +829,8 @@ public class MRCTest extends TestCase {
         final String fileName1 = dirName + "/testFile";
         final String fileName2 = dirName + "/testFile2";
         
-        StripingPolicy sp1 = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 64, 1);
-        StripingPolicy sp2 = new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 256, 1);
+        StripingPolicy sp1 = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1);
+        StripingPolicy sp2 = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 1);
         
         // create a new file in a directory in a new volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, RandomSelectionPolicy.POLICY_ID, sp1,
@@ -891,7 +896,7 @@ public class MRCTest extends TestCase {
     }
     
     private static StripingPolicy getDefaultStripingPolicy() {
-        return new StripingPolicy(Constants.STRIPING_POLICY_DEFAULT, 1000, 1);
+        return new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 1000, 1);
     }
     
     private static List<String> createGIDs(String gid) {

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
@@ -99,7 +100,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
  */
 public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
-    public static final short   POLICY_ID          = 2;
+    public static final short   POLICY_ID          = (short) AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX
+                                                           .intValue();
     
     private static final String OWNER              = "user:";
     

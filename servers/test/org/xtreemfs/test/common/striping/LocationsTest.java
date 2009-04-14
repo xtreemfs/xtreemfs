@@ -40,6 +40,7 @@ import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.test.SetupUtils;
 
@@ -84,8 +85,8 @@ public class LocationsTest extends TestCase {
         rep2List.add(osds.get(3).toString());
 
         ReplicaSet rset = new ReplicaSet();
-        rset.add(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 4), 0, osdList));
-        rset.add(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, 128, 4), 0, rep2List));
+        rset.add(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4), 0, osdList));
+        rset.add(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4), 0, rep2List));
         XLocSet xlocset = new XLocSet(rset, 1, "", 0);
         XLocations loc = new XLocations(xlocset, osds.get(1));
 

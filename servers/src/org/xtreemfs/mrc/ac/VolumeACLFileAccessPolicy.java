@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
@@ -50,7 +51,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
  */
 public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
-    public static final short   POLICY_ID          = 3;
+    public static final short   POLICY_ID          = (short) AccessControlPolicyType.ACCESS_CONTROL_POLICY_VOLUME
+                                                           .intValue();
     
     private static final String AM_WRITE           = "w";
     

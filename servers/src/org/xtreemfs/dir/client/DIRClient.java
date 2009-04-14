@@ -34,6 +34,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
@@ -183,7 +184,7 @@ public class DIRClient extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<ServiceSet> xtreemfs_service_get_by_type(InetSocketAddress server, int serviceType) {
+    public RPCResponse<ServiceSet> xtreemfs_service_get_by_type(InetSocketAddress server, ServiceType serviceType) {
         xtreemfs_service_get_by_typeRequest rq = new xtreemfs_service_get_by_typeRequest(serviceType);
         
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ServiceSet>() {

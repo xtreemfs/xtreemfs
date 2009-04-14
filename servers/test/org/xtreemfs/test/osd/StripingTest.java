@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -44,7 +43,6 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -52,6 +50,7 @@ import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -158,7 +157,7 @@ public class StripingTest extends TestCase {
         
         capSecret = osdCfg1.getCapabilitySecret();
 
-        sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, KB, 3), 0, new StringSet()));
+        sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3), 0, new StringSet()));
         dirConfig = SetupUtils.createDIRConfig();
 
     }
@@ -193,7 +192,7 @@ public class StripingTest extends TestCase {
         osdset.add(SetupUtils.getOSD1UUID().toString());
         osdset.add(SetupUtils.getOSD2UUID().toString());
         osdset.add(SetupUtils.getOSD3UUID().toString());
-        Replica r = new Replica(new StripingPolicy(Constants.STRIPING_POLICY_RAID0, KB, 3), 0, osdset);
+        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3), 0, osdset);
         replicas.add(r);
         xloc = new XLocSet(replicas, 1, "",0);
         

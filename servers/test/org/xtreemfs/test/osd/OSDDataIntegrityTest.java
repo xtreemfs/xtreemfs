@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -83,7 +84,7 @@ public class OSDDataIntegrityTest extends TestCase {
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();
         osdset.add(serverID.toString());
-        Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(Constants.STRIPING_POLICY_RAID0, 2, 1), 0, osdset);
+        Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 2, 1), 0, osdset);
         replicas.add(r);
         XLocSet xloc = new XLocSet(replicas, 1, "",0);
 

@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.ac;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -44,16 +45,17 @@ import org.xtreemfs.mrc.utils.PathResolver;
  */
 public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     
-    public static final short   POLICY_ID = 1;
-        
+    public static final short POLICY_ID = (short) AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL
+                                                .intValue(); ;
+    
     @Override
     public String translateAccessFlags(int accessMode) {
         return null;
     }
     
     @Override
-    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, String accessMode) {
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, String accessMode) {
         // do nothing
     }
     
@@ -76,28 +78,27 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) {
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) {
         // do nothing
     }
     
     @Override
-    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
-        throws MRCException {
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException {
         return null;
     }
     
     @Override
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
-        throws MRCException, UserException {
+        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
+        UserException {
         // do nothing
     }
     
     @Override
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
-        throws MRCException, UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
+        UserException {
         // do nothing
     }
     

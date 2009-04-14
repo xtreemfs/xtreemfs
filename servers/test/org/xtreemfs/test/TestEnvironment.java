@@ -22,6 +22,7 @@ import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -149,7 +150,7 @@ public class TestEnvironment {
             dmap.put("totalRAM", "1000000000");
             dmap.put("usedRAM", "0");
             dmap.put("proto_version", "" + OSDInterface.getVersion());
-            Service reg = new Service("mockUpOSD", 0, Constants.SERVICE_TYPE_OSD, "mockUpOSD", 0, dmap);
+            Service reg = new Service(ServiceType.SERVICE_TYPE_OSD, "mockUpOSD", 0, "mockUpOSD", 0, dmap);
             RPCResponse<Long> response = dirClient.xtreemfs_service_register(null, reg);
             response.get();
             response.freeBuffers();

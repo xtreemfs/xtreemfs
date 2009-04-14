@@ -36,7 +36,9 @@ import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
@@ -107,7 +109,7 @@ public class MRCHelper {
         ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("mrc", mrcUUID);
         dmap.put("free", free);
-        Service sreg = new Service(vol.getId(), 0, Constants.SERVICE_TYPE_VOLUME, vol.getName(), 0, dmap);
+        Service sreg = new Service(ServiceType.SERVICE_TYPE_VOLUME, vol.getId(), 0, vol.getName(), 0, dmap);
         
         return sreg;
     }
@@ -147,9 +149,9 @@ public class MRCHelper {
         if (stripingPolicy == null)
             throw new MRCException("could not open file " + path + ": no default striping policy available");
         
-        org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(Converter
-                .policyNameToInt(stripingPolicy.getPattern()), stripingPolicy.getStripeSize(), stripingPolicy
-                .getWidth());
+        org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
+            StripingPolicyType.valueOf(stripingPolicy.getPattern()), stripingPolicy.getStripeSize(),
+            stripingPolicy.getWidth());
         
         StringSet osds = new StringSet();
         
