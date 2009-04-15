@@ -222,6 +222,9 @@ public class Converter {
         
         StringTokenizer st = new StringTokenizer(spString, " ,\t");
         String policy = st.nextToken();
+        if(policy.equals("RAID0"))
+            policy = StripingPolicyType.STRIPING_POLICY_RAID0.toString();
+        
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
         

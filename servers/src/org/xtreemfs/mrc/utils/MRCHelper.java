@@ -236,43 +236,46 @@ public class MRCHelper {
             // ignore, will be handled by the 'default' case
         }
         
-        switch (key) {
-        
-        case locations:
-            XLocList xLocList = file.getXLocList();
-            return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToString(xLocList);
-        case file_id:
-            return volume.getId() + ":" + file.getId();
-        case object_type:
-            String ref = sMan.getSoftlinkTarget(file.getId());
-            return ref != null ? "3" : file.isDirectory() ? "2" : "1";
-        case url:
-            return "uuid:" + config.getUUID().toString() + "/" + path;
-        case owner:
-            return file.getOwnerId();
-        case group:
-            return file.getOwningGroupId();
-        case default_sp:
-            if (!file.isDirectory())
-                return "";
-            StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
-            if (sp == null)
-                return "";
-            return Converter.stripingPolicyToString(sp);
-        case ac_policy_id:
-            return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
-        case osdsel_policy_id:
-            return file.getId() == 1 ? volume.getOsdPolicyId() + "" : "";
-        case osdsel_policy_args:
-            return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume.getOsdPolicyArgs())
-                : "";
-        case read_only:
-            if (file.isDirectory())
-                return "";
+        if (key != null) {
             
-            return String.valueOf(file.isReadOnly());
-        case free_space:
-            return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(volume.getId())) : "";
+            switch (key) {
+            
+            case locations:
+                XLocList xLocList = file.getXLocList();
+                return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToString(xLocList);
+            case file_id:
+                return volume.getId() + ":" + file.getId();
+            case object_type:
+                String ref = sMan.getSoftlinkTarget(file.getId());
+                return ref != null ? "3" : file.isDirectory() ? "2" : "1";
+            case url:
+                return "uuid:" + config.getUUID().toString() + "/" + path;
+            case owner:
+                return file.getOwnerId();
+            case group:
+                return file.getOwningGroupId();
+            case default_sp:
+                if (!file.isDirectory())
+                    return "";
+                StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
+                if (sp == null)
+                    return "";
+                return Converter.stripingPolicyToString(sp);
+            case ac_policy_id:
+                return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
+            case osdsel_policy_id:
+                return file.getId() == 1 ? volume.getOsdPolicyId() + "" : "";
+            case osdsel_policy_args:
+                return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume
+                        .getOsdPolicyArgs()) : "";
+            case read_only:
+                if (file.isDirectory())
+                    return "";
+                
+                return String.valueOf(file.isReadOnly());
+            case free_space:
+                return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(volume.getId())) : "";
+            }
         }
         
         return "";

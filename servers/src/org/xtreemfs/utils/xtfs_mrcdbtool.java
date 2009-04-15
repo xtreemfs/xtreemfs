@@ -36,6 +36,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
+import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -57,6 +58,7 @@ public class xtfs_mrcdbtool {
         options.put("cp", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         
         try {
@@ -68,7 +70,7 @@ public class xtfs_mrcdbtool {
         }
         
         CliOption h = options.get("h");
-        if (h.switchValue != null) {
+        if (h.switchValue) {
             usage();
             return;
         }
@@ -80,7 +82,7 @@ public class xtfs_mrcdbtool {
             return;
         }
         
-        if (arguments.size() != 2) {
+        if (arguments.size() < 2) {
             usage();
             return;
         }
@@ -98,24 +100,30 @@ public class xtfs_mrcdbtool {
         CliOption cp = options.get("cp");
         CliOption t = options.get("t");
         CliOption tp = options.get("tp");
+        CliOption p = options.get("p");
         
         String host = mrc.urlValue.getHost();
         int port = mrc.urlValue.getPort();
         String protocol = mrc.urlValue.getProtocol();
-        
+                
         RPCNIOSocketClient rpcClient = null;
         
         try {
             
             SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
                 c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
-            rpcClient = new RPCNIOSocketClient(sslOptions, 0, 0);
+            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
+            rpcClient.start();
             MRCClient client = new MRCClient(rpcClient, new InetSocketAddress(host, port));
+            
+            StringSet gids = new StringSet();
+            gids.add("");
+            UserCredentials creds = new UserCredentials("", gids, p == null? "passphrase": p.stringValue);
             
             if (op.equals("dump")) {
                 RPCResponse<Object> r = null;
                 try {
-                    r = client.xtreemfs_dump_database(null, new UserCredentials(), dumpFile);
+                    r = client.xtreemfs_dump_database(null, creds, dumpFile);
                     r.waitForResult();
                 } finally {
                     if (r != null)
@@ -126,7 +134,7 @@ public class xtfs_mrcdbtool {
             else if (op.equals("restore")) {
                 RPCResponse<Object> r = null;
                 try {
-                    r = client.xtreemfs_restore_database(null,  new UserCredentials(), dumpFile);
+                    r = client.xtreemfs_restore_database(null, creds, dumpFile);
                     r.waitForResult();
                 } finally {
                     if (r != null)
@@ -147,7 +155,7 @@ public class xtfs_mrcdbtool {
     
     private static void usage() {
         System.out
-                .println("usage: xtfs_mrcdbtool -mrc <mrc_URL> [-c <creds_file>] [-cp <creds_passphrase>] [-t <trusted_CAs>] [-tp <trusted_passphrase>] dump|restore <dump_file>");
+                .println("usage: xtfs_mrcdbtool -mrc <mrc_URL> [-p <admin_passphrase>] [-c <creds_file>] [-cp <creds_passphrase>] [-t <trusted_CAs>] [-tp <trusted_passphrase>] dump|restore <dump_file>");
         System.exit(1);
     }
     

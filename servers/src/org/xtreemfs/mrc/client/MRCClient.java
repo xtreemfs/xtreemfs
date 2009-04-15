@@ -88,8 +88,8 @@ import org.xtreemfs.interfaces.MRCInterface.symlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.symlinkResponse;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkResponse;
-import org.xtreemfs.interfaces.MRCInterface.utimeRequest;
-import org.xtreemfs.interfaces.MRCInterface.utimeResponse;
+import org.xtreemfs.interfaces.MRCInterface.utimensRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimensResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_checkpointRequest;
@@ -573,12 +573,12 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse utime(InetSocketAddress server, UserCredentials credentials, String path, long atime,
         long ctime, long mtime) {
         
-        utimeRequest rq = new utimeRequest(path, atime, ctime, mtime);
+        utimensRequest rq = new utimensRequest(path, atime, ctime, mtime);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final utimeResponse resp = new utimeResponse();
+                final utimensResponse resp = new utimensResponse();
                 resp.deserialize(data);
                 return null;
             }
