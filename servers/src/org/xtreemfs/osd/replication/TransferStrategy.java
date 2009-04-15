@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
@@ -55,36 +54,13 @@ public abstract class TransferStrategy {
         public boolean requestObjectList;
     }
 
-    /**
-     * Encapsulates the most important infos.
-     * 
-     * 12.02.2009
-     * 
-     * @author user
-     */
-    protected class ReplicationDetails {
-        String fileId;
-        Capability capability;
-        XLocations otherReplicas; // does not contain current replica
-
-        ReplicationDetails(String fileID, Capability capability, XLocations xLoc) {
-            this.fileId = fileID;
-            this.capability = capability;
-
-            // get other Replicas without local
-            this.otherReplicas = xLoc.cloneWithoutReplicaInList(xLoc.getLocalReplica());
-        }
-    }
+    protected String fileID;
+    protected XLocations xLoc; // does not contain current replica
 
     /**
      * contains the chosen values for the next replication request
      */
     protected NextRequest next;
-
-    /**
-     * contains necessary information
-     */
-    protected ReplicationDetails details;
 
     /**
      * contains all objects which must be replicated (e.g. background-replication)
@@ -97,9 +73,15 @@ public abstract class TransferStrategy {
     protected ArrayList<Long> preferredObjects; // requested objects
 
     /**
+     * 
+     */
+    private final ServiceAvailability osdAvailability;
+
+    /**
      * contains a list of local available objects for each OSD
      */
     protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
+
     /**
      * contains a list of possible OSDs for each object used to notice which OSDs were already requested
      */
@@ -113,11 +95,14 @@ public abstract class TransferStrategy {
     /**
      * @param rqDetails
      */
-    protected TransferStrategy(String fileID, Capability cap, XLocations xLoc, long filesize) {
+    protected TransferStrategy(String fileID, XLocations xLoc, long filesize,
+            ServiceAvailability osdAvailability) {
         super();
-        this.details = new ReplicationDetails(fileID, cap, xLoc);
+        this.xLoc = xLoc;
+        this.fileID = fileID;
         this.requiredObjects = new ArrayList<Long>();
         this.preferredObjects = new ArrayList<Long>();
+        this.osdAvailability = osdAvailability;
         this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
         this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
         this.filesize = filesize;
@@ -169,7 +154,7 @@ public abstract class TransferStrategy {
             if (added) {
                 // do more
                 if (!availableOSDsForObject.containsKey(object))
-                    availableOSDsForObject.put(object, details.otherReplicas.getOSDsForObject(objectID));
+                    availableOSDsForObject.put(object, xLoc.getOSDsForObject(objectID, xLoc.getLocalReplica()));
             }
             return added;
         } else
@@ -185,7 +170,7 @@ public abstract class TransferStrategy {
     public boolean removeRequiredObject(long objectID) {
         boolean removed = this.requiredObjects.remove(Long.valueOf(objectID));
         // do more
-        // availableOSDsForObject.remove(Long.valueOf(objectID));
+        availableOSDsForObject.remove(Long.valueOf(objectID));
         return removed;
     }
 
@@ -254,29 +239,28 @@ public abstract class TransferStrategy {
         return filesize;
     }
 
-    /**
-     * Removes the OSD from the list that is used for knowing which OSDs could be used for fetching this
-     * object.
-     * 
-     * @param objectID
-     */
-    public void removeOSDForObject(long objectID, ServiceUUID osd) {
-        availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
-    }
-
-    /*
-     * FIXME: internal-handling would be better
-     */
-    public void removeOSDListForObject(long objectID) {
-        availableOSDsForObject.remove(Long.valueOf(objectID));
-    }
-
-    /**
-     * @return
-     * @see java.util.ArrayList#isEmpty()
-     */
-    public boolean isOSDAvailableForObject(long objectNo) {
-        return !availableOSDsForObject.get(objectNo).isEmpty();
-    }
-    
+//    /**
+//     * Removes the OSD from the list that is used for knowing which OSDs could be used for fetching this
+//     * object.
+//     * 
+//     * @param objectID
+//     */
+//    public void removeOSDForObject(long objectID, ServiceUUID osd) {
+//        availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
+//    }
+//
+//    /*
+//     * FIXME: internal-handling would be better
+//     */
+//    public void removeOSDListForObject(long objectID) {
+//        availableOSDsForObject.remove(Long.valueOf(objectID));
+//    }
+//
+//    /**
+//     * @return
+//     * @see java.util.ArrayList#isEmpty()
+//     */
+//    public boolean isOSDAvailableForObject(long objectNo) {
+//        return !availableOSDsForObject.get(objectNo).isEmpty();
+//    }
 }

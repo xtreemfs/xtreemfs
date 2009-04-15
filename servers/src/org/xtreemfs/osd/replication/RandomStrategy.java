@@ -27,7 +27,6 @@ package org.xtreemfs.osd.replication;
 import java.util.List;
 import java.util.Random;
 
-import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
@@ -44,8 +43,9 @@ public class RandomStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public RandomStrategy(String fileId, Capability capability, XLocations xLoc, long filesize) {
-        super(fileId, capability, xLoc, filesize);
+    public RandomStrategy(String fileId, XLocations xLoc, long filesize,
+            ServiceAvailability osdAvailability) {
+        super(fileId, xLoc, filesize, osdAvailability);
         this.random = new Random();
     }
 

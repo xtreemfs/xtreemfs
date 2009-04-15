@@ -46,6 +46,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
@@ -137,7 +138,7 @@ public class ReplicaManagement {
         if(sSet.size() != 0)
             mrcAddress = new ServiceUUID(sSet.get(0).getData().get("mrc")).getAddress();
         else
-            throw new IOException("cannot find volume.");
+            throw new IOException("Cannot find volume.");
 
         this.mrcClient = new MRCClient(client, mrcAddress);
         this.file = new RandomAccessFile("r", mrcAddress, volume + filepath, client, credentials);
@@ -359,12 +360,7 @@ public class ReplicaManagement {
                 system.initialize();
                 system.listSuitableOSDs();
             } else if (command.equals(CREATE_TEST_ENV)) { // hidden command
-                if (args.length > NUMBER_OF_MANDATORY_ARGS) {
-                    InetSocketAddress mrc = new InetSocketAddress(args[argNumber].split(":")[0], Integer
-                            .parseInt(args[argNumber].split(":")[1]));
-                    argNumber++;
-                    system.createTestEnv(mrc);
-                }
+                system.createTestEnv();
             } else {
                 usage();
             }
@@ -410,7 +406,18 @@ public class ReplicaManagement {
      * @throws IOException 
      * @throws ONCRPCException 
      */
-    private void createTestEnv(InetSocketAddress mrcAddress) throws ONCRPCException, IOException, InterruptedException{
+    private void createTestEnv() throws ONCRPCException, IOException, InterruptedException{
+        ServiceSet sSet;
+        // get MRC address
+        RPCResponse<ServiceSet> r0 = dirClient.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_MRC);
+        sSet = r0.get();
+        r0.freeBuffers();
+
+        if(sSet.size() != 0)
+            mrcAddress = new ServiceUUID(sSet.get(0).getUuid()).getAddress();
+        else
+            throw new IOException("Cannot find a MRC.");
+        
         mrcClient = new MRCClient(client, mrcAddress);
 
         // create a volume (no access control)

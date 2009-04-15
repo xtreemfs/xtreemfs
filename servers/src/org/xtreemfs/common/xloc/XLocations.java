@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.interfaces.ReplicaSet;
-import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.XLocSet;
 
 
@@ -114,17 +112,17 @@ public class XLocations {
      * @param objectNo
      * @return
      */
-    public List<ServiceUUID> getOSDsForObject(long objectNo, ServiceUUID myUUID){
+    public List<ServiceUUID> getOSDsForObject(long objectNo, Replica localReplica){
         List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
-        if (myUUID == null) {
+        if (localReplica == null) {
             for(Replica replica : replicas){
                 osds.add(replica.getOSDForObject(objectNo));
             }
         } else {
             for(Replica replica : replicas){
-                final ServiceUUID osd = replica.getOSDForObject(objectNo);
-                if (osd.equals(myUUID))
+                if (localReplica == replica)
                     continue;
+                final ServiceUUID osd = replica.getOSDForObject(objectNo);
                 osds.add(osd);
             }
         }
@@ -140,7 +138,7 @@ public class XLocations {
      * @param replica
      * @return
      */
-    public XLocations cloneWithoutReplicaInList(Replica replica) {
+/*    public XLocations cloneWithoutReplicaInList(Replica replica) {
         ReplicaSet replicaSet = new ReplicaSet();
         for (Replica currentReplica : replicas) {
             if (currentReplica != replica) {
@@ -155,4 +153,4 @@ public class XLocations {
         XLocSet xLocSet = new XLocSet(replicaSet, getVersion(), getReplicaUpdatePolicy(), xloc.getRead_only_file_size());
         return new XLocations(xLocSet);
     }
-}
+*/}

@@ -25,7 +25,6 @@ package org.xtreemfs.osd.replication;
 
 import java.util.List;
 
-import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
@@ -43,8 +42,9 @@ public class SimpleStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public SimpleStrategy(String fileId, Capability capability, XLocations xLoc, long filesize) {
-        super(fileId, capability, xLoc, filesize);
+    public SimpleStrategy(String fileId, XLocations xLoc, long filesize,
+            ServiceAvailability osdAvailability) {
+        super(fileId, xLoc, filesize, osdAvailability);
     }
 
     @Override
@@ -80,12 +80,12 @@ public class SimpleStrategy extends TransferStrategy {
         next = selectNextOSDhelper(objectID);
     }
 
-    private NextRequest selectNextOSDhelper(long objectID) {
+    private NextRequest selectNextOSDhelper(long objectNo) {
         NextRequest next = new NextRequest();
-        next.objectNo = objectID;
+        next.objectNo = objectNo;
 
         // use the next replica relative to the last used replica
-        List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
+        List<ServiceUUID> osds = this.xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
         if (osds.size() > 0) {
             this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
             next.osd = osds.get(this.indexOfLastUsedOSD);

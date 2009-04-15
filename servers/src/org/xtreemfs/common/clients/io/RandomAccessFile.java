@@ -266,8 +266,9 @@ public class RandomAccessFile implements ObjectStore {
      * @return
      */
     private List<ServiceUUID> sortOSDs(List<ServiceUUID> osds) {
-        // TODO Auto-generated method stub
-        return osds;
+        List<ServiceUUID> list = new ArrayList<ServiceUUID>(osds);
+//        Collections.shuffle(list);
+        return list;
     }
 
     public int checkObject(long objectNo) throws IOException {

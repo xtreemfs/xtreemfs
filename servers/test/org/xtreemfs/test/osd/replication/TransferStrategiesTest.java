@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.replication.RandomStrategy;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
@@ -112,7 +113,7 @@ public class TransferStrategiesTest extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        this.strategy = new SimpleStrategy(fileID, cap, xLoc, filesize);
+        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
     }
 
     @After
@@ -166,7 +167,7 @@ public class TransferStrategiesTest extends TestCase {
 
     @Test
     public void testCurrentReplicaNotInReplicaList() {
-        this.strategy = new SimpleStrategy(fileID, cap, xLoc, filesize);
+        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
         for (int i = 0; i < 20; i++) {
             this.strategy.addRequiredObject(i);
         }
@@ -187,7 +188,7 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testSelectNextForSimpleTransfer() {
-        this.strategy = new SimpleStrategy(fileID, cap, xLoc, filesize);
+        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
         this.strategy.addRequiredObject(1);
         this.strategy.addRequiredObject(2);
         this.strategy.addRequiredObject(3);
@@ -240,7 +241,7 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testSelectNextForRandomTransfer() {
-        this.strategy = new RandomStrategy(fileID, cap, xLoc, filesize);
+        this.strategy = new RandomStrategy(fileID, xLoc, filesize, new ServiceAvailability());
 
         ArrayList<Long> objectsToRequest = new ArrayList<Long>();
         objectsToRequest.add(Long.valueOf(1));
