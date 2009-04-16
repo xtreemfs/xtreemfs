@@ -36,7 +36,7 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
   {
     OSDProxy* osd_proxy;
     if ( dir_proxy.get_ssl_context() )
-      osd_proxy = new OSDProxy( uri, *dir_proxy.get_ssl_context() );
+      osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( *dir_proxy.get_ssl_context() ) );
     else
       osd_proxy = new OSDProxy( uri );
     osd_proxy_stage_group.createStage( *osd_proxy );

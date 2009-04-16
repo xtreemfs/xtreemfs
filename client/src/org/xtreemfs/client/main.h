@@ -45,7 +45,7 @@ namespace org
 
         virtual ~Main()
         {
-          delete ssl_context;
+          YIELD::Object::decRef( ssl_context );
         }
 
         template <class ProxyType>
@@ -61,7 +61,7 @@ namespace org
 
           ProxyType* proxy;
           if ( ssl_context != NULL )
-            proxy = new ProxyType( uri, *ssl_context );
+            proxy = new ProxyType( uri, YIELD::Object::incRef( *ssl_context ) );
           else
             proxy = new ProxyType( uri );
 

@@ -29,7 +29,7 @@ namespace org
 
         uint32_t get_flags() const { return flags; }
         uint64_t get_operation_timeout_ms() const { return operation_timeout_ms; }
-        const YIELD::SSLContext* get_ssl_context() const { return ssl_context; }
+        YIELD::SSLContext* get_ssl_context() const { return ssl_context; }
         uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
         const YIELD::URI& get_uri() const { return uri; }
         void set_flags( uint32_t flags ) { this->flags = flags; }
@@ -41,7 +41,7 @@ namespace org
 
       protected:
         Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port );
-        Proxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port );
+        Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port );
 
         virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
 

@@ -8,15 +8,14 @@ using namespace org::xtreemfs::client;
 
 #include "org/xtreemfs/interfaces/constants.h"
 
-#include <errno.h>
+#include <algorithm>
+
 #ifdef _WIN32
 #include "yield/platform/windows.h"
 #define ETIMEDOUT WSAETIMEDOUT
+#else
+#include <errno.h>
 #endif
-
-#include <openssl/err.h>
-#include <openssl/pkcs12.h>
-#include <openssl/ssl.h>
 
 
 Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port )
@@ -36,8 +35,8 @@ Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port )
     throw YIELD::Exception( "invalid URI scheme" );
 }
 
-Proxy::Proxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port )
-: uri( uri )
+Proxy::Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port )
+: uri( uri ), ssl_context( &ssl_context )
 {
   if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
   {
@@ -46,7 +45,6 @@ Proxy::Proxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context, uint1
 
     peer_sockaddr = this->uri;
 
-    this->ssl_context = new YIELD::SSLContext( ssl_context );
     init();
   }
   else
@@ -67,6 +65,7 @@ void Proxy::init()
 Proxy::~Proxy()
 {
   delete conn;
+  YIELD::Object::decRef( ssl_context );
 }
 
 void Proxy::handleEvent( YIELD::Event& ev )

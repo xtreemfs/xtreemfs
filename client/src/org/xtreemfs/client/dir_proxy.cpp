@@ -13,7 +13,7 @@ DIRProxy::DIRProxy( const YIELD::URI& uri )
   dir_interface.registerObjectFactories( object_factories );
 }
 
-DIRProxy::DIRProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context )
+DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context )
   : Proxy( uri, ssl_context, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )
 {
   policies = new PolicyContainer;

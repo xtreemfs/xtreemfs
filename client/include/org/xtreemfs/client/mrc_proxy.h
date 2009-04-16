@@ -22,7 +22,7 @@ namespace org
       {
       public:
         MRCProxy( const YIELD::URI& uri );
-        MRCProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context );
+        MRCProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context );
         virtual ~MRCProxy();
 
         bool access( const Path& path, uint32_t mode );

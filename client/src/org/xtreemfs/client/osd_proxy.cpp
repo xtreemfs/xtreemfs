@@ -11,7 +11,7 @@ OSDProxy::OSDProxy( const YIELD::URI& uri )
   osd_interface.registerObjectFactories( object_factories );
 }
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context )
+OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context )
   : Proxy( uri, ssl_context, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
 {
   osd_interface.registerObjectFactories( object_factories );

@@ -25,7 +25,7 @@ namespace org
       {
       public:
         DIRProxy( const YIELD::URI& uri );
-        DIRProxy( const YIELD::URI& uri, const YIELD::SSLContext& ssl_context );
+        DIRProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context );
         virtual ~DIRProxy();
 
         YIELD::URI getURIFromUUID( const std::string& uuid );
