@@ -134,7 +134,7 @@ public class MRCHelper {
     
     public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
         OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress)
-        throws DatabaseException, MRCException {
+        throws DatabaseException, UserException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -147,7 +147,8 @@ public class MRCHelper {
             stripingPolicy = sMan.getDefaultStripingPolicy(1);
         
         if (stripingPolicy == null)
-            throw new MRCException("could not open file " + path + ": no default striping policy available");
+            throw new UserException(ErrNo.EIO, "could not open file " + path
+                + ": no default striping policy available");
         
         org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
             StripingPolicyType.valueOf(stripingPolicy.getPattern()), stripingPolicy.getStripeSize(),
@@ -158,7 +159,7 @@ public class MRCHelper {
         ServiceSet osdMaps = osdMan.getUsableOSDs(volume.getId());
         
         if (osdMaps == null || osdMaps.size() == 0)
-            throw new MRCException("could not open file " + path + ": no feasible OSDs available");
+            throw new UserException(ErrNo.EIO, "could not open file " + path + ": no feasible OSDs available");
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
