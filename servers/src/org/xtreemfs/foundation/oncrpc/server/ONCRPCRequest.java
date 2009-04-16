@@ -26,6 +26,7 @@ package org.xtreemfs.foundation.oncrpc.server;
 import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
@@ -37,7 +38,6 @@ import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.XDRUtils;
-import org.xtreemfs.mrc.ErrNo;
 
 /**
  *
@@ -84,7 +84,7 @@ public class ONCRPCRequest {
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
         final String strace = OutputUtils.stackTraceToString(rootCause);
-        sendException(new errnoException(0, "internal server error caused by: "+rootCause, strace));
+        sendException(new errnoException(ErrNo.EIO, "internal server error caused by: "+rootCause, strace));
     }
 
     public void sendProtocolException(ProtocolException exception) {

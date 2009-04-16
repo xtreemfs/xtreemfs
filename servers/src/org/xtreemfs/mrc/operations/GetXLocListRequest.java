@@ -25,10 +25,10 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listResponse;
-import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;

@@ -34,6 +34,7 @@ import junit.textui.TestRunner;
 
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
@@ -51,7 +52,6 @@ import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;

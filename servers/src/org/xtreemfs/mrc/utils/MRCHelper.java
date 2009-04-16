@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
@@ -39,7 +40,6 @@ import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
-import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;

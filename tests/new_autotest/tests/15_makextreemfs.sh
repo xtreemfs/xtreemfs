@@ -35,7 +35,15 @@ then
 	cleanup 1
 fi
 
-bin/xtfs_lsvol localhost
+if [ $SSL_ENABLED -eq 0 ]
+then
+	echo "list all volumes on the local MRC..."
+	bin/xtfs_lsvol localhost
+else
+	echo "list all volumes on the local MRC (with SSL)..."
+	bin/xtfs_lsvol --pkcs12-file-path=$DIRNAME/servers/test/certs/Client.p12 --pkcs12-passphrase=passphrase localhost
+fi
+	
 if [ $? -ne 0 ]
 then
 	echo "ERROR: cannot execute xtfs_lsvol!"

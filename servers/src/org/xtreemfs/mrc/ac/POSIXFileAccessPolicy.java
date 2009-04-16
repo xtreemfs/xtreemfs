@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;

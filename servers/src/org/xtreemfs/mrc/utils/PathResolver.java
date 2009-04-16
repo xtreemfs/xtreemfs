@@ -24,7 +24,7 @@
 
 package org.xtreemfs.mrc.utils;
 
-import org.xtreemfs.mrc.ErrNo;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;

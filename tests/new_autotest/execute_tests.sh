@@ -21,11 +21,14 @@ TEST_DIR=$1
 
 echo -e "\n\n================== STARTING TESTS ====================\n\n"
 
+echo -e "started on `date`"
+
 result=0
 
 for testfile in $TEST_BASEDIR/tests/*.sh
 do
 	echo -e "TEST: $testfile\n"
+	echo -e "start: `date`\n"
 
 	$testfile
 
@@ -34,8 +37,11 @@ do
 		echo -e "FAILED: $testfile\n"
 	fi
 
+    echo -e "\n done: `date`\n"
 	echo -e "\n-----------------------------------------------------\n"
 done
+
+echo -e "finished on `date`"
 
 if [ $result -eq 0 ]; then
 	echo -e "\n\n================== S U C C E S S ====================\n\n"

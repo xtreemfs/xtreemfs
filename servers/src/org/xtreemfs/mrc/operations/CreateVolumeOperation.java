@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.Service;
@@ -39,7 +40,6 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
-import org.xtreemfs.mrc.ErrNo;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;

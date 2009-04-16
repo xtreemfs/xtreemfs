@@ -22,7 +22,7 @@
  * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.mrc;
+package org.xtreemfs.foundation;
 
 /**
  * POSIX error numbers.

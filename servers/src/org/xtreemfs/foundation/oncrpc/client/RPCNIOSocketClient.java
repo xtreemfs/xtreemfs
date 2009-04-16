@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.foundation.pinky.channels.ChannelIO;
@@ -56,7 +57,6 @@ import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.mrc.ErrNo;
 
 /**
  *

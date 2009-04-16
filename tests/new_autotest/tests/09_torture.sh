@@ -12,7 +12,7 @@ do
 		$JAVA_HOME/bin/java -cp $XTREEMFS_DIR/servers/dist/XtreemFS.jar org.xtreemfs.sandbox.tests.TortureXtreemFS -v $volume oncrpc://localhost:32638 oncrpc://localhost:32636
 	else
 		echo "torture (with SSL) on volume $volume..."
-		$JAVA_HOME/bin/java -cp $XTREEMFS_DIR/servers/dist/XtreemFS.jar org.xtreemfs.sandbox.tests.TortureXtreemFS -c $XTREEMFS_DIR/servers/test/certs/Client.p12 -cpass passphrase -t $XTREEMFS_DIR/servers/test/certs/trusted.jsk -tpass passphrase -v $volume oncrpcs://localhost:32638 oncrpcs://localhost:32636
+		$JAVA_HOME/bin/java -cp $XTREEMFS_DIR/servers/dist/XtreemFS.jar org.xtreemfs.sandbox.tests.TortureXtreemFS -c $XTREEMFS_DIR/servers/test/certs/Client.p12 -cpass passphrase -t $XTREEMFS_DIR/servers/test/certs/trusted.jks -tpass passphrase -v $volume oncrpcs://localhost:32638 oncrpcs://localhost:32636
 	fi
 
         if [ $? -ne 0 ]
