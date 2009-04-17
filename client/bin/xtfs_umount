@@ -1,0 +1,12 @@
+#!/bin/bash
+# a simple wrapper around fusermount -u
+
+if [ $# -ne 1 ]
+then
+	echo "usage: xtfs_umount <mount_point>"
+	echo ""
+	exit 1
+fi
+
+fusermount -u $1
+exit $?

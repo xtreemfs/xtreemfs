@@ -1,0 +1,74 @@
+.TH xtfs_mkvol 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_mkvol \- create a new XtreemFS volume
+.SH SYNOPSIS
+\fBxtfs_mkvol [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]/\fIvolume
+.br
+
+.SH DESCRIPTION
+.I xtfs_mkvol
+creates a new volume named \fIvolume \fRon the XtreemFS MRC running at \fImrchost\fR:\fIport\fR.
+
+.SH EXAMPLE USAGE
+.B "xtfs_mkvol remote.mrc.machine/myVolume"
+.br
+.B "xtfs_mkvol -p RAID0 -w 2 -s 256 -a POSIX oncrpc://remote.mrc.machine/myVolume"
+
+.SH OPTIONS
+.TP
+\fB\-a/\-\-access\-control\-policy=NULL|POSIX|VOLUME
+access control policy for the volume
+.TP
+\fB\-m/\-\-mode=n
+initial POSIX access mode for the root directory
+.TP
+\fB\-o/\-\-osd\-selection\-policy=SIMPLE|PROXIMITY
+policy that defines how OSDs are assigned to new files
+.TP
+\fB\-p/\-\-striping\-policy=NONE|RAID0
+default striping policy for the volume
+.TP
+\fB\-s/\-\-striping\-policy\-stripe\-size=n
+stripe size for the volume's default striping policy
+.TP
+\fB\-w/\-\-striping\-policy\-width=n
+striping width (default number of OSDs) for the volume's default striping policy
+.TP
+\fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
+PEM certificate file path (for SSL installations only)
+.TP
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
+.TP
+\fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
+PEM private key passphrase (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-file\-path=\fIfile
+PKCS#12 file path (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-passphrase=\fIpass
+PKCS#12 file passphrase (for SSL installations only)
+.TP
+\fB\-t/\-\-timeout\-ms=millis
+request timeout in milliseconds
+.TP
+\fB\-d/\-\-debug=\fIlevel
+debug level
+.TP
+\fB\-h/\-\-help
+print help and exit
+
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+.BR
+
+
+.SH AVAILABILITY
+The xtfs_mkvol command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org

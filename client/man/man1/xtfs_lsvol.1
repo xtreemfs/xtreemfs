@@ -1,0 +1,56 @@
+.TH xtfs_lsvol 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_lsvol \- list all XtreemFS volumes on an MRC
+.SH SYNOPSIS
+\fBxtfs_lsvol [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]
+.br
+
+.SH DESCRIPTION
+.I xtfs_lsvol
+lists all volumes located on the XtreemFS MRC running at \fImrchost\fR:\fIport\fR.
+
+.SH EXAMPLE USAGE
+.B "xtfs_lsvol remote.mrc.machine
+.br
+.B "xtfs_lsvol -l oncrpc://remote.mrc.machine:11111
+
+.SH OPTIONS
+.TP
+\fB\-l
+print complete information on volumes
+.TP
+\fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
+PEM certificate file path (for SSL installations only)
+.TP
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
+.TP
+\fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
+PEM private key passphrase (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-file\-path=\fIfile
+PKCS#12 file path (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-passphrase=\fIpass
+PKCS#12 file passphrase (for SSL installations only)
+.TP
+\fB\-t/\-\-timeout\-ms=millis
+request timeout in milliseconds
+.TP
+\fB\-d/\-\-debug=\fIlevel
+debug level
+.TP
+\fB\-h/\-\-help
+print help and exit
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+
+.SH AVAILABILITY
+The xtfs_lsvol command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org

@@ -1,0 +1,69 @@
+.TH xtfs_mount 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_mount \- mounts an XtreemFS volume
+.SH SYNOPSIS
+\fBxtfs_mount [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]/\fIvolume mountpoint
+.br
+
+.SH DESCRIPTION
+.I xtfs_mount
+mounts the volume \fIvolume\fR registered at the Directory Service \fIdirhost\fR:\fIport\fR to the local directory \fImountpoint\fR. \fIxtfs_mount\fR is implemented as a FUSE user-level file system driver. Other than in-kernel drives, it operates as a detached process per mount point. 
+
+.SH EXAMPLE USAGE
+.B "xtfs_mount remote.dirservice.machine/MyVolume /mnt"
+
+.SH OPTIONS
+.TP
+\fB\-c/\-\-cache
+enable client-side caching
+.TP
+\fB\-f/\-\-foreground
+run the client process in the foreground (blocks the shell until the volume is un-mounted)
+.TP
+\fB\-o=fuse_option
+additional parameters that are passed to FUSE
+.TP
+\fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
+PEM certificate file path (for SSL installations only)
+.TP
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
+.TP
+\fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
+PEM private key passphrase (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-file\-path=\fIfile
+PKCS#12 file path (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-passphrase=\fIpass
+PKCS#12 file passphrase (for SSL installations only)
+.TP
+\fB\-t/\-\-timeout\-ms=millis
+request timeout in milliseconds
+.TP
+\fB\-d/\-\-debug=\fIlevel
+debug level
+.TP
+\fB\-h/\-\-help
+print help and exit
+
+.SH "SEE ALSO"
+.BR fusermount (1),
+.BR xtfs_umount (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+.BR
+
+.SH "KNOWN ISSUES"
+FUSE does not support mmap in connection with direct I/O. In order to get applications running on XtreemFS that rely on mmap, volumes have to be mounted without using the FUSE option
+.B "-o direct_io"
+. However, this might lead to inconsistencies if different clients access a file concurrently, as requests might be serviced from the local page cache.
+
+When run on older Linux kernels (2.6.18 or earlier), the XtreemFS client might fail to enforce access control when changing to a directory. The problem can be solved by passing \fB"-o default_permissions"\fR to FUSE.
+
+.SH AVAILABILITY
+The xtfs_mount command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org
