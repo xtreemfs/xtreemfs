@@ -21,34 +21,24 @@ using namespace org::xtreemfs::client;
 Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port )
   : uri( uri )
 {
-  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPC_SCHEME ) == 0  )
-  {
-    if ( this->uri.get_port() == 0 )
-      this->uri.set_port( default_oncrpc_port );
+  if ( this->uri.get_port() == 0 )
+    this->uri.set_port( default_oncrpc_port );
 
-    peer_sockaddr = this->uri;
+  peer_sockaddr = this->uri;
 
-    ssl_context = NULL;
-    init();
-  }
-  else
-    throw YIELD::Exception( "invalid URI scheme" );
+  ssl_context = NULL;
+  init();
 }
 
 Proxy::Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port )
 : uri( uri ), ssl_context( &ssl_context )
 {
-  if ( strcmp( uri.get_scheme(), org::xtreemfs::interfaces::ONCRPCS_SCHEME ) == 0 )
-  {
-    if ( this->uri.get_port() == 0 )
-      this->uri.set_port( default_oncrpcs_port );
+  if ( this->uri.get_port() == 0 )
+    this->uri.set_port( default_oncrpcs_port );
 
-    peer_sockaddr = this->uri;
+  peer_sockaddr = this->uri;
 
-    init();
-  }
-  else
-    throw YIELD::Exception( "invalid URI scheme" );
+  init();
 }
 
 void Proxy::init()

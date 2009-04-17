@@ -91,9 +91,9 @@ namespace org
         {
           switch ( id )
           {
-            case OPTION_DEBUG_LEVEL:
+            case OPTION_LOG_LEVEL:
             {
-              if ( get_debug_level() >= org::xtreemfs::interfaces::DEBUG_LEVEL_TRACE )
+              if ( get_log_level() >= org::xtreemfs::interfaces::LOG_DEBUG )
                 YIELD::TCPSocket::set_trace_socket_io_onoff( true );
             }
             break;
