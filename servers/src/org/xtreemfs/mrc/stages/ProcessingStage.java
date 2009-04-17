@@ -59,6 +59,7 @@ import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
 import org.xtreemfs.mrc.operations.OpenOperation;
 import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
+import org.xtreemfs.mrc.operations.ReadDirOperation;
 import org.xtreemfs.mrc.operations.RemoveACLEntriesOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
@@ -103,6 +104,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(StatOperation.OP_ID, new StatOperation(master));
         operations.put(CheckAccessOperation.OP_ID, new CheckAccessOperation(master));
         operations.put(ReadDirAndStatOperation.OP_ID, new ReadDirAndStatOperation(master));
+        operations.put(ReadDirOperation.OP_ID, new ReadDirOperation(master));
         operations.put(CreateFileOperation.OP_ID, new CreateFileOperation(master));
         operations.put(CreateDirOperation.OP_ID, new CreateDirOperation(master));
         operations.put(CreateSymLinkOperation.OP_ID, new CreateSymLinkOperation(master));
