@@ -48,10 +48,10 @@ Proxy::Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, YIELD::Log&
 
 void Proxy::init( uint16_t default_port )
 {
-  peer_sockaddr = this->uri;
-
   if ( this->uri.get_port() == 0 )
     this->uri.set_port( default_port );
+
+  peer_sockaddr = this->uri;
 
   policies = new PolicyContainer;
 
