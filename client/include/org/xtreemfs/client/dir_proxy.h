@@ -24,19 +24,11 @@ namespace org
       class DIRProxy : public Proxy
       {
       public:
-        DIRProxy( const YIELD::URI& uri );
-        DIRProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context );
+        ORG_XTREEMFS_CLIENT_PROXY_CONSTRUCTORS( DIRProxy, dir_interface );
         virtual ~DIRProxy();
 
         YIELD::URI getURIFromUUID( const std::string& uuid );
         YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
-
-        // EventHandler
-        const char* getEventHandlerName() const { return "DIRProxy"; }
-
-      protected:
-        // Proxy
-        bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
 
       private:
         org::xtreemfs::interfaces::DIRInterface dir_interface;

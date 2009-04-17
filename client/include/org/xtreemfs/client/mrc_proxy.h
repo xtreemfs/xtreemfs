@@ -15,15 +15,10 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainer;
-
-
       class MRCProxy : public Proxy
       {
       public:
-        MRCProxy( const YIELD::URI& uri );
-        MRCProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context );
-        virtual ~MRCProxy();
+        ORG_XTREEMFS_CLIENT_PROXY_CONSTRUCTORS( MRCProxy, mrc_interface );
 
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
@@ -54,16 +49,8 @@ namespace org
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
 
-        // EventHandler
-        const char* getEventHandlerName() const { return "MRCProxy"; }
-
-      protected:
-        // Proxy
-        bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const;
-
       private:
         org::xtreemfs::interfaces::MRCInterface mrc_interface;
-        PolicyContainer* policies;
       };
     };
   };

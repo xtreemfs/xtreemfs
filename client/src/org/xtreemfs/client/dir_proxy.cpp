@@ -6,31 +6,10 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::URI& uri )
-  : Proxy( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT )
-{
-  policies = new PolicyContainer;
-  dir_interface.registerObjectFactories( object_factories );
-}
-
-DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context )
-  : Proxy( uri, ssl_context, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT )
-{
-  policies = new PolicyContainer;
-  dir_interface.registerObjectFactories( object_factories );
-}
-
 DIRProxy::~DIRProxy()
 {
-  delete policies;
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
     delete uuid_to_uri_i->second;
-}
-
-bool DIRProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
-{
-  policies->getCurrentUserCredentials( out_user_credentials );
-  return true;
 }
 
 YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )

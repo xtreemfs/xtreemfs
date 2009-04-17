@@ -17,6 +17,17 @@ namespace org
     {
       class Main : public YIELD::Main
       {
+      public:
+        virtual int main( int argc, char** argv )
+        {
+          if ( argc == 1 )
+          {
+            printUsage();
+            return 0;
+          }
+          else
+            return YIELD::Main::main( argc, argv );
+        }
       protected:
         enum
         {
@@ -32,6 +43,8 @@ namespace org
         Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : YIELD::Main( program_name, program_description, files_usage )
         {
+          log = NULL;
+
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_PASSPHRASE, "--pass", "--pem-private-key-passphrase", "PEM private key passphrase" );
@@ -45,6 +58,7 @@ namespace org
 
         virtual ~Main()
         {
+          YIELD::Object::decRef( log );
           YIELD::Object::decRef( ssl_context );
         }
 
@@ -61,13 +75,20 @@ namespace org
 
           ProxyType* proxy;
           if ( ssl_context != NULL )
-            proxy = new ProxyType( uri, YIELD::Object::incRef( *ssl_context ) );
+            proxy = new ProxyType( uri, ssl_context->incRef(), get_log().incRef() );
           else
-            proxy = new ProxyType( uri );
+            proxy = new ProxyType( uri, get_log().incRef() );
 
           proxy->set_operation_timeout_ms( timeout_ms );
 
           return proxy;
+        }
+
+        YIELD::Log& get_log()
+        {
+          if ( log == NULL )
+            log = new YIELD::Log( std::cout, get_log_level() );
+          return *log;
         }
 
         uint64_t get_timeout_ms() const { return timeout_ms; }
@@ -93,7 +114,7 @@ namespace org
           {
             case OPTION_LOG_LEVEL:
             {
-              if ( get_log_level() >= org::xtreemfs::interfaces::LOG_DEBUG )
+              if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
                 YIELD::TCPSocket::set_trace_socket_io_onoff( true );
             }
             break;
@@ -121,8 +142,10 @@ namespace org
 
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
-        YIELD::SSLContext* ssl_context;
         uint64_t timeout_ms;
+
+        YIELD::Log* log;
+        YIELD::SSLContext* ssl_context;
       };
     };
   };

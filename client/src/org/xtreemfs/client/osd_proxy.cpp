@@ -5,21 +5,6 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxy::OSDProxy( const YIELD::URI& uri )
-  : Proxy( uri, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPC_PORT )
-{
-  osd_interface.registerObjectFactories( object_factories );
-}
-
-OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context )
-  : Proxy( uri, ssl_context, org::xtreemfs::interfaces::OSDInterface::DEFAULT_ONCRPCS_PORT )
-{
-  osd_interface.registerObjectFactories( object_factories );
-}
-
-OSDProxy::~OSDProxy()
-{ }
-
 void OSDProxy::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data )
 {
   osd_interface.read( file_credentials, file_id, object_number, object_version, offset, length, object_data, this );

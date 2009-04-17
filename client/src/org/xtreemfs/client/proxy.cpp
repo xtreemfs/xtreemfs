@@ -21,28 +21,40 @@ using namespace org::xtreemfs::client;
 Proxy::Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port )
   : uri( uri )
 {
-  if ( this->uri.get_port() == 0 )
-    this->uri.set_port( default_oncrpc_port );
-
-  peer_sockaddr = this->uri;
-
   ssl_context = NULL;
-  init();
+  log = NULL;
+  init( default_oncrpc_port );
+}
+
+Proxy::Proxy( const YIELD::URI& uri, YIELD::Log& log, uint16_t default_oncrpc_port )
+  : uri( uri ), log( &log )
+{
+  ssl_context = NULL;
+  init( default_oncrpc_port );
 }
 
 Proxy::Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port )
 : uri( uri ), ssl_context( &ssl_context )
 {
-  if ( this->uri.get_port() == 0 )
-    this->uri.set_port( default_oncrpcs_port );
-
-  peer_sockaddr = this->uri;
-
-  init();
+  log = NULL;
+  init( default_oncrpcs_port );
 }
 
-void Proxy::init()
+Proxy::Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, YIELD::Log& log, uint16_t default_oncrpcs_port )
+: uri( uri ), ssl_context( &ssl_context ), log( &log )
 {
+  init( default_oncrpcs_port );
+}
+
+void Proxy::init( uint16_t default_port )
+{
+  peer_sockaddr = this->uri;
+
+  if ( this->uri.get_port() == 0 )
+    this->uri.set_port( default_port );
+
+  policies = new PolicyContainer;
+
   flags = PROXY_DEFAULT_FLAGS;
   reconnect_tries_max = PROXY_DEFAULT_RECONNECT_TRIES_MAX;
   operation_timeout_ms = PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
@@ -54,8 +66,10 @@ void Proxy::init()
 
 Proxy::~Proxy()
 {
+  delete policies;
   delete conn;
   YIELD::Object::decRef( ssl_context );
+  YIELD::Object::decRef( log );
 }
 
 void Proxy::handleEvent( YIELD::Event& ev )
@@ -81,8 +95,8 @@ void Proxy::handleEvent( YIELD::Event& ev )
           try
           {
             org::xtreemfs::interfaces::UserCredentials user_credentials;
-            bool have_user_credentials = getCurrentUserCredentials( user_credentials );
-            YIELD::ONCRPCRequest oncrpc_req( YIELD::Object::incRef( req ), object_factories, have_user_credentials ? org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR : 0, &user_credentials );
+            policies->getCurrentUserCredentials( user_credentials );
+            YIELD::ONCRPCRequest oncrpc_req( YIELD::Object::incRef( req ), object_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, &user_credentials );
 
             uint8_t reconnect_tries_left = reconnect_tries_max;
             if ( conn == NULL )

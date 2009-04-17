@@ -36,9 +36,19 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
   {
     OSDProxy* osd_proxy;
     if ( dir_proxy.get_ssl_context() )
-      osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( *dir_proxy.get_ssl_context() ) );
+    {
+      if ( dir_proxy.get_log() )
+        osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( *dir_proxy.get_ssl_context() ), dir_proxy.get_log()->incRef() );
+      else
+        osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( *dir_proxy.get_ssl_context() ) );
+    }
     else
-      osd_proxy = new OSDProxy( uri );
+    {
+      if ( dir_proxy.get_log() )
+        osd_proxy = new OSDProxy( uri, dir_proxy.get_log()->incRef() );
+      else
+        osd_proxy = new OSDProxy( uri );
+    }
     osd_proxy_stage_group.createStage( *osd_proxy );
     YIELD::Object::incRef( *osd_proxy ); // For the cache
     osd_proxy_cache_lock.acquire();

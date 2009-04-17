@@ -17,6 +17,9 @@ namespace org
   {
     namespace client
     {
+      class PolicyContainer;
+
+
       class Proxy : public YIELD::EventHandler
       {
       public:
@@ -28,6 +31,7 @@ namespace org
         virtual ~Proxy();
 
         uint32_t get_flags() const { return flags; }
+        YIELD::Log* get_log() const { return log; }
         uint64_t get_operation_timeout_ms() const { return operation_timeout_ms; }
         YIELD::SSLContext* get_ssl_context() const { return ssl_context; }
         uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
@@ -41,17 +45,46 @@ namespace org
 
       protected:
         Proxy( const YIELD::URI& uri, uint16_t default_oncrpc_port );
+        Proxy( const YIELD::URI& uri, YIELD::Log& log, uint16_t default_oncrpc_port );
         Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, uint16_t default_oncrpcs_port );
+        Proxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, YIELD::Log& log, uint16_t default_oncrpcs_port );
 
-        virtual bool getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const { return false; }
+#define ORG_XTREEMFS_CLIENT_PROXY_CONSTRUCTORS( ProxyType, interface_instance ) \
+        ProxyType( const YIELD::URI& uri ) \
+          : Proxy( uri, interface_instance.DEFAULT_ONCRPC_PORT ) \
+        { \
+          interface_instance.registerObjectFactories( object_factories ); \
+        } \
+        \
+        ProxyType( const YIELD::URI& uri, YIELD::Log& log ) \
+          : Proxy( uri, log, interface_instance.DEFAULT_ONCRPC_PORT ) \
+        { \
+          interface_instance.registerObjectFactories( object_factories ); \
+        } \
+        \
+        ProxyType( const YIELD::URI& uri, YIELD::SSLContext& ssl_context ) \
+          : Proxy( uri, interface_instance.DEFAULT_ONCRPCS_PORT ) \
+        { \
+          interface_instance.registerObjectFactories( object_factories ); \
+        } \
+        ProxyType( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, YIELD::Log& log ) \
+          : Proxy( uri, log, interface_instance.DEFAULT_ONCRPCS_PORT ) \
+        { \
+          interface_instance.registerObjectFactories( object_factories ); \
+        } \
+        \
+        const char* getEventHandlerName() const { return #ProxyType; }
 
         YIELD::ObjectFactories object_factories;
 
       private:
-        void init();
+        void init( uint16_t default_port );
 
         YIELD::URI uri;
         YIELD::SSLContext* ssl_context;
+        YIELD::Log* log;
+
+        PolicyContainer* policies;
 
         uint32_t flags;
         uint8_t reconnect_tries_max;

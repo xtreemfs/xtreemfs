@@ -2,34 +2,8 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/mrc_proxy.h"
-#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
-
-MRCProxy::MRCProxy( const YIELD::URI& uri )
-  : Proxy( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT )
-{
-  policies = new PolicyContainer;
-  mrc_interface.registerObjectFactories( object_factories );
-}
-
-MRCProxy::MRCProxy( const YIELD::URI& uri, YIELD::SSLContext& ssl_context )
-  : Proxy( uri, ssl_context, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT )
-{
-  policies = new PolicyContainer;
-  mrc_interface.registerObjectFactories( object_factories );
-}
-
-MRCProxy::~MRCProxy()
-{
-  delete policies;
-}
-
-bool MRCProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials ) const
-{
-  policies->getCurrentUserCredentials( out_user_credentials );
-  return true;
-}
 
 bool MRCProxy::access( const Path& path, uint32_t mode )
 {

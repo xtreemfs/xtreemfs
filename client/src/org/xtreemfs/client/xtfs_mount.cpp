@@ -90,16 +90,16 @@ namespace org
 
           if ( cache )
             xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
-          if ( get_log_level() >= org::xtreemfs::interfaces::LOG_DEBUG )
-            xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
+          if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+            xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
-          if ( get_log_level() >= org::xtreemfs::interfaces::LOG_DEBUG )
+          if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           if ( direct_io )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
 
-          yieldfs::FUSE fuse( *xtreemfs_volume, fuse_flags );
+          yieldfs::FUSE fuse( xtreemfs_volume->incRef(), get_log().incRef(), fuse_flags );
           int ret;
 #ifdef _WIN32
           ret = fuse.main( mount_point.c_str() );
