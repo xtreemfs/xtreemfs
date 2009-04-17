@@ -104,6 +104,7 @@ module org
         void xtreemfs_dump_database( string dump_file ) # 52;
         void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
         void xtreemfs_lsvol( out VolumeSet volumes ) # 31;
+        void xtreemfs_listdir( out StringSet names ) # 33;
         void xtreemfs_mkvol( Volume volume ) # 10;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
         void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
