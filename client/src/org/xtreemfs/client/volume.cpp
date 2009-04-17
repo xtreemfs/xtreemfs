@@ -66,6 +66,18 @@ bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
   return true;
 }
 
+bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
+{
+  org::xtreemfs::interfaces::StringSet names;
+  mrc_proxy.listdir( Path( this->name, path ), names );
+  for ( org::xtreemfs::interfaces::StringSet::const_iterator name_i = names.begin(); name_i != names.end(); name_i++ )
+  {
+    if ( !callback( *name_i ) )
+      return false;
+  }
+  return true;
+}
+
 bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_names )
 {
   xtreemfs::interfaces::StringSet names;

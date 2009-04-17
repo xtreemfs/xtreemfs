@@ -49,8 +49,10 @@ namespace org
         OSDProxyFactory& get_osd_proxy_factory() const { return osd_proxy_factory; }
 
         YIELD_PLATFORM_VOLUME_PROTOTYPES;
+        bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
 
         YIELD::auto_Object<YIELD::Stat> getattr( const Path& path );
+        
 
       private:
         std::string name;

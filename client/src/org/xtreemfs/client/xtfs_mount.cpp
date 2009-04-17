@@ -89,12 +89,12 @@ namespace org
           YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
           if ( cache )
-            xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::Object::incRef( *xtreemfs_volume ) );
-          if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+            xtreemfs_volume = new yieldfs::TTLCachedVolume( YIELD::Object::incRef( *xtreemfs_volume ), 5, get_log().incRef() );
+          if ( get_log_level() >= YIELD::Log::LOG_INFO )
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
-          if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+          if ( get_log_level() >= YIELD::Log::LOG_INFO )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           if ( direct_io )
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;

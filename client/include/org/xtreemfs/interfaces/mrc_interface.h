@@ -396,6 +396,10 @@ namespace org
         virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, YIELD::EventTarget* send_target ) { xtreemfs_lsvol( volumes, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_lsvol( volumes, NULL, response_timeout_ns ); }
         virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_lsvolSyncRequest* __req = new xtreemfs_lsvolSyncRequest(); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { xtreemfs_lsvolResponse& __resp = ( xtreemfs_lsvolResponse& )__req->waitForDefaultResponse( response_timeout_ns ); volumes = __resp.get_volumes(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
+        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { xtreemfs_listdir( path, names, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, YIELD::EventTarget* send_target ) { xtreemfs_listdir( path, names, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_listdir( path, names, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_listdirSyncRequest* __req = new xtreemfs_listdirSyncRequest( path ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { xtreemfs_listdirResponse& __resp = ( xtreemfs_listdirResponse& )__req->waitForDefaultResponse( response_timeout_ns ); names = __resp.get_names(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume ) { xtreemfs_mkvol( volume, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume, YIELD::EventTarget* send_target ) { xtreemfs_mkvol( volume, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_mkvol( volume, NULL, response_timeout_ns ); }
@@ -2302,6 +2306,81 @@ namespace org
         YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
       };
 
+      class xtreemfs_listdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_listdirResponse() { }
+        xtreemfs_listdirResponse( const org::xtreemfs::interfaces::StringSet& names ) : names( names ) { }
+        virtual ~xtreemfs_listdirResponse() { }
+
+        void set_names( const org::xtreemfs::interfaces::StringSet&  names ) { this->names = names; }
+        const org::xtreemfs::interfaces::StringSet& get_names() const { return names; }
+
+        bool operator==( const xtreemfs_listdirResponse& other ) const { return names == other.names; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse", 3770781012UL );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "names" ), &names ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "names" ), names ); }
+
+      protected:
+        org::xtreemfs::interfaces::StringSet names;
+      };
+
+      class xtreemfs_listdirRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_listdirRequest() { }
+        xtreemfs_listdirRequest( const std::string& path ) : path( path ) { }
+        xtreemfs_listdirRequest( const char* path, size_t path_len ) : path( path, path_len ) { }
+        virtual ~xtreemfs_listdirRequest() { }
+
+        void set_path( const std::string& path ) { set_path( path.c_str(), path.size() ); }
+        void set_path( const char* path, size_t path_len = 0 ) { this->path.assign( path, ( path_len != 0 ) ? path_len : std::strlen( path ) ); }
+        const std::string& get_path() const { return path; }
+
+        bool operator==( const xtreemfs_listdirRequest& other ) const { return path == other.path; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest", 2800551134UL );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "path" ), path ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "path" ), path ); }
+
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 2; }
+        virtual uint32_t getOperationNumber() const { return 33; }
+
+        virtual uint32_t getDefaultResponseTypeId() const { return 3770781012UL; }
+        virtual Event* createDefaultResponse() { return new xtreemfs_listdirResponse; }
+
+
+      protected:
+        std::string path;
+      };
+
+      class xtreemfs_listdirSyncRequest : public xtreemfs_listdirRequest
+      {
+      public:
+        xtreemfs_listdirSyncRequest() : xtreemfs_listdirRequest( std::string() ) { }
+        xtreemfs_listdirSyncRequest( const std::string& path ) : xtreemfs_listdirRequest( path ) { }
+        xtreemfs_listdirSyncRequest( const char* path, size_t path_len ) : xtreemfs_listdirRequest( path, path_len ) { }
+        virtual ~xtreemfs_listdirSyncRequest() { }
+
+        bool operator==( const xtreemfs_listdirSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
+        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse>( timeout_ns ); }
+
+      private:
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+      };
+
       class xtreemfs_mkvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
       {
       public:
@@ -3047,6 +3126,7 @@ namespace org
           object_factories.registerObjectFactory( 2901057887UL, new YIELD::ObjectFactoryImpl<xtreemfs_dump_databaseRequest> ); object_factories.registerObjectFactory( 1815656759UL, new YIELD::ObjectFactoryImpl<xtreemfs_dump_databaseSyncRequest> ); object_factories.registerObjectFactory( 995967380UL, new YIELD::ObjectFactoryImpl<xtreemfs_dump_databaseResponse> );
           object_factories.registerObjectFactory( 3264623697UL, new YIELD::ObjectFactoryImpl<xtreemfs_get_suitable_osdsRequest> ); object_factories.registerObjectFactory( 1264948882UL, new YIELD::ObjectFactoryImpl<xtreemfs_get_suitable_osdsSyncRequest> ); object_factories.registerObjectFactory( 2352042645UL, new YIELD::ObjectFactoryImpl<xtreemfs_get_suitable_osdsResponse> );
           object_factories.registerObjectFactory( 738271786UL, new YIELD::ObjectFactoryImpl<xtreemfs_lsvolRequest> ); object_factories.registerObjectFactory( 2023175249UL, new YIELD::ObjectFactoryImpl<xtreemfs_lsvolSyncRequest> ); object_factories.registerObjectFactory( 2554565499UL, new YIELD::ObjectFactoryImpl<xtreemfs_lsvolResponse> );
+          object_factories.registerObjectFactory( 2800551134UL, new YIELD::ObjectFactoryImpl<xtreemfs_listdirRequest> ); object_factories.registerObjectFactory( 2865950482UL, new YIELD::ObjectFactoryImpl<xtreemfs_listdirSyncRequest> ); object_factories.registerObjectFactory( 3770781012UL, new YIELD::ObjectFactoryImpl<xtreemfs_listdirResponse> );
           object_factories.registerObjectFactory( 1895169082UL, new YIELD::ObjectFactoryImpl<xtreemfs_mkvolRequest> ); object_factories.registerObjectFactory( 257131742UL, new YIELD::ObjectFactoryImpl<xtreemfs_mkvolSyncRequest> ); object_factories.registerObjectFactory( 3778316902UL, new YIELD::ObjectFactoryImpl<xtreemfs_mkvolResponse> );
           object_factories.registerObjectFactory( 526231386UL, new YIELD::ObjectFactoryImpl<xtreemfs_renew_capabilityRequest> ); object_factories.registerObjectFactory( 2840337294UL, new YIELD::ObjectFactoryImpl<xtreemfs_renew_capabilitySyncRequest> ); object_factories.registerObjectFactory( 137996173UL, new YIELD::ObjectFactoryImpl<xtreemfs_renew_capabilityResponse> );
           object_factories.registerObjectFactory( 3822735046UL, new YIELD::ObjectFactoryImpl<xtreemfs_replica_addRequest> ); object_factories.registerObjectFactory( 3351137176UL, new YIELD::ObjectFactoryImpl<xtreemfs_replica_addSyncRequest> ); object_factories.registerObjectFactory( 112572185UL, new YIELD::ObjectFactoryImpl<xtreemfs_replica_addResponse> );
@@ -3096,6 +3176,7 @@ namespace org
               case 2901057887UL: handlextreemfs_dump_databaseRequest( static_cast<xtreemfs_dump_databaseRequest&>( ev ) ); return;
               case 3264623697UL: handlextreemfs_get_suitable_osdsRequest( static_cast<xtreemfs_get_suitable_osdsRequest&>( ev ) ); return;
               case 738271786UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( ev ) ); return;
+              case 2800551134UL: handlextreemfs_listdirRequest( static_cast<xtreemfs_listdirRequest&>( ev ) ); return;
               case 1895169082UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
               case 526231386UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
               case 3822735046UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
@@ -3153,6 +3234,7 @@ namespace org
         virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req ) { xtreemfs_dump_databaseResponse* resp = NULL; try { resp = new xtreemfs_dump_databaseResponse; _xtreemfs_dump_database( req.get_dump_file() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { xtreemfs_get_suitable_osdsResponse* resp = NULL; try { resp = new xtreemfs_get_suitable_osdsResponse; org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req ) { xtreemfs_lsvolResponse* resp = NULL; try { resp = new xtreemfs_lsvolResponse; org::xtreemfs::interfaces::VolumeSet volumes; _xtreemfs_lsvol( volumes ); resp->set_volumes( volumes ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_listdirRequest( xtreemfs_listdirRequest& req ) { xtreemfs_listdirResponse* resp = NULL; try { resp = new xtreemfs_listdirResponse; org::xtreemfs::interfaces::StringSet names; _xtreemfs_listdir( req.get_path(), names ); resp->set_names( names ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req ) { xtreemfs_mkvolResponse* resp = NULL; try { resp = new xtreemfs_mkvolResponse; _xtreemfs_mkvol( req.get_volume() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req ) { xtreemfs_renew_capabilityResponse* resp = NULL; try { resp = new xtreemfs_renew_capabilityResponse; org::xtreemfs::interfaces::XCap renewed_xcap; _xtreemfs_renew_capability( req.get_old_xcap(), renewed_xcap ); resp->set_renewed_xcap( renewed_xcap ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { xtreemfs_replica_addResponse* resp = NULL; try { resp = new xtreemfs_replica_addResponse; _xtreemfs_replica_add( req.get_file_id(), req.get_new_replica() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
@@ -3190,6 +3272,7 @@ namespace org
         virtual void _xtreemfs_dump_database( const std::string& dump_file ) { }
         virtual void _xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids ) { }
         virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes ) { }
+        virtual void _xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { }
         virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume ) { }
         virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap ) { }
         virtual void _xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { }
@@ -3230,6 +3313,7 @@ namespace org
       virtual void _xtreemfs_dump_database( const std::string& dump_file );\
       virtual void _xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids );\
       virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );\
+      virtual void _xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names );\
       virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume );\
       virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );\
       virtual void _xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica );\
@@ -3268,6 +3352,7 @@ namespace org
       virtual void handlextreemfs_dump_databaseRequestRequest( xtreemfs_dump_databaseRequest& req );\
       virtual void handlextreemfs_get_suitable_osdsRequestRequest( xtreemfs_get_suitable_osdsRequest& req );\
       virtual void handlextreemfs_lsvolRequestRequest( xtreemfs_lsvolRequest& req );\
+      virtual void handlextreemfs_listdirRequestRequest( xtreemfs_listdirRequest& req );\
       virtual void handlextreemfs_mkvolRequestRequest( xtreemfs_mkvolRequest& req );\
       virtual void handlextreemfs_renew_capabilityRequestRequest( xtreemfs_renew_capabilityRequest& req );\
       virtual void handlextreemfs_replica_addRequestRequest( xtreemfs_replica_addRequest& req );\

@@ -145,13 +145,28 @@ void Proxy::handleEvent( YIELD::Event& ev )
                       reconnect_tries_left = reconnect( reconnect_tries_left );
                   }
                   else
+                  {
+                    if ( log )
+                      log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
+
                     throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
+                  }
                 }
                 else
+                {
+                  if ( log )
+                    log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
+
                   throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
+                }
               }
               else
+              {
+                if ( log ) 
+                  log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": lost connection while trying to send " << ev.get_type_name() << ".";
+
                 reconnect_tries_left = reconnect( reconnect_tries_left );
+              }
             }
           }
           catch ( YIELD::ExceptionEvent* exc_ev )
@@ -171,12 +186,19 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
 uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
 {
-  if ( conn != NULL ) // This is a reconnect, not the first connect
+  if ( conn == NULL ) // This the first connect
+  {
+    if ( log )
+      log->getStream( YIELD::Log::LOG_NOTICE ) << getEventHandlerName() << ": connecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
+  }
+  else // This is a reconnect
   {
     fd_event_queue.detachSocket( *conn, conn );
     conn->close();
     delete conn;
     conn = NULL;
+    if ( log )
+      log->getStream( YIELD::Log::LOG_WARNING ) << getEventHandlerName() << ": reconnecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
   }
 
   while( reconnect_tries_left == static_cast<uint8_t>( -1 ) ||
@@ -197,6 +219,8 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
       conn->setBlocking();
       if ( conn->connect( peer_sockaddr ) )
         return reconnect_tries_left;
+      else if ( log )
+        log->getStream( YIELD::Log::LOG_ERR ) << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed.";
     }
     else // Non-blocking/timed
     {
@@ -221,6 +245,8 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
           if ( remaining_operation_timeout_ms == 0 ) { reconnect_tries_left = 0; break; }
         }
       }
+      else if ( log )
+        log->getStream( YIELD::Log::LOG_ERR ) << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed.";
     }
 
     // Clear the connection state for the next try

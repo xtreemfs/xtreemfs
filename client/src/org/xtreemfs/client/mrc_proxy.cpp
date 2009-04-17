@@ -63,6 +63,11 @@ void MRCProxy::link( const std::string& target_path, const std::string& link_pat
   mrc_interface.link( target_path, link_path, this );
 }
 
+void MRCProxy::listdir( const Path& path, org::xtreemfs::interfaces::StringSet& names )
+{
+  mrc_interface.xtreemfs_listdir( path, names, this );
+}
+
 void MRCProxy::listxattr( const Path& path, org::xtreemfs::interfaces::StringSet& names )
 {
   mrc_interface.listxattr( path, names, this );
