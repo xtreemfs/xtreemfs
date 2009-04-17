@@ -2,6 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/mrc_proxy.h"
+#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 

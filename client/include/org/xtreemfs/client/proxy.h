@@ -76,6 +76,7 @@ namespace org
         const char* getEventHandlerName() const { return #ProxyType; }
 
         YIELD::ObjectFactories object_factories;
+        PolicyContainer* policies;
 
       private:
         void init( uint16_t default_port );
@@ -83,8 +84,6 @@ namespace org
         YIELD::URI uri;
         YIELD::SSLContext* ssl_context;
         YIELD::Log* log;
-
-        PolicyContainer* policies;
 
         uint32_t flags;
         uint8_t reconnect_tries_max;
