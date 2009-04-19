@@ -32,8 +32,8 @@ namespace org
         xtfs_mount()
           : Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
         {
-          addOption( XTFS_MOUNT_OPTION_CACHE, "-c", "--cache" );
-          cache = false;
+          addOption( XTFS_MOUNT_OPTION_CACHE_METADATA, "--cache-metadata" );
+          cache_metadata = false;
 
           direct_io = false;
 
@@ -46,13 +46,13 @@ namespace org
       private:
         enum
         {
-          XTFS_MOUNT_OPTION_CACHE = 10,
+          XTFS_MOUNT_OPTION_CACHE_METADATA = 10,
           XTFS_MOUNT_OPTION_DIRECT_IO = 11,
           XTFS_MOUNT_OPTION_FOREGROUND = 12,
           XTFS_MOUNT_OPTION_FUSE_OPTION = 13
         };
 
-        bool cache;
+        bool cache_metadata;
         bool direct_io;
         std::auto_ptr<YIELD::URI> dir_uri;
         bool foreground;
@@ -88,8 +88,8 @@ namespace org
           // Start FUSE with an XtreemFS volume
           YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
-          if ( cache )
-            xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), 5, get_log().incRef() );
+          if ( cache_metadata )
+            xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef(), 5 );
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
 
@@ -129,7 +129,7 @@ namespace org
         {
           switch ( id )
           {
-            case XTFS_MOUNT_OPTION_CACHE: cache = true; break;
+            case XTFS_MOUNT_OPTION_CACHE_METADATA: cache_metadata = true; break;
             case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
 
             case XTFS_MOUNT_OPTION_FUSE_OPTION:

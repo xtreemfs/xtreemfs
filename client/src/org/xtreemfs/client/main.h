@@ -112,12 +112,14 @@ namespace org
         {
           switch ( id )
           {
+            /*
             case OPTION_LOG_LEVEL:
             {
               if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
                 YIELD::TCPSocket::set_trace_socket_io_onoff( true );
             }
             break;
+            */
 
             case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;                  
             case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = arg; break;

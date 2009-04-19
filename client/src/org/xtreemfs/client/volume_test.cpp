@@ -14,7 +14,7 @@ namespace org
   {
     namespace client
     {
-      class VolumeTestSuite : public YIELD::VolumeTestSuite
+      class VolumeTestSuite : public YIELD::VolumeTestSuite<Volume>
       {
       public:
         VolumeTestSuite( const char* test_suite_name )
@@ -23,7 +23,7 @@ namespace org
             mrc_proxy( "oncrpc://outtolunch/" ),
             osd_proxy_factory( dir_proxy, stage_group ),
             volume( "test", dir_proxy, mrc_proxy, osd_proxy_factory ),
-            YIELD::VolumeTestSuite( test_suite_name, volume )
+            YIELD::VolumeTestSuite<Volume>( test_suite_name, volume )
         {
           stage_group.createStage( dir_proxy );
           stage_group.createStage( mrc_proxy );
