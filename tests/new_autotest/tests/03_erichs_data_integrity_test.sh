@@ -1,4 +1,15 @@
 #!/bin/bash
+
+if [ $# -ne 1 ]
+then
+	echo "$0 <test directory>";
+	exit 1;
+fi
+
+TEST_DIR=$1
+
+. $TEST_DIR/globals.sh
+
 . $TEST_BASEDIR/tests/utilities.inc
 
 echo "erichs data integrity test..."

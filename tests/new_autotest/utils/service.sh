@@ -8,7 +8,7 @@ start_service() {
 		echo "ERROR: service already running or remove lock file $TEST_DIR/$1.run"
 		exit 1
 	fi
-	$JAVA_HOME/bin/java -cp $XTREEMFS_DIR/servers/dist/XtreemFS.jar:$XTREEMFS_DIR/servers/lib/BabuDB-0.1.0-RC.jar $class $TEST_DIR/config/$service.config > $TEST_DIR/log/$service.log 2>&1 &
+	$JAVA_HOME/bin/java -ea -cp $XTREEMFS_DIR/servers/dist/XtreemFS.jar:$XTREEMFS_DIR/servers/lib/BabuDB-0.1.0-RC.jar $class $TEST_DIR/config/$service.config > $TEST_DIR/log/$service.log 2>&1 &
 	
 	servicepid=$!
 	sleep 1

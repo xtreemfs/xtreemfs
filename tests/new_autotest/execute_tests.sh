@@ -15,7 +15,6 @@ fi
 
 TEST_DIR=$1
 
-. $TEST_DIR/globals.sh
 
 #execute_tests
 
@@ -30,7 +29,7 @@ do
 	echo -e "TEST: $testfile\n"
 	echo -e "start: `date`\n"
 
-	$testfile
+	$testfile $TEST_DIR
 
 	if [ $? -ne 0 ]; then
 		result=1

@@ -1,4 +1,15 @@
 #!/bin/bash
+
+if [ $# -ne 1 ]
+then
+	echo "$0 <test directory>";
+	exit 1;
+fi
+
+TEST_DIR=$1
+
+. $TEST_DIR/globals.sh
+
 . $TEST_BASEDIR/tests/utilities.inc
 
 cleanup() {
@@ -121,9 +132,23 @@ then
 	cleanup 1;
 fi
 
+target=`readlink $DIRNAME/softlink`
+if [ ! $target ]
+then
+	echo "FAILED. softlink has no target: $target!"
+	ls -l $DIRNAME
+	cleanup 1;
+fi
+
 mv $DIRNAME/softlink $DIRNAME/softlink2
 
 target=`readlink $DIRNAME/softlink2`
+if [ ! $target ]
+then
+	echo "FAILED. softlink2 has no target after rename: $target!"
+	ls -l $DIRNAME
+	cleanup 1;
+fi
 target=`basename $target`
 if [ $target != "testfile2" ]
 then
@@ -141,9 +166,9 @@ then
 fi
 
 echo -n "delete softlink..."
-rm $DIRNAME/softlink || cleanup 1; echo "OK"
+rm $DIRNAME/softlink2 || cleanup 1; echo "OK"
 
-if [ -e $DIRNAME/softlink ]
+if [ -e $DIRNAME/softlink2 ]
 then
 	echo "FAILED. unlink did not remove softlink!"
 	cleanup 1;
