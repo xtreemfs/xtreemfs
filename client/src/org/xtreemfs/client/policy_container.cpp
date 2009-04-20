@@ -69,7 +69,7 @@ PolicyContainer::~PolicyContainer()
 
   for ( YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
   {
-    for ( YIELD::STLHashMap<std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )      
+    for ( YIELD::STLHashMap<std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
       delete j->second;
     delete i->second;
   }
@@ -177,7 +177,7 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
   if ( get_passwd_from_user_credentials )
   {
     int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
-    if ( get_passwd_from_user_credentials_ret < 0 )      
+    if ( get_passwd_from_user_credentials_ret < 0 )
       throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
   }
   else
@@ -269,11 +269,25 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
     struct group grp, *grp_res;
     char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
 
-    if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL && pwd_res->pw_name != NULL &&
-         getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL && grp_res->gr_name != NULL )
+    if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 )
     {
-      out_user_credentials.set_user_id( pwd_res->pw_name );
-      out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+      if ( pwd_res != NULL && pwd_res->pw_name != NULL )
+      {
+        if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
+        {
+          if ( grp_res != NULL && grp_res->gr_name != NULL )
+          {
+            out_user_credentials.set_user_id( pwd_res->pw_name );
+            out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+          }
+          else
+            throw YIELD::PlatformException( EINVAL, "no such gid" );
+        }
+        else
+          throw YIELD::PlatformException();
+      }
+      else
+        throw YIELD::PlatformException( EINVAL, "no such uid" );
     }
     else
       throw YIELD::PlatformException();
