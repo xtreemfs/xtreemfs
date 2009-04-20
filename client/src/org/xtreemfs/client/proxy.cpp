@@ -206,9 +206,19 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
   {
     // Create the conn object based on the URI type
     if ( ssl_context == NULL )
-      conn = new YIELD::TCPSocket;
+    {
+      if ( log != NULL )
+        conn = new YIELD::TCPSocket( log->incRef() );
+      else
+        conn = new YIELD::TCPSocket;
+    }
     else
-      conn = new YIELD::SSLSocket( *ssl_context );
+    {
+      if ( log != NULL )
+        conn = new YIELD::SSLSocket( *ssl_context, log->incRef() );
+      else
+        conn = new YIELD::SSLSocket( *ssl_context );
+    }
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
     fd_event_queue.attachSocket( *conn, conn, false, false ); // Attach without read or write notifications enabled
