@@ -63,7 +63,9 @@ namespace org
         // xtfs_bin
         int _main( int argc, char** argv )
         {
-          if ( !foreground )
+          if ( foreground )
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": running in foreground.";
+          else
           {
 #ifndef _WIN32
             if ( daemon( 1, 0 ) == -1 )
@@ -75,10 +77,12 @@ namespace org
 
           // Create the DIRProxy
           YIELD::auto_Object<DIRProxy> dir_proxy = createProxy<DIRProxy>( *dir_uri.get() );
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << static_cast<const char*>( *dir_uri.get() ) << ".";
           main_stage_group.createStage( *dir_proxy.get() );
 
           // Create the MRCProxy
           YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << static_cast<const char*>( mrc_uri ) << ".";
           YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( mrc_uri );
           main_stage_group.createStage( *mrc_proxy.get() );
 
@@ -89,15 +93,27 @@ namespace org
           YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
           if ( cache_metadata )
+          {
             xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef(), 5 );
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
+          }
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
+          {
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
+          }
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
+          {
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+    	      get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
+          }
           if ( direct_io )
+          {
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+          }
 
           yieldfs::FUSE fuse( xtreemfs_volume->incRef(), get_log().incRef(), fuse_flags );
           int ret;
@@ -109,18 +125,21 @@ namespace org
           else
           {
             std::vector<char*> argvv;
-            std::string fuse_o_args( "-o" );
-            fuse_o_args.append( this->fuse_o_args );
+            argvv.push_back( argv[0] );
+            argvv.push_back( "-o" );
             argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
             argvv.push_back( NULL );
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
             struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
             ret = fuse.main( fuse_args_, mount_point.c_str() );
           }
 #endif
 
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": shutting down.";
           YIELD::Object::decRef( *xtreemfs_volume );
-
           YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
+
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
 
           return ret;
         }
