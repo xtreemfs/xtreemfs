@@ -94,41 +94,42 @@ bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
   return true;
 }
 
-YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode )
+YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   Path path( this->name, _path );
 
-  uint32_t system_v_flags = 0;
+  uint32_t system_v_flags;
 #ifdef __linux__
+  system_v_flags = 0;
   if ( ( flags & O_WRONLY ) == O_WRONLY )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
-	flags ^= O_WRONLY;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
+	  flags ^= O_WRONLY;
   }
   if ( ( flags & O_RDWR ) == O_RDWR )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
-	flags ^= O_RDWR;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
+	  flags ^= O_RDWR;
   }
   if ( ( flags & O_APPEND ) == O_APPEND )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
-	flags ^= O_APPEND;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
+	  flags ^= O_APPEND;
   }
   if ( ( flags & O_CREAT ) == O_CREAT )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
-	flags ^= O_CREAT;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
+	  flags ^= O_CREAT;
   }
   if ( ( flags & O_TRUNC ) == O_TRUNC )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
-	flags ^= O_TRUNC;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
+	  flags ^= O_TRUNC;
   }
   if ( ( flags & O_EXCL ) == O_EXCL )
   {
-	system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
-	flags ^= O_EXCL;
+	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
+	  flags ^= O_EXCL;
   }
   system_v_flags |= flags;
 #else
@@ -136,7 +137,7 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
 #endif
 
   org::xtreemfs::interfaces::FileCredentials file_credentials;
-  mrc_proxy.open( path, system_v_flags, mode, file_credentials );
+  mrc_proxy.open( path, system_v_flags, mode, attributes, file_credentials );
   uint32_t path_hash = YIELD::string_hash( path );
 
   SharedFile* shared_file = in_use_shared_files.find( path_hash );
@@ -237,7 +238,7 @@ bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 
 bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
-  YIELD::File* file = this->open( path, O_TRUNC, 0 ).release();
+  YIELD::File* file = YIELD::Volume::open( path, O_TRUNC ).release();
   file->truncate( new_size );
   YIELD::Object::decRef( file );
   return true;

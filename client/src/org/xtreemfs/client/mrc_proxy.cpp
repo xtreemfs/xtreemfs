@@ -88,9 +88,9 @@ void MRCProxy::mkvol( const org::xtreemfs::interfaces::Volume& volume )
   mrc_interface.xtreemfs_mkvol( volume, this );
 }
 
-void MRCProxy::open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials )
+void MRCProxy::open( const Path& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
-  mrc_interface.open( path, flags, mode, file_credentials, this );
+  mrc_interface.open( path, flags, mode, attributes, file_credentials, this );
 }
 
 void MRCProxy::readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries )

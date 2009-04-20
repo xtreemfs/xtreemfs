@@ -332,10 +332,10 @@ namespace org
         virtual void mkdir( const std::string& path, uint32_t mode, YIELD::EventTarget* send_target ) { mkdir( path, mode, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void mkdir( const std::string& path, uint32_t mode, YIELD::timeout_ns_t response_timeout_ns ) { mkdir( path, mode, NULL, response_timeout_ns ); }
         virtual void mkdir( const std::string& path, uint32_t mode, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { mkdirSyncRequest* __req = new mkdirSyncRequest( path, mode ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { mkdirResponse& __resp = ( mkdirResponse& )__req->waitForDefaultResponse( response_timeout_ns );  YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { open( path, flags, mode, file_credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::EventTarget* send_target ) { open( path, flags, mode, file_credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::timeout_ns_t response_timeout_ns ) { open( path, flags, mode, file_credentials, NULL, response_timeout_ns ); }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { openSyncRequest* __req = new openSyncRequest( path, flags, mode ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { openResponse& __resp = ( openResponse& )__req->waitForDefaultResponse( response_timeout_ns ); file_credentials = __resp.get_file_credentials(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { open( path, flags, mode, attributes, file_credentials, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::EventTarget* send_target ) { open( path, flags, mode, attributes, file_credentials, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::timeout_ns_t response_timeout_ns ) { open( path, flags, mode, attributes, file_credentials, NULL, response_timeout_ns ); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { openSyncRequest* __req = new openSyncRequest( path, flags, mode, attributes ); if ( send_target == NULL ) send_target = this; send_target->send( YIELD::Object::incRef( *__req ) ); try { openResponse& __resp = ( openResponse& )__req->waitForDefaultResponse( response_timeout_ns ); file_credentials = __resp.get_file_credentials(); YIELD::Object::decRef( __resp ); YIELD::Object::decRef( *__req ); } catch ( ... ) { YIELD::Object::decRef( *__req ); throw; } }
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries ) { readdir( path, directory_entries, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries, YIELD::EventTarget* send_target ) { readdir( path, directory_entries, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries, YIELD::timeout_ns_t response_timeout_ns ) { readdir( path, directory_entries, NULL, response_timeout_ns ); }
@@ -1194,9 +1194,9 @@ namespace org
       class openRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
       {
       public:
-        openRequest() : flags( 0 ), mode( 0 ) { }
-        openRequest( const std::string& path, uint32_t flags, uint32_t mode ) : path( path ), flags( flags ), mode( mode ) { }
-        openRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode ) : path( path, path_len ), flags( flags ), mode( mode ) { }
+        openRequest() : flags( 0 ), mode( 0 ), attributes( 0 ) { }
+        openRequest( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes ) : path( path ), flags( flags ), mode( mode ), attributes( attributes ) { }
+        openRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode, uint32_t attributes ) : path( path, path_len ), flags( flags ), mode( mode ), attributes( attributes ) { }
         virtual ~openRequest() { }
 
         void set_path( const std::string& path ) { set_path( path.c_str(), path.size() ); }
@@ -1206,15 +1206,17 @@ namespace org
         uint32_t get_flags() const { return flags; }
         void set_mode( uint32_t mode ) { this->mode = mode; }
         uint32_t get_mode() const { return mode; }
+        void set_attributes( uint32_t attributes ) { this->attributes = attributes; }
+        uint32_t get_attributes() const { return attributes; }
 
-        bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode; }
+        bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode && attributes == other.attributes; }
 
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::MRCInterface::openRequest", 2208926316UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "path" ), path ); flags = input_stream.readUint32( YIELD::StructuredStream::Declaration( "flags" ) ); mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "path" ), path ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "flags" ), flags ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "path" ), path ); flags = input_stream.readUint32( YIELD::StructuredStream::Declaration( "flags" ) ); mode = input_stream.readUint32( YIELD::StructuredStream::Declaration( "mode" ) ); attributes = input_stream.readUint32( YIELD::StructuredStream::Declaration( "attributes" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "path" ), path ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "flags" ), flags ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "mode" ), mode ); output_stream.writeUint32( YIELD::StructuredStream::Declaration( "attributes" ), attributes ); }
 
         // YIELD::Request
         virtual uint32_t getInterfaceNumber() const { return 2; }
@@ -1228,14 +1230,15 @@ namespace org
         std::string path;
         uint32_t flags;
         uint32_t mode;
+        uint32_t attributes;
       };
 
       class openSyncRequest : public openRequest
       {
       public:
-        openSyncRequest() : openRequest( std::string(), 0, 0 ) { }
-        openSyncRequest( const std::string& path, uint32_t flags, uint32_t mode ) : openRequest( path, flags, mode ) { }
-        openSyncRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode ) : openRequest( path, path_len, flags, mode ) { }
+        openSyncRequest() : openRequest( std::string(), 0, 0, 0 ) { }
+        openSyncRequest( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes ) : openRequest( path, flags, mode, attributes ) { }
+        openSyncRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode, uint32_t attributes ) : openRequest( path, path_len, flags, mode, attributes ) { }
         virtual ~openSyncRequest() { }
 
         bool operator==( const openSyncRequest& ) const { return true; }
@@ -3218,7 +3221,7 @@ namespace org
         virtual void handlelinkRequest( linkRequest& req ) { linkResponse* resp = NULL; try { resp = new linkResponse; _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlelistxattrRequest( listxattrRequest& req ) { listxattrResponse* resp = NULL; try { resp = new listxattrResponse; org::xtreemfs::interfaces::StringSet names; _listxattr( req.get_path(), names ); resp->set_names( names ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlemkdirRequest( mkdirRequest& req ) { mkdirResponse* resp = NULL; try { resp = new mkdirResponse; _mkdir( req.get_path(), req.get_mode() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
-        virtual void handleopenRequest( openRequest& req ) { openResponse* resp = NULL; try { resp = new openResponse; org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handleopenRequest( openRequest& req ) { openResponse* resp = NULL; try { resp = new openResponse; org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), req.get_attributes(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlereaddirRequest( readdirRequest& req ) { readdirResponse* resp = NULL; try { resp = new readdirResponse; org::xtreemfs::interfaces::DirectoryEntrySet directory_entries; _readdir( req.get_path(), directory_entries ); resp->set_directory_entries( directory_entries ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handleremovexattrRequest( removexattrRequest& req ) { removexattrResponse* resp = NULL; try { resp = new removexattrResponse; _removexattr( req.get_path(), req.get_name() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlerenameRequest( renameRequest& req ) { renameResponse* resp = NULL; try { resp = new renameResponse; org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _rename( req.get_source_path(), req.get_target_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
@@ -3256,7 +3259,7 @@ namespace org
         virtual void _link( const std::string& target_path, const std::string& link_path ) { }
         virtual void _listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { }
         virtual void _mkdir( const std::string& path, uint32_t mode ) { }
-        virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { }
+        virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { }
         virtual void _readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries ) { }
         virtual void _removexattr( const std::string& path, const std::string& name ) { }
         virtual void _rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials ) { }
@@ -3297,7 +3300,7 @@ namespace org
       virtual void _link( const std::string& target_path, const std::string& link_path );\
       virtual void _listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names );\
       virtual void _mkdir( const std::string& path, uint32_t mode );\
-      virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& file_credentials );\
+      virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials );\
       virtual void _readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );\
       virtual void _removexattr( const std::string& path, const std::string& name );\
       virtual void _rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials );\

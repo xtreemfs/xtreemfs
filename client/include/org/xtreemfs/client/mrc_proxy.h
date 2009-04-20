@@ -34,7 +34,7 @@ namespace org
         void mkdir( const Path& path, uint32_t mode );
         void lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );
         void mkvol( const org::xtreemfs::interfaces::Volume& volume );
-        void open( const Path& path, uint32_t flags, uint32_t mode, org::xtreemfs::interfaces::FileCredentials& credentials );
+        void open( const Path& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& credentials );
         void readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );
         void removexattr( const Path& path, const std::string& name );
         void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& credentials );
