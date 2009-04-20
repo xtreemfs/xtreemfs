@@ -54,7 +54,6 @@ namespace org
 
         YIELD::auto_Object<YIELD::Stat> getattr( const Path& path );
         
-
       private:
         std::string name;
         DIRProxy& dir_proxy; uint64_t dir_proxy_operation_timeout_ms;
@@ -63,6 +62,7 @@ namespace org
 
         YIELD::STLHashMap<SharedFile*> in_use_shared_files;
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
+        void set_errno( YIELD::Exception& );
 
       private:
         // SharedFileCallbackInterface

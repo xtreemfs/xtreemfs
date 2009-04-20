@@ -3,7 +3,6 @@
 
 #include "org/xtreemfs/client/proxy.h"
 #include "policy_container.h"
-#include "platform_exception_event.h"
 using namespace org::xtreemfs::client;
 
 #include "org/xtreemfs/interfaces/constants.h"
@@ -149,7 +148,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                     if ( log )
                       log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
 
-                    throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
+                    throwExceptionEvent( new org::xtreemfs::interfaces::Exceptions::errnoException( ETIMEDOUT, "timed out", "" ) );
                   }
                 }
                 else
@@ -157,7 +156,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   if ( log )
                     log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
 
-                  throwExceptionEvent( new PlatformExceptionEvent( ETIMEDOUT ) );
+                  throwExceptionEvent( new org::xtreemfs::interfaces::Exceptions::errnoException( ETIMEDOUT, "timed out", "" ) );
                 }
               }
               else
@@ -266,10 +265,15 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     conn = NULL;
   }
 
-  unsigned long error_code = YIELD::PlatformException::errno_();
-  if ( error_code == 0 )
-    error_code = ETIMEDOUT;
-  throw new PlatformExceptionEvent( error_code );
+#ifdef _WIN32
+  if ( ::GetLastError() != 0 )
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::GetLastError() ), "", "" );
+#else
+  if ( ::errno != 0 )
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::errno ), "", "" );
+#endif
+  else
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( ETIMEDOUT, "timed out", "" );
 }
 
 void Proxy::throwExceptionEvent( YIELD::ExceptionEvent* exc_ev )

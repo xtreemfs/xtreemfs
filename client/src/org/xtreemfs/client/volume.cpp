@@ -12,8 +12,8 @@
 using namespace org::xtreemfs::client;
 
 #include <errno.h>
-#ifndef _WIN32
-#include <sys/statvfs.h>
+#ifdef _WIN32
+#include "yield/platform/windows.h"
 #endif
 
 
@@ -168,11 +168,11 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
   return true;
 }
 
-YIELD::Path Volume::readlink( const YIELD::Path& path )
+YIELD::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy.getattr( Path( this->name, path ), stbuf );
-  return stbuf.get_link_target();
+  return new YIELD::Path( stbuf.get_link_target() );
 }
 
 bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )

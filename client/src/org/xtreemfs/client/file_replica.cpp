@@ -138,6 +138,6 @@ OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )
       }
     }
 
-    default: throw YIELD::NotSupportedException(); break;
+    default: YIELD::DebugBreak(); throw YIELD::Exception(); break;
   }
 }

@@ -92,6 +92,9 @@ namespace org
           // Start FUSE with an XtreemFS volume
           YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
 
+          // Translate exceptions into errno codes
+          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume, get_log().incRef() );
+
           if ( cache_metadata )
           {
             xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef(), 5 );
