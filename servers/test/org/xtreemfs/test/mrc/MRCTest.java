@@ -152,7 +152,7 @@ public class MRCTest extends TestCase {
         try {
             invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/", 0));
             fail("directory already exists");
-        } catch(MRCException exc) {
+        } catch (MRCException exc) {
             
         }
         
@@ -253,13 +253,14 @@ public class MRCTest extends TestCase {
         assertEquals("1", val);
         
         // check read-only replication
-        FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0));
+        FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl",
+            FileAccessManager.O_CREAT, 0, 0));
         assertEquals(Constants.REPL_UPDATE_PC_NONE, creds.getXlocs().getRepUpdatePolicy());
         
         invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only", "true", 0));
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only"));
         assertEquals("true", val);
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0));
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getRepUpdatePolicy());
     }
     
@@ -359,19 +360,19 @@ public class MRCTest extends TestCase {
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0774));
         
         // open w/ O_RDONLY; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0, 0));
         
         // open w/ O_RDWR; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0, 0));
         
         // create a new file w/ O_CREAT; should implicitly create a new file
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256, 0));
         invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         
         // open w/ O_WRONLY; should fail
         try {
-            invokeSync(client
-                    .open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_WRONLY, 256));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_WRONLY,
+                256, 0));
             fail();
         } catch (MRCException exc) {
             assertEquals(ErrNo.EACCES, exc.getError_code());
@@ -379,7 +380,7 @@ public class MRCTest extends TestCase {
         
         // open a directory; should fail
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0, 0));
             fail("opened directory");
         } catch (MRCException exc) {
         }
@@ -391,7 +392,7 @@ public class MRCTest extends TestCase {
         
         // open a symlink
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/link",
-            FileAccessManager.O_RDONLY, 0));
+            FileAccessManager.O_RDONLY, 0, 0));
         
         // wait one second before renewing the capability
         Thread.sleep(1000);
@@ -402,16 +403,18 @@ public class MRCTest extends TestCase {
         
         // test redirect
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0, 0));
             fail("should have been redirected");
         } catch (MRCException exc) {
         }
         
         // open w/ truncate flag; check whether the epoch number is incremented
         invokeSync(client.create(mrcAddress, uc, volumeName + "/trunc", 0777));
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0));
+        creds = invokeSync(client
+                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0));
         assertEquals(1, creds.getXcap().getTruncate_epoch());
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0));
+        creds = invokeSync(client
+                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0));
         assertEquals(2, creds.getXcap().getTruncate_epoch());
         
         // TODO: check open w/ ACLs set
@@ -419,10 +422,11 @@ public class MRCTest extends TestCase {
         // test truncate
         
         // open w/ write cap and truncate
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0, 0));
         invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
         
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDONLY, 0));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDONLY, 0,
+            0));
         try {
             invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
             fail("truncated file w/o write permissions");
@@ -448,7 +452,7 @@ public class MRCTest extends TestCase {
         // open O_CREATE as uid2 should fail
         try {
             invokeSync(client.open(mrcAddress, uc2, volumeName + "/test2.txt",
-                (FileAccessManager.O_WRONLY | FileAccessManager.O_CREAT), 256));
+                (FileAccessManager.O_WRONLY | FileAccessManager.O_CREAT), 256, 0));
             fail();
         } catch (MRCException exc) {
             assertEquals(ErrNo.EACCES, exc.getError_code());
@@ -756,7 +760,8 @@ public class MRCTest extends TestCase {
         invokeSync(client.create(mrcAddress, uc, fileName, 0));
         
         // check and update file sizes repeatedly
-        XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0)).getXcap();
+        XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0))
+                .getXcap();
         Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
         assertEquals(0L, stat.getSize());
         
@@ -842,7 +847,7 @@ public class MRCTest extends TestCase {
         
         // check if the striping policy assigned to the file matches the default
         // striping policy
-        XLocSet xLoc = invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0))
+        XLocSet xLoc = invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0, 0))
                 .getXlocs();
         assertEquals(sp1.toString(), xLoc.getReplicas().get(0).getStriping_policy().toString());
         
@@ -850,7 +855,8 @@ public class MRCTest extends TestCase {
         // extended attribute
         invokeSync(client.setxattr(mrcAddress, uc, dirName, "xtreemfs.default_sp", Converter
                 .stripingPolicyToString(sp2), 0));
-        xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0)).getXlocs();
+        xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0, 0))
+                .getXlocs();
         assertEquals(sp2.toString(), xLoc.getReplicas().get(0).getStriping_policy().toString());
         
     }

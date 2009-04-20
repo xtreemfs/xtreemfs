@@ -115,7 +115,7 @@ public class RandomAccessFile implements ObjectStore {
 
         this.credentials = credentials;
 
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, this.mode);
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, this.mode, 0);
         fileCredentials = r.get();
         r.freeBuffers();
 
@@ -671,7 +671,7 @@ public class RandomAccessFile implements ObjectStore {
      * @throws InterruptedException
      */
     private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException, InterruptedException {
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, mode);
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, mode, 0);
         fileCredentials = r.get();
         r.freeBuffers();
         

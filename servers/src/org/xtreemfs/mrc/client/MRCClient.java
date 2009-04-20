@@ -392,9 +392,9 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse<FileCredentials> open(InetSocketAddress server, UserCredentials credentials,
-        String path, int flags, int mode) {
+        String path, int flags, int mode, int w32attrs) {
         
-        openRequest rq = new openRequest(path, flags, mode);
+        openRequest rq = new openRequest(path, flags, w32attrs, mode);
         RPCResponse<FileCredentials> r = sendRequest(server, rq.getOperationNumber(), rq,
             new RPCResponseDecoder<FileCredentials>() {
                 

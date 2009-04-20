@@ -102,7 +102,7 @@ public class ChangeOwnerOperation extends MRCOperation {
             }
             
             // check whether the owner may be changed
-            if (rqArgs.getUser_id() != null) {
+            if (rqArgs.getUser_id().equals("")) {
                 if (!rq.getDetails().superUser)
                     throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
                 
@@ -113,8 +113,8 @@ public class ChangeOwnerOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
             // change owner and owning group
-            file.setOwnerAndGroup(rqArgs.getUser_id() == null ? file.getOwnerId() : rqArgs.getUser_id(), rqArgs
-                    .getGroup_id() == null ? file.getOwningGroupId() : rqArgs.getGroup_id());
+            file.setOwnerAndGroup(rqArgs.getUser_id().equals("") ? file.getOwnerId() : rqArgs.getUser_id(), rqArgs
+                    .getGroup_id().equals("")? file.getOwningGroupId() : rqArgs.getGroup_id());
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             // update POSIX timestamps
