@@ -110,7 +110,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
             bool have_written = false;
 
             for ( ;; )
-            {   
+            {
               if ( !have_written )
               {
                 if ( oncrpc_req.serialize( *conn ) )
@@ -161,7 +161,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
               }
               else
               {
-                if ( log ) 
+                if ( log )
                   log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": lost connection while trying to send " << ev.get_type_name() << ".";
 
                 reconnect_tries_left = reconnect( reconnect_tries_left );
@@ -269,8 +269,8 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
   if ( ::GetLastError() != 0 )
     throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::GetLastError() ), "", "" );
 #else
-  if ( ::errno != 0 )
-    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::errno ), "", "" );
+  if ( errno != 0 )
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( errno ), "", "" );
 #endif
   else
     throw new org::xtreemfs::interfaces::Exceptions::errnoException( ETIMEDOUT, "timed out", "" );
