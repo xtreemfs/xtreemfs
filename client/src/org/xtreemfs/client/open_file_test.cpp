@@ -18,7 +18,7 @@ namespace org
       {
       public:
         OpenFileTestSuite( const char* test_suite_name )
-          : YIELD::FileTestSuite( test_suite_name, volume ),
+          : YIELD::FileTestSuite( test_suite_name ),
             stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
             dir_proxy( "oncrpc://outtolunch/" ),
             mrc_proxy( "oncrpc://outtolunch/" ),
@@ -34,6 +34,12 @@ namespace org
           YIELD::SEDAStageGroup::destroyStageGroup( stage_group );
         }
 
+        // YIELD::FileTestSuite
+        YIELD::File* createFile( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+        {
+          return volume.open( path, flags, mode, attributes ).release();
+        }
+
       private:
         YIELD::SEDAStageGroup& stage_group;
         DIRProxy dir_proxy;
@@ -47,4 +53,4 @@ namespace org
 
 TEST_SUITE_EX( OpenFile, org::xtreemfs::client::OpenFileTestSuite )
 
-TEST_MAIN( Volume )
+TEST_MAIN( OpenFile )

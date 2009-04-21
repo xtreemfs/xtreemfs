@@ -29,7 +29,7 @@ namespace org
 
         bool read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read );
         void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size );
-        bool write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, uint64_t offset, size_t* out_bytes_written );
+        bool writev( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written );
 
       private:
         SharedFile& parent_shared_file;

@@ -16,10 +16,20 @@ OpenFile::~OpenFile()
   Object::decRef( attached_to_file_replica.get_parent_shared_file() );
 }
 
+bool OpenFile::datasync()
+{
+  return true;
+}
+
 bool OpenFile::close()
 {
   YIELD::DebugBreak();
   return false;
+}
+
+bool OpenFile::flush()
+{
+  return true;
 }
 
 YIELD::auto_Object<YIELD::Stat> OpenFile::getattr()
@@ -52,6 +62,11 @@ bool OpenFile::setxattr( const std::string& name, const std::string& value, int 
   return get_parent_volume().setxattr( get_path(), name, value, flags );
 }
 
+bool OpenFile::sync()
+{
+  return true;
+}
+
 bool OpenFile::truncate( uint64_t new_size )
 {
   org::xtreemfs::interfaces::XCap truncate_xcap;
@@ -61,7 +76,7 @@ bool OpenFile::truncate( uint64_t new_size )
   return true;
 }
 
-bool OpenFile::write( const void* wbuf, size_t size, uint64_t offset, size_t* out_bytes_written )
+bool OpenFile::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
 {
-  return attached_to_file_replica.write( file_credentials, wbuf, size, offset, out_bytes_written );
+  return attached_to_file_replica.writev( file_credentials, buffers, buffers_count, offset, out_bytes_written );
 }

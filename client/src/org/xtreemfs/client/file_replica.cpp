@@ -75,10 +75,13 @@ void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& fi
    get_mrc_proxy().update_file_size( file_credentials.get_xcap(), osd_write_response );
 }
 
-bool FileReplica::write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const void* wbuf, size_t size, uint64_t offset, size_t* out_bytes_written )
+bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
 {
-  const char* wbuf_p = static_cast<const char*>( wbuf );
-  uint64_t file_offset = offset, file_offset_max = offset + size;
+  if ( buffers_count != 1 ) 
+    YIELD::DebugBreak();
+
+  const char* wbuf_p = static_cast<const char*>( buffers[0].iov_base );
+  uint64_t file_offset = offset, file_offset_max = offset + buffers[0].iov_len;
   uint32_t stripe_size = striping_policy.get_stripe_size() * 1024;
   org::xtreemfs::interfaces::OSDWriteResponse newest_osd_write_response;
 
