@@ -90,6 +90,7 @@ public class ObjectInformation {
     }
 
     public ObjectData getObjectData(boolean isLastObject, int offset, int length) {
+        assert(length >= 0);
         if (isLastObject) {
             switch (status) {
                 case EXISTS: return new ObjectData(data, 0, 0, checksumInvalidOnOSD);
@@ -99,8 +100,8 @@ public class ObjectInformation {
         } else {
             switch (status) {
                 case EXISTS: {
-                    final int paddingZeros = length-data.capacity();
-                    assert(paddingZeros >= 0) : "offset: "+offset+" length: "+length+" capacity: "+data.capacity();
+                    final int paddingZeros = length-data.remaining();
+                    assert(paddingZeros >= 0) : "offset: "+offset+" length: "+length+" remaining: "+data.remaining();
                     return new ObjectData(data,0,paddingZeros,checksumInvalidOnOSD);
                 }
                 case DOES_NOT_EXIST:

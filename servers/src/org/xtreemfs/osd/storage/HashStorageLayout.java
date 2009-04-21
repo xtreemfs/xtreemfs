@@ -179,7 +179,7 @@ public class HashStorageLayout extends StorageLayout {
                 if (length == -1)
                     bbuf = BufferPool.allocate(flength);
                 else {
-                    if (flength-offset < 0) {
+                    if (flength-offset <= 0) {
                         //nothing to read here
                         f.close();
                         bbuf = BufferPool.allocate(0);
@@ -192,6 +192,7 @@ public class HashStorageLayout extends StorageLayout {
                 }
                 f.getChannel().position(offset);
                 f.getChannel().read(bbuf.getBuffer());
+                assert(!bbuf.hasRemaining());
                 bbuf.position(0);
                 f.close();
                 return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));

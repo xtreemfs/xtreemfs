@@ -201,6 +201,13 @@ public final class ReadOperation extends OSDOperation {
         //final boolean isRangeRequested = (args.getOffset() > 0) || (args.getLength() < result.getStripeSize());
         ObjectData data;
         data = result.getObjectData(isLastObjectOrEOF, args.getOffset(), args.getLength());
+        //must deliver enough data!
+        int datasize = 0;
+        if (data.getData() != null)
+            datasize = data.getData().remaining();
+        datasize += data.getZero_padding();
+        assert((isLastObjectOrEOF && datasize <= args.getLength()) ||
+                (!isLastObjectOrEOF && datasize == args.getLength()));
         master.objectSent();
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
