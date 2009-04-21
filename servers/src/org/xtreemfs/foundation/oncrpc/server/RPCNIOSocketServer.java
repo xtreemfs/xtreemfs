@@ -187,7 +187,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
         notifyStarted();
 
-        Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Srv " + bindPort + " ready");
+        Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Srv " + bindPort + " ready "+(sslOptions != null ? "SSL enabled" : ""));
 
         try {
             while (!quit) {
@@ -411,43 +411,35 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                         //finished sending... send fragment data now...
                         } else {*/
                             //send fragment data
-                            final ReusableBuffer currentBuf = rq.getCurrentResponseBuffer();
-                            final int numBytesWritten = writeData(key, channel, currentBuf.getBuffer());
+                            final long numBytesWritten = channel.write(rq.getResponseSendBuffers());
                             if (numBytesWritten == -1) {
                                 //connection closed
                                 closeConnection(key);
                                 return;
                             }
-                            if (currentBuf.hasRemaining()) {
+                            if (!rq.responseComplete()) {
                                 //not enough data...
                                 break;
                             }
-                            con.setSendingFragmentHeader(true);
                             //finished sending fragment
-                            if (rq.isLastResoponseBuffer()) {
-                                //clean up :-) request finished
-                                pendingRequests--;
-                                if (Logging.tracingEnabled()) {
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent response for " + rq);
-                                }
-                                rq.freeBuffers();
-                                con.setSend(null);
-                                int numRq = con.getOpenRequests().decrementAndGet();
+                            //clean up :-) request finished
+                            pendingRequests--;
+                            if (Logging.tracingEnabled()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent response for " + rq);
+                            }
+                            rq.freeBuffers();
+                            con.setSend(null);
+                            int numRq = con.getOpenRequests().decrementAndGet();
 
-                                if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
-                                    if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
-                                        //read from client again
-                                        key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                                        Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: " + con.getChannel().socket().getRemoteSocketAddress());
-                                    }
+                            if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
+                                if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
+                                    //read from client again
+                                    key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                                    Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: " + con.getChannel().socket().getRemoteSocketAddress());
                                 }
-
-                                continue;
-                            } else {
-                                rq.nextResponseBuffer();
                             }
 
-                        //}
+                            continue;
                     }
                 }
             }

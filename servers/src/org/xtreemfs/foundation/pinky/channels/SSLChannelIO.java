@@ -279,20 +279,47 @@ public class SSLChannelIO extends ChannelIO {
     /**
      * {@inheritDoc}
      */
+    /**
+     * {@inheritDoc} warning: maybe more bytes would be consumed from src-buffer than will be written to
+     * channel (returned value)
+     */
     @Override
     public long write(ByteBuffer[] src) throws IOException {
-        // TODO: completely rewrite this function, because it is only a simple dummy
-        long tmp = 0;
-        for (int i = 0; i < src.length; i++) {
-            try {
-                tmp += write(src[i]);
-            } catch (IOException e) {
-                // TODO exception handling?
-                e.printStackTrace();
-                break;
+        int returnValue = 0;
+        if (!shutdownInProgress) {
+            if (handshakeComplete) {
+                SSLEngineResult result = sslEngine.wrap(src, outNetBuffer.getBuffer());
+                outNetBuffer.flip(); // ready for writing to channel
+
+                switch (result.getStatus()) {
+                    case OK: {
+                        tryFlush();
+
+                        break;
+                    }
+                    case BUFFER_OVERFLOW: {
+                        // needed more space in outNetBuffer
+                        // two reasons for overflow:
+                        // 1. buffer is too small
+                        // 2. buffer is nearly full
+                        tryFlush();
+                        /*
+                         * throw new IOException(
+                         * "BufferOverflow in SSLEngine. Buffer for SSLEngine-generated data is too small.");
+                         */
+                        break;
+                    }
+                    case CLOSED: {
+                        throw new IOException("The SSLEngine is already closed.");
+                    }
+                    default: {
+                        throw new IOException("The SSLEngine is in a curiuos state.");
+                    }
+                }
+                returnValue = result.bytesConsumed();
             }
         }
-        return tmp;
+        return returnValue;
     }
 
     /**

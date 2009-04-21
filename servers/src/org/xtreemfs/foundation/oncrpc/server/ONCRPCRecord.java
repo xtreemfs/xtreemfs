@@ -24,6 +24,7 @@
 
 package org.xtreemfs.foundation.oncrpc.server;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -60,6 +61,8 @@ public class ONCRPCRecord {
      * list of buffer that make up the response
      */
     private List<ReusableBuffer>  responseBuffers;
+
+    private ByteBuffer[]          responseSendBuffers;
 
     /**
      * fragment which is currently sent
@@ -115,6 +118,21 @@ public class ONCRPCRecord {
      */
     ReusableBuffer getCurrentResponseBuffer() {
         return responseBuffers.get(bufferSendCount);
+    }
+
+    ByteBuffer[] getResponseSendBuffers() {
+        if (this.responseSendBuffers == null) {
+            final int numBuffers = responseBuffers.size();
+            responseSendBuffers = new ByteBuffer[numBuffers];
+            for (int i = 0; i < numBuffers; i++) {
+                responseSendBuffers[i] = responseBuffers.get(i).getBuffer();
+            }
+        }
+        return responseSendBuffers;
+    }
+
+    boolean responseComplete() {
+        return !responseSendBuffers[responseSendBuffers.length-1].hasRemaining();
     }
 
     int getResponseSize() {
