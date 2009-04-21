@@ -214,9 +214,9 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     else
     {
       if ( log != NULL )
-        conn = new YIELD::SSLSocket( *ssl_context, log->incRef() );
+        conn = new YIELD::SSLSocket( ssl_context->incRef(), log->incRef() );
       else
-        conn = new YIELD::SSLSocket( *ssl_context );
+        conn = new YIELD::SSLSocket( ssl_context->incRef() );
     }
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking

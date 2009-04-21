@@ -63,12 +63,12 @@ namespace org
         } \
         \
         ProxyType( const YIELD::URI& uri, YIELD::SSLContext& ssl_context ) \
-          : Proxy( uri, interface_instance.DEFAULT_ONCRPCS_PORT ) \
+          : Proxy( uri, ssl_context, interface_instance.DEFAULT_ONCRPCS_PORT ) \
         { \
           interface_instance.registerObjectFactories( object_factories ); \
         } \
         ProxyType( const YIELD::URI& uri, YIELD::SSLContext& ssl_context, YIELD::Log& log ) \
-          : Proxy( uri, log, interface_instance.DEFAULT_ONCRPCS_PORT ) \
+          : Proxy( uri, ssl_context, log, interface_instance.DEFAULT_ONCRPCS_PORT ) \
         { \
           interface_instance.registerObjectFactories( object_factories ); \
         } \
