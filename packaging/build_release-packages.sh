@@ -23,24 +23,22 @@ SERVER_WHITE_LIST=(
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 CLIENT_WHITE_LIST=(
-	"client/bootstrap.sh" ""
-	"client/config.h.in" ""
-	"client/configure.ac" ""
-	"client/make.config" ""
-	"client/Makefile" ""
-	"client/Makefile.am" ""
-	"client/bin" "bin"
-	"client/json-c-0.7" "json-c-0.7"
-	"client/man" "man"
-	"client/neon-0.27.2" "neon-0.27.2"
+	"client/generate_src_and_proj.bat" ""
+	"client/include" "include"
+	"client/scons.py" ""
+	"client/SConstruct" ""
+	"client/proj" "proj"
+	"client/share" "share"
 	"client/src" "src"
-	"client/tools" "tools"
-	"client/tests" "tests"
+	"client/bin" "bin"
+	"client/man" "man"
 	"servers/config/default_dir" "config/default_dir"
 )
 
 # black list for files/dirs which should NEVER be copied
 SERVER_BLACK_LIST=(
+	"servers/bin/generate_xtreemfs_java.py"
+	"servers/config/*test"
 )
 
 # black list for files/dirs which should NEVER be copied
@@ -92,7 +90,8 @@ build_client_package() {
 	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
 
 	# create archiv
-	tar -cjf "$CLIENT_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $CLIENT_PACKAGE_NAME
+	#tar -cjf "$CLIENT_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $CLIENT_PACKAGE_NAME
+	tar -czf "$CLIENT_PACKAGE_NAME.tar.gz" -C $TMP_PATH $CLIENT_PACKAGE_NAME
 }
 
 # server package
@@ -137,7 +136,8 @@ build_server_package() {
 	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
 
 	# create archiv
-	tar -cjf "$SERVER_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $SERVER_PACKAGE_NAME
+	#tar -cjf "$SERVER_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $SERVER_PACKAGE_NAME
+	tar -czf "$SERVER_PACKAGE_NAME.tar.gz" -C $TMP_PATH $SERVER_PACKAGE_NAME
 }
 
 function copy_server_white_list() {

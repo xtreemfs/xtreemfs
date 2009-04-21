@@ -1,6 +1,6 @@
-xtreemfs-server (0.10.1) stable; urgency=low
+xtreemfs-server (1.0.0) stable; urgency=low
 
-  * Initial release
+  * Release
 
- -- xtreemfs <xtreemfs-users@googlegroups.com>  Wed, 04 Jun 2008 13:52:09 +0200
+ -- xtreemfs <xtreemfs-users@googlegroups.com>  Wed, 15 Apr 2009 17:48:00 +0200
 

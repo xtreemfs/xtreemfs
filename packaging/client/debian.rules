@@ -25,9 +25,9 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-#	./configure
-#	make all
-	make -C "."
+	#./configure
+	#make all
+	python scons.py
 	# --- end custom part for compiling
 
 	touch build-stamp
@@ -38,8 +38,8 @@ clean:
 	rm -f build-stamp
 
 	# Add here commands to clean up after the build process.
-#	make clean
-#	make -C "." clean
+	#make clean
+	#make -C "." clean
 	# --- end custom part for cleaning up
 
 	dh_clean
@@ -52,7 +52,7 @@ install: build
 
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly /usr/src/packages/BUILD/debian/debian/<nameOfPackage>
-#	make install DESTDIR=/usr/src/packages/BUILD/debian/ace
+	#make install DESTDIR=/usr/src/packages/BUILD/debian/ace
 	# --- end custom part for installing
 	
 	# copy bins
@@ -79,27 +79,27 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-#	dh_installdebconf
+	#dh_installdebconf
 	dh_installdocs
 	dh_installexamples
 	dh_installmenu
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_installinit
+	#dh_installlogrotate
+	#dh_installemacsen
+	#dh_installpam
+	#dh_installmime
+	#dh_installinit
 	dh_installcron
 	dh_installman
 	dh_installinfo
-#	dh_undocumented
+	#dh_undocumented
 	dh_installchangelogs
 	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms
-#	dh_makeshlibs
+	#dh_makeshlibs
 	dh_installdeb
-#	dh_perl
+	#dh_perl
 	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums

@@ -119,8 +119,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final HttpServer             httpServ;
     
-    public MRCRequestDispatcher(final MRCConfig config) throws IOException,
-        ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
+    public MRCRequestDispatcher(final MRCConfig config) throws IOException, ClassNotFoundException,
+        IllegalAccessException, InstantiationException, DatabaseException {
         
         this.config = config;
         
@@ -222,24 +222,24 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
             config);
     }
-
+    
     public void asyncShutdown() {
         heartbeatThread.shutdown();
-
+        
         serverStage.shutdown();
-
+        
         clientStage.shutdown();
-
+        
         osdMonitor.shutdown();
-
+        
         procStage.shutdown();
-
+        
         UUIDResolver.shutdown();
         
         volumeManager.shutdown();
-
+        
         httpServ.stop(0);
-
+        
         TimeSync.getInstance().shutdown();
     }
     
@@ -351,7 +351,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         data.put(Vars.AVAILPROCS, String.valueOf(Runtime.getRuntime().availableProcessors()));
         data.put(Vars.BPSTATS, BufferPool.getStatus());
         data.put(Vars.DEBUG, Integer.toString(config.getDebugLevel()));
-        data.put(Vars.DIRURL, "http://" + config.getDirectoryService().getHostName() + ":"
+        data.put(Vars.DIRURL, config.getDirectoryService().getHostName() + ":"
             + config.getDirectoryService().getPort());
         data.put(Vars.GLOBALRESYNC, Long.toString(TimeSync.getTimeSyncInterval()));
         
@@ -382,20 +382,34 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory()) + " / "
             + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory()) + "</span>");
         
-        // TODO: add request statistics
-        // StringBuffer rqTableBuf = new StringBuffer();
-        // long totalRequests = 0;
-        // for (String req : brainStage._statMap.keySet()) {
-        //
-        // long count = brainStage._statMap.get(req);
-        // totalRequests += count;
-        //
-        // rqTableBuf.append("<tr><td align=\"left\">'");
-        // rqTableBuf.append(req);
-        // rqTableBuf.append("'</td><td>");
-        // rqTableBuf.append(count);
-        // rqTableBuf.append("</td></tr>");
-        // }
+        StringBuffer rqTableBuf = new StringBuffer();
+        long totalRequests = 0;
+        for (Entry<Integer, Integer> entry : procStage.get_opCountMap().entrySet()) {
+            
+            long count = entry.getValue();
+            totalRequests += count;
+            
+            if (count != 0) {
+                
+                try {
+                    String req = MRCInterface.createRequest(new ONCRPCRequestHeader(0, 0, 0, entry.getKey()))
+                            .getTypeName();
+                    req = req.substring(req.lastIndexOf("::") + 2, req.lastIndexOf("Request"));
+                    
+                    rqTableBuf.append("<tr><td align=\"left\">'");
+                    rqTableBuf.append(req);
+                    rqTableBuf.append("'</td><td>");
+                    rqTableBuf.append(count);
+                    rqTableBuf.append("</td></tr>");
+                    
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }
+        
+        data.put(Vars.TOTALNUMRQ, totalRequests + "");
+        data.put(Vars.RQSTATS, rqTableBuf.toString());
         
         // add volume statistics
         try {
@@ -413,11 +427,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 while (it.hasNext()) {
                     Service osd = it.next();
                     final ServiceUUID osdUUID = new ServiceUUID(osd.getUuid());
-                    volTableBuf.append("<a href=\"");
-                    volTableBuf.append(osdUUID.toURL());
-                    volTableBuf.append("\">");
                     volTableBuf.append(osdUUID);
-                    volTableBuf.append("</a>");
                     if (it.hasNext())
                         volTableBuf.append(", ");
                 }

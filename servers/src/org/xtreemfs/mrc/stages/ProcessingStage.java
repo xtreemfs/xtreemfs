@@ -88,12 +88,23 @@ public class ProcessingStage extends MRCStage {
     
     private final Map<Integer, MRCOperation> operations;
     
+    private final Map<Integer, Integer>      _opCountMap;
+    
+    private final boolean                    statisticsEnabled         = true;
+    
     public ProcessingStage(MRCRequestDispatcher master) {
         super("ProcSt");
         this.master = master;
-        operations = new HashMap<Integer, MRCOperation>();
         
+        operations = new HashMap<Integer, MRCOperation>();
         installOperations();
+        
+        if (statisticsEnabled) {
+            // initialize operations counter
+            _opCountMap = new HashMap<Integer, Integer>();
+            for (Integer i : operations.keySet())
+                _opCountMap.put(i, 0);
+        }
     }
     
     public void installOperations() {
@@ -138,6 +149,10 @@ public class ProcessingStage extends MRCStage {
         operations.put(InternalDebugOperation.OP_ID, new InternalDebugOperation(master));
     }
     
+    public Map<Integer, Integer> get_opCountMap() {
+        return _opCountMap;
+    }
+    
     @Override
     protected void processMethod(StageMethod method) {
         switch (method.getStageMethod()) {
@@ -164,10 +179,15 @@ public class ProcessingStage extends MRCStage {
         
         final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getOperationNumber());
         if (op == null) {
-            rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION,
-                "requested operation ("+rpcRequest.getRequestHeader().getOperationNumber()+") is not available on this MRC"));
+            rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION, "requested operation ("
+                + rpcRequest.getRequestHeader().getOperationNumber() + ") is not available on this MRC"));
             master.requestFinished(rq);
             return;
+        }
+        
+        if (statisticsEnabled) {
+            _opCountMap.put(rpcRequest.getRequestHeader().getOperationNumber(), _opCountMap.get(rpcRequest
+                    .getRequestHeader().getOperationNumber()) + 1);
         }
         
         // parse request arguments

@@ -1,12 +1,12 @@
 Name:           XtreemFS-server
-Version:        0.10.1
-Release:        1
+Version:        1.0.0
+Release:        beta1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 #BuildRequires:  fastjar
 Group:          Networking
 Summary:        XtreemFS server components (DIR, MRC, OSD)
-Source0:        %{name}-%{version}.tar.bz2
+Source0:        %{name}-%{version}.tar.gz
 Requires:       grep
 
 %description

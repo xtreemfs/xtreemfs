@@ -98,8 +98,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         this.vcListeners = new LinkedList<VolumeChangeListener>();
         
         dbDir = master.getConfig().getDbDir();
-        dbLogDir = master.getConfig().getDbDir(); // TODO: introduce separate
-        // parameter
+        dbLogDir = master.getConfig().getDbLogDir();
         mngrMap = new HashMap<String, StorageManager>();
         volIdMap = new HashMap<String, VolumeInfo>();
         volNameMap = new HashMap<String, VolumeInfo>();

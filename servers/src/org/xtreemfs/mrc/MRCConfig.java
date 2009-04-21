@@ -47,19 +47,13 @@ public class MRCConfig extends ServiceConfig {
     
     private String            dbDir;
     
-    private int               osdCheckInterval;
+    private String            dbLogDir;
     
-    private String            appendLogFileName;
+    private int               osdCheckInterval;
     
     private boolean           noatime;
     
     private boolean           noFsync;
-    
-    private int               dbCheckpointInterval;
-    
-    private int               idleIntervalForDBCheckpoint;
-    
-    private int               logFileSizeForDBCheckpoint;
     
     private String            policyDir;
     
@@ -85,7 +79,7 @@ public class MRCConfig extends ServiceConfig {
         
         this.directoryService = this.readRequiredInetAddr("dir_service.host", "dir_service.port");
         
-        this.appendLogFileName = this.readRequiredString("database.log");
+        this.dbLogDir = this.readRequiredString("database.log");
         
         this.dbDir = this.readRequiredString("database.dir");
         
@@ -96,13 +90,6 @@ public class MRCConfig extends ServiceConfig {
         this.remoteTimeSync = this.readRequiredInt("remote_time_sync");
         
         this.noFsync = this.readOptionalBoolean("no_fsync", false);
-        
-        this.dbCheckpointInterval = this.readRequiredInt("database.checkpoint.interval");
-        
-        this.idleIntervalForDBCheckpoint = this
-                .readRequiredInt("database.checkpoint.idle_interval");
-        
-        this.logFileSizeForDBCheckpoint = this.readRequiredInt("database.checkpoint.logfile_size");
         
         this.uuid = new ServiceUUID(this.readRequiredString("uuid"));
         
@@ -121,8 +108,8 @@ public class MRCConfig extends ServiceConfig {
         return directoryService;
     }
     
-    public String getAppendLogFileName() {
-        return appendLogFileName;
+    public String getDbLogDir() {
+        return dbLogDir;
     }
     
     public String getDbDir() {
@@ -143,18 +130,6 @@ public class MRCConfig extends ServiceConfig {
     
     public boolean isNoFsync() {
         return noFsync;
-    }
-    
-    public int getDBCheckpointInterval() {
-        return dbCheckpointInterval;
-    }
-    
-    public int getIdleIntervalForDBCheckpoint() {
-        return idleIntervalForDBCheckpoint;
-    }
-    
-    public int getLogFileSizeForDBCheckpoint() {
-        return logFileSizeForDBCheckpoint;
     }
     
     public ServiceUUID getUUID() {

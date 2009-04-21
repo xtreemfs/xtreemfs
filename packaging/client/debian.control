@@ -2,7 +2,7 @@ Source: xtreemfs-client
 Section: unknown
 Priority: optional
 Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
-Build-Depends: debhelper (>= 5), make (>=3.8.1), gcc (>=4), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), libxml2-dev (>= 2.6)
+Build-Depends: debhelper (>= 5), build-essential (>=11), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: xtreemfs-client
