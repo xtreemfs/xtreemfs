@@ -32,6 +32,9 @@ namespace org
         xtfs_mount()
           : Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
         {
+          addOption( XTFS_MOUNT_OPTION_CACHE_FILES, "--cache-files" );
+          cache_files = false;
+
           addOption( XTFS_MOUNT_OPTION_CACHE_METADATA, "--cache-metadata" );
           cache_metadata = false;
 
@@ -46,13 +49,14 @@ namespace org
       private:
         enum
         {
-          XTFS_MOUNT_OPTION_CACHE_METADATA = 10,
-          XTFS_MOUNT_OPTION_DIRECT_IO = 11,
-          XTFS_MOUNT_OPTION_FOREGROUND = 12,
-          XTFS_MOUNT_OPTION_FUSE_OPTION = 13
+          XTFS_MOUNT_OPTION_CACHE_FILES = 10,
+          XTFS_MOUNT_OPTION_CACHE_METADATA = 11,
+          XTFS_MOUNT_OPTION_DIRECT_IO = 12,
+          XTFS_MOUNT_OPTION_FOREGROUND = 13,
+          XTFS_MOUNT_OPTION_FUSE_OPTION = 14
         };
 
-        bool cache_metadata;
+        bool cache_files, cache_metadata;
         bool direct_io;
         std::auto_ptr<YIELD::URI> dir_uri;
         bool foreground;
@@ -95,11 +99,18 @@ namespace org
           // Translate exceptions into errno codes
           xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume, get_log().incRef() );
 
+          if ( cache_files )
+          {
+            xtreemfs_volume = new yieldfs::FileCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
+            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
+          }
+
           if ( cache_metadata )
           {
             xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef(), 5 );
             get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
           }
+
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
             xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
@@ -151,6 +162,7 @@ namespace org
         {
           switch ( id )
           {
+            case XTFS_MOUNT_OPTION_CACHE_FILES: cache_files = true; break;
             case XTFS_MOUNT_OPTION_CACHE_METADATA: cache_metadata = true; break;
             case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
 
