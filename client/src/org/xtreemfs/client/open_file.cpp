@@ -37,7 +37,7 @@ YIELD::auto_Object<YIELD::Stat> OpenFile::getattr()
   return get_parent_volume().getattr( get_path() );
 }
 
-bool OpenFile::getxattr( const std::string& name, std::string out_value )
+bool OpenFile::getxattr( const std::string& name, std::string& out_value )
 {
   return get_parent_volume().getxattr( get_path(), name, out_value );
 }
