@@ -26,6 +26,7 @@ package org.xtreemfs.osd.operations;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -95,7 +96,8 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, rq, new ReadObjectCallback() {
+        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
+                args.getOffset(),args.getLength(), rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
@@ -196,13 +198,9 @@ public final class ReadOperation extends OSDOperation {
     }
 
     private void readFinish(OSDRequest rq, readRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
-        final boolean isRangeRequested = (args.getOffset() > 0) || (args.getLength() < result.getStripeSize());
+        //final boolean isRangeRequested = (args.getOffset() > 0) || (args.getLength() < result.getStripeSize());
         ObjectData data;
-        if (isRangeRequested) {
-            data = result.getObjectData(isLastObjectOrEOF, args.getOffset(), args.getLength());
-        } else {
-            data = result.getObjectData(isLastObjectOrEOF);
-        }
+        data = result.getObjectData(isLastObjectOrEOF, args.getOffset(), args.getLength());
         master.objectSent();
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
@@ -244,6 +242,30 @@ public final class ReadOperation extends OSDOperation {
             }
         } else {
             // TODO: check implementation!
+            try {
+                //replication always delivers full objects...
+                if (args.getOffset() > 0 || args.getLength() < result.getStripeSize()) {
+                    //cut range from object data
+                    final int availData = result.getData().remaining();
+                    if (availData-args.getOffset() <= 0) {
+                        //offset is beyond available data
+                        BufferPool.free(result.getData());
+                        result.setData(BufferPool.allocate(0));
+                    } else {
+                        if (availData-args.getOffset() >= args.getLength()) {
+                            result.getData().range(args.getOffset(), args.getLength());
+                        } else {
+                            //less data than requested
+                            result.getData().range(args.getOffset(), availData-args.getOffset());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                rq.sendInternalServerError(ex);
+                return;
+            }
+
             if (args.getObject_number() == sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1))
                 // last object
                 readFinish(rq, args, result, true);

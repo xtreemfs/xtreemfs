@@ -52,7 +52,9 @@ public class SetupUtils {
     
     public static final String CERT_DIR    = "test/certs/";
     
-    public static boolean      SSL_ON      = true;
+    public static boolean      SSL_ON      = false;
+
+    public static boolean      CHECKSUMS_ON = false;
     
     public static final int    DEBUG_LEVEL = Logging.LEVEL_ERROR;
     
@@ -75,7 +77,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", "true");
+        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD1UUID().toString());
@@ -102,7 +104,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", "true");
+        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD2UUID().toString());
@@ -129,7 +131,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", "true");
+        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD3UUID().toString());
@@ -156,7 +158,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", "true");
+        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getOSD4UUID().toString());
@@ -187,7 +189,7 @@ public class SetupUtils {
             props.setProperty("ssl.trusted_certs.pw", "passphrase");
             props.setProperty("ssl.trusted_certs.container", "jks");
             props.setProperty("report_free_space", "true");
-            props.setProperty("checksums.enabled", "true");
+            props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
             props.setProperty("checksums.algorithm", "Adler32");
             props.setProperty("capability_secret", "secretPassphrase");
             props.setProperty("uuid", getOSDUUID("localhost", startPort).toString());

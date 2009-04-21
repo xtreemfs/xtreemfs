@@ -78,7 +78,8 @@ public final class LocalReadOperation extends OSDOperation {
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, rq,
+        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, (int)args.getOffset(),
+                (int)args.getLength(), rq,
                 new ReadObjectCallback() {
 
                     @Override

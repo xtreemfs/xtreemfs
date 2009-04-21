@@ -74,7 +74,8 @@ public final class CheckObjectOperation extends OSDOperation {
             return;
         }
         
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq, new ReadObjectCallback() {
+        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                0,-1, rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
@@ -172,7 +173,7 @@ public final class CheckObjectOperation extends OSDOperation {
     private void readFinish(OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
 
         ObjectData data;
-        data = result.getObjectData(isLastObjectOrEOF);
+        data = result.getObjectData(isLastObjectOrEOF,0,result.getStripeSize());
         if (data.getData() != null) {
             data.setZero_padding(data.getZero_padding()+data.getData().remaining());
             BufferPool.free(data.getData());

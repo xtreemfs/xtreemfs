@@ -157,6 +157,11 @@ public class HashStorageLayout extends StorageLayout {
 
     public ObjectInformation readObject(String fileId, long objNo, int version, long checksum,
         StripingPolicyImpl sp) throws IOException {
+        return readObject(fileId, objNo, version, checksum, sp, 0, -1);
+    }
+
+    public ObjectInformation readObject(String fileId, long objNo, int version, long checksum,
+        StripingPolicyImpl sp, int offset, int length) throws IOException {
         ReusableBuffer bbuf = null;
 
         String fileName = generateAbsolutObjectPath(fileId, objNo, version, checksum);
@@ -167,9 +172,25 @@ public class HashStorageLayout extends StorageLayout {
 
             RandomAccessFile f = new RandomAccessFile(fileName, "r");
 
-            if (f.length() > 0) {
+            final int flength = (int)f.length();
+
+            if (flength > 0) {
                 // read object data
-                bbuf = BufferPool.allocate((int) f.length());
+                if (length == -1)
+                    bbuf = BufferPool.allocate(flength);
+                else {
+                    if (flength-offset < 0) {
+                        //nothing to read here
+                        f.close();
+                        bbuf = BufferPool.allocate(0);
+                        return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));
+                    }
+                    if (flength-offset < length)
+                        bbuf = BufferPool.allocate(flength-offset);
+                    else
+                        bbuf = BufferPool.allocate(length);
+                }
+                f.getChannel().position(offset);
                 f.getChannel().read(bbuf.getBuffer());
                 bbuf.position(0);
                 f.close();

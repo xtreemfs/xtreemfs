@@ -150,6 +150,9 @@ public abstract class StorageLayout {
 	    long checksum, StripingPolicyImpl sp)
 	    throws IOException;
 
+    public abstract ObjectInformation readObject(String fileId, long objNo, int objVer,
+            long objChksm, StripingPolicyImpl sp, int offset, int length) throws IOException;
+
     /**
      * Determines whether the given data has a correct checksum.
      *

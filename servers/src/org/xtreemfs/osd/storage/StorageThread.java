@@ -74,6 +74,8 @@ public class StorageThread extends Stage {
 
     private OSDRequestDispatcher master;
 
+    private final boolean checksumsEnabled;
+
     public StorageThread(int id, OSDRequestDispatcher dispatcher,
             MetadataCache cache, StorageLayout layout) {
 
@@ -82,6 +84,7 @@ public class StorageThread extends Stage {
         this.cache = cache;
         this.layout = layout;
         this.master = dispatcher;
+        this.checksumsEnabled = master.getConfig().isUseChecksums();
     }
 
     @Override
@@ -207,9 +210,13 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final long objNo = (Long) rq.getArgs()[1];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
+            final int offset = (Integer) rq.getArgs()[3];
+            final int length = (Integer) rq.getArgs()[4];
 
             final FileInfo fi = layout.getFileInfo(sp, fileId);
             //final boolean rangeRequested = (offset > 0) || (length < stripeSize);
+
+            final boolean fullRead = (length == -1) || length == sp.getStripeSizeForObject(objNo);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "READ: " + fileId + "-" + objNo + ".");
@@ -226,14 +233,36 @@ public class StorageThread extends Stage {
             }
 
             
-            ObjectInformation obj = layout.readObject(fileId, objNo, objVer, objChksm, sp);
+            ObjectInformation obj = null;
+            if (fullRead || checksumsEnabled) {
+                obj = layout.readObject(fileId, objNo, objVer, objChksm, sp);
+                if (checksumsEnabled && obj.getData() != null) {
+                    obj.setChecksumInvalidOnOSD(!layout.checkObject(obj.getData(), objChksm));
+                    obj.getData().position(0);
+                }
+                if (!fullRead && obj.getData() != null) {
+                    //cut range from object data
+                    final int availData = obj.getData().remaining();
+                    if (availData-offset <= 0) {
+                        //offset is beyond available data
+                        BufferPool.free(obj.getData());
+                        obj.setData(BufferPool.allocate(0));
+                    } else {
+                        if (availData-offset >= length) {
+                            obj.getData().range(offset, length);
+                        } else {
+                            //less data than requested
+                            obj.getData().range(offset, availData-offset);
+                        }
+                    }
+                }
+            } else {
+                obj = layout.readObject(fileId, objNo, objVer, objChksm, sp, offset, length);
+            }
             obj.setLastLocalObjectNo(fi.getLastObjectNumber());
             obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
 
-            if (obj.getData() != null) {
-                obj.setChecksumInvalidOnOSD(!layout.checkObject(obj.getData(), objChksm));
-                obj.getData().position(0);
-            }
+            
 
             cback.readComplete(obj, null);
         } catch (IOException ex) {
@@ -316,7 +345,7 @@ public class StorageThread extends Stage {
 
                 if (rangeRequested) {
                     ObjectInformation obj = layout.readObject(fileId, objNo, currentV, oldChecksum, sp);
-                    ObjectData oldObject = obj.getObjectData(fi.getLastObjectNumber()==objNo);
+                    ObjectData oldObject = obj.getObjectData(fi.getLastObjectNumber()==objNo,0,sp.getStripeSizeForObject(objNo));
                     if (oldObject.getData() == null) {
                         if (oldObject.getZero_padding() > 0) {
                             //create a zero padded object

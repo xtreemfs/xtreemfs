@@ -64,8 +64,8 @@ public class StorageStage extends Stage {
     }
 
     public void readObject(String fileId, long objNo, StripingPolicyImpl sp,
-            OSDRequest request, ReadObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_READ_OBJECT, new Object[]{fileId,objNo,sp}, request, listener);
+            int offset, int length, OSDRequest request, ReadObjectCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_READ_OBJECT, new Object[]{fileId,objNo,sp,offset,length}, request, listener);
     }
 
     public static interface ReadObjectCallback {

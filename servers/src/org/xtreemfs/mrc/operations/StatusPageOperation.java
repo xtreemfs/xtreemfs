@@ -85,10 +85,10 @@ public class StatusPageOperation extends MRCOperation {
         StringBuffer sb = null;
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream(
-                "/org/xtreemfs/new_mrc/templates/status.html");
+                "/org/xtreemfs/mrc/templates/status.html");
             if (is == null)
                 is = this.getClass().getClassLoader().getResourceAsStream(
-                    "org/xtreemfs/new_mrc/templates/status.html");
+                    "org/xtreemfs/mrc/templates/status.html");
             if (is == null)
                 is = this.getClass().getResourceAsStream("../templates/status.html");
             BufferedReader br = new BufferedReader(new InputStreamReader(is));

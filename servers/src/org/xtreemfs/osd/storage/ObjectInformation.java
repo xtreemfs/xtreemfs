@@ -71,7 +71,7 @@ public class ObjectInformation {
         PADDING_OBJECT
     };
 
-    private final ReusableBuffer data;
+    private ReusableBuffer data;
 
     private final ObjectStatus   status;
 
@@ -89,7 +89,7 @@ public class ObjectInformation {
         this.stripeSize = stripeSize;
     }
 
-    public ObjectData getObjectData(boolean isLastObject) {
+    public ObjectData getObjectData(boolean isLastObject, int offset, int length) {
         if (isLastObject) {
             switch (status) {
                 case EXISTS: return new ObjectData(data, 0, 0, checksumInvalidOnOSD);
@@ -99,12 +99,13 @@ public class ObjectInformation {
         } else {
             switch (status) {
                 case EXISTS: {
-                    final int paddingZeros = getStripeSize()-data.capacity();
+                    final int paddingZeros = length-data.capacity();
+                    assert(paddingZeros >= 0) : "offset: "+offset+" length: "+length+" capacity: "+data.capacity();
                     return new ObjectData(data,0,paddingZeros,checksumInvalidOnOSD);
                 }
                 case DOES_NOT_EXIST:
                 case PADDING_OBJECT: {
-                    return new ObjectData(data, 0, getStripeSize(), checksumInvalidOnOSD);
+                    return new ObjectData(data, 0, length, checksumInvalidOnOSD);
                 }
             }
         }
@@ -112,11 +113,14 @@ public class ObjectInformation {
         return null;
     }
 
-    public ObjectData getObjectData(boolean isLastObject, int offset, int length) {
+    /*public ObjectData getObjectData(boolean isLastObject, int offset, int length) {
         if (offset+length > getStripeSize())
             throw new IllegalArgumentException("offset+length must be less than the stripe size");
 
-        ObjectData tmp = getObjectData(isLastObject);
+        ObjectData tmp = getObjectData(isLastObject,length);
+
+
+
 
         final int dataLength = tmp.getZero_padding() + ((tmp.getData() != null) ? tmp.getData().remaining() : 0);
 
@@ -165,13 +169,17 @@ public class ObjectInformation {
         return tmp;
 
 
-    }
+    }*/
     
         /**
      * @return the data
      */
     public ReusableBuffer getData() {
         return data;
+    }
+
+    public void setData(ReusableBuffer data) {
+        this.data = data;
     }
 
     /**

@@ -178,7 +178,13 @@ public class TortureXtreemFS {
                     //do writes
                     byte[] readBuffer = new byte[recsize];
                     for (int rec = 0; rec < numRecs;rec++) {
-                        raf.read(readBuffer, 0, recsize);
+                        final int bytesRead = raf.read(readBuffer, 0, recsize);
+                        if (bytesRead != recsize) {
+                            System.out.println("PREMATURE END-OF-FILE AT "+rec*recsize);
+                            System.out.println("expected "+recsize+" bytes");
+                            System.out.println("got "+bytesRead+" bytes");
+                            System.exit(1);
+                        }
                         for (int i = 0; i < recsize; i++) {
                             if (readBuffer[i] != (byte)((i%26) + 65)) {
                                 System.out.println("INVALID CONTENT AT "+(rec*recsize+i));
