@@ -45,7 +45,7 @@ public class XtreemOSAuthProvider implements AuthenticationProvider {
 
     private NullAuthProvider nullAuth;
 
-    public UserCredentials getEffectiveCredentials(String authHeader, ChannelIO channel) throws AuthenticationException {
+    public UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx, ChannelIO channel) throws AuthenticationException {
         //use cached info!
         assert(nullAuth != null);
         if (channel.getAttachment() != null) {
@@ -54,7 +54,7 @@ public class XtreemOSAuthProvider implements AuthenticationProvider {
             final Boolean serviceCert = (Boolean)cache[0];
             if (serviceCert) {
                 Logging.logMessage(Logging.LEVEL_DEBUG,this,"service cert...");
-                return nullAuth.getEffectiveCredentials(authHeader, channel);
+                return nullAuth.getEffectiveCredentials(ctx, channel);
             } else {
                 Logging.logMessage(Logging.LEVEL_DEBUG,this,"using cached creds: "+cache[1]);
                 return (UserCredentials)cache[1];
@@ -70,7 +70,7 @@ public class XtreemOSAuthProvider implements AuthenticationProvider {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "XOS-Service cert present");
                     channel.setAttachment(new Object[]{new Boolean(true)});
                     //use NullAuth in this case to parse JSON header
-                    return nullAuth.getEffectiveCredentials(authHeader, null);
+                    return nullAuth.getEffectiveCredentials(ctx, null);
                 } else {
 
                     final String globalUID = cp.getVOAttributeValue((X509Certificate) certs[0], VO.Attribute.GlobalUserID);
