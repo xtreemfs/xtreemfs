@@ -111,10 +111,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
               if ( oncrpc_req.get() == NULL )
                 oncrpc_req = new YIELD::ONCRPCRequest( YIELD::Object::incRef( req ), object_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, &user_credentials );
 
-              if ( operation_timeout_ms == static_cast<uint64_t>( -1 ) || ssl_context != NULL )
-                conn->setBlocking();
-              else
-                conn->setBlocking();
+              conn->setBlockingMode( operation_timeout_ms == static_cast<uint64_t>( -1 ) );
 
               if ( !have_written )
               {
@@ -134,7 +131,8 @@ void Proxy::handleEvent( YIELD::Event& ev )
                 }
               }
 
-              if ( YIELD::Socket::WOULDBLOCK() )
+              bool conn_want_read = conn->want_read(), conn_want_write = conn->want_write();
+              if ( conn_want_read || conn_want_write )
               {
 #ifdef _DEBUG
                 if ( remaining_operation_timeout_ms == static_cast<uint64_t>( -1 ) )
@@ -144,7 +142,9 @@ void Proxy::handleEvent( YIELD::Event& ev )
                 if ( remaining_operation_timeout_ms > 0 )
                 {
                   double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
+                  fd_event_queue.toggleSocketEvent( *conn, conn, conn_want_read, conn_want_write );
                   YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
+                  fd_event_queue.toggleSocketEvent( *conn, conn, false, false );                  
                   if ( fd_event )
                   {
                     if ( fd_event->error_code == 0 )
@@ -158,7 +158,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                   }
                   else
                   {
-                    if ( log )
+                    if ( log != NULL )
                       log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
 
                     clearConnectionState();
@@ -167,7 +167,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                 }
                 else
                 {
-                  if ( log )
+                  if ( log != NULL )
                     log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": " << ev.get_type_name() << " timed out.";
 
                   clearConnectionState();
@@ -176,7 +176,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
               }
               else
               {
-                if ( log )
+                if ( log != NULL )
                   log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": lost connection while trying to send " << ev.get_type_name() << ".";
 
                 reconnect_tries_left = reconnect( reconnect_tries_left );
@@ -217,33 +217,23 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
   {
     if ( conn == NULL ) // This the first connect
     {
-      if ( log )
+      if ( log != NULL )
         log->getStream( YIELD::Log::LOG_NOTICE ) << getEventHandlerName() << ": connecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
     }
     else // This is a reconnect
     {
       clearConnectionState();
-      if ( log )
+      if ( log != NULL )
         log->getStream( YIELD::Log::LOG_WARNING ) << getEventHandlerName() << ": reconnecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
     }
 
     // Create the conn object based on the URI type
     if ( ssl_context == NULL )
-    {
-      if ( log != NULL )
-        conn = new YIELD::TCPSocket( log->incRef() );
-      else
-        conn = new YIELD::TCPSocket;
-    }
+      conn = new YIELD::TCPSocket( YIELD::Object::incRef( log ) );
     else
-    {
-      if ( log != NULL )
-        conn = new YIELD::SSLSocket( ssl_context->incRef(), log->incRef() );
-      else
-        conn = new YIELD::SSLSocket( ssl_context->incRef() );
-    }
+      conn = new YIELD::SSLSocket( ssl_context->incRef(), YIELD::Object::incRef( log ) );
 
-    conn->setNonBlocking();
+    conn->setBlockingMode( false ); // So we can do connects() with timeouts shorter than the default OS timeout
 
     // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
     fd_event_queue.attachSocket( *conn, conn, false, false ); // Attach without read or write notifications enabled
@@ -258,21 +248,20 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully connected to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
 
-        if ( ssl_context != NULL )
-          conn->setBlocking();
-
         return reconnect_tries_left;
       }
       else if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || --reconnect_tries_left > 0 )
       {
-        if ( YIELD::Socket::WOULDBLOCK() )
+        if ( conn->want_write() )
         {
           fd_event_queue.toggleSocketEvent( *conn, conn, false, true ); // Write readiness = the connect() operation is complete
           fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
+          fd_event_queue.toggleSocketEvent( *conn, conn, false, false );
         }
         else if ( log != NULL )
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed.";
+          YIELD::PlatformException platform_exc;
+          log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed (error_code = " << platform_exc.get_error_code() << ", what = " << platform_exc.what() << ")";
           YIELD::Thread::sleep( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
         }
       }
