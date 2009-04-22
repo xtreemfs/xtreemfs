@@ -164,6 +164,11 @@ public class HashStorageLayout extends StorageLayout {
         StripingPolicyImpl sp, int offset, int length) throws IOException {
         ReusableBuffer bbuf = null;
 
+        if (length == -1) {
+            assert(offset == 0) : "if length is -1 offset must be 0 but is "+offset;
+            length = sp.getStripeSizeForObject(objNo);
+        }
+
         String fileName = generateAbsolutObjectPath(fileId, objNo, version, checksum);
 
         File file = new File(fileName);
@@ -174,31 +179,35 @@ public class HashStorageLayout extends StorageLayout {
 
             final int flength = (int)f.length();
 
-            if (flength > 0) {
-                // read object data
-                if (length == -1)
-                    bbuf = BufferPool.allocate(flength);
-                else {
-                    if (flength-offset <= 0) {
-                        //nothing to read here
-                        f.close();
-                        bbuf = BufferPool.allocate(0);
-                        return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));
-                    }
-                    if (flength-offset < length)
+            try {
+                if (flength == 0) {
+                    return new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,sp.getStripeSizeForObject(objNo));
+                } else if (flength <= offset) {
+                    bbuf = BufferPool.allocate(0);
+                    return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));
+                } else {
+                    // read object data
+                    int lastoffset = offset+length;
+                    assert(lastoffset <= sp.getStripeSizeForObject(objNo));
+
+                    if (lastoffset > flength) {
+                        assert(flength-offset > 0);
                         bbuf = BufferPool.allocate(flength-offset);
-                    else
+                    } else {
                         bbuf = BufferPool.allocate(length);
+                    }
+
+                    f.getChannel().position(offset);
+                    f.getChannel().read(bbuf.getBuffer());
+
+                    assert(!bbuf.hasRemaining());
+                    assert(bbuf.remaining() <= length);
+                    bbuf.position(0);
+                    f.close();
+                    return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));
                 }
-                f.getChannel().position(offset);
-                f.getChannel().read(bbuf.getBuffer());
-                assert(!bbuf.hasRemaining());
-                bbuf.position(0);
+            } finally {
                 f.close();
-                return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf,sp.getStripeSizeForObject(objNo));
-            } else {
-                f.close();
-                return new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,sp.getStripeSizeForObject(objNo));
             }
 
             

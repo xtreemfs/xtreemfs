@@ -127,6 +127,77 @@ public class OSDRangeReads extends TestCase {
         testEnv.shutdown();
         System.out.println("shutdown complete");
     }
+
+    public void testRandomRanges() throws Exception {
+        System.out.println("TEST testRandomRanges");
+        //write object
+        ReusableBuffer buf = BufferPool.allocate(2048);
+        for (int i = 0; i < 2048; i++)
+            buf.put((byte)((i%26) + 65));
+        buf.flip();
+        ObjectData data = new ObjectData(buf, 0, 0, false);
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(2048, resp.getNew_file_size().get(0).getSize_in_bytes());
+
+        //do random reads
+        for (int round = 0; round < 200; round++) {
+            final int offset = (int)(Math.random()*2048.0);
+            final int size = (int)(Math.random()*(2048.0-((double)offset)));
+            System.out.println("offset: "+offset+" size: "+size);
+            assert (offset+size <= 2048);
+            RPCResponse<ObjectData> rr = osdClient.read(serverID.getAddress(), fileId, fcred, 0, 0, offset, size);
+            data = rr.get();
+            assertEquals(size,data.getData().remaining());
+            for (int i = 0; i < size; i++) {
+                assertEquals((byte)(((i+offset)%26) + 65),data.getData().get());
+            }
+            BufferPool.free(data.getData());
+            rr.freeBuffers();
+        }
+    }
+
+    public void testRandomRangesWithEOF() throws Exception {
+        System.out.println("TEST testRandomRangesWithEOF");
+        //write object
+        ReusableBuffer buf = BufferPool.allocate(1024);
+        for (int i = 0; i < 1024; i++)
+            buf.put((byte)((i%26) + 65));
+        buf.flip();
+        ObjectData data = new ObjectData(buf, 0, 0, false);
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), fileId, fcred, 0, 0, 0, 0, data);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertEquals(1,resp.getNew_file_size().size());
+        assertEquals(1024, resp.getNew_file_size().get(0).getSize_in_bytes());
+
+        //do random reads
+        for (int round = 0; round < 200; round++) {
+            final int offset = (int)(Math.random()*2048.0);
+            final int size = (int)(Math.random()*(2048.0-((double)offset)));
+            System.out.println("offset: "+offset+" size: "+size);
+            assert (offset+size <= 2048);
+            RPCResponse<ObjectData> rr = osdClient.read(serverID.getAddress(), fileId, fcred, 0, 0, offset, size);
+            data = rr.get();
+            if (offset+size < 1024) {
+                assertEquals(size,data.getData().remaining());
+            } else {
+                if (offset >= 1024) {
+                    assertEquals(0,data.getData().remaining());
+                } else {
+                    assertEquals(1024-offset, data.getData().remaining());
+                }
+            }
+            final int remain = data.getData().remaining();
+            for (int i = 0; i < remain; i++) {
+                assertEquals((byte)(((i+offset)%26) + 65),data.getData().get());
+            }
+            BufferPool.free(data.getData());
+            rr.freeBuffers();
+        }
+    }
     
     
     public void testRangeReads() throws Exception {

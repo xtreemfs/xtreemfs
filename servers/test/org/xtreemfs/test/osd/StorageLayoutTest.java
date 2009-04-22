@@ -112,6 +112,14 @@ public class StorageLayoutTest extends TestCase {
         }
         BufferPool.free(oinfo.getData());
 
+        //range test
+        oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 32,1);
+        assertEquals(1, oinfo.getData().capacity());
+        for (int i = 32; i < 33; i++) {
+            assertEquals((byte) (48 + i), oinfo.getData().get());
+        }
+        BufferPool.free(oinfo.getData());
+
         oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 32,64);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 32; i < 64; i++) {
