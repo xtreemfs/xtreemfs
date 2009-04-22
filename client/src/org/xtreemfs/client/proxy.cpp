@@ -131,7 +131,7 @@ void Proxy::handleEvent( YIELD::Event& ev )
                 }
               }
 
-              bool conn_want_read = conn->want_read(), conn_want_write = conn->want_write();
+              bool conn_want_read = conn->want_read(), conn_want_write = conn_want_read ? false : conn->want_write();
               if ( conn_want_read || conn_want_write )
               {
 #ifdef _DEBUG
