@@ -156,9 +156,6 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
 
 void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
 {
-  out_uid = 0;
-  out_gid = 0;
-
   uint32_t user_id_hash = YIELD::string_hash( user_id.c_str() );
   uint32_t group_id_hash = YIELD::string_hash( group_id.c_str() );
 
@@ -174,13 +171,17 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
     }
   }
 
+  bool have_passwd = false;
   if ( get_passwd_from_user_credentials )
   {
     int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
-    if ( get_passwd_from_user_credentials_ret < 0 )
-      throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
+    if ( get_passwd_from_user_credentials_ret >= 0 )
+      have_passwd = true;
+//    else    
+//      throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
   }
-  else
+
+  if ( !have_passwd )
   {
 #ifdef _WIN32
     YIELD::DebugBreak();
