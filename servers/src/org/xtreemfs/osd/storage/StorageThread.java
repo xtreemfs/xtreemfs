@@ -315,10 +315,10 @@ public class StorageThread extends Stage {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "WRITE: " + fileId + "-" + objNo + "." + " last objNo=" + fi.getLastObjectNumber()+" dataSize="+dataLength+" at offset="+offset);
             }
-
-            if (offset + data.capacity() > stripeSize) {
+            final int dataCapacity = data.capacity();
+            if (offset + dataCapacity > stripeSize) {
                 BufferPool.free(data);
-                cback.writeComplete(null, new OSDException(ErrorCodes.INVALID_PARAMS, "offset+data.length must be <= stripe size", ""));
+                cback.writeComplete(null, new OSDException(ErrorCodes.INVALID_PARAMS, "offset+data.length must be <= stripe size (offset="+offset+" data.length="+dataCapacity+" stripe size="+stripeSize+")", ""));
                 return;
             }
 

@@ -26,6 +26,7 @@
 package org.xtreemfs.sandbox.tests;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,6 +47,7 @@ import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -151,64 +153,12 @@ public class TortureXtreemFS {
 
             for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                 for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize *2) {
-                    final int numRecs = fsize/recsize;
-                    if (numRecs == 0)
+                    if (testSequential(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
                         continue;
-                    byte[] sendBuffer = new byte[recsize];
-                    for (int i = 0; i < recsize; i++) {
-                        sendBuffer[i] = (byte)((i%26) + 65);
                     }
-
-                    long tStart = System.currentTimeMillis();
-                    RandomAccessFile raf = new RandomAccessFile("rw",mrcAddr,volname+path,rpcClient,"root",grs);
-                    long tOpen = System.currentTimeMillis();
-
-                    long bytesWritten = 0;
-                    //do writes
-                    for (int rec = 0; rec < numRecs;rec++) {
-                        bytesWritten += raf.write(sendBuffer, 0, recsize);
+                    if (testRandom(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
+                        continue;
                     }
-                    final long tWrite = System.currentTimeMillis();
-                    assert(bytesWritten == numRecs*recsize);
-
-                    raf.flush();
-                    raf.seek(0);
-                    final long tFlush = System.currentTimeMillis();
-
-                    //do writes
-                    byte[] readBuffer = new byte[recsize];
-                    for (int rec = 0; rec < numRecs;rec++) {
-                        final int bytesRead = raf.read(readBuffer, 0, recsize);
-                        if (bytesRead != recsize) {
-                            System.out.println("PREMATURE END-OF-FILE AT "+rec*recsize);
-                            System.out.println("expected "+recsize+" bytes");
-                            System.out.println("got "+bytesRead+" bytes");
-                            System.exit(1);
-                        }
-                        for (int i = 0; i < recsize; i++) {
-                            if (readBuffer[i] != (byte)((i%26) + 65)) {
-                                System.out.println("INVALID CONTENT AT "+(rec*recsize+i));
-                                System.out.println("expected:  "+(byte)((i%26) + 65));
-                                System.out.println("got     : "+readBuffer[i]);
-                                System.exit(1);
-                            }
-                        }
-                    }
-                    final long tRead = System.currentTimeMillis();
-
-                    raf.delete();
-
-                    final long tDelete = System.currentTimeMillis();
-
-                    double writeRate = ( (double) fsize) / 1024.0 / ( ((double)(tWrite-tOpen+1)) / 1000.0 );
-
-                    double readRate = ( (double) fsize) / 1024.0 / ( ((double)(tRead-tFlush+1)) / 1000.0 );
-
-                    System.out.format("fs: %8d   bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n",
-                            fsize/1024,recsize,(tWrite-tOpen),writeRate,(tRead-tFlush),
-                            readRate);
-
-
                 }
             }
 
@@ -221,6 +171,114 @@ public class TortureXtreemFS {
         }
 
     }
+
+    private static boolean testSequential(int fsize, int recsize, InetSocketAddress mrcAddr, final String volname, final String path, RPCNIOSocketClient rpcClient, List<String> grs) throws ONCRPCException, InterruptedException, Exception, IOException {
+        final int numRecs = fsize / recsize;
+        if (numRecs == 0) {
+            return true;
+        }
+        byte[] sendBuffer = new byte[recsize];
+        for (int i = 0; i < recsize; i++) {
+            sendBuffer[i] = (byte) ((i%26) + 65);
+        }
+        long tStart = System.currentTimeMillis();
+        RandomAccessFile raf = new RandomAccessFile("rw", mrcAddr, volname + path, rpcClient, "root", grs);
+        long tOpen = System.currentTimeMillis();
+        long bytesWritten = 0;
+        //do writes
+        for (int rec = 0; rec < numRecs; rec++) {
+            bytesWritten += raf.write(sendBuffer, 0, recsize);
+        }
+        final long tWrite = System.currentTimeMillis();
+        assert (bytesWritten == numRecs * recsize);
+        raf.flush();
+        raf.seek(0);
+        final long tFlush = System.currentTimeMillis();
+        //do writes
+        byte[] readBuffer = new byte[recsize];
+        for (int rec = 0; rec < numRecs; rec++) {
+            final int bytesRead = raf.read(readBuffer, 0, recsize);
+            if (bytesRead != recsize) {
+                System.out.println("PREMATURE END-OF-FILE AT " + rec * recsize);
+                System.out.println("expected " + recsize + " bytes");
+                System.out.println("got " + bytesRead + " bytes");
+                System.exit(1);
+            }
+            for (int i = 0; i < recsize; i++) {
+                if (readBuffer[i] != (byte) ((i%26) + 65)) {
+                    System.out.println("INVALID CONTENT AT " + (rec * recsize + i));
+                    System.out.println("expected:  " + (byte) ((i%26) + 65));
+                    System.out.println("got     : " + readBuffer[i]);
+                    System.exit(1);
+                }
+            }
+        }
+        final long tRead = System.currentTimeMillis();
+        raf.delete();
+        final long tDelete = System.currentTimeMillis();
+        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite-tOpen+1)) / 1000.0);
+        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead-tFlush+1)) / 1000.0);
+        System.out.format("fs: %8d   bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", fsize / 1024, recsize, tWrite - tOpen, writeRate, tRead - tFlush, readRate);
+        return false;
+    }
+
+    private static boolean testRandom(int fsize, int recsize, InetSocketAddress mrcAddr, final String volname, final String path, RPCNIOSocketClient rpcClient, List<String> grs) throws ONCRPCException, InterruptedException, Exception, IOException {
+        final int numRecs = fsize / recsize;
+        int[] skips = new int[numRecs];
+        if (numRecs == 0) {
+            return true;
+        }
+        byte[] sendBuffer = new byte[recsize];
+        for (int i = 0; i < recsize; i++) {
+            sendBuffer[i] = (byte) ((i%26) + 65);
+        }
+        long tStart = System.currentTimeMillis();
+        RandomAccessFile raf = new RandomAccessFile("rw", mrcAddr, volname + path, rpcClient, "root", grs);
+        long tOpen = System.currentTimeMillis();
+        long bytesWritten = 0;
+        //do writes
+        for (int rec = 0; rec < numRecs; rec++) {
+            skips[rec] = (int) (Math.random()*((double)recsize));
+            raf.seek(raf.getFilePointer()+skips[rec]);
+            bytesWritten += raf.write(sendBuffer, 0, recsize);
+        }
+        final long tWrite = System.currentTimeMillis();
+        if (bytesWritten != numRecs * recsize) {
+            System.out.println("not all data was written!");
+            System.exit(1);
+        }
+        raf.flush();
+        raf.seek(0);
+        final long tFlush = System.currentTimeMillis();
+        //do writes
+        byte[] readBuffer = new byte[recsize];
+        for (int rec = 0; rec < numRecs; rec++) {
+            raf.seek(raf.getFilePointer()+skips[rec]);
+            final int bytesRead = raf.read(readBuffer, 0, recsize);
+            if (bytesRead != recsize) {
+                System.out.println("PREMATURE END-OF-FILE AT " + rec * recsize);
+                System.out.println("expected " + recsize + " bytes");
+                System.out.println("got " + bytesRead + " bytes");
+                System.exit(1);
+            }
+            for (int i = 0; i < recsize; i++) {
+                if (readBuffer[i] != (byte) ((i%26) + 65)) {
+                    System.out.println("INVALID CONTENT AT " + (rec * recsize + i));
+                    System.out.println("expected:  " + (byte) ((i%26) + 65));
+                    System.out.println("got     : " + readBuffer[i]);
+                    System.exit(1);
+                }
+            }
+        }
+        final long tRead = System.currentTimeMillis();
+        raf.delete();
+        final long tDelete = System.currentTimeMillis();
+        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite-tOpen+1)) / 1000.0);
+        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead-tFlush+1)) / 1000.0);
+        System.out.format("rnd gaps       bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", recsize, tWrite - tOpen, writeRate, tRead - tFlush, readRate);
+        return false;
+    }
+
 
     private static void usage() {
         System.out.println("usage: torture [options] <dir_url> <mrc_url>");

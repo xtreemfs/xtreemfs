@@ -129,7 +129,7 @@ class ByteMapperRAID0 implements ByteMapper {
 
         int bytesInLastObject = -1;
         if (firstObject == lastObject) {
-            bytesInLastObject = length;
+            bytesInLastObject = length-offsetInFirstObject;
         } else {
             if (((filePosition + length) % this.stripeSize) == 0) {
                 bytesInLastObject = this.stripeSize;
@@ -145,8 +145,10 @@ class ByteMapperRAID0 implements ByteMapper {
             int bytesToWrite = this.stripeSize;
             int objOffset = 0;
 
-            if (obj == firstObject)
+            if (obj == firstObject) {
+                bytesToWrite = this.stripeSize-offsetInFirstObject;
                 objOffset = offsetInFirstObject;
+            }
             if (obj == lastObject)
                 bytesToWrite = bytesInLastObject;
 
