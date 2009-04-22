@@ -141,15 +141,15 @@ void Proxy::handleEvent( YIELD::Event& ev )
 
                 if ( remaining_operation_timeout_ms > 0 )
                 {
-                  double start_epoch_time_ms = YIELD::Time::getCurrentUnixTimeMS();
+                  double start_unix_time_ms = YIELD::Time::getCurrentUnixTimeMS();
                   fd_event_queue.toggleSocketEvent( *conn, conn, conn_want_read, conn_want_write );
                   YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( remaining_operation_timeout_ms ) * NS_IN_MS ) );
-                  fd_event_queue.toggleSocketEvent( *conn, conn, false, false );                  
+                  fd_event_queue.toggleSocketEvent( *conn, conn, false, false );
                   if ( fd_event )
                   {
                     if ( fd_event->error_code == 0 )
-                      remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentUnixTimeMS() - start_epoch_time_ms ), remaining_operation_timeout_ms );
-                    else
+                      remaining_operation_timeout_ms -= std::min( static_cast<uint64_t>( YIELD::Time::getCurrentUnixTimeMS() - start_unix_time_ms ), remaining_operation_timeout_ms );
+                    else if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || reconnect_tries_left > 0 )
                     {
                       reconnect_tries_left = reconnect( reconnect_tries_left );
                       have_written = false;
@@ -177,11 +177,18 @@ void Proxy::handleEvent( YIELD::Event& ev )
               else
               {
                 if ( log != NULL )
-                  log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": lost connection while trying to send " << ev.get_type_name() << ".";
+                {
+                  YIELD::PlatformException platform_exc;
+                  log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": lost connection while trying to send " << ev.get_type_name() << " (error_code = " << platform_exc.get_error_code() << ", what = " << platform_exc.what() << ").";
+                }
 
-                reconnect_tries_left = reconnect( reconnect_tries_left );
-                have_written = false;
-                oncrpc_req.reset( NULL );
+                if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || reconnect_tries_left > 0 )
+                {
+                  YIELD::Thread::sleep( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
+                  reconnect_tries_left = reconnect( reconnect_tries_left );
+                  have_written = false;
+                  oncrpc_req.reset( NULL );
+                }
               }
             }
           }
@@ -213,70 +220,84 @@ void Proxy::clearConnectionState()
 
 uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
 {
-  if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || reconnect_tries_left > 0 )
+  if ( conn == NULL ) // This the first connect
   {
-    if ( conn == NULL ) // This the first connect
-    {
-      if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_NOTICE ) << getEventHandlerName() << ": connecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
-    }
-    else // This is a reconnect
-    {
-      clearConnectionState();
-      if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_WARNING ) << getEventHandlerName() << ": reconnecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
-    }
+    if ( log != NULL )
+      log->getStream( YIELD::Log::LOG_NOTICE ) << getEventHandlerName() << ": connecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
+  }
+  else // This is a reconnect
+  {
+    clearConnectionState();
+    if ( log != NULL )
+      log->getStream( YIELD::Log::LOG_WARNING ) << getEventHandlerName() << ": reconnecting to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
+  }
 
-    // Create the conn object based on the URI type
-    if ( ssl_context == NULL )
-      conn = new YIELD::TCPSocket( YIELD::Object::incRef( log ) );
+  // Create the conn object based on the URI type
+  if ( ssl_context == NULL )
+    conn = new YIELD::TCPSocket( YIELD::Object::incRef( log ) );
+  else
+    conn = new YIELD::SSLSocket( ssl_context->incRef(), YIELD::Object::incRef( log ) );
+
+  conn->setBlockingMode( false ); // So we can do connects() with timeouts shorter than the default OS timeout
+
+  // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
+  fd_event_queue.attachSocket( *conn, conn, false, false ); // Attach without read or write notifications enabled
+
+  for ( ;; )
+  {
+    if ( log != NULL )
+      log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": trying to connect to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
+
+    if ( conn->connect( peer_sockaddr ) )
+    {
+      if ( log != NULL )
+        log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully connected to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
+
+      return reconnect_tries_left;
+    }
+    else if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || --reconnect_tries_left > 0 )
+    {
+#ifdef _WIN32
+      if ( ::WSAGetLastError() == EINPROGRESS )
+#else
+      if ( errno == EINPROGRESS )
+#endif
+      {
+        fd_event_queue.toggleSocketEvent( *conn, conn, false, true ); // Write readiness = the connect() operation is complete
+        uint64_t start_unix_time_ns = YIELD::Time::getCurrentUnixTimeNS();
+        YIELD::FDEvent* fd_event = static_cast<YIELD::FDEvent*>( fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS ) );
+        fd_event_queue.toggleSocketEvent( *conn, conn, false, false );
+        if ( fd_event == NULL )
+        {
+          uint64_t elapsed_time_ns = YIELD::Time::getCurrentUnixTimeNS() - start_unix_time_ns;
+          if ( elapsed_time_ns < static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS )
+          {
+            // Sometimes select() does not wait for the full time out
+            // If we did not get a notification, sleep for the rest of the time out
+            uint64_t sleep_time_ns = elapsed_time_ns - static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS;
+            if ( sleep_time_ns > 2 * NS_IN_MS )
+              YIELD::Thread::sleep( sleep_time_ns );
+          }
+        }
+      }
+      else if ( log != NULL )
+      {
+        YIELD::PlatformException platform_exc;
+        log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed (error_code = " << platform_exc.get_error_code() << ", what = " << platform_exc.what() << ").";
+        YIELD::Thread::sleep( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
+      }
+    }
     else
-      conn = new YIELD::SSLSocket( ssl_context->incRef(), YIELD::Object::incRef( log ) );
-
-    conn->setBlockingMode( false ); // So we can do connects() with timeouts shorter than the default OS timeout
-
-    // Attach the socket to the fd_event_queue even if we're doing a blocking connect, in case a later read/write is non-blocking
-    fd_event_queue.attachSocket( *conn, conn, false, false ); // Attach without read or write notifications enabled
-
-    for ( ;; )
-    {
-      if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": trying to connect to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
-
-      if ( conn->connect( peer_sockaddr ) )
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully connected to " << this->uri.get_host() << ":" << this->uri.get_port() << ".";
-
-        return reconnect_tries_left;
-      }
-      else if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || --reconnect_tries_left > 0 )
-      {
-        if ( conn->want_write() )
-        {
-          fd_event_queue.toggleSocketEvent( *conn, conn, false, true ); // Write readiness = the connect() operation is complete
-          fd_event_queue.timed_dequeue( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
-          fd_event_queue.toggleSocketEvent( *conn, conn, false, false );
-        }
-        else if ( log != NULL )
-        {
-          YIELD::PlatformException platform_exc;
-          log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connect() to " << this->uri.get_host() << ":" << this->uri.get_port() << " failed (error_code = " << platform_exc.get_error_code() << ", what = " << platform_exc.what() << ")";
-          YIELD::Thread::sleep( static_cast<YIELD::timeout_ns_t>( ORG_XTREEMFS_CLIENT_PROXY_CONNECTION_TIMEOUT_MS ) * NS_IN_MS );
-        }
-      }
-      else
-        break;
-    }
+      break;
+  }
 
 #ifdef _WIN32
-    if ( GetLastError() != ERROR_SUCCESS )
-      throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::GetLastError() ), "", "" );
+  if ( GetLastError() != ERROR_SUCCESS )
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( ::GetLastError() ), "", "" );
 #else
-    if ( errno != 0 )
-      throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( errno ), "", "" );
+  if ( errno != 0 )
+    throw new org::xtreemfs::interfaces::Exceptions::errnoException( static_cast<uint32_t>( errno ), "", "" );
 #endif
-  }
 
   throw new org::xtreemfs::interfaces::Exceptions::errnoException( ETIMEDOUT, "timed out", "" );
 }
