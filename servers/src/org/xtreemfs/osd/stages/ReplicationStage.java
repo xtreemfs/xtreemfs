@@ -132,7 +132,7 @@ public class ReplicationStage extends Stage {
         long objectNo = (Long) rq.getArgs()[1];
         ObjectData data = (ObjectData) rq.getArgs()[2];
 
-        if(data.getData().limit() != 0)
+        if (data != null && data.getData().limit() != 0)
             disseminationLayer.objectFetched(fileId, objectNo, data);
         else {
             // data could not be fetched

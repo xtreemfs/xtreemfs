@@ -54,50 +54,57 @@ public class RandomStrategy extends TransferStrategy {
         // prepare
         super.selectNext();
 
-        long objectID = -1;
+        long objectNo = -1;
 
         // first fetch a preferred object
         if (!this.preferredObjects.isEmpty()) {
-            objectID = this.preferredObjects.remove(getPositiveRandom() % this.preferredObjects.size());
-            this.requiredObjects.remove(Long.valueOf(objectID));
+            objectNo = this.preferredObjects.get(getPositiveRandom() % this.preferredObjects.size());
         } else { // fetch any object
             if (!this.requiredObjects.isEmpty()) {
-                objectID = this.requiredObjects.remove(getPositiveRandom() % this.requiredObjects.size());
+                objectNo = this.requiredObjects.get(getPositiveRandom() % this.requiredObjects.size());
             }
         }
 
         // select OSD
-        if (objectID != -1)
-            next = selectNextOSDhelper(objectID);
+        if (objectNo != -1)
+            next = selectNextOSDhelper(objectNo);
         else
             // nothing to fetch
             next = null;
     }
 
     @Override
-    public void selectNextOSD(long objectID) {
+    public void selectNextOSD(long objectNo) {
         // prepare
         super.selectNext();
         // select OSD
-        next = selectNextOSDhelper(objectID);
+        next = selectNextOSDhelper(objectNo);
     }
 
-    private NextRequest selectNextOSDhelper(long objectID) {
+    private NextRequest selectNextOSDhelper(long objectNo) {
         NextRequest next = new NextRequest();
-        next.objectNo = objectID;
+        next.objectNo = objectNo;
+        int testedOSDs;
 
-        List<ServiceUUID> osds = this.availableOSDsForObject.get(objectID);
-        if (osds.size() > 0) {
+        List<ServiceUUID> osds = this.availableOSDsForObject.get(objectNo);
+        for (testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
             // use random OSD
-            next.osd = osds.get(getPositiveRandom() % osds.size());
+            ServiceUUID osd = osds.get(getPositiveRandom() % osds.size());
+            // if OSD is available => end "search"
+            if (osdAvailability.isServiceAvailable(osd)) {
+                next.osd = osd;
 
-            // no object list
-            next.requestObjectList = false;
-        } else
+                // no object list
+                next.requestObjectList = false;
+                break;
+            }
+        }
+        // if no OSD could be found
+        if (osds.size() == 0 || osds.size() == testedOSDs || isHole(objectNo))
             next = null;
         return next;
     }
-
+    
     /**
      * returns a random positive integer
      * 
@@ -107,4 +114,29 @@ public class RandomStrategy extends TransferStrategy {
         int result = random.nextInt();
         return (result > 0) ? result : 0 - result;
     }
+    
+//  /**
+//  * Removes the OSD from the list that is used for knowing which OSDs could be used for fetching this
+//  * object.
+//  * 
+//  * @param objectID
+//  */
+// public void removeOSDForObject(long objectID, ServiceUUID osd) {
+//     availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
+// }
+//
+// /*
+//  * FIXME: internal-handling would be better
+//  */
+// public void removeOSDListForObject(long objectID) {
+//     availableOSDsForObject.remove(Long.valueOf(objectID));
+// }
+//
+// /**
+//  * @return
+//  * @see java.util.ArrayList#isEmpty()
+//  */
+// public boolean isOSDAvailableForObject(long objectNo) {
+//     return !availableOSDsForObject.get(objectNo).isEmpty();
+// }
 }

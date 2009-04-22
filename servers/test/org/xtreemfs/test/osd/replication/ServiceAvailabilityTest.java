@@ -83,7 +83,7 @@ public class ServiceAvailabilityTest extends TestCase {
         assertTrue(serviceAvailability.isServiceAvailable(service));
 
         // service not available
-        serviceAvailability.setServicewasNotAvailable(service);
+        serviceAvailability.setServiceWasNotAvailable(service);
         assertFalse(serviceAvailability.isServiceAvailable(service));
         Thread.sleep(INITIAL_TIMEOUT);
         assertFalse(serviceAvailability.isServiceAvailable(service));
@@ -93,8 +93,8 @@ public class ServiceAvailabilityTest extends TestCase {
         assertTrue(serviceAvailability.isServiceAvailable(service));
 
         // service not available again
-        serviceAvailability.setServicewasNotAvailable(service);
-        serviceAvailability.setServicewasNotAvailable(service);
+        serviceAvailability.setServiceWasNotAvailable(service);
+        serviceAvailability.setServiceWasNotAvailable(service);
         Thread.sleep(INITIAL_TIMEOUT*7);
         assertFalse(serviceAvailability.isServiceAvailable(service));
         Thread.sleep(INITIAL_TIMEOUT*9);
@@ -118,7 +118,7 @@ public class ServiceAvailabilityTest extends TestCase {
             assertTrue(serviceAvailability.isServiceAvailable(service));
             // timeout > MAX_LAST_ACCESS
             for (int timeout = INITIAL_TIMEOUT; timeout > MAX_LAST_ACCESS+CLEANUP_INTERVAL; timeout = timeout * 2) {
-                serviceAvailability.setServicewasNotAvailable(service);
+                serviceAvailability.setServiceWasNotAvailable(service);
             }
         }
         Thread.sleep(CLEANUP_INTERVAL);

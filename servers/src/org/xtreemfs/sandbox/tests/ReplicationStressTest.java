@@ -26,13 +26,12 @@ package org.xtreemfs.sandbox.tests;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
@@ -61,7 +60,7 @@ import org.xtreemfs.mrc.client.MRCClient;
  * @author clorenz
  */
 public class ReplicationStressTest {
-    public static final String tmpDir = "/tmp/xtreemfs-test/";
+    public static String tmpDir;
     public static final String tmpFilename = "replicatedFile";
     public static final String VOLUME_NAME = "replicationTestVolume";
     public static final String DIR_PATH = "/replicationTest/";
@@ -78,6 +77,8 @@ public class ReplicationStressTest {
     public final int PART_SIZE = 1024 * 1024; // 1MB
     public static final int STRIPE_SIZE = 128; // KB
 
+    public final int SLEEP_TIME = 1000 * 30; // FIXME: 10 minutes
+
     /*
      * reader-threads
      */
@@ -86,10 +87,12 @@ public class ReplicationStressTest {
          * 
          */
         public final int NUMBER_OF_RANGES = 20;
+        public final int SLEEP_TIME = 1000 * 10; // FIXME: sleep 1 minute
 
         private final UserCredentials userCredentials;
         private final RPCNIOSocketClient client;
         private InetSocketAddress mrcAddress;
+        int threadNo;
 
         private CopyOnWriteArrayList<String> fileList;
         private Random random;
@@ -97,15 +100,15 @@ public class ReplicationStressTest {
         public ReaderThreads(int threadNo, InetSocketAddress mrcAddress,
                 CopyOnWriteArrayList<String> fileList, Random random, UserCredentials userCredentials)
                 throws Exception {
-            Thread.currentThread().setName("ReaderThread " + threadNo);
             this.mrcAddress = mrcAddress;
             this.fileList = fileList;
             this.random = random;
             this.userCredentials = userCredentials;
+            this.threadNo = threadNo;
 
             client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
             client.start();
-            client.waitForStartup();
+            client.waitForStartup();            
         }
 
         public void shutdown() throws Exception {
@@ -115,14 +118,22 @@ public class ReplicationStressTest {
 
         @Override
         public void run() {
+            Thread.currentThread().setName("ReaderThread " + threadNo);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, Thread.currentThread().getName() + " started");
+
+            int fileCounter = 0;
             while (!Thread.interrupted()) {
                 try {
                     while (fileList.isEmpty())
-                        Thread.sleep(1000 * 60); // sleep 1 minute
+                        Thread.sleep(SLEEP_TIME);
 
                     // get any file from list
                     String fileName = fileList.get(random.nextInt(fileList.size()));
                     readFile(fileName);
+                    
+                    if (++fileCounter % 100 == 0)
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, Thread.currentThread().getName()
+                                + " has read " + fileCounter + " files");
                 } catch (InterruptedException e) {
                     break;
                 } catch (Exception e) {
@@ -143,52 +154,63 @@ public class ReplicationStressTest {
          * read/replicate files
          */
         public void readFile(String fileName) throws Exception {
+            int partSize = PART_SIZE * 2;
             java.io.RandomAccessFile originalFile = null;
             try {
                 originalFile = new java.io.RandomAccessFile(tmpDir + tmpFilename, "r");
 
                 RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, VOLUME_NAME + DIR_PATH
-                        + fileName + fileName, client, userCredentials);
+                        + fileName, client, userCredentials);
                 long filesize = raf.length();
 
                 // prepare ranges for reading file
-                List<List<Integer>> ranges = new ArrayList<List<Integer>>();
-                int startOffset = 0;
-                int length = (int) filesize / (NUMBER_OF_RANGES - 1); // read EOF in the last range
-                for (int i = 0; i < NUMBER_OF_RANGES; i++) {
-                    List<Integer> range = new ArrayList<Integer>();
-                    range.add(startOffset);
-                    range.add(length);
-                    ranges.add(range);
-
-                    startOffset = startOffset + length;
+                List<Integer> startOffsets = new LinkedList<Integer>();
+                for (int startOffset = 0; startOffset < filesize; startOffset = startOffset + partSize + 1) {
+                    startOffsets.add(startOffset);
                 }
 
                 // shuffle list for non straight forward reading
-                Collections.shuffle(ranges, random);
+                Collections.shuffle(startOffsets, random);
 
                 // read file
-                for (List<Integer> range : ranges) {
-                    startOffset = range.get(0);
-                    length = range.get(1);
-                    byte[] result = new byte[length];
+                for (Integer startOffset : startOffsets) {
+                    byte[] result = new byte[partSize];
 
                     // read
                     try {
-                        raf.read(result, startOffset, length);
+                        raf.seek(startOffset);
+                        raf.read(result, 0, result.length);
                     } catch (Exception e) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "File cannot be read.");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "File " + fileName + " cannot be read.");
                         throw e;
                     }
 
                     // TODO: monitoring: time (latency)
 
                     // ASSERT the byte-data
-                    byte[] expectedResult = new byte[length];
+                    byte[] expectedResult = new byte[partSize];
                     originalFile.seek(startOffset);
                     originalFile.read(expectedResult);
-                    if (result != expectedResult)
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "Read wrong data.");
+                    if (startOffset + partSize > filesize) {
+                        // swap data to zeros
+                        expectedResult = Arrays.copyOf(expectedResult, (int) (filesize - startOffset));
+                        expectedResult = Arrays.copyOf(expectedResult, partSize);
+                    }
+                    if (!Arrays.equals(result, expectedResult)) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "ERROR: Read wrong data in file "
+                                + fileName + " from " + startOffset + " to " + (startOffset + partSize)
+                                + ". Filesize is " + filesize + ".");
+                        System.out.println("first 128 bytes read:\t"
+                                + Arrays.toString(Arrays.copyOfRange(result, 0, 128)));
+                        System.out.println("first 128 bytes expected:\t"
+                                + Arrays.toString(Arrays.copyOfRange(expectedResult, 0, 128)));
+                        System.out.println("last 128 bytes read:\t"
+                                + Arrays.toString(Arrays.copyOfRange(result, result.length - 128,
+                                        result.length)));
+                        System.out.println("last 128 bytes expected:\t"
+                                + Arrays.toString(Arrays.copyOfRange(expectedResult, result.length - 128,
+                                        result.length)));
+                    }
                 }
             } finally {
                 if (originalFile != null)
@@ -264,6 +286,8 @@ public class ReplicationStressTest {
         r2 = mrcClient.mkdir(null, userCredentials, VOLUME_NAME + DIR_PATH, 0);
         r2.get();
         r2.freeBuffers();
+        
+        Logging.logMessage(Logging.LEVEL_ERROR, this, "test volume initialized");
     }
 
     /**
@@ -272,32 +296,29 @@ public class ReplicationStressTest {
     public void writeTmpFileToDisk(long maxFilesize) throws Exception {
         java.io.RandomAccessFile out = null;
         try {
-            out = new java.io.RandomAccessFile(tmpDir + tmpFilename, "cw");
+            out = new java.io.RandomAccessFile(tmpDir + tmpFilename, "rw");
 
-            long part = maxFilesize;
+            long part = 0;
             long filesize = maxFilesize;
             byte[] data;
-            if (filesize < PART_SIZE) {
-                // generate the WHOLE data
+            if (filesize <= PART_SIZE) {
+                // write the WHOLE data
                 data = generateData((int) filesize);
-                // write data to file
                 out.write(data);
             } else {
-                while (part < filesize) {
+                while (part + PART_SIZE < filesize) {
                     if (random.nextInt(100) > 10) { // 90% chance
-                        // generate A piece of data
+                        // write A piece of data
                         data = generateData(PART_SIZE);
-                        // write data to file
                         out.write(data);
                     } else { // skip writing => hole
                         out.seek(out.getFilePointer() + PART_SIZE);
                     }
-                    part = part - PART_SIZE;
+                    part = part + PART_SIZE;
                 }
-                if (part < filesize + PART_SIZE) {
-                    // generate LAST piece of data
-                    data = generateData((int) (part - PART_SIZE));
-                    // write data to file
+                if (part < filesize) {
+                    // write LAST piece of data
+                    data = generateData((int) (filesize - part));
                     out.write(data);
                 }
             }
@@ -312,12 +333,15 @@ public class ReplicationStressTest {
      */
     public String writeFile(long maxFilesize) throws Exception {
         String fileName = getFileName();
-        int factor = random.nextInt(1000);
-        long filesize = (factor == 0) ? maxFilesize / 1 : maxFilesize / factor;
+        Logging.logMessage(Logging.LEVEL_ERROR, this, "write file " + fileName);
+
+        double factor = random.nextDouble();
+        factor = (factor + 0.2 < 1) ? (factor + 0.2) : factor; // rather bigger filesizes
+        long filesize = Math.round(maxFilesize * factor);
 
         java.io.RandomAccessFile in = null;
         try {
-            in = new java.io.RandomAccessFile(tmpDir + tmpFilename, "cw");
+            in = new java.io.RandomAccessFile(tmpDir + tmpFilename, "rw");
             
             assert(filesize <= in.length());
 
@@ -325,7 +349,7 @@ public class ReplicationStressTest {
             byte[] data;
 
             // create file in xtreemfs
-            RandomAccessFile raf = new RandomAccessFile("cw", mrcClient.getDefaultServerAddress(),
+            RandomAccessFile raf = new RandomAccessFile("rw", mrcClient.getDefaultServerAddress(),
                     VOLUME_NAME + DIR_PATH + fileName, client, userCredentials);
 
             if (filesize < PART_SIZE) {
@@ -334,32 +358,30 @@ public class ReplicationStressTest {
                 in.read(data);
                 raf.write(data, 0, data.length);
             } else {
-                while (part < filesize) {
-                    if (random.nextInt(100) > 10) { // 90% chance
-                        // read and write A piece of data
-                        data = new byte[PART_SIZE];
-                        in.read(data);
-                        // write data to file
-                        raf.write(data, part, data.length);
-                    } else { // skip writing => hole
-                        in.seek(in.getFilePointer() + PART_SIZE);
-                        raf.seek(raf.getFilePointer() + PART_SIZE);
-                    }
-                    part = part + PART_SIZE;
-                }
-                if (part < filesize + PART_SIZE) {
-                    // read and write LAST piece of data
-                    data = new byte[part - PART_SIZE];
+                while (part + PART_SIZE < filesize) {
+                    // read and write A piece of data
+                    data = new byte[PART_SIZE];
                     in.read(data);
                     // write data to file
-                    raf.write(data, part, data.length);
+                    raf.write(data, 0, data.length);
+
+                    part = part + PART_SIZE;
+                }
+                if (part < filesize) {
+                    // read and write LAST piece of data
+                    data = new byte[(int) (filesize - part)];
+                    in.read(data);
+                    // write data to file
+                    raf.write(data, 0, data.length);
                 }
             }
 
             // ASSERT correct filesize
             int mrcFilesize = (int) raf.length();
             if (filesize != mrcFilesize)
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "Filesize is not correctly written.");
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "ERROR: Filesize of file " + fileName
+                        + " is not correctly written. It should be " + filesize + " instead of "
+                        + mrcFilesize + ".");
         } finally {
             if (in != null)
                 in.close();
@@ -371,7 +393,7 @@ public class ReplicationStressTest {
      * set file read only and add replicas
      */
     public void prepareReplication(String fileName) throws Exception {
-        RandomAccessFile raf = new RandomAccessFile("w", mrcClient.getDefaultServerAddress(), VOLUME_NAME
+        RandomAccessFile raf = new RandomAccessFile("r", mrcClient.getDefaultServerAddress(), VOLUME_NAME
                 + DIR_PATH + fileName, client, userCredentials);
 
         raf.setReadOnly(true);
@@ -389,8 +411,16 @@ public class ReplicationStressTest {
         for (int i = 0; i < number; i++) {
             RandomAccessFile raf = new RandomAccessFile("r", mrcClient.getDefaultServerAddress(), VOLUME_NAME
                     + DIR_PATH + fileName, client, userCredentials);
-            // select any replica
-            Replica replica = raf.getXLoc().getReplicas().get(random.nextInt(raf.getXLoc().getReplicas().size()));
+
+            // only the original replica is remaining
+            if(raf.getXLoc().getReplicas().size() <= 1)
+                break;
+
+            // select any replica, except the first (original)
+            int replicaNumber = random.nextInt(raf.getXLoc().getReplicas().size());
+            replicaNumber = (replicaNumber == 0) ? 1 : replicaNumber;
+            Replica replica = raf.getXLoc().getReplicas().get(replicaNumber);
+            
             raf.removeReplica(replica);
         }
     }
@@ -407,9 +437,14 @@ public class ReplicationStressTest {
                     + DIR_PATH + fileName, client, userCredentials);
             // get OSDs for a replica
             List<ServiceUUID> replica = raf.getSuitableOSDsForAReplica();
-            Collections.shuffle(replica, random);
-            replica = replica.subList(0, raf.getStripingPolicy().getWidth());
-            raf.addReplica(replica, raf.getStripingPolicy());
+            
+            // enough OSDs available?
+            if(replica.size() >= raf.getStripingPolicy().getWidth()) {
+                Collections.shuffle(replica, random);
+                replica = replica.subList(0, raf.getStripingPolicy().getWidth());
+                raf.addReplica(replica, raf.getStripingPolicy());
+            } else
+                break;
         }
     }
 
@@ -446,7 +481,7 @@ public class ReplicationStressTest {
      *            the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        final int MANDATORY_ARGS = 5;
+        final int MANDATORY_ARGS = 6;
 
         if (args.length < MANDATORY_ARGS || args.length > MANDATORY_ARGS)
             usage();
@@ -454,41 +489,49 @@ public class ReplicationStressTest {
         int argNumber = 0;
         // parse arguments
         InetSocketAddress dirAddress = new InetSocketAddress(args[argNumber].split(":")[0], Integer
-                .parseInt(args[argNumber].split(":")[1]));
+                .parseInt(args[argNumber++].split(":")[1]));
+        tmpDir = args[argNumber++];
         // "client" reading threads
         int threadNumber = Integer.parseInt(args[argNumber++]);
         // 
-        int maxFilesize = Integer.parseInt(args[argNumber++]); // KB
-        long randomSeed = Integer.parseInt(args[argNumber++]);
+        int maxFilesize = Integer.parseInt(args[argNumber++]) * 1024 * 1024; // MB => byte
+        Random random = new Random(Integer.parseInt(args[argNumber++]));
         int stripeWidth = Integer.parseInt(args[argNumber++]);
 
         // create file list
         CopyOnWriteArrayList<String> fileList = new CopyOnWriteArrayList<String>();
 
-        Random random = new Random(randomSeed);
-
         ReplicationStressTest controller = new ReplicationStressTest(dirAddress, fileList, random);
         controller.initializeVolume(stripeWidth);
 
-        // start reading threads
-        ExecutorService executor = Executors.newFixedThreadPool(threadNumber);
+        Thread[] readerThreads = new Thread[threadNumber]; 
+        // create reading threads
         for (int i = 0; i < threadNumber; i++) {
-            // TODO: shuffle the fileList for each thread => different job processing sequence
-            executor.execute(controller.new ReaderThreads(i, controller.mrcClient.getDefaultServerAddress(), fileList,
-                    new Random(random.nextLong()), controller.userCredentials));
+            readerThreads[i] = new Thread((controller.new ReaderThreads(i, controller.mrcClient
+                    .getDefaultServerAddress(), fileList, new Random(random.nextLong()),
+                    controller.userCredentials)));
         }
 
         // write filedata to disk
         controller.writeTmpFileToDisk(maxFilesize);
 
-        int timeToWait = 1000 * 60 * 10; // 10 minutes
+        // start reading threads
+        for (Thread thread : readerThreads) {
+            thread.start();
+        }
+
         // change some details (replicas, new files) from time to time
         while (!Thread.interrupted()) {
             try {
+                // create new file
+                String filename = controller.writeFile(maxFilesize);
+                controller.prepareReplication(filename);
+
+                fileList.add(filename);
+
                 // add/remove replicas for existing files
-                int i = 0;
-                do {
-                    Thread.sleep(timeToWait);
+                for(int i = 0; i < 2; i++) { // FIXME
+                    Thread.sleep(controller.SLEEP_TIME);
 
                     for (int j = 0; j < fileList.size(); j++) {
                         String fileName = fileList.get(random.nextInt(fileList.size()));
@@ -498,14 +541,7 @@ public class ReplicationStressTest {
                         String fileName = fileList.get(random.nextInt(fileList.size()));
                         controller.addReplica(fileName, random.nextInt(2));
                     }
-                    i++;
-                } while (i < 6);
-
-                // create new file
-                String filename = controller.writeFile(maxFilesize);
-                controller.prepareReplication(filename);
-
-                fileList.add(filename);
+                }
             } catch (InterruptedException e) {
                 break;
             } catch (Exception e) {
@@ -515,14 +551,17 @@ public class ReplicationStressTest {
         }
 
         // shutdown ALL
-        executor.shutdown();
+        // stop reading threads
+        for (Thread thread : readerThreads) {
+            thread.interrupt();
+        }
         controller.shutdown();
     }
 
     public static void usage() {
         StringBuffer out = new StringBuffer();
         out.append("Usage: java -cp <xtreemfs-jar> org.xtreemfs.sandbox.tests.ReplicationStressTest ");
-        out.append("<DIR-address> <number of readers> <max. filesize> <random seed> <stripe width>\n");
+        out.append("<DIR-address> <tmp-directory> <number of readers> <max. filesize in MB> <random seed> <stripe width>\n");
         out.append("THIS TEST WILL NEVER END!\n");
         System.out.println(out.toString());
         System.exit(1);

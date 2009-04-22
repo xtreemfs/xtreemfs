@@ -52,47 +52,56 @@ public class SimpleStrategy extends TransferStrategy {
         // prepare
         super.selectNext();
 
-        long objectID = -1;
+        long objectNo = -1;
 
         // first fetch a preferred object
         if (!this.preferredObjects.isEmpty()) {
-            objectID = this.preferredObjects.remove(0);
-            this.requiredObjects.remove(Long.valueOf(objectID));
+            objectNo = this.preferredObjects.get(0);
         } else { // fetch any object
             if (!this.requiredObjects.isEmpty()) {
-                objectID = this.requiredObjects.remove(0);
+                objectNo = this.requiredObjects.get(0);
             }
         }
 
+        // TODO: handle case, if no OSD could be found for object (=> hole), because nobody will ever notice, that this object is a hole
+        
         // select OSD
-        if (objectID != -1)
-            next = selectNextOSDhelper(objectID);
+        if (objectNo != -1)
+            next = selectNextOSDhelper(objectNo);
         else
             // nothing to fetch
             next = null;
     }
 
     @Override
-    public void selectNextOSD(long objectID) {
+    public void selectNextOSD(long objectNo) {
         // prepare
         super.selectNext();
         // select OSD
-        next = selectNextOSDhelper(objectID);
+        next = selectNextOSDhelper(objectNo);
     }
 
     private NextRequest selectNextOSDhelper(long objectNo) {
         NextRequest next = new NextRequest();
         next.objectNo = objectNo;
+        int testedOSDs;
 
         // use the next replica relative to the last used replica
         List<ServiceUUID> osds = this.xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
-        if (osds.size() > 0) {
+        for(testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
             this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
-            next.osd = osds.get(this.indexOfLastUsedOSD);
-
-            // no object list
-            next.requestObjectList = false;
-        } else
+            ServiceUUID osd = osds.get(this.indexOfLastUsedOSD);
+            
+            // if OSD is available => end "search"
+            if (osdAvailability.isServiceAvailable(osd)) {
+                next.osd = osd;
+                // no object list
+                next.requestObjectList = false;
+                break;
+            }
+        }
+        // if no OSD could be found
+        if (osds.size() == 0 || osds.size() == testedOSDs || isHole(objectNo))
             next = null;
         return next;
     }

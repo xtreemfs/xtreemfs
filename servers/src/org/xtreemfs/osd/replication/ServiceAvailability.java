@@ -179,7 +179,7 @@ public class ServiceAvailability {
      * can manage the timeouts.
      * @param service
      */
-    public void setServicewasNotAvailable(ServiceUUID service) {
+    public void setServiceWasNotAvailable(ServiceUUID service) {
         if(!serviceAvailability.containsKey(service))
             serviceAvailability.put(service, new ServiceInfo(initialTimeout));
         serviceAvailability.get(service).lastAccessFailed();

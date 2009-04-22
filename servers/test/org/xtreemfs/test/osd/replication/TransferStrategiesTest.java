@@ -43,8 +43,8 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.replication.RandomStrategy;
+import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
@@ -129,8 +129,8 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testAddAndRemoveRequiredObject() {
-        this.strategy.addRequiredObject(objectNo);
-        assertTrue(this.strategy.removeRequiredObject(objectNo));
+        this.strategy.addObject(objectNo, false);
+        assertTrue(this.strategy.removeObject(objectNo));
     }
 
     /**
@@ -142,8 +142,8 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testAddAndRemovePreferredObject() {
-        this.strategy.addPreferredObject(objectNo);
-        assertTrue(this.strategy.removePreferredObject(objectNo));
+        this.strategy.addObject(objectNo, true);
+        assertTrue(this.strategy.removeObject(objectNo));
     }
 
     /**
@@ -155,32 +155,36 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testGetXXXObjectsCount() {
-        this.strategy.addRequiredObject(1);
-        this.strategy.addRequiredObject(2);
-        this.strategy.addRequiredObject(3);
-        this.strategy.addRequiredObject(4);
-        this.strategy.addPreferredObject(3);
+        this.strategy.addObject(1, false);
+        this.strategy.addObject(2, false);
+        this.strategy.addObject(3, false);
+        this.strategy.addObject(4, false);
+        this.strategy.addObject(4, false);
+        this.strategy.addObject(5, true);
+        this.strategy.addObject(3, true);
 
-        assertEquals(4, this.strategy.getRequiredObjectsCount());
-        assertEquals(1, this.strategy.getPreferredObjectsCount());
+        assertEquals(5, this.strategy.getObjectsCount());
     }
 
-    @Test
-    public void testCurrentReplicaNotInReplicaList() {
-        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
-        for (int i = 0; i < 20; i++) {
-            this.strategy.addRequiredObject(i);
-        }
-        while (true) {
-            this.strategy.selectNext();
-            NextRequest next = this.strategy.getNext();
-            if (next != null) {
-                assertNotSame(xLoc.getLocalReplica().getOSDForObject(objectNo), next.osd);
-            } else
-                break;
-        }
-
-    }
+//    @Test
+//    public void testCurrentReplicaNotInReplicaList() {
+//        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
+//        for (int i = 0; i < 5; i++) {
+//            this.strategy.addObject(i, false);
+//        }
+//
+//        for (int i = 0; i < xLoc.getNumReplicas() * xLoc.getLocalReplica().getStripingPolicy().getWidth(); i++) {
+//            this.strategy.selectNext();
+//            NextRequest next = this.strategy.getNext();
+//            if (next != null) {
+//                assertNotSame(xLoc.getLocalReplica().getOSDForObject(objectNo), next.osd);
+//            } else
+//                break;
+//        }
+//        for (int i = 0; i < 20; i++) {
+//            assertTrue(strategy.isHole(i));
+//        }
+//    }
 
     /**
      * Test method for
@@ -189,11 +193,11 @@ public class TransferStrategiesTest extends TestCase {
     @Test
     public void testSelectNextForSimpleTransfer() {
         this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
-        this.strategy.addRequiredObject(1);
-        this.strategy.addRequiredObject(2);
-        this.strategy.addRequiredObject(3);
-        this.strategy.addRequiredObject(4);
-        this.strategy.addPreferredObject(2);
+        this.strategy.addObject(1, false);
+        this.strategy.addObject(2, false);
+        this.strategy.addObject(3, false);
+        this.strategy.addObject(4, false);
+        this.strategy.addObject(2, true);
 
         int replica = 1;
 
@@ -250,9 +254,9 @@ public class TransferStrategiesTest extends TestCase {
         objectsToRequest.add(Long.valueOf(4));
 
         for (int i = 0; i < objectsToRequest.size(); i++) {
-            this.strategy.addRequiredObject(objectsToRequest.get(i));
+            this.strategy.addObject(objectsToRequest.get(i), false);
         }
-        this.strategy.addPreferredObject(2);
+        this.strategy.addObject(2, true);
 
         ArrayList<Long> requestedObjects = new ArrayList<Long>();
 

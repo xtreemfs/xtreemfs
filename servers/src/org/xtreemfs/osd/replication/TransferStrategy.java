@@ -73,24 +73,21 @@ public abstract class TransferStrategy {
     protected ArrayList<Long> preferredObjects; // requested objects
 
     /**
-     * 
+     * checks if the OSD is available (e.g. network interrupt)
      */
-    private final ServiceAvailability osdAvailability;
-
-    /**
-     * contains a list of local available objects for each OSD
-     */
-    protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
+    protected final ServiceAvailability osdAvailability;
 
     /**
      * contains a list of possible OSDs for each object used to notice which OSDs were already requested
+     * key: objectNo
      */
     protected HashMap<Long, List<ServiceUUID>> availableOSDsForObject;
 
     /**
-     * known filesize up to now
+     * contains a list of local available objects for each OSD
+     * key: ServiceUUID of a OSD
      */
-    protected long filesize;
+//    protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
 
     /**
      * @param rqDetails
@@ -103,9 +100,8 @@ public abstract class TransferStrategy {
         this.requiredObjects = new ArrayList<Long>();
         this.preferredObjects = new ArrayList<Long>();
         this.osdAvailability = osdAvailability;
-        this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
         this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
-        this.filesize = filesize;
+//        this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
         this.next = null;
     }
 
@@ -113,22 +109,14 @@ public abstract class TransferStrategy {
      * chooses the next object, which will be replicated
      */
     public void selectNext() {
-        if (next != null) {
-            // removePreferredObject(next.objectID);
-            // removeRequiredObject(next.objectID);
-            next = null;
-        }
+        next = null;
     }
 
     /**
      * 
      */
     public void selectNextOSD(long objectID) {
-        if (next != null) {
-            // removePreferredObject(next.objectID);
-            // removeRequiredObject(next.objectID);
-            next = null;
-        }
+        next = null;
     }
 
     /**
@@ -138,129 +126,92 @@ public abstract class TransferStrategy {
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public NextRequest getNext() {
+        if (next != null) {
+            // remove object from lists, so it can't be chosen twice
+            removeObjectFromList(next.objectNo);
+            // remove used OSD for this object, because the OSD will not be used a second time
+            availableOSDsForObject.get(next.objectNo).remove(next.osd);
+        }
         return next;
     }
 
     /**
      * add an object which must be replicated
      * 
-     * @param e
+     * @param objectNo
+     * @param preferred
      * @return
+     * @see java.util.ArrayList#add(java.lang.Object)
      */
-    public boolean addRequiredObject(long objectID) {
-        Long object = Long.valueOf(objectID);
-        if (!this.requiredObjects.contains(object)) {
-            boolean added = this.requiredObjects.add(object);
-            if (added) {
-                // do more
-                if (!availableOSDsForObject.containsKey(object))
-                    availableOSDsForObject.put(object, xLoc.getOSDsForObject(objectID, xLoc.getLocalReplica()));
-            }
-            return added;
-        } else
-            return false;
+    public boolean addObject(long objectNo, boolean preferred) {
+        // add existing OSDs containing the object
+        if (!availableOSDsForObject.containsKey(objectNo))
+            availableOSDsForObject.put(objectNo, xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica()));
+
+        if (preferred) {
+            // object must not contained in both lists
+            if (requiredObjects.contains(objectNo))
+                requiredObjects.remove(objectNo);
+            // no multiple entries
+            if (!preferredObjects.contains(objectNo))
+                return preferredObjects.add(objectNo);
+        } else {
+            // object must not contained in both lists
+            if (preferredObjects.contains(objectNo))
+                preferredObjects.remove(objectNo);
+            // no multiple entries
+            if (!requiredObjects.contains(objectNo))
+                return requiredObjects.add(objectNo);
+        }
+        return false;
+    }
+
+    /**
+     * removes the objectNo only from the list of replicating objects
+     * 
+     * @param objectNo
+     * @return
+     * @see java.util.ArrayList#remove(java.lang.Object)
+     */
+    protected boolean removeObjectFromList(long objectNo) {
+        boolean contained = preferredObjects.remove(objectNo);
+        contained = contained || requiredObjects.remove(objectNo);
+        return contained;
     }
 
     /**
      * remove an object which need not be replicated anymore
      * 
-     * @param o
+     * @param objectNo
+     * @return
      * @see java.util.ArrayList#remove(java.lang.Object)
      */
-    public boolean removeRequiredObject(long objectID) {
-        boolean removed = this.requiredObjects.remove(Long.valueOf(objectID));
-        // do more
-        availableOSDsForObject.remove(Long.valueOf(objectID));
-        return removed;
+    public boolean removeObject(long objectNo) {
+        boolean contained = (null != availableOSDsForObject.remove(objectNo));
+        contained = contained || removeObjectFromList(objectNo);
+        return contained;
     }
 
     /**
-     * Add an object which must be replicated first. Note: Adds the object also to required objects list.
+     * Returns how much objects will be replicated.
      * 
-     * @param e
      * @return
-     * @see java.util.ArrayList#add(java.lang.Object)
      */
-    public boolean addPreferredObject(long objectID) {
-        boolean added = true;
-        Long object = Long.valueOf(objectID);
-        if (!this.preferredObjects.contains(object)) {
-            if (this.preferredObjects.add(object))
-                if (!addRequiredObject(objectID))
-                    if (!this.requiredObjects.contains(object)) {
-                        // rollback
-                        this.preferredObjects.remove(object);
-                        added = false;
-                    }
-            return added;
-        } else
+    public int getObjectsCount() {
+        return preferredObjects.size() + requiredObjects.size();
+    }
+
+    /**
+     * checks if the object is a hole
+     * 
+     * @param objectNo
+     * @return true: it is a hole
+     * false: maybe it is a hole
+     */
+    public boolean isHole(long objectNo){
+        if(availableOSDsForObject.containsKey(objectNo))
+            return (availableOSDsForObject.get(objectNo).size() == 0);
+        else
             return false;
     }
-
-    /**
-     * Remove an object which must be replicated first. Note: Removes the object also from required objects
-     * list.
-     * 
-     * @param o
-     * @return
-     * @see java.util.ArrayList#remove(java.lang.Object)
-     */
-    public boolean removePreferredObject(long objectID) {
-        boolean removed;
-        removed = this.preferredObjects.remove(Long.valueOf(objectID));
-        removeRequiredObject(objectID);
-        return removed;
-    }
-
-    /**
-     * Returns how much objects still must be replicated.
-     * 
-     * @return
-     * @see java.util.ArrayList#size()
-     */
-    public int getRequiredObjectsCount() {
-        return this.requiredObjects.size();
-    }
-
-    /**
-     * Returns how much objects will be replicated preferred.
-     * 
-     * @return
-     * @see java.util.ArrayList#size()
-     */
-    public int getPreferredObjectsCount() {
-        return this.preferredObjects.size();
-    }
-
-    /**
-     * @return the filesize
-     */
-    public long getFilesize() {
-        return filesize;
-    }
-
-//    /**
-//     * Removes the OSD from the list that is used for knowing which OSDs could be used for fetching this
-//     * object.
-//     * 
-//     * @param objectID
-//     */
-//    public void removeOSDForObject(long objectID, ServiceUUID osd) {
-//        availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
-//    }
-//
-//    /*
-//     * FIXME: internal-handling would be better
-//     */
-//    public void removeOSDListForObject(long objectID) {
-//        availableOSDsForObject.remove(Long.valueOf(objectID));
-//    }
-//
-//    /**
-//     * @return
-//     * @see java.util.ArrayList#isEmpty()
-//     */
-//    public boolean isOSDAvailableForObject(long objectNo) {
-//        return !availableOSDsForObject.get(objectNo).isEmpty();
-//    }
 }

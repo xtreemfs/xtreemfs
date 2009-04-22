@@ -26,6 +26,7 @@ package org.xtreemfs.common.clients.io;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -267,7 +268,8 @@ public class RandomAccessFile implements ObjectStore {
      */
     private List<ServiceUUID> sortOSDs(List<ServiceUUID> osds) {
         List<ServiceUUID> list = new ArrayList<ServiceUUID>(osds);
-//        Collections.shuffle(list);
+//        list = list.subList(0, 1); FIXME: only for tests
+        Collections.shuffle(list);
         return list;
     }
 

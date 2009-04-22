@@ -70,7 +70,6 @@ public class ObjectDissemination {
         private static class ObjectInfo {
             List<StageRequest> waitingRequests;
             ServiceUUID lastOSD;
-            int requestedOSDs = 0;
 
             public ObjectInfo() {
                 this.waitingRequests = new ArrayList<StageRequest>();
@@ -79,6 +78,7 @@ public class ObjectDissemination {
 
         String fileID;
         final TransferStrategy strategy;
+        long lastObject;
         XLocations xLoc;
         Capability cap;
         CowPolicy cow;
@@ -95,7 +95,10 @@ public class ObjectDissemination {
             this.cap = cap;
             this.cow = cow;
             this.objectsInProgress = new HashMap<Long, ObjectInfo>();
-        }
+
+            StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+            this.lastObject = sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1);
+            }
 
         /**
          * @see java.util.HashMap#containsKey(java.lang.Object)
@@ -180,7 +183,7 @@ public class ObjectDissemination {
 
         // keep in mind current request
         fileInfo.add(objectNo, rq);
-        fileInfo.strategy.addPreferredObject(objectNo);
+        fileInfo.strategy.addObject(objectNo, true);
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "FETCHING OBJECT: " + fileID + ":" + objectNo);
 
@@ -227,17 +230,17 @@ public class ObjectDissemination {
                         master.getReplicationStage().InternalObjectFetched(fileID, objectNo, data);
                     } catch (ONCRPCException e) {
                         // TODO 
-                        osdAvailability.setServicewasNotAvailable(osd);
+                        osdAvailability.setServiceWasNotAvailable(osd);
                         master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (IOException e) {
                         // TODO 
-                        osdAvailability.setServicewasNotAvailable(osd);
+                        osdAvailability.setServiceWasNotAvailable(osd);
                         master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (InterruptedException e) {
                         // TODO 
-                        osdAvailability.setServicewasNotAvailable(osd);
+                        osdAvailability.setServiceWasNotAvailable(osd);
                         e.printStackTrace();
                     } finally {
                         r.freeBuffers();
@@ -266,18 +269,17 @@ public class ObjectDissemination {
             writeObjectEvent.startInternalEvent(new Object[] { fileID, objectNo, data.getData(), fileInfo.xLoc,
                     fileInfo.cow });
 
-            // delete object in maps/lists
-//            fileInfo.strategy.removeOSDListForObject(objectNo);
-            fileInfo.strategy.removePreferredObject(objectNo);
-            fileInfo.remove(objectNo);
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "object fetched " + fileID + ":" + objectNo);
 
+            // delete object in maps/lists
+            fileInfo.strategy.removeObject(objectNo);
+            fileInfo.remove(objectNo);
             if (filesInProgress.isEmpty())
                 fileCompleted(fileID);
         } else {
             // try next replica
-            fileInfo.strategy.addPreferredObject(objectNo); // TODO: preferred or only requested?
+            fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
             prepareRequest(fileInfo, objectNo);
             
             // free buffer
@@ -291,13 +293,9 @@ public class ObjectDissemination {
     public void objectNotFetched(String fileID, long objectNo) {
         FileInfo fileInfo = filesInProgress.get(fileID);
 
-        // lastOSD could not help => remove it from list for this object
-//        fileInfo.strategy.removeOSDForObject(objectNo, fileInfo.get(objectNo).lastOSD);
-        fileInfo.get(objectNo).requestedOSDs++;
-
         // check if it is a hole
         // FIXME: change this, if using different striping policies
-        if (fileInfo.get(objectNo).requestedOSDs == fileInfo.xLoc.getLocalReplica().getOSDs().size()) {
+        if (fileInfo.strategy.isHole(objectNo)) {
             // => hole or error; we assume it is a hole
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "object " + fileID + ":" + objectNo
@@ -305,13 +303,16 @@ public class ObjectDissemination {
 
             sendResponses(fileInfo, objectNo, null, ObjectStatus.PADDING_OBJECT);
 
+            // delete object in maps/lists
+            fileInfo.strategy.removeObject(objectNo);
+            fileInfo.remove(objectNo);
             if (filesInProgress.isEmpty())
                 fileCompleted(fileID);
 
             // TODO: remember on this OSD that this object is a hole
         } else {
             // try next replica
-            fileInfo.strategy.addPreferredObject(objectNo); // TODO: preferred or only requested?
+            fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
             prepareRequest(fileInfo, objectNo);
         }
     }
@@ -345,7 +346,7 @@ public class ObjectDissemination {
                 objectInfo = new ObjectInformation(status, null, sp.getStripeSizeForObject(objectNo));
             }
             // FIXME: filesize not from strategy
-            objectInfo.setGlobalLastObjectNo(sp.getObjectNoForOffset(fileInfo.strategy.getFilesize() - 1));
+            objectInfo.setGlobalLastObjectNo(fileInfo.lastObject);
 
             final FetchObjectCallback callback = (FetchObjectCallback) rq.getCallback();
             callback.fetchComplete(objectInfo, null);
