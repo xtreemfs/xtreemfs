@@ -257,11 +257,7 @@ uint8_t Proxy::reconnect( uint8_t reconnect_tries_left )
     }
     else if ( reconnect_tries_left == static_cast<uint8_t>( -1 ) || --reconnect_tries_left > 0 )
     {
-#ifdef _WIN32
-      if ( ::WSAGetLastError() == EINPROGRESS )
-#else
-      if ( errno == EINPROGRESS )
-#endif
+      if ( conn->want_write() )
       {
         fd_event_queue.toggleSocketEvent( *conn, conn, false, true ); // Write readiness = the connect() operation is complete
         uint64_t start_unix_time_ns = YIELD::Time::getCurrentUnixTimeNS();
