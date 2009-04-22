@@ -54,6 +54,7 @@ import org.xtreemfs.mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
 import org.xtreemfs.mrc.operations.GetXAttrsOperation;
+import org.xtreemfs.mrc.operations.GetXLocListOperation;
 import org.xtreemfs.mrc.operations.InternalDebugOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
@@ -147,6 +148,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(GetSuitableOSDsOperation.OP_ID, new GetSuitableOSDsOperation(master));
         operations.put(TruncateOperation.OP_ID, new TruncateOperation(master));
         operations.put(InternalDebugOperation.OP_ID, new InternalDebugOperation(master));
+        operations.put(GetXLocListOperation.OP_ID, new GetXLocListOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {

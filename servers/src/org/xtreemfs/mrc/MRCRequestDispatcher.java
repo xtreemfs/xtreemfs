@@ -346,12 +346,12 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public Map<StatusPageOperation.Vars, String> getStatusInformation() {
-        HashMap<StatusPageOperation.Vars, String> data = new HashMap();
+        HashMap<StatusPageOperation.Vars, String> data = new HashMap<StatusPageOperation.Vars, String>();
         
         data.put(Vars.AVAILPROCS, String.valueOf(Runtime.getRuntime().availableProcessors()));
         data.put(Vars.BPSTATS, BufferPool.getStatus());
         data.put(Vars.DEBUG, Integer.toString(config.getDebugLevel()));
-        data.put(Vars.DIRURL, config.getDirectoryService().getHostName() + ":"
+        data.put(Vars.DIRURL, "oncrpc://" + config.getDirectoryService().getHostName() + ":"
             + config.getDirectoryService().getPort());
         data.put(Vars.GLOBALRESYNC, Long.toString(TimeSync.getTimeSyncInterval()));
         
