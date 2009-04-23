@@ -4,9 +4,9 @@
 #ifndef ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 #define ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 
-#include "org/xtreemfs/client/proxy.h"
+#include "yield.h"
+
 #include "org/xtreemfs/interfaces/dir_interface.h"
-#include "org/xtreemfs/client/proxy.h"
 
 #include <map>
 #include <string>
@@ -21,18 +21,22 @@ namespace org
       class PolicyContainer;
 
 
-      class DIRProxy : public Proxy
+      class DIRProxy : public YIELD::ONCRPCProxy
       {
       public:
-        ORG_XTREEMFS_CLIENT_PROXY_CONSTRUCTORS( DIRProxy, dir_interface );
+        DIRProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context = NULL, YIELD::Log* log = NULL );
         virtual ~DIRProxy();
 
         YIELD::URI getURIFromUUID( const std::string& uuid );
         YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
 
+        // YIELD::EventHandler
+        const char* getEventHandlerName() const { return "DIRProxy"; }
+
       private:
         org::xtreemfs::interfaces::DIRInterface dir_interface;
         PolicyContainer* policies;
+
 
         class CachedAddressMappingURI : public YIELD::URI
         {
@@ -53,6 +57,10 @@ namespace org
 
         std::map<std::string, CachedAddressMappingURI*> uuid_to_uri_cache;
         YIELD::Mutex uuid_to_uri_cache_lock;
+
+
+        // YIELD::Proxy
+        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::Request& );
       };
     };
   };

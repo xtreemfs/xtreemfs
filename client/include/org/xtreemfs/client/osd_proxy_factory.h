@@ -20,7 +20,7 @@ namespace org
       class OSDProxyFactory
       {
       public:
-        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max = Proxy::PROXY_DEFAULT_RECONNECT_TRIES_MAX, uint32_t osd_proxy_flags = Proxy::PROXY_DEFAULT_FLAGS );
+        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max = YIELD::ONCRPCProxy::DEFAULT_RECONNECT_TRIES_MAX );
         virtual ~OSDProxyFactory();
 
         OSDProxy& createOSDProxy( const std::string& uuid );

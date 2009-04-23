@@ -30,7 +30,7 @@ namespace org
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri.get() );
           org::xtreemfs::interfaces::Stat stbuf;
           mrc_proxy.get()->getattr( path, stbuf );
 

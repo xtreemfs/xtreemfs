@@ -93,7 +93,6 @@ r"../../../../src/org/xtreemfs/client/osd_proxy.cpp",
 r"../../../../src/org/xtreemfs/client/osd_proxy_factory.cpp",
 r"../../../../src/org/xtreemfs/client/path.cpp",
 r"../../../../src/org/xtreemfs/client/policy_container.cpp",
-r"../../../../src/org/xtreemfs/client/proxy.cpp",
 r"../../../../src/org/xtreemfs/client/shared_file.cpp",
 r"../../../../src/org/xtreemfs/client/volume.cpp"
 ) ) )

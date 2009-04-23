@@ -29,7 +29,7 @@ namespace org
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( *mrc_uri.get() );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri.get() );
           mrc_proxy.get()->rmvol( volume_name );
           return 0;
         }

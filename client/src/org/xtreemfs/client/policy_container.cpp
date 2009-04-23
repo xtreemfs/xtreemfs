@@ -118,15 +118,15 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
     {
       if ( user_info !=NULL )
       {
-        size_t username_wcslen = wcslen( user_info->wkui1_username );
-        size_t username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
+        int username_wcslen = static_cast<int>( wcslen( user_info->wkui1_username ) );
+        int username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
         char* user_id = new char[username_strlen+1];
         WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, user_id, username_strlen+1, 0, NULL );
         out_user_credentials.set_user_id( user_id, username_strlen );
         delete [] user_id;
 
-        size_t logon_domain_wcslen = wcslen( user_info->wkui1_logon_domain );
-        size_t logon_domain_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, NULL, 0, 0, NULL );
+        int logon_domain_wcslen = static_cast<int>( wcslen( user_info->wkui1_logon_domain ) );
+        int logon_domain_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, NULL, 0, 0, NULL );
         char* group_id = new char[logon_domain_strlen+1];
         WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, group_id, logon_domain_strlen+1, 0, NULL );
         std::string group_id_str( group_id, logon_domain_strlen );
@@ -141,7 +141,7 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
       }
     }
 
-    throw YIELD::PlatformException( ERROR_ACCESS_DENIED, "could not retrieve user_id and group_id" );
+    throw YIELD::Exception( ERROR_ACCESS_DENIED, "could not retrieve user_id and group_id" );
   }
 #else
 //  int caller_uid = yieldfs::FUSE::geteuid();
@@ -178,7 +178,7 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
     if ( get_passwd_from_user_credentials_ret >= 0 )
       have_passwd = true;
 //    else    
-//      throw YIELD::PlatformException( get_passwd_from_user_credentials_ret * -1 );
+//      throw YIELD::Exception( get_passwd_from_user_credentials_ret * -1 );
   }
 
   if ( !have_passwd )
@@ -199,7 +199,7 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
     }
     else
     {
-      //    throw YIELD::PlatformException();
+      //    throw YIELD::Exception();
       out_uid = 0;
       out_gid = 0;
     }
@@ -254,11 +254,11 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
           out_user_credentials.set_group_ids( group_ids_ss );
         }
         else
-          throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
+          throw YIELD::Exception( get_user_credentials_from_passwd_ret * -1 );
       }
     }
     else
-      throw YIELD::PlatformException( get_user_credentials_from_passwd_ret * -1 );
+      throw YIELD::Exception( get_user_credentials_from_passwd_ret * -1 );
   }
   else
   {
@@ -282,16 +282,16 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
             out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
           }
           else
-            throw YIELD::PlatformException( EINVAL, "no such gid" );
+            throw YIELD::Exception( EINVAL, "no such gid" );
         }
         else
-          throw YIELD::PlatformException();
+          throw YIELD::Exception();
       }
       else
-        throw YIELD::PlatformException( EINVAL, "no such uid" );
+        throw YIELD::Exception( EINVAL, "no such uid" );
     }
     else
-      throw YIELD::PlatformException();
+      throw YIELD::Exception();
 #endif
   }
 

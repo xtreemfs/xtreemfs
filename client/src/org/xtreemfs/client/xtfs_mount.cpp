@@ -80,14 +80,14 @@ namespace org
           YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
 
           // Create the DIRProxy
-          YIELD::auto_Object<DIRProxy> dir_proxy = createProxy<DIRProxy>( *dir_uri.get() );
+          YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri.get() );
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << static_cast<const char*>( *dir_uri.get() ) << ".";
           main_stage_group.createStage( *dir_proxy.get() );
 
           // Create the MRCProxy
           YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << static_cast<const char*>( mrc_uri ) << ".";
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createProxy<MRCProxy>( mrc_uri );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( mrc_uri );
           main_stage_group.createStage( *mrc_proxy.get() );
 
           // Create the OSDProxyFactory

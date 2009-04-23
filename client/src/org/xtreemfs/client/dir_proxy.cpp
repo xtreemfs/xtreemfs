@@ -2,14 +2,31 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/dir_proxy.h"
+#include "org/xtreemfs/interfaces/exceptions.h"
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 
+DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD::Log* log )
+  : YIELD::ONCRPCProxy( uri, ssl_context, log )
+{
+  dir_interface.registerObjectFactories( object_factories );
+  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( object_factories );
+  policies = new PolicyContainer;
+}
+
 DIRProxy::~DIRProxy()
 {
+  delete policies;
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
     delete uuid_to_uri_i->second;
+}
+
+YIELD::ONCRPCRequest* DIRProxy::createONCRPCRequest( YIELD::Request& out_body )
+{
+  YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+  policies->getCurrentUserCredentials( *user_credentials.get() );
+  return new YIELD::ONCRPCRequest( out_body, object_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release() );
 }
 
 YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )

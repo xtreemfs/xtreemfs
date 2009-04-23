@@ -105,28 +105,25 @@ namespace org
           org::xtreemfs::interfaces::MRCInterface().registerObjectFactories( object_factories );
           org::xtreemfs::interfaces::OSDInterface().registerObjectFactories( object_factories );
 
-          request = NULL;
           proxy = NULL;
         }
 
         ~xtfs_send()
         {
-          YIELD::Object::decRef( request );
-          delete proxy;
+          YIELD::Object::decRef( proxy );
         }
 
       private:
         YIELD::ObjectFactories object_factories;
-        YIELD::Request* request;
-        Proxy* proxy;
+        YIELD::auto_Object<YIELD::Request> request;
+        YIELD::EventTarget* proxy;
 
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::Object::incRef( *request );
-          proxy->send( *request );
+          proxy->send( request.get()->incRef() );
 
-          YIELD::Event& resp = request->waitForDefaultResponse( get_timeout_ms() );
+          YIELD::Event& resp = request.get()->waitForDefaultResponse( get_timeout_ms() );
           std::cout << resp.get_type_name() << "( ";
           YIELD::PrettyPrintOutputStream output_stream( std::cout );
           resp.serialize( output_stream );
@@ -146,18 +143,18 @@ namespace org
             {
               std::string request_type_name( rpc_uri.get()->get_resource() + 1 );
               request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
-              if ( request != NULL )
-                proxy = createProxy<MRCProxy>( *rpc_uri.get() );
+              if ( request.get() != NULL )
+                proxy = createMRCProxy( *rpc_uri.get() ).release();
               else
               {
                 request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
-                if ( request != NULL )
-                  proxy = createProxy<DIRProxy>( *rpc_uri.get() );
+                if ( request.get() != NULL )
+                  proxy = createDIRProxy( *rpc_uri.get() ).release();
                 else
                 {
                   request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
-                  if ( request != NULL )
-                    proxy = createProxy<OSDProxy>( *rpc_uri.get() );
+                  if ( request.get() != NULL )
+                    proxy = createOSDProxy( *rpc_uri.get() ).release();
                   else
                     throw YIELD::Exception( "unknown operation" );
                 }
@@ -166,7 +163,7 @@ namespace org
               if ( files_count > 1 )
               {
                 argvInputStream argv_input_stream( files_count - 1, files+1 );
-                request->deserialize( argv_input_stream );
+                request.get()->deserialize( argv_input_stream );
               }
             }
             else

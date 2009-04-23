@@ -190,14 +190,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_event.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\include\org\xtreemfs\client\volume.h"
     >
 </File>
@@ -392,10 +384,6 @@
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\policy_container.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy.cpp"
     >
 </File>
 <File

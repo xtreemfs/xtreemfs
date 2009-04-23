@@ -6,6 +6,8 @@
 
 #include "yield/main.h"
 
+#include "org/xtreemfs/client/dir_proxy.h"
+#include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/interfaces/constants.h"
 
 
@@ -53,7 +55,7 @@ namespace org
           ssl_context = NULL;
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
-          timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+          timeout_ms = YIELD::ONCRPCProxy::DEFAULT_REQUEST_TIMEOUT_MS;
         }
 
         virtual ~Main()
@@ -61,9 +63,30 @@ namespace org
           YIELD::Object::decRef( log );
           YIELD::Object::decRef( ssl_context );
         }
+        
+        YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
+        {
+          return createProxy<DIRProxy>( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
+        }
 
-        template <class ProxyType>
-        ProxyType* createProxy( const YIELD::URI& uri )
+        YIELD::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri )
+        {
+          return createProxy<MRCProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
+        }
+
+        YIELD::auto_Object<OSDProxy> createOSDProxy( const YIELD::URI& uri )
+        {
+          return createProxy<OSDProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
+        }
+
+        YIELD::Log& get_log()
+        {
+          if ( log == NULL )
+            log = new YIELD::Log( std::cout, get_log_level() );
+          return *log;
+        }
+
+        YIELD::SSLContext* get_ssl_context()
         {
           if ( ssl_context == NULL )
           {
@@ -73,22 +96,7 @@ namespace org
               ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
           }
 
-          ProxyType* proxy;
-          if ( ssl_context != NULL )
-            proxy = new ProxyType( uri, ssl_context->incRef(), get_log().incRef() );
-          else
-            proxy = new ProxyType( uri, get_log().incRef() );
-
-          proxy->set_operation_timeout_ms( timeout_ms );
-
-          return proxy;
-        }
-
-        YIELD::Log& get_log()
-        {
-          if ( log == NULL )
-            log = new YIELD::Log( std::cout, get_log_level() );
-          return *log;
+          return ssl_context;
         }
 
         uint64_t get_timeout_ms() const { return timeout_ms; }
@@ -131,7 +139,7 @@ namespace org
             {
               timeout_ms = atol( arg );
               if ( timeout_ms == 0 )
-                timeout_ms = Proxy::PROXY_DEFAULT_OPERATION_TIMEOUT_MS;
+                timeout_ms = YIELD::ONCRPCProxy::DEFAULT_REQUEST_TIMEOUT_MS;
             }
             break;
 
@@ -148,6 +156,18 @@ namespace org
 
         YIELD::Log* log;
         YIELD::SSLContext* ssl_context;
+
+
+        template <class ProxyType>
+        YIELD::auto_Object<ProxyType> createProxy( const YIELD::URI& uri, uint16_t default_port )
+        {
+          YIELD::URI checked_uri( uri );
+          if ( checked_uri.get_port() == 0 )
+            checked_uri.set_port( default_port );
+          ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
+          proxy->set_request_timeout_ms( timeout_ms );
+          return proxy;
+        }
       };
     };
   };

@@ -5,7 +5,6 @@
 #define ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 
 #include "org/xtreemfs/client/path.h"
-#include "org/xtreemfs/client/proxy.h"
 #include "org/xtreemfs/interfaces/mrc_interface.h"
 
 
@@ -15,10 +14,14 @@ namespace org
   {
     namespace client
     {
-      class MRCProxy : public Proxy
+      class PolicyContainer;
+
+
+      class MRCProxy : public YIELD::ONCRPCProxy
       {
       public:
-        ORG_XTREEMFS_CLIENT_PROXY_CONSTRUCTORS( MRCProxy, mrc_interface );
+        MRCProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context = NULL, YIELD::Log* log = NULL );
+        virtual ~MRCProxy();
 
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
@@ -50,8 +53,16 @@ namespace org
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
 
+        // YIELD::EventHandler
+        const char* getEventHandlerName() const { return "MRCProxy"; }
+
       private:
         org::xtreemfs::interfaces::MRCInterface mrc_interface;
+        PolicyContainer* policies;
+
+
+        // YIELD::Proxy
+        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::Request& );
       };
     };
   };
