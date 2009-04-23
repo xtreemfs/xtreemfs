@@ -24,7 +24,10 @@ FileReplica::~FileReplica()
 void FileReplica::flush( const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 {
   if ( !latest_osd_write_response.get_new_file_size().empty() )
+  {
     get_mrc_proxy().update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+    latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
+  }
 }
 
 bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
