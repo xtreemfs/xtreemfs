@@ -196,8 +196,11 @@ public class OpenOperation extends MRCOperation {
                 sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
             }
 
-            else
+            else {
                 xLocSet = Converter.xLocListToXLocSet(xLocList);
+                if (file.isReadOnly())
+                    xLocSet.setRead_only_file_size(file.getSize());
+            }
             
             Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                     .getGlobalTime()
