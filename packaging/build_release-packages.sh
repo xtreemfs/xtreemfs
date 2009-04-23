@@ -35,6 +35,11 @@ CLIENT_WHITE_LIST=(
 	"servers/config/default_dir" "config/default_dir"
 )
 
+# source (relative from XTREEMFS_HOME_DIR) and destination (in package)
+XOS_ADDONS_WHITE_LIST=(
+	"servers/xtreemos" "xtreemos"
+)
+
 # black list for files/dirs which should NEVER be copied
 SERVER_BLACK_LIST=(
 	"servers/bin/generate_xtreemfs_java.py"
@@ -43,6 +48,10 @@ SERVER_BLACK_LIST=(
 
 # black list for files/dirs which should NEVER be copied
 CLIENT_BLACK_LIST=(
+)
+
+# black list for files/dirs which should NEVER be copied
+XOS_ADDONS_BLACK_LIST=(
 )
 
 # --------------------------
@@ -140,6 +149,29 @@ build_server_package() {
 	tar -czf "$SERVER_PACKAGE_NAME.tar.gz" -C $TMP_PATH $SERVER_PACKAGE_NAME
 }
 
+build_xtreemos_addons() {
+
+	PACKAGE_PATH="$TMP_PATH/$XOS_ADDONS_PACKAGE_NAME"
+	PACKAGE_PATH_TMP="$TMP_PATH/$XOS_ADDONS_PACKAGE_NAME""_tmp"
+
+	echo "build XtreemOS addons package"
+	
+	create_dir $PACKAGE_PATH
+	create_dir $PACKAGE_PATH_TMP
+	cp -a $XTREEMFS_HOME_DIR/* $PACKAGE_PATH_TMP
+
+	# delete all from black-list in temporary dir
+	delete_xos_addons_black_list $PACKAGE_PATH_TMP
+
+	# copy white-list to temporary dir
+	copy_xos_addons_white_list $PACKAGE_PATH_TMP $PACKAGE_PATH
+	
+	# delete all .svn directories
+	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+
+	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH/xtreemos .
+}
+
 function copy_server_white_list() {
 	SRC_PATH=$1
 	DEST_PATH=$2
@@ -178,6 +210,25 @@ function copy_client_white_list() {
 	done
 }
 
+function copy_xos_addons_white_list() {
+	SRC_PATH=$1
+	DEST_PATH=$2
+
+	for (( i = 0 ; i < ${#XOS_ADDONS_WHITE_LIST[@]} ; i=i+2 ))
+	do
+		SRC="$SRC_PATH/${XOS_ADDONS_WHITE_LIST[$i]}"
+		# if directory doesn't exist, create it for copying file
+		if [ -d $SRC_PATH/${XOS_ADDONS_WHITE_LIST[i]} ]; then
+			mkdir -p "$DEST_PATH/${XOS_ADDONS_WHITE_LIST[i+1]}"
+			SRC="$SRC/*"
+		else
+			TMP_DIRNAME=${XOS_ADDONS_WHITE_LIST[i+1]%/*}
+			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
+		fi
+		cp -a $SRC "$DEST_PATH/${XOS_ADDONS_WHITE_LIST[$i+1]}"
+	done
+}
+
 function delete_server_black_list() {
 	SRC_PATH=$1
 
@@ -193,6 +244,15 @@ function delete_client_black_list() {
 	for (( i = 0 ; i < ${#CLIENT_BLACK_LIST[@]} ; i++ ))
 	do
 		rm -Rf "$SRC_PATH/${CLIENT_BLACK_LIST[i]}"
+	done
+}
+
+function delete_xos_addons_black_list() {
+	SRC_PATH=$1
+
+	for (( i = 0 ; i < ${#XOS_ADDONS_BLACK_LIST[@]} ; i++ ))
+	do
+		rm -Rf "$SRC_PATH/${XOS_ADDONS_BLACK_LIST[i]}"
 	done
 }
 
@@ -226,6 +286,7 @@ fi
 
 CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
 SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
+XOS_ADDONS_PACKAGE_NAME="XtreemFS-XOS-addons-$VERSION"
 
 # create temporary directory
 create_dir $TMP_PATH
@@ -233,6 +294,7 @@ create_dir $TMP_PATH
 # build packages
 build_client_package
 build_server_package
+build_xtreemos_addons
 
 # delete temporary directory
 rm -Rf $TMP_PATH
