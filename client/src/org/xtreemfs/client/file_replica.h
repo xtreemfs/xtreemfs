@@ -27,6 +27,7 @@ namespace org
         Volume& get_parent_volume() const { return parent_shared_file.get_parent_volume(); }
         const Path& get_path() const { return parent_shared_file.get_path(); }
 
+        void flush( const org::xtreemfs::interfaces::FileCredentials& file_credentials );       
         bool read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read );
         void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size );
         bool writev( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written );
@@ -35,6 +36,8 @@ namespace org
         SharedFile& parent_shared_file;
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
         std::vector<std::string> osd_uuids;
+        org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
+        void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& );
 
         MRCProxy& get_mrc_proxy() const { return parent_shared_file.get_mrc_proxy(); }
 

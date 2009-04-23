@@ -21,6 +21,12 @@ FileReplica::~FileReplica()
     YIELD::Object::decRef( *osd_proxy_i );
 }
 
+void FileReplica::flush( const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+{
+  if ( !latest_osd_write_response.get_new_file_size().empty() )
+    get_mrc_proxy().update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+}
+
 bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
 {
   char* rbuf_p = static_cast<char*>( rbuf );
@@ -69,10 +75,9 @@ bool FileReplica::read( const org::xtreemfs::interfaces::FileCredentials& file_c
 
 void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t new_size )
 {
- org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
- get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
- if ( !osd_write_response.get_new_file_size().empty() )
-   get_mrc_proxy().update_file_size( file_credentials.get_xcap(), osd_write_response );
+  org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
+  get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
+  processOSDWriteResponse( osd_write_response );
 }
 
 bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
@@ -83,7 +88,7 @@ bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file
   const char* wbuf_p = static_cast<const char*>( buffers[0].iov_base );
   uint64_t file_offset = offset, file_offset_max = offset + buffers[0].iov_len;
   uint32_t stripe_size = striping_policy.get_stripe_size() * 1024;
-  org::xtreemfs::interfaces::OSDWriteResponse newest_osd_write_response;
+  org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
 
   while ( file_offset < file_offset_max )
   {
@@ -95,27 +100,13 @@ bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file
     org::xtreemfs::interfaces::ObjectData object_data( new YIELD::String( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
 
     OSDProxy& osd_proxy = get_osd_proxy( object_number );
-    org::xtreemfs::interfaces::OSDWriteResponse temp_osd_write_response;
-    osd_proxy.write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, temp_osd_write_response );
+    org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
+    osd_proxy.write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, osd_write_response );
 
     wbuf_p += object_size;
     file_offset += object_size;
-
-    // Newer OSDWriteResponse = higher truncate epoch or same truncate epoch and higher file size
-    if ( !temp_osd_write_response.get_new_file_size().empty() )
-    {
-      if ( newest_osd_write_response.get_new_file_size().empty() )
-        newest_osd_write_response = temp_osd_write_response;
-      else if ( temp_osd_write_response.get_new_file_size()[0].get_truncate_epoch() > newest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() )
-        newest_osd_write_response = temp_osd_write_response;
-      else if ( temp_osd_write_response.get_new_file_size()[0].get_truncate_epoch() == newest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() &&
-                temp_osd_write_response.get_new_file_size()[0].get_size_in_bytes() > newest_osd_write_response.get_new_file_size()[0].get_size_in_bytes() )
-        newest_osd_write_response = temp_osd_write_response;
-    }
+    processOSDWriteResponse( osd_write_response );    
   }
-
-  if ( !newest_osd_write_response.get_new_file_size().empty() )
-    get_mrc_proxy().update_file_size( file_credentials.get_xcap(), newest_osd_write_response );
 
   if ( out_bytes_written )
     *out_bytes_written = file_offset - offset;
@@ -142,5 +133,21 @@ OSDProxy& FileReplica::get_osd_proxy( uint64_t object_number )
     }
 
     default: YIELD::DebugBreak(); throw YIELD::Exception(); break;
+  }
+}
+
+void FileReplica::processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response )
+{
+  // Newer OSDWriteResponse = higher truncate epoch or same truncate epoch and higher file size
+  if ( !osd_write_response.get_new_file_size().empty() )
+  {
+    if ( latest_osd_write_response.get_new_file_size().empty() )
+      latest_osd_write_response = osd_write_response;
+    else if ( osd_write_response.get_new_file_size()[0].get_truncate_epoch() > latest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() )
+      latest_osd_write_response = osd_write_response;
+    else if ( osd_write_response.get_new_file_size()[0].get_truncate_epoch() == latest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() &&
+              osd_write_response.get_new_file_size()[0].get_size_in_bytes() > latest_osd_write_response.get_new_file_size()[0].get_size_in_bytes() )
+   
+   latest_osd_write_response = osd_write_response;
   }
 }

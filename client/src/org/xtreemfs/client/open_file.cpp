@@ -13,22 +13,25 @@ OpenFile::OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_crede
 
 OpenFile::~OpenFile()
 {
+  flush();
   Object::decRef( attached_to_file_replica.get_parent_shared_file() );
 }
 
 bool OpenFile::datasync()
 {
+  attached_to_file_replica.flush( file_credentials );
   return true;
 }
 
 bool OpenFile::close()
 {
-  YIELD::DebugBreak();
-  return false;
+  attached_to_file_replica.flush( file_credentials );
+  return true;
 }
 
 bool OpenFile::flush()
 {
+  attached_to_file_replica.flush( file_credentials );
   return true;
 }
 
@@ -64,6 +67,7 @@ bool OpenFile::setxattr( const std::string& name, const std::string& value, int 
 
 bool OpenFile::sync()
 {
+  attached_to_file_replica.flush( file_credentials );
   return true;
 }
 
