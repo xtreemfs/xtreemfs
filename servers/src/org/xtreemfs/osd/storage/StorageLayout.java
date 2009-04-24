@@ -33,7 +33,6 @@ import java.io.IOException;
 
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.osd.OSDConfig;
 
@@ -293,12 +292,4 @@ public abstract class StorageLayout {
     public abstract boolean fileExists(String fileId);
 
     public abstract long getFileInfoLoadCount();
-
-    /**
-     * 
-     * @return all available files on the OSD ordered by volume IDs
-     * 
-     * @throws IOException if an error occurred
-     */
-    public abstract ConcurrentFileMap getAllFiles() throws IOException;
 }

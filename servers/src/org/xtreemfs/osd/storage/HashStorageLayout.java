@@ -33,11 +33,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-
 import java.util.EmptyStackException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
+
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.checksums.ChecksumAlgorithm;
@@ -45,7 +45,6 @@ import org.xtreemfs.common.checksums.ChecksumFactory;
 import org.xtreemfs.common.checksums.StringChecksumAlgorithm;
 import org.xtreemfs.common.checksums.algorithms.JavaHash;
 import org.xtreemfs.common.checksums.algorithms.SDBM;
-import org.xtreemfs.common.clients.osd.ConcurrentFileMap;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -81,8 +80,9 @@ public class HashStorageLayout extends StorageLayout {
 
     private static final int  DEFAULT_MAX_DIR_DEPTH = 4;
 
+    @Deprecated
     private static final char VERSION_SEPARATOR     = '.';
-
+    @Deprecated
     private static final char CHECKSUM_SEPARATOR    = '-';
 
     private int               prefixLength;
@@ -94,9 +94,6 @@ public class HashStorageLayout extends StorageLayout {
     private ChecksumAlgorithm checksumAlgo;
 
     private long              _stat_fileInfoLoads;
-
-    // object list of file IDs, ordered by volume ID
-    private ConcurrentFileMap fileMap;
 
     private final boolean     checksumsEnabled;
     
@@ -562,73 +559,6 @@ public class HashStorageLayout extends StorageLayout {
     public long getFileInfoLoadCount() {
         return _stat_fileInfoLoads;
     }
-   
-    /**
-     * traverse the file tree and fill the fileMap</br>
-     * - <code>directory</code> is the root node where the algorithm starts</br>
-     * - saves the metaInfos to global <code>fileMap</code></br>
-     * - ignores files that start with '.'</br>
-     * 
-     * @param  directory
-     * @throws IOException thrown by fileMap.insert()
-     */
-    private void traverseFileTree(String directory) throws IOException{
-        int PREVIEW_LENGTH = 15;
-        
-        FileReader fReader;
-        File f = new File(directory);
-        File[] sub = f.listFiles(); //there will be no error, if the directory is empty
-        
-        File newestFirst = null;
-        File newestLast = null;
-        Long objectSize = 0L;
-        
-        // go through all subs
-        for(int i=0;i<sub.length;i++){
-            if (sub[i] == null || sub[i].getName().startsWith(".") || sub[i].getName().endsWith(".ser"));//do nothing
-            
-            // get the file with the newest version  
-            else if (sub[i].isFile()) {   
-                try{
-                    if (newestFirst == null){
-                        newestFirst = newestLast = sub[i];
-                        objectSize = sub[i].length();
-                    }else if (getVersion(sub[i])>getVersion(newestFirst)){
-                        newestFirst = newestLast = sub[i];
-                        objectSize = (objectSize>=sub[i].length()) ? objectSize : sub[i].length();
-                    }else if (getVersion(sub[i])==getVersion(newestFirst)){
-                        if (getObjectNo(sub[i])<getObjectNo(newestFirst)){
-                            newestFirst = sub[i];
-                        }else if (getObjectNo(sub[i])>getObjectNo(newestLast)){
-                            newestLast = sub[i];
-                        }
-                        objectSize = (objectSize>=sub[i].length()) ? objectSize : sub[i].length();
-                    }
-                }catch(NumberFormatException ne){
-                    Logging.logMessage(Logging.LEVEL_WARN, this, "CleanUp: an illegal file was discovered and ignored.");
-                }
-            // use the next directory as root      
-            }else if(sub[i].isDirectory()) { 
-                traverseFileTree(sub[i].getAbsolutePath());
-            }
-            else assert false; //should never be reached
-        }    
-
-        if (newestFirst!=null){
-            // get a preview from the file
-            fReader = new FileReader(newestFirst);
-            char[] preview = new char[PREVIEW_LENGTH];
-            fReader.read(preview);
-            fReader.close();
-        
-            // get the metaInfo from the root-directory
-            int stripCount = getObjectNo(newestLast);
-            long fileSize = (stripCount==1) ? newestFirst.length() : (objectSize*stripCount)+newestLast.length();
-            
-            // insert the data into the fileMap
-            fileMap.insert(f.getName(),fileSize,String.valueOf(preview),objectSize); 
-        }                        
-    }
     
     /**
      * 
@@ -653,19 +583,6 @@ public class HashStorageLayout extends StorageLayout {
         ObjFileData ofd = parseFileName(name);
         return (int)ofd.objNo;
     } 
-    
-    /**
-     * 
-     * @return list of all available files on the storage device ordered by volume IDs
-     * @throws IOException 
-     * 
-     * @throws IOException - thrown by traverseFileTree()
-     */
-    public ConcurrentFileMap getAllFiles() throws IOException{
-        this.fileMap = new ConcurrentFileMap();
-        traverseFileTree(this.storageDir);
-        return this.fileMap;
-    }
 
     public static String createFileName(long objNo, int objVersion, long checksum) {
         final StringBuffer sb = new StringBuffer(Integer.SIZE/8*3+Long.SIZE/8);
@@ -697,28 +614,67 @@ public class HashStorageLayout extends StorageLayout {
     public FileList getFileList(FileList l, int maxNumEntries) {
 
         if (l == null) {
-            l = new FileList(new Stack(), new LinkedList());
+            l = new FileList(new Stack<String>(), new HashMap<String,FileData>());
             l.status.push("");
         }
         l.files.clear();
 
         try {
             do {
+                int PREVIEW_LENGTH = 15;
                 String currentDir = l.status.pop();
                 File dir = new File(storageDir+currentDir);
+                FileReader fReader;
+                
+                File newestFirst = null;
+                File newestLast = null;
+                Long objectSize = 0L;
+                
                 for (File ch : dir.listFiles()) {
-                    if (ch.isDirectory()) {
-
-                        final String chFname = ch.getName();
-                        if (chFname.length() == prefixLength) {
-                            //hash dir
-                            l.status.push(currentDir+"/"+chFname);
-                        } else {
-                            //filename dir
-                            l.files.add(chFname);
+                    // handle the directories (hash and fileName)
+                    if (ch!=null && ch.isDirectory()) {
+                        l.status.push(currentDir+"/"+ch.getName());
+                    // get informations from the objects
+                    } else if (ch != null && ch.isFile() && !ch.getName().startsWith(".") && !ch.getName().endsWith(".ser")) {
+                        // get the file metadata
+                        try{
+                            if (newestFirst == null){
+                                newestFirst = newestLast = ch;
+                                objectSize = ch.length();
+                            }else if (getVersion(ch)>getVersion(newestFirst)){
+                                newestFirst = newestLast = ch;
+                                objectSize = (objectSize>=ch.length()) ? objectSize : ch.length();
+                            }else if (getVersion(ch)==getVersion(newestFirst)){
+                                if (getObjectNo(ch)<getObjectNo(newestFirst)){
+                                    newestFirst = ch;
+                                }else if (getObjectNo(ch)>getObjectNo(newestLast)){
+                                    newestLast = ch;
+                                }
+                                objectSize = (objectSize>=ch.length()) ? objectSize : ch.length();
+                            }
+                        }catch(NumberFormatException ne){
+                            Logging.logMessage(Logging.LEVEL_ERROR, this, "CleanUp: an illegal file was discovered and ignored.");
                         }
-
                     }
+                }
+                
+                // dir is a fileName-directory
+                if (newestFirst!=null){
+                    // get a preview from the file
+                    char[] preview = null;
+                    try{
+                        fReader = new FileReader(newestFirst);
+                        preview = new char[PREVIEW_LENGTH];
+                        fReader.read(preview);
+                        fReader.close();
+                    } catch (Exception e) { assert(false); }   
+                     
+                    // get the metaInfo from the root-directory
+                    int stripCount = getObjectNo(newestLast);
+                    long fileSize = (stripCount==1) ? newestFirst.length() : (objectSize*stripCount)+newestLast.length();
+                    
+                    // insert the data into the FileList
+                    l.files.put(dir.getName(),new FileData(fileSize,(int) (objectSize/1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;
@@ -732,14 +688,26 @@ public class HashStorageLayout extends StorageLayout {
     }
     
     public static final class FileList {
+        // directories to scan
         final Stack<String> status;
-        final List<String>  files;
+        // fileName->fileDetails
+        final Map<String,FileData>  files;
+        
         boolean             hasMore;
 
-        public FileList(Stack<String> status, List<String> files) {
+        public FileList(Stack<String> status, Map<String,FileData> files) {
             this.status = status;
             this.files = files;
         }
     }
 
+    final class FileData {
+        final long      size;
+        final int       objectSize;
+        
+        FileData(long size, int objectSize) {
+            this.size = size;
+            this.objectSize = objectSize;
+        }
+    }
 }
