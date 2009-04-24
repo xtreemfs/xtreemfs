@@ -123,7 +123,7 @@ namespace org
         {
           proxy->send( request.get()->incRef() );
 
-          YIELD::Event& resp = request.get()->waitForDefaultResponse( get_timeout_ms() );
+          YIELD::Event& resp = request.get()->waitForDefaultResponse( static_cast<uint64_t>( -1 ) ); // get_timeout_ms() );
           std::cout << resp.get_type_name() << "( ";
           YIELD::PrettyPrintOutputStream output_stream( std::cout );
           resp.serialize( output_stream );
