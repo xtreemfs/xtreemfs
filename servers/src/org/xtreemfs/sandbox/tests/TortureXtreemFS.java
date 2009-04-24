@@ -161,6 +161,16 @@ public class TortureXtreemFS {
                     }
                 }
             }
+            
+            System.out.println("\nrandom test\n");
+
+            for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
+                for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize *2) {
+                    if (testRandom(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
+                        continue;
+                    }
+                }
+            }
 
             System.out.println("finished");
             rpcClient.shutdown();
@@ -186,18 +196,23 @@ public class TortureXtreemFS {
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
         //do writes
+        long tWrite = 0;
         for (int rec = 0; rec < numRecs; rec++) {
+            long tmpStart = System.currentTimeMillis();
             bytesWritten += raf.write(sendBuffer, 0, recsize);
+            tWrite += System.currentTimeMillis()-tmpStart;
         }
-        final long tWrite = System.currentTimeMillis();
         assert (bytesWritten == numRecs * recsize);
         raf.flush();
         raf.seek(0);
         final long tFlush = System.currentTimeMillis();
+        long tRead = 0;
         //do writes
         byte[] readBuffer = new byte[recsize];
         for (int rec = 0; rec < numRecs; rec++) {
+            long tmpStart = System.currentTimeMillis();
             final int bytesRead = raf.read(readBuffer, 0, recsize);
+            tRead += System.currentTimeMillis()-tmpStart;
             if (bytesRead != recsize) {
                 System.out.println("PREMATURE END-OF-FILE AT " + rec * recsize);
                 System.out.println("expected " + recsize + " bytes");
@@ -213,12 +228,12 @@ public class TortureXtreemFS {
                 }
             }
         }
-        final long tRead = System.currentTimeMillis();
+        
         raf.delete();
         final long tDelete = System.currentTimeMillis();
-        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite-tOpen+1)) / 1000.0);
-        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead-tFlush+1)) / 1000.0);
-        System.out.format("fs: %8d   bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", fsize / 1024, recsize, tWrite - tOpen, writeRate, tRead - tFlush, readRate);
+        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
+        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
+        System.out.format("fs: %8d   bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", fsize / 1024, recsize, tWrite, writeRate, tRead, readRate);
         return false;
     }
 
@@ -236,13 +251,15 @@ public class TortureXtreemFS {
         RandomAccessFile raf = new RandomAccessFile("rw", mrcAddr, volname + path, rpcClient, "root", grs);
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
+        long tWrite = 0;
         //do writes
         for (int rec = 0; rec < numRecs; rec++) {
             skips[rec] = (int) (Math.random()*((double)recsize));
             raf.seek(raf.getFilePointer()+skips[rec]);
+            long tmpStart = System.currentTimeMillis();
             bytesWritten += raf.write(sendBuffer, 0, recsize);
+            tWrite += System.currentTimeMillis()-tmpStart;
         }
-        final long tWrite = System.currentTimeMillis();
         if (bytesWritten != numRecs * recsize) {
             System.out.println("not all data was written!");
             System.exit(1);
@@ -250,11 +267,14 @@ public class TortureXtreemFS {
         raf.flush();
         raf.seek(0);
         final long tFlush = System.currentTimeMillis();
+        long tRead = 0;
         //do writes
         byte[] readBuffer = new byte[recsize];
         for (int rec = 0; rec < numRecs; rec++) {
             raf.seek(raf.getFilePointer()+skips[rec]);
+            long tmpStart = System.currentTimeMillis();
             final int bytesRead = raf.read(readBuffer, 0, recsize);
+            tRead += System.currentTimeMillis()-tmpStart;
             if (bytesRead != recsize) {
                 System.out.println("PREMATURE END-OF-FILE AT " + rec * recsize);
                 System.out.println("expected " + recsize + " bytes");
@@ -270,12 +290,11 @@ public class TortureXtreemFS {
                 }
             }
         }
-        final long tRead = System.currentTimeMillis();
         raf.delete();
         final long tDelete = System.currentTimeMillis();
-        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite-tOpen+1)) / 1000.0);
-        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead-tFlush+1)) / 1000.0);
-        System.out.format("rnd gaps       bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", recsize, tWrite - tOpen, writeRate, tRead - tFlush, readRate);
+        double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
+        double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
+        System.out.format("rnd gaps       bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", recsize, tWrite, writeRate, tRead, readRate);
         return false;
     }
 
