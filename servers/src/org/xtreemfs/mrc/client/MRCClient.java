@@ -686,10 +686,10 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse xtreemfs_restore_file(InetSocketAddress server, String filePath, String fileId,
-        int fileSize, String osdUUID, int stripeSize) {
+        long fileSizeInBytes, String osdUUID, int stripeSizeInKB) {
         
-        xtreemfs_restore_fileRequest rq = new xtreemfs_restore_fileRequest(filePath, fileId, fileSize,
-            osdUUID, stripeSize);
+        xtreemfs_restore_fileRequest rq = new xtreemfs_restore_fileRequest(filePath, fileId, fileSizeInBytes,
+            osdUUID, stripeSizeInKB);
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
             
             @Override
