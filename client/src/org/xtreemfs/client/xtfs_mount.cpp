@@ -77,28 +77,24 @@ namespace org
 #endif
           }
 
-          YIELD::SEDAStageGroup& main_stage_group = YIELD::SEDAStageGroup::createStageGroup();
-
           // Create the DIRProxy
           YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri.get() );
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << static_cast<const char*>( *dir_uri.get() ) << ".";
-          main_stage_group.createStage( *dir_proxy.get() );
 
           // Create the MRCProxy
           YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << static_cast<const char*>( mrc_uri ) << ".";
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( mrc_uri );
-          main_stage_group.createStage( *mrc_proxy.get() );
 
           // Create the OSDProxyFactory
-          OSDProxyFactory osd_proxy_factory( *dir_proxy.get(), main_stage_group );
+          YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory = createOSDProxyFactory( *dir_uri.get() );
 
           uint32_t xtreemfs_volume_flags = 0;
           if ( cache_files )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
           if ( cache_metadata )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
-          YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory, xtreemfs_volume_flags );
+          YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), *osd_proxy_factory.get(), xtreemfs_volume_flags );
 
           // Translate exceptions into errno codes
           xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume, get_log().incRef() );
@@ -155,7 +151,6 @@ namespace org
 
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": shutting down.";
           YIELD::Object::decRef( *xtreemfs_volume );
-          YIELD::SEDAStageGroup::destroyStageGroup( main_stage_group ); // Must destroy the stage group before the event handlers go out of scope so the stages aren't holding dead pointers
 
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
 

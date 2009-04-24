@@ -20,7 +20,7 @@ MRCProxy::~MRCProxy()
   delete policies;
 }
 
-YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::Request& out_body )
+YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::Object& out_body )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );

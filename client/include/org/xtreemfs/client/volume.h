@@ -67,8 +67,8 @@ namespace org
         uint32_t flags;
 
         YIELD::STLHashMap<SharedFile*> in_use_shared_files;
+        YIELD::Mutex in_use_shared_files_lock;
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
-        void set_errno( YIELD::Exception& );
 
       private:
         // SharedFileCallbackInterface

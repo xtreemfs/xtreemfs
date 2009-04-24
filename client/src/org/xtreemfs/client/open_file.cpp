@@ -14,7 +14,8 @@ OpenFile::OpenFile( const org::xtreemfs::interfaces::FileCredentials& file_crede
 OpenFile::~OpenFile()
 {
   flush();
-  Object::decRef( attached_to_file_replica.get_parent_shared_file() );
+  SharedFile& parent_shared_file = attached_to_file_replica.get_parent_shared_file(); // Get then decRef(), since attached_to_file_replica will probably be deleted by the decRef
+  Object::decRef( parent_shared_file );
 }
 
 bool OpenFile::datasync()

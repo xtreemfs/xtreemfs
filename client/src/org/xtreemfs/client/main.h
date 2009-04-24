@@ -46,6 +46,7 @@ namespace org
           : YIELD::Main( program_name, program_description, files_usage )
         {
           log = NULL;
+          stage_group = &YIELD::SEDAStageGroup::createStageGroup();
 
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
@@ -62,6 +63,7 @@ namespace org
         {
           YIELD::Object::decRef( log );
           YIELD::Object::decRef( ssl_context );
+          YIELD::SEDAStageGroup::destroyStageGroup( *stage_group );
         }
         
         YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
@@ -79,27 +81,17 @@ namespace org
           return createProxy<OSDProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
         }
 
+        YIELD::auto_Object<OSDProxyFactory> createOSDProxyFactory( const YIELD::URI& dir_uri )
+        {
+          return new OSDProxyFactory( *createDIRProxy( dir_uri ).release(), *stage_group );
+        }
+
         YIELD::Log& get_log()
         {
           if ( log == NULL )
             log = new YIELD::Log( std::cout, get_log_level() );
           return *log;
         }
-
-        YIELD::SSLContext* get_ssl_context()
-        {
-          if ( ssl_context == NULL )
-          {
-            if ( !pkcs12_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
-            else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
-          }
-
-          return ssl_context;
-        }
-
-        uint64_t get_timeout_ms() const { return timeout_ms; }
 
         std::auto_ptr<YIELD::URI> parseURI( const char* uri_c_str )
         {
@@ -156,6 +148,7 @@ namespace org
 
         YIELD::Log* log;
         YIELD::SSLContext* ssl_context;
+        YIELD::SEDAStageGroup* stage_group;
 
 
         template <class ProxyType>
@@ -166,7 +159,21 @@ namespace org
             checked_uri.set_port( default_port );
           ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
           proxy->set_request_timeout_ms( timeout_ms );
+          stage_group->createStage( proxy->incRef(), 1, new YIELD::FDAndInternalEventQueue );
           return proxy;
+        }
+
+        YIELD::SSLContext* get_ssl_context()
+        {
+          if ( ssl_context == NULL )
+          {
+            if ( !pkcs12_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
+            else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+          }
+
+          return ssl_context;
         }
       };
     };

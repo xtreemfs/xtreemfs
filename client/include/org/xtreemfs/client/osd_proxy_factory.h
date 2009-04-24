@@ -17,7 +17,7 @@ namespace org
       class VersionedURI;
 
 
-      class OSDProxyFactory
+      class OSDProxyFactory : public YIELD::Object
       {
       public:
         OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max = YIELD::ONCRPCProxy::DEFAULT_RECONNECT_TRIES_MAX );

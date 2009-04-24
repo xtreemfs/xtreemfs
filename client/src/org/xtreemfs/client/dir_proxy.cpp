@@ -22,7 +22,7 @@ DIRProxy::~DIRProxy()
     delete uuid_to_uri_i->second;
 }
 
-YIELD::ONCRPCRequest* DIRProxy::createONCRPCRequest( YIELD::Request& out_body )
+YIELD::ONCRPCRequest* DIRProxy::createONCRPCRequest( YIELD::Object& out_body )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );

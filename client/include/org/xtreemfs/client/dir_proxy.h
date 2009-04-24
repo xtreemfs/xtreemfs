@@ -60,7 +60,7 @@ namespace org
 
 
         // YIELD::Proxy
-        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::Request& );
+        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::Object& out_body );
       };
     };
   };

@@ -36,13 +36,16 @@ namespace org
         SharedFile& parent_shared_file;
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
         std::vector<std::string> osd_uuids;
+
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
-        void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& );
+        YIELD::Mutex latest_osd_write_response_lock;
+        void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& new_osd_write_response, org::xtreemfs::interfaces::OSDWriteResponse& latest_osd_write_response );
 
         MRCProxy& get_mrc_proxy() const { return parent_shared_file.get_mrc_proxy(); }
 
         OSDProxy& get_osd_proxy( uint64_t object_number );
         std::vector<OSDProxy*> osd_proxies;
+        YIELD::Mutex osd_proxies_lock;
       };
     };
   };
