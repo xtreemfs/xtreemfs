@@ -93,8 +93,12 @@ namespace org
           // Create the OSDProxyFactory
           OSDProxyFactory osd_proxy_factory( *dir_proxy.get(), main_stage_group );
 
-          // Start FUSE with an XtreemFS volume
-          YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory );
+          uint32_t xtreemfs_volume_flags = 0;
+          if ( cache_files )
+            xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
+          if ( cache_metadata )
+            xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
+          YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), osd_proxy_factory, xtreemfs_volume_flags );
 
           // Translate exceptions into errno codes
           xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume, get_log().incRef() );

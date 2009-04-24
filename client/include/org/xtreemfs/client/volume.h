@@ -41,10 +41,15 @@ namespace org
       class Volume : public YIELD::Volume, public SharedFileCallbackInterface
       {
       public:
-        Volume( const std::string& name, DIRProxy&, MRCProxy&, OSDProxyFactory& );
+        const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
+        const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
+           
+
+        Volume( const std::string& name, DIRProxy&, MRCProxy&, OSDProxyFactory&, uint32_t flags = 0 );
         virtual ~Volume() { }
 
         DIRProxy& get_dir_proxy() const { return dir_proxy; }
+        uint32_t get_flags() const { return flags; }
         MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
         OSDProxyFactory& get_osd_proxy_factory() const { return osd_proxy_factory; }
 
@@ -56,9 +61,10 @@ namespace org
         
       private:
         std::string name;
-        DIRProxy& dir_proxy; uint64_t dir_proxy_operation_timeout_ms;
-        MRCProxy& mrc_proxy; uint64_t mrc_proxy_operation_timeout_ms;
-        OSDProxyFactory& osd_proxy_factory; uint64_t osd_proxy_operation_timeout_ms;
+        DIRProxy& dir_proxy;
+        MRCProxy& mrc_proxy;
+        OSDProxyFactory& osd_proxy_factory;
+        uint32_t flags;
 
         YIELD::STLHashMap<SharedFile*> in_use_shared_files;
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );

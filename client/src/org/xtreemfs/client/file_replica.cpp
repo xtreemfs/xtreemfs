@@ -81,6 +81,8 @@ void FileReplica::truncate( const org::xtreemfs::interfaces::FileCredentials& fi
   org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
   get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
   processOSDWriteResponse( osd_write_response );
+  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    flush( file_credentials );
 }
 
 bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
@@ -110,6 +112,9 @@ bool FileReplica::writev( const org::xtreemfs::interfaces::FileCredentials& file
     file_offset += object_size;
     processOSDWriteResponse( osd_write_response );    
   }
+
+  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    flush( file_credentials );
 
   if ( out_bytes_written )
     *out_bytes_written = file_offset - offset;
