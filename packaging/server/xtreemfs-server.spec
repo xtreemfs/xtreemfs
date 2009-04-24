@@ -1,6 +1,6 @@
 Name:           XtreemFS-server
 Version:        1.0.0
-Release:        beta1
+Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 #BuildRequires:  fastjar

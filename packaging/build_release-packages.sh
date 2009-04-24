@@ -12,7 +12,10 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 SERVER_WHITE_LIST=(
 	"servers/build.xml" ""
 	"servers/bin" "bin"
-	"servers/config" "config"
+	"servers/config/default_dir" "config/default_dir"
+	"servers/config/dirconfig.properties" "config/dirconfig.properties"
+	"servers/config/mrcconfig.properties" "config/mrcconfig.properties"
+	"servers/config/osdconfig.properties" "config/osdconfig.properties"
 	"servers/init.d-scripts" "init.d-scripts"
 	"servers/lib" "lib"
 	"servers/man" "man"
@@ -43,7 +46,7 @@ XOS_ADDONS_WHITE_LIST=(
 # black list for files/dirs which should NEVER be copied
 SERVER_BLACK_LIST=(
 	"servers/bin/generate_xtreemfs_java.py"
-	"servers/config/*test"
+	"servers/lib/test"
 )
 
 # black list for files/dirs which should NEVER be copied
