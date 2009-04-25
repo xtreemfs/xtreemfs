@@ -82,7 +82,11 @@ namespace org
         void parseFiles( int files_count, char** files )
         {
           if ( files_count >= 1 )
-            mrc_uri = parseVolumeURI( files[0], volume_name );
+          {
+            mrc_uri = parseURI( files[0] );
+            if ( mrc_uri.get()->get_resource().size() > 1 )
+              volume_name = mrc_uri.get()->get_resource().c_str() + 1;
+          }
           else
             throw YIELD::Exception( "must specify an MRC URI" );
         }
