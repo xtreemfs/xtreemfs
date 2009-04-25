@@ -8,6 +8,7 @@
 #include "org/xtreemfs/client/volume.h"
 
 
+/*
 namespace org
 {
   namespace xtreemfs
@@ -54,3 +55,4 @@ namespace org
 TEST_SUITE_EX( File, org::xtreemfs::client::FileTestSuite )
 
 TEST_MAIN( File )
+*/

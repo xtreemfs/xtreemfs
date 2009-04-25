@@ -61,7 +61,7 @@ namespace org
 
         virtual ~Main()
         {
-          YIELD::SEDAStageGroup::destroyStageGroup( *stage_group );
+          YIELD::StageGroup::destroyStageGroup( *stage_group );
           YIELD::Object::decRef( log );
           YIELD::Object::decRef( ssl_context );         
         }
@@ -160,7 +160,7 @@ namespace org
 
         YIELD::Log* log;
         YIELD::SSLContext* ssl_context;
-        YIELD::SEDAStageGroup* stage_group;
+        YIELD::StageGroup* stage_group;
 
 
         template <class ProxyType>
@@ -171,7 +171,7 @@ namespace org
             checked_uri.set_port( default_port );
           ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
           proxy->set_request_timeout_ms( timeout_ms );
-          stage_group->createStage( proxy->incRef(), 1, new YIELD::FDAndInternalEventQueue );
+          stage_group->createStage( proxy->incRef(), new YIELD::FDAndInternalEventQueue, &get_log() );
           return proxy;
         }
 
