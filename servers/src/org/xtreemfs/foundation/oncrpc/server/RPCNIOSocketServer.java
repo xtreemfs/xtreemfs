@@ -281,6 +281,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             final int numBytesRead = readData(key, channel, fragmentHeader);
                             if (numBytesRead == -1) {
                                 //connection closed
+                                if (Logging.isInfo()) {
+                                    Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                                }
                                 closeConnection(key);
                                 return;
                             }
@@ -345,6 +348,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 }
             }
         } catch (ClosedByInterruptException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+            }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
             }
@@ -413,6 +419,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             //send fragment data
                             final long numBytesWritten = channel.write(rq.getResponseSendBuffers());
                             if (numBytesWritten == -1) {
+                                if (Logging.isInfo()) {
+                                    Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                                }
                                 //connection closed
                                 closeConnection(key);
                                 return;
@@ -444,6 +453,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 }
             }
         } catch (ClosedByInterruptException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+            }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
             }
@@ -554,6 +566,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             }
 
         } catch (ClosedChannelException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection during accept");
+            }
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "cannot establish connection: " + ex);
             if (channelIO != null) {
                 try {
