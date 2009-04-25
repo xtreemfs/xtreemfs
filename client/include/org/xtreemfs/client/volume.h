@@ -21,24 +21,9 @@ namespace org
       class DIRProxy;
       class MRCProxy;
       class OSDProxyFactory;
-      class SharedFile;
-      class OpenFile;
-      class PolicyContainer;
 
 
-      class SharedFileCallbackInterface
-      {
-      public:
-        virtual ~SharedFileCallbackInterface() { }
-
-      private:
-        friend class SharedFile;
-
-        virtual void release( SharedFile& ) = 0;
-      };
-
-
-      class Volume : public YIELD::Volume, public SharedFileCallbackInterface
+      class Volume : public YIELD::Volume
       {
       public:
         const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
@@ -66,13 +51,8 @@ namespace org
         OSDProxyFactory& osd_proxy_factory;
         uint32_t flags;
 
-        YIELD::STLHashMap<SharedFile*> in_use_shared_files;
-        YIELD::Mutex in_use_shared_files_lock;
-        void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
 
-      private:
-        // SharedFileCallbackInterface
-        void release( SharedFile& );
+        void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
       };
     };
   };

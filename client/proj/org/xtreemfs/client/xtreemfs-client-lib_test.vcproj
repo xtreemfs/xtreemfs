@@ -170,7 +170,7 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\open_file_test.cpp"
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\file_test.cpp"
     >
 </File>
 <File

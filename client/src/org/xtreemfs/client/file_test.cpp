@@ -14,10 +14,10 @@ namespace org
   {
     namespace client
     {
-      class OpenFileTestSuite : public YIELD::FileTestSuite
+      class FileTestSuite : public YIELD::FileTestSuite
       {
       public:
-        OpenFileTestSuite( const char* test_suite_name )
+        FileTestSuite( const char* test_suite_name )
           : YIELD::FileTestSuite( test_suite_name ),
             stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
             dir_proxy( "oncrpc://outtolunch/" ),
@@ -29,7 +29,7 @@ namespace org
           stage_group.createStage( mrc_proxy );
         }
 
-        virtual ~OpenFileTestSuite()
+        virtual ~FileTestSuite()
         {
           YIELD::SEDAStageGroup::destroyStageGroup( stage_group );
         }
@@ -51,6 +51,6 @@ namespace org
   };
 };
 
-TEST_SUITE_EX( OpenFile, org::xtreemfs::client::OpenFileTestSuite )
+TEST_SUITE_EX( File, org::xtreemfs::client::FileTestSuite )
 
-TEST_MAIN( OpenFile )
+TEST_MAIN( File )

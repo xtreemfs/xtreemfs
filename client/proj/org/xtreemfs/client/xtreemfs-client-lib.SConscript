@@ -86,13 +86,11 @@ if not sys.platform.startswith( "win" ):
 
 ( build_env.Library( r"../../../../lib/xtreemfs-client", (
 r"../../../../src/org/xtreemfs/client/dir_proxy.cpp",
-r"../../../../src/org/xtreemfs/client/file_replica.cpp",
+r"../../../../src/org/xtreemfs/client/file.cpp",
 r"../../../../src/org/xtreemfs/client/mrc_proxy.cpp",
-r"../../../../src/org/xtreemfs/client/open_file.cpp",
 r"../../../../src/org/xtreemfs/client/osd_proxy.cpp",
 r"../../../../src/org/xtreemfs/client/osd_proxy_factory.cpp",
 r"../../../../src/org/xtreemfs/client/path.cpp",
 r"../../../../src/org/xtreemfs/client/policy_container.cpp",
-r"../../../../src/org/xtreemfs/client/shared_file.cpp",
 r"../../../../src/org/xtreemfs/client/volume.cpp"
 ) ) )

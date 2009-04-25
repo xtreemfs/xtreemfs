@@ -79,7 +79,7 @@ for lib in ["xtreemfs-client"]:
 
 AlwaysBuild( build_env.Program( r"../../../../bin/xtreemfs-client-lib_test", (
 r"./org_xtreemfs_client_test_main.cpp",
-r"../../../../src/org/xtreemfs/client/open_file_test.cpp",
+r"../../../../src/org/xtreemfs/client/file_test.cpp",
 r"../../../../src/org/xtreemfs/client/path_test.cpp",
 r"../../../../src/org/xtreemfs/client/volume_test.cpp"
 ) ) )

@@ -34,7 +34,7 @@ namespace org
         };
 
         bool long_listing;
-        std::auto_ptr<YIELD::URI> mrc_uri;
+        YIELD::auto_Object<YIELD::URI> mrc_uri;
         std::string volume_name;
 
         // xtfs_bin
@@ -82,11 +82,7 @@ namespace org
         void parseFiles( int files_count, char** files )
         {
           if ( files_count >= 1 )
-          {
-            mrc_uri = parseURI( files[0] );
-            if ( strlen( mrc_uri->get_resource() ) > 1 )
-              volume_name = mrc_uri->get_resource() + 1;
-          }
+            mrc_uri = parseVolumeURI( files[0], volume_name );
           else
             throw YIELD::Exception( "must specify an MRC URI" );
         }

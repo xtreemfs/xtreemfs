@@ -22,7 +22,7 @@ namespace org
         { }
 
       private:
-        std::auto_ptr<YIELD::URI> mrc_uri;
+        YIELD::auto_Object<YIELD::URI> mrc_uri;
         std::string volume_name;
 
 
@@ -37,11 +37,7 @@ namespace org
         void parseFiles( int files_count, char** files )
         {
           if ( files_count >= 1 )
-          {
-            mrc_uri = parseURI( files[0] );
-            if ( strlen( mrc_uri.get()->get_resource() ) > 1 )
-              volume_name = mrc_uri.get()->get_resource() + 1;
-          }
+            mrc_uri = parseVolumeURI( files[0], volume_name );
           else
             throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
         }

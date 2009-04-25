@@ -3,12 +3,10 @@
 
 #include "org/xtreemfs/client/volume.h"
 #include "org/xtreemfs/client/dir_proxy.h"
+#include "org/xtreemfs/client/file.h"
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy_factory.h"
 #include "org/xtreemfs/client/path.h"
-#include "open_file.h"
-#include "shared_file.h"
-#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 #include <errno.h>
@@ -139,23 +137,7 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
   org::xtreemfs::interfaces::FileCredentials file_credentials;
   mrc_proxy.open( path, system_v_flags, mode, attributes, file_credentials );
 
-  in_use_shared_files_lock.acquire();
-  SharedFile* shared_file = in_use_shared_files.find( static_cast<const char*>( path ) );
-  if ( shared_file == NULL )
-  {
-    shared_file = new SharedFile( *this, path, file_credentials.get_xlocs() );
-    in_use_shared_files.insert( static_cast<const char*>( path ), shared_file );
-    OpenFile& open_file = shared_file->open( file_credentials );
-    YIELD::Object::decRef( *shared_file ); // every open creates a new reference to the SharedFile; decRef the original reference here so that the last released'd OpenFile will delete the SharedFile
-    in_use_shared_files_lock.release();
-    return &open_file;
-  }
-  else
-  {
-    OpenFile& open_file = shared_file->open( file_credentials );
-    in_use_shared_files_lock.release();
-    return &open_file;
-  }
+  return new File( *this, path, file_credentials );
 }
 
 bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
@@ -266,13 +248,6 @@ bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const Y
 YIELD::Path Volume::volname( const YIELD::Path& )
 {
   return name;
-}
-
-void Volume::release( SharedFile& shared_file )
-{
-  in_use_shared_files_lock.acquire();
-  in_use_shared_files.remove( static_cast<const char*>( shared_file.get_path() ) );
-  in_use_shared_files_lock.release();
 }
 
 void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set )

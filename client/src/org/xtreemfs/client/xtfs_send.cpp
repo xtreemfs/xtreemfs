@@ -137,11 +137,11 @@ namespace org
         {
           if ( files_count >= 1 )
           {
-            std::auto_ptr<YIELD::URI> rpc_uri = parseURI( files[0] );
+            YIELD::auto_Object<YIELD::URI> rpc_uri = parseURI( files[0] );
 
-            if ( strlen( rpc_uri.get()->get_resource() ) > 1 )
+            if ( rpc_uri.get()->get_resource().size() > 1 )
             {
-              std::string request_type_name( rpc_uri.get()->get_resource() + 1 );
+              std::string request_type_name( rpc_uri.get()->get_resource().c_str() + 1 );
               request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request.get() != NULL )
                 proxy = createMRCProxy( *rpc_uri.get() ).release();

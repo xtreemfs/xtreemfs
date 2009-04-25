@@ -58,7 +58,7 @@ namespace org
 
         bool cache_files, cache_metadata;
         bool direct_io;
-        std::auto_ptr<YIELD::URI> dir_uri;
+        YIELD::auto_Object<YIELD::URI> dir_uri;
         bool foreground;
         std::string fuse_o_args;
         std::string mount_point, volume_name;
@@ -79,11 +79,11 @@ namespace org
 
           // Create the DIRProxy
           YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri.get() );
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << static_cast<const char*>( *dir_uri.get() ) << ".";
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << *dir_uri.get() << ".";
 
           // Create the MRCProxy
           YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << static_cast<const char*>( mrc_uri ) << ".";
+          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << mrc_uri << ".";
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( mrc_uri );
 
           // Create the OSDProxyFactory
@@ -184,13 +184,9 @@ namespace org
         {
           if ( file_count >= 2 )
           {
-            dir_uri = parseURI( files[0] );
-            if ( strlen( dir_uri->get_resource() ) > 1 )
-            {
-              volume_name = dir_uri->get_resource() + 1;
-              mount_point = files[1];
-              return;
-            }
+            dir_uri = parseVolumeURI( files[0], volume_name );
+            mount_point = files[1];
+            return;
           }
 
           throw YIELD::Exception( "must specify dir_host/volume name and mount point" );

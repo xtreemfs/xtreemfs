@@ -26,7 +26,7 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
 
 OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
-  uint32_t uri_hash = YIELD::string_hash( uri.get_decoded_uri() );
+  uint32_t uri_hash = YIELD::string_hash( uri.get_host() );
   osd_proxy_cache_lock.acquire();
   OSDProxy* osd_proxy = osd_proxy_cache.find( uri_hash );
   osd_proxy_cache_lock.release();

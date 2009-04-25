@@ -61,9 +61,9 @@ namespace org
 
         virtual ~Main()
         {
-          YIELD::Object::decRef( log );
-          YIELD::Object::decRef( ssl_context );
           YIELD::SEDAStageGroup::destroyStageGroup( *stage_group );
+          YIELD::Object::decRef( log );
+          YIELD::Object::decRef( ssl_context );         
         }
         
         YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
@@ -92,8 +92,8 @@ namespace org
             log = new YIELD::Log( std::cout, get_log_level() );
           return *log;
         }
-
-        std::auto_ptr<YIELD::URI> parseURI( const char* uri_c_str )
+       
+        YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
         {
           std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
@@ -104,7 +104,19 @@ namespace org
               uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
           }
 
-          return std::auto_ptr<YIELD::URI>( new YIELD::URI( uri_str ) );
+          return YIELD::auto_Object<YIELD::URI>( new YIELD::URI( uri_str ) );
+        }
+
+        YIELD::auto_Object<YIELD::URI> parseVolumeURI( const char* volume_uri_c_str, std::string& volume_name )
+        {
+          YIELD::auto_Object<YIELD::URI> volume_uri = parseURI( volume_uri_c_str );
+          if ( volume_uri.get()->get_resource().size() > 1 )
+          {
+            volume_name = volume_uri.get()->get_resource().c_str() + 1;
+            return volume_uri;
+          }
+          else
+            throw YIELD::Exception( "invalid volume URI" );
         }
 
         // YIELD::Main

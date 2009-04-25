@@ -24,7 +24,7 @@ namespace org
         { }
 
       private:
-        std::auto_ptr<YIELD::URI> mrc_uri;
+        YIELD::auto_Object<YIELD::URI> mrc_uri;
         Path path;
 
         // xtfs_bin
@@ -93,8 +93,8 @@ namespace org
           if ( files_count >= 1 )
           {
             mrc_uri = parseURI( files[0] );
-            if ( strlen( mrc_uri->get_resource() ) > 1 )
-              path = Path( mrc_uri->get_resource() + 1 );
+            if ( mrc_uri.get()->get_resource().size() > 1 )
+              path = Path( mrc_uri.get()->get_resource().c_str() + 1 );
             else
               throw YIELD::Exception( "must specify a volume_name/[path]" );
           }
