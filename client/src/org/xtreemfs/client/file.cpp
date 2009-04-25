@@ -11,14 +11,20 @@ using namespace org::xtreemfs::client;
 
 File::File( Volume& parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), path( path ), file_credentials( file_credentials )
-{ }
+{
+  const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
+  osd_proxies = new OSDProxy*[osd_uuids.size()];
+  memset( osd_proxies, 0, sizeof( *osd_proxies ) );
+}
 
 File::~File()
 {
   flush();
 
-  for ( std::vector<OSDProxy*>::iterator osd_proxy_i = osd_proxies.begin(); osd_proxy_i != osd_proxies.end(); osd_proxy_i++ )
-    YIELD::Object::decRef( *osd_proxy_i );
+  const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
+  for ( uint32_t osd_i = 0; osd_i < osd_uuids.size(); osd_i++ )
+    YIELD::Object::decRef( osd_proxies[osd_i] );
+  delete [] osd_proxies;
 }
 
 bool File::datasync()
@@ -52,19 +58,18 @@ YIELD::auto_Object<YIELD::Stat> File::getattr()
 OSDProxy& File::get_osd_proxy( uint64_t object_number )
 {
   const org::xtreemfs::interfaces::StripingPolicy& striping_policy = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy();
-  const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
 
   switch ( striping_policy.get_type() )
   {
     case org::xtreemfs::interfaces::STRIPING_POLICY_RAID0:
     {      
       size_t osd_i = object_number % striping_policy.get_width();
-      if ( osd_proxies.size() > osd_i && osd_proxies[osd_i] != NULL )
+      if ( osd_proxies[osd_i] != NULL )
         return *osd_proxies[osd_i];
       else
       {
-        OSDProxy& osd_proxy = parent_volume.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] );
-        osd_proxies.resize( osd_i+1 );
+        const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
+        OSDProxy& osd_proxy = parent_volume.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] ); 
         osd_proxies[osd_i] = &osd_proxy;
         return osd_proxy;
       }

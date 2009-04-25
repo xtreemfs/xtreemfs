@@ -32,8 +32,8 @@ namespace org
         org::xtreemfs::interfaces::FileCredentials file_credentials;
 
         OSDProxy& get_osd_proxy( uint64_t object_number );
-        std::vector<OSDProxy*> osd_proxies;
-
+        OSDProxy** osd_proxies;
+ 
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
         void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
       };
