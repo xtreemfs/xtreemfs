@@ -1,4 +1,5 @@
-import sys, os.path, signal, shutil
+import sys, os.path, signal, shutil, time, traceback, unittest
+from errno import *
 from optparse import OptionParser
 from subprocess import Popen, call
 
@@ -12,8 +13,8 @@ OSD_PKCS12_PASSPHRASE = "passphrase"
 TRUSTED_CERTS_JKS_PASSPHRASE = "passphrase"
 
 # Paths
-MY_DIR_PATH = os.path.dirname( sys.modules[__name__].__file__ )
-XTREEMFS_DIR_PATH = os.path.join( MY_DIR_PATH, "..", ".." )
+MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
+XTREEMFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", ".." ) )
 
 CERT_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "certs" ) )
 CLIENT_PKCS12_FILE_PATH = os.path.join( CERT_DIR_PATH, "Client.p12" )
@@ -72,28 +73,35 @@ def check_environment():
 def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
     tests_dir_path = os.path.join( MY_DIR_PATH, "tests" )
     sys.path.append( tests_dir_path )
+    original_cwd = os.getcwd()
     for file_name in os.listdir( tests_dir_path ):
         if file_name.endswith( ".py" ):
-            test_module_name = os.path.splitext( file_name[0] )
+            test_module_name = os.path.splitext( file_name )[0]
+            print "Trying to import test", test_module_name
             try:
                 test_module = __import__( test_module_name )
             except ImportError:
                 print "Could not import", test_module_name, "from tests"
+                traceback.print_exc()
                 continue
 
             if hasattr( test_module, "suite" ):
                 suite = getattr( test_module, "suite" )
                 for mount_point_dir_name in os.listdir( os.path.join( MY_DIR_PATH, "mnt" ) ):
                     mount_point_dir_path = os.path.join( MY_DIR_PATH, "mnt", mount_point_dir_name )
+                    print "Running", test_module_name, "in", mount_point_dir_path
                     test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
                     try: os.mkdir( test_run_dir_path )
                     except: pass                                         
                     os.chdir( test_run_dir_path )
-                    print "Running", test_module_name, "in", mount_point_dir_path
                     unittest.TextTestRunner().run( suite )
                     os.chdir( mount_point_dir_path )
                     shutil.rmtree( test_run_dir_path )
-                    
+            else:
+                print "Test module", test_module_name, "does not have a suite global variable"
+
+    os.chdir( original_cwd )                    
+
 
 def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT ):
     locals().update( globals() )
@@ -182,6 +190,7 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
         generate_osd_config( debug_level, ssl_enabled, osdnum )
 
     _start_service( "dir" )
+    time.sleep( 0.5 )
     _start_service( "mrc" )    
     for osdnum in xrange( 1, num_osds+1 ):
         _start_service( "osd", str( osdnum ) )
@@ -198,9 +207,10 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
             xtfs_mkvol_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
             xtfs_mkvol_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
             xtfs_mkvol_args.append( "localhost/test_%(osdnum)u" % locals() )
-            print "Creating volume test_%(osdnum)s with command line" % locals(), " ".join( xtfs_mkvol_args )                            
-            retcode = call( xtfs_mkvol_args )
-            if retcode != 0:
+            xtfs_mkvol_args = " ".join( xtfs_mkvol_args )                            
+            print "Creating volume test_%(osdnum)s with command line" % locals(), xtfs_mkvol_args
+            retcode = call( xtfs_mkvol_args, shell=True )
+            if retcode != 0 and retcode != EEXIST:
                 print "FAILED: cannot create volume test_%(osdnum)u" % locals()
                 stop_environment( num_osds )
                 sys.exit( 1 )
@@ -208,32 +218,35 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
     if mount_volumes:
         for osdnum in xrange( 1, num_osds+1 ):
             for direct_io in ( False, True ):
+                mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
+                mount_dir_path = os.path.join( "mnt", mount_dir_name ) 
                 xtfs_mount_args = [XTFS_MOUNT_FILE_PATH]
                 xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
+                xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
                 if ssl_enabled: xtfs_mount_args.extend( client_ssl_args )
-                if direct_io: xtfs_mount_args.exthend( ( "-o", "direct_io" ) )
+                if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
                 DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
                 xtfs_mount_args.append( "localhost:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
-                xtfs_mount_args.append( os.path.join( "mnt", str( osdnum ) + ( not direct_io and "_nondirect" or "" ) ) )
-                print "Mounting volume test_%(osdnum)s with command line" % locals(), " ".join( xtfs_mount_args )                
-                # retcode = call( xtfs_mount_args )
-                retcode = 0
-                if retcode != 0:
-                    print "FAILED: could not mount volume test_%(osdnum)u"
-                    stop_environment( num_osds )
-                    sys.exit( 1 )
+                xtfs_mount_args.append( mount_dir_path )
+                xtfs_mount_args = " ".join( xtfs_mount_args )
+                print "Mounting volume test_%(osdnum)s with command line" % locals(), xtfs_mount_args
+                if not os.path.exists( mount_dir_path ): os.mkdir( mount_dir_path )                
+                log_file_path = os.path.join( "log", "client" + mount_dir_name + ".log" )
+                stderr = stdout = open( log_file_path, "a" )
+                xtfs_mount_process = Popen( xtfs_mount_args, shell=True, stdout=stdout, stderr=stderr )
             
 
 def _start_service( service_name, service_num="" ):        
-    args = ["java"] 
+    args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
     args.append( "-ea" ) # Enable assertions
-    args.extend( ( "-cp", sys.platform.startswith( "win" ) and ";".join( CLASSPATH ) or ":".join( CLASSPATH ), ) )
+    args.extend( ( "-cp", "" + ( sys.platform.startswith( "win" ) and ";".join( CLASSPATH ) or ":".join( CLASSPATH ) ) + "", ) )
     args.append( "org.xtreemfs." + service_name + "." + service_name.upper() ) # Class name
     args.append( os.path.join( "config", service_name + service_num + ".config" ) ) # Configuration file
+    args = " ".join( args )
     log_file_path = os.path.join( "log", service_name + service_num + ".log" )
-#    stderr = stdout = open( log_file_path, "a" )
-    print "Starting", service_name.upper() + service_num, "service with command line", " ".join( args ), "and redirecting output to", log_file_path
-    p = Popen( args, shell=True )# , stdout=stdout, stderr=stderr )
+    stderr = stdout = open( log_file_path, "a" )
+    print "Starting", service_name.upper() + service_num, "service with command line", args, "and redirecting output to", log_file_path
+    p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
 
 
@@ -243,6 +256,16 @@ def stop_environment( num_osds=NUM_OSDS_DEFAULT ):
     for osdnum in xrange( 1, num_osds+1 ):
         _stop_service( "osd", str( osdnum ) )
 
+    mnt_dir_path = os.path.abspath( "mnt" )
+    for mounts_line in open( "/proc/mounts" ).readlines():
+       mounts_line_parts = mounts_line.split()
+       device = mounts_line_parts[0]
+       mount_point_dir_path = mounts_line_parts[1]
+       if device == "/dev/fuse" and mount_point_dir_path.startswith( mnt_dir_path ):
+           fusermount_args = " ".join( ["fusermount", "-u", mount_point_dir_path] )
+           print "Unmounting volume with", fusermount_args
+           call( fusermount_args, shell=True )
+
 def _stop_service( service_name, service_num="" ):
     run_file_path = os.path.join( "run", service_name + service_num + ".run" )
     if os.path.exists( run_file_path ):
@@ -251,7 +274,10 @@ def _stop_service( service_name, service_num="" ):
         if sys.platform.startswith( "win" ):
             call( "TASKKILL /PID %(service_pid)u /F /T" % locals() )
         else:
-            os.kill( service_pid, signal.SIGKILL )
+            try: 
+               os.kill( service_pid, signal.SIGTERM )
+            except:
+               traceback.print_exc()
         os.unlink( run_file_path )
     else:
         print "ERROR:", run_file_path, "does not exist,", service_name.upper(), "service is not running."
@@ -282,9 +308,13 @@ if __name__ == "__main__":
     elif options.stop_environment:
         stop_environment()
     else:
+        stop_environment()
         start_environment( debug_level=options.debug_level, ssl_enabled=options.ssl_enabled, num_osds=options.num_osds, create_volumes=not options.disable_create_volumes, mount_volumes=not options.disable_mount_volumes )
         if not options.start_environment: # i.e. no options were specified
-            execute_tests( num_osds=options.num_osds )
+            try:
+                execute_tests( num_osds=options.num_osds )
+            except:
+                traceback.print_exc()
             stop_environment()
     
         
