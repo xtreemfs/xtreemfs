@@ -11,7 +11,9 @@ TEST_SUBDIR_PATH = os.path.join( TEST_DIR_NAME, TEST_SUBDIR_NAME )
 class SimpleMetadataTestCase(unittest.TestCase):
 	def tearDown( self ):
 		try: os.unlink( TEST_FILE_NAME )
-		except: pass
+    		except: pass
+       	        try: os.unlink( TEST_LINK_NAME )
+                except: pass
 		try: shutil.rmtree( TEST_DIR_NAME )
 		except: pass
 
@@ -32,7 +34,7 @@ class linkTest(SimpleMetadataTestCase):
 	def runTest(self ):
 		open( TEST_FILE_NAME, "w+" ).close()
 		assert os.path.exists( TEST_FILE_NAME )
-		os.link( TEST_LINK_NAME, TEST_FILE_NAME )
+		os.link( TEST_FILE_NAME, TEST_LINK_NAME )
 		assert os.path.exists( TEST_LINK_NAME )
 		os.unlink( TEST_LINK_NAME )
 		assert not os.path.exists( TEST_LINK_NAME )
@@ -70,7 +72,7 @@ class renamefileTest(SimpleMetadataTestCase):
 	def runTest( self ):
 		open( TEST_FILE_NAME, "w+" ).close()
 		assert os.path.exists( TEST_FILE_NAME )
-		os.rename( TEST_DIR_NAME, "renamefile" )
+		os.rename( TEST_FILE_NAME, "renamefile" )
 		assert not os.path.exists( TEST_FILE_NAME )
 		assert os.path.exists( "renamefile" )
 		os.unlink( "renamefile" )
@@ -91,11 +93,11 @@ class symlinkTest(SimpleMetadataTestCase):
 	def runTest( self ):
 		open( TEST_FILE_NAME, "w+" ).close()
 		assert os.path.exists( TEST_FILE_NAME )
-		os.symlink( TEST_LINK_NAME, TEST_FILE_NAME )
+		os.symlink( TEST_FILE_NAME, TEST_LINK_NAME )
 		assert os.path.exists( TEST_LINK_NAME )
-		assert os.path.readlink( TEST_LINK_NAME ) == TEST_FILE_NAME
+		assert os.readlink( TEST_LINK_NAME ) == TEST_FILE_NAME
 		os.rename( TEST_LINK_NAME, "renamedlink" )
-		assert os.path.readlink( "renamedlink" ) == TEST_FILE_NAME		
+		assert os.readlink( "renamedlink" ) == TEST_FILE_NAME		
 		os.unlink( "renamedlink" )
 		assert os.path.exists( TEST_FILE_NAME )
 
