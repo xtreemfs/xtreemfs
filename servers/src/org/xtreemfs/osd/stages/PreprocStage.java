@@ -247,7 +247,7 @@ public class PreprocStage extends Stage {
         //assemble stuff
         if (hdr.getInterfaceVersion() != OSDInterface.getVersion()) {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
-                    ErrNo.EINVAL,"invalid version requested"));
+                    ErrNo.EINVAL,"invalid version requested (requested="+hdr.getInterfaceVersion()+" avail="+OSDInterface.getVersion()+")"));
             return false;
         }
 
