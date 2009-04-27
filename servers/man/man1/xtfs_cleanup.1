@@ -18,18 +18,17 @@ Cleans up the OSD with the given uuid.
 .SH OPTIONS
 .TP
 .TP
-\fB-h\fP 						show usage info
+\fB-h\fP                   show usage info
 .TP
-\fB-v\fP 						verbose mode - no listing of file details
+\fB-r\fP                   restore mode - all files will be restored to directory '/Lost+Found/' at the volume they are located
 .TP
-\fB-h\fP 						restore mode - all files will be restored to directory '/Lost+Found/' at the volume they are located
+\fB-e\fP                   !erase mode - all files will be removed without further request!
 .TP
-\fB-e\fP 						!erase mode - all files will be removed without further request!
+\fB-deleteVolumes\fP       !volume deletion - deletes volumes that might be dead!
 .TP
-\fB-d\fP <dir_address>       	directory service (DIR) to use (e.g. 'oncrpc://localhost:32638')
-If no DIR URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'.
-
-
+\fB-i\fP                   interactive mode - user is asked for decisions
+.TP
+\fB-stop\fP                suspend the currently running cleanup
 
 .SH "SEE ALSO"
 .BR xtfs_mount (1),

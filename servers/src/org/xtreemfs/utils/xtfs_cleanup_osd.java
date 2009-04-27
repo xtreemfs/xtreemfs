@@ -81,16 +81,16 @@ public class xtfs_cleanup_osd {
     
           CLIParser.parseCLI(args, options, arguments);
     
-          if (arguments.size() != 1 || options.get("h").switchValue != null) {
+          if (arguments.size() != 1 || options.get("h").switchValue) {
               usage();
               return;
           }
           
-          boolean remove = options.get("e").switchValue != null;
-          boolean restore = options.get("r").switchValue != null;
-          boolean deleteVolumes = options.get("deleteVolumes").switchValue != null;
-          boolean interactive = options.get("i").switchValue != null;
-          boolean stop = options.get("stop").switchValue != null;
+          boolean remove = options.get("e").switchValue;
+          boolean restore = options.get("r").switchValue;
+          boolean deleteVolumes = options.get("deleteVolumes").switchValue;
+          boolean interactive = options.get("i").switchValue;
+          boolean stop = options.get("stop").switchValue;
           
           // read default settings for the OSD
           String osdUUID = null;

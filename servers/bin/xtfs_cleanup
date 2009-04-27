@@ -43,4 +43,4 @@ check_xtreemfs
 check_java
 
 exec $JAVA_HOME/bin/java -ea -cp $XTREEMFS/servers/dist/XtreemFS.jar:$XTREEMFS/servers/lib/*:/usr/share/java/XtreemFS.jar:. \
-    org.xtreemfs.utils.cleanup_osd $*
+    org.xtreemfs.utils.xtfs_cleanup_osd $*
