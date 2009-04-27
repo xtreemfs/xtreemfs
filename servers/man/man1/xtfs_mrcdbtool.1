@@ -1,4 +1,4 @@
-.TH xtfs_mrcdbtool 1 "July 2008" "The XtreemFS Distributed File System" "XtreemFS server"
+.TH xtfs_mrcdbtool 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS server"
 .SH NAME
 xtfs_mrcdbtool \- dump and restore MRC databases.
 .SH SYNOPSIS
@@ -10,11 +10,11 @@ xtfs_mrcdbtool \- dump and restore MRC databases.
 dumps an MRC database to a file, or restores an MRC database from a dump file. An XML dump of the MRC database is created if the \fIdump\fP parameter is present. When dumping an MRC database, the XML file containing the dump will be created on the server at the path \fIdump_file\fP. Dumps can be restored by using the \fIrestore\fP parameter. For safety reasons, this is only possible if the target MRC does not have a database yet.
 
 .SH EXAMPLE USAGE
-.B "xtfs_mrcdbtool -mrc http://localhost:32636 dump /tmp/dump.xml"
+.B "xtfs_mrcdbtool -mrc oncrpc://localhost:32636 dump /tmp/dump.xml"
 .PP
 Dumps the database of the MRC running on \fIlocalhost:32636\fP to \fI/tmp/dump.xml\fP
 
-.B "xtfs_mrcdbtool -mrc http://localhost:32636 restore /tmp/dump.xml"
+.B "xtfs_mrcdbtool -mrc oncrpc://localhost:32636 restore /tmp/dump.xml"
 .PP
 Restores the database of the MRC running on \fIlocalhost:32636\fP from the dump in \fI/tmp/dump.xml\fP
 
@@ -24,16 +24,16 @@ Restores the database of the MRC running on \fIlocalhost:32636\fP from the dump 
 Print help.
 .TP
 .B \-mrc \fImrc_url
-The URL the MRC, e.g. http://localhost:32636.
+The URL the MRC, e.g. oncrpc://localhost:32636.
 .TP
 .B \-c \fIcreds_file
-Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with https://.
+Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with oncrpcs://.
 .TP
 .B \-cp \fIcreds_passphrase
 An optional passphrase to access the credentials file.
 .TP
 .B \-t \fItrusted_CAs
-Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with https://.
+Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with oncrpcs://.
 .TP
 .B \-tp \fItrusted_passphrase
 An optional passphrase to access the truststore file.
@@ -47,9 +47,8 @@ An optional passphrase to access the truststore file.
 .BR xtfs_rmvol (1),
 .BR xtfs_lsvol (1),
 .BR xtfs_stat (1),
-.BR xtfs_sp (1),
 .BR xtfs_scrub (1)
 .BR
 
 .SH AVAILABILITY
-The xtfs_mrcdbtool command is part of the XtreemFS-server package and is available from http://www.XtreemFS.org
+The xtfs_mrcdbtool command is part of the XtreemFS-server package and is available from http://www.xtreemfs.org

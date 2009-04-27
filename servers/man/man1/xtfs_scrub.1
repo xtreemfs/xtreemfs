@@ -1,4 +1,4 @@
-.TH xtfs_scrub 1 "July 2008" "The XtreemFS Distributed File System" "XtreemFS server"
+.TH xtfs_scrub 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS server"
 .SH NAME
 xtfs_scrub \- checks for each file in a volume if the MRC file size is outdated and if the checksum is correct. 
 .SH SYNOPSIS
@@ -10,18 +10,18 @@ xtfs_scrub \- checks for each file in a volume if the MRC file size is outdated 
 performs a consistency check of each file in a given volume. The check compares the file size stored as part of the metadata to the actual file size defined by all objects of the file. If the metadata file size is outdated, it is corrected, granted that no \fI\-chk\fP switch is provided. In addition, an error is indicated if the file's checksum is not correct. The volume to scrub can either be specified by a name <volume_name> or a UUID 'uuid:<volume_uuid>' 
 
 .SH EXAMPLE USAGE
-.B "xtfs_scrub -dir http://localhost:32638 myVolume
+.B "xtfs_scrub -dir oncrpc://localhost:32638 myVolume
 .PP
-Scrubs all files in the volume named 'myVolume' registered at the Directory Service 'http://localhost:32638'.
+Scrubs all files in the volume named 'myVolume' registered at the Directory Service 'oncrpc://localhost:32638'.
 
 .SH OPTIONS
 .TP
 .TP
 \fB-h\fP show usage info
 .TP
-\fB-dir\fP directory service to use (e.g. 'http://localhost:32638')
+\fB-dir\fP directory service to use (e.g. 'oncrpc://localhost:32638')
 If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'
-In case of a secured URI ('https://...'), it is necessary to also specify SSL settings (-c, -cp, -t, -tp).
+In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL settings (-c, -cp, -t, -tp).
 .TP
 \fB-c\fP  <creds_file>         a PKCS#12 file containing user credentials
 .TP
@@ -46,9 +46,8 @@ In case of a secured URI ('https://...'), it is necessary to also specify SSL se
 .BR xtfs_rmvol (1),
 .BR xtfs_lsvol (1),
 .BR xtfs_stat (1),
-.BR xtfs_sp (1),
 .BR xtfs_mrcdbtool (1)
 .BR
 
 .SH AVAILABILITY
-The xtfs_mrcdbtool command is part of the XtreemFS-server package and is available from http://www.XtreemFS.org
+The xtfs_mrcdbtool command is part of the XtreemFS-server package and is available from http://www.xtreemfs.org

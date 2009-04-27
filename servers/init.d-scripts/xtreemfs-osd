@@ -92,7 +92,7 @@ start() {
 stop() {
     if [ -f $PID_OSD ]
     then
-        echo -n "stoping XtreemFS Object Storage Device (OSD)..."
+        echo -n "stopping XtreemFS Object Storage Device (OSD)..."
         killproc -p $PID_OSD java
         log_success_msg
 	echo

@@ -91,7 +91,7 @@ start() {
 stop() {
     if [ -f $PID_DS ]
     then
-        echo -n "stoping XtreemFS Directory Service (DIR)..."
+        echo -n "stopping XtreemFS Directory Service (DIR)..."
         killproc -p $PID_DS java
         log_success_msg
 	echo

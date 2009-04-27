@@ -1,4 +1,4 @@
-.TH xtfs_cleanup 1 "September 2008" "The XtreemFS Distributed File System" "XtreemFS server"
+.TH xtfs_cleanup 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS server"
 .SH NAME
 xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
 .SH SYNOPSIS
@@ -26,7 +26,7 @@ Cleans up the OSD with the given uuid.
 .TP
 \fB-e\fP 						!erase mode - all files will be removed without further request!
 .TP
-\fB-d\fP <dir_address>       	directory service (DIR) to use (e.g. 'http://localhost:32638')
+\fB-d\fP <dir_address>       	directory service (DIR) to use (e.g. 'oncrpc://localhost:32638')
 If no DIR URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'.
 
 
@@ -39,10 +39,9 @@ If no DIR URI is specified, URI and security settings are taken from '/etc/xos/x
 .BR xtfs_rmvol (1),
 .BR xtfs_lsvol (1),
 .BR xtfs_stat (1),
-.BR xtfs_sp (1),
 .BR xtfs_mrcdbtool (1),
 .BR xtfs_scrub (1)
 .BR
 
 .SH AVAILABILITY
-The xtfs_cleanup command is part of the XtreemFS-server package and is available from http://www.XtreemFS.org.
+The xtfs_cleanup command is part of the XtreemFS-server package and is available from http://www.xtreemfs.org.
