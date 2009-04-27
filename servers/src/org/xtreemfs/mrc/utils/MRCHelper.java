@@ -343,6 +343,8 @@ public class MRCHelper {
                 
             } catch (NumberFormatException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (IllegalArgumentException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
             }
             
             break;

@@ -39,6 +39,7 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
@@ -129,58 +130,64 @@ public class BabuDBVolumeManager implements VolumeManager {
             
         } catch (BabuDBException e) {
             
-            // database already exists
-            Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
-            
-            try {
+            if (e.getErrorCode() == ErrorCode.DB_EXISTS) {
                 
-                // retrieve the database version number
-                byte[] verBytes = database
-                        .directLookup(VOLUME_DB_NAME, VERSION_INDEX, VERSION_KEY.getBytes());
-                int ver = ByteBuffer.wrap(verBytes).getInt();
+                // database already exists
+                Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
                 
-                // check the database version number
-                if (ver != VersionManagement.getMrcDataVersion()) {
+                try {
                     
-                    String errMsg = "Wrong database version. Expected version = "
-                        + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
+                    // retrieve the database version number
+                    byte[] verBytes = database.directLookup(VOLUME_DB_NAME, VERSION_INDEX, VERSION_KEY
+                            .getBytes());
+                    int ver = ByteBuffer.wrap(verBytes).getInt();
                     
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, errMsg);
-                    if (VersionManagement.getMrcDataVersion() > ver)
-                        Logging
-                                .logMessage(
-                                    Logging.LEVEL_ERROR,
-                                    this,
-                                    "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
+                    // check the database version number
+                    if (ver != VersionManagement.getMrcDataVersion()) {
+                        
+                        String errMsg = "Wrong database version. Expected version = "
+                            + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
+                        
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, errMsg);
+                        if (VersionManagement.getMrcDataVersion() > ver)
+                            Logging
+                                    .logMessage(
+                                        Logging.LEVEL_ERROR,
+                                        this,
+                                        "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
+                        
+                        throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
+                    }
                     
-                    throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
+                } catch (BabuDBException exc) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this,
+                        "The MRC database is either corrupted or outdated. The expected database version for this server is "
+                            + VersionManagement.getMrcDataVersion());
+                    throw new DatabaseException(exc);
                 }
                 
-            } catch (BabuDBException exc) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,
-                    "The MRC database is either corrupted or outdated. The expected database version for this server is "
-                        + VersionManagement.getMrcDataVersion());
-                throw new DatabaseException(exc);
-            }
-            
-            try {
-                
-                // retrieve the list of volumes from the database
-                Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(VOLUME_DB_NAME, VOL_INDEX,
-                    new byte[0]);
-                List<VolumeInfo> list = new LinkedList<VolumeInfo>();
-                while (it.hasNext())
-                    list.add(new BufferBackedVolumeInfo(it.next().getValue()));
-                
-                for (VolumeInfo vol : list) {
-                    mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName(), vol.getId()));
-                    volIdMap.put(vol.getId(), vol);
-                    volNameMap.put(vol.getName(), vol);
+                try {
+                    
+                    // retrieve the list of volumes from the database
+                    Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(VOLUME_DB_NAME, VOL_INDEX,
+                        new byte[0]);
+                    List<VolumeInfo> list = new LinkedList<VolumeInfo>();
+                    while (it.hasNext())
+                        list.add(new BufferBackedVolumeInfo(it.next().getValue()));
+                    
+                    for (VolumeInfo vol : list) {
+                        mngrMap.put(vol.getId(), new BabuDBStorageManager(database, vol.getName(), vol
+                                .getId()));
+                        volIdMap.put(vol.getId(), vol);
+                        volNameMap.put(vol.getName(), vol);
+                    }
+                    
+                } catch (BabuDBException exc) {
+                    throw new DatabaseException(exc);
                 }
                 
-            } catch (BabuDBException exc) {
-                throw new DatabaseException(exc);
-            }
+            } else
+                Logging.logMessage(Logging.LEVEL_ERROR, this, e);
         }
     }
     
