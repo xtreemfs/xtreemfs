@@ -41,7 +41,9 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.EventWriteObject;
@@ -172,7 +174,7 @@ public class ObjectDissemination {
         FileInfo fileInfo = this.filesInProgress.get(fileID);
         if (fileInfo == null) { // file not in progress
             // create a new strategy
-            TransferStrategy strategy = new SimpleStrategy(fileID, xLoc, xLoc.getXLocSet()
+            TransferStrategy strategy = new RandomStrategy(fileID, xLoc, xLoc.getXLocSet()
                     .getRead_only_file_size(), osdAvailability);
             fileInfo = new FileInfo(fileID, strategy, xLoc, capability, cow);
             this.filesInProgress.put(fileID, fileInfo);
@@ -202,8 +204,8 @@ public class ObjectDissemination {
             fileInfo.get(objectNo).lastOSD = next.osd;
             sendFetchObjectRequest(next.objectNo, next.osd, fileInfo.fileID, fileInfo.cap, fileInfo.xLoc);
         } else {
-            // FIXME: use correct Exception
-            sendError(fileInfo, objectNo, new Exception());
+            sendError(fileInfo, objectNo, new OSDException(ErrorCodes.IO_ERROR,
+                    "Object does not exist locally and none replica could be fetched.", ""));
             
             if (filesInProgress.isEmpty())
                 fileCompleted(fileInfo.fileID);
@@ -234,14 +236,11 @@ public class ObjectDissemination {
                         master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (IOException e) {
-                        // TODO 
                         osdAvailability.setServiceWasNotAvailable(osd);
                         master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (InterruptedException e) {
-                        // TODO 
-                        osdAvailability.setServiceWasNotAvailable(osd);
-                        e.printStackTrace();
+                        // ignore 
                     } finally {
                         r.freeBuffers();
                     }
@@ -278,6 +277,8 @@ public class ObjectDissemination {
             if (filesInProgress.isEmpty())
                 fileCompleted(fileID);
         } else {
+            // TODO: save data, if other replicas are less useful
+            
             // try next replica
             fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
             prepareRequest(fileInfo, objectNo);

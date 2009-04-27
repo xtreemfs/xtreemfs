@@ -53,7 +53,6 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -63,6 +62,11 @@ import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
+import org.xtreemfs.osd.operations.CleanupGetResultsOperation;
+import org.xtreemfs.osd.operations.CleanupGetStatusOperation;
+import org.xtreemfs.osd.operations.CleanupIsRunningOperation;
+import org.xtreemfs.osd.operations.CleanupStartOperation;
+import org.xtreemfs.osd.operations.CleanupStopOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventWriteObject;
@@ -81,6 +85,7 @@ import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
@@ -92,12 +97,6 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.osd.operations.CleanupGetResultsOperation;
-import org.xtreemfs.osd.operations.CleanupGetStatusOperation;
-import org.xtreemfs.osd.operations.CleanupIsRunningOperation;
-import org.xtreemfs.osd.operations.CleanupStartOperation;
-import org.xtreemfs.osd.operations.CleanupStopOperation;
-import org.xtreemfs.osd.storage.CleanupThread;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
 
@@ -137,7 +136,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     protected final long            startupTime;
 
-    protected final AtomicLong      numBytesTX, numBytesRX, numObjsTX, numObjsRX;
+    protected final AtomicLong      numBytesTX, numBytesRX, numObjsTX, numObjsRX, numReplBytesRX, numReplObjsRX;
 
     protected final VivaldiStage    vStage;
 
@@ -155,6 +154,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         numBytesRX = new AtomicLong();
         numObjsTX = new AtomicLong();
         numObjsRX = new AtomicLong();
+        numReplBytesRX = new AtomicLong();
+        numReplObjsRX = new AtomicLong();
         
         // initialize the checksum factory
         ChecksumFactory.getInstance().addProvider(new JavaChecksumProvider());
@@ -621,8 +622,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         numObjsRX.incrementAndGet();
     }
 
+    public void objectReplicated() {
+        numReplObjsRX.incrementAndGet();
+    }
+
     public void objectSent() {
         numObjsTX.incrementAndGet();
+    }
+
+    public void replicatedDataReceived(int numBytes) {
+        numReplBytesRX.addAndGet(numBytes);
     }
 
     public void dataReceived(int numBytes) {
@@ -647,6 +656,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public long getBytesSent() {
         return numBytesTX.get();
+    }
+
+    public long getReplicatedObjectsReceived() {
+        return numReplObjsRX.get();
+    }
+
+    public long getReplicatedBytesReceived() {
+        return numReplBytesRX.get();
     }
 
     public void updateVivaldiCoordinates(VivaldiCoordinates newVC) {

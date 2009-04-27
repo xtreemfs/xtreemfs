@@ -122,8 +122,8 @@ public class ReplicationStage extends Stage {
         if (xLoc.getNumReplicas() > 1) {
             disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
         } else
-            // no replica available => object cannot be fetched
-            callback.fetchComplete(new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null,
+            // object does not exist locally and no replica exists => hole
+            callback.fetchComplete(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
                     xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)), null);
     }
 
@@ -137,7 +137,8 @@ public class ReplicationStage extends Stage {
         else {
             // data could not be fetched
             disseminationLayer.objectNotFetched(fileId, objectNo);
-            BufferPool.free(data.getData());
+            if(data != null)
+                BufferPool.free(data.getData());
         }
     }
     

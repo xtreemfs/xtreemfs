@@ -53,9 +53,11 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.client.OSDClient;
 
 public class RandomAccessFile implements ObjectStore {
@@ -241,6 +243,18 @@ public class RandomAccessFile implements ObjectStore {
                 }
                 break;
             } catch (ONCRPCException ex) {
+                if (buffer != null)
+                    BufferPool.free(buffer);
+                if (((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR
+                        || osds.lastIndexOf(osd) == osds.size() - 1) {
+                    System.out.println(ex.toString());
+                    ex.printStackTrace();
+                    throw new IOException("cannot read object", ex);
+                } else
+                    continue;
+            } catch (IOException ex) {
+                if(buffer != null)
+                    BufferPool.free(buffer);
                 if (osds.lastIndexOf(osd) == osds.size() - 1) { // last osd in list
                     System.out.println(ex.toString());
                     ex.printStackTrace();
@@ -248,10 +262,7 @@ public class RandomAccessFile implements ObjectStore {
                 } else
                     continue;
             } catch (InterruptedException ex) {
-                if (osds.lastIndexOf(osd) == osds.size() - 1) { // last osd in list
-                    throw new IOException("cannot read object", ex);
-                } else
-                    continue;
+                // ignore
             } finally {
                 if (response != null) {
                     response.freeBuffers();

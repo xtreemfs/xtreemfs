@@ -94,4 +94,9 @@ public final class ErrorCodes {
     public static final int EPOCH_OUTDATED = 14;
 
     public static final int FILE_IS_READ_ONLY = 15;
+    
+    /**
+     * 
+     */
+    public static final int IO_ERROR = 16;
 }

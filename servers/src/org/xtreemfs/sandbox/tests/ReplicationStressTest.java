@@ -74,10 +74,10 @@ public class ReplicationStressTest {
     /**
      * biggest generated data in RAM (piecewise write of file)
      */
-    public final int PART_SIZE = 1024 * 1024; // 1MB
+    public static final int PART_SIZE = 1024 * 1024; // 1MB
     public static final int STRIPE_SIZE = 128; // KB
 
-    public final int SLEEP_TIME = 1000 * 30; // FIXME: 10 minutes
+    public static final int SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN = 1000 * 60 * 60; // 60 minutes
 
     /*
      * reader-threads
@@ -86,8 +86,8 @@ public class ReplicationStressTest {
         /**
          * 
          */
-        public final int NUMBER_OF_RANGES = 20;
-        public final int SLEEP_TIME = 1000 * 10; // FIXME: sleep 1 minute
+        public static final int NUMBER_OF_RANGES = 20;
+        public static final int SLEEP_TIME = 1000 * 10; // sleep 10 seconds
 
         private final UserCredentials userCredentials;
         private final RPCNIOSocketClient client;
@@ -131,7 +131,7 @@ public class ReplicationStressTest {
                     String fileName = fileList.get(random.nextInt(fileList.size()));
                     readFile(fileName);
                     
-                    if (++fileCounter % 100 == 0)
+                    if (++fileCounter % 1000 == 0)
                         Logging.logMessage(Logging.LEVEL_ERROR, this, Thread.currentThread().getName()
                                 + " has read " + fileCounter + " files");
                 } catch (InterruptedException e) {
@@ -530,8 +530,8 @@ public class ReplicationStressTest {
                 fileList.add(filename);
 
                 // add/remove replicas for existing files
-                for(int i = 0; i < 2; i++) { // FIXME
-                    Thread.sleep(controller.SLEEP_TIME);
+                for(int i = 0; i < 10; i++) { // FIXME
+                    Thread.sleep(controller.SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN/10);
 
                     for (int j = 0; j < fileList.size(); j++) {
                         String fileName = fileList.get(random.nextInt(fileList.size()));

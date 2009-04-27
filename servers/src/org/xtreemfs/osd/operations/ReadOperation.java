@@ -218,7 +218,7 @@ public final class ReadOperation extends OSDOperation {
     private void readReplica(final OSDRequest rq, final readRequest args) {
         XLocations xLoc = rq.getLocationList();
         StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
-
+        
         // check if it is a EOF
         if (args.getObject_number() > sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1)) {
             ObjectInformation objectInfo = new ObjectInformation(ObjectStatus.DOES_NOT_EXIST, null, sp

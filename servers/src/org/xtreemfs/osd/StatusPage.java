@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
@@ -42,6 +43,8 @@ public class StatusPage {
             OBJREAD("<!-- $OBJREAD -->"),
             BYTETX("<!-- $BYTETX -->"),
             BYTERX("<!-- $BYTERX -->"),
+            REPLOBJWRITE("<!-- $REPLOBJWRITE -->"),
+            REPLBYTERX("<!-- $REPLBYTERX -->"),
             GMAXMSG("<!-- $GMAXMSG -->"),
             GMAXRPC("<!-- $GMAXRPC -->"),
             DELETES("<!-- $DELETES -->"),
@@ -126,6 +129,9 @@ public class StatusPage {
                 .formatBytes(master.getBytesSent()));
         tmp = tmp.replace(Vars.BYTERX.toString(), OutputUtils
                 .formatBytes(master.getBytesReceived()));
+        tmp = tmp.replace(Vars.REPLOBJWRITE.toString(), Long.toString(master.getReplicatedObjectsReceived()));
+        tmp = tmp.replace(Vars.REPLBYTERX.toString(), OutputUtils
+                .formatBytes(master.getReplicatedBytesReceived()));
         tmp = tmp
                 .replace(Vars.DELETES.toString(), Long.toString(master.getDeletionStage().getNumFilesDeleted()));
         tmp = tmp.replace(Vars.GLOBALTIME.toString(), new Date(globalTime).toString() + " ("

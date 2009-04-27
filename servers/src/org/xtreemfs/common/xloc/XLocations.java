@@ -132,25 +132,4 @@ public class XLocations {
     public List<ServiceUUID> getOSDsForObject(long objectNo) {
         return getOSDsForObject(objectNo, null);
     }
-
-    /**
-     * Creates a deep(er) copy of the XLocations-list without the specified replica.
-     * @param replica
-     * @return
-     */
-/*    public XLocations cloneWithoutReplicaInList(Replica replica) {
-        ReplicaSet replicaSet = new ReplicaSet();
-        for (Replica currentReplica : replicas) {
-            if (currentReplica != replica) {
-                StringSet osds = new StringSet();
-                for (ServiceUUID osd : currentReplica.getOSDs()) {
-                    osds.add(osd.toString());
-                }
-                replicaSet.add(new org.xtreemfs.interfaces.Replica(currentReplica.getStripingPolicy()
-                        .getPolicy(), currentReplica.getReplicationFlags(), osds));
-            }
-        }
-        XLocSet xLocSet = new XLocSet(replicaSet, getVersion(), getReplicaUpdatePolicy(), xloc.getRead_only_file_size());
-        return new XLocations(xLocSet);
-    }
-*/}
+}

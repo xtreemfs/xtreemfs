@@ -73,6 +73,9 @@ public class EventWriteObject extends OSDOperation {
         final XLocations xloc = (XLocations) args[3];
         final CowPolicy cow = (CowPolicy) args[4];
 
+        master.objectReplicated();
+        master.replicatedDataReceived(data.capacity());
+
         master.getStorageStage().writeObjectWithoutGMax(fileId, objectNo, xloc.getLocalReplica().getStripingPolicy(), 0,
                 data, cow, xloc, null, new WriteObjectCallback() {
                     @Override
