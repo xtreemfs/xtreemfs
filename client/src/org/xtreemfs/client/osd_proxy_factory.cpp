@@ -6,8 +6,8 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group, uint8_t osd_proxy_reconnect_tries_max )
-  : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group ), osd_proxy_reconnect_tries_max( osd_proxy_reconnect_tries_max )
+OSDProxyFactory::OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group )
+  : dir_proxy( dir_proxy ), osd_proxy_stage_group( osd_proxy_stage_group )
 { }
 
 OSDProxyFactory::~OSDProxyFactory()
@@ -35,6 +35,8 @@ OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
   else
   {
     osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( dir_proxy.get_ssl_context() ), YIELD::Object::incRef( dir_proxy.get_log() ) );
+    osd_proxy->set_operation_timeout_ns( dir_proxy.get_operation_timeout_ns() );
+    osd_proxy->set_reconnect_tries_max( dir_proxy.get_reconnect_tries_max() );
     osd_proxy_stage_group.createStage( *osd_proxy, new YIELD::FDAndInternalEventQueue );
     YIELD::Object::incRef( *osd_proxy ); // For the cache
     osd_proxy_cache_lock.acquire();

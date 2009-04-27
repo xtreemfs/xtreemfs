@@ -56,7 +56,7 @@ namespace org
           ssl_context = NULL;
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
-          timeout_ms = YIELD::ONCRPCProxy::DEFAULT_REQUEST_TIMEOUT_MS;
+          timeout_ms = 0;
         }
 
         virtual ~Main()
@@ -124,29 +124,12 @@ namespace org
         {
           switch ( id )
           {
-            /*
-            case OPTION_LOG_LEVEL:
-            {
-              if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
-                YIELD::TCPSocket::set_trace_socket_io_onoff( true );
-            }
-            break;
-            */
-
             case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;                  
             case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = arg; break;
             case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = arg; break;
             case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = arg; break;
             case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = arg; break;
-
-            case OPTION_TIMEOUT_MS:
-            {
-              timeout_ms = atol( arg );
-              if ( timeout_ms == 0 )
-                timeout_ms = YIELD::ONCRPCProxy::DEFAULT_REQUEST_TIMEOUT_MS;
-            }
-            break;
-
+            case OPTION_TIMEOUT_MS: timeout_ms = atof( arg ); break;
             default: YIELD::Main::parseOption( id, arg ); break;
           }
         }
@@ -156,7 +139,7 @@ namespace org
 
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
-        uint64_t timeout_ms;
+        double timeout_ms;
 
         YIELD::Log* log;
         YIELD::SSLContext* ssl_context;
@@ -170,7 +153,8 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
           ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
-          proxy->set_request_timeout_ms( timeout_ms );
+          if ( timeout_ms != 0 )
+            proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
           stage_group->createStage( proxy->incRef(), new YIELD::FDAndInternalEventQueue, &get_log() );
           return proxy;
         }
