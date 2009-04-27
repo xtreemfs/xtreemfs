@@ -121,7 +121,7 @@ public class CleanupThread extends LifeCycleThread {
             if (isRunning) {
                 Date d = new Date(startTime);
                 return String.format("files checked: %8d   zombies: %8d   running since: %s",
-                        filesChecked, zombies, DateFormat.getDateInstance().format(d));
+                        filesChecked, zombies.get(), DateFormat.getDateInstance().format(d));
             } else {
                 Date d = new Date(startTime);
                 return "not running, last check started "+DateFormat.getDateInstance().format(d);
@@ -206,9 +206,10 @@ public class CleanupThread extends LifeCycleThread {
                                      final AtomicInteger numZombies = new AtomicInteger(0);
                                      for (int i = 0; i < files.size(); i++) {
                                          if (eval.charAt(i) == '0') {
-                                             final String fName = files.get(i);
+                                             // retrieve the fileName
+                                             final String fName = volume.id+":"+files.get(i);
                                              // retrieve the fileData
-                                             final FileData fData = l.files.get(files.get(i));
+                                             final FileData fData = l.files.get(fName);
                                              
                                              // check against the OFT
                                              master.getPreprocStage().checkDeleteOnClose(files.get(i), new DeleteOnCloseCallback() {
