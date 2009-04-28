@@ -46,6 +46,10 @@ STRIPE_SIZE_DEFAULT = 128
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
 
 
+# Singletons
+original_cwd = os.getcwd()
+
+
 def check_environment():
     if os.environ.has_key( "JAVA_HOME" ):
 #        JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep "java version" | \
@@ -73,11 +77,10 @@ def check_environment():
 def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
     tests_dir_path = os.path.join( MY_DIR_PATH, "tests" )
     sys.path.append( tests_dir_path )
-    original_cwd = os.getcwd()
     for file_name in os.listdir( tests_dir_path ):
         if file_name.endswith( ".py" ):
             test_module_name = os.path.splitext( file_name )[0]
-            print "Trying to import test", test_module_name
+#            print "Trying to import test", test_module_name
             try:
                 test_module = __import__( test_module_name )
             except ImportError:
@@ -251,10 +254,10 @@ def _start_service( service_name, service_num="" ):
 
 
 def stop_environment( num_osds=NUM_OSDS_DEFAULT ):
-    _stop_service( "dir" )
-    _stop_service( "mrc" )
     for osdnum in xrange( 1, num_osds+1 ):
         _stop_service( "osd", str( osdnum ) )
+    _stop_service( "mrc" )
+    _stop_service( "dir" ) # Stop the DIR last so the other services can deregister
 
     mnt_dir_path = os.path.abspath( "mnt" )
     for mounts_line in open( "/proc/mounts" ).readlines():
@@ -313,8 +316,11 @@ if __name__ == "__main__":
         if not options.start_environment: # i.e. no options were specified
             try:
                 execute_tests( num_osds=options.num_osds )
+            except KeyboardInterrupt:
+                pass
             except:
                 traceback.print_exc()
+            os.chdir( original_cwd )
             stop_environment()
     
         
