@@ -63,9 +63,9 @@ namespace org
         {
           YIELD::StageGroup::destroyStageGroup( *stage_group );
           YIELD::Object::decRef( log );
-          YIELD::Object::decRef( ssl_context );         
+          YIELD::Object::decRef( ssl_context );
         }
-        
+
         YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
         {
           return createProxy<DIRProxy>( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
@@ -92,7 +92,7 @@ namespace org
             log = new YIELD::Log( std::cout, get_log_level() );
           return *log;
         }
-       
+
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
         {
           std::string uri_str( uri_c_str );
@@ -124,7 +124,7 @@ namespace org
         {
           switch ( id )
           {
-            case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;                  
+            case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;
             case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = arg; break;
             case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = arg; break;
             case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = arg; break;
@@ -155,7 +155,7 @@ namespace org
           ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
-          stage_group->createStage( proxy->incRef(), new YIELD::FDAndInternalEventQueue, &get_log() );
+          stage_group->createStage( *proxy, new YIELD::FDAndInternalEventQueue, &get_log() );
           return proxy;
         }
 

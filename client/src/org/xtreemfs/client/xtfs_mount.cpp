@@ -94,26 +94,26 @@ namespace org
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
           if ( cache_metadata )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
-          YIELD::Volume* xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), *osd_proxy_factory.get(), xtreemfs_volume_flags );
+          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), *osd_proxy_factory.get(), xtreemfs_volume_flags );
 
           // Translate exceptions into errno codes
-          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume, get_log().incRef() );
+          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume.release(), get_log().incRef() );
 
           if ( cache_files )
           {
-            xtreemfs_volume = new yieldfs::FileCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
+            xtreemfs_volume = new yieldfs::FileCachingVolume( *xtreemfs_volume.release(), get_log().incRef() );
             get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
           }
 
           if ( cache_metadata )
           {
-            xtreemfs_volume = new yieldfs::StatCachingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef(), 5 );
+            xtreemfs_volume = new yieldfs::StatCachingVolume( *xtreemfs_volume.release(), get_log().incRef(), 5 );
             get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
           }
 
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
-            xtreemfs_volume = new yieldfs::TracingVolume( YIELD::Object::incRef( *xtreemfs_volume ), get_log().incRef() );
+            xtreemfs_volume = new yieldfs::TracingVolume( *xtreemfs_volume.release(), get_log().incRef() );
             get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
           }
 
@@ -129,7 +129,7 @@ namespace org
             get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
           }
 
-          yieldfs::FUSE fuse( xtreemfs_volume->incRef(), get_log().incRef(), fuse_flags );
+          yieldfs::FUSE fuse( *xtreemfs_volume.get(), get_log().incRef(), fuse_flags );
           int ret;
 #ifdef _WIN32
           ret = fuse.main( mount_point.c_str() );
@@ -148,9 +148,6 @@ namespace org
             ret = fuse.main( fuse_args_, mount_point.c_str() );
           }
 #endif
-
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": shutting down.";
-          YIELD::Object::decRef( *xtreemfs_volume );
 
           get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
 

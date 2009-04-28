@@ -17,6 +17,7 @@ OSDProxyFactory::~OSDProxyFactory()
     YIELD::Object::decRef( *osd_proxy_i->second );
   osd_proxy_cache.clear();
   osd_proxy_cache_lock.release();
+  Object::decRef( dir_proxy );
 }
 
 OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
