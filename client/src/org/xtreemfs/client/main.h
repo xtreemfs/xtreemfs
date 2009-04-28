@@ -155,7 +155,7 @@ namespace org
           ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
-          stage_group->createStage( *proxy, new YIELD::FDAndInternalEventQueue, &get_log() );
+          stage_group->createStage( proxy->incRef(), new YIELD::FDAndInternalEventQueue, &get_log() );
           return proxy;
         }
 
