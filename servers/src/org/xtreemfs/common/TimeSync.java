@@ -47,7 +47,7 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * A dir client used to synchronize clocks
      */
-    private final DIRClient  dir;
+    private DIRClient  dir;
     
     /**
      * interval in ms to wait between to synchronizations.
@@ -102,7 +102,11 @@ public final class TimeSync extends LifeCycleThread {
     public void run() {
         TimeSync.theInstance = this;
         notifyStarted();
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"running");
+        String tsStatus = " using the local clock (precision is "+this.localTimeRenew+"ms)";
+        if (this.dir != null) {
+            tsStatus =" and remote sync every "+this.timeSyncInterval+"ms";
+        }
+        Logging.logMessage(Logging.LEVEL_INFO, this,"TimeSync is running "+tsStatus);
         while (!quit) {
             localSysTime = System.currentTimeMillis();
             if (localSysTime - lastSync > timeSyncInterval) {
@@ -142,7 +146,26 @@ public final class TimeSync extends LifeCycleThread {
         s.start();
         return s;
     }
-    
+
+    public static TimeSync initializeLocal(int timeSyncInterval, int localTimeRenew) {
+        if (theInstance != null) {
+            Logging.logMessage(Logging.LEVEL_WARN, null,"time sync already running");
+            return theInstance;
+        }
+
+        TimeSync s = new TimeSync(null, timeSyncInterval, localTimeRenew);
+        s.start();
+        return s;
+    }
+
+    public void enableRemoteSynchronization(DIRClient client) {
+        if (this.dir != null) {
+            throw new RuntimeException("remote time synchronization is already enabled");
+        }
+        this.dir = client;
+        Logging.logMessage(Logging.LEVEL_INFO, this,"TimeSync remote synchronization enabled every "+this.timeSyncInterval+"ms");
+    }
+
     public static void close() {
         if (theInstance == null)
             return;

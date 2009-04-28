@@ -54,7 +54,6 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -245,13 +244,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void startup() throws Exception {
         
-        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
-        
-        UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
-        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
-        
+        TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
+       
         clientStage.start();
         clientStage.waitForStartup();
+
+        UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
+        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
+
+        TimeSync.getInstance().enableRemoteSynchronization(dirClient);
         osdMonitor.start();
         osdMonitor.waitForStartup();
         
