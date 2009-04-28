@@ -235,7 +235,7 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     public void writeObject(String fileId, long objNo, ReusableBuffer data, int version,
-        int offset, long checksum, StripingPolicyImpl sp) throws IOException {
+        int offset, long checksum, StripingPolicyImpl sp, boolean sync) throws IOException {
 
         // ignore empty writes
         if (data.capacity() > 0) {
@@ -247,8 +247,9 @@ public class HashStorageLayout extends StorageLayout {
                 // write file
                 String filename = generateAbsoluteObjectPath(relPath, objNo, version,
                     checksum);
-                File file = new File(filename);              
-                RandomAccessFile f = new RandomAccessFile(file, "rw");
+                File file = new File(filename);
+                String mode = sync ? "rwd" : "rw";
+                RandomAccessFile f = new RandomAccessFile(file, mode);
 
                 data.position(0);
                 f.seek(offset);

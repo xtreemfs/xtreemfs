@@ -304,6 +304,7 @@ public class StorageThread extends Stage {
             final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
             final XLocations xloc = (XLocations) rq.getArgs()[6];
             final boolean gMaxOff = (Boolean) rq.getArgs()[7];
+            final boolean syncWrite = (Boolean) rq.getArgs()[8];
 
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -397,7 +398,8 @@ public class StorageThread extends Stage {
             }
 
             writeData.position(0);
-            layout.writeObject(fileId, objNo, writeData, nextV, offset, oldChecksum, sp);
+
+            layout.writeObject(fileId, objNo, writeData, nextV, offset, oldChecksum, sp,syncWrite);
             long newChecksum = layout.createChecksum(fileId, objNo, writeData.capacity() == sp.getStripeSizeForObject(objNo) ? writeData : null, nextV, oldChecksum);
 
 
@@ -687,7 +689,7 @@ public class StorageThread extends Stage {
             newData.put((byte) 0);
         }
 
-        layout.writeObject(fileId, objNo, newData, version + 1, 0, checksum, sp);
+        layout.writeObject(fileId, objNo, newData, version + 1, 0, checksum, sp,false);
         long newChecksum = layout.createChecksum(fileId, objNo, newData, version + 1, checksum);
 
         BufferPool.free(newData);

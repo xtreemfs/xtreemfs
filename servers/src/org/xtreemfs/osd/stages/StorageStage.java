@@ -84,18 +84,18 @@ public class StorageStage extends Stage {
     }
 
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp,
-            int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc,
+            int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync,
             OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,false}, request, listener);
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,false,sync}, request, listener);
     }
 
     /*
      * currently only used for replication
      */
     public void writeObjectWithoutGMax(String fileId, long objNo, StripingPolicyImpl sp,
-            int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc,
+            int offset, ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync,
             OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,true}, request, listener);
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,true,sync}, request, listener);
     }
 
     public static interface WriteObjectCallback {

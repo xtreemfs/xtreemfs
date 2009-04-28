@@ -188,7 +188,7 @@ public abstract class StorageLayout {
      *             when the object cannot be written
      */
     public abstract void writeObject(String fileId, long objNo, ReusableBuffer data, int version,
-        int offset, long checksum, StripingPolicyImpl sp) throws IOException;
+        int offset, long checksum, StripingPolicyImpl sp, boolean sync) throws IOException;
 
     /**
      * Calculates and stores the checksum for an object.

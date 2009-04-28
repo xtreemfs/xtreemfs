@@ -81,17 +81,21 @@ public final class WriteOperation extends OSDOperation {
             return;
         }
         
-        if (rq.getLocationList().getReplicaUpdatePolicy() == Constants.REPL_UPDATE_PC_RONLY) {
+        if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
             // file is read only
             rq.sendException(new OSDException(ErrorCodes.FILE_IS_READ_ONLY,
                     "Cannot write on read-only files.", ""));
         } else {
+
+            boolean syncWrite = (rq.getCapability().getAccessMode() & Constants.SYSTEM_V_FCNTL_H_O_SYNC) > 0;
+
+
             master.objectReceived();
             master.dataReceived(args.getObject_data().getData().capacity());
 
             master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), sp,
                     args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
-                    rq.getLocationList(), rq, new WriteObjectCallback() {
+                    rq.getLocationList(), syncWrite, rq, new WriteObjectCallback() {
 
                         @Override
                         public void writeComplete(OSDWriteResponse result, Exception error) {
