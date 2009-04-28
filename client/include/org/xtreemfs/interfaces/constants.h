@@ -1,8 +1,5 @@
-// Copyright 2009 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-#ifndef ORG_XTREEMFS_INTERFACES_CONSTANTS_H
-#define ORG_XTREEMFS_INTERFACES_CONSTANTS_H
+#ifndef _61688623039_H
+#define _61688623039_H
 
 #include <string>
 
@@ -25,18 +22,19 @@ namespace org
       const static uint32_t SYSTEM_V_FCNTL_H_O_CREAT = 0x0100;
       const static uint32_t SYSTEM_V_FCNTL_H_O_TRUNC = 0x0200;
       const static uint32_t SYSTEM_V_FCNTL_H_O_EXCL = 0x0400;
+      const static uint32_t SYSTEM_V_FCNTL_H_O_SYNC = 0x0010;
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFREG = 0x8000;
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFDIR = 0x4000;
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFLNK = 0xA000;
-
-
+  
+  
     };
-
-
-
+  
+  
+  
   };
-
-
+  
+  
 
 };
 

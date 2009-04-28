@@ -97,41 +97,63 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
   Path path( this->name, _path );
 
   uint32_t system_v_flags;
-#ifdef __linux__
+
+#ifdef _WIN32
+  system_v_flags = flags;
+#else
   system_v_flags = 0;
+
+  if ( ( flags & O_SYNC ) == O_SYNC )
+  {
+    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_SYNC;
+    flags ^= O_SYNC;
+  }
+
+#ifdef __linux__
   if ( ( flags & O_WRONLY ) == O_WRONLY )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
 	  flags ^= O_WRONLY;
   }
+
   if ( ( flags & O_RDWR ) == O_RDWR )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
 	  flags ^= O_RDWR;
   }
+
   if ( ( flags & O_APPEND ) == O_APPEND )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
 	  flags ^= O_APPEND;
   }
+
   if ( ( flags & O_CREAT ) == O_CREAT )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
 	  flags ^= O_CREAT;
   }
+
   if ( ( flags & O_TRUNC ) == O_TRUNC )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
 	  flags ^= O_TRUNC;
   }
+
   if ( ( flags & O_EXCL ) == O_EXCL )
   {
 	  system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
 	  flags ^= O_EXCL;
   }
+
+  if ( ( flags & O_DIRECT ) == O_DIRECT )
+  {
+    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_SYNC;
+    flags ^= O_DIRECT;
+  }
+
   system_v_flags |= flags;
-#else
-  system_v_flags = flags;
+#endif
 #endif
 
   org::xtreemfs::interfaces::FileCredentials file_credentials;
