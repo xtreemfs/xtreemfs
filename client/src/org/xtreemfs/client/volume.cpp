@@ -151,9 +151,8 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
     system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_SYNC;
     flags ^= O_DIRECT;
   }
-
-  system_v_flags |= flags;
 #endif
+  system_v_flags |= flags;
 #endif
 
   org::xtreemfs::interfaces::FileCredentials file_credentials;
