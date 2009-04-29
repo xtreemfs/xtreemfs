@@ -60,6 +60,8 @@ public class MRCConfig extends ServiceConfig {
     private String            authenticationProvider;
     
     private String            capabilitySecret;
+
+    private boolean           renewTimedOutCaps;
     
     /** Creates a new instance of MRCConfig */
     public MRCConfig(String filename) throws IOException {
@@ -98,6 +100,8 @@ public class MRCConfig extends ServiceConfig {
         this.authenticationProvider = readRequiredString("authentication_provider");
         
         this.capabilitySecret = readRequiredString("capability_secret");
+
+        this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
     }
     
     public int getOsdCheckInterval() {
@@ -146,6 +150,13 @@ public class MRCConfig extends ServiceConfig {
     
     public String getCapabilitySecret() {
         return capabilitySecret;
+    }
+
+    /**
+     * @return the renewTimedOutCaps
+     */
+    public boolean isRenewTimedOutCaps() {
+        return renewTimedOutCaps;
     }
     
 }

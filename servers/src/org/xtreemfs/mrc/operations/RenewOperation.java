@@ -42,9 +42,12 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 public class RenewOperation extends MRCOperation {
     
     public static final int OP_ID = 25;
+
+    public final boolean renewTimedOutCaps;
     
     public RenewOperation(MRCRequestDispatcher master) {
         super(master);
+        renewTimedOutCaps = master.getConfig().isRenewTimedOutCaps();
     }
     
     @Override
@@ -63,7 +66,7 @@ public class RenewOperation extends MRCOperation {
                 throw new UserException(cap + " does not have a valid signature");
             
             // check whether the capability has expired
-            if (cap.hasExpired())
+            if (cap.hasExpired() && !renewTimedOutCaps)
                 throw new UserException(cap + " has expired");
             
             Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
