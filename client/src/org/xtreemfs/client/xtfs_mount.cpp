@@ -135,7 +135,7 @@ namespace org
           ret = fuse->main( mount_point.c_str() );
 #else
           if ( fuse_o_args.empty() )
-            ret = fuse.main( argv[0], mount_point.c_str() );
+            ret = fuse->main( argv[0], mount_point.c_str() );
           else
           {
             std::vector<char*> argvv;
@@ -145,7 +145,7 @@ namespace org
             argvv.push_back( NULL );
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
             struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-            ret = fuse.main( fuse_args_, mount_point.c_str() );
+            ret = fuse->main( fuse_args_, mount_point.c_str() );
           }
 #endif
 
