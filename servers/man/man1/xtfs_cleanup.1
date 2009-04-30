@@ -2,7 +2,7 @@
 .SH NAME
 xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
 .SH SYNOPSIS
-\fBxtfs_cleanup [ \fIoptions\fB ] \fI<osd_address>\fB | \fIuuid:<osd_uuid>
+\fBxtfs_cleanup [ \fIoptions\fB ] \fIuuid:<osd_uuid>
 .BR
 
 .SH DESCRIPTION
@@ -20,7 +20,7 @@ Cleans up the OSD with the given uuid.
 .TP
 \fB-h\fP                   show usage info
 .TP
-\fB-r\fP                   restore mode - all files will be restored to directory '/Lost+Found/' at the volume they are located
+\fB-r\fP                   restore mode - all files will be restored to directory '/lost+found/' at the volume they are located
 .TP
 \fB-e\fP                   !erase mode - all files will be removed without further request!
 .TP
@@ -29,6 +29,8 @@ Cleans up the OSD with the given uuid.
 \fB-i\fP                   interactive mode - user is asked for decisions
 .TP
 \fB-stop\fP                suspend the currently running cleanup
+.TP
+\fB-p\fP                   your administrator password, if password-protection is enabled
 
 .SH "SEE ALSO"
 .BR xtfs_mount (1),
