@@ -57,8 +57,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::NewFileSizeSet", 4266043619UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::NewFileSize value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::NewFileSize>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::NewFileSize", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::NewFileSize>::size(); }
       };
 
       class OSDtoMRCData : public YIELD::Object
@@ -100,8 +100,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::OSDtoMRCDataSet", 3900363312UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::OSDtoMRCData value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCData", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::OSDtoMRCData>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::OSDtoMRCData", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::OSDtoMRCData>::size(); }
       };
 
       class OSDWriteResponse : public YIELD::Object
@@ -199,8 +199,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::ReplicaSet", 4051946467UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::Replica value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Replica", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::Replica>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Replica", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::Replica>::size(); }
       };
 
       class XCap : public YIELD::Object
@@ -316,8 +316,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::FileCredentialsSet", 1629291456UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::FileCredentials value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::FileCredentials>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::FileCredentials", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::FileCredentials>::size(); }
       };
 
 

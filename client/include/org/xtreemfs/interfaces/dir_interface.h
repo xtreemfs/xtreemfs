@@ -78,8 +78,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::AddressMappingSet", 3884050721UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::AddressMapping value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::AddressMapping", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::AddressMapping>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::AddressMapping", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::AddressMapping>::size(); }
       };
 
       class ServiceDataMap : public std::map<std::string,std::string>, public YIELD::Object
@@ -146,8 +146,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::ServiceSet", 3685523999UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::Service value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Service", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::Service>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Service", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::Service>::size(); }
       };
 
 

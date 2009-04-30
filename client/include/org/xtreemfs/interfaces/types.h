@@ -27,8 +27,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::StringSet", 1366254439UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string value; input_stream.readString( YIELD::StructuredStream::Declaration( "value" ), value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<std::string>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<std::string>::size(); }
       };
 
       class UserCredentials : public YIELD::Object

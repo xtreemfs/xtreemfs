@@ -127,8 +127,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::DirectoryEntrySet", 3851275498UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::DirectoryEntry value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::DirectoryEntry", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::DirectoryEntry>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::DirectoryEntry", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::DirectoryEntry>::size(); }
       };
 
       class StatVFS : public YIELD::Object
@@ -225,8 +225,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::VolumeSet", 2227996177UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { org::xtreemfs::interfaces::Volume value; input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Volume", "value" ), &value ); push_back( value ); }
+        uint64_t get_size() const { return std::vector<org::xtreemfs::interfaces::Volume>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::Volume", "value" ), ( *this )[value_i] ); } }
-        size_t getSize() const { return std::vector<org::xtreemfs::interfaces::Volume>::size(); }
       };
 
 
