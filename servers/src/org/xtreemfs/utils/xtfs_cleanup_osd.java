@@ -37,7 +37,7 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.include.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.utils.CLIParser.CliOption;

@@ -24,15 +24,16 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 /**
  * 
@@ -64,12 +65,27 @@ public abstract class MRCOperation {
      */
     public ErrorRecord parseRequestArgs(MRCRequest rq) {
         try {
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsing request arguments");
+            
             Request req = MRCInterface.createRequest(rq.getRPCRequest().getRequestHeader());
             req.deserialize(rq.getRPCRequest().getRequestFragment());
             rq.setRequestArgs(req);
+            
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "successfully parsed request arguments:");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, req.toString());
+            }
+            
             return null;
             
         } catch (Throwable exc) {
+            
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not parse request arguments:");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+            }
             return new ErrorRecord(ErrorClass.INVALID_ARGS, exc.getMessage(), exc);
         }
     }
@@ -106,14 +122,14 @@ public abstract class MRCOperation {
         rq.setError(error);
         master.requestFinished(rq);
     }
-
+    
     protected void validateContext(MRCRequest rq) throws UserException {
         UserCredentials ctx = getUserCredentials(rq);
-        if ((ctx == null) || (ctx.getGroup_ids().size() == 0) ||
-            (ctx.getUser_id().length() == 0)) {
-            throw new UserException(ErrNo.EACCES, "UserCredentials must contain a non-empty userID and at least one groupID!");
+        if ((ctx == null) || (ctx.getGroup_ids().size() == 0) || (ctx.getUser_id().length() == 0)) {
+            throw new UserException(ErrNo.EACCES,
+                "UserCredentials must contain a non-empty userID and at least one groupID!");
         }
-
+        
     }
     
 }

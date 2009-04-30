@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
+import org.xtreemfs.common.logging.Logging;
+
 public class ServiceConfig extends Config {
     
     protected int         debugLevel;
@@ -72,7 +74,7 @@ public class ServiceConfig extends Config {
     
     public void read() throws IOException {
         
-        this.debugLevel = this.readRequiredInt("debug.level");
+        this.debugLevel = this.readOptionalInt("debug.level", Logging.LEVEL_INFO);
         
         this.debugCategory = this.readOptionalString("debug.category", "all");
         

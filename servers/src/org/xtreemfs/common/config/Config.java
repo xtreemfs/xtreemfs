@@ -97,6 +97,14 @@ abstract public class Config {
         else
             return Boolean.parseBoolean(tmp.trim());
     }
+    
+    protected int readOptionalInt(String paramName, int defaultValue) {
+        String tmp = props.getProperty(paramName);
+        if (tmp == null)
+            return defaultValue;
+        else
+            return Integer.parseInt(tmp.trim());
+    }
 
     protected InetAddress readOptionalInetAddr(String paramName,
         InetAddress defaultValue) throws UnknownHostException {
