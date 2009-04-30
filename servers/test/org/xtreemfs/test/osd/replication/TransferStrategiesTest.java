@@ -74,7 +74,7 @@ public class TransferStrategiesTest extends TestCase {
      */
     public TransferStrategiesTest() throws InvalidXLocationsException {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(Logging.LEVEL_TRACE);
+        Logging.start(Logging.LEVEL_DEBUG);
 
         String file = "1:1";
         cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, "secretPassphrase");

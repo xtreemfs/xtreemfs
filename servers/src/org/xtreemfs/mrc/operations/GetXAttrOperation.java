@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.getxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getxattrResponse;
@@ -55,80 +54,70 @@ public class GetXAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final getxattrRequest rqArgs = (getxattrRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        Path p = new Path(rqArgs.getPath());
+        
+        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        // retrieve and prepare the metadata to return
+        FileMetadata file = res.getFile();
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            rqArgs.setPath(target);
+            p = new Path(target);
             
-            final getxattrRequest rqArgs = (getxattrRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-            
-            validateContext(rq);
-            
-            Path p = new Path(rqArgs.getPath());
-            
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.setPath(target);
-                p = new Path(target);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                        + target + " does not exist"));
-                    return;
-                }
-                
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
             }
             
-            String value = null;
-            if (rqArgs.getName().startsWith("xtreemfs."))
-                value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
-                    volume, res.toString(), file, rqArgs.getName().substring(9));
-            else {
-                
-                // first, try to fetch an individual user attribute
-                value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.getName());
-                
-                // if no such attribute exists, try to fetch a global attribute
-                if (value == null)
-                    value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.getName());
-            }
-            
-            if (value == null)
-                throw new UserException(ErrNo.ENODATA);
-            
-            // set the response
-            rq.setResponse(new getxattrResponse(value));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            volume = vMan.getVolumeByName(p.getComp(0));
+            sMan = vMan.getStorageManager(volume.getId());
+            res = new PathResolver(sMan, p);
+            file = res.getFile();
         }
+        
+        String value = null;
+        if (rqArgs.getName().startsWith("xtreemfs."))
+            value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), volume,
+                res.toString(), file, rqArgs.getName().substring(9));
+        else {
+            
+            // first, try to fetch an individual user attribute
+            value = sMan.getXAttr(file.getId(), rq.getDetails().userId, rqArgs.getName());
+            
+            // if no such attribute exists, try to fetch a global attribute
+            if (value == null)
+                value = sMan.getXAttr(file.getId(), StorageManager.GLOBAL_ID, rqArgs.getName());
+        }
+        
+        if (value == null)
+            throw new UserException(ErrNo.ENODATA);
+        
+        // set the response
+        rq.setResponse(new getxattrResponse(value));
+        finishRequest(rq);
     }
     
 }

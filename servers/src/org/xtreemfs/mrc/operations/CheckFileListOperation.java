@@ -26,12 +26,10 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 
@@ -48,39 +46,33 @@ public class CheckFileListOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final xtreemfs_check_file_existsRequest rqArgs = (xtreemfs_check_file_existsRequest) rq
-                    .getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            StorageManager sMan = vMan.getStorageManager(rqArgs.getVolume_id());
-            
-            String response = sMan == null ? "2" : "";
-            if (sMan != null)
-                try {
-                    if (rqArgs.getFile_ids().size() == 0)
-                        throw new UserException("fileList was empty!");
-                    for (String fileId : rqArgs.getFile_ids()) {
-                        if (fileId == null)
-                            throw new MRCException("file ID was null!");
-                        response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
-                    }
-                } catch (UserException ue) {
-                    response = "2";
-                } catch (MRCException be) {
-                    throw new MRCException("checkFileList caused an Exception: " + be.getMessage());
+        final xtreemfs_check_file_existsRequest rqArgs = (xtreemfs_check_file_existsRequest) rq
+                .getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        StorageManager sMan = vMan.getStorageManager(rqArgs.getVolume_id());
+        
+        String response = sMan == null ? "2" : "";
+        if (sMan != null)
+            try {
+                if (rqArgs.getFile_ids().size() == 0)
+                    throw new UserException("fileList was empty!");
+                for (String fileId : rqArgs.getFile_ids()) {
+                    if (fileId == null)
+                        throw new MRCException("file ID was null!");
+                    response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
                 }
-            
-            // set the response
-            rq.setResponse(new xtreemfs_check_file_existsResponse(response));
-            finishRequest(rq);
-            
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+            } catch (UserException ue) {
+                response = "2";
+            } catch (MRCException be) {
+                throw new MRCException("checkFileList caused an Exception: " + be.getMessage());
+            }
+        
+        // set the response
+        rq.setResponse(new xtreemfs_check_file_existsResponse(response));
+        finishRequest(rq);
     }
     
 }

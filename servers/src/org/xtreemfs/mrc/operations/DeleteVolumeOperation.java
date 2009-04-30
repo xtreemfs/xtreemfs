@@ -51,40 +51,30 @@ public class DeleteVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(final MRCRequest rq) {
+    public void startRequest(final MRCRequest rq) throws Throwable {
         
-        try {
+        final xtreemfs_rmvolRequest rqArgs = (xtreemfs_rmvolRequest) rq.getRequestArgs();
+        
+        final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
+        final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
+        
+        // get the volume's root directory
+        FileMetadata file = sMan.getMetadata(0, volume.getName());
+        
+        // check whether privileged permissions are granted for deleting the
+        // volume
+        master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
+            rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        // deregister the volume from the Directory Service
+        RPCResponse response = master.getDirClient().xtreemfs_service_deregister(null, volume.getId());
+        response.registerListener(new RPCResponseAvailableListener() {
             
-            final xtreemfs_rmvolRequest rqArgs = (xtreemfs_rmvolRequest) rq.getRequestArgs();
-            
-            final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
-            final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
-            
-            // get the volume's root directory
-            FileMetadata file = sMan.getMetadata(0, volume.getName());
-            
-            // check whether privileged permissions are granted for deleting the
-            // volume
-            master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // deregister the volume from the Directory Service
-            RPCResponse response = master.getDirClient().xtreemfs_service_deregister(null, volume.getId());
-            response.registerListener(new RPCResponseAvailableListener() {
-                
-                @Override
-                public void responseAvailable(RPCResponse r) {
-                    processStep2(rqArgs, volume.getId(), rq, r);
-                }
-            });
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+            @Override
+            public void responseAvailable(RPCResponse r) {
+                processStep2(rqArgs, volume.getId(), rq, r);
+            }
+        });
     }
     
     private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq,
@@ -104,7 +94,8 @@ public class DeleteVolumeOperation extends MRCOperation {
             finishRequest(rq);
             
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {

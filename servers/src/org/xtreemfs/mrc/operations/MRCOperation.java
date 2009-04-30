@@ -52,7 +52,7 @@ public abstract class MRCOperation {
      * @param rq
      *            the new request
      */
-    public abstract void startRequest(MRCRequest rq);
+    public abstract void startRequest(MRCRequest rq) throws Throwable;
     
     /**
      * Parses the request arguments.
@@ -92,7 +92,7 @@ public abstract class MRCOperation {
      * 
      * @param rq
      */
-    protected void finishRequest(MRCRequest rq) {
+    public void finishRequest(MRCRequest rq) {
         master.requestFinished(rq);
     }
     
@@ -102,7 +102,7 @@ public abstract class MRCOperation {
      * @param rq
      * @param error
      */
-    protected void finishRequest(MRCRequest rq, ErrorRecord error) {
+    public void finishRequest(MRCRequest rq, ErrorRecord error) {
         rq.setError(error);
         master.requestFinished(rq);
     }

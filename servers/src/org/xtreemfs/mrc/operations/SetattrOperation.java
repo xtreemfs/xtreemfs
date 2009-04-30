@@ -24,14 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setattrResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -56,78 +54,67 @@ public class SetattrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final setattrRequest rqArgs = (setattrRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        Path p = new Path(rqArgs.getPath());
+        
+        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        // retrieve and prepare the metadata to return
+        FileMetadata file = res.getFile();
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            rqArgs.setPath(target);
+            p = new Path(target);
             
-            final setattrRequest rqArgs = (setattrRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-            
-            Path p = new Path(rqArgs.getPath());
-            
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.setPath(target);
-                p = new Path(target);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
-                    return;
-                }
-                
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
             }
             
-            // check whether write permissions are granted to the parent
-            // directory
-            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            
-            file.setW32Attrs(rqArgs.getStbuf().getAttributes());
-            
-            
-            // update POSIX timestamps
-            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-            
-            // set the response
-            rq.setResponse(new setattrResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            volume = vMan.getVolumeByName(p.getComp(0));
+            sMan = vMan.getStorageManager(volume.getId());
+            res = new PathResolver(sMan, p);
+            file = res.getFile();
         }
+        
+        // check whether write permissions are granted to the parent
+        // directory
+        faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId,
+            rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        file.setW32Attrs(rqArgs.getStbuf().getAttributes());
+        
+        // update POSIX timestamps
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        
+        // set the response
+        rq.setResponse(new setattrResponse());
+        
+        update.execute();
+        
     }
     
 }

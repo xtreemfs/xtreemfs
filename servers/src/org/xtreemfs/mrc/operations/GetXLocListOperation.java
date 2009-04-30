@@ -24,16 +24,13 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
@@ -53,39 +50,29 @@ public class GetXLocListOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final xtreemfs_replica_listRequest rqArgs = (xtreemfs_replica_listRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            
-            validateContext(rq);
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
-            
-            StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
-            
-            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-            if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + idRes.getLocalFileId() + "' does not exist");
-            
-            // get the replicas from the X-Loc list
-            ReplicaSet replicas = Converter.xLocListToXLocSet(file.getXLocList()).getReplicas();
-            
-            // set the response
-            rq.setResponse(new xtreemfs_replica_listResponse(replicas));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final xtreemfs_replica_listRequest rqArgs = (xtreemfs_replica_listRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        
+        validateContext(rq);
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
+        
+        StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+        
+        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(ErrNo.ENOENT, "file '" + idRes.getLocalFileId() + "' does not exist");
+        
+        // get the replicas from the X-Loc list
+        ReplicaSet replicas = Converter.xLocListToXLocSet(file.getXLocList()).getReplicas();
+        
+        // set the response
+        rq.setResponse(new xtreemfs_replica_listResponse(replicas));
+        finishRequest(rq);
     }
     
 }

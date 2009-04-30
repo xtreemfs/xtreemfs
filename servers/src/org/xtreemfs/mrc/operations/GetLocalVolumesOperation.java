@@ -31,10 +31,8 @@ import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
@@ -53,29 +51,23 @@ public class GetLocalVolumesOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            Collection<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
+        Collection<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
+        
+        VolumeSet vSet = new VolumeSet();
+        for (VolumeInfo data : volumes) {
             
-            VolumeSet vSet = new VolumeSet();
-            for (VolumeInfo data : volumes) {
-                
-                StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
-                FileMetadata md = sMan.getMetadata(1);
-                vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), OSDSelectionPolicyType
-                        .parseInt(data.getOsdPolicyId()), Converter.stripingPolicyToStripingPolicy(sMan
-                        .getDefaultStripingPolicy(1)),
-                    AccessControlPolicyType.parseInt(data.getAcPolicyId()), data.getId(), md.getOwnerId(), md
-                            .getOwningGroupId()));
-            }
-            
-            rq.setResponse(new xtreemfs_lsvolResponse(vSet));
-            finishRequest(rq);
-            
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
+            FileMetadata md = sMan.getMetadata(1);
+            vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), OSDSelectionPolicyType
+                    .parseInt(data.getOsdPolicyId()), Converter.stripingPolicyToStripingPolicy(sMan
+                    .getDefaultStripingPolicy(1)), AccessControlPolicyType.parseInt(data.getAcPolicyId()),
+                data.getId(), md.getOwnerId(), md.getOwningGroupId()));
         }
+        
+        rq.setResponse(new xtreemfs_lsvolResponse(vSet));
+        finishRequest(rq);
     }
     
 }

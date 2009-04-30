@@ -27,18 +27,15 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -66,89 +63,79 @@ public class DeleteOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path p = new Path(rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq
+                .getRequestArgs()).getPath() : ((rmdirRequest) rq.getRequestArgs()).getPath());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the parent directory grants write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), 0,
+            rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        // check whether the file/directory exists
+        res.checkIfFileDoesNotExist();
+        
+        FileMetadata file = res.getFile();
+        
+        // check whether the entry itself can be deleted (this is e.g.
+        // important w/ POSIX access control if the sticky bit is set)
+        faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, file, res.getParentDirId(), rq
+                .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        if (file.isDirectory() && sMan.getChildren(file.getId()).hasNext())
+            throw new UserException(ErrNo.ENOTEMPTY, "'" + p + "' is not empty");
+        
+        FileCredentialsSet creds = new FileCredentialsSet();
+        
+        // unless the file is a directory, retrieve X-headers for file
+        // deletion on OSDs; if the request was authorized before,
+        // assume that a capability has been issued already.
+        if (!file.isDirectory()) {
             
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
+            // create a deletion capability for the file
+            Capability cap = new Capability(volume.getId() + ":" + file.getId(),
+                FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
+                        .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(),
+                master.getConfig().getCapabilitySecret());
             
-            final Path p = new Path(rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq
-                    .getRequestArgs()).getPath() : ((rmdirRequest) rq.getRequestArgs()).getPath());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), 0,
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether the file/directory exists
-            res.checkIfFileDoesNotExist();
-            
-            FileMetadata file = res.getFile();
-            
-            // check whether the entry itself can be deleted (this is e.g.
-            // important w/ POSIX access control if the sticky bit is set)
-            faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, file, res.getParentDirId(),
-                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            if (file.isDirectory() && sMan.getChildren(file.getId()).hasNext())
-                throw new UserException(ErrNo.ENOTEMPTY, "'" + p + "' is not empty");
-            
-            FileCredentialsSet creds = new FileCredentialsSet();
-            
-            // unless the file is a directory, retrieve X-headers for file
-            // deletion on OSDs; if the request was authorized before,
-            // assume that a capability has been issued already.
-            if (!file.isDirectory()) {
-                
-                // create a deletion capability for the file
-                Capability cap = new Capability(volume.getId() + ":" + file.getId(),
-                    FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
-                            .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file
-                            .getEpoch(), master.getConfig().getCapabilitySecret());
-                
-                // set the XCapability and XLocationsList headers
-                XLocList xloc = file.getXLocList();
-                if (xloc != null && xloc.getReplicaCount() > 0)
-                    creds.add(new FileCredentials(Converter.xLocListToXLocSet(xloc), cap.getXCap()));
-            }
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // unlink the file; if there are still links to the file, reset the
-            // X-headers to null, as the file content must not be deleted
-            sMan.delete(res.getParentDirId(), res.getFileName(), update);
-            if (file.getLinkCount() > 1)
-                creds.clear();
-            
-            // update POSIX timestamps of parent directory
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
-                update);
-            
-            if (file.getLinkCount() > 1)
-                MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-            
-            // set the response
-            rq.setResponse(new unlinkResponse(creds));
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            // set the XCapability and XLocationsList headers
+            XLocList xloc = file.getXLocList();
+            if (xloc != null && xloc.getReplicaCount() > 0)
+                creds.add(new FileCredentials(Converter.xLocListToXLocSet(xloc), cap.getXCap()));
         }
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // unlink the file; if there are still links to the file, reset the
+        // X-headers to null, as the file content must not be deleted
+        sMan.delete(res.getParentDirId(), res.getFileName(), update);
+        if (file.getLinkCount() > 1)
+            creds.clear();
+        
+        // update POSIX timestamps of parent directory
+        MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
+            update);
+        
+        if (file.getLinkCount() > 1)
+            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
+        
+        // set the response
+        rq.setResponse(new unlinkResponse(creds));
+        
+        update.execute();
     }
     
 }

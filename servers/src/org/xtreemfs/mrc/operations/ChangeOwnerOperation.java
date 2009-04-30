@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownResponse;
@@ -56,82 +55,73 @@ public class ChangeOwnerOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final chownRequest rqArgs = (chownRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        Path p = new Path(rqArgs.getPath());
+        
+        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        FileMetadata file = res.getFile();
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            rqArgs.setPath(target);
+            p = new Path(target);
             
-            final chownRequest rqArgs = (chownRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-
-            Path p = new Path(rqArgs.getPath());
-            
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.setPath(target);
-                p = new Path(target);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
-                    return;
-                }
-                
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
             }
             
-            // check whether the owner may be changed
-            if (rqArgs.getUser_id().equals("")) {
-                if (!rq.getDetails().superUser)
-                    throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
-                
-            } else
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                    rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // change owner and owning group
-            file.setOwnerAndGroup(rqArgs.getUser_id().equals("") ? file.getOwnerId() : rqArgs.getUser_id(), rqArgs
-                    .getGroup_id().equals("")? file.getOwningGroupId() : rqArgs.getGroup_id());
-            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-            
-            // set the response
-            rq.setResponse(new chownResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            volume = vMan.getVolumeByName(p.getComp(0));
+            sMan = vMan.getStorageManager(volume.getId());
+            res = new PathResolver(sMan, p);
+            file = res.getFile();
         }
+        
+        // check whether the owner may be changed
+        if (rqArgs.getUser_id().equals("")) {
+            if (!rq.getDetails().superUser)
+                throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
+            
+        } else
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // change owner and owning group
+        file.setOwnerAndGroup(rqArgs.getUser_id().equals("") ? file.getOwnerId() : rqArgs.getUser_id(),
+            rqArgs.getGroup_id().equals("") ? file.getOwningGroupId() : rqArgs.getGroup_id());
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        
+        // update POSIX timestamps
+        MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
+        
+        // set the response
+        rq.setResponse(new chownResponse());
+        
+        update.execute();
+        
     }
     
 }

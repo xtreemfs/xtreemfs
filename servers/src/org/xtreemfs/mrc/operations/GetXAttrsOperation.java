@@ -27,15 +27,11 @@ package org.xtreemfs.mrc.operations;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.listxattrResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -60,70 +56,61 @@ public class GetXAttrsOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final listxattrRequest rqArgs = (listxattrRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-            
-            final Path p = new Path(rqArgs.getPath());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
-            
-            HashSet<String> attrNames = new HashSet<String>();
-            
-            Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
-            Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
-            
-            // include global attributes
-            while (globalAttrs.hasNext())
-                attrNames.add(globalAttrs.next().getKey());
-            
-            // include individual user attributes
-            while (myAttrs.hasNext())
-                attrNames.add(myAttrs.next().getKey());
-            
-            // include system attributes
-            for (SysAttrs attr : SysAttrs.values()) {
-                String key = "xtreemfs." + attr.toString();
-                Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master
-                        .getOSDStatusManager(), volume, res.toString(), file, attr.toString());
-                if (!value.equals(""))
-                    attrNames.add(key);
-            }
-            
-            StringSet names = new StringSet();
-            Iterator<String> it = attrNames.iterator();
-            while (it.hasNext())
-                names.add(it.next());
-            
-            // set the response
-            rq.setResponse(new listxattrResponse(names));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+        final listxattrRequest rqArgs = (listxattrRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path p = new Path(rqArgs.getPath());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        // retrieve and prepare the metadata to return
+        FileMetadata file = res.getFile();
+        
+        HashSet<String> attrNames = new HashSet<String>();
+        
+        Iterator<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
+        Iterator<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
+        
+        // include global attributes
+        while (globalAttrs.hasNext())
+            attrNames.add(globalAttrs.next().getKey());
+        
+        // include individual user attributes
+        while (myAttrs.hasNext())
+            attrNames.add(myAttrs.next().getKey());
+        
+        // include system attributes
+        for (SysAttrs attr : SysAttrs.values()) {
+            String key = "xtreemfs." + attr.toString();
+            Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
+                volume, res.toString(), file, attr.toString());
+            if (!value.equals(""))
+                attrNames.add(key);
         }
+        
+        StringSet names = new StringSet();
+        Iterator<String> it = attrNames.iterator();
+        while (it.hasNext())
+            names.add(it.next());
+        
+        // set the response
+        rq.setResponse(new listxattrResponse(names));
+        finishRequest(rq);
+        
     }
 }

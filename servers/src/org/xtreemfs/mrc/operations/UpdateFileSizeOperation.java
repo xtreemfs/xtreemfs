@@ -32,11 +32,9 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -55,87 +53,77 @@ public class UpdateFileSizeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final xtreemfs_update_file_sizeRequest rqArgs = (xtreemfs_update_file_sizeRequest) rq
+                .getRequestArgs();
+        
+        Capability cap = new Capability(rqArgs.getXcap(), master.getConfig().getCapabilitySecret());
+        
+        // check whether the capability has a valid signature
+        if (!cap.hasValidSignature())
+            throw new UserException(cap + " does not have a valid signature");
+        
+        // check whether the capability has expired
+        if (cap.hasExpired())
+            throw new UserException(cap + " has expired");
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
+        
+        StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+        
+        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
+        
+        NewFileSizeSet newFSSet = rqArgs.getOsd_write_response().getNew_file_size();
+        
+        if (newFSSet.isEmpty())
+            throw new UserException(ErrNo.EINVAL, "invalid file size: empty");
+        
+        NewFileSize newFS = newFSSet.get(0);
+        long newFileSize = newFS.getSize_in_bytes();
+        int epochNo = newFS.getTruncate_epoch();
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // only accept valid file size updates
+        if (epochNo >= file.getEpoch()) {
             
-            final xtreemfs_update_file_sizeRequest rqArgs = (xtreemfs_update_file_sizeRequest) rq
-                    .getRequestArgs();
-            
-            Capability cap = new Capability(rqArgs.getXcap(), master.getConfig().getCapabilitySecret());
-            
-            // check whether the capability has a valid signature
-            if (!cap.hasValidSignature())
-                throw new UserException(cap + " does not have a valid signature");
-            
-            // check whether the capability has expired
-            if (cap.hasExpired())
-                throw new UserException(cap + " has expired");
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
-            
-            StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
-            
-            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-            if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
-            
-            NewFileSizeSet newFSSet = rqArgs.getOsd_write_response().getNew_file_size();
-            
-            if (newFSSet.isEmpty())
-                throw new UserException(ErrNo.EINVAL, "invalid file size: empty");
-            
-            NewFileSize newFS = newFSSet.get(0);
-            long newFileSize = newFS.getSize_in_bytes();
-            int epochNo = newFS.getTruncate_epoch();
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // only accept valid file size updates
-            if (epochNo >= file.getEpoch()) {
+            // accept any file size in a new epoch but only larger file
+            // sizes in
+            // the current epoch
+            if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
                 
-                // accept any file size in a new epoch but only larger file
-                // sizes in
-                // the current epoch
-                if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
-                    
-                    int time = (int) (TimeSync.getGlobalTime() / 1000);
-                    
-                    file.setSize(newFileSize);
-                    file.setEpoch(epochNo);
-                    file.setCtime(time);
-                    file.setMtime(time);
-                    
-                    sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
-                    sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-                }
+                int time = (int) (TimeSync.getGlobalTime() / 1000);
+                
+                file.setSize(newFileSize);
+                file.setEpoch(epochNo);
+                file.setCtime(time);
+                file.setMtime(time);
+                
+                sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
+                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
-
-            else {
-                if (epochNo < file.getEpoch())
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                            "received file size update w/ invalid epoch: " + epochNo + ", current epoch="
-                                + file.getEpoch());
-                    } else if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                            "received update for outdated file size: " + newFileSize + ", current file size="
-                                + file.getSize());
-                    }
-            }
-            
-            // set the response
-            rq.setResponse(new xtreemfs_update_file_sizeResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
+
+        else {
+            if (epochNo < file.getEpoch())
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "received file size update w/ invalid epoch: " + epochNo + ", current epoch="
+                            + file.getEpoch());
+                } else if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "received update for outdated file size: "
+                        + newFileSize + ", current file size=" + file.getSize());
+                }
+        }
+        
+        // set the response
+        rq.setResponse(new xtreemfs_update_file_sizeResponse());
+        
+        update.execute();
+        
     }
 }

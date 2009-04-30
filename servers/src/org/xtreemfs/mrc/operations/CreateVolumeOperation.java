@@ -59,61 +59,51 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(final MRCRequest rq) {
+    public void startRequest(final MRCRequest rq) throws Throwable {
         
-        try {
+        final xtreemfs_mkvolRequest rqArgs = (xtreemfs_mkvolRequest) rq.getRequestArgs();
+        
+        validateContext(rq);
+        Volume volData = rqArgs.getVolume();
+        
+        // first, check whether the given policies are supported
+        
+        if (master.getOSDStatusManager().getOSDSelectionPolicy(
+            (short) volData.getOsd_selection_policy().intValue()) == null)
+            throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
+                + volData.getOsd_selection_policy());
+        
+        if (master.getFileAccessManager().getFileAccessPolicy(
+            (short) volData.getAccess_control_policy().intValue()) == null)
+            throw new UserException(ErrNo.EINVAL, "invalid file access policy ID: "
+                + volData.getAccess_control_policy());
+        
+        // in order to allow volume creation in a single-threaded
+        // non-blocking
+        // manner, it needs to be performed in two steps:
+        // * first, the volume is registered with the directory service
+        // * when registration has been confirmed at the directory service,
+        // request processing is continued with step 2
+        
+        final String volumeId = master.getVolumeManager().newVolumeId();
+        
+        // check whether a volume with the same name has already been
+        // registered at the Directory Service
+        
+        Map<String, Object> queryMap = new HashMap<String, Object>();
+        queryMap.put("name", volData.getName());
+        List<String> attrs = new LinkedList<String>();
+        attrs.add("version");
+        
+        RPCResponse<ServiceSet> response = master.getDirClient().xtreemfs_service_get_by_type(null,
+            ServiceType.SERVICE_TYPE_VOLUME);
+        response.registerListener(new RPCResponseAvailableListener<ServiceSet>() {
             
-            final xtreemfs_mkvolRequest rqArgs = (xtreemfs_mkvolRequest) rq.getRequestArgs();
-            
-            validateContext(rq);
-            Volume volData = rqArgs.getVolume();
-            
-            // first, check whether the given policies are supported
-            
-            if (master.getOSDStatusManager().getOSDSelectionPolicy(
-                (short) volData.getOsd_selection_policy().intValue()) == null)
-                throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
-                    + volData.getOsd_selection_policy());
-            
-            if (master.getFileAccessManager().getFileAccessPolicy(
-                (short) volData.getAccess_control_policy().intValue()) == null)
-                throw new UserException(ErrNo.EINVAL, "invalid file access policy ID: "
-                    + volData.getAccess_control_policy());
-            
-            // in order to allow volume creation in a single-threaded
-            // non-blocking
-            // manner, it needs to be performed in two steps:
-            // * first, the volume is registered with the directory service
-            // * when registration has been confirmed at the directory service,
-            // request processing is continued with step 2
-            
-            final String volumeId = master.getVolumeManager().newVolumeId();
-            
-            // check whether a volume with the same name has already been
-            // registered at the Directory Service
-            
-            Map<String, Object> queryMap = new HashMap<String, Object>();
-            queryMap.put("name", volData.getName());
-            List<String> attrs = new LinkedList<String>();
-            attrs.add("version");
-            
-            RPCResponse<ServiceSet> response = master.getDirClient().xtreemfs_service_get_by_type(null,
-                ServiceType.SERVICE_TYPE_VOLUME);
-            response.registerListener(new RPCResponseAvailableListener<ServiceSet>() {
-                
-                @Override
-                public void responseAvailable(RPCResponse<ServiceSet> r) {
-                    processStep2(rqArgs, volumeId, rq, r);
-                }
-            });
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+            @Override
+            public void responseAvailable(RPCResponse<ServiceSet> r) {
+                processStep2(rqArgs, volumeId, rq, r);
+            }
+        });
     }
     
     private void processStep2(final xtreemfs_mkvolRequest rqArgs, final String volumeId, final MRCRequest rq,
@@ -153,7 +143,8 @@ public class CreateVolumeOperation extends MRCOperation {
             });
             
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {
@@ -185,7 +176,8 @@ public class CreateVolumeOperation extends MRCOperation {
             finishRequest(rq);
             
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {

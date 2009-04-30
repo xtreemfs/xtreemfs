@@ -89,11 +89,11 @@ public class HeartbeatThread extends LifeCycleThread {
         RPCResponse<String> r = null;
         try {
             if (client.clientIsAlive()) {
-
+                
                 RPCResponse r1 = client.xtreemfs_service_offline(null, uuid.toString());
                 r1.get();
                 r1.freeBuffers();
-
+                
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "cannot deregister at DIR: " + ex);
@@ -159,6 +159,13 @@ public class HeartbeatThread extends LifeCycleThread {
                     uuid.getAddress().getPort(), "*", 3600);
                 
                 endpoints.add(m);
+            }
+            
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this,
+                    "registering the following address mapping for the service:");
+                for (AddressMapping mapping : endpoints)
+                    Logging.logMessage(Logging.LEVEL_INFO, this, mapping.toString());
             }
             
             // fetch the latest address mapping version from the Directory

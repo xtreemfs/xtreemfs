@@ -28,7 +28,6 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -67,172 +66,162 @@ public class OpenOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
+        final openRequest rqArgs = (openRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        Path p = new Path(rqArgs.getPath());
+        
+        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        FileMetadata file = null;
+        
+        // check whether the file/directory exists
         try {
             
-            final openRequest rqArgs = (openRequest) rq.getRequestArgs();
+            res.checkIfFileDoesNotExist();
             
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
+            // check if O_CREAT and O_EXCL are set; if so, send an exception
+            if ((rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0
+                && (rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0)
+                res.checkIfFileExistsAlready();
             
-            Path p = new Path(rqArgs.getPath());
+            file = res.getFile();
             
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            FileMetadata file = null;
-            
-            // check whether the file/directory exists
-            try {
+            // if the file refers to a symbolic link, resolve the link
+            String target = sMan.getSoftlinkTarget(file.getId());
+            if (target != null) {
+                rqArgs.setPath(target);
+                p = new Path(target);
                 
-                res.checkIfFileDoesNotExist();
+                // if the local MRC is not responsible, send a redirect
+                if (!vMan.hasVolume(p.getComp(0))) {
+                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                        + target + " does not exist"));
+                    return;
+                }
                 
-                // check if O_CREAT and O_EXCL are set; if so, send an exception
-                if ((rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0
-                    && (rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0)
-                    res.checkIfFileExistsAlready();
-                
+                volume = vMan.getVolumeByName(p.getComp(0));
+                sMan = vMan.getStorageManager(volume.getId());
+                res = new PathResolver(sMan, p);
                 file = res.getFile();
-                
-                // if the file refers to a symbolic link, resolve the link
-                String target = sMan.getSoftlinkTarget(file.getId());
-                if (target != null) {
-                    rqArgs.setPath(target);
-                    p = new Path(target);
-                    
-                    // if the local MRC is not responsible, send a redirect
-                    if (!vMan.hasVolume(p.getComp(0))) {
-                        finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                            "link target " + target + " does not exist"));
-                        return;
-                    }
-                    
-                    volume = vMan.getVolumeByName(p.getComp(0));
-                    sMan = vMan.getStorageManager(volume.getId());
-                    res = new PathResolver(sMan, p);
-                    file = res.getFile();
-                }
-                
-                if (file.isDirectory())
-                    throw new UserException(ErrNo.EISDIR, "open is restricted to files");
-                
-                // check whether the file is marked as 'read-only'; in this
-                // case, throw an exception if write access is requested
-                if (file.isReadOnly()
-                    && ((rqArgs.getFlags() & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY
-                        | FileAccessManager.O_TRUNC | FileAccessManager.O_APPEND)) != 0))
-                    throw new UserException(ErrNo.EPERM, "read-only files cannot be written");
-                
-                // check whether the permission is granted
-                faMan.checkPermission(rqArgs.getFlags(), sMan, file, res.getParentDirId(),
-                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-                
-            } catch (UserException exc) {
-                
-                // if the file does not exist, check whether the O_CREAT flag
-                // has been provided
-                if (exc.getErrno() == ErrNo.ENOENT && (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
-                    
-                    // check for write permission in parent dir
-                    // check whether the parent directory grants write access
-                    faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
-                            .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                            .getDetails().groupIds);
-                    
-                    // get the next free file ID
-                    long fileId = sMan.getNextFileId();
-                    
-                    // atime, ctime, mtime
-                    int time = (int) (TimeSync.getGlobalTime() / 1000);
-                    
-                    // create the metadata object
-                    file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
-                        rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), rqArgs
-                                .getAttributes(), 0, false, 0, 0, update);
-                    
-                    // set the file ID as the last one
-                    sMan.setLastFileId(fileId, update);
-                }
-
-                else
-                    throw exc;
             }
             
-            // get the current epoch, use (and increase) the truncate number if
-            // the open mode is truncate
-            int trEpoch = file.getEpoch();
-            if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
-                file.setIssuedEpoch(file.getIssuedEpoch() + 1);
-                trEpoch = file.getIssuedEpoch();
-                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-            }
+            if (file.isDirectory())
+                throw new UserException(ErrNo.EISDIR, "open is restricted to files");
             
-            XLocList xLocList = file.getXLocList();
-            XLocSet xLocSet = null;
+            // check whether the file is marked as 'read-only'; in this
+            // case, throw an exception if write access is requested
+            if (file.isReadOnly()
+                && ((rqArgs.getFlags() & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY
+                    | FileAccessManager.O_TRUNC | FileAccessManager.O_APPEND)) != 0))
+                throw new UserException(ErrNo.EPERM, "read-only files cannot be written");
             
-            // if no replicas have been assigned yet, assign a new replica
-            if (xLocList == null || xLocList.getReplicaCount() == 0) {
-                
-                // create a replica with the default striping policy together
-                // with a set of feasible OSDs from the OSD status manager
-                Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume,
-                    res.getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
-                            .getClientIdentity()).getAddress());
-                
-                ReplicaSet replicas = new ReplicaSet();
-                replicas.add(replica);
-                
-                xLocSet = new XLocSet(replicas, 0, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
-                    : Constants.REPL_UPDATE_PC_NONE, 0);
-                
-                file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
-                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-            }
-
-            else {
-                xLocSet = Converter.xLocListToXLocSet(xLocList);
-                if (file.isReadOnly())
-                    xLocSet.setRead_only_file_size(file.getSize());
-            }
-            
-            Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
-                    .getGlobalTime()
-                / 1000 + Capability.DEFAULT_VALIDITY, ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress().getHostAddress(), trEpoch, master.getConfig()
-                    .getCapabilitySecret());
-            
-            // update POSIX timestamps of file
-            MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,
-                true, sMan, update);
-            
-            // update POSIX timestamps of parent directory
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
-                update);
-            
-            // update POSIX timestamps of parent directory
-            if (!master.getConfig().isNoAtime())
-                MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true, false, false,
-                    sMan, update);
-            
-            // set the response
-            rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
-            
-            update.execute();
+            // check whether the permission is granted
+            faMan.checkPermission(rqArgs.getFlags(), sMan, file, res.getParentDirId(),
+                rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
             
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            
+            // if the file does not exist, check whether the O_CREAT flag
+            // has been provided
+            if (exc.getErrno() == ErrNo.ENOENT && (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
+                
+                // check for write permission in parent dir
+                // check whether the parent directory grants write access
+                faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
+                        .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
+                        .getDetails().groupIds);
+                
+                // get the next free file ID
+                long fileId = sMan.getNextFileId();
+                
+                // atime, ctime, mtime
+                int time = (int) (TimeSync.getGlobalTime() / 1000);
+                
+                // create the metadata object
+                file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time, rq
+                        .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), rqArgs
+                        .getAttributes(), 0, false, 0, 0, update);
+                
+                // set the file ID as the last one
+                sMan.setLastFileId(fileId, update);
+            }
+
+            else
+                throw exc;
         }
+        
+        // get the current epoch, use (and increase) the truncate number if
+        // the open mode is truncate
+        int trEpoch = file.getEpoch();
+        if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
+            file.setIssuedEpoch(file.getIssuedEpoch() + 1);
+            trEpoch = file.getIssuedEpoch();
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        }
+        
+        XLocList xLocList = file.getXLocList();
+        XLocSet xLocSet = null;
+        
+        // if no replicas have been assigned yet, assign a new replica
+        if (xLocList == null || xLocList.getReplicaCount() == 0) {
+            
+            // create a replica with the default striping policy together
+            // with a set of feasible OSDs from the OSD status manager
+            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
+                    .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
+                    .getClientIdentity()).getAddress());
+            
+            ReplicaSet replicas = new ReplicaSet();
+            replicas.add(replica);
+            
+            xLocSet = new XLocSet(replicas, 0, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+                : Constants.REPL_UPDATE_PC_NONE, 0);
+            
+            file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
+            sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        }
+
+        else {
+            xLocSet = Converter.xLocListToXLocSet(xLocList);
+            if (file.isReadOnly())
+                xLocSet.setRead_only_file_size(file.getSize());
+        }
+        
+        Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
+                .getGlobalTime()
+            / 1000 + Capability.DEFAULT_VALIDITY,
+            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
+            trEpoch, master.getConfig().getCapabilitySecret());
+        
+        // update POSIX timestamps of file
+        MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,
+            true, sMan, update);
+        
+        // update POSIX timestamps of parent directory
+        MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
+            update);
+        
+        // update POSIX timestamps of parent directory
+        if (!master.getConfig().isNoAtime())
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true, false, false, sMan,
+                update);
+        
+        // set the response
+        rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
+        
+        update.execute();
     }
     
 }

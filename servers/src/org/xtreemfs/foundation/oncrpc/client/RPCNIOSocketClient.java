@@ -124,7 +124,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
 
     private void sendRequest(InetSocketAddress server, ONCRPCRequest request) {
-        if (Logging.tracingEnabled()) {
+        if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "send request " + request + " no " + transactionId.get());
         }
         //get connection
@@ -493,7 +493,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                                 } else {
                                     con.addRequest(send.getXID(), send);
                                     con.setSendRequest(null);
-                                    if (Logging.tracingEnabled()) {
+                                    if (Logging.isDebug()) {
                                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent request to " + con.getEndpoint());
                                     }
                                 }

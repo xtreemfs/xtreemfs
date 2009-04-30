@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -180,6 +181,11 @@ public class ProcessingStage extends MRCStage {
         final ONCRPCRequest rpcRequest = rq.getRPCRequest();
         
         final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getOperationNumber());
+        
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "operation for request " + rq + ": "
+                + op.getClass().getSimpleName());
+        
         if (op == null) {
             rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION, "requested operation ("
                 + rpcRequest.getRequestHeader().getOperationNumber() + ") is not available on this MRC"));
@@ -225,7 +231,16 @@ public class ProcessingStage extends MRCStage {
             return;
         }
         
-        op.startRequest(rq);
+        try {
+            op.startRequest(rq);
+        } catch (UserException exc) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+            op.finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
+                exc));
+        } catch (Throwable exc) {
+            op.finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred",
+                exc));
+        }
     }
-    
 }

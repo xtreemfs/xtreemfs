@@ -24,16 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -55,56 +51,46 @@ public class StatOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final getattrRequest rqArgs = (getattrRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-            
-            validateContext(rq);
-            
-            final Path p = new Path(rqArgs.getPath());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // retrieve and prepare the metadata to return
-            FileMetadata file = res.getFile();
-            
-            String linkTarget = sMan.getSoftlinkTarget(file.getId());
-            int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
-                : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
-                    : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
-            long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-            Stat stat = new Stat(mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime()
-                * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file
-                    .getOwnerId(), file.getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget,
-                file.getEpoch(), (int) file.getW32Attrs());
-            // TODO: check whether Win32 attrs are 32 or 64 bits long
-            
-            // set the response
-            rq.setResponse(new getattrResponse(stat));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final getattrRequest rqArgs = (getattrRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path p = new Path(rqArgs.getPath());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        // retrieve and prepare the metadata to return
+        FileMetadata file = res.getFile();
+        
+        String linkTarget = sMan.getSoftlinkTarget(file.getId());
+        int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
+        mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
+            : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
+        long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
+        Stat stat = new Stat(mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime() * (long) 1e9,
+            (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file.getOwnerId(), file
+                    .getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget, file.getEpoch(),
+            (int) file.getW32Attrs());
+        // TODO: check whether Win32 attrs are 32 or 64 bits long
+        
+        // set the response
+        rq.setResponse(new getattrResponse(stat));
+        finishRequest(rq);
+        
     }
     
 }

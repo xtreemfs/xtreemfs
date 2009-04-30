@@ -24,15 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.StatVFS;
 import org.xtreemfs.interfaces.MRCInterface.statvfsRequest;
 import org.xtreemfs.interfaces.MRCInterface.statvfsResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
@@ -49,29 +45,20 @@ public class StatFSOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final statvfsRequest rqArgs = (statvfsRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
-            
-            long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
-            StatVFS statfs = new StatVFS(1024, blocks, volume.getId(), 1024);
-            
-            // set the response
-            rq.setResponse(new statvfsResponse(statfs));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final statvfsRequest rqArgs = (statvfsRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
+        
+        long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
+        StatVFS statfs = new StatVFS(1024, blocks, volume.getId(), 1024);
+        
+        // set the response
+        rq.setResponse(new statvfsResponse(statfs));
+        finishRequest(rq);
+        
     }
     
 }

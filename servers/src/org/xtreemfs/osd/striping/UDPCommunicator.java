@@ -165,11 +165,11 @@ public class UDPCommunicator extends LifeCycleThread {
                             sender = (InetSocketAddress) channel.receive(data.getBuffer());
                             if (sender == null) {
                                 BufferPool.free(data);
-                                if (Logging.tracingEnabled())
+                                if (Logging.isDebug())
                                     Logging.logMessage(Logging.LEVEL_WARN,this,"read key for empty read");
                             } else {
 
-                                if (Logging.tracingEnabled())
+                                if (Logging.isDebug())
                                     Logging.logMessage(Logging.LEVEL_DEBUG,this,"read data from "+sender);
 
                                 receiver.receiveUDP(new UDPMessage(sender, data));
@@ -178,7 +178,7 @@ public class UDPCommunicator extends LifeCycleThread {
                     } else if (key.isWritable()) {
                         UDPMessage r = q.poll();
                         while (r != null) {
-                            if (Logging.tracingEnabled())
+                            if (Logging.isDebug())
                                 Logging.logMessage(Logging.LEVEL_DEBUG,this,"sent packet to "+r.getAddress());
                             int sent = channel.send(r.getPayload().getBuffer(),r.getAddress());
                             BufferPool.free(r.getPayload());

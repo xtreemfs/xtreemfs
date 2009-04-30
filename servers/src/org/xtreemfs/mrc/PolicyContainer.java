@@ -107,13 +107,11 @@ public class PolicyContainer {
                 options.add(cp);
                 
                 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null,
-                    null);
+                StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
                 
                 Iterable<? extends JavaFileObject> compilationUnits = fileManager
                         .getJavaFileObjectsFromFiles(Arrays.asList(javaFiles));
-                if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits)
-                        .call())
+                if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits).call())
                     Logging.logMessage(Logging.LEVEL_WARN, this, "some policies in '"
                         + policyDir.getAbsolutePath() + "' could not be compiled");
                 
@@ -196,8 +194,8 @@ public class PolicyContainer {
                 return findSystemClass(name);
             } catch (ClassNotFoundException exc) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not find system class '"
-                        + name + "', trying to define the class");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not find system class '" + name
+                        + "', trying to define the class");
             }
             
             if (policyDir == null || !policyDir.exists())
@@ -208,8 +206,8 @@ public class PolicyContainer {
             // define it
             try {
                 
-                File classFile = new File(policyDir.getAbsolutePath() + "/"
-                    + name.replace('.', '/') + ".class");
+                File classFile = new File(policyDir.getAbsolutePath() + "/" + name.replace('.', '/')
+                    + ".class");
                 
                 Class clazz = loadFromStream(new FileInputStream(classFile));
                 
@@ -226,8 +224,7 @@ public class PolicyContainer {
                 
             } catch (LinkageError err) {
                 
-                Logging.logMessage(Logging.LEVEL_WARN, this, "could not define class '" + name
-                    + "'");
+                Logging.logMessage(Logging.LEVEL_WARN, this, "could not define class '" + name + "'");
                 Logging.logMessage(Logging.LEVEL_WARN, this, err);
                 
             }
@@ -250,13 +247,14 @@ public class PolicyContainer {
             Map<Long, Class> map = policyMap.get(policyInterFace);
             if (map == null)
                 return null;
-                //throw new ClassNotFoundException();
+            // throw new ClassNotFoundException();
             
             Class clazz = map.get(id);
-            /*if (clazz == null)
-                return null;
-                throw new ClassNotFoundException();*/
-            
+            /*
+             * if (clazz == null) return null; throw new
+             * ClassNotFoundException();
+             */
+
             return clazz;
         }
         
@@ -330,8 +328,7 @@ public class PolicyContainer {
         } catch (Exception exc) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "no built-in policy '"
-                    + config.getAuthenticationProvider()
-                    + "' exists, searching for plug-in policies...");
+                    + config.getAuthenticationProvider() + "' exists, searching for plug-in policies...");
         }
         
         // if no built-in policy could be found, check for plug-in policy
@@ -359,16 +356,15 @@ public class PolicyContainer {
         // otherwise, check whether a constructor exists that needs the slice
         // manager; if so, invoke it
         try {
-            return (FileAccessPolicy) policyClass.getConstructor(
-                new Class[] { VolumeManager.class }).newInstance(volMan);
+            return (FileAccessPolicy) policyClass.getConstructor(new Class[] { VolumeManager.class })
+                    .newInstance(volMan);
         } catch (InstantiationException exc) {
             // ignore
         }
         
         // otherwise, throw an exception indicating that no suitable constructor
         // was found
-        throw new InstantiationException("policy " + policyClass
-            + " does not have a suitable constructor");
+        throw new InstantiationException("policy " + policyClass + " does not have a suitable constructor");
         
     }
     

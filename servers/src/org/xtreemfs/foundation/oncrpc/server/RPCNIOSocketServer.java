@@ -334,7 +334,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 if (rq.isAllFragmentsReceived()) {
                                     con.setReceive(null);
                                     //request is complete... send to receiver
-                                    if (Logging.tracingEnabled()) {
+                                    if (Logging.isDebug()) {
                                         Logging.logMessage(Logging.LEVEL_DEBUG, this, rq.toString());
                                     }
                                     con.getOpenRequests().incrementAndGet();
@@ -433,7 +433,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             //finished sending fragment
                             //clean up :-) request finished
                             pendingRequests--;
-                            if (Logging.tracingEnabled()) {
+                            if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent response for " + rq);
                             }
                             rq.freeBuffers();

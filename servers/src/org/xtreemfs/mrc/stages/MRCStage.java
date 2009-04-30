@@ -132,7 +132,7 @@ public abstract class MRCStage extends LifeCycleThread {
                 
                 rq = op.getRq();
                 
-                if (Logging.tracingEnabled())
+                if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "processing request XID="
                         + rq.getRPCRequest().getRequestHeader().getXID() + " method: " + op.getStageMethod());
                 
@@ -165,8 +165,8 @@ public abstract class MRCStage extends LifeCycleThread {
     protected void methodExecutionFailed(StageMethod m, ErrorRecord err) {
         assert (m != null);
         if (m.getCallback() == null) {
-            if (Logging.tracingEnabled()) {
-                Logging.logMessage(Logging.LEVEL_TRACE, this, "event dropped (possibly finished) XID="
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "event dropped (possibly finished) XID="
                     + m.getRq().getRPCRequest().getRequestHeader().getXID() + " with error: " + err);
             }
             return;
@@ -191,8 +191,8 @@ public abstract class MRCStage extends LifeCycleThread {
         assert (m != null);
         assert (m.getRq() != null);
         if (m.getCallback() == null) {
-            if (Logging.tracingEnabled()) {
-                Logging.logMessage(Logging.LEVEL_TRACE, this, "event dropped (possibly finished) XID="
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "event dropped (possibly finished) XID="
                     + m.getRq().getRPCRequest().getRequestHeader().getXID());
             }
             return;

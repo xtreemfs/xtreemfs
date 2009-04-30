@@ -96,7 +96,8 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException e) {
             // database already exists
-            Logging.logMessage(Logging.LEVEL_TRACE, this, "database '" + dbName + "' loaded");
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "database '" + dbName + "' loaded");
         }
     }
     

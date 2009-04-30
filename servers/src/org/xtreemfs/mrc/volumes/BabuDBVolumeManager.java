@@ -133,7 +133,8 @@ public class BabuDBVolumeManager implements VolumeManager {
             if (e.getErrorCode() == ErrorCode.DB_EXISTS) {
                 
                 // database already exists
-                Logging.logMessage(Logging.LEVEL_TRACE, this, "database loaded from '" + dbDir + "'");
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "database loaded from '" + dbDir + "'");
                 
                 try {
                     

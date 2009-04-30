@@ -24,16 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
 /**
@@ -49,32 +45,22 @@ public class GetSuitableOSDsOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final xtreemfs_get_suitable_osdsRequest rqArgs = (xtreemfs_get_suitable_osdsRequest) rq
-                    .getRequestArgs();
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
-            
-            ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(idRes.getVolumeId());
-            StringSet uuids = new StringSet();
-            for (int i = 0; i < usableOSDs.size(); i++)
-                uuids.add(usableOSDs.get(i).getUuid());
-            
-            // set the response
-            rq.setResponse(new xtreemfs_get_suitable_osdsResponse(uuids));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final xtreemfs_get_suitable_osdsRequest rqArgs = (xtreemfs_get_suitable_osdsRequest) rq
+                .getRequestArgs();
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
+        
+        ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(idRes.getVolumeId());
+        StringSet uuids = new StringSet();
+        for (int i = 0; i < usableOSDs.size(); i++)
+            uuids.add(usableOSDs.get(i).getUuid());
+        
+        // set the response
+        rq.setResponse(new xtreemfs_get_suitable_osdsResponse(uuids));
+        finishRequest(rq);
     }
     
 }

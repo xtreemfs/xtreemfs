@@ -26,14 +26,11 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 /**
  * 
@@ -42,8 +39,8 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 public class RenewOperation extends MRCOperation {
     
     public static final int OP_ID = 25;
-
-    public final boolean renewTimedOutCaps;
+    
+    public final boolean    renewTimedOutCaps;
     
     public RenewOperation(MRCRequestDispatcher master) {
         super(master);
@@ -51,38 +48,28 @@ public class RenewOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final xtreemfs_renew_capabilityRequest rqArgs = (xtreemfs_renew_capabilityRequest) rq
-                    .getRequestArgs();
-            
-            // create a capability object to verify the capability
-            Capability cap = new Capability(rqArgs.getOld_xcap(), master.getConfig().getCapabilitySecret());
-            
-            // check whether the capability has a valid signature
-            if (!cap.hasValidSignature())
-                throw new UserException(cap + " does not have a valid signature");
-            
-            // check whether the capability has expired
-            if (cap.hasExpired() && !renewTimedOutCaps)
-                throw new UserException(cap + " has expired");
-            
-            Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
-                / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), master
-                    .getConfig().getCapabilitySecret());
-            
-            // set the response
-            rq.setResponse(new xtreemfs_renew_capabilityResponse(newCap.getXCap()));
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final xtreemfs_renew_capabilityRequest rqArgs = (xtreemfs_renew_capabilityRequest) rq
+                .getRequestArgs();
+        
+        // create a capability object to verify the capability
+        Capability cap = new Capability(rqArgs.getOld_xcap(), master.getConfig().getCapabilitySecret());
+        
+        // check whether the capability has a valid signature
+        if (!cap.hasValidSignature())
+            throw new UserException(cap + " does not have a valid signature");
+        
+        // check whether the capability has expired
+        if (cap.hasExpired() && !renewTimedOutCaps)
+            throw new UserException(cap + " has expired");
+        
+        Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
+            / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), master
+                .getConfig().getCapabilitySecret());
+        
+        // set the response
+        rq.setResponse(new xtreemfs_renew_capabilityResponse(newCap.getXCap()));
+        finishRequest(rq);
     }
 }

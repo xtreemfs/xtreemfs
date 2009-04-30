@@ -28,15 +28,12 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -56,60 +53,49 @@ public class TruncateOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final ftruncateRequest rqArgs = (ftruncateRequest) rq.getRequestArgs();
-            
-            Capability writeCap = new Capability(rqArgs.getWrite_xcap(), master.getConfig()
-                    .getCapabilitySecret());
-            
-            // check whether the capability has a valid signature
-            if (!writeCap.hasValidSignature())
-                throw new UserException(writeCap + " does not have a valid signature");
-            
-            // check whether the capability has expired
-            if (writeCap.hasExpired())
-                throw new UserException(writeCap + " has expired");
-            
-            // check whether the capability grants write permissions
-            if ((writeCap.getAccessMode() & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR | FileAccessManager.O_TRUNC)) == 0)
-                throw new UserException(ErrNo.EACCES, writeCap + " is not a write capability");
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(writeCap.getFileId());
-            
-            StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
-            
-            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-            if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + writeCap.getFileId() + "' does not exist");
-            
-            // get the current epoch, use (and increase) the truncate number if
-            // the open mode is truncate
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            int newEpoch = file.getIssuedEpoch() + 1;
-            file.setIssuedEpoch(newEpoch);
-            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-            
-            Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
-                | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
-                ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-                newEpoch, master.getConfig().getCapabilitySecret());
-            
-            // set the response
-            rq.setResponse(new ftruncateResponse(truncCap.getXCap()));
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final ftruncateRequest rqArgs = (ftruncateRequest) rq.getRequestArgs();
+        
+        Capability writeCap = new Capability(rqArgs.getWrite_xcap(), master.getConfig().getCapabilitySecret());
+        
+        // check whether the capability has a valid signature
+        if (!writeCap.hasValidSignature())
+            throw new UserException(writeCap + " does not have a valid signature");
+        
+        // check whether the capability has expired
+        if (writeCap.hasExpired())
+            throw new UserException(writeCap + " has expired");
+        
+        // check whether the capability grants write permissions
+        if ((writeCap.getAccessMode() & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR | FileAccessManager.O_TRUNC)) == 0)
+            throw new UserException(ErrNo.EACCES, writeCap + " is not a write capability");
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(writeCap.getFileId());
+        
+        StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+        
+        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(ErrNo.ENOENT, "file '" + writeCap.getFileId() + "' does not exist");
+        
+        // get the current epoch, use (and increase) the truncate number if
+        // the open mode is truncate
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        int newEpoch = file.getIssuedEpoch() + 1;
+        file.setIssuedEpoch(newEpoch);
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        
+        Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
+            | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
+            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
+            newEpoch, master.getConfig().getCapabilitySecret());
+        
+        // set the response
+        rq.setResponse(new ftruncateResponse(truncCap.getXCap()));
+        update.execute();
     }
 }

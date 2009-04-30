@@ -44,30 +44,25 @@ public class InternalDebugOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-
-            final xtreemfs_internal_debugRequest rqArgs = (xtreemfs_internal_debugRequest) rq.getRequestArgs();
-
-            if (rqArgs.getCmd().equals("shutdown_babudb")) {
-                master.getVolumeManager().checkpointDB();
-
-                master.getVolumeManager().shutdown();
-
-                // set the response
-                rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
-            } else if (rqArgs.getCmd().equals("startup_babudb")) {
-                master.getVolumeManager().init();
-                rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
-            } else {
-                rq.setResponse(new xtreemfs_internal_debugResponse("unknown command"));
-            }
-            finishRequest(rq);
+        final xtreemfs_internal_debugRequest rqArgs = (xtreemfs_internal_debugRequest) rq.getRequestArgs();
+        
+        if (rqArgs.getCmd().equals("shutdown_babudb")) {
+            master.getVolumeManager().checkpointDB();
             
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            master.getVolumeManager().shutdown();
+            
+            // set the response
+            rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
+        } else if (rqArgs.getCmd().equals("startup_babudb")) {
+            master.getVolumeManager().init();
+            rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
+        } else {
+            rq.setResponse(new xtreemfs_internal_debugResponse("unknown command"));
         }
+        finishRequest(rq);
+        
     }
     
 }

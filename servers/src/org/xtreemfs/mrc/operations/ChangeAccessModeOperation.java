@@ -24,14 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -56,76 +54,67 @@ public class ChangeAccessModeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final chmodRequest rqArgs = (chmodRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        Path p = new Path(rqArgs.getPath());
+        
+        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        FileMetadata file = res.getFile();
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            rqArgs.setPath(target);
+            p = new Path(target);
             
-            final chmodRequest rqArgs = (chmodRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-
-            Path p = new Path(rqArgs.getPath());
-            
-            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
-            PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            FileMetadata file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.setPath(target);
-                p = new Path(target);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT,
-                        "link target " + target + " does not exist"));
-                    return;
-                }
-                
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
             }
             
-            // check whether the access mode may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // change the access mode; only bits 0-11 may be changed
-            faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().groupIds, (file.getPerms() & 0xFFFFF800) | (rqArgs.getMode() & 0x7FF), update);
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-            
-            // set the response
-            rq.setResponse(new chmodResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            volume = vMan.getVolumeByName(p.getComp(0));
+            sMan = vMan.getStorageManager(volume.getId());
+            res = new PathResolver(sMan, p);
+            file = res.getFile();
         }
+        
+        // check whether the access mode may be changed
+        faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // change the access mode; only bits 0-11 may be changed
+        faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId,
+            rq.getDetails().groupIds, (file.getPerms() & 0xFFFFF800) | (rqArgs.getMode() & 0x7FF), update);
+        
+        // update POSIX timestamps
+        MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
+        
+        // set the response
+        rq.setResponse(new chmodResponse());
+        
+        update.execute();
+        
     }
     
 }

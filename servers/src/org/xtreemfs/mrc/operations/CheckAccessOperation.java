@@ -24,14 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -53,52 +50,42 @@ public class CheckAccessOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
+        final accessRequest rqArgs = (accessRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path p = new Path(rqArgs.getPath());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver res = new PathResolver(sMan, p);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether file exists
+        res.checkIfFileDoesNotExist();
+        
+        // perform the access check
+        FileMetadata file = res.getFile();
+        boolean success = false;
         try {
-            
-            final accessRequest rqArgs = (accessRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-            
-            final Path p = new Path(rqArgs.getPath());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether file exists
-            res.checkIfFileDoesNotExist();
-            
-            // perform the access check
-            FileMetadata file = res.getFile();
-            boolean success = false;
-            try {
-                faMan.checkPermission(rqArgs.getMode(), sMan, file, res.getParentDirId(),
-                    rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-                success = true;
-            } catch (UserException exc) {
-                // permission denied
-            }
-            
-            // set the response
-            rq.setResponse(new accessResponse(success));
-            finishRequest(rq);
-            
+            faMan.checkPermission(rqArgs.getMode(), sMan, file, res.getParentDirId(), rq.getDetails().userId,
+                rq.getDetails().superUser, rq.getDetails().groupIds);
+            success = true;
         } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            // permission denied
         }
+        
+        // set the response
+        rq.setResponse(new accessResponse(success));
+        finishRequest(rq);
     }
     
 }

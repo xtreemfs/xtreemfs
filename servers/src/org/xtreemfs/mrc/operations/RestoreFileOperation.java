@@ -25,16 +25,13 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -60,80 +57,71 @@ public class RestoreFileOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            if (!rq.getDetails().superUser)
-                throw new UserException(ErrNo.EACCES, "operation is restricted to superusers");
-            
-            final xtreemfs_restore_fileRequest rqArgs = (xtreemfs_restore_fileRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
-            
-            final Path p = new Path(vMan.getVolumeById(idRes.getVolumeId()).getName() + "/"
-                + rqArgs.getFile_path());
-            final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
-            
-            // prepare file creation in database
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            int time = (int) (TimeSync.getGlobalTime() / 1000);
-            long nextFileId = sMan.getNextFileId();
-            
-            // create parent directories if necessary
-            FileMetadata[] path = sMan.resolvePath(p);
-            long parentId = 1;
-            for (int i = 0; i < p.getCompCount(); i++)
-                try {
-                    if (path[i] != null)
-                        parentId = path[i].getId();
+        if (!rq.getDetails().superUser)
+            throw new UserException(ErrNo.EACCES, "operation is restricted to superusers");
+        
+        final xtreemfs_restore_fileRequest rqArgs = (xtreemfs_restore_fileRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
+        
+        final Path p = new Path(vMan.getVolumeById(idRes.getVolumeId()).getName() + "/"
+            + rqArgs.getFile_path());
+        final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+        
+        // prepare file creation in database
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        long nextFileId = sMan.getNextFileId();
+        
+        // create parent directories if necessary
+        FileMetadata[] path = sMan.resolvePath(p);
+        long parentId = 1;
+        for (int i = 0; i < p.getCompCount(); i++)
+            try {
+                if (path[i] != null)
+                    parentId = path[i].getId();
+                
+                else {
+                    sMan.createDir(nextFileId, parentId, p.getComp(i), time, time, time,
+                        rq.getDetails().userId, rq.getDetails().groupIds.get(0), 509, 0, update);
+                    parentId = nextFileId;
+                    nextFileId++;
                     
-                    else {
-                        sMan.createDir(nextFileId, parentId, p.getComp(i), time, time, time,
-                            rq.getDetails().userId, rq.getDetails().groupIds.get(0), 509, 0, update);
-                        parentId = nextFileId;
-                        nextFileId++;
-                        
-                        // set the file ID as the last one
-                        sMan.setLastFileId(nextFileId, update);
-                    }
-                } catch (DatabaseException exc) {
-                    if (exc.getType() != ExceptionType.FILE_EXISTS)
-                        throw exc;
+                    // set the file ID as the last one
+                    sMan.setLastFileId(nextFileId, update);
                 }
-            
-            // create the metadata object
-            FileMetadata file = sMan.createFile(idRes.getLocalFileId(), parentId, rqArgs.getFile_id(), time,
-                time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0), 511, 0, rqArgs
-                        .getFile_size(), false, 0, 0, update);
-            
-            int size = (rqArgs.getStripe_size() < 1024 ? 1 : (rqArgs.getStripe_size() % 1024 != 0) ? rqArgs
-                    .getStripe_size() / 1024 + 1 : rqArgs.getStripe_size() / 1024);
-            
-            // create and assign the new XLocList
-            StripingPolicy sp = sMan.createStripingPolicy("RAID0", size, 1);
-            XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() });
-            XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, Constants.REPL_UPDATE_PC_NONE, 0);
-            
-            file.setXLocList(xLocList);
-            sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-            
-            // set the response
-            rq.setResponse(new xtreemfs_restore_fileResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+            } catch (DatabaseException exc) {
+                if (exc.getType() != ExceptionType.FILE_EXISTS)
+                    throw exc;
+            }
+        
+        // create the metadata object
+        FileMetadata file = sMan.createFile(idRes.getLocalFileId(), parentId, rqArgs.getFile_id(), time,
+            time, time, rq.getDetails().userId, rq.getDetails().groupIds.get(0), 511, 0, rqArgs
+                    .getFile_size(), false, 0, 0, update);
+        
+        int size = (rqArgs.getStripe_size() < 1024 ? 1 : (rqArgs.getStripe_size() % 1024 != 0) ? rqArgs
+                .getStripe_size() / 1024 + 1 : rqArgs.getStripe_size() / 1024);
+        
+        // create and assign the new XLocList
+        StripingPolicy sp = sMan.createStripingPolicy("RAID0", size, 1);
+        XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() });
+        XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, Constants.REPL_UPDATE_PC_NONE, 0);
+        
+        file.setXLocList(xLocList);
+        sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        
+        // set the response
+        rq.setResponse(new xtreemfs_restore_fileResponse());
+        
+        update.execute();
+        
     }
     
 }

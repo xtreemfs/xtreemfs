@@ -28,17 +28,14 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.MRCInterface.renameRequest;
 import org.xtreemfs.interfaces.MRCInterface.renameResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -64,231 +61,221 @@ public class MoveOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final renameRequest rqArgs = (renameRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path sp = new Path(rqArgs.getSource_path());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(sp.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver sRes = new PathResolver(sMan, sp);
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the parent directory grants write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, sRes.getParentDir(), sRes
+                .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+            rq.getDetails().groupIds);
+        
+        final Path tp = new Path(rqArgs.getTarget_path());
+        
+        // check arguments
+        if (sp.getCompCount() == 1)
+            throw new UserException(ErrNo.ENOENT, "cannot move a volume");
+        
+        if (!sp.getComp(0).equals(tp.getComp(0)))
+            throw new UserException(ErrNo.ENOENT, "cannot move between volumes");
+        
+        // check whether the file/directory exists
+        sRes.checkIfFileDoesNotExist();
+        
+        // check whether the entry itself can be moved (this is e.g.
+        // important w/ POSIX access control if the sticky bit is set)
+        faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, sRes.getFile(), sRes
+                .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
+            rq.getDetails().groupIds);
+        
+        FileMetadata source = sRes.getFile();
+        
+        // find out what the source path refers to (1 = directory, 2 = file)
+        FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
+        
+        final PathResolver tRes = new PathResolver(sMan, tp);
+        
+        FileMetadata targetParentDir = tRes.getParentDir();
+        if (targetParentDir == null || !targetParentDir.isDirectory())
+            throw new UserException(ErrNo.ENOTDIR, "'" + tp.getComps(0, tp.getCompCount() - 2)
+                + "' is not a directory");
+        
+        FileMetadata target = tRes.getFile();
+        
+        // find out what the target path refers to (0 = does not exist, 1 =
+        // directory, 2 = file)
+        FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
+            : target.isDirectory() ? FileType.dir : FileType.file;
+        
+        FileCredentialsSet creds = new FileCredentialsSet();
+        
+        // if both the old and the new directory point to the same
+        // entity, do nothing
+        if (sp.equals(tp)) {
+            rq.setResponse(new renameResponse(creds));
+            finishRequest(rq);
+            return;
+        }
+        
+        // check whether the path prefix of the target file is
+        // searchable
+        faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the parent directory of the target file grants
+        // write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
+                .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
+            rq.getDetails().groupIds);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        switch (sourceType) {
+        
+        // source is a directory
+        case dir: {
             
-            final renameRequest rqArgs = (renameRequest) rq.getRequestArgs();
+            // check whether the target is a subdirectory of the
+            // source directory; if so, throw an exception
+            if (tp.isSubDirOf(sp))
+                throw new UserException(ErrNo.EINVAL, "cannot move '" + sp
+                    + "' to one of its own subdirectories");
             
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
+            switch (targetType) {
             
-            validateContext(rq);
-            
-            final Path sp = new Path(rqArgs.getSource_path());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(sp.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver sRes = new PathResolver(sMan, sp);
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, sRes.getParentDir(), sRes
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            final Path tp = new Path(rqArgs.getTarget_path());
-            
-            // check arguments
-            if (sp.getCompCount() == 1)
-                throw new UserException(ErrNo.ENOENT, "cannot move a volume");
-            
-            if (!sp.getComp(0).equals(tp.getComp(0)))
-                throw new UserException(ErrNo.ENOENT, "cannot move between volumes");
-            
-            // check whether the file/directory exists
-            sRes.checkIfFileDoesNotExist();
-            
-            // check whether the entry itself can be moved (this is e.g.
-            // important w/ POSIX access control if the sticky bit is set)
-            faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, sRes.getFile(), sRes
-                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            FileMetadata source = sRes.getFile();
-            
-            // find out what the source path refers to (1 = directory, 2 = file)
-            FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
-            
-            final PathResolver tRes = new PathResolver(sMan, tp);
-            
-            FileMetadata targetParentDir = tRes.getParentDir();
-            if (targetParentDir == null || !targetParentDir.isDirectory())
-                throw new UserException(ErrNo.ENOTDIR, "'" + tp.getComps(0, tp.getCompCount() - 2)
-                    + "' is not a directory");
-            
-            FileMetadata target = tRes.getFile();
-            
-            // find out what the target path refers to (0 = does not exist, 1 =
-            // directory, 2 = file)
-            FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
-                : target.isDirectory() ? FileType.dir : FileType.file;
-            
-            FileCredentialsSet creds = new FileCredentialsSet();
-            
-            // if both the old and the new directory point to the same
-            // entity, do nothing
-            if (sp.equals(tp)) {
-                rq.setResponse(new renameResponse(creds));
-                finishRequest(rq);
-                return;
-            }
-            
-            // check whether the path prefix of the target file is
-            // searchable
-            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether the parent directory of the target file grants
-            // write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            switch (sourceType) {
-            
-            // source is a directory
-            case dir: {
-                
-                // check whether the target is a subdirectory of the
-                // source directory; if so, throw an exception
-                if (tp.isSubDirOf(sp))
-                    throw new UserException(ErrNo.EINVAL, "cannot move '" + sp
-                        + "' to one of its own subdirectories");
-                
-                switch (targetType) {
-                
-                case nexists: // target does not exist
-                {
-                    // relink the metadata object to the parent directory of
-                    // the target path and remove the former link
-                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                    source.setLinkCount(newLinkCount);
-                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    break;
-                }
-                    
-                case dir: // target is a directory
-                {
-                    
-                    // check whether the target directory may be overwritten; if
-                    // so, delete it
-                    faMan.checkPermission(FileAccessManager.NON_POSIX_DELETE, sMan, target, tRes
-                            .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                            .getDetails().groupIds);
-                    
-                    if (sMan.getChildren(target.getId()).hasNext())
-                        throw new UserException(ErrNo.ENOTEMPTY, "target directory '" + tRes
-                            + "' is not empty");
-                    else
-                        sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    // relink the metadata object to the parent directory of
-                    // the target path and remove the former link
-                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                    source.setLinkCount(newLinkCount);
-                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    break;
-                }
-                    
-                case file: // target is a file
-                    throw new UserException(ErrNo.ENOTDIR, "cannot rename directory '" + sRes + "' to file '"
-                        + tRes + "'");
-                    
-                }
+            case nexists: // target does not exist
+            {
+                // relink the metadata object to the parent directory of
+                // the target path and remove the former link
+                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
+                source.setLinkCount(newLinkCount);
+                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
+                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
                 
                 break;
-                
             }
                 
-                // source is a file
-            case file: {
+            case dir: // target is a directory
+            {
                 
-                switch (targetType) {
+                // check whether the target directory may be overwritten; if
+                // so, delete it
+                faMan.checkPermission(FileAccessManager.NON_POSIX_DELETE, sMan, target,
+                    tRes.getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
+                    rq.getDetails().groupIds);
                 
-                case nexists: // target does not exist
-                {
-                    
-                    // relink the metadata object to the parent directory of
-                    // the target path and remove the former link
-                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                    source.setLinkCount(newLinkCount);
-                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    break;
-                }
-                    
-                case dir: // target is a directory
-                {
-                    throw new UserException(ErrNo.EISDIR, "cannot rename file '" + sRes + "' to directory '"
-                        + tRes + "'");
-                }
-                    
-                case file: // target is a file
-                {
-                    
-                    // unless there is still another link to the target file,
-                    // i.e. the target file must not be deleted yet, create a
-                    // 'delete' capability and include the XCapability and
-                    // XLocationsList headers in the response
-                    if (target.getLinkCount() == 1) {
-                        
-                        // create a deletion capability for the file
-                        Capability cap = new Capability(volume.getId() + ":" + target.getId(),
-                            FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
-                                    .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-                            target.getEpoch(), master.getConfig().getCapabilitySecret());
-                        
-                        creds.add(new FileCredentials(Converter.xLocListToXLocSet(target.getXLocList()), cap
-                                .getXCap()));
-                    }
-                    
-                    // delete the target
+                if (sMan.getChildren(target.getId()).hasNext())
+                    throw new UserException(ErrNo.ENOTEMPTY, "target directory '" + tRes + "' is not empty");
+                else
                     sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    // relink the metadata object to the parent directory of
-                    // the target path and remove the former link
-                    short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                    source.setLinkCount(newLinkCount);
-                    source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                    sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
-                    
-                    break;
-                }
-                    
-                }
+                
+                // relink the metadata object to the parent directory of
+                // the target path and remove the former link
+                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
+                source.setLinkCount(newLinkCount);
+                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
+                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                
+                break;
+            }
+                
+            case file: // target is a file
+                throw new UserException(ErrNo.ENOTDIR, "cannot rename directory '" + sRes + "' to file '"
+                    + tRes + "'");
                 
             }
+            
+            break;
+            
+        }
+            
+            // source is a file
+        case file: {
+            
+            switch (targetType) {
+            
+            case nexists: // target does not exist
+            {
+                
+                // relink the metadata object to the parent directory of
+                // the target path and remove the former link
+                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
+                source.setLinkCount(newLinkCount);
+                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
+                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                
+                break;
+            }
+                
+            case dir: // target is a directory
+            {
+                throw new UserException(ErrNo.EISDIR, "cannot rename file '" + sRes + "' to directory '"
+                    + tRes + "'");
+            }
+                
+            case file: // target is a file
+            {
+                
+                // unless there is still another link to the target file,
+                // i.e. the target file must not be deleted yet, create a
+                // 'delete' capability and include the XCapability and
+                // XLocationsList headers in the response
+                if (target.getLinkCount() == 1) {
+                    
+                    // create a deletion capability for the file
+                    Capability cap = new Capability(volume.getId() + ":" + target.getId(),
+                        FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
+                                .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), target
+                                .getEpoch(), master.getConfig().getCapabilitySecret());
+                    
+                    creds.add(new FileCredentials(Converter.xLocListToXLocSet(target.getXLocList()), cap
+                            .getXCap()));
+                }
+                
+                // delete the target
+                sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
+                
+                // relink the metadata object to the parent directory of
+                // the target path and remove the former link
+                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
+                source.setLinkCount(newLinkCount);
+                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
+                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                
+                break;
+            }
+                
             }
             
-            // update POSIX timestamps of source and target parent directories
-            MRCHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false, true, true,
-                sMan, update);
-            MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false, true, true,
-                sMan, update);
-            
-            // set the response
-            rq.setResponse(new renameResponse(creds));
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         }
+        }
+        
+        // update POSIX timestamps of source and target parent directories
+        MRCHelper.updateFileTimes(sRes.getParentsParentId(), sRes.getParentDir(), false, true, true, sMan,
+            update);
+        MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false, true, true, sMan,
+            update);
+        
+        // set the response
+        rq.setResponse(new renameResponse(creds));
+        
+        update.execute();
+        
     }
     
 }

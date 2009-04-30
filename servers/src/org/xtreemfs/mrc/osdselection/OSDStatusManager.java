@@ -240,7 +240,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                     r.freeBuffers();
             }
             
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "request sent...");
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "request sent...");
             
             synchronized (this) {
                 try {
@@ -251,7 +252,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             }
         }
         
-        Logging.logMessage(Logging.LEVEL_INFO, this, "shutdown complete");
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, this, "shutdown complete");
         notifyStopped();
         
     }
@@ -306,16 +308,19 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     
     public synchronized void evaluateResponse(ServiceSet knownOSDs) {
         
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "response...");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "response...");
         
         assert (knownOSDs != null);
         
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "registered OSDs");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "registered OSDs");
         if (knownOSDs.size() == 0)
             Logging.logMessage(Logging.LEVEL_WARN, this, "there are currently no OSDs available");
-        for (Service osd : knownOSDs) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, osd.getUuid());
-        }
+        if (Logging.isDebug())
+            for (Service osd : knownOSDs) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, osd.getUuid());
+            }
         
         for (VolumeOSDs vol : volumeMap.values()) {
             OSDSelectionPolicy policy = getOSDSelectionPolicy(vol.selectionPolicyID);

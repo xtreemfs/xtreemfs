@@ -61,11 +61,12 @@ public class RestoreDBOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
         try {
             
-            final xtreemfs_restore_databaseRequest rqArgs = (xtreemfs_restore_databaseRequest) rq.getRequestArgs();
+            final xtreemfs_restore_databaseRequest rqArgs = (xtreemfs_restore_databaseRequest) rq
+                    .getRequestArgs();
             final VolumeManager vMan = master.getVolumeManager();
             
             // First, check if any volume exists already. If so, deny the
@@ -209,15 +210,10 @@ public class RestoreDBOperation extends MRCOperation {
             rq.setResponse(new xtreemfs_restore_databaseResponse());
             finishRequest(rq);
             
-        } catch (UserException exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getMessage(), exc));
         } catch (SAXException exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION,
                 exc.getException().getMessage() == null ? "an error has occured" : exc.getException()
                         .getMessage(), exc.getException()));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                exc.getMessage() == null ? "an error has occurred" : exc.getMessage(), exc));
         }
     }
     

@@ -30,10 +30,8 @@ import java.io.FileWriter;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
@@ -51,44 +49,39 @@ public class DumpDBOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final xtreemfs_dump_databaseRequest rqArgs = (xtreemfs_dump_databaseRequest) rq.getRequestArgs();
+        final VolumeManager vMan = master.getVolumeManager();
+        
+        BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.getDump_file()));
+        xmlWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xmlWriter.write("<filesystem dbversion=\"" + VersionManagement.getMrcDataVersion() + "\">\n");
+        
+        for (VolumeInfo volume : vMan.getVolumes()) {
+            xmlWriter
+                    .write("<volume id=\""
+                        + volume.getId()
+                        + "\" name=\""
+                        + volume.getName()
+                        + "\" acPolicy=\""
+                        + volume.getAcPolicyId()
+                        + "\" osdPolicy=\""
+                        + volume.getOsdPolicyId()
+                        + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\""
+                            + volume.getOsdPolicyArgs() : "") + "\">\n");
             
-            final xtreemfs_dump_databaseRequest rqArgs = (xtreemfs_dump_databaseRequest) rq.getRequestArgs();
-            final VolumeManager vMan = master.getVolumeManager();
+            StorageManager sMan = vMan.getStorageManager(volume.getId());
+            sMan.dumpDB(xmlWriter);
             
-            BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.getDump_file()));
-            xmlWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            xmlWriter.write("<filesystem dbversion=\"" + VersionManagement.getMrcDataVersion() + "\">\n");
-            
-            for (VolumeInfo volume : vMan.getVolumes()) {
-                xmlWriter.write("<volume id=\""
-                    + volume.getId()
-                    + "\" name=\""
-                    + volume.getName()
-                    + "\" acPolicy=\""
-                    + volume.getAcPolicyId()
-                    + "\" osdPolicy=\""
-                    + volume.getOsdPolicyId()
-                    + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\"" + volume.getOsdPolicyArgs()
-                        : "") + "\">\n");
-                
-                StorageManager sMan = vMan.getStorageManager(volume.getId());
-                sMan.dumpDB(xmlWriter);
-                
-                xmlWriter.write("</volume>\n");
-            }
-            
-            xmlWriter.write("</filesystem>\n");
-            xmlWriter.close();
-            
-            // set the response
-            rq.setResponse(new xtreemfs_dump_databaseResponse());
-            finishRequest(rq);
-            
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            xmlWriter.write("</volume>\n");
         }
+        
+        xmlWriter.write("</filesystem>\n");
+        xmlWriter.close();
+        
+        // set the response
+        rq.setResponse(new xtreemfs_dump_databaseResponse());
+        finishRequest(rq);
     }
 }

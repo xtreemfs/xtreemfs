@@ -25,15 +25,12 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.createRequest;
 import org.xtreemfs.interfaces.MRCInterface.createResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -55,69 +52,58 @@ public class CreateFileOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final createRequest rqArgs = (createRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-            
-            validateContext(rq);
-            
-            final Path p = new Path(rqArgs.getPath());
-            
-            final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver res = new PathResolver(sMan, p);
-            
-            // check if file == volume
-            if (res.getParentDir() == null)
-                throw new UserException(ErrNo.EEXIST, "file or directory '" + res.getFileName()
-                    + "' exists already");
-            
-            // check whether the path prefix is searchable
-            faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // check whether the parent directory grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res
-                    .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            // check whether the file/directory exists already
-            res.checkIfFileExistsAlready();
-            
-            // prepare file creation in database
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // get the next free file ID
-            long fileId = sMan.getNextFileId();
-            
-            // atime, ctime, mtime
-            int time = (int) (TimeSync.getGlobalTime() / 1000);
-            
-            // create the metadata object
-            sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time, rq
-                    .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, 0, false, 0,
-                0, update);
-            
-            // set the file ID as the last one
-            sMan.setLastFileId(fileId, update);
-            
-            // set the response
-            rq.setResponse(new createResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
-        }
+        final createRequest rqArgs = (createRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path p = new Path(rqArgs.getPath());
+        
+        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver res = new PathResolver(sMan, p);
+        
+        // check if file == volume
+        if (res.getParentDir() == null)
+            throw new UserException(ErrNo.EEXIST, "file or directory '" + res.getFileName()
+                + "' exists already");
+        
+        // check whether the path prefix is searchable
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the parent directory grants write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, res.getParentDir(), res.getParentsParentId(),
+            rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        // check whether the file/directory exists already
+        res.checkIfFileExistsAlready();
+        
+        // prepare file creation in database
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // get the next free file ID
+        long fileId = sMan.getNextFileId();
+        
+        // atime, ctime, mtime
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
+        // create the metadata object
+        sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
+            rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, 0, false, 0, 0,
+            update);
+        
+        // set the file ID as the last one
+        sMan.setLastFileId(fileId, update);
+        
+        // set the response
+        rq.setResponse(new createResponse());
+        
+        update.execute();
     }
     
 }

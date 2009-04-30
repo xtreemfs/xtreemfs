@@ -83,7 +83,7 @@ public class RandomAccessFileTest extends TestCase {
     private final UserCredentials uc;
 
     public RandomAccessFileTest() {
-        Logging.start(Logging.LEVEL_TRACE);
+        Logging.start(Logging.LEVEL_DEBUG);
         groupIDs = new ArrayList(1);
         groupIDs.add("test");
         uc = MRCClient.getCredentials(userID, groupIDs);

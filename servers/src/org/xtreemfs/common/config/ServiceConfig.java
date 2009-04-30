@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Christian Lorenz (ZIB), Björn Kolbeck (ZIB), Jan Stender (ZIB)
  */
@@ -29,128 +29,136 @@ import java.net.InetAddress;
 import java.util.Properties;
 
 public class ServiceConfig extends Config {
-
-    protected int debugLevel;
-
-    protected int port;
-
-    protected int    httpPort;
-
-    protected InetAddress address;
-
-    protected boolean useSSL;
-
-    protected String serviceCredsFile;
-
-    protected String serviceCredsPassphrase;
-
-    protected String serviceCredsContainer;
-
-    protected String trustedCertsFile;
-
-    protected String trustedCertsPassphrase;
-
-    protected String trustedCertsContainer;
     
-    protected String geoCoordinates;
-
-    protected String adminPassword;
-
+    protected int         debugLevel;
+    
+    protected String      debugCategory;
+    
+    protected int         port;
+    
+    protected int         httpPort;
+    
+    protected InetAddress address;
+    
+    protected boolean     useSSL;
+    
+    protected String      serviceCredsFile;
+    
+    protected String      serviceCredsPassphrase;
+    
+    protected String      serviceCredsContainer;
+    
+    protected String      trustedCertsFile;
+    
+    protected String      trustedCertsPassphrase;
+    
+    protected String      trustedCertsContainer;
+    
+    protected String      geoCoordinates;
+    
+    protected String      adminPassword;
+    
     public ServiceConfig() {
         super();
     }
-
+    
     public ServiceConfig(Properties prop) {
         super(prop);
     }
-
+    
     public ServiceConfig(String filename) throws IOException {
         super(filename);
     }
-
+    
     public void read() throws IOException {
-
-        this.debugLevel = this.readRequiredInt("debug_level");
-
+        
+        this.debugLevel = this.readRequiredInt("debug.level");
+        
+        this.debugCategory = this.readOptionalString("debug.category", "all");
+        
         this.port = this.readRequiredInt("listen.port");
-
+        
         this.httpPort = this.readRequiredInt("http_port");
-
+        
         this.address = this.readOptionalInetAddr("listen.address", null);
-
-        if(this.useSSL = this.readRequiredBoolean("ssl.enabled")){
+        
+        if (this.useSSL = this.readRequiredBoolean("ssl.enabled")) {
             this.serviceCredsFile = this.readRequiredString("ssl.service_creds");
-
+            
             this.serviceCredsPassphrase = this.readRequiredString("ssl.service_creds.pw");
-
+            
             this.serviceCredsContainer = this.readRequiredString("ssl.service_creds.container");
-
+            
             this.trustedCertsFile = this.readRequiredString("ssl.trusted_certs");
-
+            
             this.trustedCertsPassphrase = this.readRequiredString("ssl.trusted_certs.pw");
-
+            
             this.trustedCertsContainer = this.readRequiredString("ssl.trusted_certs.container");
         }
         
         this.geoCoordinates = this.readOptionalString("geographic_coordinates", "");
-
-        this.adminPassword = this.readOptionalString("admin_password","");
+        
+        this.adminPassword = this.readOptionalString("admin_password", "");
     }
-
-	public int getDebugLevel() {
-		return this.debugLevel;
-	}
-
-	public int getPort() {
-		return this.port;
-	}
-
+    
+    public int getDebugLevel() {
+        return this.debugLevel;
+    }
+    
+    public String getDebugCategory() {
+        return this.debugCategory;
+    }
+    
+    public int getPort() {
+        return this.port;
+    }
+    
     public int getHttpPort() {
         return this.httpPort;
     }
-
-	public InetAddress getAddress() {
-		return this.address;
-	}
-
-	public boolean isUsingSSL() {
-		return this.useSSL;
-	}
-
-	public String getServiceCredsContainer() {
-		return this.serviceCredsContainer;
-	}
-
-	public String getServiceCredsFile() {
-		return this.serviceCredsFile;
-	}
-
-	public String getServiceCredsPassphrase() {
-		return this.serviceCredsPassphrase;
-	}
-
-	public String getTrustedCertsContainer() {
-		return this.trustedCertsContainer;
-	}
-
-	public String getTrustedCertsFile() {
-		return this.trustedCertsFile;
-	}
-
-	public String getTrustedCertsPassphrase() {
-		return this.trustedCertsPassphrase;
-	}
-
+    
+    public InetAddress getAddress() {
+        return this.address;
+    }
+    
+    public boolean isUsingSSL() {
+        return this.useSSL;
+    }
+    
+    public String getServiceCredsContainer() {
+        return this.serviceCredsContainer;
+    }
+    
+    public String getServiceCredsFile() {
+        return this.serviceCredsFile;
+    }
+    
+    public String getServiceCredsPassphrase() {
+        return this.serviceCredsPassphrase;
+    }
+    
+    public String getTrustedCertsContainer() {
+        return this.trustedCertsContainer;
+    }
+    
+    public String getTrustedCertsFile() {
+        return this.trustedCertsFile;
+    }
+    
+    public String getTrustedCertsPassphrase() {
+        return this.trustedCertsPassphrase;
+    }
+    
     public String getGeoCoordinates() {
         return geoCoordinates;
     }
-
+    
     public void setGeoCoordinates(String geoCoordinates) {
         this.geoCoordinates = geoCoordinates;
     }
-
+    
     public String getAdminPassword() {
         return this.adminPassword;
     }
-
+    
 }

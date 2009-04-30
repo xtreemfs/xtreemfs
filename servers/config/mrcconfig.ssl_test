@@ -1,5 +1,8 @@
-# degub level (0 = error, 1 = warn, 2 = info, 3 = debug, 4 = trace)
-debug_level = 1
+# debug level (0 = emergency, 1 = alert, 2 = critical, 3 = error, 4 = warning, 5 = notice, 6 = info, 7 = debug)
+debug.level = 4
+
+# optional debug category
+#debug.category = all
 
 # port for the service to listen on
 listen.port = 32636

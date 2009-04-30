@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 
@@ -47,8 +48,7 @@ public class NetUtils {
      * @return a list of mappings
      * @throws IOException
      */
-    public static AddressMappingSet getReachableEndpoints(int port, String protocol)
-        throws IOException {
+    public static AddressMappingSet getReachableEndpoints(int port, String protocol) throws IOException {
         
         AddressMappingSet endpoints = new AddressMappingSet();
         
@@ -76,7 +76,8 @@ public class NetUtils {
                     continue;
                 
                 if (!(inetAddr.isLinkLocalAddress() || inetAddr.isSiteLocalAddress())) {
-                    endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*", 3600));
+                    endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*",
+                        3600));
                     break;
                 }
                 
@@ -114,14 +115,22 @@ public class NetUtils {
                     InetAddress inetAddr = addr.getAddress();
                     
                     if (inetAddr.isSiteLocalAddress()) {
-                        endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*", 3600));
+                        endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port,
+                            "*", 3600));
                         break;
                     }
                 }
                 
-                if(!endpoints.isEmpty())
+                if (!endpoints.isEmpty())
                     break;
             }
+        }
+        
+        // in case no IP address could be found at all, use 127.0.0.1 for local testing
+        if (endpoints.isEmpty()) {
+            Logging.logMessage(Logging.LEVEL_WARN, null,
+                "could not find a valid IP address, will use 127.0.0.1 instead");
+            endpoints.add(new AddressMapping("", 0, protocol, "127.0.0.1", port, "*", 3600));
         }
         
         return endpoints;
@@ -148,9 +157,8 @@ public class NetUtils {
         while (ifcs.hasMoreElements()) {
             for (InterfaceAddress addr : ifcs.nextElement().getInterfaceAddresses()) {
                 InetAddress inetAddr = addr.getAddress();
-                System.out.println(inetAddr + ", loopback: " + inetAddr.isLoopbackAddress()
-                    + ", linklocal: " + inetAddr.isLinkLocalAddress() + ", reachable: "
-                    + inetAddr.isReachable(1000));
+                System.out.println(inetAddr + ", loopback: " + inetAddr.isLoopbackAddress() + ", linklocal: "
+                    + inetAddr.isLinkLocalAddress() + ", reachable: " + inetAddr.isReachable(1000));
             }
         }
         

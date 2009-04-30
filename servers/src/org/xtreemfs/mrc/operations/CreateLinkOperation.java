@@ -24,15 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.linkRequest;
 import org.xtreemfs.interfaces.MRCInterface.linkResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -56,82 +53,68 @@ public class CreateLinkOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
-            
-            final linkRequest rqArgs = (linkRequest) rq.getRequestArgs();
-            
-            final VolumeManager vMan = master.getVolumeManager();
-            final FileAccessManager faMan = master.getFileAccessManager();
-
-            validateContext(rq);
-            
-            final Path lp = new Path(rqArgs.getLink_path());
-            final Path tp = new Path(rqArgs.getTarget_path());
-            
-            if (!lp.getComp(0).equals(tp.getComp(0)))
-                throw new UserException(ErrNo.EXDEV,
-                    "cannot create hard links across volume boundaries");
-            
-            final VolumeInfo volume = vMan.getVolumeByName(lp.getComp(0));
-            final StorageManager sMan = vMan.getStorageManager(volume.getId());
-            final PathResolver lRes = new PathResolver(sMan, lp);
-            final PathResolver tRes = new PathResolver(sMan, tp);
-            
-            // check whether the link's path prefix is searchable
-            faMan.checkSearchPermission(sMan, lRes, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether the link's parent directory grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, lRes.getParentDir(), 0, rq
-                    .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether the link exists already
-            lRes.checkIfFileExistsAlready();
-            
-            // check whether the target path prefix is searchable
-            faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
-            
-            // check whether the target exists
-            tRes.checkIfFileDoesNotExist();
-            
-            FileMetadata target = tRes.getFile();
-            
-            if (target.isDirectory())
-                throw new UserException(ErrNo.EPERM, "no support for links to directories");
-            
-            // check whether the target file grants write access
-            faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, target, tRes
-                    .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser, rq
-                    .getDetails().groupIds);
-            
-            // prepare file creation in database
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // create the link
-            sMan.link(target, lRes.getParentDirId(), lRes.getFileName(), update);
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(lRes.getParentsParentId(), lRes.getParentDir(), false,
-                true, true, sMan, update);
-            MRCHelper.updateFileTimes(tRes.getParentDirId(), target, false, true, false, sMan,
-                update);
-
-            // set the response
-            rq.setResponse(new linkResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc
-                    .getMessage(), exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR,
-                "an error has occurred", exc));
-        }
+        final linkRequest rqArgs = (linkRequest) rq.getRequestArgs();
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
+        
+        validateContext(rq);
+        
+        final Path lp = new Path(rqArgs.getLink_path());
+        final Path tp = new Path(rqArgs.getTarget_path());
+        
+        if (!lp.getComp(0).equals(tp.getComp(0)))
+            throw new UserException(ErrNo.EXDEV, "cannot create hard links across volume boundaries");
+        
+        final VolumeInfo volume = vMan.getVolumeByName(lp.getComp(0));
+        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final PathResolver lRes = new PathResolver(sMan, lp);
+        final PathResolver tRes = new PathResolver(sMan, tp);
+        
+        // check whether the link's path prefix is searchable
+        faMan.checkSearchPermission(sMan, lRes, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the link's parent directory grants write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, lRes.getParentDir(), 0,
+            rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        // check whether the link exists already
+        lRes.checkIfFileExistsAlready();
+        
+        // check whether the target path prefix is searchable
+        faMan.checkSearchPermission(sMan, tRes, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        // check whether the target exists
+        tRes.checkIfFileDoesNotExist();
+        
+        FileMetadata target = tRes.getFile();
+        
+        if (target.isDirectory())
+            throw new UserException(ErrNo.EPERM, "no support for links to directories");
+        
+        // check whether the target file grants write access
+        faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, target, tRes.getParentDirId(), rq
+                .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
+        
+        // prepare file creation in database
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // create the link
+        sMan.link(target, lRes.getParentDirId(), lRes.getFileName(), update);
+        
+        // update POSIX timestamps
+        MRCHelper.updateFileTimes(lRes.getParentsParentId(), lRes.getParentDir(), false, true, true, sMan,
+            update);
+        MRCHelper.updateFileTimes(tRes.getParentDirId(), target, false, true, false, sMan, update);
+        
+        // set the response
+        rq.setResponse(new linkResponse());
+        
+        update.execute();
     }
     
 }

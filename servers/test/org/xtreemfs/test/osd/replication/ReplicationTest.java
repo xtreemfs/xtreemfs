@@ -89,7 +89,7 @@ public class ReplicationTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(Logging.LEVEL_TRACE);
+        Logging.start(Logging.LEVEL_DEBUG);
 
         this.stripeSize = 128 * 1024; // byte
         this.data = SetupUtils.generateData(stripeSize);

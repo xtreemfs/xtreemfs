@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
@@ -64,108 +63,96 @@ public class AddReplicaOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq) throws Throwable {
         
-        try {
+        final xtreemfs_replica_addRequest rqArgs = (xtreemfs_replica_addRequest) rq.getRequestArgs();
+        
+        final FileAccessManager faMan = master.getFileAccessManager();
+        final VolumeManager vMan = master.getVolumeManager();
+        
+        validateContext(rq);
+        
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
+        
+        StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+        
+        // retrieve the file metadata
+        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(ErrNo.ENOENT, "file '" + rqArgs.getFile_id() + "' does not exist");
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            String path = target;
+            Path p = new Path(path);
             
-            final xtreemfs_replica_addRequest rqArgs = (xtreemfs_replica_addRequest) rq.getRequestArgs();
-            
-            final FileAccessManager faMan = master.getFileAccessManager();
-            final VolumeManager vMan = master.getVolumeManager();
-            
-            validateContext(rq);
-            
-            // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
-            
-            StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
-            
-            // retrieve the file metadata
-            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-            if (file == null)
-                throw new UserException(ErrNo.ENOENT, "file '" + rqArgs.getFile_id() + "' does not exist");
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                String path = target;
-                Path p = new Path(path);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                        + target + " does not exist"));
-                    return;
-                }
-                
-                VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
-                PathResolver res = new PathResolver(sMan, p);
-                file = res.getFile();
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
             }
             
-            if (file.isDirectory())
-                throw new UserException(ErrNo.EPERM, "replicas may only be added to files");
-            
-            // check whether privileged permissions are granted for adding
-            // replicas
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            Replica newRepl = rqArgs.getNew_replica();
-            org.xtreemfs.interfaces.StripingPolicy sp = newRepl.getStriping_policy();
-            StringSet osds = newRepl.getOsd_uuids();
-            
-            StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripe_size(), sp
-                    .getWidth());
-            
-            if (!file.isReadOnly())
-                throw new UserException(ErrNo.EPERM,
-                    "the file has to be made read-only before adding replicas");
-            
-            // check whether the new replica relies on a set of OSDs which
-            // hasn't been used yet
-            XLocList xLocList = file.getXLocList();
-            
-            if (!MRCHelper.isAddable(xLocList, newRepl.getOsd_uuids()))
-                throw new UserException("at least one OSD already used in current X-Locations list '"
-                    + Converter.xLocListToXLocSet(xLocList).toString() + "'");
-            
-            // create a new replica and add it to the client's X-Locations list
-            // (this will automatically increment the X-Locations list version)
-            XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]));
-            if (xLocList == null)
-                xLocList = sMan.createXLocList(new XLoc[] { replica },
-                    file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : Constants.REPL_UPDATE_PC_NONE, 1);
-            else {
-                XLoc[] repls = new XLoc[xLocList.getReplicaCount() + 1];
-                for (int i = 0; i < xLocList.getReplicaCount(); i++)
-                    repls[i] = xLocList.getReplica(i);
-                
-                repls[repls.length - 1] = replica;
-                xLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(),
-                    xLocList.getVersion() + 1);
-            }
-            
-            file.setXLocList(xLocList);
-            
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-            
-            // update the X-Locations list
-            sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-            
-            // set the response
-            rq.setResponse(new xtreemfs_replica_addResponse());
-            
-            update.execute();
-            
-        } catch (UserException exc) {
-            Logging.logMessage(Logging.LEVEL_TRACE, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+            VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
+            sMan = vMan.getStorageManager(volume.getId());
+            PathResolver res = new PathResolver(sMan, p);
+            file = res.getFile();
         }
+        
+        if (file.isDirectory())
+            throw new UserException(ErrNo.EPERM, "replicas may only be added to files");
+        
+        // check whether privileged permissions are granted for adding
+        // replicas
+        faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
+                .getDetails().groupIds);
+        
+        Replica newRepl = rqArgs.getNew_replica();
+        org.xtreemfs.interfaces.StripingPolicy sp = newRepl.getStriping_policy();
+        StringSet osds = newRepl.getOsd_uuids();
+        
+        StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripe_size(), sp
+                .getWidth());
+        
+        if (!file.isReadOnly())
+            throw new UserException(ErrNo.EPERM, "the file has to be made read-only before adding replicas");
+        
+        // check whether the new replica relies on a set of OSDs which
+        // hasn't been used yet
+        XLocList xLocList = file.getXLocList();
+        
+        if (!MRCHelper.isAddable(xLocList, newRepl.getOsd_uuids()))
+            throw new UserException("at least one OSD already used in current X-Locations list '"
+                + Converter.xLocListToXLocSet(xLocList).toString() + "'");
+        
+        // create a new replica and add it to the client's X-Locations list
+        // (this will automatically increment the X-Locations list version)
+        XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]));
+        if (xLocList == null)
+            xLocList = sMan.createXLocList(new XLoc[] { replica },
+                file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : Constants.REPL_UPDATE_PC_NONE, 1);
+        else {
+            XLoc[] repls = new XLoc[xLocList.getReplicaCount() + 1];
+            for (int i = 0; i < xLocList.getReplicaCount(); i++)
+                repls[i] = xLocList.getReplica(i);
+            
+            repls[repls.length - 1] = replica;
+            xLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
+        }
+        
+        file.setXLocList(xLocList);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        // update the X-Locations list
+        sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        
+        // set the response
+        rq.setResponse(new xtreemfs_replica_addResponse());
+        
+        update.execute();
     }
     
 }

@@ -91,7 +91,7 @@ public class StorageLayoutTest extends TestCase {
             data.put((byte) (48 + i));
         }
 
-        layout.writeObject(fileId, 0l, data, 1, 0, 0, sp);
+        layout.writeObject(fileId, 0l, data, 1, 0, 0, sp, false);
         BufferPool.free(data);
 
         ObjectInformation oinfo = layout.readObject(fileId, 0l, 1, 0, sp);

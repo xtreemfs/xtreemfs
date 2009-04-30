@@ -123,7 +123,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         this.config = config;
         
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
         
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
@@ -245,13 +246,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void startup() throws Exception {
         
         TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
-       
+        
         clientStage.start();
         clientStage.waitForStartup();
-
+        
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
-
+        
         TimeSync.getInstance().enableRemoteSynchronization(dirClient);
         osdMonitor.start();
         osdMonitor.waitForStartup();
@@ -296,6 +297,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         httpServ.stop(0);
         
         TimeSync.getInstance().shutdown();
+        
+        Logging.logMessage(Logging.LEVEL_INFO, this, "MRC shutdown complete");
     }
     
     public void requestFinished(MRCRequest request) {
@@ -320,19 +323,29 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             case USER_EXCEPTION: {
                 rpcRequest.sendGenericException(new MRCException(error.getErrorCode(), error
                         .getErrorMessage(), ""));
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "user exception: errno="
+                        + request.getError().getErrorCode());
                 break;
             }
             case INVALID_ARGS: {
                 rpcRequest.sendGarbageArgs(error.getErrorMessage());
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid request arguments");
                 break;
             }
             case UNKNOWN_OPERATION: {
                 rpcRequest.sendProtocolException(new ProtocolException(
                     ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getStackTrace()));
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "unknown operation: "
+                        + request.getRPCRequest().getRequestHeader().getOperationNumber());
                 break;
             }
                 
             default: {
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
+                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getThrowable());
                 rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
@@ -341,6 +354,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         else {
             assert (request.getResponse() != null);
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response for request "
+                    + request.getRPCRequest().getRequestHeader().getXID());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, request.getResponse().toString());
+            }
             rpcRequest.sendResponse(request.getResponse());
         }
         
@@ -523,15 +541,18 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
-        Logging.logMessage(Logging.LEVEL_TRACE, this, "received new request");
         
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         
         if (hdr.getInterfaceVersion() != MRCInterface.getVersion()) {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
                 ErrNo.EINVAL, "invalid version requested"));
+            
             return;
         }
+        
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "enqueueing request: " + rq.toString());
         
         // no callback, special stage which executes the operatios
         procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
