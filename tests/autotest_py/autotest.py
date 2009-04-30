@@ -77,10 +77,11 @@ def check_environment():
 def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
     tests_dir_path = os.path.join( MY_DIR_PATH, "tests" )
     sys.path.append( tests_dir_path )
+    test_suites = {}
     for file_name in os.listdir( tests_dir_path ):
         if file_name.endswith( ".py" ):
             test_module_name = os.path.splitext( file_name )[0]
-#            print "Trying to import test", test_module_name
+            print "Trying to import test", test_module_name
             try:
                 test_module = __import__( test_module_name )
             except ImportError:
@@ -90,18 +91,24 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
 
             if hasattr( test_module, "suite" ):
                 suite = getattr( test_module, "suite" )
-                for mount_point_dir_name in os.listdir( os.path.join( MY_DIR_PATH, "mnt" ) ):
-                    mount_point_dir_path = os.path.join( MY_DIR_PATH, "mnt", mount_point_dir_name )
-                    print "Running", test_module_name, "in", mount_point_dir_path
-                    test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
-                    try: os.mkdir( test_run_dir_path )
-                    except: pass                                         
-                    os.chdir( test_run_dir_path )
-                    unittest.TextTestRunner().run( suite )
-                    os.chdir( mount_point_dir_path )
-                    shutil.rmtree( test_run_dir_path )
+                test_suites[test_module_name] = suite
             else:
                 print "Test module", test_module_name, "does not have a suite global variable"
+
+    test_module_names = test_suites.keys()
+    test_module_names.sort()
+    for test_module_name in test_module_names:
+        test_suite = test_suites[test_module_name]
+        for mount_point_dir_name in os.listdir( os.path.join( MY_DIR_PATH, "mnt" ) ):
+            mount_point_dir_path = os.path.join( MY_DIR_PATH, "mnt", mount_point_dir_name )
+            print "Running", test_module_name, "in", mount_point_dir_path
+            test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
+            try: os.mkdir( test_run_dir_path )
+            except: pass                                         
+            os.chdir( test_run_dir_path )
+            unittest.TextTestRunner().run( test_suite )
+            os.chdir( mount_point_dir_path )
+            shutil.rmtree( test_run_dir_path )
 
     os.chdir( original_cwd )                    
 
@@ -202,6 +209,7 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
         client_ssl_args = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s", "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" )
 
     if create_volumes:
+        time.sleep( 1.0 ) # Wait for the servers to start
         for osdnum in xrange( 1, num_osds+1 ):
             xtfs_mkvol_args = [XTFS_MKVOL_FILE_PATH]
             xtfs_mkvol_args.extend( ( "-d", str( debug_level ) ) )
@@ -219,6 +227,7 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
                 sys.exit( 1 )
 
     if mount_volumes:
+        time.sleep( 1.0 )
         for osdnum in xrange( 1, num_osds+1 ):
             for direct_io in ( False, True ):
                 mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
@@ -313,6 +322,7 @@ if __name__ == "__main__":
     else:
         stop_environment()
         start_environment( debug_level=options.debug_level, ssl_enabled=options.ssl_enabled, num_osds=options.num_osds, create_volumes=not options.disable_create_volumes, mount_volumes=not options.disable_mount_volumes )
+        time.sleep( 1.0 ) # Wait for clients and servers to start up
         if not options.start_environment: # i.e. no options were specified
             try:
                 execute_tests( num_osds=options.num_osds )
