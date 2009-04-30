@@ -33,11 +33,11 @@ import org.xtreemfs.test.TestEnvironment;
  *
  * @author bjko
  */
-public class NewCleanupTest extends TestCase {
+public class CleanupTest extends TestCase {
 
     private TestEnvironment env;
 
-    public NewCleanupTest() {
+    public CleanupTest() {
         super();
         Logging.start(Logging.LEVEL_ERROR);
     }
