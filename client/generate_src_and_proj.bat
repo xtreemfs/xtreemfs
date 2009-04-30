@@ -1,11 +1,14 @@
 @ECHO OFF
 
+set GOOGLE_BREAKPAD_PATH=%CD%\share\google-breakpad
 set XTREEMFS_PATH=%CD%\..
 set XTREEMFS_CLIENT_PATH=%CD%
 set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%YIELDFS_PATH%\share\yield
 REM set YIELD_PATH=%CD%\..\..\yield
 
+set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src
+REM -l google-breakpad_d.lib -c proj\google-breakpad\google-breakpad.SConscript
 set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include -D YIELD_HAVE_OPENSSL
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%
@@ -31,15 +34,20 @@ python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib_test -t exe -s %
 
 REM Binary projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_fuzz.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\*_fuzzer.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mount.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\main.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_rmvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_send.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_stat -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_stat.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mount.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\main.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_rmvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_send.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtfs_stat -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_stat.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_GOOGLE_BREAKPAD_FLAGS% %DEPEND_XTREEMFS_CLIENT_FLAGS%
 
 REM Policy projects
 python %YIELD_PATH%\bin\generate_proj.py -n xos_ams_flog -t dll -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xos_ams_flog.c -I %XTREEMFS_CLIENT_PATH%\include --lu xos_ams -o %XTREEMFS_CLIENT_PATH%\lib
+
+
+REM Google Breakpad
+cd %XTREEMFS_CLIENT_PATH%\proj\google-breakpad
+python %YIELD_PATH%\bin\generate_proj.py --generate-vcproj -n google-breakpad -t lib --Dw UNICODE -s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e linux -e mac -e solaris -e google_breakpad -e processor -e tools -e sender -e minidump_file_writer* -e *test* -e http_upload* -e md5.* -e pdb_source_line_writer.* -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -o %XTREEMFS_CLIENT_PATH%\lib
 
  
 cd %XTREEMFS_CLIENT_PATH%

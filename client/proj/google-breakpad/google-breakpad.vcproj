@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="xtfs_rmvol"
-	ProjectGUID="{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}"
-	RootNamespace="xtfs_rmvol"
+	Name="google-breakpad"
+	ProjectGUID="{AF7AE548-AC85-424F-87CD-417ECBC12291}"
+	RootNamespace="google-breakpad"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -20,15 +20,15 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
 			IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
-				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
@@ -43,9 +43,9 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client_d.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad_d.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
@@ -54,9 +54,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client_d.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad_d.lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
 				GenerateDebugInformation="true"
@@ -69,14 +69,14 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
 			IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
-				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
 				StringPooling="false"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -89,9 +89,9 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client_d.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -100,9 +100,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -114,14 +114,14 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
 			IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
-				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
 				StringPooling="false"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -134,9 +134,9 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client_d.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -145,9 +145,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="xtreemfs-client.lib"
-				AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-				OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_rmvol.exe"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				OutputFile="$(ProjectDir)..\..\lib\google-breakpad.lib"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="false"
 				RandomizedBaseAddress="1"
@@ -165,10 +165,100 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\xtfs_rmvol.cpp"
+			<Filter Name="client">
+<Filter Name="windows">
+<Filter Name="common">
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\common\auto_critical_section.h"
     >
 </File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\common\ipc_protocol.h"
+    >
+</File>
+</Filter>
+<Filter Name="crash_generation">
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\client_info.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_client.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_server.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\client_info.cc"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_client.cc"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_server.cc"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.cc"
+    >
+</File>
+</Filter>
+<Filter Name="handler">
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\handler\exception_handler.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\windows\handler\exception_handler.cc"
+    >
+</File>
+</Filter>
+</Filter>
+</Filter>
+<Filter Name="common">
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\string_conversion.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.c"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\string_conversion.cc"
+    >
+</File>
+<Filter Name="windows">
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\windows\guid_string.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\windows\string_utils-inl.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\windows\guid_string.cc"
+    >
+</File>
+<File
+    RelativePath="..\..\share\google-breakpad\src\common\windows\string_utils.cc"
+    >
+</File>
+</Filter>
+</Filter>
 
 		</Filter>
 	</Files>

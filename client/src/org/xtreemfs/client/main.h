@@ -10,8 +10,11 @@
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/interfaces/constants.h"
 
-#if defined(_WIN32) && defined(_DEBUG)
+#ifdef _WIN32
+#include "client/windows/handler/exception_handler.h" // Google Breakpad
+#ifdef _DEBUG
 #include <vld.h>
+#endif
 #endif
 
 
