@@ -59,7 +59,7 @@ public class xtfs_cleanup_osd {
     
     private static InetSocketAddress osdAddr;
     
-    private static String password = new String();
+    private static String password;
     
     /**
      * Main method.
@@ -78,6 +78,7 @@ public class xtfs_cleanup_osd {
           options.put("deleteVolumes", new CliOption(CliOption.OPTIONTYPE.SWITCH));
           options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH));
           options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+          options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
     
           CLIParser.parseCLI(args, options, arguments);
     
@@ -91,6 +92,7 @@ public class xtfs_cleanup_osd {
           boolean deleteVolumes = options.get("deleteVolumes").switchValue;
           boolean interactive = options.get("i").switchValue;
           boolean stop = options.get("stop").switchValue;
+          password = (options.get("p").stringValue != null) ? options.get("p").stringValue : ""; 
           
           // read default settings for the OSD
           String osdUUID = null;
@@ -247,6 +249,7 @@ public class xtfs_cleanup_osd {
         System.out.println("  "+"-deleteVolumes !dangerous! deletes volumes that might be dead.");
         System.out.println("  "+"-i interactive mode.");
         System.out.println("  "+"-stop suspend the currently running cleanup.");
+        System.out.println("  "+"-p set the administrator password.");
         System.exit(1);
     }
 }

@@ -25,9 +25,9 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startResponse;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
@@ -57,7 +57,7 @@ public final class CleanupStartOperation extends OSDOperation {
             return;
         }
         xtreemfs_cleanup_startRequest args = (xtreemfs_cleanup_startRequest)rq.getRequestArgs();
-        master.getCleanupThread().cleanupStart(args.getRemove_zombies(),args.getRemove_unavail_volume(),args.getLost_and_found());
+        master.getCleanupThread().cleanupStart(args.getRemove_zombies(),args.getRemove_unavail_volume(),args.getLost_and_found(),uc);
         xtreemfs_cleanup_startResponse response = new xtreemfs_cleanup_startResponse();
         rq.sendSuccess(response);
     }

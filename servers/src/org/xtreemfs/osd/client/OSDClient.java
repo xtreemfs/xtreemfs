@@ -25,6 +25,7 @@
 package org.xtreemfs.osd.client;
 
 import java.net.InetSocketAddress;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -33,15 +34,11 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
+import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
@@ -49,6 +46,8 @@ import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_get_resultsRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_is_runningRequest;
@@ -61,12 +60,14 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_stopRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_stopResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownResponse;
-import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.ObjectData;
-import org.xtreemfs.interfaces.StringSet;
-import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  *
@@ -251,7 +252,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_startRequest rq = new xtreemfs_cleanup_startRequest(removeZombies, removeDeadVolumes, lostAndFound);
 
-        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
 
@@ -269,7 +270,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_stopRequest rq = new xtreemfs_cleanup_stopRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
 
@@ -287,7 +288,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_is_runningRequest rq = new xtreemfs_cleanup_is_runningRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
 
@@ -305,7 +306,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_statusRequest rq = new xtreemfs_cleanup_statusRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
 
@@ -323,7 +324,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_get_resultsRequest rq = new xtreemfs_cleanup_get_resultsRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(), password);
+        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
         RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
 

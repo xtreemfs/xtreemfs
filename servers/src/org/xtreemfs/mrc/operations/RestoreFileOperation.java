@@ -25,13 +25,11 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -59,8 +57,8 @@ public class RestoreFileOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        if (!rq.getDetails().superUser)
-            throw new UserException(ErrNo.EACCES, "operation is restricted to superusers");
+        //if (!rq.getDetails().superUser) XXX check the adminPassword from the OSD (MRC and OSD have to share their pw)
+        //    throw new UserException(ErrNo.EACCES, "operation is restricted to superusers");
         
         final xtreemfs_restore_fileRequest rqArgs = (xtreemfs_restore_fileRequest) rq.getRequestArgs();
         

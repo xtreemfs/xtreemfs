@@ -253,7 +253,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
-        TimeSync.getInstance().enableRemoteSynchronization(dirClient);
+        //TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
         osdMonitor.start();
         osdMonitor.waitForStartup();
         

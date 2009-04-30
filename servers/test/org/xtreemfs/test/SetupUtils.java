@@ -63,7 +63,7 @@ public class SetupUtils {
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", TEST_DIR + "/osd0");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33637");
         props.setProperty("http_port", "30637");
         // props.setProperty("listen.address", "localhost");
@@ -90,7 +90,7 @@ public class SetupUtils {
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", TEST_DIR + "/osd1");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33640");
         props.setProperty("http_port", "30640");
         // props.setProperty("listen.address", "localhost");
@@ -117,7 +117,7 @@ public class SetupUtils {
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", TEST_DIR + "/osd2");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33641");
         props.setProperty("http_port", "30641");
         props.setProperty("listen.address", "localhost");
@@ -144,7 +144,7 @@ public class SetupUtils {
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", TEST_DIR + "/osd3");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33642");
         props.setProperty("http_port", "30642");
         props.setProperty("listen.address", "localhost");
@@ -175,7 +175,7 @@ public class SetupUtils {
             props.setProperty("dir_service.host", "localhost");
             props.setProperty("dir_service.port", "33638");
             props.setProperty("object_dir", TEST_DIR + "/osd" + i);
-            props.setProperty("debug_level", "" + DEBUG_LEVEL);
+            props.setProperty("debug.level", "" + DEBUG_LEVEL);
             props.setProperty("listen.port", "" + startPort);
             props.setProperty("http_port", "" + (startPort-3000));
             props.setProperty("listen.address", "localhost");
@@ -203,7 +203,7 @@ public class SetupUtils {
     public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("database.dir", TEST_DIR);
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33638");
         props.setProperty("http_port", "30638");
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -225,7 +225,7 @@ public class SetupUtils {
         props.setProperty("database.dir", TEST_DIR + "/mrc0");
         props.setProperty("database.log", TEST_DIR + "/test-brain0.log");
         props.setProperty("osd_check_interval", "10");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33636");
         props.setProperty("http_port", "30636");
         props.setProperty("listen.address", "localhost");
@@ -256,7 +256,7 @@ public class SetupUtils {
         props.setProperty("database.dir", TEST_DIR + "/mrc1");
         props.setProperty("database.log", TEST_DIR + "/test-brain1.log");
         props.setProperty("osd_check_interval", "10");
-        props.setProperty("debug_level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("listen.port", "33639");
         props.setProperty("http_port", "30639");
         props.setProperty("listen.address", "localhost");

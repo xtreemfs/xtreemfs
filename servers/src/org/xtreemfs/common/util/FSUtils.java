@@ -31,7 +31,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -57,13 +56,16 @@ public class FSUtils {
         if (!file.exists())
             return;
 
-        for (File f : file.listFiles()) {
-            if (f.isDirectory())
-                delTree(f);
-            else
-                f.delete();
+        File[] fileList;
+        if ((fileList = file.listFiles())!=null){
+            for (File f : fileList) {
+                if (f.isDirectory())
+                    delTree(f);
+                else
+                    f.delete();
+            }
         }
-
+        
         file.delete();
     }
 

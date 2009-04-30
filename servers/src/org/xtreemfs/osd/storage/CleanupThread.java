@@ -7,7 +7,6 @@ package org.xtreemfs.osd.storage;
 
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,8 +19,10 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage.DeleteOnCloseCallback;
 import org.xtreemfs.osd.storage.HashStorageLayout.FileData;
 import org.xtreemfs.osd.storage.HashStorageLayout.FileList;
@@ -31,15 +32,26 @@ import org.xtreemfs.osd.storage.HashStorageLayout.FileList;
  * @author bjko
  */
 public class CleanupThread extends LifeCycleThread {
-
+    // where zombies will be restored
     public final static String DEFAULT_RESTORE_PATH = "lost+found";
+    
+    // PATTERN for the output. Brackets are not allowed to be used at the format strings.
+    public final static String STATUS_FORMAT = "files checked: %8d   zombies: %8d   running since: %s";        
+    public final static String STOPPED_FORMAT = "not running, last check started %s";
+    public final static String DEAD_VOLUME_FORMAT = "volume %s is dead - not registered at directory service";    
+    public final static String DELETED_VOLUME_FORMAT = "volume %s was removed from MRC %s";    
+    public final static String VOLUME_RESULT_FORMAT = "volume %s had %8d zombies - out of %8d files checked";    
+    public final static String ERROR_FORMAT = "ERROR: cannot check volume %s , reason: %s";    
+    public final static String ZOMBIES_RESTORED_FORMAT = "%8d zombies restored to '"+DEFAULT_RESTORE_PATH+"' on volume %s";
+    public final static String ZOMBIES_DELETED_FORMAT = "%8d zombies deleted from %s volume %s";
+    public final static String ZOMBIE_DELETE_ERROR_FORMAT = "%s could not be deleted, because: %s";
     
     private final OSDRequestDispatcher master;
     
     private volatile boolean isRunning;
     
     private volatile boolean quit;
-
+    
     /**
      * remove files for which no metadata exists. if false, zombies
      * are just reported.
@@ -68,6 +80,8 @@ public class CleanupThread extends LifeCycleThread {
 
     private long startTime;
     
+    private UserCredentials uc;
+    
     final ServiceUUID localUUID;
 
     public CleanupThread(OSDRequestDispatcher master, HashStorageLayout layout) {
@@ -81,7 +95,7 @@ public class CleanupThread extends LifeCycleThread {
         localUUID = master.getConfig().getUUID();
     }
 
-    public boolean cleanupStart(boolean removeZombies, boolean removeDeadVolumes, boolean lostAndFound) {
+    public boolean cleanupStart(boolean removeZombies, boolean removeDeadVolumes, boolean lostAndFound, UserCredentials uc) {
         synchronized (this) {
             if (isRunning) {
                 return false;
@@ -89,6 +103,7 @@ public class CleanupThread extends LifeCycleThread {
                 this.removeZombies = removeZombies;
                 this.removeDeadVolumes = removeDeadVolumes;
                 this.lostAndFound = lostAndFound;
+                this.uc = uc;
                 isRunning = true;
                 this.notify();
                 return true;
@@ -120,11 +135,11 @@ public class CleanupThread extends LifeCycleThread {
         synchronized (this) {
             if (isRunning) {
                 Date d = new Date(startTime);
-                return String.format("files checked: %8d   zombies: %8d   running since: %s",
+                return String.format(STATUS_FORMAT,
                         filesChecked, zombies.get(), DateFormat.getDateInstance().format(d));
             } else {
                 Date d = new Date(startTime);
-                return "not running, last check started "+DateFormat.getDateInstance().format(d);
+                return String.format(STOPPED_FORMAT, DateFormat.getDateInstance().format(d));
             }
         }
 
@@ -156,11 +171,11 @@ public class CleanupThread extends LifeCycleThread {
                 final MRCClient mrcClient = new MRCClient(master.getRPCClient(),null);
                 do {
                     l = layout.getFileList(l, 1024*4);
-                    Map<Volume,StringSet> perVolume = new HashMap<Volume, StringSet>();
+                    Map<Volume,StringSet> perVolume = new Hashtable<Volume, StringSet>();
                     for (String fileName : l.files.keySet()) {
                         filesChecked++;
                         String[] tmp = fileName.split(":");
-                        StringSet flist = perVolume.get(tmp[0]);
+                        StringSet flist = perVolume.get((Volume) new Volume(tmp[0]));
                         if (flist == null) {
                             flist = new StringSet();
                             perVolume.put(new Volume(tmp[0]),flist);
@@ -174,7 +189,7 @@ public class CleanupThread extends LifeCycleThread {
                     }
 
                     //check each volume
-                    Map<Volume,Map<String,FileData>> zombieFilesPerVolume = new HashMap<Volume, Map<String,FileData>>();
+                    Map<Volume,Map<String,FileData>> zombieFilesPerVolume = new Hashtable<Volume, Map<String,FileData>>();
                     
                     for (Volume volume : perVolume.keySet()) {
                         final Map<String,FileData> zombieFiles = new Hashtable<String,FileData>();
@@ -184,34 +199,35 @@ public class CleanupThread extends LifeCycleThread {
                              
                              if (s.size() == 0) {
                                  //volume does not exist
-                                 results.add("volume "+volume.id+" is dead (not registered at directory service)");
+                                 results.add(String.format(DEAD_VOLUME_FORMAT, volume.id));
                                  volume.dead();
                                  // retrieve fileData
                                  for (String zombie : perVolume.get(volume)){
                                      zombieFiles.put(zombie,l.files.get(zombie));
                                  }
                              } else {
-                                 String mrc = s.get(0).getData().get("mrc");
-                                 volume.mrc = new ServiceUUID(mrc);
+                                 volume.mrc = new ServiceUUID(s.get(0).getData().get("mrc"));
                                  RPCResponse<String> r = mrcClient.xtreemfs_checkFileExists(volume.mrc.getAddress(), volume.id, perVolume.get(volume));
                                  String eval = r.get();
                                  r.freeBuffers();
                                  if (eval.equals("2")) {
                                      //volume was deleted (not a dead volume, since MRC answered!)
-                                     results.add("volume "+volume.id+" was removed from MRC "+mrc);
+                                     results.add(String.format(DELETED_VOLUME_FORMAT, volume.id,volume.mrc));
                                  } else {
                                      //check all files...
                                      StringSet files = perVolume.get(volume);
-                                     
                                      final AtomicInteger numZombies = new AtomicInteger(0);
+                                     final AtomicInteger openOFTChecks = new AtomicInteger(0);
+                                     
                                      for (int i = 0; i < files.size(); i++) {
                                          if (eval.charAt(i) == '0') {
                                              // retrieve the fileName
                                              final String fName = volume.id+":"+files.get(i);
                                              // retrieve the fileData
                                              final FileData fData = l.files.get(fName);
-                                             
+                                                                                          
                                              // check against the OFT
+                                             openOFTChecks.incrementAndGet();
                                              master.getPreprocStage().checkDeleteOnClose(files.get(i), new DeleteOnCloseCallback() {
                                                  @Override
                                                  public void deleteOnCloseResult(boolean isDeleteOnClose, Exception error) {
@@ -220,16 +236,26 @@ public class CleanupThread extends LifeCycleThread {
                                                          numZombies.incrementAndGet();
                                                          zombies.incrementAndGet();
                                                          zombieFiles.put(fName, fData);
+                                                         if (openOFTChecks.decrementAndGet() <= 0) {
+                                                             synchronized (openOFTChecks) {
+                                                                 openOFTChecks.notify();
+                                                             }
+                                                         }
                                                      }
                                                  }
                                              });
                                          }
                                      }
-                                     results.add("volume "+volume.id+" had "+numZombies+" zombie (out of "+files.size()+" files checked) ;"+volume.id+";"+numZombies+";"+files.size());
+                                     
+                                     synchronized (openOFTChecks) {
+                                         while (openOFTChecks.get()>0)
+                                             openOFTChecks.wait();
+                                     }
+                                     results.add(String.format(VOLUME_RESULT_FORMAT, volume.id, numZombies.get(), files.size()));
                                  }
                              }
                         } catch (Exception ex) {
-                            results.add("ERROR: cannot check volume "+volume.id+", reason: "+ex);
+                            results.add(String.format(ERROR_FORMAT, volume.id,ex.getMessage()));
                         }
                         
                         if (zombieFiles.size()!=0) zombieFilesPerVolume.put(volume, zombieFiles);
@@ -251,20 +277,43 @@ public class CleanupThread extends LifeCycleThread {
                                 FileData data = zombieFiles.get(fileName);
                                 RPCResponse<?> r = mrcClient.xtreemfs_restore_file(volume.mrc.getAddress(), 
                                         DEFAULT_RESTORE_PATH, fileName, data.size, 
-                                        localUUID.toString(), Integer.valueOf(String.valueOf(data.objectSize)));
+                                        localUUID.toString(), Integer.valueOf(String.valueOf(data.objectSize)), uc);
                                 
                                 // the response does not matter
                                 r.get(); r.freeBuffers();
-                            }   
+                            }  
+                            
+                            results.add(String.format(ZOMBIES_RESTORED_FORMAT,zombieFiles.keySet().size(),volume.id));
                         // delete files of dead volumes if the flag is set
                         } else if ((volume.isDead() && removeDeadVolumes) || 
                              // delete zombies if the flag is set
                                 (!volume.isDead() && removeZombies)) {
                             Map<String,FileData> zombieFiles = zombieFilesPerVolume.get(volume);
+                            final AtomicInteger openDeletes = new AtomicInteger(0);
                             
-                            for (String fileName : zombieFiles.keySet()) {
-                                master.getDeletionStage().deleteObjects(fileName, null, null);
-                            }    
+                            for (final String fileName : zombieFiles.keySet()) {
+                                openDeletes.incrementAndGet(); 
+                                master.getDeletionStage().deleteObjects(fileName, null, new DeletionStage.DeleteObjectsCallback() {
+                                
+                                    @Override
+                                    public void deleteComplete(Exception error) {
+                                        if (error!=null)
+                                            results.add(String.format(ZOMBIE_DELETE_ERROR_FORMAT, fileName, error.getMessage()));
+                                        
+                                        if (openDeletes.decrementAndGet() <= 0) {
+                                            synchronized (openDeletes) {
+                                                openDeletes.notify();
+                                            }
+                                        }
+                                    }
+                                });
+                            }   
+                            
+                            synchronized (openDeletes) {
+                                while (openDeletes.get()>0)
+                                    openDeletes.wait();
+                            }
+                            results.add(String.format(ZOMBIES_DELETED_FORMAT, zombieFiles.keySet().size(),(volume.isDead() ? "dead" : "existing"),volume.id));
                         }
                     }
                     
@@ -285,6 +334,15 @@ public class CleanupThread extends LifeCycleThread {
         Logging.logMessage(Logging.LEVEL_INFO, this,"cleanup thread stopped");
         notifyStopped();
     }
+    
+    /**
+     * 
+     * @param format
+     * @return a regular expression for retrieving the information build into a string made with the given format.
+     */
+    public static String getRegex(String format) {
+        return format.replaceAll("\\+",".").replaceAll("%8d", "(\\\\s*\\\\d+)").replaceAll("%s", "([\\\\S\\\\p{Punct}]+)");
+    }
 
     /**
      * Contains VolumeId and MRC Address.
@@ -292,7 +350,7 @@ public class CleanupThread extends LifeCycleThread {
      * 23.04.2009
      * @author flangner
      */
-    final class Volume {
+    public class Volume {
         final String id;
         ServiceUUID mrc = null;
         boolean dead = false;
@@ -316,6 +374,14 @@ public class CleanupThread extends LifeCycleThread {
         public boolean equals(Object obj) {
             if (obj == null || !(obj instanceof Volume)) return false;
             return id.equals(((Volume) obj).id);
+        }
+        
+        /* (non-Javadoc)
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return this.id.hashCode();
         }
     }
 }
