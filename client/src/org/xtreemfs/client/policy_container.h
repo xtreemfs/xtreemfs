@@ -18,17 +18,19 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainer
+      class PolicyContainer : public YIELD::Object
       {
       public:
         PolicyContainer();
-        virtual ~PolicyContainer();
-
+        
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
         void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
         void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
 
       private:
+        ~PolicyContainer();
+
+
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
         YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int, int>*>*> user_credentials_to_passwd_cache;
 

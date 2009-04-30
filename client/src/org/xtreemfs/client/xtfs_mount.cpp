@@ -68,7 +68,7 @@ namespace org
         int _main( int argc, char** argv )
         {
           if ( foreground )
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": running in foreground.";
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": running in foreground.";
           else
           {
 #ifndef _WIN32
@@ -78,61 +78,61 @@ namespace org
           }
 
           // Create the DIRProxy
-          YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri.get() );
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << *dir_uri.get() << ".";
+          YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri );
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << *dir_uri << ".";
 
           // Create the MRCProxy
-          YIELD::URI mrc_uri = dir_proxy.get()->getVolumeURIFromVolumeName( volume_name );
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << mrc_uri << ".";
+          YIELD::URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( volume_name );
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << mrc_uri << ".";
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( mrc_uri );
 
           // Create the OSDProxyFactory
-          YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory = createOSDProxyFactory( *dir_uri.get() );
+          YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory = createOSDProxyFactory( *dir_uri );
 
           uint32_t xtreemfs_volume_flags = 0;
           if ( cache_files )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
           if ( cache_metadata )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
-          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, *dir_proxy.get(), *mrc_proxy.get(), *osd_proxy_factory.get(), xtreemfs_volume_flags );
+          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory, xtreemfs_volume_flags );
 
           // Translate exceptions into errno codes
-          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( *xtreemfs_volume.release(), get_log().incRef() );
+          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( xtreemfs_volume, get_log() );
 
           if ( cache_files )
           {
-            xtreemfs_volume = new yieldfs::FileCachingVolume( *xtreemfs_volume.release(), get_log().incRef() );
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
+            xtreemfs_volume = new yieldfs::FileCachingVolume( xtreemfs_volume, get_log() );
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
           }
 
           if ( cache_metadata )
           {
-            xtreemfs_volume = new yieldfs::StatCachingVolume( *xtreemfs_volume.release(), get_log().incRef(), 5 );
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
+            xtreemfs_volume = new yieldfs::StatCachingVolume( xtreemfs_volume, get_log(), 5 );
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
           }
 
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
-            xtreemfs_volume = new yieldfs::TracingVolume( *xtreemfs_volume.release(), get_log().incRef() );
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
+            xtreemfs_volume = new yieldfs::TracingVolume( xtreemfs_volume, get_log() );
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
           }
 
           uint32_t fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
-    	      get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
+    	      get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
           }
           if ( direct_io )
           {
     	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
           }
 
-          yieldfs::FUSE fuse( *xtreemfs_volume.get(), get_log().incRef(), fuse_flags );
+          YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( xtreemfs_volume, get_log(), fuse_flags );
           int ret;
 #ifdef _WIN32
-          ret = fuse.main( mount_point.c_str() );
+          ret = fuse->main( mount_point.c_str() );
 #else
           if ( fuse_o_args.empty() )
             ret = fuse.main( argv[0], mount_point.c_str() );
@@ -143,13 +143,13 @@ namespace org
             argvv.push_back( "-o" );
             argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
             argvv.push_back( NULL );
-            get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
             struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
             ret = fuse.main( fuse_args_, mount_point.c_str() );
           }
 #endif
 
-          get_log().getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
 
           return ret;
         }

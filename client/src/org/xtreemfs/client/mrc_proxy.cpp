@@ -7,7 +7,7 @@
 using namespace org::xtreemfs::client;
 
 
-MRCProxy::MRCProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD::Log* log )
+MRCProxy::MRCProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
   mrc_interface.registerObjectFactories( object_factories );
@@ -17,7 +17,7 @@ MRCProxy::MRCProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD
 
 MRCProxy::~MRCProxy()
 {
-  delete policies;
+  YIELD::Object::decRef( policies );
 }
 
 YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::Object& out_body )

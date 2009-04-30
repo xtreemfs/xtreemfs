@@ -20,9 +20,8 @@ namespace org
       class MRCProxy : public YIELD::ONCRPCProxy
       {
       public:
-        MRCProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context = NULL, YIELD::Log* log = NULL );
-        virtual ~MRCProxy();
-
+        MRCProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL );
+        
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
         void chown( const Path& path, int uid, int gid );
@@ -57,6 +56,9 @@ namespace org
         const char* getEventHandlerName() const { return "MRCProxy"; }
 
       private:
+        ~MRCProxy();
+
+
         org::xtreemfs::interfaces::MRCInterface mrc_interface;
         PolicyContainer* policies;
 

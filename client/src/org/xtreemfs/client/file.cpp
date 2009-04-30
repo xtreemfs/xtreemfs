@@ -43,7 +43,7 @@ bool File::flush()
 {
   if ( !latest_osd_write_response.get_new_file_size().empty() )  
   {
-    parent_volume.get_mrc_proxy().update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+    parent_volume.get_mrc_proxy()->update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
     latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
   }  
 
@@ -69,9 +69,9 @@ OSDProxy& File::get_osd_proxy( uint64_t object_number )
       else
       {
         const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
-        OSDProxy& osd_proxy = parent_volume.get_osd_proxy_factory().createOSDProxy( osd_uuids[osd_i] ); 
-        osd_proxies[osd_i] = &osd_proxy;
-        return osd_proxy;
+        YIELD::auto_Object<OSDProxy> osd_proxy = parent_volume.get_osd_proxy_factory()->createOSDProxy( osd_uuids[osd_i] ); 
+        osd_proxies[osd_i] = &osd_proxy->incRef();
+        return *osd_proxy.release();
       }
     }
 
@@ -170,7 +170,7 @@ bool File::sync()
 bool File::truncate( uint64_t new_size )
 {
   org::xtreemfs::interfaces::XCap truncate_xcap;
-  parent_volume.get_mrc_proxy().ftruncate( file_credentials.get_xcap(), truncate_xcap );
+  parent_volume.get_mrc_proxy()->ftruncate( file_credentials.get_xcap(), truncate_xcap );
   file_credentials.set_xcap( truncate_xcap );
   org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
   get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );

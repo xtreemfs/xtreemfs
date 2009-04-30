@@ -54,5 +54,5 @@ namespace org
 
 TEST_SUITE_EX( File, org::xtreemfs::client::FileTestSuite )
 
-TEST_MAIN( File )
+//TEST_MAIN( File )
 */

@@ -21,12 +21,13 @@ namespace org
       class File : public YIELD::File
       {
       public:
-        File( Volume& parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
-        virtual ~File();
+        File( Volume& parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );        
 
         YIELD_PLATFORM_FILE_PROTOTYPES;
 
       private:
+        ~File();
+
         Volume& parent_volume;
         YIELD::Path path;
         org::xtreemfs::interfaces::FileCredentials file_credentials;

@@ -6,7 +6,7 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD::Log* log )
+OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
   osd_interface.registerObjectFactories( object_factories );

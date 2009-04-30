@@ -7,7 +7,7 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD::Log* log )
+DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
   dir_interface.registerObjectFactories( object_factories );
@@ -17,7 +17,7 @@ DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context, YIELD
 
 DIRProxy::~DIRProxy()
 {
-  delete policies;
+  YIELD::Object::decRef( policies );
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
     delete uuid_to_uri_i->second;
 }

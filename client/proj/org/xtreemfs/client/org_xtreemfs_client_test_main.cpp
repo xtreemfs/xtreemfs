@@ -5,7 +5,6 @@
 #include "yield/platform/yunit.h"
 
 
-//extern YIELD::TestSuite& FileTestSuite();
 extern YIELD::TestSuite& PathTestSuite();
 
 
@@ -22,7 +21,6 @@ public:
     YIELD::TestRunner test_runner;
     int run_ret = 0;
 
-//    run_ret |= test_runner.run( FileTestSuite() );
     run_ret |= test_runner.run( PathTestSuite() );
 
     return run_ret;

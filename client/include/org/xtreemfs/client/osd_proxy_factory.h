@@ -21,18 +21,19 @@ namespace org
       {
       public:
         OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group );
-        virtual ~OSDProxyFactory();
 
-        OSDProxy& createOSDProxy( const std::string& uuid );
+        YIELD::auto_Object<OSDProxy> createOSDProxy( const std::string& uuid );
 
       private:
+        ~OSDProxyFactory();
+
         DIRProxy& dir_proxy;
         YIELD::StageGroup& osd_proxy_stage_group;
 
         YIELD::STLHashMap<OSDProxy*> osd_proxy_cache;
         YIELD::Mutex osd_proxy_cache_lock;
 
-        OSDProxy& createOSDProxy( const YIELD::URI& uri );
+        YIELD::auto_Object<OSDProxy> createOSDProxy( const YIELD::URI& uri );
       };
     };
   };

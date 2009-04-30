@@ -40,9 +40,9 @@ namespace org
         // xtfs_bin
         int _main( int, char** )
         {
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri.get() );
+          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
           org::xtreemfs::interfaces::VolumeSet volumes;
-          mrc_proxy.get()->lsvol( volumes );
+          mrc_proxy->lsvol( volumes );
 
           for ( org::xtreemfs::interfaces::VolumeSet::const_iterator volume_i = volumes.begin(); volume_i != volumes.end(); volume_i++ )
           {
@@ -84,8 +84,8 @@ namespace org
           if ( files_count >= 1 )
           {
             mrc_uri = parseURI( files[0] );
-            if ( mrc_uri.get()->get_resource().size() > 1 )
-              volume_name = mrc_uri.get()->get_resource().c_str() + 1;
+            if ( mrc_uri->get_resource().size() > 1 )
+              volume_name = mrc_uri->get_resource().c_str() + 1;
           }
           else
             throw YIELD::Exception( "must specify an MRC URI" );

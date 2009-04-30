@@ -10,6 +10,10 @@
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/interfaces/constants.h"
 
+#if defined(_WIN32) && defined(_DEBUG)
+#include <vld.h>
+#endif
+
 
 namespace org
 {
@@ -30,6 +34,7 @@ namespace org
           else
             return YIELD::Main::main( argc, argv );
         }
+
       protected:
         enum
         {
@@ -45,7 +50,6 @@ namespace org
         Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : YIELD::Main( program_name, program_description, files_usage )
         {
-          log = NULL;
           stage_group = &YIELD::SEDAStageGroup::createStageGroup();
 
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
@@ -62,8 +66,6 @@ namespace org
         virtual ~Main()
         {
           YIELD::StageGroup::destroyStageGroup( *stage_group );
-          YIELD::Object::decRef( log );
-          YIELD::Object::decRef( ssl_context );
         }
 
         YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
@@ -86,11 +88,11 @@ namespace org
           return new OSDProxyFactory( *createDIRProxy( dir_uri ).release(), *stage_group );
         }
 
-        YIELD::Log& get_log()
+        YIELD::auto_Object<YIELD::Log> get_log()
         {
           if ( log == NULL )
             log = new YIELD::Log( std::cout, get_log_level() );
-          return *log;
+          return log;
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -110,9 +112,9 @@ namespace org
         YIELD::auto_Object<YIELD::URI> parseVolumeURI( const char* volume_uri_c_str, std::string& volume_name )
         {
           YIELD::auto_Object<YIELD::URI> volume_uri = parseURI( volume_uri_c_str );
-          if ( volume_uri.get()->get_resource().size() > 1 )
+          if ( volume_uri->get_resource().size() > 1 )
           {
-            volume_name = volume_uri.get()->get_resource().c_str() + 1;
+            volume_name = volume_uri->get_resource().c_str() + 1;
             return volume_uri;
           }
           else
@@ -141,8 +143,8 @@ namespace org
         std::string pkcs12_file_path, pkcs12_passphrase;
         double timeout_ms;
 
-        YIELD::Log* log;
-        YIELD::SSLContext* ssl_context;
+        YIELD::auto_Object<YIELD::Log> log;
+        YIELD::auto_Object<YIELD::SSLContext> ssl_context;
         YIELD::StageGroup* stage_group;
 
 
@@ -152,14 +154,14 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          ProxyType* proxy = new ProxyType( checked_uri, YIELD::Object::incRef( get_ssl_context() ), &get_log().incRef() );
+          YIELD::auto_Object<ProxyType> proxy = new ProxyType( checked_uri, get_ssl_context(), get_log() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
-          stage_group->createStage( proxy->incRef(), new YIELD::FDAndInternalEventQueue, &get_log() );
+          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), get_log() );
           return proxy;
         }
 
-        YIELD::SSLContext* get_ssl_context()
+        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
         {
           if ( ssl_context == NULL )
           {

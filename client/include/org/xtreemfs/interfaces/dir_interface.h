@@ -89,9 +89,9 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_TYPE_INFO( MAP, "org::xtreemfs::interfaces::ServiceDataMap", 3914327351UL );
+        uint64_t get_size() const { return std::map<std::string, std::string>::size(); }
         void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string key; input_stream.readString( YIELD::StructuredStream::Declaration( 0, static_cast<uint32_t>( 0 ) ), key ); if ( !key.empty() ) { std::string value; input_stream.readString( YIELD::StructuredStream::Declaration( key.c_str(), static_cast<uint32_t>( 0 ) ), value ); ( *this )[key] = value; } }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { for ( iterator i = begin(); i != end(); i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( i->first.c_str(), static_cast<uint32_t>( 0 ) ), i->second ); } }
-        size_t getSize() const { return std::map<std::string, std::string>::size(); }
       };
 
       class Service : public YIELD::Object

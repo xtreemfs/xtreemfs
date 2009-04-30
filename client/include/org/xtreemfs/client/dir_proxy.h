@@ -24,8 +24,8 @@ namespace org
       class DIRProxy : public YIELD::ONCRPCProxy
       {
       public:
-        DIRProxy( const YIELD::URI& uri, YIELD::SSLContext* ssl_context = NULL, YIELD::Log* log = NULL );
-        virtual ~DIRProxy();
+        DIRProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL );
+        
 
         YIELD::URI getURIFromUUID( const std::string& uuid );
         YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
@@ -34,6 +34,9 @@ namespace org
         const char* getEventHandlerName() const { return "DIRProxy"; }
 
       private:
+        ~DIRProxy();
+
+
         org::xtreemfs::interfaces::DIRInterface dir_interface;
         PolicyContainer* policies;
 

@@ -17,24 +17,24 @@ using namespace org::xtreemfs::client;
 #endif
 
 
-Volume::Volume( const std::string& name, DIRProxy& dir_proxy, MRCProxy& mrc_proxy, OSDProxyFactory& osd_proxy_factory, uint32_t flags )
+Volume::Volume( const std::string& name, YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<MRCProxy> mrc_proxy, YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory, uint32_t flags )
 : name( name ), dir_proxy( dir_proxy ), mrc_proxy( mrc_proxy ), osd_proxy_factory( osd_proxy_factory ), flags( flags )
 { }
 
 bool Volume::access( const YIELD::Path& path, int amode )
 {
-  return mrc_proxy.access( Path( this->name, path ), amode );
+  return mrc_proxy->access( Path( this->name, path ), amode );
 }
 
 bool Volume::chmod( const YIELD::Path& path, mode_t mode )
 {
-  mrc_proxy.chmod( Path( this->name, path ), mode );
+  mrc_proxy->chmod( Path( this->name, path ), mode );
   return true;
 }
 
 bool Volume::chown( const YIELD::Path& path, int uid, int gid )
 {
-  mrc_proxy.chown( Path( this->name, path ), uid, gid );
+  mrc_proxy->chown( Path( this->name, path ), uid, gid );
   return true;
 }
 
@@ -46,7 +46,7 @@ YIELD::auto_Object<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
 YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy.getattr( path, stbuf );
+  mrc_proxy->getattr( path, stbuf );
 #ifdef _WIN32
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
 #else
@@ -56,20 +56,20 @@ YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
-  mrc_proxy.getxattr( Path( this->name, path ), name, out_value );
+  mrc_proxy->getxattr( Path( this->name, path ), name, out_value );
   return true;
 }
 
 bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
 {
-  mrc_proxy.link( Path( this->name, old_path ), Path( this->name, new_path ) );
+  mrc_proxy->link( Path( this->name, old_path ), Path( this->name, new_path ) );
   return true;
 }
 
 bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
 {
   org::xtreemfs::interfaces::StringSet names;
-  mrc_proxy.listdir( Path( this->name, path ), names );
+  mrc_proxy->listdir( Path( this->name, path ), names );
   for ( org::xtreemfs::interfaces::StringSet::const_iterator name_i = names.begin(); name_i != names.end(); name_i++ )
   {
     if ( !callback( *name_i ) )
@@ -81,14 +81,14 @@ bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
 bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_names )
 {
   xtreemfs::interfaces::StringSet names;
-  mrc_proxy.listxattr( Path( this->name, path ), names );
+  mrc_proxy->listxattr( Path( this->name, path ), names );
   out_names.assign( names.begin(), names.end() );
   return true;
 }
 
 bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
 {
-  mrc_proxy.mkdir( Path( this->name, path ), mode );
+  mrc_proxy->mkdir( Path( this->name, path ), mode );
   return true;
 }
 
@@ -156,7 +156,7 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
 #endif
 
   org::xtreemfs::interfaces::FileCredentials file_credentials;
-  mrc_proxy.open( path, system_v_flags, mode, attributes, file_credentials );
+  mrc_proxy->open( path, system_v_flags, mode, attributes, file_credentials );
 
   return new File( *this, path, file_credentials );
 }
@@ -164,7 +164,7 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
 bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
 {
   org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
-  mrc_proxy.readdir( Path( this->name, path ), directory_entries );
+  mrc_proxy->readdir( Path( this->name, path ), directory_entries );
   for ( org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator directory_entry_i = directory_entries.begin(); directory_entry_i != directory_entries.end(); directory_entry_i++ )
   {
     const org::xtreemfs::interfaces::Stat& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
@@ -182,7 +182,7 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
 YIELD::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy.getattr( Path( this->name, path ), stbuf );
+  mrc_proxy->getattr( Path( this->name, path ), stbuf );
   return new YIELD::Path( stbuf.get_link_target() );
 }
 
@@ -190,20 +190,20 @@ bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
 {
   Path from_xtreemfs_path( this->name, from_path ), to_xtreemfs_path( this->name, to_path );
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
-  mrc_proxy.rename( from_xtreemfs_path, to_xtreemfs_path, file_credentials_set );
+  mrc_proxy->rename( from_xtreemfs_path, to_xtreemfs_path, file_credentials_set );
   osd_unlink( file_credentials_set );
   return true;
 }
 
 bool Volume::rmdir( const YIELD::Path& path )
 {
-  mrc_proxy.rmdir( Path( this->name, path ) );
+  mrc_proxy->rmdir( Path( this->name, path ) );
   return true;
 }
 
 bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
 {
-  mrc_proxy.removexattr( Path( this->name, path ), name );
+  mrc_proxy->removexattr( Path( this->name, path ), name );
   return true;
 }
 
@@ -211,13 +211,13 @@ bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
   xtreemfs::interfaces::Stat stbuf;
   stbuf.set_attributes( file_attributes );
-  mrc_proxy.setattr( Path( this->name, path ), stbuf );
+  mrc_proxy->setattr( Path( this->name, path ), stbuf );
   return true;
 }
 
 bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags )
 {
-  mrc_proxy.setxattr( Path( this->name, path ), name, value, flags );
+  mrc_proxy->setxattr( Path( this->name, path ), name, value, flags );
   return true;
 }
 
@@ -227,7 +227,7 @@ bool Volume::statvfs( const YIELD::Path& path, struct statvfs* statvfsbuf )
   {
     memset( statvfsbuf, 0, sizeof( *statvfsbuf ) );
     xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
-    mrc_proxy.statvfs( this->name, xtreemfs_statvfsbuf );
+    mrc_proxy->statvfs( this->name, xtreemfs_statvfsbuf );
     statvfsbuf->f_bsize = xtreemfs_statvfsbuf.get_bsize();
     statvfsbuf->f_bavail = statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bfree();
     statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_bfree() * 1024;
@@ -240,7 +240,7 @@ bool Volume::statvfs( const YIELD::Path& path, struct statvfs* statvfsbuf )
 
 bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 {
-  mrc_proxy.symlink( to_path, Path( this->name, from_path ) );
+  mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
   return true;
 }
 
@@ -255,14 +255,14 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 bool Volume::unlink( const YIELD::Path& path )
 {
   org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
-  mrc_proxy.unlink( Path( this->name, path ), file_credentials_set );
+  mrc_proxy->unlink( Path( this->name, path ), file_credentials_set );
   osd_unlink( file_credentials_set );
   return true;
 }
 
 bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
-  mrc_proxy.utimens( Path( this->name, path ), atime, mtime, ctime );
+  mrc_proxy->utimens( Path( this->name, path ), atime, mtime, ctime );
   return true;
 }
 
@@ -279,10 +279,6 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
     const org::xtreemfs::interfaces::ReplicaSet& replicas = file_credentials.get_xlocs().get_replicas();
     for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
-    {
-      OSDProxy& osd_proxy = osd_proxy_factory.createOSDProxy( ( *replica_i ).get_osd_uuids()[0] );
-      osd_proxy.unlink( file_credentials, file_id );
-      YIELD::Object::decRef( osd_proxy );
-    }
+      osd_proxy_factory->createOSDProxy( ( *replica_i ).get_osd_uuids()[0] )->unlink( file_credentials, file_id );
   }
 }

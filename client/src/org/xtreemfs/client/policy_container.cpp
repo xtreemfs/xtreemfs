@@ -65,7 +65,7 @@ PolicyContainer::PolicyContainer()
 PolicyContainer::~PolicyContainer()
 {
   for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
-    delete *policy_shared_library_i;
+    YIELD::Object::decRef( **policy_shared_library_i );
 
   for ( YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
   {
@@ -85,7 +85,8 @@ PolicyContainer::~PolicyContainer()
 void PolicyContainer::loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path )
 {
   PolicyContainerreaddirCallback readdir_callback( *this, policy_shared_libraries_dir_path );
-  YIELD::Volume().readdir( policy_shared_libraries_dir_path, readdir_callback );
+  YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
+  volume->readdir( policy_shared_libraries_dir_path, readdir_callback );
 }
 
 void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_library_file_path )

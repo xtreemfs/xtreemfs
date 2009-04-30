@@ -20,29 +20,28 @@ OSDProxyFactory::~OSDProxyFactory()
   Object::decRef( dir_proxy );
 }
 
-OSDProxy& OSDProxyFactory::createOSDProxy( const std::string& uuid )
+YIELD::auto_Object<OSDProxy> OSDProxyFactory::createOSDProxy( const std::string& uuid )
 {
   return createOSDProxy( dir_proxy.getURIFromUUID( uuid ) );
 }
 
-OSDProxy& OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
+YIELD::auto_Object<OSDProxy> OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
   uint32_t uri_hash = YIELD::string_hash( uri.get_host() );
   osd_proxy_cache_lock.acquire();
-  OSDProxy* osd_proxy = osd_proxy_cache.find( uri_hash );
+  YIELD::auto_Object<OSDProxy> osd_proxy = osd_proxy_cache.find( uri_hash );
   osd_proxy_cache_lock.release();
   if ( osd_proxy != NULL )
-    return YIELD::Object::incRef( *osd_proxy );
+    return osd_proxy;
   else
   {
-    osd_proxy = new OSDProxy( uri, YIELD::Object::incRef( dir_proxy.get_ssl_context() ), YIELD::Object::incRef( dir_proxy.get_log() ) );
+    osd_proxy = new OSDProxy( uri, dir_proxy.get_ssl_context(), dir_proxy.get_log() );
     osd_proxy->set_operation_timeout_ns( dir_proxy.get_operation_timeout_ns() );
     osd_proxy->set_reconnect_tries_max( dir_proxy.get_reconnect_tries_max() );
-    osd_proxy_stage_group.createStage( *osd_proxy, new YIELD::FDAndInternalEventQueue );
-    YIELD::Object::incRef( *osd_proxy ); // For the cache
+    osd_proxy_stage_group.createStage( osd_proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ) );
     osd_proxy_cache_lock.acquire();
-    osd_proxy_cache.insert( uri_hash, osd_proxy );
+    osd_proxy_cache.insert( uri_hash, &osd_proxy->incRef() );
     osd_proxy_cache_lock.release();
-    return *osd_proxy;
+    return osd_proxy;
   }
 }
