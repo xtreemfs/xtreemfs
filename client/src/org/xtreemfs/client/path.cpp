@@ -25,11 +25,12 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
     }
 #else
     if ( local_path.get_host_charset_path()[0] == DISK_PATH_SEPARATOR )
-      global_path.append( this->local_path ); //.get_utf8_path() );
+      global_path.append( this->local_path.get_host_charset_path() ); //.get_utf8_path() );
     else
     {
       global_path.append( "/", 1 );
-      global_path.append( this->local_path.get_utf8_path().c_str(), this->local_path.get_utf8_path().size() );
+//      global_path.append( this->local_path.get_utf8_path() );
+      global_path.append( this->local_path.get_host_charset_path() );       
     }
 #endif
   }
