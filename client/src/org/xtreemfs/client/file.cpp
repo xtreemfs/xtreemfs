@@ -64,15 +64,12 @@ OSDProxy& File::get_osd_proxy( uint64_t object_number )
     case org::xtreemfs::interfaces::STRIPING_POLICY_RAID0:
     {      
       size_t osd_i = object_number % striping_policy.get_width();
-      if ( osd_proxies[osd_i] != NULL )
-        return *osd_proxies[osd_i];
-      else
+      if ( osd_proxies[osd_i] == NULL )
       {
         const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
-        YIELD::auto_Object<OSDProxy> osd_proxy = parent_volume.get_osd_proxy_factory()->createOSDProxy( osd_uuids[osd_i] ); 
-        osd_proxies[osd_i] = &osd_proxy->incRef();
-        return *osd_proxy.release();
+        osd_proxies[osd_i] = parent_volume.get_osd_proxy_factory()->createOSDProxy( osd_uuids[osd_i] ).release(); 
       }
+      return *osd_proxies[osd_i];
     }
 
     default: YIELD::DebugBreak(); throw YIELD::Exception(); break;
