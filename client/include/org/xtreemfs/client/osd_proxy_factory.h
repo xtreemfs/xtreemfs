@@ -20,14 +20,14 @@ namespace org
       class OSDProxyFactory : public YIELD::Object
       {
       public:
-        OSDProxyFactory( DIRProxy& dir_proxy, YIELD::StageGroup& osd_proxy_stage_group );
+        OSDProxyFactory( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::StageGroup& osd_proxy_stage_group );
 
         YIELD::auto_Object<OSDProxy> createOSDProxy( const std::string& uuid );
 
       private:
         ~OSDProxyFactory();
 
-        DIRProxy& dir_proxy;
+        YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::StageGroup& osd_proxy_stage_group;
 
         YIELD::STLHashMap<OSDProxy*> osd_proxy_cache;
