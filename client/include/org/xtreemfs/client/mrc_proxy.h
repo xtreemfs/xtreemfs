@@ -5,6 +5,7 @@
 #define ORG_XTREEMFS_CLIENT_MRC_PROXY_H
 
 #include "org/xtreemfs/client/path.h"
+#include "org/xtreemfs/client/proxy_exception_event.h"
 #include "org/xtreemfs/interfaces/mrc_interface.h"
 
 

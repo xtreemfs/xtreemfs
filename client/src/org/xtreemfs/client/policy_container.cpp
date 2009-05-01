@@ -142,7 +142,7 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
       }
     }
 
-    throw YIELD::Exception( ERROR_ACCESS_DENIED, "could not retrieve user_id and group_id" );
+    throw YIELD::Exception( "could not retrieve user_id and group_id" );
   }
 #else
 //  int caller_uid = yieldfs::FUSE::geteuid();

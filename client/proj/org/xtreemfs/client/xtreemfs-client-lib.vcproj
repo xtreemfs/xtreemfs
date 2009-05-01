@@ -194,6 +194,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_event.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\include\org\xtreemfs\client\volume.h"
     >
 </File>
