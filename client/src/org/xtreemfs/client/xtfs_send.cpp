@@ -101,22 +101,16 @@ namespace org
         xtfs_send()
           : Main( "xtfs_send", "send RPCs to an XtreemFS server", "[oncrpc[s]://]<host>[:port]/<rpc operation name> [rpc operation parameters]" )
         {
-          org::xtreemfs::interfaces::DIRInterface().registerObjectFactories( object_factories );
-          org::xtreemfs::interfaces::MRCInterface().registerObjectFactories( object_factories );
-          org::xtreemfs::interfaces::OSDInterface().registerObjectFactories( object_factories );
-
-          proxy = NULL;
-        }
-
-        ~xtfs_send()
-        {
-          YIELD::Object::decRef( proxy );
+          object_factories = new YIELD::ObjectFactories;
+          org::xtreemfs::interfaces::DIRInterface().registerObjectFactories( *object_factories );
+          org::xtreemfs::interfaces::MRCInterface().registerObjectFactories( *object_factories );
+          org::xtreemfs::interfaces::OSDInterface().registerObjectFactories( *object_factories );
         }
 
       private:
-        YIELD::ObjectFactories object_factories;
+        YIELD::auto_Object<YIELD::ObjectFactories> object_factories;
         YIELD::auto_Object<YIELD::Request> request;
-        YIELD::EventTarget* proxy;
+        YIELD::auto_Object<YIELD::EventTarget> proxy;
 
         // xtfs_bin
         int _main( int, char** )
@@ -142,17 +136,17 @@ namespace org
             if ( rpc_uri->get_resource().size() > 1 )
             {
               std::string request_type_name( rpc_uri->get_resource().c_str() + 1 );
-              request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
+              request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
               if ( request!= NULL )
                 proxy = createMRCProxy( *rpc_uri ).release();
               else
               {
-                request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
+                request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
                 if ( request!= NULL )
                   proxy = createDIRProxy( *rpc_uri ).release();
                 else
                 {
-                  request = static_cast<YIELD::Request*>( object_factories.createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
+                  request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
                   if ( request!= NULL )
                     proxy = createOSDProxy( *rpc_uri ).release();
                   else

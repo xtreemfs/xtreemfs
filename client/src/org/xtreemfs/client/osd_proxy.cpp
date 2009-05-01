@@ -9,8 +9,8 @@ using namespace org::xtreemfs::client;
 OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
-  osd_interface.registerObjectFactories( object_factories );
-  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( object_factories );
+  osd_interface.registerObjectFactories( *object_factories );
+  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );
 }
 
 void OSDProxy::read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data )

@@ -10,8 +10,8 @@ using namespace org::xtreemfs::client;
 MRCProxy::MRCProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
-  mrc_interface.registerObjectFactories( object_factories );
-  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( object_factories );
+  mrc_interface.registerObjectFactories( *object_factories );
+  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );
   policies = new PolicyContainer;
 }
 
@@ -20,11 +20,11 @@ MRCProxy::~MRCProxy()
   YIELD::Object::decRef( policies );
 }
 
-YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::Object& out_body )
+YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::auto_Object<YIELD::Object> body )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );
-  return new YIELD::ONCRPCRequest( out_body, object_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release() );
+  return new YIELD::ONCRPCRequest( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), body );
 }
 
 bool MRCProxy::access( const Path& path, uint32_t mode )

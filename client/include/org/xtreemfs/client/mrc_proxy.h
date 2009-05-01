@@ -64,7 +64,7 @@ namespace org
 
 
         // YIELD::Proxy
-        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::Object& out_body );
+        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::auto_Object<YIELD::Object> body );
       };
     };
   };

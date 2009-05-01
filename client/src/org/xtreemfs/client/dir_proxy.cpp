@@ -10,8 +10,8 @@ using namespace org::xtreemfs::client;
 DIRProxy::DIRProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
   : YIELD::ONCRPCProxy( uri, ssl_context, log )
 {
-  dir_interface.registerObjectFactories( object_factories );
-  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( object_factories );
+  dir_interface.registerObjectFactories( *object_factories );
+  org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );
   policies = new PolicyContainer;
 }
 
@@ -22,11 +22,11 @@ DIRProxy::~DIRProxy()
     delete uuid_to_uri_i->second;
 }
 
-YIELD::ONCRPCRequest* DIRProxy::createONCRPCRequest( YIELD::Object& out_body )
+YIELD::ONCRPCRequest* DIRProxy::createONCRPCRequest( YIELD::auto_Object<YIELD::Object> body )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );
-  return new YIELD::ONCRPCRequest( out_body, object_factories, org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release() );
+  return new YIELD::ONCRPCRequest( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), body );
 }
 
 YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
