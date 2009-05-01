@@ -283,13 +283,13 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
             out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
           }
           else
-            throw YIELD::Exception( EINVAL, "no such gid" );
+            throw YIELD::Exception( "no such gid" );
         }
         else
           throw YIELD::Exception();
       }
       else
-        throw YIELD::Exception( EINVAL, "no such uid" );
+        throw YIELD::Exception( "no such uid" );
     }
     else
       throw YIELD::Exception();
