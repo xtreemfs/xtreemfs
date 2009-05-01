@@ -3203,7 +3203,7 @@ namespace org
           }
           catch ( YIELD::Exception& exc )
           {
-              static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionEvent( exc.what() ) ) );
+            static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionEvent( exc ) ) );
           }
 
           YIELD::Object::decRef( ev );
