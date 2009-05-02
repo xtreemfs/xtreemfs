@@ -34,10 +34,9 @@ YIELD::auto_Object<OSDProxy> OSDProxyFactory::createOSDProxy( const YIELD::URI& 
 
   if ( osd_proxy == NULL )
   {
-    osd_proxy = new OSDProxy( uri, dir_proxy->get_ssl_context(), dir_proxy->get_log() );
+    osd_proxy = OSDProxy::create( osd_proxy_stage_group, uri, dir_proxy->get_ssl_context(), dir_proxy->get_log() ).release();
     osd_proxy->set_operation_timeout_ns( dir_proxy->get_operation_timeout_ns() );
     osd_proxy->set_reconnect_tries_max( dir_proxy->get_reconnect_tries_max() );
-    osd_proxy_stage_group.createStage( YIELD::auto_Object<OSDProxy>( osd_proxy->incRef() ), YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ) );
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();

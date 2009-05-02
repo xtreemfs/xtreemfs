@@ -18,11 +18,16 @@ namespace org
       class PolicyContainer;
 
 
-      class MRCProxy : public YIELD::ONCRPCProxy
+      class MRCProxy : public YIELD::ONCRPCClient
       {
-      public:
-        MRCProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL );
-        
+      public:       
+        static YIELD::auto_Object<MRCProxy> create( YIELD::StageGroup& stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        {
+          YIELD::auto_Object<MRCProxy> proxy = new MRCProxy( peer_sockaddr, ssl_context, log );
+          stage_group.createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
+          return proxy;
+        }       
+
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
         void chown( const Path& path, int uid, int gid );
@@ -57,6 +62,7 @@ namespace org
         const char* getEventHandlerName() const { return "MRCProxy"; }
 
       private:
+        MRCProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log );
         ~MRCProxy();
 
 

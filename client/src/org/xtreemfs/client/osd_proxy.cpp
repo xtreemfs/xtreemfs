@@ -6,8 +6,8 @@
 using namespace org::xtreemfs::client;
 
 
-OSDProxy::OSDProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
-  : YIELD::ONCRPCProxy( uri, ssl_context, log )
+OSDProxy::OSDProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
+  : YIELD::ONCRPCClient( peer_sockaddr,ssl_context, log )
 {
   osd_interface.registerObjectFactories( *object_factories );
   org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );

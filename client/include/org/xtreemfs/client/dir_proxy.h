@@ -20,11 +20,15 @@ namespace org
       class PolicyContainer;
 
 
-      class DIRProxy : public YIELD::ONCRPCProxy
+      class DIRProxy : public YIELD::ONCRPCClient
       {
       public:
-        DIRProxy( const YIELD::URI& uri, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL );
-        
+        static YIELD::auto_Object<DIRProxy> create( YIELD::StageGroup& stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        {
+          YIELD::auto_Object<DIRProxy> proxy = new DIRProxy( peer_sockaddr, ssl_context, log );
+          stage_group.createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
+          return proxy;
+        }       
 
         YIELD::URI getURIFromUUID( const std::string& uuid );
         YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
@@ -33,6 +37,7 @@ namespace org
         const char* getEventHandlerName() const { return "DIRProxy"; }
 
       private:
+        DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log );
         ~DIRProxy();
 
 

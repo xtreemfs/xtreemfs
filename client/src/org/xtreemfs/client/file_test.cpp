@@ -8,7 +8,6 @@
 #include "org/xtreemfs/client/volume.h"
 
 
-/*
 namespace org
 {
   namespace xtreemfs
@@ -19,34 +18,32 @@ namespace org
       {
       public:
         FileTestSuite( const char* test_suite_name )
-          : YIELD::FileTestSuite( test_suite_name ),
-            stage_group( YIELD::SEDAStageGroup::createStageGroup() ),
-            dir_proxy( "oncrpc://outtolunch/" ),
-            mrc_proxy( "oncrpc://outtolunch/" ),
-            osd_proxy_factory( dir_proxy, stage_group ),
-            volume( "test", dir_proxy, mrc_proxy, osd_proxy_factory )
+          : YIELD::FileTestSuite( test_suite_name )
         {
-          stage_group.createStage( dir_proxy );
-          stage_group.createStage( mrc_proxy );
+          stage_group = &YIELD::SEDAStageGroup::createStageGroup();
+          dir_proxy = org::xtreemfs::client::DIRProxy::create( *stage_group, YIELD::URI( "oncrpc://localhost/" ) );
+          mrc_proxy = org::xtreemfs::client::MRCProxy::create( *stage_group, YIELD::URI( "oncrpc://localhost/" ) );
+          osd_proxy_factory = new org::xtreemfs::client::OSDProxyFactory( dir_proxy, *stage_group );
+          volume = new org::xtreemfs::client::Volume( "test", dir_proxy, mrc_proxy, osd_proxy_factory );
         }
 
         virtual ~FileTestSuite()
         {
-          YIELD::SEDAStageGroup::destroyStageGroup( stage_group );
+          YIELD::SEDAStageGroup::destroyStageGroup( *stage_group );
         }
 
         // YIELD::FileTestSuite
         YIELD::File* createFile( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
         {
-          return volume.open( path, flags, mode, attributes ).release();
+          return volume->open( path, flags, mode, attributes ).release();
         }
 
       private:
-        YIELD::SEDAStageGroup& stage_group;
-        DIRProxy dir_proxy;
-        MRCProxy mrc_proxy;
-        OSDProxyFactory osd_proxy_factory;
-        org::xtreemfs::client::Volume volume;
+        YIELD::SEDAStageGroup* stage_group;
+        YIELD::auto_Object<org::xtreemfs::client::DIRProxy> dir_proxy;
+        YIELD::auto_Object<org::xtreemfs::client::MRCProxy> mrc_proxy;
+        YIELD::auto_Object<org::xtreemfs::client::OSDProxyFactory> osd_proxy_factory;
+        YIELD::auto_Object<org::xtreemfs::client::Volume> volume;
       };
     };
   };
@@ -54,5 +51,4 @@ namespace org
 
 TEST_SUITE_EX( File, org::xtreemfs::client::FileTestSuite )
 
-//TEST_MAIN( File )
-*/
+TEST_MAIN( File )

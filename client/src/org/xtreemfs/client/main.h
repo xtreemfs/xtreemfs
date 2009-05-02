@@ -157,10 +157,9 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = new ProxyType( checked_uri, get_ssl_context(), get_log() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( *stage_group, checked_uri, get_ssl_context(), get_log() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
-          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), get_log() );
           return proxy;
         }
 
