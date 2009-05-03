@@ -267,15 +267,15 @@ namespace org
       #endif
       #endif
 
-      #ifndef ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_EXCEPTION_EVENT_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_EXCEPTION_RESPONSE_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS YIELD::ExceptionEvent
+      #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS YIELD::ExceptionResponse
       #endif
       #endif
 
@@ -492,7 +492,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 1; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1046856447UL; }
-        virtual Event* createDefaultResponse() { return new accessResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new accessResponse; }
 
 
       protected:
@@ -512,11 +512,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::accessResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::accessResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class chmodResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -560,7 +560,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 2; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 2600293463UL; }
-        virtual Event* createDefaultResponse() { return new chmodResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new chmodResponse; }
 
 
       protected:
@@ -580,11 +580,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::chmodResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::chmodResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class chownResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -632,7 +632,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 3; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 2956591049UL; }
-        virtual Event* createDefaultResponse() { return new chownResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new chownResponse; }
 
 
       protected:
@@ -653,11 +653,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::chownResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::chownResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class createResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -701,7 +701,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 4; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 198172638UL; }
-        virtual Event* createDefaultResponse() { return new createResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new createResponse; }
 
 
       protected:
@@ -721,11 +721,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::createResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::createResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class ftruncateResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -775,7 +775,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 30; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3573723824UL; }
-        virtual Event* createDefaultResponse() { return new ftruncateResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new ftruncateResponse; }
 
 
       protected:
@@ -793,11 +793,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::ftruncateResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::ftruncateResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class getattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -849,7 +849,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 5; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1150023493UL; }
-        virtual Event* createDefaultResponse() { return new getattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new getattrResponse; }
 
 
       protected:
@@ -868,11 +868,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::getattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::getattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class getxattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -929,7 +929,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 6; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 72976609UL; }
-        virtual Event* createDefaultResponse() { return new getxattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new getxattrResponse; }
 
 
       protected:
@@ -949,11 +949,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::getxattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::getxattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class linkResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -998,7 +998,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 7; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1242382351UL; }
-        virtual Event* createDefaultResponse() { return new linkResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new linkResponse; }
 
 
       protected:
@@ -1018,11 +1018,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::linkResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::linkResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class listxattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1074,7 +1074,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 8; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3509031574UL; }
-        virtual Event* createDefaultResponse() { return new listxattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new listxattrResponse; }
 
 
       protected:
@@ -1093,11 +1093,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::listxattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::listxattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class mkdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1141,7 +1141,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 9; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1461564105UL; }
-        virtual Event* createDefaultResponse() { return new mkdirResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new mkdirResponse; }
 
 
       protected:
@@ -1161,11 +1161,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::mkdirResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::mkdirResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class openResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1223,7 +1223,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 11; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3891582700UL; }
-        virtual Event* createDefaultResponse() { return new openResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new openResponse; }
 
 
       protected:
@@ -1245,11 +1245,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::openResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::openResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class readdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1301,7 +1301,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 12; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 42716287UL; }
-        virtual Event* createDefaultResponse() { return new readdirResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new readdirResponse; }
 
 
       protected:
@@ -1320,11 +1320,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::readdirResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::readdirResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class removexattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1369,7 +1369,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 13; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 813148522UL; }
-        virtual Event* createDefaultResponse() { return new removexattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new removexattrResponse; }
 
 
       protected:
@@ -1389,11 +1389,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::removexattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::removexattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class renameResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1448,7 +1448,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 14; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 4002167429UL; }
-        virtual Event* createDefaultResponse() { return new renameResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new renameResponse; }
 
 
       protected:
@@ -1468,11 +1468,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::renameResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::renameResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class rmdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1514,7 +1514,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 15; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 161028879UL; }
-        virtual Event* createDefaultResponse() { return new rmdirResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new rmdirResponse; }
 
 
       protected:
@@ -1533,11 +1533,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::rmdirResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::rmdirResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class setattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1581,7 +1581,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 17; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1637936981UL; }
-        virtual Event* createDefaultResponse() { return new setattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new setattrResponse; }
 
 
       protected:
@@ -1601,11 +1601,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::setattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::setattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class setxattrResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1655,7 +1655,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 18; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1656711865UL; }
-        virtual Event* createDefaultResponse() { return new setxattrResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new setxattrResponse; }
 
 
       protected:
@@ -1677,11 +1677,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::setxattrResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::setxattrResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class statvfsResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1733,7 +1733,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 19; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1545560239UL; }
-        virtual Event* createDefaultResponse() { return new statvfsResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new statvfsResponse; }
 
 
       protected:
@@ -1752,11 +1752,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::statvfsResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::statvfsResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class symlinkResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1801,7 +1801,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 20; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3986079894UL; }
-        virtual Event* createDefaultResponse() { return new symlinkResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new symlinkResponse; }
 
 
       protected:
@@ -1821,11 +1821,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::symlinkResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::symlinkResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class unlinkResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1877,7 +1877,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 21; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 35019552UL; }
-        virtual Event* createDefaultResponse() { return new unlinkResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new unlinkResponse; }
 
 
       protected:
@@ -1896,11 +1896,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::unlinkResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::unlinkResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class utimensResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1948,7 +1948,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 22; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 187175940UL; }
-        virtual Event* createDefaultResponse() { return new utimensResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new utimensResponse; }
 
 
       protected:
@@ -1970,11 +1970,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::utimensResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::utimensResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_checkpointResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2007,7 +2007,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 51; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 819133164UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_checkpointResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_checkpointResponse; }
 
       };
 
@@ -2021,11 +2021,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_check_file_existsResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2081,7 +2081,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 23; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3802978278UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_check_file_existsResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_check_file_existsResponse; }
 
 
       protected:
@@ -2101,11 +2101,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_dump_databaseResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2147,7 +2147,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 52; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 995967380UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_dump_databaseResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_dump_databaseResponse; }
 
 
       protected:
@@ -2166,11 +2166,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_dump_databaseResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_dump_databaseResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_get_suitable_osdsResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2222,7 +2222,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 24; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 2352042645UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_get_suitable_osdsResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_get_suitable_osdsResponse; }
 
 
       protected:
@@ -2241,11 +2241,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_lsvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2288,7 +2288,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 31; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 2554565499UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_lsvolResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_lsvolResponse; }
 
       };
 
@@ -2302,11 +2302,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_listdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2358,7 +2358,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 33; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3770781012UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_listdirResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_listdirResponse; }
 
 
       protected:
@@ -2377,11 +2377,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_mkvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2421,7 +2421,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 10; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3778316902UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_mkvolResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_mkvolResponse; }
 
 
       protected:
@@ -2439,11 +2439,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_renew_capabilityResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2493,7 +2493,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 25; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 137996173UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_renew_capabilityResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_renew_capabilityResponse; }
 
 
       protected:
@@ -2511,11 +2511,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_replica_addResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2559,7 +2559,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 26; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 112572185UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_replica_addResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_replica_addResponse; }
 
 
       protected:
@@ -2579,11 +2579,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_replica_listResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2635,7 +2635,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 32; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1736837504UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_replica_listResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_replica_listResponse; }
 
 
       protected:
@@ -2654,11 +2654,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_replica_removeResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2713,7 +2713,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 27; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1412849496UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_replica_removeResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_replica_removeResponse; }
 
 
       protected:
@@ -2733,11 +2733,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_restore_databaseResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2779,7 +2779,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 53; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1807651157UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_restore_databaseResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_restore_databaseResponse; }
 
 
       protected:
@@ -2798,11 +2798,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_restore_fileResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2854,7 +2854,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 28; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3701413834UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_restore_fileResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_restore_fileResponse; }
 
 
       protected:
@@ -2877,11 +2877,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_rmvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2923,7 +2923,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 16; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 180525667UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_rmvolResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_rmvolResponse; }
 
 
       protected:
@@ -2942,11 +2942,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2979,7 +2979,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 50; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1924750368UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_shutdownResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_shutdownResponse; }
 
       };
 
@@ -2993,11 +2993,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_shutdownResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_shutdownResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_update_file_sizeResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -3039,7 +3039,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 29; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1410569539UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_update_file_sizeResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_update_file_sizeResponse; }
 
 
       protected:
@@ -3058,20 +3058,20 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
-        class MRCException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS
+        class MRCException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           MRCException() : error_code( 0 ) { }
         MRCException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
         MRCException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
-          MRCException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          MRCException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~MRCException() throw() { }
 
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
@@ -3084,10 +3084,10 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::MRCInterface::MRCException", 1210568114UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::MRCInterface::MRCException", 1210568114UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new MRCException( error_code, error_message, stack_trace); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new MRCException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw MRCException( error_code, error_message, stack_trace); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
@@ -3193,17 +3193,17 @@ namespace org
               default: handleUnknownEvent( ev ); return;
             }
           }
-          catch( YIELD::ExceptionEvent* exc_ev )
+          catch( YIELD::ExceptionResponse* exception_response )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *exc_ev );
+            static_cast<YIELD::Request&>( ev ).respond( *exception_response );
           }
-          catch ( YIELD::ExceptionEvent& exc_ev )
+          catch ( YIELD::ExceptionResponse& exception_response )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *exc_ev.clone() );
+            static_cast<YIELD::Request&>( ev ).respond( *exception_response.clone() );
           }
           catch ( YIELD::Exception& exc )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionEvent( exc ) ) );
+            static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionResponse( exc ) ) );
           }
 
           YIELD::Object::decRef( ev );

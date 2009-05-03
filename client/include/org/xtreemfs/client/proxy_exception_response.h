@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_EVENT_H
-#define ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_EVENT_H
+#ifndef ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_RESPONSE_H
+#define ORG_XTREEMFS_CLIENT_PROXY_EXCEPTION_RESPONSE_H
 
 #include "yield.h"
 
@@ -13,10 +13,10 @@ namespace org
   {
     namespace client
     {
-      class ProxyExceptionEvent : public YIELD::ExceptionEvent
+      class ProxyExceptionResponse : public YIELD::ExceptionResponse
       {
       public:
-        virtual ~ProxyExceptionEvent() throw()
+        virtual ~ProxyExceptionResponse() throw()
         { }
 
         virtual uint32_t get_error_code() const { return 0; }
@@ -34,17 +34,17 @@ namespace org
             what_oss << ", strerror = " << get_error_message();
             if ( !get_stack_trace().empty() )
               what_oss << ", stack = " << get_stack_trace();
-            const_cast<ProxyExceptionEvent*>( this )->what_str = what_oss.str();
+            const_cast<ProxyExceptionResponse*>( this )->what_str = what_oss.str();
           }
 
           return what_str.c_str();
         }
 
       protected:
-        ProxyExceptionEvent()
+        ProxyExceptionResponse()
         { }
 
-        ProxyExceptionEvent( const char* what )
+        ProxyExceptionResponse( const char* what )
         {
           YIELD::DebugBreak();
         }
@@ -56,6 +56,6 @@ namespace org
   };
 };
 
-#define ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS org::xtreemfs::client::ProxyExceptionEvent
+#define ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS org::xtreemfs::client::ProxyExceptionResponse
 
 #endif

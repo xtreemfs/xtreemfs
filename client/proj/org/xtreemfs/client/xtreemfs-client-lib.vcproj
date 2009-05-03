@@ -191,7 +191,7 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_event.h"
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_response.h"
     >
 </File>
 <File

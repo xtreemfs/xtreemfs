@@ -146,15 +146,15 @@ namespace org
       #endif
       #endif
 
-      #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS ORG_EXCEPTION_EVENT_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_EXCEPTION_RESPONSE_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS YIELD::ExceptionEvent
+      #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS YIELD::ExceptionResponse
       #endif
       #endif
 
@@ -271,7 +271,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 1; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 4289876024UL; }
-        virtual Event* createDefaultResponse() { return new readResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new readResponse; }
 
 
       protected:
@@ -295,11 +295,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::readResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::readResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class truncateResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -355,7 +355,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 2; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 233138659UL; }
-        virtual Event* createDefaultResponse() { return new truncateResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new truncateResponse; }
 
 
       protected:
@@ -376,11 +376,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::truncateResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::truncateResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class unlinkResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -424,7 +424,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 3; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1159409605UL; }
-        virtual Event* createDefaultResponse() { return new unlinkResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new unlinkResponse; }
 
 
       protected:
@@ -444,11 +444,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::unlinkResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::unlinkResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class writeResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -512,7 +512,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 4; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3887614948UL; }
-        virtual Event* createDefaultResponse() { return new writeResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new writeResponse; }
 
 
       protected:
@@ -537,11 +537,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_check_objectResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -599,7 +599,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 103; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 1067317409UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_check_objectResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_check_objectResponse; }
 
 
       protected:
@@ -621,11 +621,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_internal_get_gmaxResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -679,7 +679,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 100; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 827639084UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_internal_get_gmaxResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_internal_get_gmaxResponse; }
 
 
       protected:
@@ -699,11 +699,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_internal_get_file_sizeResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -757,7 +757,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 104; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3846913658UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_internal_get_file_sizeResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_internal_get_file_sizeResponse; }
 
 
       protected:
@@ -777,11 +777,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_internal_truncateResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -837,7 +837,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 101; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 666509058UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_internal_truncateResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_internal_truncateResponse; }
 
 
       protected:
@@ -858,11 +858,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_internal_read_localResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -924,7 +924,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 102; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 2259419931UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_internal_read_localResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_internal_read_localResponse; }
 
 
       protected:
@@ -948,11 +948,11 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
       class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -985,7 +985,7 @@ namespace org
         virtual uint32_t getOperationNumber() const { return 50; }
 
         virtual uint32_t getDefaultResponseTypeId() const { return 3362631755UL; }
-        virtual Event* createDefaultResponse() { return new xtreemfs_shutdownResponse; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_shutdownResponse; }
 
       };
 
@@ -999,20 +999,20 @@ namespace org
 
 
         // YIELD::Request
-        bool respond( YIELD::Event& response_ev ) { return response_event_queue.enqueue( response_ev ); }
-        YIELD::Event& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_event_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_shutdownResponse>( timeout_ns ); }
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_shutdownResponse>( timeout_ns ); }
 
       private:
-        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_event_queue;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
-        class OSDException : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS
+        class OSDException : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           OSDException() : error_code( 0 ) { }
         OSDException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
         OSDException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
-          OSDException( const char* what ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          OSDException( const char* what ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~OSDException() throw() { }
 
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
@@ -1025,10 +1025,10 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::OSDInterface::OSDException", 863197607UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::OSDInterface::OSDException", 863197607UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new OSDException( error_code, error_message, stack_trace); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new OSDException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw OSDException( error_code, error_message, stack_trace); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
@@ -1080,17 +1080,17 @@ namespace org
               default: handleUnknownEvent( ev ); return;
             }
           }
-          catch( YIELD::ExceptionEvent* exc_ev )
+          catch( YIELD::ExceptionResponse* exception_response )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *exc_ev );
+            static_cast<YIELD::Request&>( ev ).respond( *exception_response );
           }
-          catch ( YIELD::ExceptionEvent& exc_ev )
+          catch ( YIELD::ExceptionResponse& exception_response )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *exc_ev.clone() );
+            static_cast<YIELD::Request&>( ev ).respond( *exception_response.clone() );
           }
           catch ( YIELD::Exception& exc )
           {
-            static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionEvent( exc ) ) );
+            static_cast<YIELD::Request&>( ev ).respond( *( new YIELD::ExceptionResponse( exc ) ) );
           }
 
           YIELD::Object::decRef( ev );

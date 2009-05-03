@@ -102,7 +102,7 @@ void File::processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteRes
   }
 }
 
-bool File::read( void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
+YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
 {
   char* rbuf_p = static_cast<char*>( rbuf );
   uint64_t file_offset = offset, file_offset_max = offset + size;
@@ -143,9 +143,9 @@ bool File::read( void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_rea
   }
 
   if ( out_bytes_read )
-    *out_bytes_read = file_offset - offset;
+    *out_bytes_read = static_cast<size_t>( file_offset - offset );
 
-  return true;
+  return STREAM_STATUS_OK;
 }
 
 bool File::removexattr( const std::string& name )
@@ -177,7 +177,7 @@ bool File::truncate( uint64_t new_size )
   return true;
 }
 
-bool File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
+YIELD::Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
 {
   if ( buffers_count != 1 ) 
     YIELD::DebugBreak();
@@ -208,7 +208,7 @@ bool File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t
     flush();
 
   if ( out_bytes_written )
-    *out_bytes_written = file_offset - offset;
+    *out_bytes_written = static_cast<size_t>( file_offset - offset );
 
-  return true;
+  return STREAM_STATUS_OK;
 }

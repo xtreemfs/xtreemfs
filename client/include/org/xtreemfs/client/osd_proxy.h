@@ -4,7 +4,7 @@
 #ifndef ORG_XTREEMFS_CLIENT_OSD_PROXY_H
 #define ORG_XTREEMFS_CLIENT_OSD_PROXY_H
 
-#include "org/xtreemfs/client/proxy_exception_event.h"
+#include "org/xtreemfs/client/proxy_exception_response.h"
 #include "org/xtreemfs/interfaces/osd_interface.h"
 
 

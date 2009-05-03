@@ -51,15 +51,15 @@ namespace org
       #endif
       #endif
 
-      #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_EVENT_PARENT_CLASS
-      #elif defined( ORG_EXCEPTION_EVENT_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS ORG_EXCEPTION_EVENT_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS
+      #elif defined( ORG_EXCEPTION_RESPONSE_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS ORG_EXCEPTION_RESPONSE_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS YIELD::ExceptionEvent
+      #define ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS YIELD::ExceptionResponse
       #endif
       #endif
 
@@ -71,13 +71,13 @@ namespace org
         Exceptions() { }
         virtual ~Exceptions() { }  // Request/response pair Event type definitions for the operations in Exceptions
 
-        class ProtocolException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
+        class ProtocolException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           ProtocolException() : accept_stat( 0 ), error_code( 0 ) { }
         ProtocolException( uint32_t accept_stat, uint32_t error_code, const std::string& stack_trace ) : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace ) { }
         ProtocolException( uint32_t accept_stat, uint32_t error_code, const char* stack_trace, size_t stack_trace_len ) : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace, stack_trace_len ) { }
-          ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~ProtocolException() throw() { }
 
         void set_accept_stat( uint32_t accept_stat ) { this->accept_stat = accept_stat; }
@@ -89,10 +89,10 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
           virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { accept_stat = input_stream.readUint32( YIELD::StructuredStream::Declaration( "accept_stat" ) ); error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
@@ -104,13 +104,13 @@ namespace org
         std::string stack_trace;
         };
 
-        class errnoException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
+        class errnoException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           errnoException() : error_code( 0 ) { }
         errnoException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
         errnoException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
-          errnoException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          errnoException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~errnoException() throw() { }
 
         void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
@@ -123,10 +123,10 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new errnoException( error_code, error_message, stack_trace); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new errnoException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { error_code = input_stream.readUint32( YIELD::StructuredStream::Declaration( "error_code" ) ); input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
@@ -138,13 +138,13 @@ namespace org
         std::string stack_trace;
         };
 
-        class RedirectException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
+        class RedirectException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           RedirectException() { }
         RedirectException( const std::string& to_uuid ) : to_uuid( to_uuid ) { }
         RedirectException( const char* to_uuid, size_t to_uuid_len ) : to_uuid( to_uuid, to_uuid_len ) { }
-          RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~RedirectException() throw() { }
 
         void set_to_uuid( const std::string& to_uuid ) { set_to_uuid( to_uuid.c_str(), to_uuid.size() ); }
@@ -152,10 +152,10 @@ namespace org
         const std::string& get_to_uuid() const { return to_uuid; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new RedirectException( to_uuid); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new RedirectException( to_uuid); }
           virtual void throwStackClone() const { throw RedirectException( to_uuid); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "to_uuid" ), to_uuid ); }
@@ -165,13 +165,13 @@ namespace org
         std::string to_uuid;
         };
 
-        class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
+        class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           ConcurrentModificationException() { }
         ConcurrentModificationException( const std::string& stack_trace ) : stack_trace( stack_trace ) { }
         ConcurrentModificationException( const char* stack_trace, size_t stack_trace_len ) : stack_trace( stack_trace, stack_trace_len ) { }
-          ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~ConcurrentModificationException() throw() { }
 
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
@@ -179,10 +179,10 @@ namespace org
         const std::string& get_stack_trace() const { return stack_trace; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new ConcurrentModificationException( stack_trace); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new ConcurrentModificationException( stack_trace); }
           virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "stack_trace" ), stack_trace ); }
@@ -192,13 +192,13 @@ namespace org
         std::string stack_trace;
         };
 
-        class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS
+        class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           InvalidArgumentException() { }
         InvalidArgumentException( const std::string& error_message ) : error_message( error_message ) { }
         InvalidArgumentException( const char* error_message, size_t error_message_len ) : error_message( error_message, error_message_len ) { }
-          InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_EVENT_PARENT_CLASS( what ) { }
+          InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_EXCEPTIONS_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
           virtual ~InvalidArgumentException() throw() { }
 
         void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
@@ -206,10 +206,10 @@ namespace org
         const std::string& get_error_message() const { return error_message; }
 
           // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_EVENT, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
+          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
 
-          // YIELD::ExceptionEvent
-          virtual ExceptionEvent* clone() const { return new InvalidArgumentException( error_message); }
+          // YIELD::ExceptionResponse
+          virtual ExceptionResponse* clone() const { return new InvalidArgumentException( error_message); }
           virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "error_message" ), error_message ); }
