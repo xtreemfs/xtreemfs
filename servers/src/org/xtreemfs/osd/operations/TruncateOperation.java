@@ -24,10 +24,12 @@
 
 package org.xtreemfs.osd.operations;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -125,8 +127,11 @@ public final class TruncateOperation extends OSDOperation {
                 }
 
             });
+        } catch (IOException ex) {
+            rq.sendInternalServerError(ex);
         } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
             return;
         }
     }
@@ -138,8 +143,11 @@ public final class TruncateOperation extends OSDOperation {
                 gmaxRPCs[i].get();
             }
             sendResponse(rq, result);
+        } catch (IOException ex) {
+            rq.sendInternalServerError(ex);
         } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
         } finally {
             for (RPCResponse r : gmaxRPCs)
                 r.freeBuffers();
