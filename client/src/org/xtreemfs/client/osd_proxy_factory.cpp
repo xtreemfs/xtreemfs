@@ -26,7 +26,7 @@ YIELD::auto_Object<OSDProxy> OSDProxyFactory::createOSDProxy( const std::string&
 
 YIELD::auto_Object<OSDProxy> OSDProxyFactory::createOSDProxy( const YIELD::URI& uri )
 {
-  uint32_t uri_hash = YIELD::string_hash( uri.get_host() );
+  uint32_t uri_hash = YIELD::string_hash( uri.get_host() ) ^ uri.get_port();
 
   osd_proxy_cache_lock.acquire();
   OSDProxy* osd_proxy = osd_proxy_cache.find( uri_hash );

@@ -24,7 +24,7 @@ YIELD::auto_Object<YIELD::Request> MRCProxy::createProtocolRequest( YIELD::auto_
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );
-  return new YIELD::ONCRPCRequest( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), body );
+  return new YIELD::ONCRPCRequest( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), body, get_log() );
 }
 
 bool MRCProxy::access( const Path& path, uint32_t mode )
