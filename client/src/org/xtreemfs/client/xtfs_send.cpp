@@ -118,10 +118,12 @@ namespace org
           proxy->send( request->incRef() );
 
           YIELD::Event& resp = request->waitForDefaultResponse( static_cast<uint64_t>( -1 ) ); // get_timeout_ms() );
+/*
           std::cout << resp.get_type_name() << "( ";
           YIELD::PrettyPrintOutputStream output_stream( std::cout );
           resp.serialize( output_stream );
           std::cout << " )" << std::endl;
+*/
           YIELD::Object::decRef( resp );
 
           return 0;
