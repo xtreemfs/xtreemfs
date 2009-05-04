@@ -28,19 +28,25 @@ public class DNSSelectionPolicy extends AbstractSelectionPolicy {
     @Override
     public String[] getOSDsForNewFile(ServiceSet osdMap, InetAddress clientAddr, int amount, String args) {
         final String clientFQDN = clientAddr.getCanonicalHostName();
-        System.out.println("client FQDN: "+clientFQDN);
+
+        int minPrefix = 0;
+        if (args != null) {
+            try {
+                minPrefix = Integer.valueOf(args);
+            } catch (NumberFormatException ex) {
+            }
+        }
+
 
         // first, sort out all OSDs with insufficient free capacity
         PriorityQueue<UsableOSD> list = new PriorityQueue<UsableOSD>();
         for (Service osd : osdMap) {
             if (!hasFreeCapacity(osd)) {
-                System.out.println("no free space");
                 continue;
             }
             try {
                 ServiceUUID uuid = new ServiceUUID(osd.getUuid());
                 final String osdHostName = uuid.getAddress().getAddress().getCanonicalHostName();
-                System.out.println("osd FQDN: "+osdHostName);
                 final int minLen = (osdHostName.length() > clientFQDN.length()) ? clientFQDN.length()  : osdHostName.length();
                 int osdI = osdHostName.length()-1;
                 int clientI = clientFQDN.length()-1;
@@ -51,13 +57,13 @@ public class DNSSelectionPolicy extends AbstractSelectionPolicy {
                     }
                     match++;
                 }
+                if (match < minPrefix)
+                    continue;
+
                 list.add(new UsableOSD(osd.getUuid(), match));
-                System.out.println("match: "+osdHostName+" with "+match);
             } catch (UnknownUUIDException ex) {
             }
         }
-
-        System.out.println("list: "+list);
 
         int availOSDs = (amount > list.size()) ? list.size() : amount;
         String[] osds = new String[availOSDs];

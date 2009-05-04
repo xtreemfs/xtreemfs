@@ -90,11 +90,23 @@ public class DNSSelectionPolicyTest extends TestCase {
         assertEquals("osd4",selectedOSDs[1]);
         assertEquals("osd1",selectedOSDs[2]);
 
+        selectedOSDs = p.getOSDsForNewFile(osds, clientAddr, 10, "7");
+
+        assertEquals(3,selectedOSDs.length);
+        assertEquals("osd3",selectedOSDs[0]);
+        assertEquals("osd4",selectedOSDs[1]);
+        assertEquals("osd1",selectedOSDs[2]);
+
 
         clientAddr = InetAddress.getByName("www.heise.de");
 
         selectedOSDs = p.getOSDsForNewFile(osds, clientAddr, 10, null);
 
+        assertEquals("osd2",selectedOSDs[0]);
+
+        selectedOSDs = p.getOSDsForNewFile(osds, clientAddr, 10, "5");
+
+        assertEquals(1,selectedOSDs.length);
         assertEquals("osd2",selectedOSDs[0]);
 
     }
