@@ -96,9 +96,6 @@ namespace org
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
           YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory, xtreemfs_volume_flags );
 
-          // Translate exceptions into errno codes
-          xtreemfs_volume = new yieldfs::ExceptionHandlingVolume( xtreemfs_volume, get_log() );
-
           if ( cache_files )
           {
             xtreemfs_volume = new yieldfs::FileCachingVolume( xtreemfs_volume, get_log() );

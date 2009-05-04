@@ -25,7 +25,7 @@ namespace org
         const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
            
 
-        Volume( const std::string& name, YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<MRCProxy> mrc_proxy, YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory, uint32_t flags = 0 );        
+        Volume( const std::string& name, YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<MRCProxy> mrc_proxy, YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL );        
 
         YIELD::auto_Object<DIRProxy> get_dir_proxy() const { return dir_proxy; }
         uint32_t get_flags() const { return flags; }
@@ -39,17 +39,20 @@ namespace org
         bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
         
       private:
-        ~Volume() { }
+        friend class File;
 
+        ~Volume() { }
 
         std::string name;
         YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
         YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory;
         uint32_t flags;
-
+        YIELD::auto_Object<YIELD::Log> log;
 
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
+        void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );
+        void set_errno( const char* operation_name, std::exception& exc );
       };
     };
   };
