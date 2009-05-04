@@ -4,7 +4,8 @@ package org.xtreemfs.interfaces;
 public enum OSDSelectionPolicyType 
 {
     OSD_SELECTION_POLICY_SIMPLE( 1 ),
-    OSD_SELECTION_POLICY_PROXIMITY( 2 );    
+    OSD_SELECTION_POLICY_PROXIMITY( 2 ),
+    OSD_SELECTION_POLICY_DNS( 3 );    
 
     private int __value; 
     

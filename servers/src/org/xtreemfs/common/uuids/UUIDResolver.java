@@ -259,6 +259,16 @@ public final class UUIDResolver extends Thread {
     public static void addLocalMapping(ServiceUUID uuid, int port, boolean useSSL) {
         addLocalMapping(uuid.toString(), port, useSSL);
     }
+
+    public static void addTestMapping(String uuid, String hostname, int port, boolean useSSL) {
+        assert (theInstance != null);
+
+        UUIDCacheEntry e = new UUIDCacheEntry(uuid, (useSSL ? "oncrpcs" : "oncrpc"), new InetSocketAddress(
+            hostname, port), Long.MAX_VALUE);
+
+        e.setSticky(true);
+        theInstance.cache.put(uuid, e);
+    }
     
     public static void shutdown(UUIDResolver nonSingleton) {
         nonSingleton.quit = true;

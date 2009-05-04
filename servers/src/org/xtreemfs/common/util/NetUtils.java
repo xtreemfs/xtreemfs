@@ -24,6 +24,7 @@
 package org.xtreemfs.common.util;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -113,8 +114,11 @@ public class NetUtils {
                     InetAddress inetAddr = addr.getAddress();
                     
                     if (inetAddr.isSiteLocalAddress()) {
-                        endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port,
-                            "*", 3600));
+                        String hostAddr = inetAddr.getHostAddress();
+                        if (hostAddr.lastIndexOf('%') >= 0) {
+                            hostAddr = hostAddr.substring(0, hostAddr.lastIndexOf('%'));
+                        }
+                        endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*", 3600));
                         break;
                     }
                 }
