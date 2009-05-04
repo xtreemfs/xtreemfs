@@ -94,7 +94,7 @@ namespace org
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
           if ( cache_metadata )
             xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
-          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory, xtreemfs_volume_flags );
+          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory, xtreemfs_volume_flags, get_log() );
 
           if ( cache_files )
           {
