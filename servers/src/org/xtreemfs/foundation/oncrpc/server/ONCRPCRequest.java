@@ -25,6 +25,7 @@ package org.xtreemfs.foundation.oncrpc.server;
 
 import java.net.SocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -69,6 +70,9 @@ public class ONCRPCRequest {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "response "+response.getTypeName()+" sent to client "+this.record.getConnection().getClientAddress());
+        }
         serializeAndSendRespondse(response);
     }
 
@@ -76,6 +80,9 @@ public class ONCRPCRequest {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "ProtocolException: GARBAGE ARGS sent to client "+this.record.getConnection().getClientAddress());
+        }
         sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS,ErrNo.EINVAL, message));
     }
     
@@ -84,6 +91,9 @@ public class ONCRPCRequest {
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
         final String strace = OutputUtils.stackTraceToString(rootCause);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "errnoException: SYSTEM ERR/Internal Server Error sent to client "+this.record.getConnection().getClientAddress());
+        }
         sendException(new errnoException(ErrNo.EIO, "internal server error caused by: "+rootCause, strace));
     }
 
@@ -91,6 +101,9 @@ public class ONCRPCRequest {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 exception.getAccept_stat());
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "ProtocolException: accept_stat="+exception.getAccept_stat()+" sent to client "+this.record.getConnection().getClientAddress());
+        }
         sendException(exception);
     }
 
@@ -98,6 +111,9 @@ public class ONCRPCRequest {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, exception.toString()+" sent to client "+this.record.getConnection().getClientAddress());
+        }
         sendException(exception);
     }
 
