@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 
-import sys, os.path
-from copy import copy
-
-my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
-try:
-    import yidl
-except ImportError:        
-    yidl_dir_path = os.path.join( my_dir_path, "..", "..", "share", "yidl", "src" )
-    if not yidl_dir_path in sys.path: sys.path.append( yidl_dir_path )
-    import yidl
-    
-from yidl.java_target import *
 from yidl.generator import *
+from yidl.java_target import *
 from yidl.string_utils import *
 
 
@@ -334,8 +323,11 @@ class XtreemFSJavaResponseType(XtreemFSJavaStructType):
 class XtreemFSJavaTarget(JavaTarget): pass
                                 
            
-if __name__ == "__main__":     
+if __name__ == "__main__":
+    import sys, os.path
+         
     if len( sys.argv ) == 1:
+        my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
         sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) ), 
                            "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src" ) ) ) )
         
