@@ -30,7 +30,7 @@ using namespace org::xtreemfs::client;
 
 
 Volume::Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SSLContext> ssl_context, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
-  : flags( flags ), log( log )
+  : name( name ), flags( flags ), log( log )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
   dir_proxy = DIRProxy::create( stage_group, dir_sockaddr, ssl_context, log );
@@ -348,20 +348,20 @@ bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 
 void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response )
 {
-  YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+  YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 }
 
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
+  if ( log != NULL )
+    log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << exc.what();
 #ifdef _WIN32
   YIELD::Exception::set_errno( ERROR_ACCESS_DENIED );
 #else
   YIELD::Exception::set_errno( EIO );
 #endif  
-  if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << exc.what();
 }
 
 bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags )

@@ -57,6 +57,9 @@ namespace org
           uint32_t get_ttl_s() const { return ttl_s; }
           double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
 
+          // Object
+          CachedAddressMappingURI& incRef() { return YIELD::Object::incRef( *this ); }
+
         private:
           ~CachedAddressMappingURI() { }
 

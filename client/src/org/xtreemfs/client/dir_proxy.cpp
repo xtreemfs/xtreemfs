@@ -78,9 +78,9 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid
 //    uri_str << address_mapping.get_protocol() << "://" << "localhost" << ":" << address_mapping.get_port();
     CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl_s() );
     uuid_to_uri_cache_lock.acquire();
-    uuid_to_uri_cache[uuid] = uri;
+    uuid_to_uri_cache[uuid] = &uri->incRef();
     uuid_to_uri_cache_lock.release();
-    return *uri;
+    return uri;
   }
   else
     throw YIELD::Exception( "could not find address mapping for UUID" );
