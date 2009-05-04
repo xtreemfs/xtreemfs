@@ -20,7 +20,7 @@ namespace org
         VolumeTestSuite( const char* test_suite_name )
           : YIELD::VolumeTestSuite<Volume>( test_suite_name )
         {
-          stage_group = &YIELD::SEDAStageGroup::createStageGroup();
+          stage_group = new YIELD::SEDAStageGroup( "VolumeTestSuite StageGroup" );
           dir_proxy = org::xtreemfs::client::DIRProxy::create( *stage_group, YIELD::URI( "oncrpc://localhost/" ) );
           mrc_proxy = org::xtreemfs::client::MRCProxy::create( *stage_group, YIELD::URI( "oncrpc://localhost/" ) );
           osd_proxy_factory = new org::xtreemfs::client::OSDProxyFactory( dir_proxy, *stage_group );
@@ -28,13 +28,8 @@ namespace org
           addTests( *volume );
         }
 
-        virtual ~VolumeTestSuite()
-        {
-          YIELD::SEDAStageGroup::destroyStageGroup( *stage_group );
-        }
-
       private:
-        YIELD::SEDAStageGroup* stage_group;
+        YIELD::auto_Object<YIELD::SEDAStageGroup> stage_group;
         YIELD::auto_Object<org::xtreemfs::client::DIRProxy> dir_proxy;
         YIELD::auto_Object<org::xtreemfs::client::MRCProxy> mrc_proxy;
         YIELD::auto_Object<org::xtreemfs::client::OSDProxyFactory> osd_proxy_factory;

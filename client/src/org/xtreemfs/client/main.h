@@ -53,7 +53,7 @@ namespace org
         Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : YIELD::Main( program_name, program_description, files_usage )
         {
-          stage_group = &YIELD::SEDAStageGroup::createStageGroup();
+          stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
 
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
@@ -67,9 +67,7 @@ namespace org
         }
 
         virtual ~Main()
-        {
-          YIELD::StageGroup::destroyStageGroup( *stage_group );
-        }
+        { }
 
         YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
         {
@@ -148,7 +146,7 @@ namespace org
 
         YIELD::auto_Object<YIELD::Log> log;
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
-        YIELD::StageGroup* stage_group;
+        YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
         template <class ProxyType>
