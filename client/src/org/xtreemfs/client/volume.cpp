@@ -354,9 +354,9 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
 #ifdef _WIN32
-  ::SetLastError( static_cast<DWORD>( EIO ) );
+  ::SetLastError( ERROR_ACCESS_DENIED );
 #else
-  errno = static_cast<int>( ERROR_ACCESS_DENIED );
+  errno = EIO;
 #endif
   
   if ( log != NULL )
