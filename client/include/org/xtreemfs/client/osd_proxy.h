@@ -17,10 +17,10 @@ namespace org
       class OSDProxy : public YIELD::ONCRPCClient
       {
       public:
-        static YIELD::auto_Object<OSDProxy> create( YIELD::StageGroup& stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        static YIELD::auto_Object<OSDProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
         {
           YIELD::auto_Object<OSDProxy> proxy = new OSDProxy( peer_sockaddr, ssl_context, log );
-          stage_group.createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
+          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
           return proxy;
         }       
 

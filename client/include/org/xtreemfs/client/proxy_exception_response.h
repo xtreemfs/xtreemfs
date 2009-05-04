@@ -20,6 +20,7 @@ namespace org
         { }
 
         virtual uint32_t get_error_code() const { return 0; }
+        uint32_t get_platform_error_code() const;
         virtual const std::string& get_error_message() const { return empty_error_message; }
         virtual const std::string& get_stack_trace() const { return empty_stack_trace; }
         virtual void set_error_code( uint32_t error_code ) { }

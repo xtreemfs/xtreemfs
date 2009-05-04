@@ -84,16 +84,24 @@ namespace org
           return createProxy<OSDProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
         }
 
-        YIELD::auto_Object<OSDProxyFactory> createOSDProxyFactory( const YIELD::URI& dir_uri )
-        {
-          return new OSDProxyFactory( *createDIRProxy( dir_uri ).release(), *stage_group );
-        }
-
         YIELD::auto_Object<YIELD::Log> get_log()
         {
           if ( log == NULL )
             log = new YIELD::Log( std::cout, get_log_level() );
           return log;
+        }
+
+        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
+        {
+          if ( ssl_context == NULL )
+          {
+            if ( !pkcs12_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
+            else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+          }
+
+          return ssl_context;
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -155,23 +163,10 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( *stage_group, checked_uri, get_ssl_context(), get_log() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_ssl_context(), get_log() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
           return proxy;
-        }
-
-        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
-        {
-          if ( ssl_context == NULL )
-          {
-            if ( !pkcs12_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
-            else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
-          }
-
-          return ssl_context;
         }
       };
     };

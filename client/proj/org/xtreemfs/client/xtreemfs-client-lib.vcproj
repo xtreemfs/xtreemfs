@@ -179,10 +179,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_factory.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\include\org\xtreemfs\client\path.h"
     >
 </File>
@@ -364,15 +360,15 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy_factory.cpp"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\path.cpp"
     >
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\policy_container.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy_exception_response.cpp"
     >
 </File>
 <File

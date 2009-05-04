@@ -23,15 +23,15 @@ namespace org
       class DIRProxy : public YIELD::ONCRPCClient
       {
       public:
-        static YIELD::auto_Object<DIRProxy> create( YIELD::StageGroup& stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
         {
           YIELD::auto_Object<DIRProxy> proxy = new DIRProxy( peer_sockaddr, ssl_context, log );
-          stage_group.createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
+          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
           return proxy;
         }       
 
-        YIELD::URI getURIFromUUID( const std::string& uuid );
-        YIELD::URI getVolumeURIFromVolumeName( const std::string& volume_name );
+        YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
+        YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
 
         // YIELD::EventHandler
         const char* getEventHandlerName() const { return "DIRProxy"; }
@@ -58,6 +58,8 @@ namespace org
           double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
 
         private:
+          ~CachedAddressMappingURI() { }
+
           uint32_t ttl_s;
           double creation_epoch_time_s;
         };

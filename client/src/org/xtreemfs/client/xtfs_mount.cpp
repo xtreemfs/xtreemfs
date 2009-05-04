@@ -77,40 +77,28 @@ namespace org
 #endif
           }
 
-          // Create the DIRProxy
-          YIELD::auto_Object<DIRProxy> dir_proxy = createDIRProxy( *dir_uri );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using DIR URI " << *dir_uri << ".";
-
-          // Create the MRCProxy
-          YIELD::URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( volume_name );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": using MRC URI " << mrc_uri << ".";
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( mrc_uri );
-
-          // Create the OSDProxyFactory
-          YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory = createOSDProxyFactory( *dir_uri );
-
-          uint32_t xtreemfs_volume_flags = 0;
+          uint32_t volume_flags = 0;
           if ( cache_files )
-            xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
+            volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
           if ( cache_metadata )
-            xtreemfs_volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
-          YIELD::auto_Object<YIELD::Volume> xtreemfs_volume = new Volume( volume_name, dir_proxy, mrc_proxy, osd_proxy_factory, xtreemfs_volume_flags, get_log() );
+            volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
+          YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_ssl_context(), volume_flags, get_log() );
 
           if ( cache_files )
           {
-            xtreemfs_volume = new yieldfs::FileCachingVolume( xtreemfs_volume, get_log() );
+            volume = new yieldfs::FileCachingVolume( volume, get_log() );
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
           }
 
           if ( cache_metadata )
           {
-            xtreemfs_volume = new yieldfs::StatCachingVolume( xtreemfs_volume, get_log(), 5 );
+            volume = new yieldfs::StatCachingVolume( volume, get_log(), 5 );
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
           }
 
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
-            xtreemfs_volume = new yieldfs::TracingVolume( xtreemfs_volume, get_log() );
+            volume = new yieldfs::TracingVolume( volume, get_log() );
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
           }
 
@@ -126,7 +114,7 @@ namespace org
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
           }
 
-          YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( xtreemfs_volume, get_log(), fuse_flags );
+          YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, get_log(), fuse_flags );
           int ret;
 #ifdef _WIN32
           ret = fuse->main( mount_point.c_str() );

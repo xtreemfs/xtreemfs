@@ -19,7 +19,7 @@ DIRProxy::~DIRProxy()
 {
   YIELD::Object::decRef( policies );
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
-    delete uuid_to_uri_i->second;
+    YIELD::Object::decRef( *uuid_to_uri_i->second );
 }
 
 YIELD::auto_Object<YIELD::Request> DIRProxy::createProtocolRequest( YIELD::auto_Object<> body )
@@ -29,7 +29,7 @@ YIELD::auto_Object<YIELD::Request> DIRProxy::createProtocolRequest( YIELD::auto_
   return new YIELD::ONCRPCRequest( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), body, get_log() );
 }
 
-YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
+YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid )
 {
   if ( uuid_to_uri_cache_lock.try_acquire() )
   {
@@ -40,12 +40,13 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
       double uri_age_s = YIELD::Time::getCurrentUnixTimeS()- uri->get_creation_epoch_time_s();
       if ( uri_age_s < uri->get_ttl_s() )
       {
+        uri->incRef();
         uuid_to_uri_cache_lock.release();
-        return *uri;
+        return uri;
       }
       else
       {
-        delete uri;
+        YIELD::Object::decRef( uri );
         uuid_to_uri_cache.erase( uuid_to_uri_i );
         uuid_to_uri_cache_lock.release();
       }
@@ -85,7 +86,7 @@ YIELD::URI DIRProxy::getURIFromUUID( const std::string& uuid )
     throw YIELD::Exception( "could not find address mapping for UUID" );
 }
 
-YIELD::URI DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
+YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
 {
   org::xtreemfs::interfaces::ServiceSet services;
   dir_interface.xtreemfs_service_get_by_name( volume_name, services, this );
@@ -97,7 +98,7 @@ YIELD::URI DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name 
       for ( org::xtreemfs::interfaces::ServiceDataMap::const_iterator service_data_i = data.begin(); service_data_i != data.end(); service_data_i++ )
       {
         if ( service_data_i->first == "mrc" )
-          return YIELD::URI( getURIFromUUID( service_data_i->second ) );
+          return getURIFromUUID( service_data_i->second );
       }
     }
 

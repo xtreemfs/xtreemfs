@@ -16,7 +16,7 @@ namespace org
     namespace interfaces
     {
       enum AccessControlPolicyType { ACCESS_CONTROL_POLICY_NULL = 1, ACCESS_CONTROL_POLICY_POSIX = 2, ACCESS_CONTROL_POLICY_VOLUME = 3 };
-      enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_SIMPLE = 1, OSD_SELECTION_POLICY_PROXIMITY = 2 };
+      enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_SIMPLE = 1, OSD_SELECTION_POLICY_PROXIMITY = 2, OSD_SELECTION_POLICY_DNS = 3 };
       enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
 
 

@@ -6,10 +6,7 @@
 
 #include "org/xtreemfs/client/dir_proxy.h"
 #include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/client/osd_proxy_factory.h"
 #include "org/xtreemfs/client/path.h"
-
-#include <string>
 
 
 namespace org
@@ -18,19 +15,20 @@ namespace org
   {
     namespace client
     {
+      class OSDProxy;
+
+
       class Volume : public YIELD::Volume
       {
       public:
         const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
         const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
-           
+        
+        Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL );
 
-        Volume( const std::string& name, YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<MRCProxy> mrc_proxy, YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL );        
-
-        YIELD::auto_Object<DIRProxy> get_dir_proxy() const { return dir_proxy; }
+        // Callbacks for File
         uint32_t get_flags() const { return flags; }
-        YIELD::auto_Object<MRCProxy> get_mrc_proxy() const { return mrc_proxy; }
-        YIELD::auto_Object<OSDProxyFactory> get_osd_proxy_factory() const { return osd_proxy_factory; }
+        YIELD::auto_Object<OSDProxy> get_osd_proxy( const std::string& osd_uuid );
 
         // YIELD::Volume
         YIELD_PLATFORM_VOLUME_PROTOTYPES;
@@ -39,16 +37,17 @@ namespace org
         bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
         
       private:
-        friend class File;
+        ~Volume();
 
-        ~Volume() { }
-
+        YIELD::auto_Object<YIELD::StageGroup> stage_group;
         std::string name;
         YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
-        YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory;
         uint32_t flags;
         YIELD::auto_Object<YIELD::Log> log;
+
+        YIELD::STLHashMap<OSDProxy*> osd_proxy_cache;
+        YIELD::Mutex osd_proxy_cache_lock;
 
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
         void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );

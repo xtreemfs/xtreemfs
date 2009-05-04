@@ -4,7 +4,6 @@
 #include "org/xtreemfs/client/file.h"
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy.h"
-#include "org/xtreemfs/client/osd_proxy_factory.h"
 #include "org/xtreemfs/client/volume.h"
 using namespace org::xtreemfs::client;
 
@@ -15,30 +14,17 @@ using namespace org::xtreemfs::client;
 #define ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( OperationName ) \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
-    parent_volume.set_errno( #OperationName, proxy_exception_response ); \
-  } \
-  catch ( std::exception& exc ) \
-  { \
-    parent_volume.set_errno( #OperationName, exc ); \
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
   } \
 
 
-File::File( Volume& parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-: parent_volume( parent_volume ), path( path ), file_credentials( file_credentials )
-{
-  const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
-  osd_proxies = new OSDProxy*[osd_uuids.size()];
-  memset( osd_proxies, 0, sizeof( *osd_proxies ) );
-}
+File::File( Volume& parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+: parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
+{ }
 
 File::~File()
 {
   flush();
-
-  const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
-  for ( uint32_t osd_i = 0; osd_i < osd_uuids.size(); osd_i++ )
-    YIELD::Object::decRef( osd_proxies[osd_i] );
-  delete [] osd_proxies;
 }
 
 bool File::datasync()
@@ -59,7 +45,7 @@ bool File::flush()
   {
     if ( !latest_osd_write_response.get_new_file_size().empty() )  
     {
-      parent_volume.get_mrc_proxy()->update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+      mrc_proxy->update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
       latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
     }  
     return true;
@@ -73,7 +59,7 @@ YIELD::auto_Object<YIELD::Stat> File::getattr()
   return parent_volume.getattr( path );
 }
 
-OSDProxy& File::get_osd_proxy( uint64_t object_number )
+YIELD::auto_Object<OSDProxy> File::get_osd_proxy( uint64_t object_number )
 {
   const org::xtreemfs::interfaces::StripingPolicy& striping_policy = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy();
 
@@ -82,12 +68,8 @@ OSDProxy& File::get_osd_proxy( uint64_t object_number )
     case org::xtreemfs::interfaces::STRIPING_POLICY_RAID0:
     {      
       size_t osd_i = object_number % striping_policy.get_width();
-      if ( osd_proxies[osd_i] == NULL )
-      {
-        const org::xtreemfs::interfaces::StringSet& osd_uuids = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids();
-        osd_proxies[osd_i] = parent_volume.get_osd_proxy_factory()->createOSDProxy( osd_uuids[osd_i] ).release(); 
-      }
-      return *osd_proxies[osd_i];
+      const std::string& osd_uuid = file_credentials.get_xlocs().get_replicas()[0].get_osd_uuids()[osd_i];
+      return parent_volume.get_osd_proxy( osd_uuid );
     }
 
     default: YIELD::DebugBreak(); throw YIELD::Exception(); break;
@@ -136,9 +118,8 @@ YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-      OSDProxy& osd_proxy = get_osd_proxy( object_number );
       org::xtreemfs::interfaces::ObjectData object_data;
-      osd_proxy.read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
+      get_osd_proxy( object_number )->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
       YIELD::String* data = static_cast<YIELD::String*>( object_data.get_data().get() );
       if ( data && !data->empty() )
@@ -192,10 +173,10 @@ bool File::truncate( uint64_t new_size )
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( truncate )
   {
     org::xtreemfs::interfaces::XCap truncate_xcap;
-    parent_volume.get_mrc_proxy()->ftruncate( file_credentials.get_xcap(), truncate_xcap );
+    mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
     file_credentials.set_xcap( truncate_xcap );
     org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-    get_osd_proxy( 0 ).truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
+    get_osd_proxy( 0 )->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
     processOSDWriteResponse( osd_write_response );
   //  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
@@ -225,9 +206,8 @@ YIELD::Stream::Status File::writev( const struct iovec* buffers, uint32_t buffer
         object_size = stripe_size - object_offset;
       org::xtreemfs::interfaces::ObjectData object_data( new YIELD::String( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
 
-      OSDProxy& osd_proxy = get_osd_proxy( object_number );
       org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-      osd_proxy.write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, osd_write_response );
+      get_osd_proxy( object_number )->write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, osd_write_response );
 
       wbuf_p += object_size;
       file_offset += object_size;

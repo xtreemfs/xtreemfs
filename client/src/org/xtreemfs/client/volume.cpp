@@ -2,10 +2,8 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/volume.h"
-#include "org/xtreemfs/client/dir_proxy.h"
 #include "org/xtreemfs/client/file.h"
-#include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/client/osd_proxy_factory.h"
+#include "org/xtreemfs/client/osd_proxy.h"
 #include "org/xtreemfs/client/path.h"
 using namespace org::xtreemfs::client;
 
@@ -31,9 +29,20 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const std::string& name, YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<MRCProxy> mrc_proxy, YIELD::auto_Object<OSDProxyFactory> osd_proxy_factory, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
-  : name( name ), dir_proxy( dir_proxy ), mrc_proxy( mrc_proxy ), osd_proxy_factory( osd_proxy_factory ), flags( flags ), log( log )
-{ }
+Volume::Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SSLContext> ssl_context, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
+  : flags( flags ), log( log )
+{
+  stage_group = new YIELD::SEDAStageGroup( name.c_str() );
+  dir_proxy = DIRProxy::create( stage_group, dir_sockaddr, ssl_context, log );
+  YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, ssl_context, log );
+}
+
+Volume::~Volume()
+{
+  for ( YIELD::STLHashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
+    YIELD::Object::decRef( *osd_proxy_i->second );
+}
 
 bool Volume::access( const YIELD::Path& path, int amode )
 {
@@ -86,6 +95,28 @@ YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 #else
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
 #endif
+}
+
+YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid )
+{
+  YIELD::auto_Object<YIELD::URI> osd_uri = dir_proxy->getURIFromUUID( osd_uuid );
+  uint32_t osd_uri_hash = YIELD::string_hash( osd_uri->get_host() ) ^ osd_uri->get_port();
+
+  osd_proxy_cache_lock.acquire();
+  OSDProxy* osd_proxy = osd_proxy_cache.find( osd_uri_hash );
+  osd_proxy_cache_lock.release();
+
+  if ( osd_proxy == NULL )
+  {
+    osd_proxy = OSDProxy::create( stage_group, *osd_uri, dir_proxy->get_ssl_context(), dir_proxy->get_log() ).release();
+    osd_proxy->set_operation_timeout_ns( dir_proxy->get_operation_timeout_ns() );
+    osd_proxy->set_reconnect_tries_max( dir_proxy->get_reconnect_tries_max() );
+    osd_proxy_cache_lock.acquire();
+    osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
+    osd_proxy_cache_lock.release();
+  }
+
+  return osd_proxy->incRef();
 }
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
@@ -213,7 +244,7 @@ YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t
     org::xtreemfs::interfaces::FileCredentials file_credentials;
     mrc_proxy->open( path, system_v_flags, mode, attributes, file_credentials );
 
-    return new File( *this, path, file_credentials );
+    return new File( *this, mrc_proxy, path, file_credentials );
   }
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( open );
   return NULL;
@@ -227,7 +258,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
     const org::xtreemfs::interfaces::ReplicaSet& replicas = file_credentials.get_xlocs().get_replicas();
     for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
-      osd_proxy_factory->createOSDProxy( ( *replica_i ).get_osd_uuids()[0] )->unlink( file_credentials, file_id );
+      get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] )->unlink( file_credentials, file_id );
   }
 }
 
@@ -317,36 +348,7 @@ bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 
 void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response )
 {
-  uint32_t error_code = proxy_exception_response.get_error_code();
-
-  switch ( error_code )
-  {
-#ifdef _WIN32
-    case EACCES: ::SetLastError( ERROR_ACCESS_DENIED ); break;
-    case EEXIST: ::SetLastError( ERROR_ALREADY_EXISTS ); break;
-    case EINVAL: ::SetLastError( ERROR_INVALID_PARAMETER ); break;
-    case ENOENT: ::SetLastError( ERROR_FILE_NOT_FOUND ); break;
-    case WSAETIMEDOUT: ::SetLastError( ERROR_NETWORK_BUSY ); break;
-#endif
-    case 0:
-    {
-      if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_EMERG ) << "ExceptionHandlingVolume: logic error: tried to return exception with error_code = 0, crashing.";
-      YIELD::DebugBreak();
-    }
-    break;
-
-    default:
-    {
-#ifdef _WIN32
-      ::SetLastError( static_cast<DWORD>( error_code ) );
-#else
-      errno = static_cast<int>( error_code );
-#endif
-    }
-    break;
-  }
-
+  YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
 }
@@ -354,11 +356,10 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
 #ifdef _WIN32
-  ::SetLastError( ERROR_ACCESS_DENIED );
+  YIELD::Exception::set_errno( ERROR_ACCESS_DENIED );
 #else
-  errno = EIO;
-#endif
-  
+  YIELD::Exception::set_errno( EIO );
+#endif  
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << exc.what();
 }
