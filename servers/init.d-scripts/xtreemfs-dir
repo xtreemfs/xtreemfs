@@ -138,7 +138,7 @@ case "$1" in
         start
         ;;
     *)
-        echo -e "Usage: %0 {start|stop|restart|reload|status}\n"
+        echo -e "Usage: $0 {start|stop|restart|reload|status}\n"
 	log_failure_msg
         ;;
 esac
