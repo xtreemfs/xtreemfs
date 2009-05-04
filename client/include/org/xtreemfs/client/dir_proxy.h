@@ -66,8 +66,8 @@ namespace org
         YIELD::Mutex uuid_to_uri_cache_lock;
 
 
-        // YIELD::Proxy
-        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::auto_Object<YIELD::Object> out_body );
+        // YIELD::Client
+        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<> body );
       };
     };
   };

@@ -20,7 +20,7 @@ MRCProxy::~MRCProxy()
   YIELD::Object::decRef( policies );
 }
 
-YIELD::ONCRPCRequest* MRCProxy::createONCRPCRequest( YIELD::auto_Object<YIELD::Object> body )
+YIELD::auto_Object<YIELD::Request> MRCProxy::createProtocolRequest( YIELD::auto_Object<> body )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );

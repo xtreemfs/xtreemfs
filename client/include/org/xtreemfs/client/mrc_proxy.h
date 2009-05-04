@@ -70,8 +70,8 @@ namespace org
         PolicyContainer* policies;
 
 
-        // YIELD::Proxy
-        YIELD::ONCRPCRequest* createONCRPCRequest( YIELD::auto_Object<YIELD::Object> body );
+        // YIELD::Client
+        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<> body );
       };
     };
   };
