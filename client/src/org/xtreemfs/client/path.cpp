@@ -25,7 +25,7 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
       next_sep = global_path.find( PATH_SEPARATOR, next_sep );
     }
 #else
-    if ( local_path.get_host_charset_path()[0] == PATH_SEPARATOR )
+    if ( static_cast<const char*>( local_path )[0] == PATH_SEPARATOR )
       global_path.append( static_cast<const std::string&>( this->local_path ) ); //.get_utf8_path() );
     else
     {
