@@ -58,7 +58,7 @@ include_dir_paths = [os.path.abspath( '../../share/google-breakpad/src' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-build_env.Library( "../../lib/google-breakpad_linux", (
+build_env.Library( "../../lib/google-breakpad", (
     r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc",
     r"../../share/google-breakpad/src/client/linux/handler/linux_thread.cc",
     r"../../share/google-breakpad/src/client/linux/handler/minidump_generator.cc",
