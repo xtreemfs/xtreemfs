@@ -37,6 +37,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <linux/limits.h>
 
