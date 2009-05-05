@@ -10,21 +10,7 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
 {
   if ( !local_path.empty() )
   {
-#ifdef _WIN32
-    global_path.append( "/", 1 );
-
-    if ( local_path == PATH_SEPARATOR_STRING )
-      global_path.append( static_cast<const std::string&>( this->local_path ) ); // .get_utf8_path().c_str() + 1, this->local_path.get_utf8_path().size() - 1 );
-    else
-      global_path.append( static_cast<const std::string&>( this->local_path ) ); // .get_utf8_path() );
-
-    std::string::size_type next_sep = global_path.find( PATH_SEPARATOR );
-    while ( next_sep != std::string::npos )
-    {
-      global_path[next_sep] = '/';
-      next_sep = global_path.find( PATH_SEPARATOR, next_sep );
-    }
-#else
+#if PATH_SEPARATOR == '/'
     if ( static_cast<const char*>( local_path )[0] == PATH_SEPARATOR )
       global_path.append( static_cast<const std::string&>( this->local_path ) ); //.get_utf8_path() );
     else
@@ -33,6 +19,24 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
 //      global_path.append( this->local_path.get_utf8_path() );
       global_path.append( static_cast<const std::string&>( this->local_path ) );       
     }
+#else
+    global_path.append( "/", 1 );
+
+    const std::string& local_path_str = static_cast<const std::string&>( this->local_path );
+    if ( local_path_str.size() > 1 )
+    {
+      if ( local_path_str[0] == PATH_SEPARATOR )
+        global_path.append( local_path_str.c_str() + 1, local_path_str.size() - 1 );
+      else
+        global_path.append( local_path_str );
+
+      std::string::size_type next_sep = global_path.find( PATH_SEPARATOR );
+      while ( next_sep != std::string::npos )
+      {
+        global_path[next_sep] = '/';
+        next_sep = global_path.find( PATH_SEPARATOR, next_sep );
+      }
+   }
 #endif
   }
   else
