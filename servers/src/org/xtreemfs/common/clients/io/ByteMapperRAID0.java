@@ -93,6 +93,8 @@ class ByteMapperRAID0 implements ByteMapper {
             assert(objOffset < stripeSize);
             assert(objOffset+bytesToRead <= stripeSize);
 
+            //System.out.println("read   "+obj+"   objOffset="+objOffset+" length="+bytesToRead);
+
             ReusableBuffer rb = objectStore.readObject(obj, objOffset, bytesToRead);
             assert(offset+bytesRead <= data.length);
             if (rb == null) {
@@ -118,7 +120,7 @@ class ByteMapperRAID0 implements ByteMapper {
     }
 
     public int write(byte[] data, int offset, int length, long filePosition) throws Exception{
-
+        
         final int firstObject = (int) (filePosition / this.stripeSize);
         int lastObject = (int) ( (filePosition + ((long)length)) / this.stripeSize);
         if (( (filePosition + ((long)length)) % this.stripeSize) == 0)
@@ -129,15 +131,17 @@ class ByteMapperRAID0 implements ByteMapper {
 
         int bytesInLastObject = -1;
         if (firstObject == lastObject) {
-            bytesInLastObject = length-offsetInFirstObject;
+            bytesInLastObject = length;
         } else {
             if (((filePosition + length) % this.stripeSize) == 0) {
                 bytesInLastObject = this.stripeSize;
+                assert(bytesInLastObject >= 0);
             } else {
                 bytesInLastObject = (int)((filePosition + length) % this.stripeSize);
+                assert(bytesInLastObject >= 0);
             }
         }
-
+        
 
         int bytesWritten = 0;
         for (int obj = firstObject; obj <= lastObject; obj++) {
@@ -152,6 +156,7 @@ class ByteMapperRAID0 implements ByteMapper {
             if (obj == lastObject)
                 bytesToWrite = bytesInLastObject;
 
+            
             ReusableBuffer view = ReusableBuffer.wrap(data, offset+bytesWritten, bytesToWrite);
             objectStore.writeObject(objOffset, obj, view);
             bytesWritten += bytesToWrite;
