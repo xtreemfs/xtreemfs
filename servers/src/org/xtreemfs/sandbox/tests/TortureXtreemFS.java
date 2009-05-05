@@ -156,9 +156,6 @@ public class TortureXtreemFS {
                     if (testSequential(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
                         continue;
                     }
-                    if (testRandom(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
-                        continue;
-                    }
                 }
             }
             
@@ -294,7 +291,7 @@ public class TortureXtreemFS {
         final long tDelete = System.currentTimeMillis();
         double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
         double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
-        System.out.format("rnd gaps       bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", recsize, tWrite, writeRate, tRead, readRate);
+        System.out.format("fs: %8d   bs: %8d    write: %6d ms   %6.0f kb/s    read: %6d ms   %6.0f kb/s\n", fsize / 1024, recsize, tWrite, writeRate, tRead, readRate);
         return false;
     }
 
