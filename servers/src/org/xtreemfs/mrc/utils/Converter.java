@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -202,7 +203,11 @@ public class Converter {
             Replica repl = new Replica(sp, 0, osds); // TODO: replication flags
             replicas.add(repl);
         }
-        
+
+        /*
+        //only for testing r/o-replication
+        Collections.shuffle(replicas);
+        */
         XLocSet xLocSet = new XLocSet();
         xLocSet.setReplicas(replicas);
         xLocSet.setRepUpdatePolicy(xLocList.getReplUpdatePolicy());
@@ -253,10 +258,10 @@ public class Converter {
             return null;
         
         String pattern = (String) spMap.get("pattern");
-        int size = (Integer) spMap.get("size");
-        int width = (Integer) spMap.get("width");
+        long size = (Long) spMap.get("size");
+        long width = (Long) spMap.get("width");
         
-        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(pattern), size, width);
+        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(pattern), (int)size, (int)width);
     }
     
     /**
