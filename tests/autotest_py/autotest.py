@@ -152,9 +152,9 @@ capability_secret = testsecret
 
 def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT, osdnum=1 ):
     locals().update( globals() )
-    listen_port = OSD_ONCRPC_PORT + int( osdnum ) - 1
-    http_port = OSD_HTTP_PORT + int( osdnum ) - 1
-    object_dir = os.path.join( "data", "osd" + str( int( osdnum ) - 1 ) )
+    listen_port = OSD_ONCRPC_PORT + int( osdnum )
+    http_port = OSD_HTTP_PORT + int( osdnum )
+    object_dir = os.path.join( "data", "osd" + str( osdnum ) )
     open( os.path.join( "config", "osd" + str( osdnum ) + ".config" ), "w+" ).write( """\
 uuid = test-env-OSD%(osdnum)s
 debug_level = %(debug_level)s
@@ -196,21 +196,21 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
     
     generate_dir_config( debug_level, ssl_enabled )
     generate_mrc_config( debug_level, ssl_enabled )
-    for osdnum in xrange( 1, num_osds+1 ):
+    for osdnum in xrange( num_osds ):
         generate_osd_config( debug_level, ssl_enabled, osdnum )
 
     _start_service( "dir" )
-    time.sleep( 0.5 )
     _start_service( "mrc" )    
-    for osdnum in xrange( 1, num_osds+1 ):
+    for osdnum in xrange( num_osds ):
         _start_service( "osd", str( osdnum ) )
+
+    time.sleep( 1.0 ) # Wait for the servers to start
 
     if ssl_enabled:
         client_ssl_args = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s", "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" )
 
     if create_volumes:
-        time.sleep( 1.0 ) # Wait for the servers to start
-        for osdnum in xrange( 1, num_osds+1 ):
+        for osdnum in xrange( num_osds ):
             xtfs_mkvol_args = [XTFS_MKVOL_FILE_PATH]
             xtfs_mkvol_args.extend( ( "-d", str( debug_level ) ) )
             if ssl_enabled: xtfs_mkvol_args.extend( client_ssl_args )                
@@ -227,8 +227,7 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
                 sys.exit( 1 )
 
     if mount_volumes:
-        time.sleep( 1.0 )
-        for osdnum in xrange( 1, num_osds+1 ):
+        for osdnum in xrange( num_osds ):
             for direct_io in ( False, True ):
                 mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
                 mount_dir_path = os.path.join( "mnt", mount_dir_name ) 
@@ -259,11 +258,12 @@ def _start_service( service_name, service_num="" ):
     stderr = stdout = open( log_file_path, "a" )
     print "Starting", service_name.upper() + service_num, "service with command line", args, "and redirecting output to", log_file_path
     p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
+    time.sleep( 1.0 )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
 
 
 def stop_environment( num_osds=NUM_OSDS_DEFAULT ):
-    for osdnum in xrange( 1, num_osds+1 ):
+    for osdnum in xrange( num_osds ):
         _stop_service( "osd", str( osdnum ) )
     _stop_service( "mrc" )
     _stop_service( "dir" ) # Stop the DIR last so the other services can deregister
