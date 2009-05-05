@@ -31,7 +31,7 @@ import java.util.Set;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.include.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Service;
@@ -41,7 +41,6 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -333,15 +332,18 @@ public class MRCHelper {
             try {
                 
                 org.xtreemfs.interfaces.StripingPolicy sp = null;
-                if (!value.equals("null"))
-                    sp = Converter.stringToStripingPolicy(value);
+                sp = Converter.jsonStringToStripingPolicy(value);
                 
                 if (file.getId() == 1 && sp == null)
                     throw new UserException(ErrNo.EPERM, "cannot remove the volume's default striping policy");
                 
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
                 
-            } catch (NumberFormatException exc) {
+            } catch (JSONException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (ClassCastException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (NullPointerException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
             } catch (IllegalArgumentException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);

@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
@@ -222,7 +225,7 @@ public class Converter {
         
         StringTokenizer st = new StringTokenizer(spString, " ,\t");
         String policy = st.nextToken();
-        if(policy.equals("RAID0"))
+        if (policy.equals("RAID0"))
             policy = StripingPolicyType.STRIPING_POLICY_RAID0.toString();
         
         int size = Integer.parseInt(st.nextToken());
@@ -241,14 +244,19 @@ public class Converter {
      *            the striping policy string
      * @return the striping policy
      */
-    public static org.xtreemfs.interfaces.StripingPolicy stringToStripingPolicy(String spString) {
+    public static org.xtreemfs.interfaces.StripingPolicy jsonStringToStripingPolicy(String spString)
+        throws JSONException {
         
-        StringTokenizer st = new StringTokenizer(spString, " ,\t");
-        String policy = st.nextToken();
-        int size = Integer.parseInt(st.nextToken());
-        int width = Integer.parseInt(st.nextToken());
+        Map<String, Object> spMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(spString));
         
-        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(policy), size, width);
+        if(spMap == null || spMap.isEmpty())
+            return null;
+        
+        String pattern = (String) spMap.get("pattern");
+        int size = (Integer) spMap.get("size");
+        int width = (Integer) spMap.get("width");
+        
+        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(pattern), size, width);
     }
     
     /**
