@@ -1,13 +1,11 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "org/xtreemfs/client.h"
 #include "main.h"
 using namespace org::xtreemfs::client;
 
 #include "org/xtreemfs/interfaces/constants.h"
 
-#include "yield.h"
 #include "yieldfs.h"
 
 #include <vector>
@@ -83,7 +81,7 @@ namespace org
           if ( cache_metadata )
             volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
 
-          YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_ssl_context(), volume_flags, get_log() );
+          YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_socket_factory(), volume_flags, get_log() );
 
           if ( cache_files )
           {

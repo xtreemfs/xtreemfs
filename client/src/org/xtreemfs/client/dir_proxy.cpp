@@ -7,8 +7,8 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log )
-  : YIELD::ONCRPCClient( peer_sockaddr, ssl_context, log )
+DIRProxy::DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, YIELD::auto_Object<YIELD::Log> log )
+  : YIELD::ONCRPCClient( peer_sockaddr, socket_factory, log )
 {
   dir_interface.registerObjectFactories( *object_factories );
   org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );

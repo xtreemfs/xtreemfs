@@ -24,7 +24,7 @@ namespace org
         const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
         const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
         
-        Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL );
+        Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL );
 
         // Callbacks for File
         uint32_t get_flags() const { return flags; }

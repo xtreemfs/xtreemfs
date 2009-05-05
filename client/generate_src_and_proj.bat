@@ -1,7 +1,7 @@
 @ECHO OFF
 
 set GOOGLE_BREAKPAD_PATH=%CD%\share\google-breakpad
-set GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS=-s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e google_breakpad -e minidump_file_writer* -e *test* -e http_upload* -e md5.* -e pdb_source_line_writer.* -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src
+set GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS=-s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e google_breakpad -e minidump_file_writer* -e http_upload* -e md5.* -e pdb_source_line_writer.* -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src
 set GOOGLE_BREAKPAD_WINDOWS_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -e linux -e mac -e solaris
 set GOOGLE_BREAKPAD_LINUX_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -e windows -e mac -e solaris
 set XTREEMFS_PATH=%CD%\..
@@ -11,7 +11,7 @@ set YIELD_PATH=%YIELDFS_PATH%\share\yield
 REM set YIELD_PATH=%CD%\..\..\yield
 
 set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src --lu google-breakpad_d.lib --lwS google-breakpad_d.lib -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
-set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include -D YIELD_HAVE_OPENSSL
+set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%
 set DEPEND_YIELDFS_LIB_FLAGS=-L %YIELDFS_PATH%\lib -l yieldfs_d.lib -c %YIELDFS_PATH%\proj\yieldfs\yieldfs.SConscript %DEPEND_YIELD_LIB_FLAGS%

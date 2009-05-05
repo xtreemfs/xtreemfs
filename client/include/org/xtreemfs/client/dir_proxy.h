@@ -23,9 +23,9 @@ namespace org
       class DIRProxy : public YIELD::ONCRPCClient
       {
       public:
-        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
         {
-          YIELD::auto_Object<DIRProxy> proxy = new DIRProxy( peer_sockaddr, ssl_context, log );
+          YIELD::auto_Object<DIRProxy> proxy = new DIRProxy( peer_sockaddr, socket_factory, log );
           stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
           return proxy;
         }       
@@ -37,7 +37,7 @@ namespace org
         const char* getEventHandlerName() const { return "DIRProxy"; }
 
       private:
-        DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::Log> log );
+        DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, YIELD::auto_Object<YIELD::Log> log );
         ~DIRProxy();
 
 

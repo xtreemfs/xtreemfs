@@ -4,11 +4,12 @@
 #ifndef ORG_XTREEMFS_CLIENT_MAIN_H
 #define ORG_XTREEMFS_CLIENT_MAIN_H
 
+#if !defined(YIELD_HAVE_OPENSSL) && defined(_WIN32)
+#define YIELD_HAVE_OPENSSL 1
+#endif
 #include "yield/main.h"
 
-#include "org/xtreemfs/client/dir_proxy.h"
-#include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/interfaces/constants.h"
+#include "org/xtreemfs/client.h"
 
 #if defined(_WIN32)
 #include "client/windows/handler/exception_handler.h"
@@ -45,12 +46,8 @@ namespace org
             void* MinidumpCallback_context = this;
 #if defined(_WIN32)            
 //            if ( !IsDebuggerPresent() )            {
-            {
-              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": installing Google Breakpad exception handler.";
               exception_handler = new google_breakpad::ExceptionHandler( YIELD::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, google_breakpad::ExceptionHandler::HANDLER_ALL );
-            }
 #elif defined(__linux)
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": installing Google Breakpad exception handler.";
             exception_handler = new google_breakpad::ExceptionHandler( YIELD::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, true );
 #else
 #error
@@ -82,7 +79,6 @@ namespace org
           addOption( OPTION_PEM_PRIVATE_KEY_PASSPHRASE, "--pass", "--pem-private-key-passphrase", "PEM private key passphrase" );
           addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
-          ssl_context = NULL;
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           timeout_ms = 0;
@@ -113,17 +109,21 @@ namespace org
           return log;
         }
 
-        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
+        YIELD::auto_Object<YIELD::SocketFactory> get_socket_factory()
         {
-          if ( ssl_context == NULL )
+          if ( socket_factory == NULL )
           {
+#ifdef YIELD_HAVE_OPENSSL
             if ( !pkcs12_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
+              socket_factory = new YIELD::SSLSocketFactory( new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase ), get_log() );
             else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+              socket_factory = new YIELD::SSLSocketFactory( new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase ), get_log() );
+            else
+#endif
+              socket_factory = new YIELD::TCPSocketFactory( get_log() );
           }
 
-          return ssl_context;
+          return socket_factory;            
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -173,7 +173,7 @@ namespace org
         double timeout_ms;
 
         YIELD::auto_Object<YIELD::Log> log;
-        YIELD::auto_Object<YIELD::SSLContext> ssl_context;
+        YIELD::auto_Object<YIELD::SocketFactory> socket_factory;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
@@ -183,7 +183,7 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_ssl_context(), get_log() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_socket_factory(), get_log() );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
           return proxy;

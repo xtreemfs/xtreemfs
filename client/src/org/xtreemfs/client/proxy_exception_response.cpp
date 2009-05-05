@@ -6,9 +6,9 @@ using namespace org::xtreemfs::client;
 
 #ifdef _WIN32
 #include "yield/platform/windows.h"
-#else
-#include <errno.h>
 #endif
+
+#include <errno.h>
 
 
 uint32_t ProxyExceptionResponse::get_platform_error_code() const
