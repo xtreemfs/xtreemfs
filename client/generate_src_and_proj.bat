@@ -10,7 +10,7 @@ set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%YIELDFS_PATH%\share\yield
 REM set YIELD_PATH=%CD%\..\..\yield
 
-set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src --lu google-breakpad_d.lib --lwS google-breakpad_d.lib -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
+set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
 set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%

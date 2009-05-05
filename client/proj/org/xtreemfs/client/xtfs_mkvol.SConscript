@@ -68,14 +68,6 @@ for lib_dir_path in lib_dir_paths:
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-if sys.platform.startswith( "win" ):
-    for lib in ["google-breakpad.lib"]:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
-if not sys.platform.startswith( "win" ):
-    for lib in ["google-breakpad"]:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
 
 build_env.Program( "../../../../bin/xtfs_mkvol", (
     r"../../../../src/org/xtreemfs/client/xtfs_mkvol.cpp" ) )
