@@ -260,7 +260,7 @@ public class MRCHelper {
                 StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
                 if (sp == null)
                     return "";
-                return Converter.stripingPolicyToString(sp);
+                return Converter.stripingPolicyToJSONString(sp);
             case ac_policy_id:
                 return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
             case osdsel_policy_id:

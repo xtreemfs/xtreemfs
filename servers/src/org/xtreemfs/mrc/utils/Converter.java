@@ -249,7 +249,7 @@ public class Converter {
         
         Map<String, Object> spMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(spString));
         
-        if(spMap == null || spMap.isEmpty())
+        if (spMap == null || spMap.isEmpty())
             return null;
         
         String pattern = (String) spMap.get("pattern");
@@ -284,6 +284,17 @@ public class Converter {
     public static org.xtreemfs.interfaces.StripingPolicy stripingPolicyToStripingPolicy(StripingPolicy sp) {
         return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(sp.getPattern()), sp
                 .getStripeSize(), sp.getWidth());
+    }
+    
+    public static String stripingPolicyToJSONString(StripingPolicy sp)
+        throws JSONException {
+        
+        Map<String, Object> spMap = new HashMap<String, Object>();
+        spMap.put("pattern", sp.getPattern());
+        spMap.put("size", sp.getStripeSize());
+        spMap.put("width", sp.getWidth());
+        
+        return JSONParser.writeJSON(spMap);
     }
     
     /**
