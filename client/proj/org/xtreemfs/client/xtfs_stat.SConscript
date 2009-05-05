@@ -1,5 +1,6 @@
 import sys, os.path, platform
 
+SConscript( '../../../google-breakpad/google-breakpad.SConscript' )
 SConscript( 'xtreemfs-client-lib.SConscript' )
 
 
@@ -23,24 +24,24 @@ except:
         else: build_env["CCFLAGS"] += "/MDd /ZI /W3 "
         if not "user32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "user32.lib" )
         if not "advapi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "advapi32.lib" )
-        if not "gdi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "gdi32.lib" )        
-    else:        
+        if not "gdi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "gdi32.lib" )
+    else:
         build_env["CCFLAGS"] += " -fPIC -Wall -Wunused-macros " # -fPIC (Platform Independent Code) to compile a library as part of a shared object
-        if sys.platform == "linux2": 
-            build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 " 
+        if sys.platform == "linux2":
+            build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
-        elif sys.platform == "darwin": 
+        elif sys.platform == "darwin":
             build_env["CCFLAGS"] += " -D_FILE_OFFSET_BITS=64 "
             # build_env["LINKFLAGS"] += "-framework Carbon "
             build_env["LIBS"].append( "iconv" )
-        elif sys.platform.startswith( "freebsd" ): 
+        elif sys.platform.startswith( "freebsd" ):
             build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "intl", "iconv" ) )
-        elif sys.platform == "sunos5": 
+        elif sys.platform == "sunos5":
             build_env["tools"] = ["gcc", "g++", "gnulink", "ar"]
             build_env["CCFLAGS"] += "-fno-rtti -Dupgrade_the_compiler_to_use_STL=1 -D_REENTRANT "
             build_env["LIBS"].extend( ( "stdc++", "m", "socket", "nsl", "kstat", "rt", "iconv", "cpc" ) )
-            
+
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
         else: build_env["CCFLAGS"] += "-g -D_DEBUG "
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
@@ -75,7 +76,14 @@ for lib_dir_path in lib_dir_paths:
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
+if sys.platform.startswith( "win" ):
+    for lib in ["google-breakpad.lib"]:
+       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-AlwaysBuild( build_env.Program( r"../../../../bin/xtfs_stat", (
-r"../../../../src/org/xtreemfs/client/xtfs_stat.cpp"
-) ) )
+if not sys.platform.startswith( "win" ):
+    for lib in ["google-breakpad"]:
+       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
+
+
+build_env.Program( "../../../../bin/xtfs_stat", (
+    r"../../../../src/org/xtreemfs/client/xtfs_stat.cpp" ) )

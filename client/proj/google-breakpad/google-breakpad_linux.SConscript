@@ -54,17 +54,16 @@ except:
 
     Export( "build_env", "build_conf" )
 
-include_dir_paths = [os.path.abspath( '../../../../include' )]
+include_dir_paths = [os.path.abspath( '../../share/google-breakpad/src' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-# Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in []:
-   if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-if not sys.platform.startswith( "win" ):
-    for lib in ["xos_ams"]:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
-
-build_env.SharedLibrary( "../../../../lib/xos_ams_flog", (
-    r"../../../../src/org/xtreemfs/client/xos_ams_flog.c" ) )
+build_env.Library( "../../lib/google-breakpad_linux", (
+    r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/linux_thread.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/minidump_generator.cc",
+    r"../../share/google-breakpad/src/common/convert_UTF.c",
+    r"../../share/google-breakpad/src/common/string_conversion.cc",
+    r"../../share/google-breakpad/src/common/linux/dump_symbols.cc",
+    r"../../share/google-breakpad/src/common/linux/file_id.cc",
+    r"../../share/google-breakpad/src/common/linux/guid_creator.cc" ) )

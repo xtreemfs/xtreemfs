@@ -1,14 +1,16 @@
 @ECHO OFF
 
 set GOOGLE_BREAKPAD_PATH=%CD%\share\google-breakpad
+set GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS=-s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e google_breakpad -e processor -e tools -e sender -e minidump_file_writer* -e *test* -e http_upload* -e md5.* -e pdb_source_line_writer.* -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src
+set GOOGLE_BREAKPAD_WINDOWS_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -e linux -e mac -e solaris
+set GOOGLE_BREAKPAD_LINUX_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -e windows -e mac -e solaris
 set XTREEMFS_PATH=%CD%\..
 set XTREEMFS_CLIENT_PATH=%CD%
 set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%YIELDFS_PATH%\share\yield
 REM set YIELD_PATH=%CD%\..\..\yield
 
-set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src
-REM -l google-breakpad_d.lib -c proj\google-breakpad\google-breakpad.SConscript
+set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src --lu google-breakpad_d.lib --lwS google-breakpad_d.lib -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
 set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELD_PATH%\include -D YIELD_HAVE_OPENSSL
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%
@@ -47,7 +49,9 @@ python %YIELD_PATH%\bin\generate_proj.py -n xos_ams_flog -t dll -s %XTREEMFS_CLI
 
 REM Google Breakpad
 cd %XTREEMFS_CLIENT_PATH%\proj\google-breakpad
-python %YIELD_PATH%\bin\generate_proj.py --generate-vcproj -n google-breakpad -t lib --Dw UNICODE -s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e linux -e mac -e solaris -e google_breakpad -e processor -e tools -e sender -e minidump_file_writer* -e *test* -e http_upload* -e md5.* -e pdb_source_line_writer.* -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -o %XTREEMFS_CLIENT_PATH%\lib
+python %YIELD_PATH%\bin\generate_vcproj.py -n google-breakpad -t lib -D UNICODE %GOOGLE_BREAKPAD_WINDOWS_SOURCE_FLAGS% -o %XTREEMFS_CLIENT_PATH%\lib
+python %YIELD_PATH%\bin\generate_SConscript.py -n google-breakpad
+python %YIELD_PATH%\bin\generate_SConscript.py -n google-breakpad_linux -t lib %GOOGLE_BREAKPAD_LINUX_SOURCE_FLAGS% -o %XTREEMFS_CLIENT_PATH%\lib
 
  
 cd %XTREEMFS_CLIENT_PATH%

@@ -54,17 +54,6 @@ except:
 
     Export( "build_env", "build_conf" )
 
-include_dir_paths = [os.path.abspath( '../../../../include' )]
-for include_dir_path in include_dir_paths:
-    if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
+for custom_SConscript in ['google-breakpad_custom.SConscript']:
+    SConscript( custom_SConscript )
 
-# Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in []:
-   if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-if not sys.platform.startswith( "win" ):
-    for lib in ["xos_ams"]:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
-
-build_env.SharedLibrary( "../../../../lib/xos_ams_flog", (
-    r"../../../../src/org/xtreemfs/client/xos_ams_flog.c" ) )
