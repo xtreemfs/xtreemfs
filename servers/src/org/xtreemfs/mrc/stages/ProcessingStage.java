@@ -30,6 +30,7 @@ import java.util.Map;
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -183,8 +184,8 @@ public class ProcessingStage extends MRCStage {
         final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getOperationNumber());
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "operation for request " + rq + ": "
-                + op.getClass().getSimpleName());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "operation for request %s: %s", rq
+                    .toString(), op.getClass().getSimpleName());
         
         if (op == null) {
             rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION, "requested operation ("
@@ -235,7 +236,7 @@ public class ProcessingStage extends MRCStage {
             op.startRequest(rq);
         } catch (UserException exc) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
             op.finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {

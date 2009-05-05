@@ -17,46 +17,54 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Jan Stender (ZIB)
  */
 
 package org.xtreemfs.foundation;
 
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+
 /**
  * A base class for threads representing a life cycle. It offers methods for
  * blocking other threads until a certain life cycle event has occured. It
  * currently supports two life cycle-related events: startup and shutdown.
- *
+ * 
  * @author stender
- *
+ * 
  */
 public class LifeCycleThread extends Thread {
-
+    
     private final Object      startLock;
-
+    
     private final Object      stopLock;
-
+    
     private boolean           started;
-
+    
     private boolean           stopped;
-
+    
     private Exception         exc;
-
+    
     private LifeCycleListener listener;
-
+    
     public LifeCycleThread(String name) {
         super(name);
         startLock = new Object();
         stopLock = new Object();
     }
-
+    
     /**
      * This method should be invoked by subclasses when the startup procedure
      * has been completed.
      */
     protected void notifyStarted() {
+        
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "Thread %s started", Thread
+                    .currentThread().getName());
+        
         synchronized (startLock) {
             started = true;
             startLock.notifyAll();
@@ -64,12 +72,17 @@ public class LifeCycleThread extends Thread {
                 listener.startupPerformed();
         }
     }
-
+    
     /**
      * This method should be invoked by subclasses when the shutdown procedure
      * has been completed.
      */
     protected void notifyStopped() {
+        
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "Thread %s terminated", Thread
+                    .currentThread().getName());
+        
         synchronized (stopLock) {
             stopped = true;
             stopLock.notifyAll();
@@ -77,74 +90,77 @@ public class LifeCycleThread extends Thread {
                 listener.shutdownPerformed();
         }
     }
-
+    
     /**
      * This method should be invoked by subclasses when the thread has crashed.
      */
     protected void notifyCrashed(Exception exc) {
-
+        
+        Logging.logMessage(Logging.LEVEL_CRIT, this, "service ***CRASHED***, shutting down");
+        Logging.logError(Logging.LEVEL_CRIT, this, exc);
+        
         synchronized (startLock) {
             this.exc = exc;
             started = true;
             startLock.notifyAll();
         }
-
+        
         synchronized (stopLock) {
             this.exc = exc;
             stopped = true;
             stopLock.notifyAll();
         }
-
+        
         if (listener != null)
             listener.crashPerformed();
     }
-
+    
     /**
      * Synchronously waits for a notification indicating that the startup
      * procedure has been completed.
-     *
+     * 
      * @throws Exception
      *             if an error occured during the startup procedure
      */
     public void waitForStartup() throws Exception {
         synchronized (startLock) {
-
+            
             while (!started)
                 startLock.wait();
-
+            
             if (exc != null)
                 throw exc;
         }
     }
-
+    
     /**
      * Synchronously waits for a notification indicating that the shutdown
      * procedure has been completed.
-     *
+     * 
      * @throws Exception
      *             if an error occured during the shutdown procedure
      */
     public void waitForShutdown() throws Exception {
         synchronized (stopLock) {
-
+            
             if (!started)
                 return;
             while (!stopped)
                 stopLock.wait();
-
+            
             if (exc != null)
                 throw exc;
         }
     }
-
+    
     /**
      * Sets a listener waiting for life cycle events.
-     *
+     * 
      * @param listener
      *            the listener
      */
     public void setLifeCycleListener(LifeCycleListener listener) {
         this.listener = listener;
     }
-
+    
 }

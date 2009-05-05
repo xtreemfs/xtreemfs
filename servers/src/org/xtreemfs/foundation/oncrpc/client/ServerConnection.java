@@ -34,8 +34,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
-import org.xtreemfs.foundation.pinky.channels.ChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 
 /**
@@ -97,7 +98,8 @@ public class ServerConnection {
         if (waitt > MAX_RETRY_WAIT)
             waitt = MAX_RETRY_WAIT;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG,this,"next reconnect possible after "+(waitt/1000)+" s, "+this.numConnectAttempts);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                "next reconnect possible after %d s, %d", (waitt / 1000), this.numConnectAttempts);
         this.nextReconnectTime = System.currentTimeMillis()+waitt;
     }
 

@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 
 /**
@@ -85,7 +86,9 @@ public class ServiceAvailability {
                 } catch (InterruptedException ex) {
                 }
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutdown complete");
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "shutdown complete");
         }
     }
     

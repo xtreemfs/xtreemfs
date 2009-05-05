@@ -28,6 +28,8 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -191,6 +193,11 @@ public class OpenOperation extends MRCOperation {
             
             file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
             sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "assigned the following XLoc list to file %s:%d: %s", volume.getId(), file.getId(),
+                    xLocSet.toString());
         }
 
         else {
@@ -204,6 +211,10 @@ public class OpenOperation extends MRCOperation {
             / 1000 + Capability.DEFAULT_VALIDITY,
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
             trEpoch, master.getConfig().getCapabilitySecret());
+        
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                "issued the following capability for %s:%d: %s", volume.getId(), file.getId(), cap.toString());
         
         // update POSIX timestamps of file
         MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,

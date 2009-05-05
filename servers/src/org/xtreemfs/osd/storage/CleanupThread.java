@@ -331,7 +331,7 @@ public class CleanupThread extends LifeCycleThread {
         } catch (Exception thr) {
             this.notifyCrashed(thr);
         }
-        Logging.logMessage(Logging.LEVEL_INFO, this,"cleanup thread stopped");
+
         notifyStopped();
     }
     

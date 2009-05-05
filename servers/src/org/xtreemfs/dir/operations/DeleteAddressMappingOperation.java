@@ -28,6 +28,7 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
@@ -67,7 +68,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
             xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         }
     }

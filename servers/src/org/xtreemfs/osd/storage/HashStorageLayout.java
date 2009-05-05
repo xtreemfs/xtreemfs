@@ -46,6 +46,7 @@ import org.xtreemfs.common.checksums.StringChecksumAlgorithm;
 import org.xtreemfs.common.checksums.algorithms.JavaHash;
 import org.xtreemfs.common.checksums.algorithms.SDBM;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.osd.OSDConfig;
@@ -128,13 +129,13 @@ public class HashStorageLayout extends StorageLayout {
 
             // get the algorithm from the factory
             try {
-				checksumAlgo = ChecksumFactory.getInstance().getAlgorithm(config.getChecksumProvider());
-			} catch (NoSuchAlgorithmException e) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,
-                        "could not instantiate checksum algorithm '" + config.getChecksumProvider()
-                            + "'");
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "OSD checksums will be switched off");
-			}
+                checksumAlgo = ChecksumFactory.getInstance().getAlgorithm(config.getChecksumProvider());
+            } catch (NoSuchAlgorithmException e) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                    "could not instantiate checksum algorithm '%s'", config.getChecksumProvider());
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                    "OSD checksums will be switched off");
+            }
         }
 
         if (maxSubdirsPerDir != 0) {
@@ -224,8 +225,8 @@ public class HashStorageLayout extends StorageLayout {
             long calcedChecksum = checksumAlgo.getValue();
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "calc'ed checksum: " + calcedChecksum
-                    + ", stored checksum: " + checksum);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                    "calc'ed checksum: %s, stored checksum: %s", +calcedChecksum, checksum);
 
             // test the checksum
             return calcedChecksum == checksum;
@@ -654,7 +655,8 @@ public class HashStorageLayout extends StorageLayout {
                                 objectSize = (objectSize>=ch.length()) ? objectSize : ch.length();
                             }
                         }catch(NumberFormatException ne){
-                            Logging.logMessage(Logging.LEVEL_ERROR, this, "CleanUp: an illegal file was discovered and ignored.");
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                                "CleanUp: an illegal file was discovered and ignored.");
                         }
                     }
                 }

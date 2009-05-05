@@ -24,7 +24,6 @@
 package org.xtreemfs.common.util;
 
 import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -32,6 +31,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 
@@ -131,8 +131,8 @@ public class NetUtils {
         // in case no IP address could be found at all, use 127.0.0.1 for local
         // testing
         if (endpoints.isEmpty()) {
-            Logging.logMessage(Logging.LEVEL_WARN, null,
-                "could not find a valid IP address, will use 127.0.0.1 instead");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
+                "could not find a valid IP address, will use 127.0.0.1 instead", new Object[0]);
             endpoints.add(new AddressMapping("", 0, protocol, "127.0.0.1", port, "*", 3600));
         }
         

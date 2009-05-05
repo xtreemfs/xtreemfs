@@ -29,12 +29,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.xtreemfs.common.Request;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 public abstract class MRCStage extends LifeCycleThread {
     
@@ -133,81 +131,21 @@ public abstract class MRCStage extends LifeCycleThread {
                 rq = op.getRq();
                 
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "processing request XID="
-                        + rq.getRPCRequest().getRequestHeader().getXID() + " method: " + op.getStageMethod());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                        "processing request XID=%d method %d",
+                        rq.getRPCRequest().getRequestHeader().getXID(), op.getStageMethod());
                 
                 processMethod(op);
                 
             } catch (InterruptedException ex) {
                 break;
             } catch (Exception ex) {
-                if (rq != null)
-                    Logging
-                            .logMessage(Logging.LEVEL_DEBUG, this, "exception occurred while processing:"
-                                + rq);
-                Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
                 this.notifyCrashed(ex);
                 break;
             }
         }
         
         notifyStopped();
-    }
-    
-    /**
-     * Operation was not successful, returns an error to the client.
-     * 
-     * @param rq
-     *            the request
-     * @param err
-     *            the error details to send to the client
-     */
-    protected void methodExecutionFailed(StageMethod m, ErrorRecord err) {
-        assert (m != null);
-        if (m.getCallback() == null) {
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "event dropped (possibly finished) XID="
-                    + m.getRq().getRPCRequest().getRequestHeader().getXID() + " with error: " + err);
-            }
-            return;
-        }
-        assert (m.getRq() != null);
-        assert (err != null);
-        
-        if (err.getErrorClass() == ErrorClass.INTERNAL_SERVER_ERROR)
-            Logging.logMessage(Logging.LEVEL_ERROR, this, err.toString());
-        
-        m.getRq().setError(err);
-        m.getCallback().methodExecutionCompleted(m.getRq(), StageResponseCode.FAILED);
-    }
-    
-    /**
-     * Stage operation was executed successful.
-     * 
-     * @param rq
-     * @param code
-     */
-    protected void methodExecutionSuccess(StageMethod m, StageResponseCode code) {
-        assert (m != null);
-        assert (m.getRq() != null);
-        if (m.getCallback() == null) {
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "event dropped (possibly finished) XID="
-                    + m.getRq().getRPCRequest().getRequestHeader().getXID());
-            }
-            return;
-        }
-        m.getCallback().methodExecutionCompleted(m.getRq(), code);
-    }
-    
-    protected void calcRequestDuration(Request rq) {
-        long d = (System.nanoTime() - rq.getEnqueueNanos()) / 100000l;
-        _numRq.incrementAndGet();
-        if (_minRqTime.get() > d)
-            _minRqTime.set((int) d);
-        if (_maxRqTime.get() < d)
-            _maxRqTime.set((int) d);
-        _sumRqTime.addAndGet(d);
     }
     
     /**

@@ -7,10 +7,10 @@ package org.xtreemfs.osd.stages;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
@@ -130,7 +130,6 @@ public class VivaldiStage extends Stage {
             } catch (InterruptedException ex) {
                 break;
             } catch (Exception ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
                 notifyCrashed(ex);
                 break;
             }

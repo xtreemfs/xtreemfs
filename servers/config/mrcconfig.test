@@ -1,8 +1,24 @@
-# optional debug level (0 = emergency, 1 = alert, 2 = critical, 3 = error, 4 = warning, 5 = notice, 6 = info, 7 = debug)
-# debug.level = 4
+# optional debug level
+# 0: emergency
+# 1: alert
+# 2: critical
+# 3: error
+# 4: warning
+# 5: notice
+# 6: info (default)
+# 7: debug
+debug.level = 7
 
-# optional debug category
-#debug.category = all
+# optional debug categories - a space or comma-separated list of log message categories
+# all (default) - enable logging for all categories
+# lifecycle     - log messaages pertaining to service lifecycles
+# net           - network-related log messages
+# auth          - authorization-related log messages
+# stage         - log messages pertaining to the request flow through the stages
+# proc          - log messages pertaining to any kind of request processing
+# db            - database access log messages
+# misc          - any other log messages
+debug.categories = net proc
 
 # port for the service to listen on
 listen.port = 32636

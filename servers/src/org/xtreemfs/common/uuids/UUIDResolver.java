@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -108,9 +109,13 @@ public final class UUIDResolver extends Thread {
         if (theInstance == null) {
             new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
             theInstance.start();
-            Logging.logMessage(Logging.LEVEL_DEBUG, null, "started UUIDResolver");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "started UUIDResolver",
+                    new Object[0]);
         } else {
-            Logging.logMessage(Logging.LEVEL_INFO, null, "UUIDResolver already running!");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDResolver already running!",
+                    new Object[0]);
         }
     }
     
@@ -154,14 +159,20 @@ public final class UUIDResolver extends Thread {
                 + ". Attention: local mode enabled, no remote lookup possible.");
         RPCResponse<AddressMappingSet> r = null;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "loading uuid mapping for " + uuid);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "loading uuid mapping for %s", uuid);
         try {
             r = dir.xtreemfs_address_mappings_get(null, uuid);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent request to DIR");
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "sent request to DIR");
             AddressMappingSet ams = r.get();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "received response for " + uuid);
+            if (Logging.isDebug())
+                Logging
+                        .logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "received response for %s",
+                            uuid);
             if (ams.size() == 0) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "NO UUID MAPPING FOR: " + uuid);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "NO UUID MAPPING FOR: %s",
+                        uuid);
                 throw new UnknownUUIDException("uuid " + uuid + " is not registered at directory server");
             }
             for (AddressMapping addrMapping : ams) {
@@ -173,14 +184,15 @@ public final class UUIDResolver extends Thread {
                     final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtl_s() * 1000;
                     final InetSocketAddress endpoint = new InetSocketAddress(address, port);
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "matching uuid record found for uuid "
-                            + uuid + " with network " + network);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "matching uuid record found for uuid " + uuid + " with network " + network);
                     UUIDCacheEntry e = new UUIDCacheEntry(uuid, protocol, endpoint, validUntil);
                     cache.put(uuid, e);
                     return e;
                 }
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "NO UUID MAPPING FOR: " + uuid);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "NO UUID MAPPING FOR: %s", uuid);
             throw new UnknownUUIDException(
                 "there is no matching entry for my network in the uuid address mapping. The service at "
                     + uuid
@@ -211,8 +223,9 @@ public final class UUIDResolver extends Thread {
                 if (entry.getLastAccess() + maxUnusedEntry < TimeSync.getLocalSystemTime()) {
                     // dump entry!
                     iter.remove();
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "removed entry from UUID cache: "
-                        + entry.getUuid());
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "removed entry from UUID cache: %s", entry.getUuid());
                 } else {
                     // check if update is necessary
                     if (entry.getValidUntil() < TimeSync.getLocalSystemTime() + cacheCleanInterval) {
@@ -220,9 +233,8 @@ public final class UUIDResolver extends Thread {
                         try {
                             updates.add(fetchUUID(entry.getUuid()));
                         } catch (Exception ex) {
-                            Logging
-                                    .logMessage(Logging.LEVEL_WARN, this, "cannot refresh UIID mapping: "
-                                        + ex);
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                "cannot refresh UIID mapping: %s", ex.toString());
                             iter.remove();
                         }
                     }
@@ -249,8 +261,8 @@ public final class UUIDResolver extends Thread {
     public static void addLocalMapping(String localUUID, int port, boolean useSSL) {
         assert (theInstance != null);
         
-        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "oncrpcs" : "oncrpc"), new InetSocketAddress(
-            "localhost", port), Long.MAX_VALUE);
+        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "oncrpcs" : "oncrpc"),
+            new InetSocketAddress("localhost", port), Long.MAX_VALUE);
         
         e.setSticky(true);
         theInstance.cache.put(localUUID, e);
@@ -280,10 +292,13 @@ public final class UUIDResolver extends Thread {
             theInstance.quit = true;
             theInstance.interrupt();
             theInstance = null;
-            Logging.logMessage(Logging.LEVEL_DEBUG, null, "UUIDREsolver shut down");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
+                    new Object[0]);
         } else {
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,
-                "UUIDREsolver was already shut down or is not running");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                    "UUIDREsolver was already shut down or is not running", new Object[0]);
         }
     }
     

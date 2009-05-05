@@ -24,7 +24,7 @@
 
 package org.xtreemfs.common.auth;
 
-import org.xtreemfs.foundation.pinky.channels.ChannelIO;
+import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 
 /**
  * A simple provider that parses the JSON string sent in the authentication

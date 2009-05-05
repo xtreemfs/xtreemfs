@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.PolicyContainer;
@@ -58,7 +60,7 @@ public class FileAccessManager {
     public static final int                    O_TRUNC                = Constants.SYSTEM_V_FCNTL_H_O_TRUNC;
     
     public static final int                    O_APPEND               = Constants.SYSTEM_V_FCNTL_H_O_APPEND;
-
+    
     public static final int                    O_EXCL                 = Constants.SYSTEM_V_FCNTL_H_O_EXCL;
     
     public static final int                    NON_POSIX_SEARCH       = 04000000;
@@ -165,9 +167,10 @@ public class FileAccessManager {
                 policy = policyContainer.getFileAccessPolicy(policyId, volMan);
                 policies.put(policyId, policy);
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "could not load FileAccessPolicy with ID "
-                    + policyId);
-                Logging.logMessage(Logging.LEVEL_WARN, this, exc);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                    "could not load FileAccessPolicy with ID %d", policyId);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils
+                        .stackTraceToString(exc));
             }
         }
         

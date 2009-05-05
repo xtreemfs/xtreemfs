@@ -26,11 +26,12 @@ package org.xtreemfs.osd;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -43,29 +44,30 @@ import org.xtreemfs.osd.storage.CowPolicy;
  */
 public final class OSDRequest {
 
-	private final ONCRPCRequest rpcRequest;
-
+    private final ONCRPCRequest rpcRequest;
+    
     private Serializable        requestArgs;
-
-	/**
-	 * Request operation which contains state machine.
-	 */
-	private OSDOperation     operation;
-
-    private Object           attachment;
-
-    private long             requestId;
-
-    private static long      rqIdCounter = 1;
-
-    private RPCResponse[]    pendingRequests;
-
-    private String     fileId;
-    private Capability capability;
-
-    private XLocations locationList;
-
-    private CowPolicy        cowPolicy;
+    
+    /**
+     * Request operation which contains state machine.
+     */
+    private OSDOperation        operation;
+    
+    private Object              attachment;
+    
+    private long                requestId;
+    
+    private static long         rqIdCounter = 1;
+    
+    private RPCResponse[]       pendingRequests;
+    
+    private String              fileId;
+    
+    private Capability          capability;
+    
+    private XLocations          locationList;
+    
+    private CowPolicy           cowPolicy;
 
 
 	public OSDRequest(ONCRPCRequest request) {
@@ -79,7 +81,8 @@ public final class OSDRequest {
 
     public void sendProtocolException(ProtocolException protocolException) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending protocol exception "+protocolException);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending protocol exception %s",
+                protocolException.toString());
         }
         getRpcRequest().sendProtocolException(protocolException);
     }
@@ -92,15 +95,17 @@ public final class OSDRequest {
         if (getRpcRequest() != null) {
             getRpcRequest().sendInternalServerError(cause);
         } else {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error on internal request: "+cause);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,cause);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error on internal request: %s",
+                cause.toString());
+            Logging.logError(Logging.LEVEL_ERROR, this, cause);
         }
     }
 
     public void sendOSDException(int errno, String message) {
         OSDException ex = new OSDException(errno, message, "");
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending errno exception "+ex);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s", ex
+                    .toString());
         }
         getRpcRequest().sendGenericException(ex);
     }
@@ -108,7 +113,8 @@ public final class OSDRequest {
     public void sendException(Exception ex) {
         if (ex instanceof ONCRPCException) {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending exception "+ex);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending exception %s", ex
+                        .toString());
             }
             getRpcRequest().sendGenericException((ONCRPCException)ex);
         } else {

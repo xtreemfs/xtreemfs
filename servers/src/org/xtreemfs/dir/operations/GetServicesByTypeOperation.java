@@ -85,10 +85,9 @@ public class GetServicesByTypeOperation extends DIROperation {
             }
 
             xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"response: "+response);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         }
     }

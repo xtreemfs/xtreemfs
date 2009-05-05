@@ -33,6 +33,7 @@ import java.util.StringTokenizer;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.interfaces.Service;
@@ -45,8 +46,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     static final long MIN_FREE_CAPACITY = 32 * 1024 * 1024; // 32 mb
                                                             
     @Override
-    public ServiceSet getUsableOSDs(ServiceSet osds,
-        String args) {
+    public ServiceSet getUsableOSDs(ServiceSet osds, String args) {
         
         Set<String> rules = null;
         if (args != null) {
@@ -56,12 +56,12 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
                 
                 // parse the JSON formatted argument list
                 StringTokenizer st = new StringTokenizer(args, "[, \t");
-                while(st.hasMoreTokens())
+                while (st.hasMoreTokens())
                     rules.add(st.nextToken());
-                 
+                
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "invalid set of suitable OSDs: '"
-                    + args + "'");
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                    "invalid OSD selection arguments: '%s'", args);
             }
         }
         
@@ -81,7 +81,7 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
     
     static boolean hasFreeCapacity(Service osd) {
         String freeStr = osd.getData().get("free");
-
+        
         long free = Long.parseLong(freeStr);
         return free > MIN_FREE_CAPACITY;
     }
@@ -92,10 +92,10 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
      */
 
     static boolean hasTimedOut(Service osd) {
-
+        
         // if the OSD has contacted the DS within the last 10 minutes,
         // assume that it is still running
-
+        
         long updateTimestamp = osd.getLast_updated_s();
         long currentTime = TimeSync.getGlobalTime() / 1000;
         return currentTime - updateTimestamp > OSD_TIMEOUT_SPAN;
@@ -177,8 +177,8 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
                     try {
                         patternPort = Integer.valueOf(patternPortIP[1].split("/")[0]);
                     } catch (NumberFormatException f) {
-                        Logging.logMessage(Logging.LEVEL_WARN, null, "'" + pattern
-                            + "' port is not valid.");
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                            "'%s' port is not valid", pattern);
                     }
                 }
                 
@@ -194,14 +194,12 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
                         boolean wasNotZero = false;
                         for (int i = 3; i <= 0; i--) {
                             if (wasNotZero
-                                && (Integer.parseInt(osdIPv4[i]) != Integer
-                                        .parseInt(patternIPv4[i]))) {
+                                && (Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i]))) {
                                 return false;
                             } else {
                                 if (Integer.parseInt(patternIPv4[i]) != 0) {
                                     wasNotZero = true;
-                                    if ((Integer.parseInt(osdIPv4[i]) != Integer
-                                            .parseInt(patternIPv4[i])))
+                                    if ((Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i])))
                                         return false;
                                 }
                             }
@@ -226,12 +224,9 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
                     return true;
                 } catch (URISyntaxException e) {
                     Logging
-                            .logMessage(
-                                Logging.LEVEL_WARN,
-                                null,
-                                "'"
-                                    + pattern
-                                    + "' is not a valid identifier for an osd or osd-range and will be ignored.");
+                            .logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                                "'%s' is not a valid identifier for an osd or osd-range and will be ignored",
+                                pattern);
                 }
             }
         } else {

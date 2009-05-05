@@ -35,8 +35,8 @@ import java.util.Map;
 
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.NetUtils;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -96,7 +96,8 @@ public class HeartbeatThread extends LifeCycleThread {
                 
             }
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "cannot deregister at DIR: " + ex);
+            Logging.logMessage(Logging.LEVEL_WARN, this, "could not deregister service at DIR");
+            Logging.logError(Logging.LEVEL_WARN, this, ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
@@ -132,8 +133,8 @@ public class HeartbeatThread extends LifeCycleThread {
                 r2.get();
                 
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
-                        + " successfully registered at Directory Service");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "%s successfully registered at Directory Service", uuid);
             }
             
             // ... register the address mapping for the service
@@ -162,10 +163,10 @@ public class HeartbeatThread extends LifeCycleThread {
             }
             
             if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this,
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "registering the following address mapping for the service:");
                 for (AddressMapping mapping : endpoints)
-                    Logging.logMessage(Logging.LEVEL_INFO, this, mapping.toString());
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, mapping.toString());
             }
             
             // fetch the latest address mapping version from the Directory
@@ -196,8 +197,7 @@ public class HeartbeatThread extends LifeCycleThread {
         } catch (InterruptedException ex) {
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,
-                "an error occurred while initially contacting the Directory Service: "
-                    + OutputUtils.stackTraceToString(ex));
+                "an error occurred while initially contacting the Directory Service");
             notifyCrashed(ex);
         } finally {
             for (RPCResponse resp : responses)
@@ -233,14 +233,14 @@ public class HeartbeatThread extends LifeCycleThread {
                         r2.get();
                         
                         if (Logging.isDebug())
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this, uuid
-                                + " successfully updated at Directory Service");
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                                "%s successfully updated at Directory Service", uuid);
                     }
                     
                 } catch (IOException ex) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 } catch (ONCRPCException ex) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 } catch (InterruptedException ex) {
                     quit = true;
                     break;
@@ -262,7 +262,6 @@ public class HeartbeatThread extends LifeCycleThread {
         }
         
         notifyStopped();
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutdown complete");
     }
     
 }

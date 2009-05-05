@@ -41,18 +41,20 @@ import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.checksums.ChecksumFactory;
 import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleListener;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -309,7 +311,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         cThread.setLifeCycleListener(this);
 
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD at " + this.config.getUUID() + " ready");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "OSD at %s ready", this.getConfig()
+                    .getUUID().toString());
     }
 
     public CleanupThread getCleanupThread() {
@@ -344,11 +347,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
             
-            Logging.logMessage(Logging.LEVEL_INFO, this, "RequestController and all services operational");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                    "OSD RequestController and all services operational");
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "startup failed");
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             System.exit(1);
         }
         
@@ -388,11 +393,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             httpServ.stop(0);
             
-            Logging.logMessage(Logging.LEVEL_INFO, this, "OSD and all stages terminated");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD and all stages terminated");
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
@@ -415,11 +421,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             httpServ.stop(0);
 
-            Logging.logMessage(Logging.LEVEL_INFO, this, "OSD and all stages terminated");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD and all stages terminated");
 
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
@@ -458,7 +465,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed() {
-        Logging.logMessage(Logging.LEVEL_ERROR, this, "a component crashed... shutting down system!");
         this.shutdown();
     }
     
@@ -492,7 +498,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         try {
             OSDRequest request = new OSDRequest(rq);
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"received new request: "+rq);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq
+                        .toString());
             preprocStage.prepareRequest(request, new PreprocStage.ParseCompleteCallback() {
 
                 @Override
@@ -509,7 +516,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             });
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
@@ -606,10 +613,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             //send gmax to storage stage
             try {
                 GMAXMessage gmax = new GMAXMessage(msg);
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"received GMAX packet for : "+gmax.getFileId());
+                
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                        "received GMAX packet for: %s", gmax.getFileId());
+                
                 stStage.receivedGMAX_ASYNC(gmax.getFileId(), gmax.getTruncateEpoch(), gmax.getLastObject());
             } catch (Exception ex) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, OutputUtils
+                            .stackTraceToString(ex));
             }
         } else if (msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_REQUEST ||
                    msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_RESPONSE) {

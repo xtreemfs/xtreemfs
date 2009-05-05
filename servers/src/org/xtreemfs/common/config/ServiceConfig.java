@@ -26,15 +26,19 @@ package org.xtreemfs.common.config;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 
 public class ServiceConfig extends Config {
     
     protected int         debugLevel;
     
-    protected String      debugCategory;
+    protected Category[]  debugCategories;
     
     protected int         port;
     
@@ -76,8 +80,6 @@ public class ServiceConfig extends Config {
         
         this.debugLevel = this.readOptionalInt("debug.level", Logging.LEVEL_INFO);
         
-        this.debugCategory = this.readOptionalString("debug.category", "all");
-        
         this.port = this.readRequiredInt("listen.port");
         
         this.httpPort = this.readRequiredInt("http_port");
@@ -101,14 +103,37 @@ public class ServiceConfig extends Config {
         this.geoCoordinates = this.readOptionalString("geographic_coordinates", "");
         
         this.adminPassword = this.readOptionalString("admin_password", "");
+        
+        this.debugCategories = this.readCategories("debug.categories");
+    }
+    
+    protected Category[] readCategories(String property) {
+        
+        String tmp = this.readOptionalString(property, "");
+        StringTokenizer st = new StringTokenizer(tmp, " \t,");
+        
+        List<Category> cats = new LinkedList<Category>();
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            try {
+                cats.add(Category.valueOf(token));
+            } catch (IllegalArgumentException exc) {
+                System.err.println("invalid logging category: " + token);
+            }
+        }
+        
+        if (cats.size() == 0)
+            cats.add(Category.all);
+        
+        return cats.toArray(new Category[cats.size()]);
     }
     
     public int getDebugLevel() {
         return this.debugLevel;
     }
     
-    public String getDebugCategory() {
-        return this.debugCategory;
+    public Category[] getDebugCategories() {
+        return this.debugCategories;
     }
     
     public int getPort() {

@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
@@ -67,15 +68,16 @@ public abstract class MRCOperation {
         try {
             
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsing request arguments");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments");
             
             Request req = MRCInterface.createRequest(rq.getRPCRequest().getRequestHeader());
             req.deserialize(rq.getRPCRequest().getRequestFragment());
             rq.setRequestArgs(req);
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "successfully parsed request arguments:");
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, req.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                    "successfully parsed request arguments:");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, req.toString());
             }
             
             return null;
@@ -83,8 +85,9 @@ public abstract class MRCOperation {
         } catch (Throwable exc) {
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not parse request arguments:");
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                    "could not parse request arguments:");
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.stage, this, exc);
             }
             return new ErrorRecord(ErrorClass.INVALID_ARGS, exc.getMessage(), exc);
         }

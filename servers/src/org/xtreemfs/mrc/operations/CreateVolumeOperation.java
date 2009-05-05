@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
@@ -144,7 +145,7 @@ public class CreateVolumeOperation extends MRCOperation {
             
         } catch (UserException exc) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {
@@ -177,7 +178,7 @@ public class CreateVolumeOperation extends MRCOperation {
             
         } catch (UserException exc) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {

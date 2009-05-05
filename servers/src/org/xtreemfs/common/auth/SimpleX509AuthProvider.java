@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.pinky.channels.ChannelIO;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 
 /**
  * authentication provider for XOS certificates.
@@ -40,19 +41,24 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
     
     private NullAuthProvider nullAuth;
     
-    public UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx, ChannelIO channel)
-        throws AuthenticationException {
+    public UserCredentials getEffectiveCredentials(org.xtreemfs.interfaces.UserCredentials ctx,
+        ChannelIO channel) throws AuthenticationException {
         // use cached info!
         assert (nullAuth != null);
         if (channel.getAttachment() != null) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "using attachment...");
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this, "using attachment...");
             final Object[] cache = (Object[]) channel.getAttachment();
             final Boolean serviceCert = (Boolean) cache[0];
             if (serviceCert) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "service cert...");
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this, "service cert...");
                 return nullAuth.getEffectiveCredentials(ctx, channel);
             } else {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "using cached creds: " + cache[1]);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this, "using cached creds: "
+                        + cache[1]);
                 return (UserCredentials) cache[1];
             }
         }
@@ -65,7 +71,9 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                 String commonName = getNameElement(cert.getSubjectX500Principal().getName(), "CN");
                 
                 if (commonName.startsWith("host/") || commonName.startsWith("xtreemfs-service/")) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "X.509-host cert present");
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this,
+                            "X.509-host cert present");
                     channel.setAttachment(new Object[] { new Boolean(true) });
                     // use NullAuth in this case to parse JSON header
                     return nullAuth.getEffectiveCredentials(ctx, null);
@@ -76,8 +84,9 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                     List<String> gids = new ArrayList<String>(1);
                     gids.add(globalGID);
                     
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "X.509-User cert present: " + globalUID
-                        + "," + globalGID);
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this,
+                            "X.509-User cert present: %s, %s", globalUID, globalGID);
                     
                     boolean isSuperUser = gids.contains("xtreemfs-admin");
                     final UserCredentials creds = new UserCredentials(globalUID, gids, isSuperUser);
@@ -88,7 +97,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                 throw new AuthenticationException("no X.509-certificates present");
             }
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
+            Logging.logUserError(Logging.LEVEL_ERROR, Category.auth, this, ex);
             throw new AuthenticationException("invalid credentials " + ex);
         }
         

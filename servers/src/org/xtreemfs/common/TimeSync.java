@@ -28,6 +28,7 @@ package org.xtreemfs.common;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -47,7 +48,7 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * A dir client used to synchronize clocks
      */
-    private DIRClient  dir;
+    private DIRClient        dir;
     
     /**
      * interval in ms to wait between to synchronizations.
@@ -102,17 +103,17 @@ public final class TimeSync extends LifeCycleThread {
     public void run() {
         TimeSync.theInstance = this;
         notifyStarted();
-        String tsStatus = " using the local clock (precision is "+this.localTimeRenew+"ms)";
+        String tsStatus = " using the local clock (precision is " + this.localTimeRenew + "ms)";
         if (this.dir != null) {
-            tsStatus =" and remote sync every "+this.timeSyncInterval+"ms";
+            tsStatus = " and remote sync every " + this.timeSyncInterval + "ms";
         }
-        Logging.logMessage(Logging.LEVEL_INFO, this,"TimeSync is running "+tsStatus);
+        Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "TimeSync is running %s", tsStatus);
         while (!quit) {
             localSysTime = System.currentTimeMillis();
             if (localSysTime - lastSync > timeSyncInterval) {
                 resync();
             }
-            if (! quit) {
+            if (!quit) {
                 try {
                     TimeSync.sleep(localTimeRenew);
                 } catch (InterruptedException ex) {
@@ -121,7 +122,7 @@ public final class TimeSync extends LifeCycleThread {
             }
             
         }
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"shutdown complete");
+        
         notifyStopped();
         theInstance = null;
     }
@@ -138,7 +139,8 @@ public final class TimeSync extends LifeCycleThread {
     public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
         
         if (theInstance != null) {
-            Logging.logMessage(Logging.LEVEL_WARN, null,"time sync already running");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
+                new Object[0]);
             return theInstance;
         }
         
@@ -146,26 +148,30 @@ public final class TimeSync extends LifeCycleThread {
         s.start();
         return s;
     }
-
+    
     public static TimeSync initializeLocal(int timeSyncInterval, int localTimeRenew) {
         if (theInstance != null) {
-            Logging.logMessage(Logging.LEVEL_WARN, null,"time sync already running");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
+                new Object[0]);
             return theInstance;
         }
-
+        
         TimeSync s = new TimeSync(null, timeSyncInterval, localTimeRenew);
         s.start();
         return s;
     }
-
+    
     public void enableRemoteSynchronization(DIRClient client) {
         if (this.dir != null) {
             throw new RuntimeException("remote time synchronization is already enabled");
         }
         this.dir = client;
-        Logging.logMessage(Logging.LEVEL_INFO, this,"TimeSync remote synchronization enabled every "+this.timeSyncInterval+"ms");
+        
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
+                "TimeSync remote synchronization enabled every %d ms", this.timeSyncInterval);
     }
-
+    
     public static void close() {
         if (theInstance == null)
             return;
@@ -232,8 +238,8 @@ public final class TimeSync extends LifeCycleThread {
             lastSync = tEnd;
             
             if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "STRANGE DRIFT CHANGE from " + oldDrift
-                    + " to " + currentDrift);
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                    "STRANGE DRIFT CHANGE from %d to %d", oldDrift, currentDrift);
             }
             
         } catch (Exception ex) {
@@ -264,9 +270,10 @@ public final class TimeSync extends LifeCycleThread {
             ts.start();
             
             for (;;) {
-                Logging.logMessage(Logging.LEVEL_INFO, null, "local time  = " + ts.getLocalSystemTime());
-                Logging.logMessage(Logging.LEVEL_INFO, null, "global time = " + ts.getGlobalTime() + " +"
-                    + ts.getDrift());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "local time  = %d", ts
+                        .getLocalSystemTime());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "global time = %d + %d", ts
+                        .getGlobalTime(), ts.getDrift());
                 Thread.sleep(1000);
             }
             

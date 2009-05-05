@@ -23,10 +23,6 @@
  */
 package org.xtreemfs.dir;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,23 +30,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.foundation.LifeCycleListener;
-import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
-import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
-import org.xtreemfs.interfaces.Exceptions.errnoException;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.operations.DIROperation;
 import org.xtreemfs.dir.operations.DeleteAddressMappingOperation;
 import org.xtreemfs.dir.operations.DeregisterServiceOperation;
@@ -62,6 +48,21 @@ import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
 import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
+import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.LifeCycleListener;
+import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
+import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.Exceptions.ProtocolException;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 /**
  * 
@@ -69,23 +70,23 @@ import org.xtreemfs.dir.operations.SetAddressMappingOperation;
  */
 public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
     LifeCycleListener {
-
-    public final static String VERSION = "1.0.0 (v1.0 RC1)";
-
+    
+    public final static String                 VERSION           = "1.0.0 (v1.0 RC1)";
+    
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
      */
     public static final int                    INDEX_ID_ADDRMAPS = 0;
-
+    
     /**
      * index for service registries, stores uuid -> ServiceRegistry
      */
-    public static final int                    INDEX_ID_SERVREG = 1;
-
+    public static final int                    INDEX_ID_SERVREG  = 1;
+    
     private final HttpServer                   httpServ;
-
+    
     private int                                numRequests;
-
+    
     private final Map<Integer, DIROperation>   registry;
     
     private final RPCNIOSocketServer           server;
@@ -150,7 +151,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     public void run() {
         try {
             notifyStarted();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"DIR running");
             while (!quit) {
                 final ONCRPCRequest rq = queue.take();
                 processRequest(rq);
@@ -158,7 +158,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         } catch (InterruptedException ex) {
             quit = true;
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
             notifyCrashed(ex);
         }
         notifyStopped();
@@ -217,10 +216,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         op = new GetServicesByTypeOperation(this);
         registry.put(op.getProcedureId(), op);
-
+        
         op = new GetServiceByNameOperation(this);
         registry.put(op.getProcedureId(), op);
-
+        
         op = new ServiceOfflineOperation(this);
         registry.put(op.getProcedureId(), op);
     }
@@ -231,7 +230,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "received new request");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq
+                    .toString());
         this.queue.add(rq);
     }
     
@@ -240,7 +241,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
-                    ErrNo.EINVAL,"invalid version requested"));
+                ErrNo.EINVAL, "invalid version requested"));
             return;
         }
         
@@ -248,7 +249,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         DIROperation op = registry.get(hdr.getOperationNumber());
         if (op == null) {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
-                ErrNo.EINVAL,"requested operation is not available on this DIR"));
+                ErrNo.EINVAL, "requested operation is not available on this DIR"));
             return;
         }
         
@@ -280,11 +281,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     @Override
     public void crashPerformed() {
-        Logging.logMessage(Logging.LEVEL_ERROR, this, "a component ***CRASHED***, shutting down.");
         try {
             shutdown();
         } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, e);
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
     }
     

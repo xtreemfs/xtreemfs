@@ -115,7 +115,7 @@ public class SetAddressMappingOperation extends DIROperation {
             xtreemfs_address_mappings_setResponse response = new xtreemfs_address_mappings_setResponse(currentVersion);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         }
     }

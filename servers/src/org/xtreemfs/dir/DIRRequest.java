@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
@@ -26,48 +26,49 @@ package org.xtreemfs.dir;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class DIRRequest {
-
+    
     private final ONCRPCRequest rpcRequest;
-
+    
     private Serializable        requestMessage;
-
+    
     public DIRRequest(ONCRPCRequest rpcRequest) {
         this.rpcRequest = rpcRequest;
     }
-
+    
     public void deserializeMessage(Serializable message) {
         final ReusableBuffer payload = rpcRequest.getRequestFragment();
         message.deserialize(payload);
         requestMessage = message;
     }
-
+    
     public Serializable getRequestMessage() {
         return requestMessage;
     }
-
+    
     public void sendSuccess(Serializable response) {
         rpcRequest.sendResponse(response);
     }
-
+    
     public void sendInternalServerError(Throwable rootCause) {
         rpcRequest.sendInternalServerError(rootCause);
     }
-
+    
     public void sendException(ONCRPCException exception) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sending exception return value: "+exception);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending exception return value");
+            Logging.logUserError(Logging.LEVEL_DEBUG, Category.net, this, exception);
         }
         rpcRequest.sendGenericException(exception);
     }
-
-
+    
 }

@@ -17,7 +17,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.foundation.pinky.channels;
+package org.xtreemfs.foundation.oncrpc.channels;
 
 import java.io.IOException;
 import java.net.Socket;

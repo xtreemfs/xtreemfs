@@ -100,7 +100,7 @@ public class StatusPageOperation extends MRCOperation {
             }
             br.close();
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
         if (sb == null) {
             statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";

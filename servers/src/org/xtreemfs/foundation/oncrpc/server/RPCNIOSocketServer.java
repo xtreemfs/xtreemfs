@@ -43,10 +43,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.foundation.pinky.SSLOptions;
-import org.xtreemfs.foundation.pinky.channels.ChannelIO;
-import org.xtreemfs.foundation.pinky.channels.SSLChannelIO;
+import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
+import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 
@@ -163,7 +165,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      */
     public void sendResponse(ONCRPCRecord request) {
         assert (request.getResponseBuffers() != null);
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "response sent");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "response sent");
         final ClientConnection connection = request.getConnection();
         if (!connection.isConnectionClosed()) {
             synchronized (connection) {
@@ -187,7 +190,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
         notifyStarted();
 
-        Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Srv " + bindPort + " ready "+(sslOptions != null ? "SSL enabled" : ""));
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "ONCRPC Srv %d ready %s", bindPort,
+                sslOptions != null ? "SSL enabled" : "");
 
         try {
             while (!quit) {
@@ -199,7 +204,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 } catch (CancelledKeyException ex) {
                     //who cares
                 } catch (IOException ex) {
-                    Logging.logMessage(Logging.LEVEL_WARN, this, "Exception while selecting: " + ex);
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                        "Exception while selecting: %s", ex.toString());
                     continue;
                 }
 
@@ -243,14 +249,13 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             selector.close();
             socket.close();
 
-            
-
-            Logging.logMessage(Logging.LEVEL_INFO, this, "ONCRPC Server " + bindPort + " shutdown complete");
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "ONCRPC Server %d shutdown complete", bindPort);
 
             notifyStopped();
         } catch (Exception thr) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "ONRPC Server " + bindPort + " CRASHED!");
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, thr);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "ONRPC Server %d CRASHED!", bindPort);
             notifyCrashed(thr);
         }
 
@@ -271,7 +276,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
                     if (con.getOpenRequests().get() > MAX_CLIENT_QUEUE) {
                         key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-                        Logging.logMessage(Logging.LEVEL_WARN, this, "client sent too many requests... not accepting new requests: " + con.getChannel().socket().getRemoteSocketAddress());
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                            "client sent too many requests... not accepting new requests: %s", con
+                                    .getChannel().socket().getRemoteSocketAddress().toString());
                         return;
                     }
                     while (true) {
@@ -282,7 +289,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             if (numBytesRead == -1) {
                                 //connection closed
                                 if (Logging.isInfo()) {
-                                    Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                                        "client closed connection (EOF): %s", channel.socket()
+                                                .getRemoteSocketAddress().toString());
                                 }
                                 closeConnection(key);
                                 return;
@@ -299,7 +308,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
 
                                 if ((fragmentSize <= 0) || (fragmentSize >= MAX_FRAGMENT_SIZE)) {
                                     if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid fragment size (" + fragmentSize + ") received, closing connection");
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                            "invalid fragment size (%d) received, closing connection",
+                                            fragmentSize);
                                     }
                                     closeConnection(key);
                                     break;
@@ -335,10 +346,13 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                     con.setReceive(null);
                                     //request is complete... send to receiver
                                     if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, rq.toString());
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, rq
+                                                .toString());
                                     }
                                     con.getOpenRequests().incrementAndGet();
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "request received");
+                                    if (Logging.isDebug())
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                            "request received");
                                     pendingRequests++;
                                     receiveRequest(key, rq, con);
                                 }
@@ -349,16 +363,21 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             }
         } catch (ClosedByInterruptException ex) {
             if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection (EOF): %s", channel.socket().getRemoteSocketAddress()
+                            .toString());
             }
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "connection to %s closed by remote peer", con.getChannel().socket()
+                            .getRemoteSocketAddress().toString());
             }
             closeConnection(key);
         } catch (IOException ex) {
             //simply close the connection
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, ex);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(ex));
             }
             closeConnection(key);
         }
@@ -420,7 +439,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             final long numBytesWritten = channel.write(rq.getResponseSendBuffers());
                             if (numBytesWritten == -1) {
                                 if (Logging.isInfo()) {
-                                    Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                                    "client closed connection (EOF): %s", channel.socket()
+                                            .getRemoteSocketAddress().toString());
                                 }
                                 //connection closed
                                 closeConnection(key);
@@ -434,7 +455,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             //clean up :-) request finished
                             pendingRequests--;
                             if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sent response for " + rq);
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                        "sent response for %s", rq.toString());
                             }
                             rq.freeBuffers();
                             con.setSend(null);
@@ -444,7 +466,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                 if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
                                     //read from client again
                                     key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                                    Logging.logMessage(Logging.LEVEL_WARN, this, "client allowed to send data again: " + con.getChannel().socket().getRemoteSocketAddress());
+                                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                                    "client allowed to send data again: %s", con.getChannel().socket()
+                                            .getRemoteSocketAddress().toString());
                                 }
                             }
 
@@ -454,16 +478,21 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             }
         } catch (ClosedByInterruptException ex) {
             if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection (EOF): "+channel.socket().getRemoteSocketAddress());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection (EOF): %s", channel.socket().getRemoteSocketAddress()
+                            .toString());
             }
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connection to " + con.getChannel().socket().getRemoteSocketAddress() + " closed by remote peer");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "connection to %s closed by remote peer", con.getChannel().socket()
+                            .getRemoteSocketAddress().toString());
             }
             closeConnection(key);
         } catch (IOException ex) {
             //simply close the connection
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, ex);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(ex));
             }
             closeConnection(key);
         }
@@ -525,7 +554,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         }
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "closing connection to " + channel.socket().getRemoteSocketAddress());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "closing connection to %s", channel
+                    .socket().getRemoteSocketAddress().toString());
         }
     }
 
@@ -562,14 +592,18 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             this.connections.add(con);
 
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "connect from client at " + client.socket().getRemoteSocketAddress());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connect from client at %s",
+                    client.socket().getRemoteSocketAddress().toString());
             }
 
         } catch (ClosedChannelException ex) {
             if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this, "client closed connection during accept");
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection during accept");
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "cannot establish connection: " + ex);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "cannot establish connection: %s", ex.toString());
             if (channelIO != null) {
                 try {
                     channelIO.close();
@@ -577,7 +611,9 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 }
             }
         } catch (IOException ex) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "cannot establish connection: " + ex);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "cannot establish connection: %s", ex.toString());
             if (channelIO != null) {
                 try {
                     channelIO.close();

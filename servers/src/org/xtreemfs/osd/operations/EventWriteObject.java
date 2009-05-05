@@ -76,16 +76,17 @@ public class EventWriteObject extends OSDOperation {
         master.objectReplicated();
         master.replicatedDataReceived(data.capacity());
 
-        master.getStorageStage().writeObjectWithoutGMax(fileId, objectNo, xloc.getLocalReplica().getStripingPolicy(), 0,
-                data, cow, xloc, false, null, new WriteObjectCallback() {
-                    @Override
-                    public void writeComplete(OSDWriteResponse result, Exception error) {
-                        if (error != null) {
-                            Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: "
-                                    + error);
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this, error);
-                        }
+        master.getStorageStage().writeObjectWithoutGMax(fileId, objectNo,
+            xloc.getLocalReplica().getStripingPolicy(), 0, data, cow, xloc, false, null,
+            new WriteObjectCallback() {
+                @Override
+                public void writeComplete(OSDWriteResponse result, Exception error) {
+                    if (error != null) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s",
+                            error.toString());
+                        Logging.logError(Logging.LEVEL_ERROR, this, error);
                     }
-                });
+                }
+            });
     }
 }

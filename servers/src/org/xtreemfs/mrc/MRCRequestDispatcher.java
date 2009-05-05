@@ -42,6 +42,7 @@ import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -49,11 +50,11 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.foundation.pinky.SSLOptions;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -123,8 +124,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         this.config = config;
         
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "use SSL=" + config.isUsingSSL());
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "use SSL=%b", config.isUsingSSL());
         
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
@@ -143,8 +144,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         authProvider = policyContainer.getAuthenticationProvider();
         authProvider.initialize(config.isUsingSSL());
         if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, this, "using authentication provider '"
-                + authProvider.getClass().getName() + "'");
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using authentication provider '%s'",
+                authProvider.getClass().getName());
         
         osdMonitor = new OSDStatusManager(config, dirClient, policyContainer);
         osdMonitor.setLifeCycleListener(this);
@@ -190,7 +191,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         sregs.add(dsVolumeInfo);
                     }
                 } catch (DatabaseException exc) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                    Logging.logError(Logging.LEVEL_ERROR, this, exc);
                 }
                 
                 return sregs;
@@ -253,7 +254,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
         
-        //TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
+        // TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
         osdMonitor.start();
         osdMonitor.waitForStartup();
         
@@ -268,9 +269,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         serverStage.start();
         serverStage.waitForStartup();
         
-        Logging
-                .logMessage(Logging.LEVEL_INFO, this, "MRC operational, listening on port "
-                    + config.getPort());
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                "MRC operational, listening on port %d", config.getPort());
     }
     
     public void shutdown() throws Exception {
@@ -298,7 +299,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         TimeSync.getInstance().shutdown();
         
-        Logging.logMessage(Logging.LEVEL_INFO, this, "MRC shutdown complete");
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "MRC shutdown complete");
     }
     
     public void requestFinished(MRCRequest request) {
@@ -314,38 +316,40 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             switch (error.getErrorClass()) {
             
             case INTERNAL_SERVER_ERROR: {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getErrorMessage() + " / request: "
-                    + request);
-                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getThrowable());
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", error.getErrorMessage(),
+                    request.toString());
+                Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
                 rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
             case USER_EXCEPTION: {
-                rpcRequest.sendGenericException(new MRCException(error.getErrorCode(), error
-                        .getErrorMessage(), ""));
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "user exception: errno="
-                        + request.getError().getErrorCode());
+                MRCException exc = new MRCException(error.getErrorCode(), error.getErrorMessage(), "");
+                rpcRequest.sendGenericException(exc);
+                if (Logging.isDebug()) {
+                    Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
+                }
                 break;
             }
             case INVALID_ARGS: {
                 rpcRequest.sendGarbageArgs(error.getErrorMessage());
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid request arguments");
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "invalid request arguments");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, error.getErrorMessage());
+                }
                 break;
             }
             case UNKNOWN_OPERATION: {
                 rpcRequest.sendProtocolException(new ProtocolException(
                     ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getStackTrace()));
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "unknown operation: "
-                        + request.getRPCRequest().getRequestHeader().getOperationNumber());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
+                        request.getRPCRequest().getRequestHeader().getOperationNumber());
                 break;
             }
                 
             default: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
-                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getThrowable());
+                Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
                 rpcRequest.sendInternalServerError(error.getThrowable());
                 break;
             }
@@ -355,9 +359,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         else {
             assert (request.getResponse() != null);
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response for request "
-                    + request.getRPCRequest().getRequestHeader().getXID());
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, request.getResponse().toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "sending response for request %d", request.getRPCRequest().getRequestHeader().getXID());
+                Logging
+                        .logMessage(Logging.LEVEL_DEBUG, Category.proc, this, request.getResponse()
+                                .toString());
             }
             rpcRequest.sendResponse(request.getResponse());
         }
@@ -504,12 +510,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed() {
-        Logging.logMessage(Logging.LEVEL_ERROR, this,
-            "A component crashed. Shutting down MRC, trying to checkpoint database");
         try {
             shutdown();
         } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, e);
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
             System.exit(1);
         }
     }
@@ -552,7 +556,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "enqueueing request: " + rq.toString());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq
+                    .toString());
         
         // no callback, special stage which executes the operatios
         procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);

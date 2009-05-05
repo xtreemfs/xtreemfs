@@ -34,30 +34,31 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
  * This class models an OpenFileTable, storing the set of files in an 'open'
  * state; it makes available a 'clean' method that cleans the table by deleting
  * entries whose expiration time is expired
- *
+ * 
  * @author Eugenio Cesario
  */
 public final class OpenFileTable {
-
+    
     private HashMap<String, OpenFileTableEntry> openFiles;
-
+    
     private PriorityQueue<OpenFileTableEntry>   expTimes;
-
+    
     // constructor
     public OpenFileTable() {
         openFiles = new HashMap<String, OpenFileTableEntry>();
         expTimes = new PriorityQueue<OpenFileTableEntry>();
     }
-
+    
     /**
      * Insert a new entry in the table
-     *
+     * 
      * @param fId
      *            fileId
      * @param expTime
@@ -65,10 +66,12 @@ public final class OpenFileTable {
      */
     public CowPolicy refresh(String fId, long expTime) {
         OpenFileTableEntry currEntry = openFiles.get(fId);
-
+        
         if (currEntry != null) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "refreshing for "
-                + fId);
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "refreshing for %s", fId);
+            
             // 'currEntry' isn't a new entry, so update it
             // if its expiration time is renewed
             if (expTime > currEntry.expTime) {
@@ -80,10 +83,10 @@ public final class OpenFileTable {
             }
             return currEntry.getCowPolicy();
         } else {
-            assert(false):"should never get here!";
-            Logging.logMessage(Logging.LEVEL_ERROR, this,"ARGH!!!! SHOULD NOT REFRESH FOR NON-OPEN FILE ANYMORE!!!!!");
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "new entry for "
-                + fId);
+            assert (false) : "should never get here!";
+            Logging.logMessage(Logging.LEVEL_ERROR, this,
+                "ARGH!!!! SHOULD NOT REFRESH FOR NON-OPEN FILE ANYMORE!!!!!");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new entry for %s", fId);
             // 'currEntry' is a new entry, so
             // insert it in the table
             OpenFileTableEntry newEntry = new OpenFileTableEntry(fId, expTime);
@@ -95,24 +98,24 @@ public final class OpenFileTable {
     
     /**
      * Insert a new entry in the table
-     *
+     * 
      * @param fId
      *            fileId
      * @param expTime
      *            expiration time
      */
     public void openFile(String fId, long expTime, CowPolicy policy) {
-        assert(openFiles.containsKey(fId) == false);
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "new entry for "
-            + fId);
+        assert (openFiles.containsKey(fId) == false);
+        
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new entry for %s", fId);
         // 'currEntry' is a new entry, so
         // insert it in the table
         OpenFileTableEntry newEntry = new OpenFileTableEntry(fId, expTime, policy);
         openFiles.put(fId, newEntry);
         expTimes.add(newEntry);
     }
-
+    
     /**
      * Returns 'true' if this table contains the specified file, 'false'
      * otherwise
@@ -120,28 +123,28 @@ public final class OpenFileTable {
     public boolean contains(String fId) {
         return openFiles.containsKey(fId);
     }
-
+    
     /**
      * Delete all the entries whose expiration time is strictly less than
      * 'toTime'.
      */
     public List<OpenFileTableEntry> clean(long toTime) {
-
+        
         LinkedList<OpenFileTableEntry> closedFiles = new LinkedList<OpenFileTableEntry>();
-
+        
         OpenFileTableEntry dummyEntry = new OpenFileTableEntry(null, toTime);
-
+        
         Iterator it = expTimes.iterator();
-
+        
         // since entries in 'expTimes' are sorted w.r.t. their expiration time
         // (ascending order), 'expTimes' has to be scanned until there is an
         // entry
         // with its 'expTimes' > 'toTime'
-
+        
         while (it.hasNext()) {
-
+            
             OpenFileTableEntry currEntry = (OpenFileTableEntry) it.next();
-
+            
             if (currEntry.compareTo(dummyEntry) < 0) {
                 String fId = currEntry.fileId;
                 openFiles.remove(fId);
@@ -153,17 +156,17 @@ public final class OpenFileTable {
         }
         return closedFiles;
     }
-
+    
     /**
      * It tells if a file was closed
-     *
+     * 
      * @param fileId
      *            File to consult
      * @return true if the file is closed
      */
     public boolean isClosed(String fileId) {
         OpenFileTableEntry fileEntry = openFiles.get(fileId);
-
+        
         if (fileEntry != null) {
             if (fileEntry.expTime < (System.currentTimeMillis() / 1000)) {
                 return true;
@@ -174,10 +177,10 @@ public final class OpenFileTable {
             return true;
         }
     }
-
+    
     public void setDeleteOnClose(String fileId) {
         OpenFileTableEntry fileEntry = openFiles.get(fileId);
-
+        
         if (fileEntry != null) {
             fileEntry.setDeleteOnClose();
         }
@@ -186,7 +189,8 @@ public final class OpenFileTable {
     /**
      * 
      * @param fileId
-     * @return true if the file with the given id is set to be deleted on close, false otherwise.
+     * @return true if the file with the given id is set to be deleted on close,
+     *         false otherwise.
      */
     public boolean isDeleteOnClose(String fileId) {
         OpenFileTableEntry fileEntry = openFiles.get(fileId);
@@ -197,46 +201,46 @@ public final class OpenFileTable {
         
         return false;
     }
-
+    
     public void close(String fileId) {
         OpenFileTableEntry currEntry = openFiles.get(fileId);
-
+        
         if (currEntry != null) {
             expTimes.remove(currEntry);
             openFiles.remove(fileId);
         }
     }
-
+    
     public int getNumOpenFiles() {
         return this.openFiles.size();
     }
     
     public List<ClientLease> getLeases(String fileId) {
         OpenFileTableEntry e = openFiles.get(fileId);
-        assert(e != null);
+        assert (e != null);
         return e.getClientLeases();
     }
-
+    
     /**
      * Class used to model an entry in the OpenFileTable
-     *
+     * 
      * @author Eugenio Cesario
-     *
+     * 
      */
     public static class OpenFileTableEntry implements Comparable {
-
-        private final String fileId;
-
-        private long         expTime;
-
-        private boolean      deleteOnClose;
+        
+        private final String      fileId;
+        
+        private long              expTime;
+        
+        private boolean           deleteOnClose;
         
         private List<ClientLease> clientLeases;
         
-        private CowPolicy    fileCowPolicy;
-
+        private CowPolicy         fileCowPolicy;
+        
         public OpenFileTableEntry(String fid, long et) {
-            this(fid,et,null);
+            this(fid, et, null);
         }
         
         public OpenFileTableEntry(String fid, long et, CowPolicy cow) {
@@ -250,7 +254,7 @@ public final class OpenFileTable {
             else
                 fileCowPolicy = new CowPolicy(CowPolicy.cowMode.NO_COW);
         }
-
+        
         public int compareTo(Object o) {
             int res = 0;
             final OpenFileTableEntry e = (OpenFileTableEntry) o;
@@ -263,7 +267,7 @@ public final class OpenFileTable {
             }
             return res;
         }
-
+        
         public boolean equals(Object o) {
             try {
                 final OpenFileTableEntry e = (OpenFileTableEntry) o;
@@ -276,23 +280,23 @@ public final class OpenFileTable {
                 return false;
             }
         }
-
+        
         public String toString() {
             return "(" + fileId + "," + expTime + ")";
         }
-
+        
         public void setExpirationTime(long newExpTime) {
             this.expTime = newExpTime;
         }
-
+        
         public void setDeleteOnClose() {
             deleteOnClose = true;
         }
-
+        
         public boolean isDeleteOnClose() {
             return deleteOnClose;
         }
-
+        
         public String getFileId() {
             return this.fileId;
         }
@@ -305,6 +309,5 @@ public final class OpenFileTable {
             return this.fileCowPolicy;
         }
         
-
     }
 }

@@ -28,6 +28,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.XCap;
 
@@ -189,7 +190,7 @@ public class Capability {
             
             return OutputUtils.byteArrayToHexString(digest);
         } catch (NoSuchAlgorithmException exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+            Logging.logError(Logging.LEVEL_ERROR, this, exc);
             return null;
         }
     }

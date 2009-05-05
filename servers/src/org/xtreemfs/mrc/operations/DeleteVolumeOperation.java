@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
@@ -95,7 +96,7 @@ public class DeleteVolumeOperation extends MRCOperation {
             
         } catch (UserException exc) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, exc);
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
                 exc));
         } catch (Throwable exc) {

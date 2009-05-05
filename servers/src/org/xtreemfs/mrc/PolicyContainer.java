@@ -44,7 +44,9 @@ import javax.tools.ToolProvider;
 
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.mrc.ac.FileAccessPolicy;
 import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.mrc.volumes.VolumeManager;
@@ -112,8 +114,8 @@ public class PolicyContainer {
                 Iterable<? extends JavaFileObject> compilationUnits = fileManager
                         .getJavaFileObjectsFromFiles(Arrays.asList(javaFiles));
                 if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits).call())
-                    Logging.logMessage(Logging.LEVEL_WARN, this, "some policies in '"
-                        + policyDir.getAbsolutePath() + "' could not be compiled");
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                        "some policies in '%s' could not be compiled", policyDir.getAbsolutePath());
                 
                 fileManager.close();
             }
@@ -142,9 +144,10 @@ public class PolicyContainer {
                     checkClass(clazz);
                     
                 } catch (Exception exc) {
-                    Logging.logMessage(Logging.LEVEL_WARN, this,
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                         "an error occurred while trying to load class from file " + cls);
-                    Logging.logMessage(Logging.LEVEL_WARN, this, exc);
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils
+                            .stackTraceToString(exc));
                 }
             }
             
@@ -194,8 +197,8 @@ public class PolicyContainer {
                 return findSystemClass(name);
             } catch (ClassNotFoundException exc) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not find system class '" + name
-                        + "', trying to define the class");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "could not find system class '%s', trying to define the class", name);
             }
             
             if (policyDir == null || !policyDir.exists())
@@ -219,13 +222,20 @@ public class PolicyContainer {
             } catch (IOException exc) {
                 
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "could not define class '" + name
-                        + "', trying to load the class from a plug-in JAR file");
+                    Logging
+                            .logMessage(
+                                Logging.LEVEL_DEBUG,
+                                Category.misc,
+                                this,
+                                "could not define class '%s', trying to load the class from a plug-in JAR file",
+                                name);
                 
             } catch (LinkageError err) {
                 
-                Logging.logMessage(Logging.LEVEL_WARN, this, "could not define class '" + name + "'");
-                Logging.logMessage(Logging.LEVEL_WARN, this, err);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, "could not define class '%s'",
+                    name);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils
+                        .stackTraceToString(err));
                 
             }
             
@@ -236,7 +246,8 @@ public class PolicyContainer {
                 for (int i = 0; i < jarFiles.length; i++)
                     urls[i] = jarFiles[i].toURI().toURL();
             } catch (MalformedURLException exc) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, OutputUtils
+                        .stackTraceToString(exc));
             }
             
             return new URLClassLoader(urls).loadClass(name);
@@ -291,15 +302,15 @@ public class PolicyContainer {
                         }
                         
                         if (polIdMap.containsKey(policyId))
-                            Logging.logMessage(Logging.LEVEL_WARN, this,
-                                "duplicate ID for policy '" + ifc + "':" + policyId);
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                "duplicate ID for policy '%s': %d", ifc.getName(), policyId);
                         
                         polIdMap.put(policyId, clazz);
                         
                     } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_WARN, this,
-                            "could not load malformed policy '" + clazz + "'");
-                        Logging.logMessage(Logging.LEVEL_WARN, this, exc);
+                        Logging.logMessage(Logging.LEVEL_WARN, this, "could not load malformed policy '%s'",
+                            clazz.getName());
+                        Logging.logMessage(Logging.LEVEL_WARN, this, OutputUtils.stackTraceToString(exc));
                     }
                 }
             }
@@ -327,8 +338,9 @@ public class PolicyContainer {
             return (AuthenticationProvider) Class.forName(authPolicy).newInstance();
         } catch (Exception exc) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "no built-in policy '"
-                    + config.getAuthenticationProvider() + "' exists, searching for plug-in policies...");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                    "no built-in policy '%s' exists, searching for plug-in policies...", config
+                            .getAuthenticationProvider());
         }
         
         // if no built-in policy could be found, check for plug-in policy

@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
@@ -106,18 +107,18 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
+
+            else if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "received update for outdated file size: " + newFileSize + ", current file size="
+                        + file.getSize());
         }
 
         else {
-            if (epochNo < file.getEpoch())
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                        "received file size update w/ invalid epoch: " + epochNo + ", current epoch="
-                            + file.getEpoch());
-                } else if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "received update for outdated file size: "
-                        + newFileSize + ", current file size=" + file.getSize());
-                }
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "received file size update w/ outdated epoch: " + epochNo + ", current epoch="
+                        + file.getEpoch());
         }
         
         // set the response

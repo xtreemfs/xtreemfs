@@ -26,6 +26,7 @@ package org.xtreemfs.foundation.oncrpc.client;
 
 import java.io.IOException;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
@@ -97,7 +98,8 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
 
     @Override
     public void responseAvailable(ONCRPCRequest request) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"response received");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "response received");
         synchronized (this) {
             this.request = request;
             if (listener != null)
@@ -108,7 +110,8 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
 
     @Override
     public void remoteExceptionThrown(ONCRPCRequest request, ONCRPCException exception) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"remote exception received");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "remote exception received");
         synchronized (this) {
             this.request = request;
             this.remoteEx = exception;
@@ -120,7 +123,8 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
 
     @Override
     public void requestFailed(ONCRPCRequest request, IOException reason) {
-        Logging.logMessage(Logging.LEVEL_DEBUG, this,"request failed received");
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "request failed received");
         synchronized (this) {
             this.request = request;
             this.ioError = reason;

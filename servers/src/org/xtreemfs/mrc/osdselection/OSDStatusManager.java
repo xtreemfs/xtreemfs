@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -206,42 +208,18 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
             knownOSDs = r.get();
         } catch (Exception exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
             this.notifyCrashed(exc);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
         
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, this, "OSD status manager operational, using "
-                + config.getDirectoryService());
-        
         notifyStarted();
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                "OSD status manager operational, using DIR %s", config.getDirectoryService().toString());
         
         while (!quit) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending request...");
-            r = null;
-            
-            try {
-                // request list of registered OSDs from Directory
-                // Service
-                r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
-                knownOSDs = r.get();
-                
-                evaluateResponse(knownOSDs);
-                
-            } catch (InterruptedException ex) {
-                break;
-            } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
-            } finally {
-                if (r != null)
-                    r.freeBuffers();
-            }
-            
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "request sent...");
             
             synchronized (this) {
                 try {
@@ -250,12 +228,36 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                     break;
                 }
             }
+            
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                "sending request for OSD list to DIR...");
+            r = null;
+            
+            try {
+                // request list of registered OSDs from Directory
+                // Service
+                r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
+                knownOSDs = r.get();
+                
+                Logging
+                        .logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "... received OSD list from DIR");
+                
+                evaluateResponse(knownOSDs);
+                
+            } catch (InterruptedException ex) {
+                break;
+            } catch (Exception exc) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, OutputUtils
+                        .stackTraceToString(exc));
+            } finally {
+                if (r != null)
+                    r.freeBuffers();
+            }
+            
         }
         
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, this, "shutdown complete");
         notifyStopped();
-        
     }
     
     /**
@@ -270,8 +272,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         
         VolumeOSDs vol = volumeMap.get(volumeId);
         if (vol == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "no volume registered at OSDStatusManager with ID '"
-                + volumeId + "'");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                "no volume registered at OSDStatusManager with ID '%s'", volumeId);
             return null;
         }
         
@@ -284,14 +286,22 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 if (knownOSDs != null)
                     vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
                 else
-                    Logging.logMessage(Logging.LEVEL_WARN, this,
-                        "could not calculate set of feasible OSDs for volume '" + vol.volID
-                            + "': haven't yet received an OSD list from Directory Service!");
+                    Logging
+                            .logMessage(
+                                Logging.LEVEL_WARN,
+                                Category.misc,
+                                this,
+                                "could not determine set of feasible OSDs for volume '%s': haven't yet received an OSD list from Directory Service!",
+                                vol.volID);
                 
             } else
-                Logging.logMessage(Logging.LEVEL_WARN, this,
-                    "could not calculate set of feasible OSDs for volume '" + vol.volID
-                        + "': no assignment policy available!");
+                Logging
+                        .logMessage(
+                            Logging.LEVEL_WARN,
+                            Category.misc,
+                            this,
+                            "could not determine set of feasible OSDs for volume '%s': no assignment policy available!",
+                            vol.volID);
         }
         
         return vol.usableOSDs;
@@ -309,17 +319,18 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     public synchronized void evaluateResponse(ServiceSet knownOSDs) {
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "response...");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "response...");
         
         assert (knownOSDs != null);
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "registered OSDs");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "registered OSDs");
         if (knownOSDs.size() == 0)
-            Logging.logMessage(Logging.LEVEL_WARN, this, "there are currently no OSDs available");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                "there are currently no OSDs available");
         if (Logging.isDebug())
             for (Service osd : knownOSDs) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, osd.getUuid());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "%s", osd.getUuid());
             }
         
         for (VolumeOSDs vol : volumeMap.values()) {
@@ -327,15 +338,19 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             if (policy != null) {
                 vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
                 
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs for " + vol.volID);
-                if (vol.usableOSDs != null)
-                    for (Service osd : vol.usableOSDs) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "       " + osd.getUuid());
-                    }
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "OSDs for %s", vol.volID);
+                    if (vol.usableOSDs != null)
+                        for (Service osd : vol.usableOSDs) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "       %s", osd
+                                    .getUuid());
+                        }
+                }
                 
             } else {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "policy ID " + vol.selectionPolicyID
-                    + " selected for volume ID " + vol.volID + " does not exist!");
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                    "policy ID %d selected for volume ID %s does not exist!", vol.selectionPolicyID,
+                    vol.volID);
             }
         }
     }
@@ -351,9 +366,10 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 policy = policyContainer.getOSDSelectionPolicy(policyId);
                 policies.put(policyId, policy);
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "could not load OSDSelectionPolicy with ID "
-                    + policyId);
-                Logging.logMessage(Logging.LEVEL_WARN, this, exc);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                    "could not load OSDSelectionPolicy with ID %d", policyId);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils
+                        .stackTraceToString(exc));
             }
         }
         

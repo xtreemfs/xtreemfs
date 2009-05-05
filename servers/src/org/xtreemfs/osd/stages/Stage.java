@@ -103,7 +103,6 @@ public abstract class Stage extends LifeCycleThread {
             } catch (InterruptedException ex) {
                 break;
             } catch (Exception ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, ex);
                 this.notifyCrashed(ex);
                 break;
             }
@@ -168,8 +167,9 @@ public abstract class Stage extends LifeCycleThread {
             if (request != null) {
                 request.sendInternalServerError(cause);
             } else {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error in internal event: "+cause);
-                Logging.logMessage(Logging.LEVEL_ERROR, this,cause);
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error in internal event: %s",
+                    cause.toString());
+                Logging.logError(Logging.LEVEL_ERROR, this, cause);
             }
         }
     }

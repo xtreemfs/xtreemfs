@@ -26,6 +26,7 @@ package org.xtreemfs.dir;
 import java.io.IOException;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 
 /**
  * This class can be used to start a new instance of the Directory Service.
@@ -57,11 +58,11 @@ public class DIR {
             return;
         }
         
-        Logging.start(config.getDebugLevel());
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
         
-        Logging
-                .logMessage(Logging.LEVEL_INFO, null, "JAVA_HOME="
-                    + System.getProperty("java.home"));
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
+                    .getProperty("java.home"));
         
         try {
             final DIRRequestDispatcher rq = new DIRRequestDispatcher(config);
@@ -71,18 +72,22 @@ public class DIR {
                 @Override
                 public void run() {
                     try {
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "received shutdown signal!");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "received shutdown signal!");
                         rq.shutdown();
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "DIR shotdown complete");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "DIR shotdown complete");
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 }
             });
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, null, ex);
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,
-                "System could not start up due to an exception. Aborted.");
+            Logging.logMessage(Logging.LEVEL_CRIT, null,
+                "DIR could not start up due to an exception. Aborted.");
+            Logging.logError(Logging.LEVEL_CRIT, null, ex);
             System.exit(1);
         }
         

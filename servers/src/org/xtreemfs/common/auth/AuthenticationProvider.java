@@ -24,7 +24,7 @@
 
 package org.xtreemfs.common.auth;
 
-import org.xtreemfs.foundation.pinky.channels.ChannelIO;
+import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 
 /**
  * Authentication Providers extract the credentials (UID/GIDs/SuperUser) from

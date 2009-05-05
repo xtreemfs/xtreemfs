@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
@@ -38,30 +38,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.LifeCycleThread;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class UDPCommunicator extends LifeCycleThread {
-
-    public final int         port;
-
-    private DatagramChannel  channel;
-
-    private Selector         selector;
-
-    private volatile boolean quit;
-
-    private final AtomicBoolean sendMode;
-
+    
+    public final int                              port;
+    
+    private DatagramChannel                       channel;
+    
+    private Selector                              selector;
+    
+    private volatile boolean                      quit;
+    
+    private final AtomicBoolean                   sendMode;
+    
     private final LinkedBlockingQueue<UDPMessage> q;
-
-    private final UDPReceiverInterface receiver;
-
-    public static final int MAX_UDP_SIZE = 1024;
-
+    
+    private final UDPReceiverInterface            receiver;
+    
+    public static final int                       MAX_UDP_SIZE = 1024;
+    
     public UDPCommunicator(int port, UDPReceiverInterface receiver) {
         super("UDPComStage");
         this.port = port;
@@ -69,148 +70,151 @@ public class UDPCommunicator extends LifeCycleThread {
         sendMode = new AtomicBoolean(false);
         this.receiver = receiver;
     }
-
+    
     /**
      * sends a UDPRequest.
+     * 
      * @attention Overwrites the first byte of rq.data with the message type.
      */
     public void send(UDPMessage rq) {
         q.add(rq);
-
+        
         if (q.size() == 1) {
-            //System.out.println("wakeup!");
+            // System.out.println("wakeup!");
             selector.wakeup();
         }
     }
-
+    
     public void shutdown() {
         quit = true;
         interrupt();
     }
-
+    
     @Override
     public void run() {
-
+        
         try {
-
+            
             selector = Selector.open();
-
+            
             channel = DatagramChannel.open();
             channel.socket().bind(new InetSocketAddress(port));
             channel.configureBlocking(false);
             channel.register(selector, SelectionKey.OP_READ);
-
-            Logging.logMessage(Logging.LEVEL_INFO,this,"UDP socket on port "+port+" ready");
-
+            
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "UDP socket on port %d ready",
+                    port);
+            
             notifyStarted();
-
+            
             boolean isRdOnly = true;
-
+            
             while (!quit) {
-
+                
                 if (q.size() == 0) {
                     if (!isRdOnly) {
                         channel.keyFor(selector).interestOps(SelectionKey.OP_READ);
-                        //System.out.println("read only");
+                        // System.out.println("read only");
                         isRdOnly = true;
                     }
                 } else {
                     if (isRdOnly) {
                         channel.keyFor(selector).interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                        //System.out.println("read write");
+                        // System.out.println("read write");
                         isRdOnly = false;
                     }
                 }
-
+                
                 int numKeys = selector.select();
-
+                
                 if (q.size() == 0) {
                     if (!isRdOnly) {
                         channel.keyFor(selector).interestOps(SelectionKey.OP_READ);
-                        //System.out.println("read only");
+                        // System.out.println("read only");
                         isRdOnly = true;
                     }
                 } else {
                     if (isRdOnly) {
                         channel.keyFor(selector).interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                        //System.out.println("read write");
+                        // System.out.println("read write");
                         isRdOnly = false;
                     }
                 }
-
+                
                 if (numKeys == 0)
                     continue;
-
+                
                 if (q.size() > 10000) {
-                    System.out.println("QS!!!!! "+q.size());
-                    System.out.println("is readOnly: "+isRdOnly);
+                    System.out.println("QS!!!!! " + q.size());
+                    System.out.println("is readOnly: " + isRdOnly);
                 }
-
+                
                 // fetch events
                 Set<SelectionKey> keys = selector.selectedKeys();
                 Iterator<SelectionKey> iter = keys.iterator();
-
+                
                 // process all events
-                while(iter.hasNext()) {
-
+                while (iter.hasNext()) {
+                    
                     SelectionKey key = iter.next();
-
+                    
                     // remove key from the list
                     iter.remove();
-
+                    
                     if (key.isReadable()) {
                         InetSocketAddress sender = null;
-                        //do {
-                            ReusableBuffer data = BufferPool.allocate(MAX_UDP_SIZE);
-                            sender = (InetSocketAddress) channel.receive(data.getBuffer());
-                            if (sender == null) {
-                                BufferPool.free(data);
-                                if (Logging.isDebug())
-                                    Logging.logMessage(Logging.LEVEL_WARN,this,"read key for empty read");
-                            } else {
-
-                                if (Logging.isDebug())
-                                    Logging.logMessage(Logging.LEVEL_DEBUG,this,"read data from "+sender);
-
-                                receiver.receiveUDP(new UDPMessage(sender, data));
-                            }
-                        //} while (sender != null);
+                        // do {
+                        ReusableBuffer data = BufferPool.allocate(MAX_UDP_SIZE);
+                        sender = (InetSocketAddress) channel.receive(data.getBuffer());
+                        if (sender == null) {
+                            BufferPool.free(data);
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                                "read key for empty read");
+                        } else {
+                            
+                            if (Logging.isDebug())
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                    "read data from %s", sender.toString());
+                            
+                            receiver.receiveUDP(new UDPMessage(sender, data));
+                        }
+                        // } while (sender != null);
                     } else if (key.isWritable()) {
                         UDPMessage r = q.poll();
                         while (r != null) {
                             if (Logging.isDebug())
-                                Logging.logMessage(Logging.LEVEL_DEBUG,this,"sent packet to "+r.getAddress());
-                            int sent = channel.send(r.getPayload().getBuffer(),r.getAddress());
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                    "sent packet to %s", r.getAddress().toString());
+                            int sent = channel.send(r.getPayload().getBuffer(), r.getAddress());
                             BufferPool.free(r.getPayload());
                             if (sent == 0) {
-                                //System.out.println("cannot send anymore!");
+                                // System.out.println("cannot send anymore!");
                                 q.put(r);
                                 break;
                             }
                             r = q.poll();
                         }
                     } else {
-                        throw new RuntimeException("strange key state: "+key);
+                        throw new RuntimeException("strange key state: " + key);
                     }
                 }
-
+                
             }
-
+            
             selector.close();
             channel.close();
-
-        } catch(ClosedByInterruptException ex) {
+            
+        } catch (ClosedByInterruptException ex) {
             // ignore
         } catch (IOException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR,this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         } catch (Throwable th) {
-            notifyCrashed(th instanceof Exception ? (Exception) th
-                : new Exception(th));
+            notifyCrashed(th instanceof Exception ? (Exception) th : new Exception(th));
             return;
         }
-
+        
         notifyStopped();
     }
-
-
+    
 }

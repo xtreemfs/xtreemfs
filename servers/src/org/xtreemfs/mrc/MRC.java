@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 
 /**
  * 
@@ -40,10 +41,12 @@ public class MRC {
      */
     public MRC(MRCConfig config, boolean useDirService) {
         
-        Logging
-                .logMessage(Logging.LEVEL_INFO, null, "JAVA_HOME="
-                    + System.getProperty("java.home"));
-        Logging.logMessage(Logging.LEVEL_INFO, null, "UUID: " + config.getUUID());
+        if (Logging.isInfo()) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
+                    .getProperty("java.home"));
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "UUID: %s", config.getUUID()
+                    .toString());
+        }
         
         try {
             rc = new MRCRequestDispatcher(config);
@@ -53,9 +56,13 @@ public class MRC {
                 @Override
                 public void run() {
                     try {
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "received shutdown signal!");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "received shutdown signal!");
                         rc.shutdown();
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "MRC shutdown complete");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "MRC shutdown complete");
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -64,17 +71,16 @@ public class MRC {
             
         } catch (Exception ex) {
             
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,
-                "System could not start up due to an exception. Aborted.");
-            Logging.logMessage(Logging.LEVEL_ERROR, null, ex);
+            Logging.logMessage(Logging.LEVEL_CRIT, null,
+                "MRC could not start up due to an exception. Aborted.");
+            Logging.logError(Logging.LEVEL_CRIT, null, ex);
             
             if (rc != null)
                 try {
                     rc.shutdown();
                 } catch (Exception e) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(),
-                        "could not shutdown MRC: ");
-                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), e);
+                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), "could not shutdown MRC: ");
+                    Logging.logError(Logging.LEVEL_ERROR, config.getUUID(), e);
                 }
         }
         
@@ -93,7 +99,7 @@ public class MRC {
         String cfgFile = (args.length > 0) ? args[0] : "config/mrcconfig.properties";
         MRCConfig config = new MRCConfig(cfgFile);
         
-        Logging.start(config.getDebugLevel());
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
         new MRC(config, true);
     };
     

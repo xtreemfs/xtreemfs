@@ -85,8 +85,9 @@ public class EventCloseFile extends OSDOperation {
             @Override
             public void deleteComplete(Exception error) {
                 if (error != null) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: " + error);
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, error);
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", error
+                            .toString());
+                    Logging.logError(Logging.LEVEL_ERROR, this, error);
                 }
 
             }

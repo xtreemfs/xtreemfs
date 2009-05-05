@@ -10,58 +10,59 @@ import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
+
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class StatusPage {
-
+    
     private final static String statusPageTemplate;
-
+    
     private enum Vars {
-
-        MAXMEM("<!-- $MAXMEM -->"),
-        FREEMEM("<!-- $FREEMEM -->"),
-        AVAILPROCS("<!-- $AVAILPROCS -->"),
-        BPSTATS("<!-- $BPSTATS -->"),
-        PORT("<!-- $PORT -->"),
-        DEBUG("<!-- $DEBUG -->"),
-        NUMCON("<!-- $NUMCON -->"),
-        PINKYQ("<!-- $PINKYQ -->"),
-        NUMREQS("<!-- $NUMREQS -->"),
-        TIME("<!-- $TIME -->"),
-        TABLEDUMP("<!-- $TABLEDUMP -->"),
-        PROTOVERSION("<!-- $PROTOVERSION -->"),
-        VERSION("<!-- $VERSION -->");
-
+            
+            MAXMEM("<!-- $MAXMEM -->"),
+            FREEMEM("<!-- $FREEMEM -->"),
+            AVAILPROCS("<!-- $AVAILPROCS -->"),
+            BPSTATS("<!-- $BPSTATS -->"),
+            PORT("<!-- $PORT -->"),
+            DEBUG("<!-- $DEBUG -->"),
+            NUMCON("<!-- $NUMCON -->"),
+            PINKYQ("<!-- $PINKYQ -->"),
+            NUMREQS("<!-- $NUMREQS -->"),
+            TIME("<!-- $TIME -->"),
+            TABLEDUMP("<!-- $TABLEDUMP -->"),
+            PROTOVERSION("<!-- $PROTOVERSION -->"),
+            VERSION("<!-- $VERSION -->");
+        
         private String template;
-
+        
         Vars(String template) {
             this.template = template;
         }
-
+        
         public String toString() {
             return template;
         }
     };
-
-
+    
     static {
         StringBuffer sb = null;
         try {
             InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
-                    "org/xtreemfs/dir/templates/status.html");
+                "org/xtreemfs/dir/templates/status.html");
             if (is == null) {
                 is = StatusPage.class.getClass().getResourceAsStream("../templates/status.html");
             }
@@ -74,7 +75,8 @@ public class StatusPage {
             }
             br.close();
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, null, ex);
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                "could not load status page template: %s", OutputUtils.stackTraceToString(ex));
         }
         if (sb == null) {
             statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";
@@ -82,27 +84,29 @@ public class StatusPage {
             statusPageTemplate = sb.toString();
         }
     }
-
+    
     public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException {
-
+        
         final BabuDB database = master.getDatabase();
-
+        
         assert (statusPageTemplate != null);
-
+        
         long time = System.currentTimeMillis();
-
-        Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
-
+        
+        Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME,
+            DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
+        
         StringBuilder dump = new StringBuilder();
-        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
+        dump
+                .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         while (iter.hasNext()) {
-            Entry<byte[],byte[]> e = iter.next();
+            Entry<byte[], byte[]> e = iter.next();
             AddressMappingSet ams = new AddressMappingSet();
             ams.deserialize(ReusableBuffer.wrap(e.getValue()));
-
+            
             final String uuid = new String(e.getKey());
-
+            
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\"><tr>");
@@ -126,35 +130,36 @@ public class StatusPage {
             dump.append("</b></td></tr></table>");
         }
         dump.append("</td></tr></table>");
-
-
-        iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
         
-        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
+        iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME,
+            DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+        
+        dump
+                .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         while (iter.hasNext()) {
-            Entry<byte[],byte[]> e = iter.next();
+            Entry<byte[], byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
             final Service sreg = new Service();
             sreg.deserialize(ReusableBuffer.wrap(e.getValue()));
-
+            
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\">");
-
+            
             dump.append("<tr><td width=\"30%\">");
             dump.append("type");
             dump.append("</td><td><b>");
             dump.append(sreg.getType());
             dump.append("</b></td></tr>");
-
+            
             dump.append("<tr><td width=\"30%\">");
             dump.append("name");
             dump.append("</td><td><b>");
             dump.append(sreg.getName());
             dump.append("</b></td></tr>");
-
-            for (Entry<String,String> dataEntry : sreg.getData().entrySet()) {
+            
+            for (Entry<String, String> dataEntry : sreg.getData().entrySet()) {
                 dump.append("<tr><td width=\"30%\">");
                 dump.append(dataEntry.getKey());
                 dump.append("</td><td><b>");
@@ -162,7 +167,7 @@ public class StatusPage {
                 if (dataEntry.getKey().equals("last_updated")) {
                     
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
-                        || dataEntry.getKey().endsWith("RAM")) {
+                    || dataEntry.getKey().endsWith("RAM")) {
                     dump.append(" bytes (");
                     dump.append(OutputUtils.formatBytes(Long.parseLong(dataEntry.getValue())));
                     dump.append(")");
@@ -171,7 +176,7 @@ public class StatusPage {
                 }
                 dump.append("</b></td></tr>");
             }
-
+            
             dump.append("<tr><td width=\"30%\">");
             dump.append("last updated");
             dump.append("</td><td><b>");
@@ -184,7 +189,7 @@ public class StatusPage {
                 dump.append(")");
                 dump.append("</b></td></tr>");
             }
-
+            
             dump.append("<td></td><td class=\"version\">version: <b>");
             dump.append(sreg.getVersion());
             dump.append("</b></td></table></td></tr>");
@@ -193,7 +198,9 @@ public class StatusPage {
         
         String tmp = null;
         try {
-            tmp = statusPageTemplate.replace(Vars.AVAILPROCS.toString(), Runtime.getRuntime().availableProcessors() + " bytes");
+            tmp = statusPageTemplate.replace(Vars.AVAILPROCS.toString(), Runtime.getRuntime()
+                    .availableProcessors()
+                + " bytes");
         } catch (Exception e) {
             tmp = statusPageTemplate;
         }
@@ -206,11 +213,11 @@ public class StatusPage {
         tmp = tmp.replace(Vars.NUMREQS.toString(), Long.toString(master.getNumRequests()));
         tmp = tmp.replace(Vars.TIME.toString(), new Date(time).toString() + " (" + time + ")");
         tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
-
+        
         tmp = tmp.replace(Vars.VERSION.toString(), DIRRequestDispatcher.VERSION);
         tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRInterface.getVersion()));
-
+        
         return tmp;
-
+        
     }
 }

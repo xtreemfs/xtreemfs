@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB), Christian Lorenz (ZIB)
  */
 
-package org.xtreemfs.foundation.pinky;
+package org.xtreemfs.foundation;
 
 import java.io.IOException;
 import java.io.InputStream;

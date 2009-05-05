@@ -24,109 +24,130 @@
 
 package org.xtreemfs.common.logging;
 
+import java.io.PrintStream;
+
 /**
  * 
  * @author bjko
  */
 public class Logging {
     
-    protected static final char ABBREV_LEVEL_INFO  = 'I';
+    public enum Category {
+        all, lifecycle, net, auth, stage, proc, db, misc
+    }
     
-    protected static final char ABBREV_LEVEL_DEBUG = 'D';
+    protected static final char      ABBREV_LEVEL_INFO  = 'I';
     
-    protected static final char ABBREV_LEVEL_WARN  = 'W';
+    protected static final char      ABBREV_LEVEL_DEBUG = 'D';
     
-    protected static final char ABBREV_LEVEL_ERROR = 'E';
+    protected static final char      ABBREV_LEVEL_WARN  = 'W';
     
-    protected static final char ABBREV_LEVEL_TRACE = 'T';
+    protected static final char      ABBREV_LEVEL_ERROR = 'E';
     
-    public static final int     LEVEL_EMERG        = 0;
+    protected static final char      ABBREV_LEVEL_TRACE = 'T';
     
-    public static final int     LEVEL_ALERT        = 1;
+    public static final int          LEVEL_EMERG        = 0;
     
-    public static final int     LEVEL_CRIT         = 2;
+    public static final int          LEVEL_ALERT        = 1;
     
-    public static final int     LEVEL_ERROR        = 3;
+    public static final int          LEVEL_CRIT         = 2;
     
-    public static final int     LEVEL_WARN         = 4;
+    public static final int          LEVEL_ERROR        = 3;
     
-    public static final int     LEVEL_NOTICE       = 5;
+    public static final int          LEVEL_WARN         = 4;
     
-    public static final int     LEVEL_INFO         = 6;
+    public static final int          LEVEL_NOTICE       = 5;
     
-    public static final int     LEVEL_DEBUG        = 7;
+    public static final int          LEVEL_INFO         = 6;
     
-    public static final String  FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %9s] %s";
+    public static final int          LEVEL_DEBUG        = 7;
     
-    protected static Logging    instance;
+    public static final String       FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %9s] %s";
     
-    protected static boolean    tracingEnabled     = false;
+    private static final PrintStream out                = System.out;
     
-    private final int           level;
+    protected static Logging         instance;
     
-    private long                startTime;
+    protected static boolean         tracingEnabled     = false;
+    
+    private final int                level;
+    
+    private final int                catMask;
+    
+    private long                     startTime;
     
     /**
      * Creates a new instance of Logging
      */
-    private Logging(int level) {
+    private Logging(int level, int catMask) {
         
         if (level < 0)
             this.level = 0;
         else
             this.level = level;
         
+        this.catMask = catMask;
+        
         instance = this;
         
         startTime = System.currentTimeMillis();
     }
     
-    public static void logMessage(int level, Object me, String msg) {
-        if (level <= instance.level) {
+    public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {
+        
+        // if the level is appropriate as well as the category, or the category
+        // is 'all', log the message
+        if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
+            
             char levelName = getLevelName(level);
-            if (me == null) {
-                System.out.println(String.format(FORMAT_PATTERN, levelName, "-", Thread.currentThread()
-                        .getName(), Thread.currentThread().getId(), getTimeStamp(), msg));
-            } else {
-                System.out.println(String.format(FORMAT_PATTERN, levelName, me.getClass().getSimpleName(),
-                    Thread.currentThread().getName(), Thread.currentThread().getId(), getTimeStamp(), msg));
+            
+            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
+                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
+                getTimeStamp(), String.format(formatPattern, args)));
+        }
+    }
+    
+    public static void logMessage(int level, Object me, String formatPattern, Object... args) {
+        logMessage(level, Category.all, me, formatPattern, args);
+    }
+    
+    public static void logError(int level, Object me, Throwable msg) {
+        
+        // if the level is appropriate, log the message
+        if (level <= instance.level) {
+            
+            char levelName = getLevelName(level);
+            
+            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
+                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
+                getTimeStamp(), msg.toString()));
+            for (StackTraceElement elem : msg.getStackTrace()) {
+                out.println(" ...                                           " + elem.toString());
+            }
+            if (msg.getCause() != null) {
+                out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
+                        .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
+                    getTimeStamp(), "root cause: " + msg.getCause()));
+                for (StackTraceElement elem : msg.getCause().getStackTrace()) {
+                    out.println(" ...                                           " + elem.toString());
+                }
             }
         }
     }
     
-    public static void logMessage(int level, Object me, Throwable msg) {
-        if (level <= instance.level) {
+    public static void logUserError(int level, Category cat, Object me, Throwable msg) {
+        
+        // if the level is appropriate as well as the category, or the category
+        // is 'all', log the message
+        if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
+            
             char levelName = getLevelName(level);
-            if (me == null) {
-                System.out.println(String.format(FORMAT_PATTERN, levelName, "-", Thread.currentThread()
-                        .getName(), Thread.currentThread().getId(), getTimeStamp(), msg.toString()));
-                for (StackTraceElement elem : msg.getStackTrace()) {
-                    System.out.println(" ...                                           " + elem.toString());
-                }
-                if (msg.getCause() != null) {
-                    System.out.println(String.format(FORMAT_PATTERN, levelName, "-", Thread.currentThread()
-                            .getName(), Thread.currentThread().getId(), getTimeStamp(), "root cause: "
-                        + msg.getCause()));
-                    for (StackTraceElement elem : msg.getCause().getStackTrace()) {
-                        System.out.println(" ...                                           "
-                            + elem.toString());
-                    }
-                }
-            } else {
-                System.out.println(String.format(FORMAT_PATTERN, levelName, me.getClass().getSimpleName(),
-                    Thread.currentThread().getName(), Thread.currentThread().getId(), getTimeStamp(), msg));
-                for (StackTraceElement elem : msg.getStackTrace()) {
-                    System.out.println(" ...                                           " + elem.toString());
-                }
-                if (msg.getCause() != null) {
-                    System.out.println(String.format(FORMAT_PATTERN, levelName, me.getClass(), Thread
-                            .currentThread().getName(), Thread.currentThread().getId(), getTimeStamp(),
-                        "root cause: " + msg.getCause()));
-                    for (StackTraceElement elem : msg.getCause().getStackTrace()) {
-                        System.out.println(" ...                                           "
-                            + elem.toString());
-                    }
-                }
+            
+            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
+                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
+                getTimeStamp(), msg.toString()));
+            for (StackTraceElement elem : msg.getStackTrace()) {
+                out.println(" ...                                           " + elem.toString());
             }
         }
     }
@@ -150,9 +171,19 @@ public class Logging {
         }
     }
     
-    public synchronized static void start(int level) {
+    public synchronized static void start(int level, Category... categories) {
         if (instance == null) {
-            instance = new Logging(level);
+            
+            int catMask = 0;
+            for (Category cat : categories) {
+                
+                if (cat == Category.all)
+                    catMask = -1;
+                
+                catMask |= 2 << cat.ordinal();
+            }
+            
+            instance = new Logging(level, catMask);
         }
     }
     

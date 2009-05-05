@@ -131,7 +131,7 @@ public final class TruncateOperation extends OSDOperation {
             rq.sendInternalServerError(ex);
         } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             return;
         }
     }
@@ -147,7 +147,7 @@ public final class TruncateOperation extends OSDOperation {
             rq.sendInternalServerError(ex);
         } catch (Throwable ex) {
             rq.sendInternalServerError(ex);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         } finally {
             for (RPCResponse r : gmaxRPCs)
                 r.freeBuffers();

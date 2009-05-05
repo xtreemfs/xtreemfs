@@ -25,6 +25,7 @@
 package org.xtreemfs.osd;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 
 public class OSD {
     
@@ -35,10 +36,13 @@ public class OSD {
      */
     public OSD(OSDConfig config) {
         
-        Logging
-                .logMessage(Logging.LEVEL_INFO, null, "JAVA_HOME="
-                    + System.getProperty("java.home"));
-        Logging.logMessage(Logging.LEVEL_INFO, null, "UUID: " + config.getUUID());
+        if (Logging.isInfo()) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
+                    .getProperty("java.home"));
+            Logging
+                    .logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "UUID: %s", config
+                            .getUUID());
+        }
         
         try {
             // FIXME: pass UUID + useDIR
@@ -52,7 +56,9 @@ public class OSD {
                 public void run() {
                     try {
                         
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "received shutdown signal!");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "received shutdown signal");
                         
                         ctrl.heartbeatThread.shutdown();
                         // FIXME: provide a solution that does not attempt to
@@ -60,7 +66,9 @@ public class OSD {
                         // to an error
                         // ctrl.shutdown();
                         
-                        Logging.logMessage(Logging.LEVEL_INFO, this, "OSD shutdown complete");
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                                "OSD shutdown complete");
                         
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -70,17 +78,16 @@ public class OSD {
             
         } catch (Exception ex) {
             
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,
-                "System could not start up due to an exception. Aborted.");
-            Logging.logMessage(Logging.LEVEL_ERROR, null, ex);
+            Logging.logMessage(Logging.LEVEL_ERROR, null,
+                "OSD could not start up due to an exception. Aborted.");
+            Logging.logError(Logging.LEVEL_ERROR, null, ex);
             
             if (dispatcher != null)
                 try {
                     dispatcher.shutdown();
                 } catch (Exception e) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(),
-                        "could not shutdown MRC: ");
-                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), e);
+                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), "could not shutdown MRC: ");
+                    Logging.logError(Logging.LEVEL_ERROR, config.getUUID(), e);
                 }
         }
     }
@@ -106,7 +113,7 @@ public class OSD {
         String cfgFile = (args.length > 0) ? args[0] : "config/osdconfig.properties";
         OSDConfig config = new OSDConfig(cfgFile);
         
-        Logging.start(config.getDebugLevel());
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
         new OSD(config);
     };
     

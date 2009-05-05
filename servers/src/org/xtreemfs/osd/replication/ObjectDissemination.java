@@ -32,6 +32,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -180,14 +181,16 @@ public class ObjectDissemination {
             this.filesInProgress.put(fileID, fileInfo);
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "start replication for file " + fileID);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "start replication for file %s",
+                    fileID);
         }
 
         // keep in mind current request
         fileInfo.add(objectNo, rq);
         fileInfo.strategy.addObject(objectNo, true);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "FETCHING OBJECT: " + fileID + ":" + objectNo);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "FETCHING OBJECT: %s:%d", fileID,
+                objectNo);
 
         prepareRequest(fileInfo, objectNo);
     }
@@ -269,7 +272,8 @@ public class ObjectDissemination {
                     fileInfo.cow });
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "object fetched " + fileID + ":" + objectNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "object fetched %s:%d", fileID,
+                    objectNo);
 
             // delete object in maps/lists
             fileInfo.strategy.removeObject(objectNo);
@@ -299,8 +303,8 @@ public class ObjectDissemination {
         if (fileInfo.strategy.isHole(objectNo)) {
             // => hole or error; we assume it is a hole
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "object " + fileID + ":" + objectNo
-                        + " could not be fetched; must be a hole.");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "object %s:%d could not be fetched; must be a hole." + fileID, objectNo);
 
             sendResponses(fileInfo, objectNo, null, ObjectStatus.PADDING_OBJECT);
 
@@ -327,7 +331,7 @@ public class ObjectDissemination {
         // if the last requested object was fetched for this file => remove from map
         filesInProgress.remove(fileID);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "stop replicating file " + fileID);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "stop replicating file %s", fileID);
     }
 
     /**

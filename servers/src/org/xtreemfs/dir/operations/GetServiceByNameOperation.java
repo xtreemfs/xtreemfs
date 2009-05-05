@@ -87,7 +87,7 @@ public class GetServiceByNameOperation extends DIROperation {
             xtreemfs_service_get_by_nameResponse response = new xtreemfs_service_get_by_nameResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         }
     }

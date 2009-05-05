@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -102,7 +103,7 @@ public class DeletionStage extends Stage {
             }
 
         } catch (Throwable exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,exc);
+            Logging.logError(Logging.LEVEL_ERROR, this, exc);
             method.sendInternalServerError(exc);
             return;
         }
@@ -114,7 +115,8 @@ public class DeletionStage extends Stage {
         final String fileId = (String) rq.getArgs()[0];
 
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "deleting objects of file " + fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects of file %s",
+                fileId);
 
         // remove the file info from the storage cache
         cache.removeFileInfo(fileId);
@@ -152,20 +154,24 @@ public class DeletionStage extends Stage {
         public void run() {
             try {
                 do {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"DeleteThread started");
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "DeleteThread started");
+                    
                     final String fileID = files.take();
                     try {
                         if (Logging.isDebug())
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"deleting objects for "+fileID);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects for %s", fileID);
                         layout.deleteFile(fileID);
                     } catch (IOException ex) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     }
                 } while (!quit);
             } catch (InterruptedException ex) {
                 //idontcare
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"DeleteThread finished");
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "DeleteThread finished");
         }
 
     }

@@ -33,6 +33,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -137,7 +138,7 @@ public class RestoreDBOperation extends MRCOperation {
                                 dbVersion = Integer.parseInt(attributes.getValue(attributes
                                         .getIndex("dbversion")));
                             } catch (Exception exc) {
-                                Logging.logMessage(Logging.LEVEL_WARN, this,
+                                Logging.logMessage(Logging.LEVEL_WARN, Category.db, this,
                                     "restoring database with invalid version number");
                             }
                         
@@ -145,8 +146,9 @@ public class RestoreDBOperation extends MRCOperation {
                             handleNestedElement(qName, attributes, true);
                         
                     } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "could not restore DB from XML dump");
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                            "could not restore DB from XML dump");
+                        Logging.logUserError(Logging.LEVEL_ERROR, Category.db, this, exc);
                         throw new SAXException(exc);
                     }
                 }
@@ -160,8 +162,9 @@ public class RestoreDBOperation extends MRCOperation {
                         handleNestedElement(qName, null, false);
                         
                     } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "could not restore DB from XML dump");
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                            "could not restore DB from XML dump");
+                        Logging.logUserError(Logging.LEVEL_ERROR, Category.db, this, exc);
                         throw new SAXException(exc);
                     }
                 }

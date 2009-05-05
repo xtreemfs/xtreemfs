@@ -104,7 +104,7 @@ public class ReplicationStage extends Stage {
                 rq.sendInternalServerError(new RuntimeException("unknown stage op request"));
             }
         } catch (Throwable exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, exc);
+            Logging.logError(Logging.LEVEL_ERROR, this, exc);
             rq.sendInternalServerError(exc);
             return;
         }

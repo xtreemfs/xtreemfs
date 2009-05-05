@@ -13,6 +13,7 @@ import java.util.Date;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
@@ -89,7 +90,7 @@ public class StatusPage {
             }
             br.close();
         } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, null, ex);
+            Logging.logError(Logging.LEVEL_ERROR, null, ex);
         }
         if (sb == null) {
             statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";

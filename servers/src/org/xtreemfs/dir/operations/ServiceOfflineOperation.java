@@ -90,10 +90,10 @@ public class ServiceOfflineOperation extends DIROperation {
             xtreemfs_service_registerResponse response = new xtreemfs_service_registerResponse(currentVersion);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         } catch (Throwable th) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,th);
+            Logging.logError(Logging.LEVEL_ERROR, this, th);
             rq.sendInternalServerError(th);
         }
     }

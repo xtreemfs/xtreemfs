@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +35,7 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -97,7 +97,7 @@ public class BabuDBStorageManager implements StorageManager {
         } catch (BabuDBException e) {
             // database already exists
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "database '" + dbName + "' loaded");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database '%s' loaded", dbName);
         }
     }
     

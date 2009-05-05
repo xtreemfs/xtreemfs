@@ -77,7 +77,7 @@ public class GetServiceByUuidOperation extends DIROperation {
             xtreemfs_service_get_by_uuidResponse response = new xtreemfs_service_get_by_uuidResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);
         }
     }

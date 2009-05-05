@@ -36,8 +36,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xtreemfs.common.logging.Logging;
-
 /**
  * A class containing helper functions for working with the local file system.
  *
@@ -139,13 +137,13 @@ public class FSUtils {
 //            return result;
 //
 //        } catch (Exception exc) {
-
-            Logging
-                    .logMessage(Logging.LEVEL_DEBUG, null,
-                        "a problem with 'stat' occurred - command probably not available on local platform");
-            Logging.logMessage(Logging.LEVEL_DEBUG, null,
-                "using the Java mechanism for retrieving free space on the object partition");
-
+//
+//            Logging
+//                    .logMessage(Logging.LEVEL_DEBUG, null,
+//                        "a problem with 'stat' occurred - command probably not available on local platform");
+//            Logging.logMessage(Logging.LEVEL_DEBUG, null,
+//                "using the Java mechanism for retrieving free space on the object partition");
+//
             // if some problem occurs, use the dedicated Java mechanism instead
             return new File(dir).getUsableSpace();
 

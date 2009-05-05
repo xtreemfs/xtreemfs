@@ -43,6 +43,7 @@ import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -134,7 +135,8 @@ public class BabuDBVolumeManager implements VolumeManager {
                 
                 // database already exists
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "database loaded from '" + dbDir + "'");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database loaded from '%s'",
+                        dbDir);
                 
                 try {
                     
@@ -149,11 +151,11 @@ public class BabuDBVolumeManager implements VolumeManager {
                         String errMsg = "Wrong database version. Expected version = "
                             + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
                         
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, errMsg);
+                        Logging.logMessage(Logging.LEVEL_CRIT, this, errMsg);
                         if (VersionManagement.getMrcDataVersion() > ver)
                             Logging
                                     .logMessage(
-                                        Logging.LEVEL_ERROR,
+                                        Logging.LEVEL_CRIT,
                                         this,
                                         "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
                         
@@ -161,7 +163,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                     }
                     
                 } catch (BabuDBException exc) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this,
+                    Logging.logMessage(Logging.LEVEL_CRIT, this,
                         "The MRC database is either corrupted or outdated. The expected database version for this server is "
                             + VersionManagement.getMrcDataVersion());
                     throw new DatabaseException(exc);
@@ -188,7 +190,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                 }
                 
             } else
-                Logging.logMessage(Logging.LEVEL_ERROR, this, e);
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
     }
     
