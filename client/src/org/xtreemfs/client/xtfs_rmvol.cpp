@@ -26,7 +26,7 @@ namespace org
         std::string volume_name;
 
 
-        // xtfs_bin
+        // YIELD::Main
         int _main( int, char** )
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );

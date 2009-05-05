@@ -37,8 +37,8 @@ namespace org
         YIELD::auto_Object<YIELD::URI> mrc_uri;
         std::string volume_name;
 
-        // xtfs_bin
-        int _main( int, char** )
+        // YIELD::Main
+        int _main( int argc, char** argv )
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
           org::xtreemfs::interfaces::VolumeSet volumes;

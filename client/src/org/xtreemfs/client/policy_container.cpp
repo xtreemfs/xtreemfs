@@ -37,8 +37,9 @@ namespace org
         // YIELD::Volume::readdirCallback
         bool operator()( const YIELD::Path& name, const YIELD::Stat& stbuf )
         {
-          std::string::size_type dll_pos = name.get_host_charset_path().find( SHLIBSUFFIX );
-          if ( dll_pos != std::string::npos && dll_pos != 0 && name.get_host_charset_path()[dll_pos-1] == '.' )
+          const std::string& name_str = static_cast<const std::string&>( name );
+          std::string::size_type dll_pos = name_str.find( SHLIBSUFFIX );
+          if ( dll_pos != std::string::npos && dll_pos != 0 && name_str[dll_pos-1] == '.' )
             policy_container.loadPolicySharedLibrary( root_dir_path + name );
           return true;
         }

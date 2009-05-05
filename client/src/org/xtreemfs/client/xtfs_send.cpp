@@ -112,7 +112,7 @@ namespace org
         YIELD::auto_Object<YIELD::Request> request;
         YIELD::auto_Object<YIELD::EventTarget> proxy;
 
-        // xtfs_bin
+        // YIELD::Main
         int _main( int, char** )
         {
           proxy->send( request->incRef() );

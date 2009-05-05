@@ -12,25 +12,26 @@ Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
   {
 #ifdef _WIN32
     global_path.append( "/", 1 );
-    if ( local_path.get_host_charset_path()[0] == DISK_PATH_SEPARATOR )
-      global_path.append( this->local_path.get_utf8_path().c_str() + 1, this->local_path.get_utf8_path().size() - 1 );
-    else
-      global_path.append( this->local_path.get_utf8_path() );
 
-    std::string::size_type next_sep = global_path.find( DISK_PATH_SEPARATOR );
+    if ( local_path == PATH_SEPARATOR_STRING )
+      global_path.append( static_cast<const std::string&>( this->local_path ) ); // .get_utf8_path().c_str() + 1, this->local_path.get_utf8_path().size() - 1 );
+    else
+      global_path.append( static_cast<const std::string&>( this->local_path ) ); // .get_utf8_path() );
+
+    std::string::size_type next_sep = global_path.find( PATH_SEPARATOR );
     while ( next_sep != std::string::npos )
     {
       global_path[next_sep] = '/';
-      next_sep = global_path.find( DISK_PATH_SEPARATOR, next_sep );
+      next_sep = global_path.find( PATH_SEPARATOR, next_sep );
     }
 #else
-    if ( local_path.get_host_charset_path()[0] == DISK_PATH_SEPARATOR )
-      global_path.append( this->local_path.get_host_charset_path() ); //.get_utf8_path() );
+    if ( local_path.get_host_charset_path()[0] == PATH_SEPARATOR )
+      global_path.append( static_cast<const std::string&>( this->local_path ) ); //.get_utf8_path() );
     else
     {
       global_path.append( "/", 1 );
 //      global_path.append( this->local_path.get_utf8_path() );
-      global_path.append( this->local_path.get_host_charset_path() );       
+      global_path.append( static_cast<const std::string&>( this->local_path ) );       
     }
 #endif
   }
@@ -50,7 +51,7 @@ Path::Path( const std::string& global_path )
     std::string::size_type next_slash = temp_local_path.find( '/' );
     while ( next_slash != std::string::npos )
     {
-      temp_local_path[next_slash] = DISK_PATH_SEPARATOR;
+      temp_local_path[next_slash] = PATH_SEPARATOR;
       next_slash = temp_local_path.find( '/', next_slash );
     }
     local_path = YIELD::Path( temp_local_path );

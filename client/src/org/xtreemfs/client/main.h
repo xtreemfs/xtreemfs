@@ -10,11 +10,15 @@
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/interfaces/constants.h"
 
-#ifdef _WIN32
-#include "client/windows/handler/exception_handler.h" // Google Breakpad
-#ifdef _DEBUG
-#include <vld.h>
-#endif
+#if defined(_WIN32)
+#include "client/windows/handler/exception_handler.h"
+#define ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD 1
+//#ifdef _DEBUG
+//#include <vld.h>
+//#endif
+#elif defined(__linux)
+#include "client/linux/handler/exception_handler.h"
+#define ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD 1
 #endif
 
 
@@ -35,7 +39,25 @@ namespace org
             return 0;
           }
           else
+          {
+#ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD
+            google_breakpad::ExceptionHandler* exception_handler;
+            void* MinidumpCallback_context = this;
+#if defined(_WIN32)            
+//            if ( !IsDebuggerPresent() )            {
+            {
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": installing Google Breakpad exception handler.";
+              exception_handler = new google_breakpad::ExceptionHandler( YIELD::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, google_breakpad::ExceptionHandler::HANDLER_ALL );
+            }
+#elif defined(__linux)
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": installing Google Breakpad exception handler.";
+            exception_handler = new google_breakpad::ExceptionHandler( YIELD::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, true );
+#else
+#error
+#endif
+#endif
             return YIELD::Main::main( argc, argv );
+          }
         }
 
       protected:
@@ -129,7 +151,7 @@ namespace org
           else
             throw YIELD::Exception( "invalid volume URI" );
         }
-
+        
         // YIELD::Main
         virtual void parseOption( int id, char* arg )
         {
@@ -146,8 +168,6 @@ namespace org
         }
 
       private:
-        const char *program_name, *program_description, *files_usage;
-
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
         double timeout_ms;
@@ -168,6 +188,45 @@ namespace org
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
           return proxy;
         }
+
+#ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD
+#if defined(_WIN32)
+        static bool MinidumpCallback( const wchar_t* dump_path, const wchar_t* minidump_id, void* context, EXCEPTION_POINTERS*, MDRawAssertionInfo*, bool succeeded )
+        {
+          return static_cast<Main*>( context )->MinidumpCallback( dump_path, minidump_id, succeeded );
+        }
+#elif defined(__linux)
+        static bool MinidumpCallback( const char *dump_path, const char *minidump_id, void* context, bool succeeded )
+        {
+          return static_cast<Main*>( context )->MinidumpCallback( dump_path, minidump_id, succeeded );
+        }
+#else
+#error
+#endif
+        bool MinidumpCallback( const YIELD::Path& dump_path, const YIELD::Path& minidump_id, bool succeeded )
+        {
+          if ( succeeded )
+          {
+            YIELD::Path dump_file_name( minidump_id ); dump_file_name = static_cast<const std::string&>( dump_file_name ) + ".dmp";
+            YIELD::Path dump_file_path( dump_path ); dump_file_path = dump_file_path + dump_file_name;
+            std::string dump_absolute_uri( "http://www.xtreemfs.org/dump/dump.php?f=" ); 
+            dump_absolute_uri.append( static_cast<const std::string&>( dump_file_name ) );
+            
+            get_log()->getStream( YIELD::Log::LOG_EMERG ) << get_program_name() << ": crashed on unknown exception, dumping to " << dump_file_path << " and trying to send to " << dump_absolute_uri;
+                  
+            try
+            {
+              YIELD::HTTPClient::PUT( dump_absolute_uri, dump_file_path, get_log() );
+            }
+            catch ( std::exception& exc )
+            {
+              get_log()->getStream( YIELD::Log::LOG_EMERG ) << get_program_name() << ": exception trying to send dump to the server: " << exc.what();
+            }
+          }
+
+          return succeeded;
+        }
+#endif
       };
     };
   };

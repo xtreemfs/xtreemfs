@@ -64,7 +64,7 @@ namespace org
         std::string mount_point, volume_name;
 
 
-        // xtfs_bin
+        // YIELD::Main
         int _main( int argc, char** argv )
         {
           if ( foreground )

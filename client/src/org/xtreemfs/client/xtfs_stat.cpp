@@ -27,7 +27,7 @@ namespace org
         YIELD::auto_Object<YIELD::URI> mrc_uri;
         Path path;
 
-        // xtfs_bin
+        // YIELD::Main
         int _main( int, char** )
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
