@@ -17,7 +17,7 @@
 //#ifdef _DEBUG
 //#include <vld.h>
 //#endif
-#elif defined(__linux)
+#elif defined(__linux) && !defined(__x86_64__)
 #include "client/linux/handler/exception_handler.h"
 #define ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD 1
 #endif
