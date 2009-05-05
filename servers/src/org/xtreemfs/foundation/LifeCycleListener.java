@@ -35,6 +35,6 @@ public interface LifeCycleListener {
 
     public void shutdownPerformed();
 
-    public void crashPerformed();
+    public void crashPerformed(Throwable cause);
 
 }

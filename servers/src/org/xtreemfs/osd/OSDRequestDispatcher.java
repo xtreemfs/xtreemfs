@@ -99,6 +99,7 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.foundation.CrashReporter;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
 
@@ -464,7 +465,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
     }
     
-    public void crashPerformed() {
+    public void crashPerformed(Throwable cause) {
+        CrashReporter.reportXtreemFSCrash("OSD", this.VERSION, cause);
         this.shutdown();
     }
     

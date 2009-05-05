@@ -81,6 +81,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.foundation.CrashReporter;
 
 /**
  * 
@@ -509,7 +510,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void shutdownPerformed() {
     }
     
-    public void crashPerformed() {
+    public void crashPerformed(Throwable cause) {
+        CrashReporter.reportXtreemFSCrash("MRC", this.VERSION, cause);
         try {
             shutdown();
         } catch (Exception e) {

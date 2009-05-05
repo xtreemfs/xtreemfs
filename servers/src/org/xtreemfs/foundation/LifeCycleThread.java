@@ -112,7 +112,7 @@ public class LifeCycleThread extends Thread {
         }
         
         if (listener != null)
-            listener.crashPerformed();
+            listener.crashPerformed(exc);
     }
     
     /**

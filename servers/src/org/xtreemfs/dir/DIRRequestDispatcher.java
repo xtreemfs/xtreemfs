@@ -63,6 +63,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.foundation.CrashReporter;
 
 /**
  * 
@@ -280,7 +281,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     }
     
     @Override
-    public void crashPerformed() {
+    public void crashPerformed(Throwable cause) {
+        CrashReporter.reportXtreemFSCrash("DIR", this.VERSION, cause);
         try {
             shutdown();
         } catch (Exception e) {
