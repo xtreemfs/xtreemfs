@@ -1,0 +1,58 @@
+.TH xtfs_sp 1 "July 2008" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_sp \- get and set the default striping policy associated with an XtreemFS directory or volume.
+.SH SYNOPSIS
+\fBxtfs_sp \--get|--set [options] \fIpath\fP
+.br
+
+.SH DESCRIPTION
+.I xtfs_sp
+gets or sets the default striping policy assigned to a directory, where \fIpath\fP
+refers to a file or directory that is part of a mounted XtreemFS volume. The \fIset\fP command sets the default striping policy of \fIpath\fP. The \fIget\fP command shows the striping policy currently assigned to \fIpath\fP.
+
+.SH OPTIONS
+
+.TP
+\fB\-\-get
+retrieve and display the default striping policy for a volume or directory
+.TP
+\fB\-\-set
+changes the default striping policy for a volume or directory, -p -s and -w must be specified
+.TP
+\fB\-p/\-\-striping-policy=NONE|RAID0
+striping policy
+.TP
+\fB\-w/\-\-striping-policy-width=n
+number of OSDs to stripe the file to
+.TP
+\fB\-s/\-\-striping-policy-stripe-size=n
+size of stripes in kB
+.TP
+\fB\-v/\-\-verbose
+print more information
+
+
+.SH EXAMPLE USAGE
+.B "xtfs_sp --set -p RAID0 -w 4 -s 256 ./xtfs-dir
+.PP
+sets the default striping policy of the directory \fB./xtfs-dir\fP to a \fBRAID0\fP striping pattern with a stripe size of \fB256kb\fP and a maximum amount of \fB4\fP OSDs.
+.PP
+.B "xtfs_sp --get ./xtfs-dir
+.PP
+shows the default striping policy assigned to the directory \fB./xtfs-dir\fP.
+
+.SH "SEE ALSO"
+.BR xtfs_mount (1),
+.BR xtfs_umount (1),
+.BR xtfs_showmount (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_stat (1),
+.BR xtfs_scrub (1),
+.BR xtfs_mrcdbtool (1)
+.BR
+
+
+.SH AVAILABILITY
+The xtfs_sp command is part of the XtreemFS-client package and is available from http://www.XtreemFS.org
