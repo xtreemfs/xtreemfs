@@ -184,6 +184,7 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
           YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_socket_factory(), get_log() );
+          proxy->set_reconnect_tries_max( 3 );
           if ( timeout_ms != 0 )
             proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
           return proxy;

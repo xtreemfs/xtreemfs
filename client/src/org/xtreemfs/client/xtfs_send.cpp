@@ -135,17 +135,17 @@ namespace org
             if ( rpc_uri->get_resource().size() > 1 )
             {
               std::string request_type_name( rpc_uri->get_resource().c_str() + 1 );
-              request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ) );
+              request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::MRCInterface::" + request_type_name + "SyncRequest" ).release() );
               if ( request!= NULL )
                 proxy = createMRCProxy( *rpc_uri ).release();
               else
               {
-                request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ) );
+                request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::DIRInterface::" + request_type_name + "SyncRequest" ).release() );
                 if ( request!= NULL )
                   proxy = createDIRProxy( *rpc_uri ).release();
                 else
                 {
-                  request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ) );
+                  request = static_cast<YIELD::Request*>( object_factories->createObject( "org::xtreemfs::interfaces::OSDInterface::" + request_type_name + "SyncRequest" ).release() );
                   if ( request!= NULL )
                     proxy = createOSDProxy( *rpc_uri ).release();
                   else
