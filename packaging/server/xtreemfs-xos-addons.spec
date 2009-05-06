@@ -1,5 +1,5 @@
 Name:           XtreemFS-XOS-addons
-Version:        1.0.0
+Version:        0.99.0
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build

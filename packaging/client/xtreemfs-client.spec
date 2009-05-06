@@ -1,12 +1,12 @@
 Name:           XtreemFS-client
-Version:        1.0.0
+Version:        0.99.0
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          Networking
 Summary:        XtreemFS client
 Source0:        %{name}-%{version}.tar.gz
-Requires:       fuse >= 2.6 attr
+Requires:       fuse >= 2.6 attr python >= 2.4
 
 
 #requires for different distributions

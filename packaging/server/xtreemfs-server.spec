@@ -1,5 +1,5 @@
 Name:           XtreemFS-server
-Version:        1.0.0
+Version:        0.99.0
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -25,6 +25,8 @@ XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
 XTREEMFS_INIT_DIR="$RPM_BUILD_ROOT/etc/init.d/"
 BIN_DIR="$RPM_BUILD_ROOT/usr/bin"
 MAN_DIR="$RPM_BUILD_ROOT/usr/share/man"
+
+export NO_BRP_CHECK_BYTECODE_VERSION=true
 
 # copy jars
 mkdir -p $XTREEMFS_JAR_DIR
@@ -71,7 +73,5 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/xtreemfs-*
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
-#/usr/share/man/man1/xtreemfs*
-
-%config
+/etc/xos/
 /etc/xos/xtreemfs/*

@@ -10,7 +10,6 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 SERVER_WHITE_LIST=(
-	"servers/build.xml" ""
 	"servers/bin" "bin"
 	"servers/config/default_dir" "config/default_dir"
 	"servers/config/dirconfig.properties" "config/dirconfig.properties"
@@ -21,6 +20,8 @@ SERVER_WHITE_LIST=(
 	"servers/man" "man"
 	"servers/dist" "dist"
 	"packaging/generate_uuid" "packaging"
+	"AUTHORS" ""
+	"COPYING" ""
 )
 
 # white list for files/dirs which should be copied
@@ -35,12 +36,17 @@ CLIENT_WHITE_LIST=(
 	"client/src" "src"
 	"client/bin" "bin"
 	"client/man" "man"
+	"utils/man" "man"
 	"servers/config/default_dir" "config/default_dir"
+	"AUTHORS" ""
+	"COPYING" ""
 )
 
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
 	"servers/xtreemos" "xtreemos"
+	"AUTHORS" ""
+	"COPYING" ""
 )
 
 # black list for files/dirs which should NEVER be copied
