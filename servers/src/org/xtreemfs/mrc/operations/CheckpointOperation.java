@@ -24,10 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_checkpointResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 
 /**
@@ -46,6 +48,11 @@ public class CheckpointOperation extends MRCOperation {
     public void startRequest(MRCRequest rq) {
         
         try {
+            
+            // check password to ensure that user is authorized
+            if (master.getConfig().getAdminPassword() != null
+                && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+                throw new UserException(ErrNo.EPERM, "invalid password");
             
             master.getVolumeManager().checkpointDB();
             

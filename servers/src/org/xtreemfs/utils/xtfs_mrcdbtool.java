@@ -33,11 +33,13 @@ import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -60,6 +62,7 @@ public class xtfs_mrcdbtool {
         options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put("adminpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         
         try {
             CLIParser.parseCLI(args, options, arguments);
@@ -105,7 +108,7 @@ public class xtfs_mrcdbtool {
         String host = mrc.urlValue.getHost();
         int port = mrc.urlValue.getPort();
         String protocol = mrc.urlValue.getProtocol();
-                
+        
         RPCNIOSocketClient rpcClient = null;
         
         try {
@@ -118,13 +121,13 @@ public class xtfs_mrcdbtool {
             
             StringSet gids = new StringSet();
             gids.add("");
-            UserCredentials creds = new UserCredentials("", gids, p == null? "passphrase": p.stringValue);
+            UserCredentials creds = new UserCredentials("", gids, p == null ? "" : p.stringValue);
             
             if (op.equals("dump")) {
                 RPCResponse<Object> r = null;
                 try {
                     r = client.xtreemfs_dump_database(null, creds, dumpFile);
-                    r.waitForResult();
+                    r.get();
                 } finally {
                     if (r != null)
                         r.freeBuffers();
@@ -135,7 +138,7 @@ public class xtfs_mrcdbtool {
                 RPCResponse<Object> r = null;
                 try {
                     r = client.xtreemfs_restore_database(null, creds, dumpFile);
-                    r.waitForResult();
+                    r.get();
                 } finally {
                     if (r != null)
                         r.freeBuffers();
@@ -145,6 +148,11 @@ public class xtfs_mrcdbtool {
             else
                 usage();
             
+        } catch (MRCException exc) {
+            if (exc.getError_code() == ErrNo.EPERM)
+                System.out.println("permission denied: invalid administrator password");
+            else
+                exc.printStackTrace();
         } catch (Exception exc) {
             exc.printStackTrace();
         } finally {

@@ -28,10 +28,12 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
@@ -52,6 +54,12 @@ public class DumpDBOperation extends MRCOperation {
     public void startRequest(MRCRequest rq) throws Throwable {
         
         final xtreemfs_dump_databaseRequest rqArgs = (xtreemfs_dump_databaseRequest) rq.getRequestArgs();
+        
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
+        
         final VolumeManager vMan = master.getVolumeManager();
         
         BufferedWriter xmlWriter = new BufferedWriter(new FileWriter(rqArgs.getDump_file()));

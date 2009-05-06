@@ -75,3 +75,6 @@ checksums.enabled = false
 geographic_coordinates = 41.388417,2.114632
 
 capability_secret = Yagga
+
+# administrator password for privileged operations
+#admin_password = blub

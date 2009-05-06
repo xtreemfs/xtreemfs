@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -68,6 +69,12 @@ public class RestoreDBOperation extends MRCOperation {
             
             final xtreemfs_restore_databaseRequest rqArgs = (xtreemfs_restore_databaseRequest) rq
                     .getRequestArgs();
+                        
+            // check password to ensure that user is authorized
+            if (master.getConfig().getAdminPassword() != null
+                && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+                throw new UserException(ErrNo.EPERM, "invalid password");
+            
             final VolumeManager vMan = master.getVolumeManager();
             
             // First, check if any volume exists already. If so, deny the

@@ -219,6 +219,7 @@ public class ProcessingStage extends MRCStage {
                     rq.getDetails().superUser = cred.isSuperUser();
                     rq.getDetails().groupIds = cred.getGroupIDs();
                     rq.getDetails().userId = cred.getUserID();
+                    rq.getDetails().password = ctx.getPassword();
                 } catch (AuthenticationException ex) {
                     throw new UserException(ErrNo.EPERM, ex.getMessage());
                 }

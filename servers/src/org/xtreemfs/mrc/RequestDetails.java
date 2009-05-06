@@ -33,12 +33,14 @@ import java.util.Map;
  * @author clorenz
  */
 public final class RequestDetails {
-        
+    
     public String              userId;
     
     public boolean             superUser;
     
     public List<String>        groupIds;
+    
+    public String              password;
     
     public Map<String, Object> context;
     

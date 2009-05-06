@@ -21,20 +21,19 @@
 #debug.categories = all
 
 # port for the service to listen on
-listen.port = 32640
+listen.port = 32641
 
-# port for the status page (HTTP server)
 http_port = 30640
 
 # optional address for network device, "any" if not specified
-# listen.address = 127.0.0.1
+#listen.address = 127.0.0.1
 
 # Directory Service endpoint
 dir_service.host = localhost
 dir_service.port = 32638
 
 # directory containing XtreemFS file content
-object_dir = /var/lib/xtreemfs/objs/
+object_dir = /tmp/xtreemfs-test/osd/
 
 # granularity of the local clock (in ms)
 local_clock_renewal = 50
@@ -44,16 +43,6 @@ remote_time_sync = 60000
 
 # specify whether SSL is required
 ssl.enabled = false
-
-# server credentials for SSL handshakes
-ssl.service_creds = /etc/xos/xtreemfs/truststore/certs/osd.p12
-ssl.service_creds.pw = xtreemfs
-ssl.service_creds.container = pkcs12
-
-# trusted certificates for SSL handshakes
-ssl.trusted_certs = /etc/xos/xtreemfs/truststore/certs/xosrootca.jks
-ssl.trusted_certs.pw = xtreemfs
-ssl.trusted_certs.container = jks
 
 report_free_space = true
 
@@ -66,15 +55,13 @@ checksums.enabled = false
 # by default, Adler32, CRC32, MD5 and SHA-1 are supported
 checksums.algorithm = Adler32
 
-# Shared secret between the MRC and all OSDs.
-# The secret is used by the MRC to sign capabilities, i.e. security tokens for
-# data access at OSDs. In turn, an OSD uses the secret to verify that the
-# capability has been issued by the MRC. The shared secret will be replaced by
-# a public key infrastructure in future releases.
-capability_secret = secretPassphrase
-
-# administrator password for privileged operations
-#admin_password = passphrase
-
 # UUID for the OSD
-uuid = default-OSD
+# IMPORTANT: replace 'localhost' with a reachable host name/IP address
+#uuid = http://farnsworth.zib.de:32640
+uuid = test-localhost-OSD
+
+checksums.enabled = false
+
+geographic_coordinates = 41.388417,2.114632
+
+capability_secret = Yagga

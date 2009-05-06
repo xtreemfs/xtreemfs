@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
@@ -55,6 +56,11 @@ public class DeleteVolumeOperation extends MRCOperation {
     public void startRequest(final MRCRequest rq) throws Throwable {
         
         final xtreemfs_rmvolRequest rqArgs = (xtreemfs_rmvolRequest) rq.getRequestArgs();
+        
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
         
         final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
         final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());

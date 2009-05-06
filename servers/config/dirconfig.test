@@ -35,10 +35,7 @@ database.dir = /tmp/xtreemfs-test/dir/database
 # specify whether SSL is required
 ssl.enabled = false
 
-#authentication providers are used to retrieve the user identities
-#from the client or from certificate
-#default provider is org.xtreemfs.common.auth.NullAuthProvider
-#which just takes the information provided by the client
-authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
+# administrator password for privileged operations
+#admin_password = blub
 
-uuid = test-localhost-DIR 
+uuid = test-localhost-DIR

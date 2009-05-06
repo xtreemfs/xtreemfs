@@ -24,12 +24,12 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.UserException;
 
 /**
  * 
@@ -47,6 +47,11 @@ public class InternalDebugOperation extends MRCOperation {
     public void startRequest(MRCRequest rq) throws Throwable {
         
         final xtreemfs_internal_debugRequest rqArgs = (xtreemfs_internal_debugRequest) rq.getRequestArgs();
+        
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
         
         if (rqArgs.getCmd().equals("shutdown_babudb")) {
             master.getVolumeManager().checkpointDB();

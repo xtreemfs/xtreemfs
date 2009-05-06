@@ -30,43 +30,32 @@ import java.util.Properties;
 import org.xtreemfs.common.config.ServiceConfig;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class DIRConfig extends ServiceConfig {
-
-    private String dbDir;
-
-    private String authenticationProvider;
-
     
-
+    private String dbDir;
+    
     /** Creates a new instance of OSDConfig */
     public DIRConfig(String filename) throws IOException {
         super(filename);
         read();
     }
-
+    
     public DIRConfig(Properties prop) throws IOException {
         super(prop);
         read();
     }
-
+    
     public void read() throws IOException {
         super.read();
-
+        
         this.dbDir = this.readRequiredString("database.dir");
-        this.authenticationProvider = readRequiredString("authentication_provider");      
-
     }
-
+    
     public String getDbDir() {
         return dbDir;
     }
-
-    public String getAuthenticationProvider() {
-        return authenticationProvider;
-    }
-
-
+    
 }

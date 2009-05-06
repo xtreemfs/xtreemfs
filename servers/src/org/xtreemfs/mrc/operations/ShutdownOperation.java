@@ -24,9 +24,11 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 
 /**
  * 
@@ -43,11 +45,15 @@ public class ShutdownOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
+        
         rq.setResponse(new xtreemfs_shutdownResponse());
         finishRequest(rq);
         
         master.asyncShutdown();
-        
     }
     
 }

@@ -64,10 +64,15 @@ public class CreateVolumeOperation extends MRCOperation {
         
         final xtreemfs_mkvolRequest rqArgs = (xtreemfs_mkvolRequest) rq.getRequestArgs();
         
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
+        
         validateContext(rq);
         Volume volData = rqArgs.getVolume();
         
-        // first, check whether the given policies are supported
+        // check whether the given policies are supported
         
         if (master.getOSDStatusManager().getOSDSelectionPolicy(
             (short) volData.getOsd_selection_policy().intValue()) == null)
@@ -80,8 +85,7 @@ public class CreateVolumeOperation extends MRCOperation {
                 + volData.getAccess_control_policy());
         
         // in order to allow volume creation in a single-threaded
-        // non-blocking
-        // manner, it needs to be performed in two steps:
+        // non-blocking manner, it needs to be performed in two steps:
         // * first, the volume is registered with the directory service
         // * when registration has been confirmed at the directory service,
         // request processing is continued with step 2

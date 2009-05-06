@@ -101,3 +101,6 @@ authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 geographic_coordinates = 52.455483,13.297405
 
 capability_secret = Yagga
+
+# administrator password for privileged operations
+#admin_password = blub

@@ -18,7 +18,7 @@ debug.level = 7
 # proc          - log messages pertaining to any kind of request processing
 # db            - database access log messages
 # misc          - any other log messages
-debug.categories = net proc
+debug.categories = net
 
 # port for the service to listen on
 listen.port = 32636
@@ -91,3 +91,6 @@ authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 geographic_coordinates = 52.455483,13.297405
 
 capability_secret = Yagga
+
+# administrator password for privileged operations
+#admin_password = blub
