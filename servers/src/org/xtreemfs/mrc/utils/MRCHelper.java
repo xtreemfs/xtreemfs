@@ -24,15 +24,22 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.mrc.utils;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
@@ -41,6 +48,7 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -49,6 +57,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.operations.AddReplicaOperation;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
@@ -93,7 +102,9 @@ public class MRCHelper {
             ac_policy_id,
             osdsel_policy_id,
             osdsel_policy_args,
+            usable_osds,
             read_only,
+            add_replica,
             free_space
     }
     
@@ -242,14 +253,14 @@ public class MRCHelper {
             
             case locations:
                 XLocList xLocList = file.getXLocList();
-                return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToString(xLocList);
+                return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToJSON(xLocList);
             case file_id:
                 return volume.getId() + ":" + file.getId();
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url:
-                return "uuid:" + config.getUUID().toString() + "/" + path;
+                return "oncrpc"+ (config.isUsingSSL() ? "s" : "")+"://" + config.getUUID().getAddress().getHostName()+":"+config.getUUID().getAddress().getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
             case group:
@@ -273,6 +284,17 @@ public class MRCHelper {
                     return "";
                 
                 return String.valueOf(file.isReadOnly());
+
+            case usable_osds: {
+                ServiceSet srvs = osdMan.getUsableOSDs(volume.getId());
+                Map<String,String> osds = new HashMap();
+                for (Service srv:srvs) {
+                    ServiceUUID uuid = new ServiceUUID(srv.getUuid());
+                    InetAddress ia = uuid.getAddress().getAddress();
+                    osds.put(uuid.toString(),ia.getCanonicalHostName());
+                }
+                return JSONParser.writeJSON(osds);
+            }
             case free_space:
                 return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(volume.getId())) : "";
             }
@@ -378,7 +400,23 @@ public class MRCHelper {
             vMan.updateVolume(volume);
             
             break;
-        
+
+        case add_replica: {
+                try {
+                    Replica newReplica = Converter.replicaFromJSON(value);
+                    //FIXME: execute add replica here!
+                } catch (JSONException exc) {
+                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+                } catch (ClassCastException exc) {
+                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+                } catch (NullPointerException exc) {
+                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+                } catch (IllegalArgumentException exc) {
+                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+                }
+                break;
+            }
+
         case read_only:
 
             if (file.isDirectory())
