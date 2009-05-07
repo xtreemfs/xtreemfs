@@ -56,7 +56,6 @@ start() {
     if [ -f $LOCKFILE ]
     then
 	echo -n "XtreemFS Directory Service (DIR) already started"
-        log_failure_msg
 	echo
         return 0
     fi
@@ -75,10 +74,8 @@ start() {
 
     if [ -e /proc/$PROCPID ]
     then
-	log_success_msg
 	echo
     else
-	log_failure_msg
 	echo
 	return 1
     fi
@@ -93,7 +90,6 @@ stop() {
     then
         echo -n "stopping XtreemFS Directory Service (DIR)..."
         killproc -p $PID_DS java
-        log_success_msg
 	echo
     fi
 
@@ -139,7 +135,7 @@ case "$1" in
         ;;
     *)
         echo -e "Usage: $0 {start|stop|restart|reload|status}\n"
-	log_failure_msg
+	return 1
         ;;
 esac
 
