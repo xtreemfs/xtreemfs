@@ -57,9 +57,9 @@ public class xtfs_mrcdbtool {
         List<String> arguments = new ArrayList<String>(3);
         options.put("mrc", new CliOption(CliOption.OPTIONTYPE.URL));
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("cp", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put("adminpass", new CliOption(CliOption.OPTIONTYPE.STRING));
@@ -100,9 +100,9 @@ public class xtfs_mrcdbtool {
         String dumpFile = arguments.get(1);
         
         CliOption c = options.get("c");
-        CliOption cp = options.get("cp");
+        CliOption cp = options.get("cpass");
         CliOption t = options.get("t");
-        CliOption tp = options.get("tp");
+        CliOption tp = options.get("tpass");
         CliOption p = options.get("p");
         
         String host = mrc.urlValue.getHost();

@@ -29,13 +29,13 @@ The URL the MRC, e.g. oncrpc://localhost:32636.
 .B \-c \fIcreds_file
 Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with oncrpcs://.
 .TP
-.B \-cp \fIcreds_passphrase
+.B \-cpass \fIcreds_passphrase
 An optional passphrase to access the credentials file.
 .TP
 .B \-t \fItrusted_CAs
 Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with oncrpcs://.
 .TP
-.B \-tp \fItrusted_passphrase
+.B \-tpass \fItrusted_passphrase
 An optional passphrase to access the truststore file.
 .TP
 .B \-p \fIpassphrase
@@ -45,7 +45,7 @@ The administrator password, if password protection is enabled
 .SH "SEE ALSO"
 .BR xtfs_mount (1),
 .BR xtfs_umount (1),
-.BR xtfs_showmount (1),
+.BR xtfs_sp (1),
 .BR xtfs_mkvol (1),
 .BR xtfs_rmvol (1),
 .BR xtfs_lsvol (1),

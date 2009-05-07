@@ -67,4 +67,5 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
+/etc/xos/
 /etc/xos/xtreemfs/*
