@@ -153,6 +153,8 @@ public class TestEnvironment {
             RPCResponse<Long> response = dirClient.xtreemfs_service_register(null, reg);
             response.get();
             response.freeBuffers();
+            
+            UUIDResolver.addLocalMapping("mockUpOSD", 11111, false);
         }
 
         if (enabledServs.contains(Services.OSD)) {

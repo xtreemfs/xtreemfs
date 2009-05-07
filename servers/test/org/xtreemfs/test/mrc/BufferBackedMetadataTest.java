@@ -71,6 +71,20 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(faPol, vol.getAcPolicyId());
         assertEquals(osdPol, vol.getOsdPolicyId());
         assertEquals(osdPolArgs, vol.getOsdPolicyArgs());
+        
+        final String newArgs = "blubber";
+        final short replPol = 4;
+        final short newOsdPol = 2;
+        vol.setOsdPolicyArgs(newArgs);
+        vol.setReplicaPolicyId(replPol);
+        vol.setOsdPolicyId(newOsdPol);
+        
+        assertEquals(id, vol.getId());
+        assertEquals(name, vol.getName());
+        assertEquals(faPol, vol.getAcPolicyId());
+        assertEquals(newOsdPol, vol.getOsdPolicyId());
+        assertEquals(newArgs, vol.getOsdPolicyArgs());
+        assertEquals(replPol, vol.getReplicaPolicyId());
     }
     
     public void testBufferBackedACLEntry() throws Exception {
@@ -189,17 +203,22 @@ public class BufferBackedMetadataTest extends TestCase {
         {
             final String[] osds = { "someOSD", "anotherOSD", "myOSD" };
             final BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 1024, 4);
+            final int replFlags = 237;
             
             // create XLoc
-            BufferBackedXLoc xloc1 = new BufferBackedXLoc(sp, osds);
-            checkXLoc(osds, sp, xloc1);
+            BufferBackedXLoc xloc1 = new BufferBackedXLoc(sp, osds, replFlags);
+            checkXLoc(osds, sp, replFlags, xloc1);
             
             byte[] tmpBuf = new byte[xloc1.getBuffer().length + 10];
             System.arraycopy(xloc1.getBuffer(), 0, tmpBuf, 3, xloc1.getBuffer().length);
             
             // copy XLoc
             BufferBackedXLoc xloc2 = new BufferBackedXLoc(tmpBuf, 3, xloc1.getBuffer().length);
-            checkXLoc(osds, sp, xloc2);
+            checkXLoc(osds, sp, replFlags, xloc2);
+            
+            final int newReplFlags = Integer.MIN_VALUE;
+            xloc2.setReplicationFlags(newReplFlags);
+            assertEquals(Integer.MIN_VALUE, xloc2.getReplicationFlags());
         }
         
     }
@@ -212,8 +231,9 @@ public class BufferBackedMetadataTest extends TestCase {
                 new BufferBackedStripingPolicy("asfd", 34, -1));
             
             final List<BufferBackedXLoc> replicas = generateXLocList(new BufferBackedXLoc(sp.get(0),
-                new String[] { "11111", "22222", "33333" }), new BufferBackedXLoc(sp.get(1), new String[] {
-                "fdsay", "34", "4" }), new BufferBackedXLoc(sp.get(2), new String[] { "354", ",mn", "asdf" }));
+                new String[] { "11111", "22222", "33333" }, 43), new BufferBackedXLoc(sp.get(1),
+                new String[] { "fdsay", "34", "4" }, 99), new BufferBackedXLoc(sp.get(2), new String[] {
+                "354", ",mn", "asdf" }, 45));
             int version = 37;
             String updatePolicy = "bla";
             
@@ -316,7 +336,7 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(owner, xattr.getOwner());
     }
     
-    private void checkXLoc(String[] osds, StripingPolicy sp, BufferBackedXLoc xloc) {
+    private void checkXLoc(String[] osds, StripingPolicy sp, int flags, BufferBackedXLoc xloc) {
         
         final StripingPolicy xlocSP = xloc.getStripingPolicy();
         
@@ -328,6 +348,8 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(osds.length, xloc.getOSDCount());
         for (int i = 0; i < osds.length; i++)
             assertEquals(osds[i], xloc.getOSD(i).toString());
+        
+        assertEquals(flags, xloc.getReplicationFlags());
     }
     
     private void checkXLocList(List<BufferBackedXLoc> replicas, int version, String updatePolicy,
@@ -336,7 +358,7 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(version, xlocList.getVersion());
         assertEquals(updatePolicy, xlocList.getReplUpdatePolicy());
         assertEquals(replicas.size(), xlocList.getReplicaCount());
-                
+        
         for (int i = 0; i < replicas.size(); i++)
             assertEquals(replicas.get(i).toString(), xlocList.getReplica(i).toString());
     }

@@ -81,9 +81,6 @@ public class FileAccessManager {
         this.policyContainer = policyContainer;
         
         policies = new HashMap<Short, FileAccessPolicy>();
-        policies.put(POSIXFileAccessPolicy.POLICY_ID, new POSIXFileAccessPolicy());
-        policies.put(YesToAnyoneFileAccessPolicy.POLICY_ID, new YesToAnyoneFileAccessPolicy());
-        policies.put(VolumeACLFileAccessPolicy.POLICY_ID, new VolumeACLFileAccessPolicy());
     }
     
     public void checkSearchPermission(StorageManager sMan, PathResolver path, String userId,

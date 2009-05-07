@@ -40,42 +40,49 @@ package org.xtreemfs.mrc.volumes.metadata;
  * 
  */
 public interface VolumeInfo {
-
+    
     /**
      * Returns the volume's ID
      * 
      * @return the volume's ID
      */
     public String getId();
-
+    
     /**
      * Returns the volume's name.
      * 
      * @return the volume's name
      */
     public String getName();
-
+    
     /**
      * Returns the volume's OSD selection policy ID.
      * 
      * @return the volume's OSD selection policy ID.
      */
     public short getOsdPolicyId();
-
+    
     /**
      * Returns the volume's OSD selection policy arguments.
      * 
      * @return the volume's OSD selection policy arguments.
      */
     public String getOsdPolicyArgs();
-
+    
+    /**
+     * Returns the volume's replica selection policy ID.
+     * 
+     * @return the volume's replica selection policy ID.
+     */
+    public short getReplicaPolicyId();
+    
     /**
      * Returns the volume's access control policy ID.
      * 
      * @return the volume#s access control policy ID.
      */
     public short getAcPolicyId();
-
+    
     /**
      * Sets the volume's OSD selection policy ID.
      * 
@@ -83,7 +90,7 @@ public interface VolumeInfo {
      *            the new OSD selection policy ID for the volume
      */
     public void setOsdPolicyId(short osdPolicyId);
-
+    
     /**
      * Sets the volume's OSD selection policy arguments.
      * 
@@ -91,5 +98,13 @@ public interface VolumeInfo {
      *            the new OSD selection policy ID for the volume
      */
     public void setOsdPolicyArgs(String osdPolicyArgs);
-
+    
+    /**
+     * Sets the volume's replica selection policy ID.
+     * 
+     * @param replicaPolicyId
+     *            the new replica selection policy ID for the volume
+     */
+    public void setReplicaPolicyId(short replicaPolicyId);
+    
 }

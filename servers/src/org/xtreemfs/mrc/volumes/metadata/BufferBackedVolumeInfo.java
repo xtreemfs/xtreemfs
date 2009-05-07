@@ -48,24 +48,24 @@ public class BufferBackedVolumeInfo implements VolumeInfo {
         final byte[] osdPolArgsBytes = osdPolicyArgs == null ? new byte[0] : osdPolicyArgs
                 .getBytes();
         
-        byte[] tmp = new byte[8 + idBytes.length + nameBytes.length + osdPolArgsBytes.length];
+        byte[] tmp = new byte[10 + idBytes.length + nameBytes.length + osdPolArgsBytes.length];
         buf = ByteBuffer.wrap(tmp);
-        buf.putShort(fileAccessPolicyId).putShort(osdPolicyId).putShort(
-            (short) (8 + idBytes.length)).putShort((short) (8 + idBytes.length + nameBytes.length))
+        buf.putShort(fileAccessPolicyId).putShort(osdPolicyId).putShort((short) 1).putShort(
+            (short) (10 + idBytes.length)).putShort((short) (10 + idBytes.length + nameBytes.length))
                 .put(idBytes).put(nameBytes).put(osdPolArgsBytes);
     }
     
     @Override
     public String getId() {
         byte[] bytes = buf.array();
-        return new String(bytes, 8, buf.getShort(4) - 8);
+        return new String(bytes, 10, buf.getShort(6) - 10);
     }
     
     @Override
     public String getName() {
         byte[] bytes = buf.array();
-        short offs = buf.getShort(4);
-        return new String(bytes, offs, buf.getShort(6) - offs);
+        short offs = buf.getShort(6);
+        return new String(bytes, offs, buf.getShort(8) - offs);
     }
     
     @Override
@@ -74,9 +74,14 @@ public class BufferBackedVolumeInfo implements VolumeInfo {
     }
     
     @Override
+    public short getReplicaPolicyId() {
+        return buf.getShort(4);
+    }
+    
+    @Override
     public String getOsdPolicyArgs() {
         byte[] bytes = buf.array();
-        short offs = buf.getShort(6);
+        short offs = buf.getShort(8);
         return new String(bytes, offs, buf.limit() - offs);
     }
     
@@ -91,12 +96,17 @@ public class BufferBackedVolumeInfo implements VolumeInfo {
     }
     
     @Override
+    public void setReplicaPolicyId(short replicaPolicyId) {
+        buf.putShort(4, replicaPolicyId);
+    }
+    
+    @Override
     public void setOsdPolicyArgs(String osdPolicyArgs) {
         
         byte[] bytes = osdPolicyArgs.getBytes();
         
         // calculate the offset for the arguments
-        short ofs = buf.getShort(6);
+        short ofs = buf.getShort(8);
         
         // create a new buffer with sufficient space, copy all data but the old
         // arguments

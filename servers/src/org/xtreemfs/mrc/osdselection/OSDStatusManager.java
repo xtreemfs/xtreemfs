@@ -281,8 +281,10 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         // of feasible OSDs from the last set of OSDs received from the
         // Directory Service
         if (vol.usableOSDs.size() == 0) {
-            OSDSelectionPolicy policy = getOSDSelectionPolicy(vol.selectionPolicyID);
-            if (policy != null) {
+            
+            try {
+                OSDSelectionPolicy policy = policyContainer.getOSDSelectionPolicy(vol.selectionPolicyID);
+                
                 if (knownOSDs != null)
                     vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
                 else
@@ -294,7 +296,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                                 "could not determine set of feasible OSDs for volume '%s': haven't yet received an OSD list from Directory Service!",
                                 vol.volID);
                 
-            } else
+            } catch (Exception exc) {
                 Logging
                         .logMessage(
                             Logging.LEVEL_WARN,
@@ -302,6 +304,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                             this,
                             "could not determine set of feasible OSDs for volume '%s': no assignment policy available!",
                             vol.volID);
+            }
         }
         
         return vol.usableOSDs;
@@ -334,8 +337,10 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             }
         
         for (VolumeOSDs vol : volumeMap.values()) {
-            OSDSelectionPolicy policy = getOSDSelectionPolicy(vol.selectionPolicyID);
-            if (policy != null) {
+            
+            try {
+                
+                OSDSelectionPolicy policy = policyContainer.getOSDSelectionPolicy(vol.selectionPolicyID);
                 vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
                 
                 if (Logging.isDebug()) {
@@ -347,33 +352,12 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                         }
                 }
                 
-            } else {
+            } catch (Exception exc) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                     "policy ID %d selected for volume ID %s does not exist!", vol.selectionPolicyID,
                     vol.volID);
             }
         }
-    }
-    
-    public OSDSelectionPolicy getOSDSelectionPolicy(short policyId) {
-        
-        OSDSelectionPolicy policy = policies.get(policyId);
-        
-        // if the policy is not built-in, try to load it from the plug-in
-        // directory
-        if (policy == null) {
-            try {
-                policy = policyContainer.getOSDSelectionPolicy(policyId);
-                policies.put(policyId, policy);
-            } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                    "could not load OSDSelectionPolicy with ID %d", policyId);
-                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils
-                        .stackTraceToString(exc));
-            }
-        }
-        
-        return policy;
     }
     
     /**

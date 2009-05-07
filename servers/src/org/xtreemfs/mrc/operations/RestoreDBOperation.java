@@ -69,7 +69,7 @@ public class RestoreDBOperation extends MRCOperation {
             
             final xtreemfs_restore_databaseRequest rqArgs = (xtreemfs_restore_databaseRequest) rq
                     .getRequestArgs();
-                        
+            
             // check password to ensure that user is authorized
             if (master.getConfig().getAdminPassword() != null
                 && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
@@ -104,6 +104,8 @@ public class RestoreDBOperation extends MRCOperation {
                                     .getIndex("acPolicy")));
                             final short osdPol = Short.parseShort(attributes.getValue(attributes
                                     .getIndex("osdPolicy")));
+                            final short replPol = attributes.getIndex("replPolicy") == -1 ? 0 : Short
+                                    .parseShort(attributes.getValue(attributes.getIndex("replPolicy")));
                             final String osdPolArgs = attributes.getIndex("osdPolicyArgs") == -1 ? null
                                 : attributes.getValue(attributes.getIndex("osdPolicyArgs"));
                             
@@ -130,10 +132,17 @@ public class RestoreDBOperation extends MRCOperation {
                                     return osdPol;
                                 }
                                 
+                                public short getReplicaPolicyId() {
+                                    return replPol;
+                                }
+                                
                                 public void setOsdPolicyArgs(String osdPolicyArgs) {
                                 }
                                 
                                 public void setOsdPolicyId(short osdPolicyId) {
+                                }
+                                
+                                public void setReplicaPolicyId(short replicaPolicyId) {
                                 }
                                 
                             };

@@ -27,10 +27,10 @@ package org.xtreemfs.mrc.metadata;
 import java.nio.ByteBuffer;
 
 public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
-
-    private String[]         osdCache;
     
-    private StripingPolicy   stripingPolicy;
+    private String[]       osdCache;
+    
+    private StripingPolicy stripingPolicy;
     
     public BufferBackedXLoc(byte[] buffer) {
         this(buffer, 0, buffer.length);
@@ -46,7 +46,7 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         osdCache = new String[numOSDs];
     }
     
-    public BufferBackedXLoc(BufferBackedStripingPolicy stripingPolicy, String[] osds) {
+    public BufferBackedXLoc(BufferBackedStripingPolicy stripingPolicy, String[] osds, int replFlags) {
         
         super(null, 0, 0);
         
@@ -63,15 +63,18 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
         int spolSize = stripingPolicy.getLength();
         assert (spolSize <= Short.MAX_VALUE);
         
-        int bufSize = spolSize + osdListSize + 2;
+        int bufSize = spolSize + osdListSize + 6;
         
         // allocate a new buffer
         len = bufSize;
         buffer = new byte[len];
         ByteBuffer tmp = ByteBuffer.wrap(buffer);
         
-        // first 2 bytes: osd list offset
-        tmp.putShort((short) (spolSize + 2));
+        // first 6 bytes: osd list offset + replication flags
+        tmp.putShort((short) (spolSize + 6));
+        
+        // next 4 bytes: replication flags
+        tmp.putInt(replFlags);
         
         // next bytes: striping policy
         tmp.put(stripingPolicy.getBuffer(), stripingPolicy.getOffset(), stripingPolicy.getLength());
@@ -121,14 +124,24 @@ public class BufferBackedXLoc extends BufferBackedMetadata implements XLoc {
             short osdListStart = tmp.getShort(offset);
             assert (osdListStart >= 0);
             
-            if (osdListStart == 2)
+            if (osdListStart == 6)
                 return null;
             
             // create the target object from a view buffer (skip the len bytes)
-            stripingPolicy = new BufferBackedStripingPolicy(buffer, offset + 2, osdListStart - 2);
+            stripingPolicy = new BufferBackedStripingPolicy(buffer, offset + 6, osdListStart - 6);
         }
         
         return stripingPolicy;
+    }
+    
+    public int getReplicationFlags() {
+        ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
+        return tmp.getInt(offset + 2);
+    }
+    
+    public void setReplicationFlags(int replFlags) {
+        ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
+        tmp.putInt(offset + 2, replFlags);
     }
     
     private int getOSDBufferOffset(int osdPosition) {

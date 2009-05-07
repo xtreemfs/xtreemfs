@@ -34,7 +34,12 @@ module org
       {
         OSD_SELECTION_POLICY_SIMPLE = 1,
         OSD_SELECTION_POLICY_PROXIMITY = 2,
-	OSD_SELECTION_POLICY_DNS = 3
+        OSD_SELECTION_POLICY_DNS = 3
+      };
+      
+      enum ReplicaSelectionPolicyType
+      {
+        REPLICA_SELECTION_POLICY_SIMPLE = 1
       };
 
       struct OSDWriteResponse 

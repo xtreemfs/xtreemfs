@@ -26,11 +26,11 @@ VOL_INDEX (BabuDB index #0)
 |key   | volumeId                                                            |
 |      | var                                                                 |
 |----------------------------------------------------------------------------|
-|value | fileAccessPolicyId    osdPolicyId    volNameOffset                  |
-|      | 2                     2              2                              |
+|value | fileAccessPolicyId    osdPolicyId    replPolicyId    volNameOffset  |
+|      | 2                     2              2               4              |
 |      |                                                                     |
 |      | osdPolArgsOffset   volumeId   volumeName   osdPolicyArgs            |
-|      | 2                  var        var          var                      |
+|      | 4                  var        var          var                      |
 |----------------------------------------------------------------------------|
 
 
@@ -228,8 +228,11 @@ xLocList - represents an X-Locations list of a file
 
 xLoc - represents a single replica in an X-Locations list
 |----------------------------------------------------------------------------|
-|osdListOffset stripingPolicy numOSDs osd1ofs ... osdnofs osd1 ... osdn      |
-|2             var            2       2           2       var      var       |
+|osdListOffset  replFlags  stripingPolicy  numOSDs  osd1ofs  ...  osdnofs    |
+|2              4          var             2        2             2          |
+|                                                                            |
+|osd1  ...  osdn                                                             |
+|var        var                                                              |
 |----------------------------------------------------------------------------|
 
 stripingPolicy - represents a striping policy

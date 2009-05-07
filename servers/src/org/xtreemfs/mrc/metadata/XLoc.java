@@ -33,7 +33,7 @@ package org.xtreemfs.mrc.metadata;
 public interface XLoc {
     
     /**
-     * The number of OSDs in the X-Location.
+     * The number of OSDs in the replica.
      *  
      * @return the number of OSDs
      */
@@ -48,9 +48,23 @@ public interface XLoc {
     public String getOSD(int index);
     
     /**
-     * Returns the striping policy assigned to the X-Location.
+     * Returns the striping policy assigned to the replica.
      * 
      * @return the striping policy
      */
     public StripingPolicy getStripingPolicy();
+    
+    /**
+     * Returns the replication flags assigned to the replica
+     * 
+     * @return the replication flags
+     */
+    public int getReplicationFlags();
+    
+    /**
+     * Assigns new replication flags to the replica.
+     * 
+     * @param replFlags the replication flags
+     */
+    public void setReplicationFlags(int replFlags);
 }

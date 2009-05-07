@@ -48,6 +48,7 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
@@ -181,9 +182,9 @@ public class OpenOperation extends MRCOperation {
             
             // create a replica with the default striping policy together
             // with a set of feasible OSDs from the OSD status manager
-            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
-                    .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress());
+            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), master
+                    .getPolicyContainer(), volume, res.getParentDirId(), rqArgs.getPath(),
+                ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress());
             
             ReplicaSet replicas = new ReplicaSet();
             replicas.add(replica);
@@ -206,6 +207,12 @@ public class OpenOperation extends MRCOperation {
                 xLocSet.setRead_only_file_size(file.getSize());
         }
         
+        // re-order the replica list, based on the replica selection policy
+        ReplicaSelectionPolicy rsPol = master.getPolicyContainer().getReplicaSelectionPolicy(
+            volume.getReplicaPolicyId());
+        xLocSet.setReplicas(rsPol.getSortedReplicaList(xLocSet.getReplicas(), ((InetSocketAddress) rq
+                .getRPCRequest().getClientIdentity()).getAddress()));
+        
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                 .getGlobalTime()
             / 1000 + Capability.DEFAULT_VALIDITY,
@@ -213,8 +220,10 @@ public class OpenOperation extends MRCOperation {
             trEpoch, master.getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                "issued the following capability for %s:%d: %s", volume.getId(), file.getId(), cap.toString());
+            Logging
+                    .logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "issued the following capability for %s:%d: %s", volume.getId(), file.getId(), cap
+                                .toString());
         
         // update POSIX timestamps of file
         MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,

@@ -48,6 +48,8 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCException;
+import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -100,6 +102,7 @@ public class MRCHelper {
             group,
             default_sp,
             ac_policy_id,
+            repl_policy_id,
             osdsel_policy_id,
             osdsel_policy_args,
             usable_osds,
@@ -143,8 +146,8 @@ public class MRCHelper {
     }
     
     public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
-        OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress)
-        throws DatabaseException, UserException {
+        OSDStatusManager osdMan, PolicyContainer policyContainer, VolumeInfo volume, long parentDirId,
+        String path, InetAddress clientAddress) throws DatabaseException, UserException, MRCException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -179,9 +182,15 @@ public class MRCHelper {
         
         // add the OSDs to the X-Locations list, according to the OSD selection
         // policy
-        for (String osd : osdMan.getOSDSelectionPolicy(volume.getOsdPolicyId()).getOSDsForNewFile(osdMaps,
-            clientAddress, width, volume.getOsdPolicyArgs()))
-            osds.add(osd);
+        try {
+            for (String osd : policyContainer.getOSDSelectionPolicy(volume.getOsdPolicyId())
+                    .getOSDsForNewFile(osdMaps, clientAddress, width, volume.getOsdPolicyArgs()))
+                osds.add(osd);
+        } catch (MRCException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new MRCException(exc);
+        }
         
         return new Replica(sp, 0, osds);
     }
@@ -279,6 +288,8 @@ public class MRCHelper {
             case osdsel_policy_args:
                 return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume
                         .getOsdPolicyArgs()) : "";
+            case repl_policy_id:
+                return file.getId() == 1 ? volume.getReplicaPolicyId() + "" : "";
             case read_only:
                 if (file.isDirectory())
                     return "";
@@ -315,35 +326,6 @@ public class MRCHelper {
         }
         
         switch (key) {
-        
-        // case locations:
-        //
-        // // explicitly setting X-Locations lists is only permitted for files
-        // // that haven't yet been assigned an X-Locations list!
-        // if (file.getXLocList() != null)
-        // throw new UserException(ErrNo.EPERM,
-        // "cannot set X-Locations: OSDs have been assigned already");
-        //            
-        // try {
-        // // parse the X-Locations list, ensure that it is correctly
-        // // formatted and consistent
-        //                
-        // XLocList newXLoc = Converter.stringToXLocList(sMan, value);
-        //                
-        // if (!MRCHelper.isConsistent(newXLoc))
-        // throw new UserException(ErrNo.EINVAL,
-        // "inconsistent X-Locations list:"
-        // + "at least one OSD occurs more than once");
-        //                
-        // file.setXLocList(newXLoc);
-        // sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
-        //                
-        // } catch (MRCException exc) {
-        // throw new UserException(ErrNo.EINVAL, "invalid X-Locations-List: " +
-        // value);
-        // }
-        //            
-        // break;
         
         case default_sp:
 
@@ -400,6 +382,25 @@ public class MRCHelper {
             vMan.updateVolume(volume);
             
             break;
+        
+        case repl_policy_id:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL,
+                    "replica selection policies can only be set and configured on volumes");
+            
+            try {
+                short newPol = Short.parseShort(value);
+                
+                volume.setReplicaPolicyId(newPol);
+                vMan.updateVolume(volume);
+                
+            } catch (NumberFormatException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid replica selection policy: " + value);
+            }
+            
+            break;
+        
 
         case add_replica: {
                 try {

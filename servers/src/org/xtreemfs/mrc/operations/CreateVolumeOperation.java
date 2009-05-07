@@ -74,15 +74,22 @@ public class CreateVolumeOperation extends MRCOperation {
         
         // check whether the given policies are supported
         
-        if (master.getOSDStatusManager().getOSDSelectionPolicy(
-            (short) volData.getOsd_selection_policy().intValue()) == null)
+        try {
+            master.getPolicyContainer().getOSDSelectionPolicy(
+                (short) volData.getOsd_selection_policy().intValue());
+            
+        } catch (Exception exc) {
             throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
                 + volData.getOsd_selection_policy());
+        }
         
-        if (master.getFileAccessManager().getFileAccessPolicy(
-            (short) volData.getAccess_control_policy().intValue()) == null)
+        try {
+            master.getFileAccessManager().getFileAccessPolicy(
+                (short) volData.getAccess_control_policy().intValue());
+        } catch (Exception exc) {
             throw new UserException(ErrNo.EINVAL, "invalid file access policy ID: "
                 + volData.getAccess_control_policy());
+        }
         
         // in order to allow volume creation in a single-threaded
         // non-blocking manner, it needs to be performed in two steps:

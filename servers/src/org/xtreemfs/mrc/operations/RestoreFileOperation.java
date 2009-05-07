@@ -113,7 +113,7 @@ public class RestoreFileOperation extends MRCOperation {
         
         // create and assign the new XLocList
         StripingPolicy sp = sMan.createStripingPolicy("RAID0", size, 1);
-        XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() });
+        XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() }, 0);
         XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, Constants.REPL_UPDATE_PC_NONE, 0);
         
         file.setXLocList(xLocList);

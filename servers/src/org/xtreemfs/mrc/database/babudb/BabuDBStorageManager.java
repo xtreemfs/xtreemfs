@@ -118,9 +118,9 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds) {
+    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds, int replFlags) {
         assert (stripingPolicy instanceof BufferBackedStripingPolicy);
-        return new BufferBackedXLoc((BufferBackedStripingPolicy) stripingPolicy, osds);
+        return new BufferBackedXLoc((BufferBackedStripingPolicy) stripingPolicy, osds, replFlags);
     }
     
     @Override

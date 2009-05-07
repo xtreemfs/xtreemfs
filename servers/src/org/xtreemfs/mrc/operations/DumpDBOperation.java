@@ -74,6 +74,8 @@ public class DumpDBOperation extends MRCOperation {
                         + volume.getName()
                         + "\" acPolicy=\""
                         + volume.getAcPolicyId()
+                        + "\" replPolicy=\""
+                        + volume.getReplicaPolicyId()
                         + "\" osdPolicy=\""
                         + volume.getOsdPolicyId()
                         + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\""

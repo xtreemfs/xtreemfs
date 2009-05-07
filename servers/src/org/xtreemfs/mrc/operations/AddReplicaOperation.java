@@ -129,7 +129,7 @@ public class AddReplicaOperation extends MRCOperation {
         
         // create a new replica and add it to the client's X-Locations list
         // (this will automatically increment the X-Locations list version)
-        XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]));
+        XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]), newRepl.getReplication_flags());
         if (xLocList == null)
             xLocList = sMan.createXLocList(new XLoc[] { replica },
                 file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : Constants.REPL_UPDATE_PC_NONE, 1);

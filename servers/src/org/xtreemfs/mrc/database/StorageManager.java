@@ -69,7 +69,7 @@ public interface StorageManager {
     
     public ACLEntry createACLEntry(long fileId, String entity, short rights);
     
-    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds);
+    public XLoc createXLoc(StripingPolicy stripingPolicy, String[] osds, int replFlags);
     
     public XLocList createXLocList(XLoc[] replicas, String replUpdatePolicy, int version);
     

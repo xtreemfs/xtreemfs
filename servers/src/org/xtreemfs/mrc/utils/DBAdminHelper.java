@@ -70,6 +70,8 @@ public class DBAdminHelper {
         
         public List<XLoc>          currentReplicaList;
         
+        public int                 currentReplFlags;
+        
         public List<String>        currentOSDList;
         
         public Map<String, Object> currentACL;
@@ -258,14 +260,16 @@ public class DBAdminHelper {
         
         StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
         
-        if (openTag)
+        if (openTag) {
             state.currentXLocSp = Converter.stringToStripingPolicy(sMan, attrs.getValue(attrs
                     .getIndex("pattern")));
-        
-        else {
+            state.currentReplFlags = attrs.getIndex("replFlags") == -1 ? 0 : Integer.parseInt(attrs
+                    .getValue(attrs.getIndex("replFlags")));
+            
+        } else {
             
             state.currentReplicaList.add(sMan.createXLoc(state.currentXLocSp, state.currentOSDList
-                    .toArray(new String[state.currentOSDList.size()])));
+                    .toArray(new String[state.currentOSDList.size()]), state.currentReplFlags));
             state.currentOSDList.clear();
         }
     }
@@ -404,7 +408,7 @@ public class DBAdminHelper {
                 XLoc repl = xloc.getReplica(i);
                 xmlWriter.write("<xloc pattern=\""
                     + OutputUtils.escapeToXML(Converter.stripingPolicyToString(repl.getStripingPolicy()))
-                    + "\">\n");
+                    + "\" replFlags=\"" + repl.getReplicationFlags() + "\">\n");
                 for (int j = 0; j < repl.getOSDCount(); j++)
                     xmlWriter.write("<osd location=\"" + repl.getOSD(j) + "\"/>\n");
                 xmlWriter.write("</xloc>\n");

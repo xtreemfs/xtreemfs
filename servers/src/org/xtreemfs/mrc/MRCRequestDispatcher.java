@@ -48,6 +48,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
@@ -81,7 +82,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.foundation.CrashReporter;
 
 /**
  * 
@@ -467,6 +467,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 volTableBuf.append(v.getAcPolicyId());
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");
                 volTableBuf.append(v.getOsdPolicyId());
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">replica policy</td><td>");
+                volTableBuf.append(v.getReplicaPolicyId());
                 volTableBuf.append("</td></tr></table></td></tr>");
             }
             
@@ -494,6 +496,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public OSDStatusManager getOSDStatusManager() {
         return osdMonitor;
+    }
+    
+    public PolicyContainer getPolicyContainer() {
+        return policyContainer;
     }
     
     public DIRClient getDirClient() {

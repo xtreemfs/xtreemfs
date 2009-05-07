@@ -174,14 +174,14 @@ public class Converter {
         return JSONParser.writeJSON(list);
     }
     
-    public static void main(String[] args) {
-        BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 256, 2);
-        BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1", "osd2" });
-        BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4" });
-        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, "policy", 3);
-        
-        System.out.println(xLocListToString(xLocList));
-    }
+//    public static void main(String[] args) {
+//        BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 256, 2);
+//        BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1", "osd2" }, 0);
+//        BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4" }, 0);
+//        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, "policy", 3);
+//        
+//        System.out.println(xLocListToString(xLocList));
+//    }
     
     /**
      * Converts an XLocSet to an XLocList
@@ -202,7 +202,7 @@ public class Converter {
             
             replicas[i] = sMan.createXLoc(sMan.createStripingPolicy(sp.getType().toString(), sp
                     .getStripe_size(), sp.getWidth()), repl.getOsd_uuids().toArray(
-                new String[repl.getOsd_uuids().size()]));
+                new String[repl.getOsd_uuids().size()]), repl.getReplication_flags());
         }
         
         return sMan.createXLocList(replicas, xLocSet.getRepUpdatePolicy(), xLocSet.getVersion());
@@ -238,10 +238,6 @@ public class Converter {
             replicas.add(repl);
         }
 
-        /*
-        //only for testing r/o-replication
-        Collections.shuffle(replicas);
-        */
         XLocSet xLocSet = new XLocSet();
         xLocSet.setReplicas(replicas);
         xLocSet.setRepUpdatePolicy(xLocList.getReplUpdatePolicy());

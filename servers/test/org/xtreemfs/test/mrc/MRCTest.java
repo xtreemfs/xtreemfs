@@ -57,6 +57,7 @@ import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;
 import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.test.SetupUtils;
@@ -854,7 +855,8 @@ public class MRCTest extends TestCase {
         // set the default striping policy of the parent directory via an
         // extended attribute
         invokeSync(client.setxattr(mrcAddress, uc, dirName, "xtreemfs.default_sp", Converter
-                .stripingPolicyToString(sp2), 0));
+                .stripingPolicyToJSONString(new BufferBackedStripingPolicy(sp2.getType().name(), sp2
+                        .getStripe_size(), sp2.getWidth())), 0));
         xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0, 0))
                 .getXlocs();
         assertEquals(sp2.toString(), xLoc.getReplicas().get(0).getStriping_policy().toString());

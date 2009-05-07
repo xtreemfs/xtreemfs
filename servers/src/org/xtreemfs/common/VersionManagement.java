@@ -25,7 +25,6 @@
 
 package org.xtreemfs.common;
 
-import java.util.List;
 
 /**
  * This class is meant to maintain version numbers for different components used
@@ -39,45 +38,9 @@ import java.util.List;
  */
 public class VersionManagement {
 
-    private static final long[] supportedProtocolVersions = { 39, 42 };
-
-    private static final long   mrcDataVersion            = 4;
+    private static final long   mrcDataVersion            = 5;
 
     private static final long   osdDataVersion            = 1;
-
-    public static long getMatchingProtVers(List<Long> proposedVersions) {
-
-        int i = 0;
-        int j = 0;
-        long result = -1;
-
-        // find the largest element contained in both lists
-        if (proposedVersions.size() > 0) {
-
-            while (i < proposedVersions.size() && j < supportedProtocolVersions.length) {
-                long diff = proposedVersions.get(i) - supportedProtocolVersions[j];
-
-                if (diff == 0) {
-                    result = supportedProtocolVersions[j];
-                    break;
-                } else if (diff > 0)
-                    i++;
-                else
-                    j++;
-            }
-        }
-
-        return result;
-    }
-
-    public static String getSupportedProtVersAsString() {
-        String str = "[";
-        for (int v = 0; v < supportedProtocolVersions.length; v++)
-            str += supportedProtocolVersions[v]
-                + (v == supportedProtocolVersions.length - 1 ? "]" : ", ");
-
-        return str;
-    }
 
     public static long getMrcDataVersion() {
         return mrcDataVersion;
