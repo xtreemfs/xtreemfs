@@ -25,17 +25,15 @@ In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL 
 .TP
 \fB-c\fP  <creds_file>         a PKCS#12 file containing user credentials
 .TP
-\fB-cp\fP <creds_passphrase>   a pass phrase to decrypt the the user credentials file
+\fB-cpass\fP <creds_passphrase>   a pass phrase to decrypt the the user credentials file
 .TP
 \fB-t\fP  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs
 .TP
-\fB-tp\fP <trusted_passphrase> a pass phrase to decrypt the trusted CAs file
+\fB-tpass\fP <trusted_passphrase> a pass phrase to decrypt the trusted CAs file
 .TP
 \fB\-chk\fP check only (do not update file sizes on the MRC in case of inconsistencies)
 .TP
-\fB\-cons\fP  n  number of connections per OSD (default=10)
-.TP
-\fB\-files\fP n  number of files to fetch at once from MRC (default=100)
+\fB\-thrs\fP  n  number of threads to use for scrubbing (default=10)
 
 
 .SH "SEE ALSO"
