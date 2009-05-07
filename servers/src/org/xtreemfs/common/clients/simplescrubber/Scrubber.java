@@ -258,9 +258,9 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         options.put("chk", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put("thrs", new CliOption(CliOption.OPTIONTYPE.NUMBER));
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("cp", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("tp", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
 
         CLIParser.parseCLI(args, options, arguments);
@@ -283,9 +283,9 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         if (dirURL != null && "oncrpcs".equals(dirURL.getProtocol())) {
             useSSL = true;
             serviceCredsFile = options.get("c").stringValue;
-            serviceCredsPass = options.get("cp").stringValue;
+            serviceCredsPass = options.get("cpass").stringValue;
             trustedCAsFile = options.get("t").stringValue;
-            trustedCAsPass = options.get("tp").stringValue;
+            trustedCAsPass = options.get("tpass").stringValue;
         }
 
         // read default settings
@@ -388,19 +388,19 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
     private static void usage() {
         System.out.println("usage: xtfs_scrub [options] <volume_name> | uuid:<volume_uuid>");
-        System.out.println("  -dir uri  directory service to use (e.g. 'http://localhost:32638')");
+        System.out.println("  -dir uri  directory service to use (e.g. 'oncrpc://localhost:32638')");
         System.out.println("            If no URI is specified, URI and security settings are taken from '"
             + DEFAULT_DIR_CONFIG + "'");
         System.out
-                .println("            In case of a secured URI ('https://...'), it is necessary to also specify SSL credentials:");
+                .println("            In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL credentials:");
         System.out
                 .println("              -c  <creds_file>         a PKCS#12 file containing user credentials");
         System.out
-                .println("              -cp <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
+                .println("              -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
         System.out
                 .println("              -t  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs");
         System.out
-                .println("              -tp <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
+                .println("              -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
         System.out
                 .println("  -chk      check only (do not update file sizes on the MRC in case of inconsistencies)");
         System.out.println("  -thrs  n  number of concurrent file scrub threads (default=" + DEFAULT_NUM_THREADS + ")");
