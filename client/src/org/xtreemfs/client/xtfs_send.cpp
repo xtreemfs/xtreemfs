@@ -58,7 +58,7 @@ namespace org
             {
               case YIELD::Object::STRING: readString( decl, static_cast<YIELD::String&>( *value ) ); break;
               case YIELD::Object::STRUCT: value->deserialize( *this ); break;
-              default: DebugBreak(); break;
+              default: YIELD::DebugBreak(); break;
             }
           }
 
