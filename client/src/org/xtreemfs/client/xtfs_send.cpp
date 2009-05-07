@@ -47,18 +47,22 @@ namespace org
             return 0;
         }
 
-        YIELD::Object* readObject( const Declaration& decl, YIELD::Object* s = NULL )
+        YIELD::Object* readObject( const Declaration& decl, YIELD::Object* value = NULL, YIELD::Object::GeneralType value_general_type = YIELD::Object::UNKNOWN )
         {
-          if ( s )
+          if ( value )
           {
-            switch ( s->get_general_type() )
+            if ( value_general_type == YIELD::Object::UNKNOWN )
+              value_general_type = value->get_general_type();
+
+            switch ( value_general_type )
             {
-              case YIELD::Object::STRING: readString( decl, static_cast<YIELD::String&>( *s ) ); break;
-              case YIELD::Object::STRUCT: s->deserialize( *this ); break;
+              case YIELD::Object::STRING: readString( decl, static_cast<YIELD::String&>( *value ) ); break;
+              case YIELD::Object::STRUCT: value->deserialize( *this ); break;
+              default: DebugBreak(); break;
             }
           }
 
-          return s;
+          return value;
         }
 
         void readString( const Declaration& decl, std::string& str )
