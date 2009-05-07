@@ -57,7 +57,6 @@ start() {
     if [ -f $LOCKFILE ]
     then
 	echo -n "XtreemFS Metadata and Replica Catalog (MRC) already started"
-        log_failure_msg
 	echo
         return 0
     fi
@@ -76,10 +75,8 @@ start() {
 
     if [ -e /proc/$PROCPID ]
     then
-	log_success_msg
 	echo
     else
-	log_failure_msg
 	echo
 	return 1
     fi
@@ -94,7 +91,6 @@ stop() {
     then
         echo -n "stopping XtreemFS Metadata and Replica Catalog (MRC)..."
         killproc -p $PID_MRC java
-        log_success_msg
 	echo
     fi
 
@@ -140,7 +136,6 @@ case "$1" in
         ;;
     *)
         echo -e "Usage: $0 {start|stop|restart|reload|status}\n"
-	log_failure_msg
         exit 1
         ;;
 esac
