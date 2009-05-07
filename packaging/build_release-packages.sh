@@ -37,6 +37,7 @@ CLIENT_WHITE_LIST=(
 	"client/bin" "bin"
 	"client/man" "man"
 	"utils/man" "man"
+	"utils/bin/xtfs_sp" "bin"
 	"servers/config/default_dir" "config/default_dir"
 	"AUTHORS" ""
 	"COPYING" ""
