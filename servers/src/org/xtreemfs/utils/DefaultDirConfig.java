@@ -24,11 +24,18 @@
 
 package org.xtreemfs.utils;
 
-import org.xtreemfs.common.config.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
+import org.xtreemfs.common.config.Config;
+import org.xtreemfs.dir.DIRConfig;
+
+/**
+ * @deprecated use {@link DIRConfig} instead!
+ *
+ */
+@Deprecated
 public class DefaultDirConfig extends Config {
 
     protected InetSocketAddress directoryService;
