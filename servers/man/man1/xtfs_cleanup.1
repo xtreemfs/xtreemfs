@@ -1,4 +1,4 @@
-.TH xtfs_cleanup 1 "April 2009" "The XtreemFS Distributed File System" "XtreemFS server"
+.TH xtfs_cleanup 1 "May 2009" "The XtreemFS Distributed File System" "XtreemFS server"
 .SH NAME
 xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
 .SH SYNOPSIS
@@ -7,18 +7,29 @@ xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metad
 
 .SH DESCRIPTION
 .I xtfs_cleanup
-performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not. 
-Returns a list of those files which properly can be deleted.
+Performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not. 
 
 .SH EXAMPLE USAGE
-.B "xtfs_cleanup [options] uuid:<osd_uuid>"
+.B "xtfs_cleanup uuid:4ef54-kl345-2l35jn-3k4jl"
 .PP
-Cleans up the OSD with the given uuid.
+Starts the cleanup process on the OSD identified by UUID '4ef54-kl345-2l35jn-3k4jl'.
 
 .SH OPTIONS
 .TP
 .TP
 \fB-h\fP                   show usage info
+.TP
+\fB-dir\fP <uri> directory service to use (e.g. 'oncrpc://localhost:32638')
+If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'
+In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL settings (-c, -cp, -t, -tp).
+.TP
+\fB-c\fP  <creds_file>         a PKCS#12 file containing user credentials
+.TP
+\fB-cpass\fP <creds_passphrase>   a pass phrase to decrypt the the user credentials file
+.TP
+\fB-t\fP  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs
+.TP
+\fB-tpass\fP <trusted_passphrase> a pass phrase to decrypt the trusted CAs file
 .TP
 \fB-r\fP                   restore mode - all files will be restored to directory '/lost+found/' at the volume they are located
 .TP
@@ -26,13 +37,11 @@ Cleans up the OSD with the given uuid.
 .TP
 \fB-deleteVolumes\fP       !volume deletion - deletes volumes that might be dead!
 .TP
-\fB-i\fP                   interactive mode - user is asked for decisions
+\fB-i\fP                   interactive mode
 .TP
 \fB-stop\fP                suspend the currently running cleanup
 .TP
-\fB-p\fP                   your administrator password, if password-protection is enabled
-.TP
-\fB-dir\fP                 the path to the DIR configuration file.
+\fB-p\fP <admin_passphrase> your administrator password.Use it, if password-protection is enabled
 
 .SH "SEE ALSO"
 .BR xtfs_mount (1),

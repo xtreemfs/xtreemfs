@@ -34,9 +34,9 @@ import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -52,7 +52,7 @@ import org.xtreemfs.utils.CLIParser.CliOption;
  * @author flangner
  */
 public class xtfs_cleanup_osd {
-    private static final String   DEFAULT_DIR_CONFIG   = "config/dirconfig.properties";
+    private static final String DEFAULT_DIR_CONFIG = "/etc/xos/xtreemfs/default_dir";
     
     private static OSDClient osd;
     
@@ -71,6 +71,7 @@ public class xtfs_cleanup_osd {
      * @param args
      * @throws Exception 
      */
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         try {
             Logging.start(Logging.LEVEL_ERROR);
@@ -85,7 +86,12 @@ public class xtfs_cleanup_osd {
             options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("dir", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("dir", new CliOption(CliOption.OPTIONTYPE.URL));
+            // SSL options
+            options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
+            options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
             
             CLIParser.parseCLI(args, options, arguments);
             
@@ -99,9 +105,15 @@ public class xtfs_cleanup_osd {
             boolean deleteVolumes = options.get("deleteVolumes").switchValue;
             boolean interactive = options.get("i").switchValue;
             boolean stop = options.get("stop").switchValue;
-            String dirCfgPath = (options.get("dir").stringValue != null) ? options.get("dir").stringValue : DEFAULT_DIR_CONFIG; 
+            ONCRPCServiceURL dirURL = options.get("dir").urlValue;
             password = (options.get("p").stringValue != null) ? options.get("p").stringValue : ""; 
-             
+            boolean useSSL = false;
+            String serviceCredsFile = null;
+            String serviceCredsPass = null;
+            String trustedCAsFile = null;
+            String trustedCAsPass = null;
+            InetSocketAddress dirAddr = null;
+            
             // read default settings for the OSD
             String osdUUID = null;
             if (arguments.get(0).startsWith("uuid:")) {
@@ -110,24 +122,37 @@ public class xtfs_cleanup_osd {
                 error("There was no UUID for the OSD given!");
             }
             
-            // load SSL options
-            SSLOptions sslOptions = null;
-            DIRConfig cfg = null;
-            try {
-                cfg = new DIRConfig(dirCfgPath);
-                cfg.read();
-                if (cfg.isUsingSSL()) {
-                    String serviceCredsFile = cfg.getServiceCredsFile();
-                    String serviceCredsPass = cfg.getServiceCredsPassphrase();
-                    String trustedCAsFile = cfg.getTrustedCertsFile();
-                    String trustedCAsPass = cfg.getTrustedCertsPassphrase();
-                    sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
-                            new FileInputStream(trustedCAsFile), trustedCAsPass);
-                }
-            } catch (IOException e){
-                error("Default DIR configuration not found!");
+            // parse security info if protocol is 'https'
+            if (dirURL != null && "oncrpcs".equals(dirURL.getProtocol())) {
+                useSSL = true;
+                serviceCredsFile = options.get("c").stringValue;
+                serviceCredsPass = options.get("cpass").stringValue;
+                trustedCAsFile = options.get("t").stringValue;
+                trustedCAsPass = options.get("tpass").stringValue;
             }
+            
+            // read default settings
+            if (dirURL == null) {
+                try {
+                    DefaultDirConfig cfg = new DefaultDirConfig(DEFAULT_DIR_CONFIG);
+                    cfg.read();
+    
+                    dirAddr = cfg.getDirectoryService();
+                    useSSL = cfg.isSslEnabled();
+                    serviceCredsFile = cfg.getServiceCredsFile();
+                    serviceCredsPass = cfg.getServiceCredsPassphrase();
+                    trustedCAsFile = cfg.getTrustedCertsFile();
+                    trustedCAsPass = cfg.getTrustedCertsPassphrase();
+                } catch (IOException e){
+                    error("No DIR service configuration available. Please use the -dir option.");
+                }
+            } else
+                dirAddr = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
 
+            SSLOptions sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile),
+                    serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
+                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
+            
             if (remove && restore) error("Zombies cannot be deleted and restored at the same time!");
             
             // connect to the OSD
@@ -139,7 +164,7 @@ public class xtfs_cleanup_osd {
             dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
             dirClient.start();
             dirClient.waitForStartup();
-            dir = new DIRClient(dirClient,new InetSocketAddress(cfg.getAddress(),cfg.getPort()));
+            dir = new DIRClient(dirClient,dirAddr);
                          
             try{
                 TimeSync.getInstance();
@@ -234,7 +259,7 @@ public class xtfs_cleanup_osd {
         try {
             return r.get();
         } catch (Exception e) {
-            throw new Exception("Cleanup could not be stopped on the given OSD, because: "+e.getMessage());
+            throw new Exception("Cleanup status could not be retrieved, because: "+e.getMessage());
         } finally {
             r.freeBuffers();
         }
@@ -245,7 +270,7 @@ public class xtfs_cleanup_osd {
         try {
             return r.get();
         } catch (Exception e) {
-            throw new Exception("Cleanup could not be stopped on the given OSD, because: "+e.getMessage());
+            throw new Exception("Cleanup results could not be retrieved, because: "+e.getMessage());
         } finally {
             r.freeBuffers();
         }
@@ -267,14 +292,20 @@ public class xtfs_cleanup_osd {
         System.out.println("xtfs_cleanup [options] uuid:<osd_uuid>\n");
         System.out.println("  "+"<osd_uuid> the unique identifier of the OSD to clean.");
         System.out.println("  "+"options:");        
-        System.out.println("  "+"-h show these usage informations.");
-        System.out.println("  "+"-r restore zombies found on the OSD.");
-        System.out.println("  "+"-e erase potential zombies.");
+        System.out.println("  "+"-dir <uri>  directory service to use (e.g. 'oncrpc://localhost:32638')");
+        System.out.println("  "+"  If no URI is specified, URI and security settings are taken from '"+DEFAULT_DIR_CONFIG+"'");
+        System.out.println("  "+"  In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL credentials:");
+        System.out.println("              -c  <creds_file>            a PKCS#12 file containing user credentials");
+        System.out.println("              -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
+        System.out.println("              -t  <trusted_CAs>           a PKCS#12 file containing a set of certificates from trusted CAs");
+        System.out.println("              -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
+        System.out.println("  "+"-h     show these usage informations.");
+        System.out.println("  "+"-r     restore zombies found on the OSD.");
+        System.out.println("  "+"-e     erase potential zombies.");
         System.out.println("  "+"-deleteVolumes !dangerous! deletes volumes that might be dead.");
-        System.out.println("  "+"-i interactive mode.");
-        System.out.println("  "+"-stop suspend the currently running cleanup.");
-        System.out.println("  "+"-p set the administrator password.");
-        System.out.println("  "+"-dir set the path to the DIR configuration file.");
+        System.out.println("  "+"-i     interactive mode.");
+        System.out.println("  "+"-stop  suspends the currently running cleanup process.");
+        System.out.println("  "+"-p <admin_passphrase> the administrator password, authorizing cleanup calls.");
         System.exit(1);
     }
 }
