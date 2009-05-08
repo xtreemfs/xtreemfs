@@ -21,11 +21,7 @@ class dbenchTest(unittest.TestCase):
         args = "dbench -c dbench-client.txt -D . 5"
         p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
         retcode = p.wait()
-        if retcode != 0:
-            print >>self.stderr, "Unexpected return code from marked_block.pl: " + str( retcode )
-            print >>self.stderr, "Output:"
-            print >>self.stderr, p.stdout.read()
-            self.assertEqual( retcode, 0 )
+        self.assertEqual( retcode, 0 )
 
 
 def createTestSuite( *args, **kwds ): 

@@ -14,11 +14,7 @@ class iozoneDiagnosticTest(unittest.TestCase):
             args = "iozone -a -+d"
             p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
             retcode = p.wait()
-            if retcode != 0:
-                print >>self.stderr, "Unexpected return code from iozone:", retcode
-                print >>self.stderr, "Output:"
-                print >>self.stderr, p.stdout.read()
-                self.fail()
+            self.assertEqual( retcode, 0 )
 
             
 def createTestSuite( *args, **kwds ): 

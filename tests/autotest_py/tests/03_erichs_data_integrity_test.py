@@ -15,11 +15,7 @@ class ErichsDataIntegrityTest(unittest.TestCase):
     def runTest( self ):
         p = subprocess.Popen( MARKED_BLOCK_PL_FILE_PATH + " --start=1 --nfiles=20 --size=1 --group=10 --base=.", shell=True, stdout=self.stdout, stderr=self.stderr )
         retcode = p.wait()
-        if retcode != 0:
-            print "Unexpected return code from marked_block.pl: " + str( retcode )
-            print "Output:"
-            print p.stdout.read()
-            self.assertEqual( retcode, 0 )
+        self.assertEqual( retcode, 0 )
 
                 
 def createTestSuite( *args, **kwds ): 

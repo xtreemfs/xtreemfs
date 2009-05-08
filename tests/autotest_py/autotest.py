@@ -263,7 +263,7 @@ def _start_service( service_name, service_num="" ):
     stderr = stdout = open( log_file_path, "a" )
     print "Starting", service_name.upper() + service_num, "service with command line", args, "and redirecting output to", log_file_path
     p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
-    time.sleep( 1.0 )
+    time.sleep( 2.0 )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
 
 

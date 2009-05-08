@@ -14,12 +14,8 @@ class iozoneThroughputTest(unittest.TestCase):
         if retcode == 0:
             pass # TODO: parse output 
         else:
-            print >>self.stderr, "Unexpected return code from iozone:", retcode
-            print >>self.stderr, "Output:"
-            print >>self.stderr, p.stdout.read()
-            self.fail()
+            self.assertEqual( retcode, 0 )
             
-
 
 def createTestSuite( *args, **kwds ): 
     if not sys.platform.startswith( "win" ):

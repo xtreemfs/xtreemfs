@@ -7,18 +7,14 @@ class bonnieTest(unittest.TestCase):
         self.stdout = stdout
         self.stderr = stderr
 		
-	def runTest( self ):
-		if "nondirect" in os.getcwd():
-			pass
-		else:
-			args = "bonnie -d ." #  -s 100"
-			p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
-			retcode = p.wait()
-			if retcode != 0:
-				print >>self.stderr, "Unexpected return code from Bonnie:", retcode
-				print >>self.stderr, "Output:"
-				print >>self.stderr, p.stdout.read()
-				self.fail()
+    def runTest( self ):
+        if "nondirect" in os.getcwd():
+            pass
+        else:
+            args = "bonnie -d ." #  -s 100"
+            p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
+            retcode = p.wait()
+            self.assertEqual( retcode, 0 )
 
 
 def createTestSuite( *args, **kwds ): 
