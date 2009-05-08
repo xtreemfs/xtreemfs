@@ -326,9 +326,10 @@ class XtreemFSJavaTarget(JavaTarget): pass
 if __name__ == "__main__":
     import sys, os.path
          
-    if len( sys.argv ) == 1:
+    if len( sys.argv ) == 1:    
         my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
-        sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "..", "interfaces" ) ), 
-                           "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src" ) ) ) )
+        os.chdir( os.path.join( my_dir_path, "..", "src", "servers" ) )
+        sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "src", "interfaces" ) ), 
+                           "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src", "servers", "src" ) ) ) )
         
     generator_main( XtreemFSJavaTarget )

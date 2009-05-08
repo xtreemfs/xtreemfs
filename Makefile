@@ -12,11 +12,11 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
-TARGETS = client server post_make_message
+TARGETS = client server
 .PHONY:	clean distclean
 
 # Some toplevel configuration
-XTFS_BINDIR = $(shell pwd)/client/bin
+XTFS_BINDIR = $(shell pwd)/bin
 export XTFS_BINDIR
 
 all: check $(TARGETS)
@@ -41,49 +41,16 @@ check:
 	
 .PHONY:	client client_clean client_distclean
 client:
-	python client/scons.py -C client
+	python src/client/scons.py -C src/client
 client_clean:
-	python client/scons.py -C client -c
+	python src/client/scons.py -C src/client -c
 client_distclean:
-	python client/scons.py -C client -c
+	python src/client/scons.py -C src/client -c
 
 .PHONY: server server_clean server_distclean
 server: check
-	$(ANT_BIN)  -f servers/build.xml jar
+	$(ANT_BIN)  -f src/servers/build.xml jar
 server_clean: check
-	$(ANT_BIN)  -f servers/build.xml clean || exit 1;
+	$(ANT_BIN)  -f src/servers/build.xml clean || exit 1;
 server_distclean: check
-	$(ANT_BIN)  -f servers/build.xml clean || exit 1;
-
-post_make_message:
-	@echo ""
-	@echo "All components have been built successfully."
-	@echo "The directories contain the following:"
-	@echo ""
-	@echo "server:"
-	@echo "        servers/bin            - server tools"
-	@echo "        servers/config         - default config files"
-	@echo "        servers/init.d-scrpts  - init-d scripts to run the servers"
-	@echo "        servers/lib            - thirdparty libraries"
-	@echo "        servers/man            - man pages for the server tools"
-	@echo "        servers/src            - source code"
-	@echo ""
-	@echo "        *** To run the servers, please make sure that Java 1.6"
-	@echo "            or newer is available. ***"
-	@echo "client:"
-	@echo "        client/bin             - client tools"
-	@echo "        client/include         - include headers"
-	@echo "        client/lib             - thirdparty libraries"
-	@echo "        client/man             - man pages for client tools"
-	@echo "        client/proj            - build and project files"
-	@echo "        client/src             - source code"
-	@echo "misc:"
-	@echo "        interfaces             - interfaces for client/server and"
-	@echo "                                 server/server communication"
-	@echo "        tests                  - test suite for  automated testing"
-	@echo "        utils/bin              - additional client utilities"
-	@echo "        utils/man              - additional client tool man pages"
-
-post_make_message_clean:
-
-post_make_message_distclean:
+	$(ANT_BIN)  -f src/servers/build.xml clean || exit 1;

@@ -26,7 +26,7 @@ except:
         if not "advapi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "advapi32.lib" )
         if not "gdi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "gdi32.lib" )
     else:
-        build_env["CCFLAGS"] += " -fPIC -Wall -Wunused-macros " # -fPIC (Platform Independent Code) to compile a library as part of a shared object
+        build_env["CCFLAGS"] += " -Wall -Wunused-macros "
         if sys.platform == "linux2":
             build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
@@ -42,10 +42,12 @@ except:
             build_env["CCFLAGS"] += "-fno-rtti -Dupgrade_the_compiler_to_use_STL=1 -D_REENTRANT "
             build_env["LIBS"].extend( ( "stdc++", "m", "socket", "nsl", "kstat", "rt", "iconv", "cpc" ) )
 
-        if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
-        else: build_env["CCFLAGS"] += "-g -D_DEBUG "
+        if ARGUMENTS.get( "coverage", 0 ): build_env["CCFLAGS"] += "-pg --coverage "; build_env["LINKFLAGS"] += "-pg --coverage "
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
         if ARGUMENTS.get( "profile-heap", 0 ): build_env["CCFLAGS"] += "-fno-omit-frame-pointer "; build_env["LIBS"].append( "tcmalloc" )
+        if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
+        else: build_env["CCFLAGS"] += "-g -D_DEBUG "
+        if ARGUMENTS.get( "shared", 0 ): build_env["CCFLAGS"] += "-fPIC "
 
     build_env["CPPPATH"] = list( set( [os.path.abspath( include_dir_path ) for include_dir_path in include_dir_paths] ) )
     build_env["LIBPATH"] = list( set( [os.path.abspath( lib_dir_path ) for lib_dir_path in lib_dir_paths] ) )
@@ -69,5 +71,5 @@ for lib_dir_path in lib_dir_paths:
 for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../../../bin/xtfs_mkvol", (
+build_env.Program( "../../../../../../bin/xtfs_mkvol", (
     r"../../../../src/org/xtreemfs/client/xtfs_mkvol.cpp" ) )

@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef ORG_XTREEMFS_CLIENT_POLICY_CONTAINER_H
-#define ORG_XTREEMFS_CLIENT_POLICY_CONTAINER_H
+#ifndef CLIENT_SRC_ORG_XTREEMFS_CLIENT_POLICY_CONTAINER_H
+#define CLIENT_SRC_ORG_XTREEMFS_CLIENT_POLICY_CONTAINER_H
 
 #include "org/xtreemfs/client/policy.h"
 #include "org/xtreemfs/interfaces/types.h"

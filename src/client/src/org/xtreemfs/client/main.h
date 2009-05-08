@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef ORG_XTREEMFS_CLIENT_MAIN_H
-#define ORG_XTREEMFS_CLIENT_MAIN_H
+#ifndef CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
+#define CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
 
 #if !defined(YIELD_HAVE_OPENSSL) && defined(_WIN32)
 #define YIELD_HAVE_OPENSSL 1
@@ -44,7 +44,7 @@ namespace org
 #ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD
             google_breakpad::ExceptionHandler* exception_handler;
             void* MinidumpCallback_context = this;
-#if defined(_WIN32)            
+#if defined(_WIN32)
 //            if ( !IsDebuggerPresent() )            {
               exception_handler = new google_breakpad::ExceptionHandler( YIELD::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, google_breakpad::ExceptionHandler::HANDLER_ALL );
 #elif defined(__linux)
@@ -123,7 +123,7 @@ namespace org
               socket_factory = new YIELD::TCPSocketFactory( get_log() );
           }
 
-          return socket_factory;            
+          return socket_factory;
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -151,7 +151,7 @@ namespace org
           else
             throw YIELD::Exception( "invalid volume URI" );
         }
-        
+
         // YIELD::Main
         virtual void parseOption( int id, char* arg )
         {
@@ -210,11 +210,11 @@ namespace org
           {
             YIELD::Path dump_file_name( minidump_id ); dump_file_name = static_cast<const std::string&>( dump_file_name ) + ".dmp";
             YIELD::Path dump_file_path( dump_path ); dump_file_path = dump_file_path + dump_file_name;
-            std::string dump_absolute_uri( "http://www.xtreemfs.org/dump/dump.php?f=" ); 
+            std::string dump_absolute_uri( "http://www.xtreemfs.org/dump/dump.php?f=" );
             dump_absolute_uri.append( static_cast<const std::string&>( dump_file_name ) );
-            
+
             get_log()->getStream( YIELD::Log::LOG_EMERG ) << get_program_name() << ": crashed on unknown exception, dumping to " << dump_file_path << " and trying to send to " << dump_absolute_uri;
-                  
+
             try
             {
               YIELD::HTTPClient::PUT( dump_absolute_uri, dump_file_path, get_log() );
