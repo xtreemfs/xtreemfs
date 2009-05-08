@@ -1,10 +1,16 @@
-import unittest, subprocess
+import unittest, subprocess, sys
 
 
 class iozoneDiagnosticTest(unittest.TestCase):
 	def runTest( self ):
 		args = "iozone -a -+d"
-		p = subprocess.Popen( args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+                if __name__ == "__main__":
+                    stdout = sys.stdout
+                    stderr = sys.stderr
+                else:
+                    stdout = subprocess.PIPE
+                    stderr = subprocess.STDOUT
+		p = subprocess.Popen( args, shell=True, stdout=stdout, stderr=stderr )
 		retcode = p.wait()
 		if retcode != 0:
 			print "Unexpected return code from iozone:", retcode
@@ -16,7 +22,13 @@ class iozoneDiagnosticTest(unittest.TestCase):
 class iozoneThroughputTest(unittest.TestCase):
 	def runTest( self ):
 		args = "iozone -t 1 -r 128k -s 20m"
-		p = subprocess.Popen( args, shell=True )#, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+                if __name__ == "__main__":
+                    stdout = sys.stdout
+                    stderr = sys.stderr
+                else:
+                    stdout = subprocess.PIPE
+                    stderr = subprocess.STDOUT
+		p = subprocess.Popen( args, shell=True )#, stdout=stdout, stderr=stderr )
 		retcode = p.wait()
 		if retcode == 0:
 			pass # TODO: parse output 
@@ -28,7 +40,7 @@ class iozoneThroughputTest(unittest.TestCase):
 			
 			
 suite = unittest.TestSuite()
-#suite.addTest( iozoneDiagnosticTest() )
+suite.addTest( iozoneDiagnosticTest() )
 suite.addTest( iozoneThroughputTest() )
         
 
