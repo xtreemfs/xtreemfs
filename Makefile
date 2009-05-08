@@ -12,7 +12,7 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
-TARGETS = client server test
+TARGETS = client server
 .PHONY:	clean distclean
 
 # Some toplevel configuration
