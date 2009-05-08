@@ -74,7 +74,7 @@ def check_environment():
     return True
 
     
-def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
+def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
     tests_dir_path = os.path.join( MY_DIR_PATH, "tests" )
     sys.path.append( tests_dir_path )
     test_suites = {}
@@ -89,11 +89,16 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT ):
                 traceback.print_exc()
                 continue
 
-            if hasattr( test_module, "suite" ):
-                suite = getattr( test_module, "suite" )
-                test_suites[test_module_name] = suite
+            if hasattr( test_module, "createTestSuite" ):
+                createTestSuite = getattr( test_module, "createTestSuite" )
+                if verbose:
+                    test_suite = createTestSuite( stdout=sys.stdout, stderr=sys.stderr )
+                else:
+                    test_suite = createTestSuite()                    
+                if test_suite is not None:
+                    test_suites[test_module_name] = test_suite
             else:
-                print "Test module", test_module_name, "does not have a suite global variable"
+                print "Test module", test_module_name, "does not have a createTestSuite global function"
 
     test_module_names = test_suites.keys()
     test_module_names.sort()
@@ -312,11 +317,12 @@ if __name__ == "__main__":
     option_parser.add_option( "--stop_environment", action="store_true", dest="stop_environment" )
     option_parser.add_option( "-s", action="store_true", dest="ssl_enabled", default=SSL_ENABLED_DEFAULT )
     option_parser.add_option( "--test", action="store_true", dest="execute_tests" )
+    option_parser.add_option( "-v", "--verbose", action="store_true", dest="verbose" )
     options, ignore = option_parser.parse_args()
 
         
     if options.execute_tests:
-        execute_tests()
+        execute_tests( verbose=options.verboses )
     elif options.stop_environment:
         stop_environment()
     else:
@@ -325,7 +331,7 @@ if __name__ == "__main__":
         time.sleep( 1.0 ) # Wait for clients and servers to start up
         if not options.start_environment: # i.e. no options were specified
             try:
-                execute_tests( num_osds=options.num_osds )
+                execute_tests( num_osds=options.num_osds, verbose=options.verbose )
             except KeyboardInterrupt:
                 pass
             except:

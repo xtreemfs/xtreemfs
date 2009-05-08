@@ -110,19 +110,21 @@ class unlinkTest(SimpleMetadataTestCase):
 		assert not os.path.exists( TEST_FILE_NAME )
 
 
-suite = unittest.TestSuite()
-suite.addTest( chmodTest() )
-suite.addTest( creatTest() )
-suite.addTest( linkTest() )
-suite.addTest( mkdirTest() )
-suite.addTest( readdirTest() )
-suite.addTest( renamedirTest() )
-suite.addTest( renamefileTest() )
-suite.addTest( rmdirTest() )
-suite.addTest( symlinkTest() )
-suite.addTest( unlinkTest() )
+def createTestSuite( *args, **kwds ):
+	test_suite = unittest.TestSuite()
+	test_suite.addTest( chmodTest() )
+	test_suite.addTest( creatTest() )	
+	if hasattr( os, "link" ): test_suite.addTest( linkTest() )
+	test_suite.addTest( mkdirTest() )
+	test_suite.addTest( readdirTest() )
+	test_suite.addTest( renamedirTest() )
+	test_suite.addTest( renamefileTest() )
+	test_suite.addTest( rmdirTest() )
+	if hasattr( os, "symlink" ): test_suite.addTest( symlinkTest() )
+	test_suite.addTest( unlinkTest() )
+	return test_suite
 		
 
 if __name__ == "__main__":
-	unittest.TextTestRunner( verbosity=2 ).run( suite )
+	unittest.TextTestRunner( verbosity=2 ).run( createTestSuite() )
 	

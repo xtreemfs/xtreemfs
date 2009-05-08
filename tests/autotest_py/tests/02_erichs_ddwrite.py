@@ -1,8 +1,13 @@
-import unittest, subprocess, time, os
+import unittest, subprocess, time, os, sys
 from glob import glob
 
 
 class ErichsddwriteTest(unittest.TestCase):
+    def __init__( self, stdout=subprocess.PIPE, stderr=subprocess.STDOUT ):
+        unittest.TestCase.__init__( self )
+        self.stdout = stdout
+        self.stderr = stderr
+    
     def setUp( self ):
         self.client_processes = []
 
@@ -19,7 +24,7 @@ class ErichsddwriteTest(unittest.TestCase):
         for clients_count in xrange( 2, 4, 2 ):
             for client_i in xrange( clients_count ):
                 args = "dd if=/dev/zero of=%(class_name)s_%(client_i)u bs=1MB count=10" % locals()
-                client_process = subprocess.Popen( args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+                client_process = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
                 self.client_processes.append( client_process )
                 
             while len( self.client_processes ) > 0:
@@ -36,11 +41,15 @@ class ErichsddwriteTest(unittest.TestCase):
                         
                 time.sleep( 0.5 )
                         
-                
-suite = unittest.TestSuite()
-suite.addTest( ErichsddwriteTest() )
+
+def createTestSuite( *args, **kwds ): 
+    if not sys.platform.startswith( "win" ):
+        return unittest.TestSuite( [ErichsddwriteTest( *args, **kwds )] )
         
 
 if __name__ == "__main__":
-    unittest.TextTestRunner( verbosity=2 ).run( suite )
+    if not sys.platform.startswith( "win" ):
+        unittest.TextTestRunner( verbosity=2 ).run( createTestSuite() )
+    else:
+        print sys.modules[__name__].__file__.split( os.sep )[-1], "not supported on Windows"
     
