@@ -1,8 +1,5 @@
 import sys, os.path, platform
 
-SConscript( 'xtreemfs-client-lib.SConscript' )
-SConscript( '../../../google-breakpad/google-breakpad.SConscript' )
-
 
 try:
     Import( "build_env", "build_conf" )
@@ -59,17 +56,24 @@ except:
 
     Export( "build_env", "build_conf" )
 
-include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
+defines = ["UNICODE"]
+if sys.platform.startswith( "win" ): defines.extend( [] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
+
+include_dir_paths = [os.path.abspath( '../../share/google-breakpad/src' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-lib_dir_paths = [os.path.abspath( '../../../../lib' )]
-for lib_dir_path in lib_dir_paths:
-    if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
-
-# Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in ["xtreemfs-client"]:
-   if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
-build_env.Program( "../../../../bin/xtfs_mount", (
-    r"../../../../src/org/xtreemfs/client/xtfs_mount.cpp" ) )
+build_env.Library( "../../lib/google-breakpad", (
+    r"../../share/google-breakpad/src/client/windows/crash_generation/client_info.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/crash_generation_client.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/minidump_generator.cc",
+    r"../../share/google-breakpad/src/client/windows/handler/exception_handler.cc",
+    r"../../share/google-breakpad/src/common/convert_UTF.c",
+    r"../../share/google-breakpad/src/common/string_conversion.cc",
+    r"../../share/google-breakpad/src/common/windows/guid_string.cc",
+    r"../../share/google-breakpad/src/common/windows/string_utils.cc" ) )

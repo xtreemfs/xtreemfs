@@ -70,5 +70,5 @@ for lib_dir_path in lib_dir_paths:
 for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../../../../../bin/xtfs_fuzz", (
+build_env.Program( "../../../../bin/xtfs_fuzz", (
     r"../../../../src/org/xtreemfs/client/xtfs_fuzz.cpp" ) )

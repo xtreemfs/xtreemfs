@@ -206,10 +206,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_server.cc"
-    >
-</File>
-<File
     RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.cc"
     >
 </File>

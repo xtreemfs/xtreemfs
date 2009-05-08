@@ -1,7 +1,7 @@
 import sys, os.path, platform
 
-SConscript( '../../../google-breakpad/google-breakpad.SConscript' )
 SConscript( 'xtreemfs-client-lib.SConscript' )
+SConscript( '../../../google-breakpad/google-breakpad.SConscript' )
 
 
 try:
@@ -71,5 +71,5 @@ for lib_dir_path in lib_dir_paths:
 for lib in ["xtreemfs-client"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../../../../../bin/xtfs_mkvol", (
+build_env.Program( "../../../../bin/xtfs_mkvol", (
     r"../../../../src/org/xtreemfs/client/xtfs_mkvol.cpp" ) )
