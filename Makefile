@@ -12,7 +12,7 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
-TARGETS = client server
+TARGETS = client server post_make_message
 .PHONY:	clean distclean
 
 # Some toplevel configuration
@@ -54,3 +54,33 @@ server_clean: check
 	$(ANT_HOME)/bin/ant  -f servers/build.xml clean || exit 1;
 server_distclean: check
 	$(ANT_HOME)/bin/ant  -f servers/build.xml clean || exit 1;
+
+post_make_message:
+	@echo ""
+	@echo "All components have been built successfully."
+	@echo "The directories contain the following:"
+	@echo ""
+	@echo "server:"
+	@echo "        servers/bin            - server tools"
+	@echo "        servers/config         - default config files"
+	@echo "        servers/init.d-scrpts  - init-d scripts to run the servers"
+	@echo "        servers/lib            - thirdparty libraries"
+	@echo "        servers/man            - man pages for the server tools"
+	@echo "        servers/src            - source code"
+	@echo ""
+	@echo "        *** To run the servers, please make sure that Java 1.6"
+	@echo "            or newer is available. ***"
+	@echo "client:"
+	@echo "        client/bin             - client tools"
+	@echo "        client/include         - include headers"
+	@echo "        client/lib             - thirdparty libraries"
+	@echo "        client/man             - man pages for client tools"
+	@echo "        client/proj            - build and project files"
+	@echo "        client/src             - source code"
+	@echo "misc:"
+	@echo "        interfaces             - interfaces for client/server and"
+	@echo "                                 server/server communication"
+	@echo "        tests                  - test suite for  automated testing"
+	@echo "        utils/bin              - additional client utilities"
+	@echo "        utils/man              - additional client tool man pages"
+	@echo ""
