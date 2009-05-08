@@ -1,4 +1,4 @@
-import sys, os.path, signal, shutil, time, traceback, unittest
+import sys, os.path, signal, shutil, time, traceback, unittest, subprocess
 from errno import *
 from optparse import OptionParser
 from subprocess import Popen, call
@@ -94,7 +94,7 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
                 if verbose:
                     test_suite = createTestSuite( stdout=sys.stdout, stderr=sys.stderr )
                 else:
-                    test_suite = createTestSuite()                    
+                    test_suite = createTestSuite( stdout=subprocess.PIPE, stderr=subproces.STDOUT )                   
                 if test_suite is not None:
                     test_suites[test_module_name] = test_suite
             else:

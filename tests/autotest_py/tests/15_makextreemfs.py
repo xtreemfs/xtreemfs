@@ -6,7 +6,7 @@ have_called_createTestSuite = False
 
 
 class makextreemfsTest(unittest.TestCase):
-    def __init__( self, stdout=subprocess.PIPE, stderr=subprocess.STDOUT ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr

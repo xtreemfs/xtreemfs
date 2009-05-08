@@ -7,7 +7,7 @@ DBENCH_CLIENT_TXT_GZ_FILE_PATH = os.path.join( MY_DIR_PATH, "dbench-client.txt.g
                                
 
 class dbenchTest(unittest.TestCase):
-    def __init__( self, stdout=subprocess.PIPE, stderr=subprocess.STDOUT ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
