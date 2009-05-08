@@ -449,8 +449,8 @@ public class BabuDBStorageHelper {
             
             // determine the full file name which the entry refers to, depending
             // on the metadata type (0: file, 2: link)
-            String entryFileName = next.getValue()[0] == 2 ? new String(next.getValue(), 8,
-                next.getValue().length - 8) : new BufferBackedRCMetadata(next.getKey(), next.getValue())
+            String entryFileName = next.getValue()[0] == 2 ? new String(next.getValue(), 9,
+                next.getValue().length - 9) : new BufferBackedRCMetadata(next.getKey(), next.getValue())
                     .getFileName();
             
             // check whether file exists, i.e.\ the file name stored in the
@@ -580,6 +580,34 @@ public class BabuDBStorageHelper {
     
     public static BufferBackedFileMetadata getMetadata(BabuDB database, String dbName, long parentId,
         String fileName) throws BabuDBException {
+        
+        // first, check the most common case: do a lookups to the first
+        // key to find the element
+        
+        byte[] key = BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) 1);
+        byte[] value = database.directLookup(dbName, BabuDBStorageManager.FILE_ID_INDEX, key);
+        
+        if (value != null) {
+            
+            BufferBackedRCMetadata rcMetadata = new BufferBackedRCMetadata(key, value);
+            
+            // if the metadata was found, look up frequently changed metadata
+            // and XLoc list and return the result
+            if (fileName.equals(rcMetadata.getFileName())) {
+                
+                byte[][] keyBufs = new byte[][] {
+                    BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) 0), key,
+                    BabuDBStorageHelper.createFilePrefixKey(parentId, fileName, (byte) 2) };
+                byte[][] valBufs = new byte[][] {
+                    database.directLookup(dbName, BabuDBStorageManager.FILE_ID_INDEX, keyBufs[0]), value,
+                    database.directLookup(dbName, BabuDBStorageManager.FILE_ID_INDEX, keyBufs[2]) };
+                
+                return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_INDEX);
+            }
+        }
+        
+        // otherwise, the file does not exist or there is a collision; in this
+        // case, find the file by means of a prefix lookup
         
         // first, find the file's collision number
         short collNumber = BabuDBStorageHelper.findFileCollisionNumber(database, dbName, parentId, fileName);
