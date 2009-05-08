@@ -83,3 +83,7 @@ post_make_message:
 	@echo "        tests                  - test suite for  automated testing"
 	@echo "        utils/bin              - additional client utilities"
 	@echo "        utils/man              - additional client tool man pages"
+
+post_make_message_clean:
+
+post_make_message_distclean:
