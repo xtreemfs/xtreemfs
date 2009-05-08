@@ -49,11 +49,11 @@ client_distclean:
 
 .PHONY: server server_clean server_distclean
 server: check
-	$(ANT_HOME)/bin/ant  -f servers/build.xml jar
+	$(ANT_BIN)  -f servers/build.xml jar
 server_clean: check
-	$(ANT_HOME)/bin/ant  -f servers/build.xml clean || exit 1;
+	$(ANT_BIN)  -f servers/build.xml clean || exit 1;
 server_distclean: check
-	$(ANT_HOME)/bin/ant  -f servers/build.xml clean || exit 1;
+	$(ANT_BIN)  -f servers/build.xml clean || exit 1;
 
 post_make_message:
 	@echo ""
@@ -83,4 +83,3 @@ post_make_message:
 	@echo "        tests                  - test suite for  automated testing"
 	@echo "        utils/bin              - additional client utilities"
 	@echo "        utils/man              - additional client tool man pages"
-	@echo ""
