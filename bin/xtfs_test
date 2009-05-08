@@ -17,8 +17,9 @@ TRUSTED_CERTS_JKS_PASSPHRASE = "passphrase"
 # Paths
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
 XTREEMFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, ".." ) )
+XTREEMFS_TESTS_DIR_PATH = os.path.join( XTREEMFS_DIR_PATH, "tests" )
 
-CERT_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "certs" ) )
+CERT_DIR_PATH = os.path.join( XTREEMFS_DIR_PATH, "tests", "certs" )
 CLIENT_PKCS12_FILE_PATH = os.path.join( CERT_DIR_PATH, "Client.p12" )
 DIR_PKCS12_FILE_PATH = os.path.join( CERT_DIR_PATH, "DIR.p12" )
 MRC_PKCS12_FILE_PATH = os.path.join( CERT_DIR_PATH, "MRC.p12" )
@@ -77,10 +78,9 @@ def check_environment():
 
     
 def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
-    tests_dir_path = os.path.join( MY_DIR_PATH, "tests" )
-    sys.path.append( tests_dir_path )
+    sys.path.append( XTREEMFS_TESTS_DIR_PATH )
     test_suites = {}
-    for file_name in os.listdir( tests_dir_path ):
+    for file_name in os.listdir( XTREEMFS_TESTS_DIR_PATH ):
         if file_name.endswith( ".py" ):
             test_module_name = os.path.splitext( file_name )[0]
             print "Trying to import test", test_module_name
@@ -96,7 +96,7 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
                 if verbose:
                     test_suite = createTestSuite( stdout=sys.stdout, stderr=sys.stderr )
                 else:
-                    test_suite = createTestSuite( stdout=subprocess.PIPE, stderr=subproces.STDOUT )                   
+                    test_suite = createTestSuite( stdout=subprocess.PIPE, stderr=subprocess.STDOUT )                   
                 if test_suite is not None:
                     test_suites[test_module_name] = test_suite
             else:
@@ -106,8 +106,8 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
     test_module_names.sort()
     for test_module_name in test_module_names:
         test_suite = test_suites[test_module_name]
-        for mount_point_dir_name in os.listdir( os.path.join( MY_DIR_PATH, "mnt" ) ):
-            mount_point_dir_path = os.path.join( MY_DIR_PATH, "mnt", mount_point_dir_name )
+        for mount_point_dir_name in os.listdir( os.path.join( original_cwd, "mnt" ) ):
+            mount_point_dir_path = os.path.join( original_cwd, "mnt", mount_point_dir_name )
             print "Running", test_module_name, "in", mount_point_dir_path
             test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
             try: os.mkdir( test_run_dir_path )
@@ -228,16 +228,19 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
             xtfs_mkvol_args = " ".join( xtfs_mkvol_args )                            
             print "Creating volume test_%(osdnum)s with command line" % locals(), xtfs_mkvol_args
             retcode = call( xtfs_mkvol_args, shell=True )
-            if retcode != 0 and retcode != EEXIST:
-                print "FAILED: cannot create volume test_%(osdnum)u" % locals()
-                stop_environment( num_osds )
-                sys.exit( 1 )
+#            if retcode != 0 and retcode != EEXIST:
+#                print "FAILED: cannot create volume test_%(osdnum)u" % locals()
+#                stop_environment( num_osds )
+#                sys.exit( 1 )
 
     if mount_volumes:
+        assert os.getcwd() == original_cwd
+        try: os.mkdir( "mnt" )
+        except: pass
         for osdnum in xrange( num_osds ):
             for direct_io in ( False, True ):
                 mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
-                mount_dir_path = os.path.join( "mnt", mount_dir_name ) 
+                mount_dir_path = os.path.join( original_cwd, "mnt", mount_dir_name ) 
                 xtfs_mount_args = [XTFS_MOUNT_FILE_PATH]
                 xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
                 xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
@@ -265,7 +268,7 @@ def _start_service( service_name, service_num="" ):
     stderr = stdout = open( log_file_path, "a" )
     print "Starting", service_name.upper() + service_num, "service with command line", args, "and redirecting output to", log_file_path
     p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
-    time.sleep( 2.0 )
+    time.sleep( 1.0 )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
 
 
@@ -275,7 +278,7 @@ def stop_environment( num_osds=NUM_OSDS_DEFAULT ):
     _stop_service( "mrc" )
     _stop_service( "dir" ) # Stop the DIR last so the other services can deregister
 
-    mnt_dir_path = os.path.abspath( "mnt" )
+    mnt_dir_path = os.path.abspath( os.path.join( original_cwd, "mnt" ) )
     for mounts_line in open( "/proc/mounts" ).readlines():
        mounts_line_parts = mounts_line.split()
        device = mounts_line_parts[0]

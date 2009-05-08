@@ -12,7 +12,7 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
-TARGETS = client server
+TARGETS = client server test
 .PHONY:	clean distclean
 
 # Some toplevel configuration
@@ -40,17 +40,20 @@ check:
 	@echo "python ok"
 	
 .PHONY:	client client_clean client_distclean
-client:
+client: check
 	python src/client/scons.py -C src/client
-client_clean:
+client_clean: check
 	python src/client/scons.py -C src/client -c
-client_distclean:
+client_distclean: check
 	python src/client/scons.py -C src/client -c
 
 .PHONY: server server_clean server_distclean
 server: check
-	$(ANT_BIN)  -f src/servers/build.xml jar
+	$(ANT_BIN) -f src/servers/build.xml jar
 server_clean: check
-	$(ANT_BIN)  -f src/servers/build.xml clean || exit 1;
+	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
 server_distclean: check
-	$(ANT_BIN)  -f src/servers/build.xml clean || exit 1;
+	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
+
+test: client server
+	$(XTFS_BINDIR)/xtfs_test
