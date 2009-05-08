@@ -113,7 +113,7 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
             try: os.mkdir( test_run_dir_path )
             except: pass                                         
             os.chdir( test_run_dir_path )
-            unittest.TextTestRunner().run( test_suite )
+            unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
             os.chdir( mount_point_dir_path )
             shutil.rmtree( test_run_dir_path )
 
