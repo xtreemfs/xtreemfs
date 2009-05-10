@@ -115,7 +115,8 @@ def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
             os.chdir( test_run_dir_path )
             unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
             os.chdir( mount_point_dir_path )
-            shutil.rmtree( test_run_dir_path )
+            try: shutil.rmtree( test_run_dir_path )
+            except: traceback.print_exc()
 
     os.chdir( original_cwd )                    
 
@@ -337,11 +338,14 @@ if __name__ == "__main__":
         if not options.start_environment: # i.e. no options were specified
             try:
                 execute_tests( num_osds=options.num_osds, verbose=options.verbose )
+                ret = 0
             except KeyboardInterrupt:
                 pass
             except:
                 traceback.print_exc()
+                ret = 1
             os.chdir( original_cwd )
             stop_environment()
+            sys.exit( ret )
     
         

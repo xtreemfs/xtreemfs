@@ -7,11 +7,6 @@ DBENCH_CLIENT_TXT_GZ_FILE_PATH = os.path.join( MY_DIR_PATH, "dbench-client.txt.g
                                
 
 class dbenchTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
-        unittest.TestCase.__init__( self )
-        self.stdout = stdout
-        self.stderr = stderr
-    
     def runTest( self ):
         gzip_client_txt_gz_data = gzip.GzipFile( DBENCH_CLIENT_TXT_GZ_FILE_PATH, mode="rb" ).read()
         assert len( gzip_client_txt_gz_data ) > 0
@@ -19,14 +14,14 @@ class dbenchTest(unittest.TestCase):
         assert os.stat( "dbench-client.txt" ).st_size > 0
         
         args = "dbench -c dbench-client.txt -D . 5"
-        p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
+        p = subprocess.Popen( args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         retcode = p.wait()
         self.assertEqual( retcode, 0 )
 
 
 def createTestSuite( *args, **kwds ): 
     if not sys.platform.startswith( "win" ):
-        return unittest.TestSuite( [dbenchTest( *args, **kwds )] )
+        return unittest.TestSuite( [dbenchTest()] )
                 
 
 if __name__ == "__main__":
