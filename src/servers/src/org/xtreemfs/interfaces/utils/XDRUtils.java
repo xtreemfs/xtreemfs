@@ -46,6 +46,10 @@ public class XDRUtils {
     //public static final int MAX_ARRAY_ELEMS = 8*1024;
     public static final int MAX_ARRAY_ELEMS = 1024*1024;
 
+    public static final int TYPE_CALL = 0;
+
+    public static final int TYPE_RESPONSE = 1;
+
 
     public static ReusableBuffer deserializeSerializableBuffer(ReusableBuffer data) {
         final int dataSize = data.getInt();

@@ -91,7 +91,6 @@ import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
-import org.xtreemfs.osd.striping.GMAXMessage;
 import org.xtreemfs.osd.striping.UDPCommunicator;
 import org.xtreemfs.osd.striping.UDPMessage;
 import org.xtreemfs.osd.striping.UDPReceiverInterface;
@@ -100,6 +99,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.foundation.CrashReporter;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, UDPReceiverInterface {
 
@@ -611,25 +613,33 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     @Override
     public void receiveUDP(UDPMessage msg) {
-        if (msg.getMsgType() == UDPMessage.Type.GMAX) {
-            //send gmax to storage stage
-            try {
-                GMAXMessage gmax = new GMAXMessage(msg);
-                
+        assert(msg.isRequest() || msg.isResponse());
+
+        if (msg.isRequest()) {
+            if (msg.getRequestData() instanceof xtreemfs_broadcast_gmaxRequest) {
+                xtreemfs_broadcast_gmaxRequest rq = (xtreemfs_broadcast_gmaxRequest) msg.getRequestData();
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "received GMAX packet for: %s", gmax.getFileId());
-                
-                stStage.receivedGMAX_ASYNC(gmax.getFileId(), gmax.getTruncateEpoch(), gmax.getLastObject());
-            } catch (Exception ex) {
+                        "received GMAX packet for: %s from %s", rq.getFileId(),msg.getAddress());
+
+                stStage.receivedGMAX_ASYNC(rq.getFileId(), rq.getTruncateEpoch(), rq.getLastObject());
+            } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
+                xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, OutputUtils
-                            .stackTraceToString(ex));
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                        "received ping request from: %s", msg.getAddress());
+
+                 vStage.receiveVivaldiMessage(msg);
             }
-        } else if (msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_REQUEST ||
-                   msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_RESPONSE) {
-            //send data to vivaldi stage
-            vStage.receiveVivaldiMessage(msg);
+        } else {
+            if (msg.getResponseData() instanceof xtreemfs_pingResponse) {
+                xtreemfs_pingResponse resp = (xtreemfs_pingResponse) msg.getResponseData();
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                        "received ping response from: %s", msg.getAddress());
+
+                 vStage.receiveVivaldiMessage(msg);
+            }
         }
     }
 

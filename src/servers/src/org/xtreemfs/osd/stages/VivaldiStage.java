@@ -14,6 +14,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.striping.UDPMessage;
@@ -57,10 +58,10 @@ public class VivaldiStage extends Stage {
 
             //do something...
 
-            if (msg.getMsgType() == UDPMessage.Type.VIVALDI_COORD_XCHG_REQUEST) {
+            if (msg.isRequest()) {
                 //send response if it was a request
                 //FIXME: replace vc with your coordinates
-                sendVivaldiCoordinates(msg.getAddress(), true, vc);
+                sendVivaldiCoordinates(msg, vc);
             }
 
         } else {
@@ -95,15 +96,11 @@ public class VivaldiStage extends Stage {
         enqueueOperation(STAGEOP_COORD_XCHG_REQUEST, new Object[]{msg}, null, null);
     }
 
-    private void sendVivaldiCoordinates(InetSocketAddress osd, boolean isResponse, VivaldiCoordinates myCoordinates) {
+    private void sendVivaldiCoordinates(UDPMessage request, VivaldiCoordinates myCoordinates) {
         final int payloadSize = myCoordinates.calculateSize();
         //add one byte for UDP message type identifier
-        ONCRPCBufferWriter wr = new ONCRPCBufferWriter(payloadSize+1);
-        wr.put((byte)0);
-        myCoordinates.serialize(wr);
-        wr.flip();
-        final ReusableBuffer buf = wr.getBuffers().get(0);
-        UDPMessage msg = new UDPMessage(isResponse ? UDPMessage.Type.VIVALDI_COORD_XCHG_RESPONSE : UDPMessage.Type.VIVALDI_COORD_XCHG_REQUEST, osd, buf);
+        xtreemfs_pingResponse resp = new xtreemfs_pingResponse(myCoordinates);
+        UDPMessage msg = request.createResponse(resp);
         master.getUdpComStage().send(msg);
     }
 

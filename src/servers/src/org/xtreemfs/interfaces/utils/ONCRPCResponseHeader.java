@@ -96,7 +96,7 @@ public class ONCRPCResponseHeader implements Serializable {
     public void deserialize(ReusableBuffer buf) {
         xid = buf.getInt();
         int msgType = buf.getInt();
-        assert msgType == 1;
+        assert msgType == 1 : "message type must be ANSWER, but is "+msgType;
         reply_stat = buf.getInt();
         assert reply_stat == REPLY_STAT_MSG_ACCEPTED;
 

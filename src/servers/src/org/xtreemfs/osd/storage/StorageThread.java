@@ -41,6 +41,7 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage;
@@ -50,7 +51,7 @@ import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
-import org.xtreemfs.osd.striping.GMAXMessage;
+import org.xtreemfs.osd.striping.UDPMessage;
 
 public class StorageThread extends Stage {
     
@@ -464,9 +465,10 @@ public class StorageThread extends Stage {
                         if (osds.size() > 1) {
                             for (ServiceUUID osd : osds) {
                                 if (!osd.equals(localUUID)) {
-                                    final GMAXMessage m = new GMAXMessage(fileId, fi.getTruncateEpoch(),
-                                        objNo);
-                                    master.getUdpComStage().send(m.getMessage(osd.getAddress()));
+                                    final xtreemfs_broadcast_gmaxRequest m = new xtreemfs_broadcast_gmaxRequest(fileId,
+                                            fi.getTruncateEpoch(), objNo, -1);
+                                    final UDPMessage udpm = new UDPMessage(osd.getAddress(), 1, 0, m);
+                                    master.getUdpComStage().send(udpm);
                                 }
                             }
                         }

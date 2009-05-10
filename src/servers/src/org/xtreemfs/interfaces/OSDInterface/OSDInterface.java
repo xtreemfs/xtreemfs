@@ -31,6 +31,8 @@ public class OSDInterface
             case 101: return new xtreemfs_internal_truncateRequest();
             case 102: return new xtreemfs_internal_read_localRequest();
             case 50: return new xtreemfs_shutdownRequest();
+            case 1000: return new xtreemfs_broadcast_gmaxRequest();
+            case 1001: return new xtreemfs_pingRequest();
 
             default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
         }
@@ -40,7 +42,7 @@ public class OSDInterface
     {
         switch( header.getXID() )
         {
-            case 1: return new readResponse();            case 2: return new truncateResponse();            case 3: return new unlinkResponse();            case 4: return new writeResponse();            case 103: return new xtreemfs_check_objectResponse();            case 100: return new xtreemfs_internal_get_gmaxResponse();            case 104: return new xtreemfs_internal_get_file_sizeResponse();            case 101: return new xtreemfs_internal_truncateResponse();            case 102: return new xtreemfs_internal_read_localResponse();            case 50: return new xtreemfs_shutdownResponse();
+            case 1: return new readResponse();            case 2: return new truncateResponse();            case 3: return new unlinkResponse();            case 4: return new writeResponse();            case 103: return new xtreemfs_check_objectResponse();            case 100: return new xtreemfs_internal_get_gmaxResponse();            case 104: return new xtreemfs_internal_get_file_sizeResponse();            case 101: return new xtreemfs_internal_truncateResponse();            case 102: return new xtreemfs_internal_read_localResponse();            case 50: return new xtreemfs_shutdownResponse();            case 1000: return new xtreemfs_broadcast_gmaxResponse();            case 1001: return new xtreemfs_pingResponse();
             default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
         }
     }    
