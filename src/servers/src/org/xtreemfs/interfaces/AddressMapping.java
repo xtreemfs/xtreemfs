@@ -10,10 +10,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public AddressMapping() { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; }
-    public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl_s ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl_s = ttl_s; }
-    public AddressMapping( Object from_hash_map ) { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; this.deserialize( from_hash_map ); }
-    public AddressMapping( Object[] from_array ) { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0;this.deserialize( from_array ); }
+    public AddressMapping() { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; uri = ""; }
+    public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl_s, String uri ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl_s = ttl_s; this.uri = uri; }
+    public AddressMapping( Object from_hash_map ) { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; uri = ""; this.deserialize( from_hash_map ); }
+    public AddressMapping( Object[] from_array ) { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; uri = "";this.deserialize( from_array ); }
 
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
@@ -29,13 +29,15 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public void setMatch_network( String match_network ) { this.match_network = match_network; }
     public int getTtl_s() { return ttl_s; }
     public void setTtl_s( int ttl_s ) { this.ttl_s = ttl_s; }
+    public String getUri() { return uri; }
+    public void setUri( String uri ) { this.uri = uri; }
 
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }    
     public long getTypeId() { return 0; }
 
     public String toString()
     {
-        return "AddressMapping( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + "\"" + protocol + "\"" + ", " + "\"" + address + "\"" + ", " + Integer.toString( port ) + ", " + "\"" + match_network + "\"" + ", " + Integer.toString( ttl_s ) + " )";
+        return "AddressMapping( " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + "\"" + protocol + "\"" + ", " + "\"" + address + "\"" + ", " + Integer.toString( port ) + ", " + "\"" + match_network + "\"" + ", " + Integer.toString( ttl_s ) + ", " + "\"" + uri + "\"" + " )";
     }
 
 
@@ -53,6 +55,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         this.port = ( ( Integer )from_hash_map.get( "port" ) ).intValue();
         this.match_network = ( String )from_hash_map.get( "match_network" );
         this.ttl_s = ( ( Integer )from_hash_map.get( "ttl_s" ) ).intValue();
+        this.uri = ( String )from_hash_map.get( "uri" );
     }
     
     public void deserialize( Object[] from_array )
@@ -63,7 +66,8 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         this.address = ( String )from_array[3];
         this.port = ( ( Integer )from_array[4] ).intValue();
         this.match_network = ( String )from_array[5];
-        this.ttl_s = ( ( Integer )from_array[6] ).intValue();        
+        this.ttl_s = ( ( Integer )from_array[6] ).intValue();
+        this.uri = ( String )from_array[7];        
     }
 
     public void deserialize( ReusableBuffer buf )
@@ -75,6 +79,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         port = buf.getInt();
         match_network = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         ttl_s = buf.getInt();
+        uri = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
     public Object serialize()
@@ -87,6 +92,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         to_hash_map.put( "port", new Integer( port ) );
         to_hash_map.put( "match_network", match_network );
         to_hash_map.put( "ttl_s", new Integer( ttl_s ) );
+        to_hash_map.put( "uri", uri );
         return to_hash_map;        
     }
 
@@ -99,6 +105,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         writer.putInt( port );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( match_network, writer );
         writer.putInt( ttl_s );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( uri, writer );
     }
     
     public int calculateSize()
@@ -111,6 +118,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
         my_size += ( Integer.SIZE / 8 );
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(match_network);
         my_size += ( Integer.SIZE / 8 );
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(uri);
         return my_size;
     }
 
@@ -122,6 +130,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     private int port;
     private String match_network;
     private int ttl_s;
+    private String uri;
 
 }
 
