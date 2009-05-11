@@ -356,8 +356,8 @@ if __name__ == "__main__":
             traceback.print_exc()
             sys.exit( 1 )
             
-#        ret = run_tests( num_osds=options.num_osds, verbose=True )        
-#        stop_services( num_osds=options.num_osds )
-#        unmount_volumes()
-#        sys.exit( ret )
+        ret = run_tests( num_osds=options.num_osds, verbose=True )        
+        stop_services( num_osds=options.num_osds )
+        unmount_volumes()
+        sys.exit( ret )
         

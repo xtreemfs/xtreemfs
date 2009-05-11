@@ -15,9 +15,9 @@ TEST_SUBDIR_PATH = os.path.join( TEST_DIR_NAME, TEST_SUBDIR_NAME )
 class SimpleMetadataTestCase(unittest.TestCase):
     def tearDown( self ):
         try: os.unlink( TEST_FILE_NAME )
-            except: pass
-                   try: os.unlink( TEST_LINK_NAME )
-                except: pass
+        except: pass
+        try: os.unlink( TEST_LINK_NAME )
+        except: pass
         try: shutil.rmtree( TEST_DIR_NAME )
         except: pass
 
