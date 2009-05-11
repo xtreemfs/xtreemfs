@@ -68,7 +68,7 @@ if sys.platform.startswith( "win" ):
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if not sys.platform.startswith( "win" ):
-    for lib in ["ssl"]:
+    for lib in ["fuse", "ssl"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 

@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -74,7 +74,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -118,7 +118,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;UNICODE"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -162,103 +162,7 @@
             Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
-            <Filter Name="processor">
-<File
-    RelativePath="..\..\share\google-breakpad\src\processor\scoped_ptr.h"
-    >
-</File>
-</Filter>
-<Filter Name="client">
-<Filter Name="windows">
-<Filter Name="common">
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\common\auto_critical_section.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\common\ipc_protocol.h"
-    >
-</File>
-</Filter>
-<Filter Name="crash_generation">
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\client_info.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_client.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_server.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\client_info.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\crash_generation_client.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.cc"
-    >
-</File>
-</Filter>
-<Filter Name="handler">
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\handler\exception_handler.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\client\windows\handler\exception_handler.cc"
-    >
-</File>
-</Filter>
-</Filter>
-</Filter>
-<Filter Name="common">
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\string_conversion.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.c"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\string_conversion.cc"
-    >
-</File>
-<Filter Name="windows">
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\windows\guid_string.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\windows\string_utils-inl.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\windows\guid_string.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\windows\string_utils.cc"
-    >
-</File>
-</Filter>
-</Filter>
-
+            
         </Filter>
     </Files>
     <Globals>
