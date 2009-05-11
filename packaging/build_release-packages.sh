@@ -10,15 +10,19 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 SERVER_WHITE_LIST=(
-	"servers/bin" "bin"
-	"servers/config/default_dir" "config/default_dir"
-	"servers/config/dirconfig.properties" "config/dirconfig.properties"
-	"servers/config/mrcconfig.properties" "config/mrcconfig.properties"
-	"servers/config/osdconfig.properties" "config/osdconfig.properties"
-	"servers/init.d-scripts" "init.d-scripts"
-	"servers/lib" "lib"
-	"servers/man" "man"
-	"servers/dist" "dist"
+	"bin/xtfs_cleanup" "bin/xtfs_cleanup"
+	"bin/xtfs_mrcdbtool" "bin/xtfs_mrcdbtool"
+	"bin/xtfs_scrub" "bin/xtfs_scrub"
+	"man/man1/xtfs_mrcdbtool.1" "man/man1/xtfs_mrcdbtool.1"
+	"man/man1/xtfs_scrub.1" "man/man1/xtfs_scrub.1"
+	"man/man1/xtfs_cleanup.1" "man/man1/xtfs_cleanup.1"
+	"etc/xos/xtreemfs/default_dir" "config/default_dir"
+	"etc/xos/xtreemfs/dirconfig.properties" "config/dirconfig.properties"
+	"etc/xos/xtreemfs/mrcconfig.properties" "config/mrcconfig.properties"
+	"etc/xos/xtreemfs/osdconfig.properties" "config/osdconfig.properties"
+	"etc/init.d" "init.d-scripts"
+	"src/servers/lib" "lib"
+	"src/servers/dist" "dist"
 	"packaging/generate_uuid" "packaging"
 	"AUTHORS" ""
 	"COPYING" ""
@@ -27,32 +31,41 @@ SERVER_WHITE_LIST=(
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 CLIENT_WHITE_LIST=(
-	"client/generate_src_and_proj.bat" ""
-	"client/include" "include"
-	"client/scons.py" ""
-	"client/SConstruct" ""
-	"client/proj" "proj"
-	"client/share" "share"
-	"client/src" "src"
-	"client/bin" "bin"
-	"client/man" "man"
-	"utils/man" "man"
-	"utils/bin/xtfs_sp" "bin"
-	"servers/config/default_dir" "config/default_dir"
+	"src/client/generate_src_and_proj.bat" ""
+	"src/client/include" "include"
+	"src/client/scons.py" ""
+	"src/client/SConstruct" ""
+	"src/client/proj" "proj"
+	"src/client/share" "share"
+	"src/client/src" "src"
+	"bin/xtfs_lsvol" "bin/xtfs_lsvol"
+	"bin/xtfs_mkvol" "bin/xtfs_mkvol"
+	"bin/xtfs_mount" "bin/xtfs_mount"
+	"bin/xtfs_rmvol" "bin/xtfs_rmvol"
+	"bin/xtfs_sp" "bin/xtfs_sp"
+	"bin/xtfs_stat" "bin/xtfs_stat"
+	"bin/xtfs_umount" "bin/xtfs_umount"
+	"man/man1/xtfs_lsvol.1" "man/man1/xtfs_lsvol.1"
+	"man/man1/xtfs_mkvol.1" "man/man1/xtfs_mkvol.1"
+	"man/man1/xtfs_mount.1" "man/man1/xtfs_mount.1"
+	"man/man1/xtfs_rmvol.1" "man/man1/xtfs_rmvol.1"
+	"man/man1/xtfs_sp.1" "man/man1/xtfs_sp.1"
+	"man/man1/xtfs_stat.1" "man/man1/xtfs_stat.1"
+	"man/man1/xtfs_umount.1" "man/man1/xtfs_umount.1"
+	"etc/xos/xtreemfs/default_dir" "config/default_dir"
 	"AUTHORS" ""
 	"COPYING" ""
 )
 
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
-	"servers/xtreemos" "xtreemos"
+	"src/servers/xtreemos" "xtreemos"
 	"AUTHORS" ""
 	"COPYING" ""
 )
 
 # black list for files/dirs which should NEVER be copied
 SERVER_BLACK_LIST=(
-	"servers/bin/generate_xtreemfs_java.py"
 	"servers/lib/test"
 )
 
@@ -62,6 +75,12 @@ CLIENT_BLACK_LIST=(
 
 # black list for files/dirs which should NEVER be copied
 XOS_ADDONS_BLACK_LIST=(
+)
+
+# black list for files/dirs which should NEVER be copied
+SOURCE_BLACK_LIST=(
+	"packaging"
+	"doc"
 )
 
 # --------------------------
@@ -74,6 +93,24 @@ Usage:
   $0 <build-version> [<xtreemfs home dir>]
 EOF
 	exit 0
+}
+
+# source tarball
+build_source_tarball() {
+	PACKAGE_PATH="$TMP_PATH/$SOURCE_TARBALL_NAME"
+
+	cleanup_client $PACKAGE_PATH
+
+	echo "build source distribution"
+
+	# delete all from black-list in temporary dir
+	delete_source_black_list $PACKAGE_PATH
+
+	# delete all .svn directories
+	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+
+	# create archiv
+	tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
 }
 
 # client package
@@ -124,7 +161,7 @@ compile_server() {
 	cp -a $XTREEMFS_HOME_DIR/* "$COMPILE_PATH"
 
 	# compile
-	ant jar -q -buildfile "$COMPILE_PATH/servers/build.xml"
+	ant jar -q -buildfile "$COMPILE_PATH/src/servers/build.xml"
 }
 
 build_server_package() {
@@ -138,12 +175,12 @@ build_server_package() {
 	create_dir $PACKAGE_PATH
 
 	# delete UUID from config-files
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/servers/config/dirconfig.properties > $COMPILE_PATH/servers/config/dirconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/servers/config/mrcconfig.properties > $COMPILE_PATH/servers/config/mrcconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/servers/config/osdconfig.properties > $COMPILE_PATH/servers/config/osdconfig.properties_new
-	mv $COMPILE_PATH/servers/config/dirconfig.properties_new $COMPILE_PATH/servers/config/dirconfig.properties
-	mv $COMPILE_PATH/servers/config/mrcconfig.properties_new $COMPILE_PATH/servers/config/mrcconfig.properties
-	mv $COMPILE_PATH/servers/config/osdconfig.properties_new $COMPILE_PATH/servers/config/osdconfig.properties
+	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties_new
+	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new
+	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties_new
+	mv $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties
+	mv $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties
+	mv $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties
 
 	# delete all from black-list in temporary dir
 	delete_server_black_list $COMPILE_PATH
@@ -266,6 +303,15 @@ function delete_xos_addons_black_list() {
 	done
 }
 
+function delete_source_black_list() {
+	SRC_PATH=$1
+
+	for (( i = 0 ; i < ${#SOURCE_BLACK_LIST[@]} ; i++ ))
+	do
+		rm -Rf "$SRC_PATH/${SOURCE_BLACK_LIST[i]}"
+	done
+}
+
 function create_dir() {
 	CREATE_DIR=$1
 	if [ -d "$CREATE_DIR" ]; then
@@ -288,7 +334,7 @@ else
 fi
 
 VERSION="$1"
-if [ ! -d "$XTREEMFS_HOME_DIR/servers" -o ! -d "$XTREEMFS_HOME_DIR/client" ] ;
+if [ ! -d "$XTREEMFS_HOME_DIR/src/servers" -o ! -d "$XTREEMFS_HOME_DIR/src/client" ] ;
 then
 	echo "directory is not the xtreemfs home directory"
 	usage
@@ -297,6 +343,7 @@ fi
 CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
 SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
 XOS_ADDONS_PACKAGE_NAME="XtreemFS-XOS-addons-$VERSION"
+SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
 # create temporary directory
 create_dir $TMP_PATH
@@ -305,6 +352,7 @@ create_dir $TMP_PATH
 build_client_package
 build_server_package
 build_xtreemos_addons
+build_source_tarball
 
 # delete temporary directory
 rm -Rf $TMP_PATH
