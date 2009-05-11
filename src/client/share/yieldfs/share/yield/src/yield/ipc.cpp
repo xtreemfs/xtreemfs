@@ -408,7 +408,7 @@ void Client::handleEvent( Event& ev )
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_DEBUG ) << getEventHandlerName() << ": waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
 
-            fd_event_queue->toggle( *connection, connection, false, true );
+            fd_event_queue->attach( *connection, connection, false, true );
             connection->set_state( Connection::CONNECTING );
             return;
           }
