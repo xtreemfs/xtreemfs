@@ -63,6 +63,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.foundation.CrashReporter;
 
 /**
@@ -183,11 +184,52 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     }
     
     private void initializeDatabase() {
+        final byte[] versionKey = "version".getBytes();
+        try {
+            database.createDatabase("dirdbver", 1);
+            try {
+                BabuDBInsertGroup ig = database.createInsertGroup("dirdbver");
+                ig.addInsert(0, versionKey, new byte[]{(byte)DIRInterface.getVersion()});
+                database.directInsert(ig);
+            } catch (BabuDBException ex) {
+                ex.printStackTrace();
+                System.err.println("cannot initialize database");
+                System.exit(1);
+            }
+        } catch (BabuDBException ex) {
+            //database exists, check version
+            if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
+                try {
+                    byte[] value = database.directLookup("dirdbver", 0, versionKey);
+                    byte ver = -1;
+                    if ((value != null) && (value.length > 0))
+                        ver = value[0];
+                    if (value[0] != DIRInterface.getVersion()) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "the database was created contains data with version no %d, this DIR uses version %d.",
+                                ver,DIRInterface.getVersion());
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "please start an older version of the DIR or remove the old database");
+                        System.exit(1);
+                    }
+                } catch (BabuDBException ex2) {
+                    ex2.printStackTrace();
+                    System.err.println("cannot initialize database");
+                    System.exit(1);
+                }
+            } else {
+                ex.printStackTrace();
+                System.err.println("cannot initialize database");
+                System.exit(1);
+            }
+        }
+
         try {
             database.createDatabase("dirdb", 3);
         } catch (BabuDBException ex) {
             // database already created
         }
+
+
         
     }
     
