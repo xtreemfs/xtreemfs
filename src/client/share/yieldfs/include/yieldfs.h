@@ -6,6 +6,10 @@
 
 #include "yield/platform.h"
 
+#ifndef _WIN32
+struct fuse_args;
+#endif
+
 
 namespace yieldfs
 {
