@@ -47,7 +47,8 @@ public class DummyONCRPCServer {
                             xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                             if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
-                                rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
+                                rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600,
+                                        "rpc://localhost:12345"));
                                 System.out.println("response size is " + rpcResponse.calculateSize());
                                 rq.sendResponse(rpcResponse);
                             } else {

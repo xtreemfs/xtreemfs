@@ -114,7 +114,7 @@ public class StatusPage {
             long version = 0;
             for (AddressMapping am : ams) {
                 dump.append("<tr><td class=\"mapping\">");
-                String endpoint = am.getProtocol() + "://" + am.getAddress() + ":" + am.getPort();
+                String endpoint = am.getUri()+" ("+am.getProtocol() + "," + am.getAddress() + "," + am.getPort()+")";
                 dump.append("<a href=\"" + endpoint + "\">");
                 dump.append(endpoint);
                 dump.append("</a></td><td class=\"mapping\">");

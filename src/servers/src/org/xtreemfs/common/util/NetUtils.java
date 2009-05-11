@@ -24,7 +24,9 @@
 package org.xtreemfs.common.util;
 
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
@@ -75,8 +77,10 @@ public class NetUtils {
                     continue;
                 
                 if (!(inetAddr.isLinkLocalAddress() || inetAddr.isSiteLocalAddress())) {
-                    endpoints.add(new AddressMapping("", 0, protocol, inetAddr.getHostAddress(), port, "*",
-                        3600));
+                    final String hostAddr = getHostAddress(inetAddr);
+                    final String uri = getURI(protocol,inetAddr,port);
+                    endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*",
+                        3600,uri));
                     break;
                 }
                 
@@ -114,11 +118,9 @@ public class NetUtils {
                     InetAddress inetAddr = addr.getAddress();
                     
                     if (inetAddr.isSiteLocalAddress()) {
-                        String hostAddr = inetAddr.getHostAddress();
-                        if (hostAddr.lastIndexOf('%') >= 0) {
-                            hostAddr = hostAddr.substring(0, hostAddr.lastIndexOf('%'));
-                        }
-                        endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*", 3600));
+                        final String hostAddr = getHostAddress(inetAddr);
+                        final String uri = getURI(protocol,inetAddr,port);
+                        endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*", 3600, uri));
                         break;
                     }
                 }
@@ -133,11 +135,38 @@ public class NetUtils {
         if (endpoints.isEmpty()) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
                 "could not find a valid IP address, will use 127.0.0.1 instead", new Object[0]);
-            endpoints.add(new AddressMapping("", 0, protocol, "127.0.0.1", port, "*", 3600));
+            endpoints.add(new AddressMapping("", 0, protocol, "127.0.0.1", port, "*", 3600, getURI(protocol, InetAddress.getLocalHost(), port)));
         }
         
         return endpoints;
         
+    }
+
+    public static String getHostAddress(InetAddress host) {
+
+        String hostAddr = host.getHostAddress();
+        if (host instanceof Inet6Address) {
+            if (hostAddr.lastIndexOf('%') >= 0) {
+                hostAddr = hostAddr.substring(0, hostAddr.lastIndexOf('%'));
+            }
+        }
+
+        return hostAddr;
+
+    }
+
+    public static String getURI(String protocol, InetAddress host, int port) {
+
+        String hostAddr = host.getHostAddress();
+        if (host instanceof Inet6Address) {
+            if (hostAddr.lastIndexOf('%') >= 0) {
+                hostAddr = hostAddr.substring(0, hostAddr.lastIndexOf('%'));
+            }
+            hostAddr = "["+hostAddr+"]";
+        }
+
+        return protocol+"://"+hostAddr+":"+port;
+
     }
     
     private static String getSubnetMaskString(short prefixLength) {

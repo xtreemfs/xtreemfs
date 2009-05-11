@@ -157,7 +157,7 @@ public class HeartbeatThread extends LifeCycleThread {
                     dottedQuad = dottedQuad.substring(1);
                 
                 AddressMapping m = new AddressMapping(uuid.toString(), 0, uuid.getProtocol(), dottedQuad,
-                    uuid.getAddress().getPort(), "*", 3600);
+                    uuid.getAddress().getPort(), "*", 3600, uuid.toURL());
                 
                 endpoints.add(m);
             }

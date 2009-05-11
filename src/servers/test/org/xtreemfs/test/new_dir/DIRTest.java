@@ -108,7 +108,8 @@ public class DIRTest extends TestCase {
         DIRClient client = testEnv.getDirClient();
 
         AddressMappingSet set = new AddressMappingSet();
-        AddressMapping mapping = new AddressMapping("uuid1", 0, "oncrpc", "localhost", 12345, "*", 3600);
+        AddressMapping mapping = new AddressMapping("uuid1", 0, "oncrpc", "localhost", 12345, "*", 3600,
+                "oncrpc://localhost:12345");
         set.add(mapping);
 
         RPCResponse<Long> r1 = client.xtreemfs_address_mappings_set(null, set);

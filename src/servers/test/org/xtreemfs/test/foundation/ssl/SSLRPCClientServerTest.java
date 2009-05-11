@@ -59,11 +59,11 @@ public class SSLRPCClientServerTest extends TestCase {
 
         System.out.println("loading ssl context");
 
-        srvSSL = createSSLOptions("certs/DIR.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
-            "certs/trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        srvSSL = createSSLOptions("DIR.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
+            "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
 
-        clientSSL = createSSLOptions("certs/Client.p12", "passphrase",
-            SSLOptions.PKCS12_CONTAINER, "certs/trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
+        clientSSL = createSSLOptions("Client.p12", "passphrase",
+            SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER);
 
         System.out.println("setup done");
     }
@@ -88,7 +88,7 @@ public class SSLRPCClientServerTest extends TestCase {
                     xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                     if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
-                        rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600));
+                        rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600,""));
                         System.out.println("response size is "+rpcResponse.calculateSize());
                         rq.sendResponse(rpcResponse);
                     } else {
@@ -411,11 +411,11 @@ public class SSLRPCClientServerTest extends TestCase {
 
         InputStream ks = cl.getResourceAsStream(keyStoreName);
         if (ks == null)
-            ks = new FileInputStream("test/" + keyStoreName);
+            ks = new FileInputStream("../../tests/certs/" + keyStoreName);
 
         InputStream ts = cl.getResourceAsStream(trustStoreName);
         if (ts == null)
-            ts = new FileInputStream("test/" + trustStoreName);
+            ts = new FileInputStream("../../tests/certs/" + trustStoreName);
 
         return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false);
     }

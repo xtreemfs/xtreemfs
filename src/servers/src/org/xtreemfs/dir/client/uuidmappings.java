@@ -78,7 +78,7 @@ public class uuidmappings {
                     }
 
                     AddressMapping am = new AddressMapping(options.get("uuid").stringValue, version,
-                            m.group(2),m.group(3),Integer.valueOf(m.group(4)),m.group(1),3600);
+                            m.group(2),m.group(3),Integer.valueOf(m.group(4)),m.group(1),3600,m.group(2)+"://"+m.group(3)+":"+m.group(4));
                     ams.clear();
                     ams.add(am);
                     RPCResponse<Long> r =client.xtreemfs_address_mappings_set(null, ams);
