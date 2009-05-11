@@ -1,5 +1,3 @@
-// Revision: 1399
-
 #include "yield/ipc.h"
 using namespace YIELD;
 using std::memset;
@@ -221,52 +219,42 @@ namespace YIELD
 // client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
-
-
 Client::Client( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log )
   : peer_sockaddr( peer_sockaddr ), socket_factory( socket_factory ), log( log )
 {
   if ( this->socket_factory == NULL )
     this->socket_factory = new TCPSocketFactory;
-
   reconnect_tries = 0;
   reconnect_tries_max = static_cast<uint8_t>( -1 );
   operation_timeout_ns = 5 * NS_IN_S;
   fd_event_queue = NULL;
 //  connection_activity_timer = new ConnectionActivityCheckTimer( *this );
 }
-
 Client::~Client()
 {
   for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
     Object::decRef( **connection_i );
 }
-
 Client::Connection* Client::createConnection()
 {
   auto_Object<Socket> _socket = socket_factory->createSocket().release();
   _socket->set_blocking_mode( false );
   return new Connection( _socket );
 }
-
 void Client::destroyConnection( Client::Connection& connection )
 {
   connection.shutdown();
   connection.close();
   YIELD::Object::decRef( connection );
 }
-
 void Client::handleEvent( Event& ev )
 {
   Connection* connection = NULL;
   uint32_t fd_event_error_code = 0;
-
   switch ( ev.get_type_id() )
   {
     case YIELD_OBJECT_TYPE_ID( StageStartupEvent ):
@@ -276,18 +264,15 @@ void Client::handleEvent( Event& ev )
       return;
     }
     break;
-
     case YIELD_OBJECT_TYPE_ID( StageShutdownEvent ):
     {
       Object::decRef( ev );
       return;
     }
     break;
-
     case YIELD_OBJECT_TYPE_ID( FDEvent ):
     {
       FDEvent& fd_ev = static_cast<FDEvent&>( ev );
-
       switch ( fd_ev.get_context()->get_general_type() )
       {
         case YIELD::Object::UNKNOWN:
@@ -296,12 +281,10 @@ void Client::handleEvent( Event& ev )
           fd_event_error_code = fd_ev.get_error_code();
         }
         break;
-
         default: YIELD::DebugBreak();
       }
     }
     break;
-
     case YIELD_OBJECT_TYPE_ID( ConnectionActivityCheckRequest ):
     {
       for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
@@ -314,7 +297,6 @@ void Client::handleEvent( Event& ev )
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
-
             auto_Object<Request> protocol_request = connection->get_protocol_request();
             if ( protocol_request != NULL )
             {
@@ -323,7 +305,6 @@ void Client::handleEvent( Event& ev )
               connection->set_protocol_request( NULL );
               this->send( *protocol_request.release() ); // Re-enqueue the request
             }
-
             fd_event_queue->detach( *connection, connection );
             connection->shutdown();
             connection->close();
@@ -336,16 +317,13 @@ void Client::handleEvent( Event& ev )
         else
           ++connection_i;
       }
-
       // Don't decRef ev, it's on the timer's stack
       return;
     }
     break;
-
     default:
     {
       auto_Object<Request> protocol_request = createProtocolRequest( auto_Object<>( ev ) ); // Give it the original reference to ev
-
       if ( !connections.empty() )
       {
         for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
@@ -358,7 +336,6 @@ void Client::handleEvent( Event& ev )
             break;
           }
         }
-
         if ( connection == NULL )
         {
           connection = createConnection();
@@ -370,20 +347,16 @@ void Client::handleEvent( Event& ev )
         connection = createConnection();
         connections.push_back( connection );
       }
-
       connection->set_protocol_request( protocol_request );
-      fd_event_queue->attach( *connection, connection, false, false );
+      // Don't attach the socket to fd_event_queue until it's really necessary, in case the socket has to be re-created on a fallback to IPv4
     }
     break;
   }
-
-
   for ( ;; )
   {
     if ( fd_event_error_code == 0 )
     {
       Stream::Status read_write_status = Stream::STREAM_STATUS_OK;
-
       switch ( connection->get_state() )
       {
         case Connection::IDLE:
@@ -391,15 +364,13 @@ void Client::handleEvent( Event& ev )
         {
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_DEBUG ) << getEventHandlerName() << ": trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries ) << ".";
-
           Stream::Status connect_status = connection->connect( peer_sockaddr );
           if ( connect_status == Stream::STREAM_STATUS_OK )
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully connected to " << peer_sockaddr << ".";
-
             reconnect_tries = 0; // Start from 0 tries every time we successfully connect so that the count doesn't reach the max in a long-running client
-
+            fd_event_queue->detach( *connection, connection );
             connection->set_state( Connection::WRITING );
             // Drop down to WRITING
       	  }
@@ -407,7 +378,6 @@ void Client::handleEvent( Event& ev )
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_DEBUG ) << getEventHandlerName() << ": waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
-
             fd_event_queue->attach( *connection, connection, false, true );
             connection->set_state( Connection::CONNECTING );
             return;
@@ -419,18 +389,16 @@ void Client::handleEvent( Event& ev )
           }
         }
         // No break here, to allow drop down to WRITING
-
         case Connection::WRITING:
         {
           auto_Object<Request> protocol_request = connection->get_protocol_request();
-
           read_write_status = protocol_request->serialize( *connection );
           if ( read_write_status == Stream::STREAM_STATUS_OK )
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
-
             connection->set_protocol_response( createProtocolResponse() );
+            fd_event_queue->detach( *connection, connection );
             connection->set_state( Connection::READING );
             // Drop down to READING
           }
@@ -438,21 +406,17 @@ void Client::handleEvent( Event& ev )
             break; // out of the switch, to check error codes
         }
         // No break here, to allow drop down to READING
-
         case Connection::READING:
         {
           auto_Object<Response> protocol_response = connection->get_protocol_response();
-
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_DEBUG ) << getEventHandlerName() << ": trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
-
           read_write_status = protocol_response->deserialize( *connection );
           if ( read_write_status == Stream::STREAM_STATUS_OK )
           {
             respond( connection->get_protocol_request(), connection->get_protocol_response() );
             connection->set_protocol_request( NULL );
             connection->set_protocol_response( NULL );
-
             fd_event_queue->detach( *connection, connection );
             connection->set_state( Connection::IDLE );
             return; // Done
@@ -461,15 +425,16 @@ void Client::handleEvent( Event& ev )
             break; // out of the switch, to check error codes
         }
         break;
-
         default: DebugBreak();
       }
-
       // Read or write failed
       if ( read_write_status == Stream::STREAM_STATUS_WANT_READ || read_write_status == Stream::STREAM_STATUS_WANT_WRITE )
       {
-        if ( !fd_event_queue->toggle( *connection, connection, read_write_status == Stream::STREAM_STATUS_WANT_READ, read_write_status == Stream::STREAM_STATUS_WANT_WRITE ) )
-          DebugBreak();
+        if ( !fd_event_queue->attach( *connection, connection, read_write_status == Stream::STREAM_STATUS_WANT_READ, read_write_status == Stream::STREAM_STATUS_WANT_WRITE ) )
+        {
+          if ( !fd_event_queue->toggle( *connection, connection, read_write_status == Stream::STREAM_STATUS_WANT_READ, read_write_status == Stream::STREAM_STATUS_WANT_WRITE ) )
+            DebugBreak();
+        }
         return;
       }
       else if ( log != NULL )
@@ -479,15 +444,12 @@ void Client::handleEvent( Event& ev )
     else if ( log != NULL ) // fd_event_error_code != 0
       log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
       // Drop down
-
-
     // Clean up the connection and prepare for another try if we're under the reconnect limit
     for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
     {
       if ( **connection_i == *connection )
       {
         auto_Object<Request> protocol_request = connection->get_protocol_request();
-
         if ( ++reconnect_tries < reconnect_tries_max )
         {
           destroyConnection( *connection );
@@ -502,54 +464,43 @@ void Client::handleEvent( Event& ev )
         {
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": exhausted connection retries to " << peer_sockaddr << ".";
-
           destroyConnection( *connection );
           connections.erase( connection_i );
-
           // We've lost errno here
 #ifdef _WIN32
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
 #else
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
 #endif
-
           return;
         }
       }
     }
   }
 }
-
-
 Client::Connection::Connection( auto_Object<Socket> _socket )
   : _socket( _socket )
 {
   state = IDLE;
 }
-
 Stream::Status Client::Connection::connect( const SocketAddress& connect_to_sockaddr )
 {
   last_activity_time = Time();
   return _socket->connect( connect_to_sockaddr );
 }
-
 Stream::Status Client::Connection::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
   last_activity_time = Time();
   return _socket->read( buffer, buffer_len, out_bytes_read );
 }
-
 Stream::Status Client::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
   last_activity_time = Time();
   return _socket->writev( buffers, buffers_count, out_bytes_written );
 }
-
-
 Client::ConnectionActivityCheckTimer::ConnectionActivityCheckTimer( Client& client )
   : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), client( client )
 { }
-
 void Client::ConnectionActivityCheckTimer::fire()
 {
   client.send( stack_connection_activity_check_request );
@@ -559,24 +510,17 @@ void Client::ConnectionActivityCheckTimer::fire()
 // fd_and_internal_event_queue.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 FDAndInternalEventQueue::FDAndInternalEventQueue()
 {
   dequeue_blocked = true;
 }
-
 bool FDAndInternalEventQueue::enqueue( Event& ev )
 {
   bool result = NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
-
   if ( dequeue_blocked )
     FDEventQueue::break_blocking_dequeue();
-
   return result;
 }
-
 Event* FDAndInternalEventQueue::dequeue()
 {
   dequeue_blocked = true; // Induces extra signals, but avoids this race:
@@ -584,56 +528,41 @@ Event* FDAndInternalEventQueue::dequeue()
 // E: enqueue to NBFQ
 // E: check blocked, = false, no signal
 // D: set blocked = true, block with event in NBFQ but no signal
-
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
   if ( ev != NULL )
   {
     dequeue_blocked = false;
     return ev;
   }
-
   ev = FDEventQueue::dequeue();
-
   dequeue_blocked = false;
-
   if ( ev != NULL )
     return ev;
-
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
-
 Event* FDAndInternalEventQueue::try_dequeue()
 {
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
   if ( ev != NULL )
     return ev;
-
   ev = FDEventQueue::try_dequeue();
-
   if ( ev )
     return ev;
-
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
-
 Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 {
   dequeue_blocked = true;
-
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
   if ( ev != NULL )
   {
     dequeue_blocked = false;
     return ev;
   }
-
   ev = FDEventQueue::timed_dequeue( timeout_ns );
-
   dequeue_blocked = false;
-
   if ( ev )
     return ev;
-
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
 
@@ -641,8 +570,6 @@ Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 // fd_event_queue.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 1024
@@ -669,29 +596,21 @@ Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 #include <sys/eventfd.h>
 #endif
 #endif
-
 #include <cstring>
 #include <iostream>
-
-
 #define MAX_EVENTS_PER_POLL 8192
 #define MAX_CONCURRENT_FDS 32767
-
-
 void FDEvent::serialize( StructuredOutputStream& output_stream )
 {
   output_stream.writeInt32( "fd", static_cast<int32_t>( get_socket() ) );
   output_stream.writeBool( "want_read", want_read() );
   output_stream.writeUint32( "error_code", static_cast<uint32_t>( get_error_code() ) );
 }
-
-
 FDEventQueue::FDEventQueue()
 {
 #ifndef YIELD_HAVE_LINUX_EVENTFD
   signal_read_socket = NULL;
 #endif
-
 #if defined(YIELD_HAVE_LINUX_EPOLL)
   poll_fd = epoll_create( MAX_CONCURRENT_FDS );
   returned_events = new epoll_event[MAX_EVENTS_PER_POLL];
@@ -709,9 +628,7 @@ FDEventQueue::FDEventQueue()
   except_fds = new fd_set; FD_ZERO( except_fds );
   except_fds_copy = new fd_set; FD_ZERO( except_fds_copy );
 #endif
-
   active_fds = 0;
-
 #ifdef YIELD_HAVE_LINUX_EVENTFD
   signal_eventfd = eventfd( 0, 0 );
   if ( signal_eventfd != -1 &&
@@ -734,7 +651,6 @@ FDEventQueue::FDEventQueue()
     throw Exception();
 #endif
 }
-
 FDEventQueue::~FDEventQueue()
 {
 #if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE)
@@ -745,12 +661,10 @@ FDEventQueue::~FDEventQueue()
   delete write_fds; delete write_fds_copy;
   delete except_fds; delete except_fds_copy;
 #endif
-
 #ifdef YIELD_HAVE_LINUX_EVENTFD
   ::close( signal_eventfd );
 #endif
 }
-
 #ifdef _WIN32
 bool FDEventQueue::attach( socket_t fd, Object* context, bool enable_read, bool enable_write )
 #else
@@ -803,7 +717,6 @@ bool FDEventQueue::attach( fd_t fd, Object* context, bool enable_read, bool enab
     if ( pollfds[pollfd_i].fd == fd )
       return false;
   }
-
   struct pollfd attach_pollfd;
   attach_pollfd.fd = fd;
   attach_pollfd.events = 0;
@@ -815,7 +728,6 @@ bool FDEventQueue::attach( fd_t fd, Object* context, bool enable_read, bool enab
   return true;
 #endif
 }
-
 void FDEventQueue::break_blocking_dequeue()
 {
 #ifdef YIELD_HAVE_LINUX_EVENTFD
@@ -826,7 +738,6 @@ void FDEventQueue::break_blocking_dequeue()
   signal_write_socket->write( &m, sizeof( m ) );
 #endif
 }
-
 #if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
 void FDEventQueue::clearReturnedEvents( fd_t fd, Object* context )
 {
@@ -854,7 +765,6 @@ void FDEventQueue::clearReturnedEvents( fd_t fd, Object* context )
   }
 }
 #endif
-
 void FDEventQueue::clearSignal()
 {
 #ifdef YIELD_HAVE_LINUX_EVENTFD
@@ -865,7 +775,6 @@ void FDEventQueue::clearSignal()
   signal_read_socket->read( reinterpret_cast<char*>( &m ), sizeof( m ) );
 #endif
 }
-
 Event* FDEventQueue::dequeue()
 {
   if ( active_fds <= 0 )
@@ -874,9 +783,7 @@ Event* FDEventQueue::dequeue()
     if ( active_fds <= 0 )
       return NULL;
   }
-
   fillStackFDEvent();
-
   if ( stack_fd_event.get_fd() != 0 )
   {
 #ifdef YIELD_HAVE_LINUX_EVENTFD
@@ -893,10 +800,8 @@ Event* FDEventQueue::dequeue()
 #endif
     }
   }
-
   return NULL;
 }
-
 #ifdef _WIN32
 void FDEventQueue::detach( socket_t fd, Object* context, bool will_keep_fd_open )
 #else
@@ -945,7 +850,6 @@ void FDEventQueue::detach( fd_t fd, Object* context, bool will_keep_fd_open )
   {
     pollfd_vector::size_type j = ( next_pollfd_to_check > 0 ) ? next_pollfd_to_check - 1 : 0;
     pollfd_vector::size_type j_max = pollfds.size();
-
     for ( unsigned char i = 0; i < 2; i++ )
     {
       for ( ; j < j_max; j++ )
@@ -958,7 +862,6 @@ void FDEventQueue::detach( fd_t fd, Object* context, bool will_keep_fd_open )
           return;
         }
       }
-
       if ( next_pollfd_to_check > 1 )
       {
         j = 0;
@@ -972,7 +875,6 @@ void FDEventQueue::detach( fd_t fd, Object* context, bool will_keep_fd_open )
   DebugBreak();
 #endif
 }
-
 bool FDEventQueue::enqueue( Event& ev )
 {
 #ifdef _DEBUG
@@ -981,7 +883,6 @@ bool FDEventQueue::enqueue( Event& ev )
   Object::decRef( ev );
   return true;
 }
-
 void FDEventQueue::fillStackFDEvent()
 {
 #if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
@@ -1042,7 +943,6 @@ void FDEventQueue::fillStackFDEvent()
   while ( next_fd_to_check != fd_to_context_map.end() )
   {
     socket_t fd = ( socket_t )next_fd_to_check->first;
-
     if ( FD_ISSET( fd, read_fds_copy ) )
     {
       stack_fd_event._want_read = true;
@@ -1068,19 +968,15 @@ void FDEventQueue::fillStackFDEvent()
       next_fd_to_check++;
       continue;
     }
-
     stack_fd_event._socket = fd;
     stack_fd_event.context = fd_to_context_map.find( fd );
     active_fds--;
-
     break;
   }
-
   if ( next_fd_to_check == fd_to_context_map.end() )
     active_fds = 0;
 #else
   pollfd_vector::size_type pollfds_size = pollfds.size();
-
   while ( next_pollfd_to_check < pollfds_size )
   {
     if ( pollfds[next_pollfd_to_check].revents != 0 )
@@ -1104,13 +1000,11 @@ void FDEventQueue::fillStackFDEvent()
     else
       next_pollfd_to_check++;
   }
-
   if ( next_pollfd_to_check == pollfds_size )
     active_fds = 0;
 #endif
 #endif
 }
-
 Event* FDEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 {
   if ( active_fds <= 0 )
@@ -1119,9 +1013,7 @@ Event* FDEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
     if ( active_fds <= 0 )
       return NULL;
   }
-
   fillStackFDEvent();
-
   if ( stack_fd_event.get_fd() != 0 )
   {
 #ifdef YIELD_HAVE_LINUX_EVENTFD
@@ -1138,10 +1030,8 @@ Event* FDEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 #endif
     }
   }
-
   return NULL;
 }
-
 int FDEventQueue::poll()
 {
 #if defined(YIELD_HAVE_LINUX_EPOLL)
@@ -1166,7 +1056,6 @@ int FDEventQueue::poll()
   return ::poll( &pollfds[0], pollfds.size(), -1 );
 #endif
 }
-
 int FDEventQueue::poll( timeout_ns_t timeout_ns )
 {
 #if defined(YIELD_HAVE_LINUX_EPOLL)
@@ -1179,10 +1068,8 @@ int FDEventQueue::poll( timeout_ns_t timeout_ns )
     struct timespec poll_tv = Time( timeout_ns );
 //			active_fds = port_getn( poll_fd, returned_events, MAX_EVENTS_PER_POLL, &nget, &poll_tv );
     int active_fds = port_get( poll_fd, returned_events, &poll_tv );
-
     if ( active_fds == 0 )
       active_fds = ( int )nget;
-
     return active_fds;
 #elif defined(_WIN32)
     memcpy( read_fds_copy, read_fds, sizeof( *read_fds ) );
@@ -1196,7 +1083,6 @@ int FDEventQueue::poll( timeout_ns_t timeout_ns )
     return ::poll( &pollfds[0], pollfds.size(), static_cast<int>( timeout_ns / NS_IN_MS ) );
 #endif
 }
-
 #ifdef _WIN32
 bool FDEventQueue::toggle( socket_t fd, Object* context, bool enable_read, bool enable_write )
 #else
@@ -1208,7 +1094,6 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
     FD_SET( fd, read_fds );
   else
     FD_CLR( fd, read_fds );
-
   if ( enable_write )
   {
     FD_SET( fd, write_fds );
@@ -1219,7 +1104,6 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
     FD_CLR( fd, write_fds );
     FD_CLR( fd, except_fds );
   }
-
   return true;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
   struct epoll_event change_event;
@@ -1251,7 +1135,6 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
 #elif !defined(_WIN32)
   pollfd_vector::size_type j = ( next_pollfd_to_check > 0 ) ? next_pollfd_to_check - 1 : 0;
   pollfd_vector::size_type j_max = pollfds.size();
-
   for ( unsigned char i = 0; i < 2; i++ )
   {
     for ( ; j < j_max; j++ )
@@ -1269,7 +1152,6 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
         return true;
       }
     }
-
     if ( next_pollfd_to_check > 1 )
     {
       j = 0;
@@ -1278,14 +1160,12 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
     else
       break;
   }
-
   return false;
 #else
   DebugBreak();
   return false;
 #endif
 }
-
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
@@ -1294,9 +1174,6 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 namespace YIELD
 {
   class SyncHTTPRequest : public HTTPRequest
@@ -1305,13 +1182,11 @@ namespace YIELD
     SyncHTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body = NULL )
       : HTTPRequest( method, absolute_uri, body )
     { }
-
     // Request
     bool respond( Response& response )
     {
       return http_response_queue.enqueue( response );
     }
-
     HTTPResponse& waitForHTTPResponse( timeout_ns_t timeout_ns )
     {
       if ( timeout_ns == static_cast<timeout_ns_t>( -1 ) )
@@ -1319,13 +1194,10 @@ namespace YIELD
       else
         return http_response_queue.timed_dequeue_typed<HTTPResponse>( timeout_ns );
     }
-
   private:
     OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > http_response_queue;
   };
 };
-
-
 auto_Object<Request> HTTPClient::createProtocolRequest( auto_Object<> body )
 {
   if ( body->get_type_id() == YIELD_OBJECT_TYPE_ID( HTTPRequest ) )
@@ -1333,22 +1205,18 @@ auto_Object<Request> HTTPClient::createProtocolRequest( auto_Object<> body )
   else
     return NULL;
 }
-
 auto_Object<Response> HTTPClient::createProtocolResponse()
 {
   return new HTTPResponse;
 }
-
 auto_Object<HTTPResponse> HTTPClient::GET( const URI& absolute_uri, auto_Object<Log> log )
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
-
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log )
 {
   auto_Object<File> file = new File( body_file_path );
@@ -1356,7 +1224,6 @@ auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& 
   file->read( const_cast<char*>( body->c_str() ), body->size(), NULL );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
-
 void HTTPClient::respond( auto_Object<Request> protocol_request, auto_Object<Response> response )
 {
   HTTPRequest* http_request = static_cast<HTTPRequest*>( protocol_request.get() );
@@ -1365,7 +1232,6 @@ void HTTPClient::respond( auto_Object<Request> protocol_request, auto_Object<Res
   else
     DebugBreak();
 }
-
 auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   auto_Object<SEDAStageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
@@ -1384,9 +1250,6 @@ auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const
 // http_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 HTTPRequest::HTTPRequest()
 {
   method[0] = 0;
@@ -1397,19 +1260,16 @@ HTTPRequest::HTTPRequest()
   deserialize_state = DESERIALIZING_METHOD;
   serialize_state = SERIALIZING_METHOD;
 }
-
 HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<> body )
   : body( body )
 {
   init( method, relative_uri, host, body );
 }
-
 HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body )
   : body( body )
 {
   init( method, absolute_uri.get_resource().c_str(), absolute_uri.get_host().c_str(), body );
 }
-
 void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, auto_Object<> body )
 {
   strncpy( this->method, method, 16 );
@@ -1421,12 +1281,10 @@ void HTTPRequest::init( const char* method, const char* relative_uri, const char
   deserialize_state = DESERIALIZE_DONE;
   serialize_state = SERIALIZING_METHOD;
 }
-
 HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
-
 Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_bytes_read )
 {
   switch ( deserialize_state )
@@ -1456,7 +1314,6 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
       }
       // Fall through
     }
-
     case DESERIALIZING_URI:
     {
       char* uri_p = uri + std::strlen( uri );
@@ -1495,7 +1352,6 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
       }
       // Fall through
     }
-
     case DESERIALIZING_HTTP_VERSION:
     {
       for ( ;; )
@@ -1521,7 +1377,6 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
       }
     }
     // Fall through
-
     case DESERIALIZING_HEADERS:
     {
       Stream::Status read_status = RFC822Headers::deserialize( input_stream, NULL );
@@ -1544,7 +1399,6 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
           {
             body = new String( content_length );
             deserialize_state = DESERIALIZING_BODY;
-
             if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
               return Stream::STREAM_STATUS_OK;
             // else fall through
@@ -1554,7 +1408,6 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
       else
         return read_status;
     }
-
     case DESERIALIZING_BODY:
     {
       Stream::Status read_status = static_cast<String*>( body.get() )->deserialize( input_stream, out_bytes_read );
@@ -1562,23 +1415,18 @@ Stream::Status HTTPRequest::deserialize( InputStream& input_stream, size_t* out_
         deserialize_state = DESERIALIZE_DONE;
       return read_status;
     }
-
     case DESERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
-
     default: DebugBreak(); return Stream::STREAM_STATUS_ERROR;
   }
 }
-
 bool HTTPRequest::respond( uint16_t status_code )
 {
   return respond( *( new HTTPResponse( status_code ) ) );
 }
-
 bool HTTPRequest::respond( uint16_t status_code, auto_Object<> body )
 {
   return respond( *( new HTTPResponse( status_code, body ) ) );
 }
-
 Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_bytes_written )
 {
   switch ( serialize_state )
@@ -1592,7 +1440,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_METHOD_URI_SEPARATOR:
     {
       Stream::Status write_status = output_stream.write( " ", 1, out_bytes_written );
@@ -1602,7 +1449,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_URI:
     {
       Stream::Status write_status = output_stream.write( uri, uri_len, out_bytes_written );
@@ -1612,7 +1458,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_HTTP_VERSION:
     {
       Stream::Status write_status = output_stream.write( " HTTP/1.1\r\n", 11, out_bytes_written );
@@ -1626,7 +1471,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
 #else
           snprintf( content_length_str, 32, "%zu", static_cast<String*>( body.get() )->size() );
 #endif
-
           set_header( "Content-Length", content_length_str );
         }
         RFC822Headers::set_iovec( "\r\n", 2 );
@@ -1636,7 +1480,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_HEADERS:
     {
       Stream::Status write_status = RFC822Headers::serialize( output_stream, out_bytes_written );
@@ -1654,7 +1497,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_BODY:
     {
       Stream::Status write_status = body->serialize( output_stream, out_bytes_written );
@@ -1664,7 +1506,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
         return write_status;
     }
     // Fall through
-
     case SERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
     default: DebugBreak(); return Stream::STREAM_STATUS_ERROR;
   }
@@ -1674,30 +1515,24 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
 // http_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 HTTPResponse::HTTPResponse()
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
   serialize_state = SERIALIZING_STATUS_LINE;
 }
-
 HTTPResponse::HTTPResponse( uint16_t status_code )
   : status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
   serialize_state = SERIALIZING_STATUS_LINE;
 }
-
 HTTPResponse::HTTPResponse( uint16_t status_code, auto_Object<> body )
   : status_code( status_code ), body( body )
 {
   deserialize_state = DESERIALIZE_DONE;
   serialize_state = SERIALIZING_STATUS_LINE;
 }
-
 Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out_bytes_read )
 {
   switch ( deserialize_state )
@@ -1727,7 +1562,6 @@ Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out
       }
     }
     // Fall through
-
     case DESERIALIZING_STATUS_CODE:
     {
       char* status_code_str_p = status_code_str + std::strlen( status_code_str );
@@ -1760,7 +1594,6 @@ Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out
       }
     }
     // Fall through
-
     case DESERIALIZING_REASON:
     {
       char c;
@@ -1780,7 +1613,6 @@ Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out
       }
     }
     // Fall through
-
     case DESERIALIZING_HEADERS:
     {
       Stream::Status read_status = RFC822Headers::deserialize( input_stream, NULL );
@@ -1806,7 +1638,6 @@ Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out
       else
         return read_status;
     }
-
     case DESERIALIZING_BODY:
     {
       Stream::Status read_status = static_cast<String*>( body.get() )->deserialize( input_stream, out_bytes_read );
@@ -1814,13 +1645,10 @@ Stream::Status HTTPResponse::deserialize( InputStream& input_stream, size_t* out
         deserialize_state = DESERIALIZE_DONE;
       return read_status;
     }
-
     case DESERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
-
     default: DebugBreak(); return Stream::STREAM_STATUS_ERROR;
   }
 }
-
 Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out_bytes_written )
 {
   switch ( serialize_state )
@@ -1829,7 +1657,6 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
     {
       const char* status_line;
       size_t status_line_len;
-
       switch ( status_code )
       {
         case 100: status_line = "HTTP/1.1 100 Continue\r\n"; status_line_len = 23; break;
@@ -1877,7 +1704,6 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
         case 507: status_line = "HTTP/1.1 507 Insufficient Storage\r\n"; status_line_len = 35; break;
         default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
       }
-
       Stream::Status write_status = output_stream.write( status_line, status_line_len, out_bytes_written );
       if ( write_status == Stream::STREAM_STATUS_OK )
       {
@@ -1891,7 +1717,6 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_HEADERS:
     {
       Stream::Status write_status = RFC822Headers::serialize( output_stream, out_bytes_written );
@@ -1909,7 +1734,6 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
         return write_status;
     }
     // Fall through
-
     case SERIALIZING_BODY:
     {
       Stream::Status write_status = body->serialize( output_stream, out_bytes_written );
@@ -1919,7 +1743,6 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
         return write_status;
     }
     // Fall through
-
     case SERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
     default: DebugBreak(); return Stream::STREAM_STATUS_ERROR;
   }
@@ -1929,14 +1752,10 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
 // json_input_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 extern "C"
 {
   #include <yajl.h>
 };
-
-
 namespace YIELD
 {
   class JSONValue
@@ -1949,7 +1768,6 @@ namespace YIELD
       have_read = false;
       as_integer = 0;
     }
-
     virtual ~JSONValue()
     {
       delete child;
@@ -1958,20 +1776,16 @@ namespace YIELD
       if ( general_type == Object::STRING )
         Object::decRef( as_string );
     }
-
     String* identifier;
     Object::GeneralType general_type;
-
     union
     {
       String* as_string;
       double as_double;
       int64_t as_integer;
     };
-
     JSONValue *parent, *child, *prev, *next;
     bool have_read;
-
   protected:
     JSONValue() : identifier( NULL ), general_type( Object::UNKNOWN )
     {
@@ -1980,8 +1794,6 @@ namespace YIELD
       as_integer = 0;
     }
   };
-
-
   class JSONObject : public Object, public JSONValue
   {
   public:
@@ -1991,7 +1803,6 @@ namespace YIELD
       reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
       next_map_key = NULL; next_map_key_len = 0;
       type_id = 0;
-
       unsigned char read_buffer[4096];
       for ( ;; )
       {
@@ -2017,27 +1828,21 @@ namespace YIELD
           throw Exception( "error reading underlying_input_stream before parsing complete" );
       }
     }
-
     ~JSONObject()
     {
       yajl_free( reader );
     }
-
     std::string type_name;
     uint32_t type_id;
-
     // Object
     Object::GeneralType get_general_type() const { return general_type; }
     const char* get_type_name() const { return !type_name.empty() ? type_name.c_str() : "JSONObject";  }
     uint32_t get_type_id() const { return type_id ? type_id : 2571531487UL; }
-
   private:
     yajl_handle reader;
-
     // Parsing state
     JSONValue *current_json_value, *parent_json_value;
     const char* next_map_key; size_t next_map_key_len;
-
     // yajl callbacks
     static int handle_yajl_null( void* _self )
     {
@@ -2045,28 +1850,24 @@ namespace YIELD
       self->createNextJSONValue().as_integer = 0;
       return 1;
     }
-
     static int handle_yajl_boolean( void* _self, int value )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
       self->createNextJSONValue().as_integer = value;
       return 1;
     }
-
     static int handle_yajl_integer( void* _self, long value )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
       self->createNextJSONValue().as_integer = value;
       return 1;
     }
-
     static int handle_yajl_double( void* _self, double value )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
       self->createNextJSONValue().as_double = value;
       return 1;
     }
-
     static int handle_yajl_string( void* _self, const unsigned char* buffer, unsigned int len )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2074,7 +1875,6 @@ namespace YIELD
       json_value.as_string = new String( reinterpret_cast<const char*>( buffer ), len );
       return 1;
     }
-
     static int handle_yajl_start_map( void* _self )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2083,7 +1883,6 @@ namespace YIELD
       self->current_json_value = json_value.child;
       return 1;
     }
-
     static int handle_yajl_map_key( void* _self, const unsigned char* map_key, unsigned int map_key_len )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2091,7 +1890,6 @@ namespace YIELD
       self->next_map_key_len = map_key_len;
       return 1;
     }
-
     static int handle_yajl_end_map( void* _self )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2102,7 +1900,6 @@ namespace YIELD
       self->parent_json_value = NULL;
       return 1;
     }
-
     static int handle_yajl_start_array( void* _self )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2111,7 +1908,6 @@ namespace YIELD
       self->current_json_value = json_value.child;
       return 1;
     }
-
     static int handle_yajl_end_array( void* _self )
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
@@ -2122,12 +1918,10 @@ namespace YIELD
       self->parent_json_value = NULL;
       return 1;
     }
-
     JSONValue& createNextJSONValue( Object::GeneralType general_type = Object::UNKNOWN )
     {
       String* identifier = next_map_key_len != 0 ? new String( next_map_key, next_map_key_len ) : NULL;
       next_map_key = NULL; next_map_key_len = 0;
-
       if ( current_json_value == NULL )
       {
         if ( parent_json_value ) // This is the first value of an array or struct
@@ -2148,22 +1942,17 @@ namespace YIELD
       else
       {
         JSONValue* next_json_value;
-
         next_json_value = new JSONValue( identifier, general_type );
-
         next_json_value->parent = current_json_value->parent;
         next_json_value->prev = current_json_value;
         current_json_value->next = next_json_value;
         current_json_value = next_json_value;
       }
-
       return *current_json_value;
     }
-
     static yajl_callbacks JSONObject_yajl_callbacks;
   };
 };
-
 yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
 {
   handle_yajl_null,
@@ -2178,26 +1967,21 @@ yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
   handle_yajl_start_array,
   handle_yajl_end_array
 };
-
-
 JSONInputStream::JSONInputStream( InputStream& underlying_input_stream )
 {
   root_decl = NULL;
   root_json_value = new JSONObject( underlying_input_stream );
   next_json_value = root_json_value->child;
 }
-
 JSONInputStream::JSONInputStream( const Declaration& root_decl, JSONValue& root_json_value )
   : root_decl( &root_decl ), root_json_value( &root_json_value ),
     next_json_value( root_json_value.child )
 { }
-
 JSONInputStream::~JSONInputStream()
 {
   if ( root_decl == NULL )
     delete root_json_value;
 }
-
 void JSONInputStream::readString( const Declaration& decl, std::string& str )
 {
   JSONValue* json_value = readJSONValue( decl, Object::STRING );
@@ -2209,7 +1993,6 @@ void JSONInputStream::readString( const Declaration& decl, std::string& str )
       str.assign( *json_value->identifier );
   }
 }
-
 bool JSONInputStream::readBool( const Declaration& decl )
 {
   JSONValue* json_value = readJSONValue( decl );
@@ -2223,7 +2006,6 @@ bool JSONInputStream::readBool( const Declaration& decl )
   else
     return false;
 }
-
 int64_t JSONInputStream::readInt64( const Declaration& decl )
 {
   JSONValue* json_value = readJSONValue( decl );
@@ -2237,7 +2019,6 @@ int64_t JSONInputStream::readInt64( const Declaration& decl )
   else
     return 0;
 }
-
 double JSONInputStream::readDouble( const Declaration& decl )
 {
   JSONValue* json_value = readJSONValue( decl );
@@ -2251,14 +2032,12 @@ double JSONInputStream::readDouble( const Declaration& decl )
   else
     return 0;
 }
-
 Object* JSONInputStream::readObject( const Declaration& decl, Object* value, Object::GeneralType value_general_type )
 {
   if ( value )
   {
     if ( value_general_type == Object::UNKNOWN )
     value_general_type = value->get_general_type();
-
     JSONValue* json_value;
     if ( decl.identifier )
     {
@@ -2277,7 +2056,6 @@ Object* JSONInputStream::readObject( const Declaration& decl, Object* value, Obj
     }
     else
     return value;
-
     JSONInputStream child_input_stream( decl, *json_value );
     switch ( value_general_type )
     {
@@ -2285,30 +2063,24 @@ Object* JSONInputStream::readObject( const Declaration& decl, Object* value, Obj
     case Object::MAP: child_input_stream.readMap( *value ); break;
     default: child_input_stream.readStruct( *value ); break;
     }
-
     json_value->have_read = true;
   }
-
   return value;
 }
-
 void JSONInputStream::readSequence( Object& s )
 {
   while ( next_json_value )
     s.deserialize( *this );
 }
-
 void JSONInputStream::readMap( Object& s )
 {
   while ( next_json_value )
     s.deserialize( *this );
 }
-
 void JSONInputStream::readStruct( Object& s )
 {
   s.deserialize( *this );
 }
-
 JSONValue* JSONInputStream::readJSONValue( const Declaration& decl, Object::GeneralType expected_general_type )
 {
   if ( root_json_value->general_type == Object::SEQUENCE )
@@ -2333,7 +2105,6 @@ JSONValue* JSONInputStream::readJSONValue( const Declaration& decl, Object::Gene
     if ( decl.identifier ) // Given a key, reading a value
     {
       JSONValue* child_json_value = root_json_value->child;
-
       while ( child_json_value )
       {
         if (
@@ -2346,7 +2117,6 @@ JSONValue* JSONInputStream::readJSONValue( const Declaration& decl, Object::Gene
           child_json_value->have_read = true;
           return child_json_value;
         }
-
         child_json_value = child_json_value->next;
       }
     }
@@ -2357,7 +2127,6 @@ JSONValue* JSONInputStream::readJSONValue( const Declaration& decl, Object::Gene
       return json_value;
     }
   }
-
   return NULL;
 }
 
@@ -2365,31 +2134,24 @@ JSONValue* JSONInputStream::readJSONValue( const Declaration& decl, Object::Gene
 // json_output_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 extern "C"
 {
   #include <yajl.h>
 };
-
-
 JSONOutputStream::JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings )
 : underlying_output_stream( underlying_output_stream ), write_empty_strings( write_empty_strings )
 {
   root_decl = NULL;
   writer = yajl_gen_alloc( NULL );
 }
-
 JSONOutputStream::JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings, yajl_gen writer, const Declaration& root_decl )
   : underlying_output_stream( underlying_output_stream ), write_empty_strings( write_empty_strings ), root_decl( &root_decl ), writer( writer )
 { }
-
 JSONOutputStream::~JSONOutputStream()
 {
   if ( root_decl == NULL ) // This is the root JSONOutputStream
     yajl_gen_free( writer );
 }
-
 void JSONOutputStream::flushYAJLBuffer()
 {
   const unsigned char * buffer;
@@ -2398,34 +2160,29 @@ void JSONOutputStream::flushYAJLBuffer()
   underlying_output_stream.write( buffer, len );
   yajl_gen_clear( writer );
 }
-
 void JSONOutputStream::writeBool( const Declaration& decl, bool value )
 {
   writeDeclaration( decl );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeDeclaration( const Declaration& decl )
 {
   if ( in_map && decl.identifier )
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( decl.identifier ), static_cast<unsigned int>( strlen( decl.identifier ) ) );
 }
-
 void JSONOutputStream::writeDouble( const Declaration& decl, double value )
 {
   writeDeclaration( decl );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeInt64( const Declaration& decl, int64_t value )
 {
   writeDeclaration( decl );
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeMap( Object* s )
 {
   yajl_gen_map_open( writer );
@@ -2435,12 +2192,10 @@ void JSONOutputStream::writeMap( Object* s )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeObject( const Declaration& decl, Object& value, Object::GeneralType value_general_type )
 {
   if ( value_general_type == Object::UNKNOWN )
     value_general_type = value.get_general_type();
-
   switch ( value_general_type )
   {
     case Object::STRING: writeString( decl, static_cast<String&>( value ).c_str(), static_cast<String&>( value ).size() ); break;
@@ -2449,14 +2204,12 @@ void JSONOutputStream::writeObject( const Declaration& decl, Object& value, Obje
     default: writeDeclaration( decl ); JSONOutputStream( underlying_output_stream, write_empty_strings, writer, decl ).writeStruct( &value ); break;
   }
 }
-
 void JSONOutputStream::writePointer( const Declaration& decl, void* value )
 {
   writeDeclaration( decl );
   yajl_gen_null( writer );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeSequence( Object* s )
 {
   yajl_gen_array_open( writer );
@@ -2466,7 +2219,6 @@ void JSONOutputStream::writeSequence( Object* s )
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
-
 void JSONOutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
   if ( value_len > 0 || write_empty_strings )
@@ -2476,7 +2228,6 @@ void JSONOutputStream::writeString( const Declaration& decl, const char* value, 
     flushYAJLBuffer();
   }
 }
-
 void JSONOutputStream::writeStruct( Object* s )
 {
   writeMap( s );
@@ -2486,25 +2237,19 @@ void JSONOutputStream::writeStruct( Object* s )
 // oncrpc_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 ONCRPCClient::ONCRPCClient( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log )
   : Client( peer_sockaddr, socket_factory, log )
 {
   object_factories = new ObjectFactories;
 }
-
 auto_Object<Request> ONCRPCClient::createProtocolRequest( auto_Object<> body )
 {
   return new ONCRPCRequest( body, get_log() );
 }
-
 auto_Object<Response> ONCRPCClient::createProtocolResponse()
 {
   return new ONCRPCResponse( object_factories, get_log() );
 }
-
 void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<Response> response )
 {
   ONCRPCRequest* oncrpc_request = static_cast<ONCRPCRequest*>( protocol_request.get() );
@@ -2513,11 +2258,9 @@ void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<R
     case REQUEST:
     {
       Request* request = static_cast<Request*>( oncrpc_request->get_body().get() );
-
       if ( response->get_type_id() == YIELD_OBJECT_TYPE_ID( ONCRPCResponse ) )
       {
         ONCRPCResponse* oncrpc_response = static_cast<ONCRPCResponse*>( response.get() );
-
         switch ( oncrpc_response->get_body()->get_general_type() )
         {
           case RESPONSE:
@@ -2527,7 +2270,6 @@ void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<R
             request->respond( response->incRef() );
           }
           break;
-
           default: break;
         }
       }
@@ -2535,7 +2277,6 @@ void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<R
         request->respond( *response.release() );
     }
     break;
-
     default: break;
   }
 }
@@ -2544,14 +2285,10 @@ void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<R
 // oncrpc_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 ONCRPCMessage::~ONCRPCMessage()
 {
   delete oncrpc_record_input_stream;
 }
-
 ONCRPCRecordInputStream& ONCRPCMessage::get_oncrpc_record_input_stream( InputStream& underlying_input_stream )
 {
   if ( oncrpc_record_input_stream == NULL )
@@ -2561,7 +2298,6 @@ ONCRPCRecordInputStream& ONCRPCMessage::get_oncrpc_record_input_stream( InputStr
     delete oncrpc_record_input_stream;
     oncrpc_record_input_stream = new ONCRPCRecordInputStream( underlying_input_stream );
   }
-
   return *oncrpc_record_input_stream;
 }
 
@@ -2569,14 +2305,10 @@ ONCRPCRecordInputStream& ONCRPCMessage::get_oncrpc_record_input_stream( InputStr
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* out_bytes_read )
 {
   ONCRPCRecordInputStream oncrpc_record_input_stream = get_oncrpc_record_input_stream( input_stream );
   XDRInputStream xdr_input_stream( oncrpc_record_input_stream );
-
   try
   {
     xid = xdr_input_stream.readUint32( "xid" );
@@ -2589,7 +2321,6 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
         uint32_t prog = xdr_input_stream.readUint32( "prog" );
         uint32_t vers = xdr_input_stream.readUint32( "vers" );
         uint32_t proc = xdr_input_stream.readUint32( "proc" );
-
         uint32_t credential_auth_flavor = xdr_input_stream.readUint32( "credential_auth_flavor" );
         uint32_t credential_auth_body_length = xdr_input_stream.readUint32( "credential_auth_body_length" );
         if ( credential_auth_body_length > 0 ) // TODO: read into credentials here
@@ -2600,7 +2331,6 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
           oncrpc_record_input_stream.read( credential_auth_body, credential_auth_body_length, NULL );
           delete [] credential_auth_body;
         }
-
         uint32_t verf_auth_flavor = xdr_input_stream.readUint32( "verf_auth_flavor" );
         uint32_t verf_auth_body_length = xdr_input_stream.readUint32( "credential_auth_body_length" );
         if ( verf_auth_body_length > 0 )
@@ -2611,10 +2341,8 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
           oncrpc_record_input_stream.read( verf_auth_body, verf_auth_body_length, NULL );
           delete [] verf_auth_body;
         }
-
         if ( body == NULL && object_factories != NULL )
           body = object_factories->createObject( proc );
-
         if ( body != NULL )
           xdr_input_stream.readObject( XDRInputStream::Declaration(), body.get() );
         else
@@ -2623,10 +2351,8 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
             log->getStream( Log::LOG_WARNING ) << get_type_name() << ": unknown procedure: " << proc << ".";
           return Stream::STREAM_STATUS_ERROR;
         }
-
         if ( log != NULL )
           log->getStream( Log::LOG_INFO ) << get_type_name() << ": successfully read " << body->get_type_name() << " body.";
-
         return Stream::STREAM_STATUS_OK;
       }
       else
@@ -2650,12 +2376,10 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
     return exc.get_status();
   }
 }
-
 Stream::Status ONCRPCRequest::serialize( OutputStream& output_stream, size_t* out_bytes_written )
 {
   ONCRPCRecordOutputStream oncrpc_record_output_stream;
   XDROutputStream xdr_output_stream( oncrpc_record_output_stream );
-
   uint32_t prog, proc, vers;
   if ( body != NULL )
   {
@@ -2677,14 +2401,12 @@ Stream::Status ONCRPCRequest::serialize( OutputStream& output_stream, size_t* ou
   }
   else
     proc = prog = vers = 0;
-
   xdr_output_stream.writeUint32( "xid", xid );
   xdr_output_stream.writeUint32( "msg_type", 0 ); // MSG_CALL
   xdr_output_stream.writeUint32( "rpcvers", 2 );
   xdr_output_stream.writeUint32( "prog", prog );
   xdr_output_stream.writeUint32( "vers", vers );
   xdr_output_stream.writeUint32( "proc", proc );
-
   xdr_output_stream.writeUint32( "credential_auth_flavor", credential_auth_flavor );
   if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
     xdr_output_stream.writeUint32( "credential_auth_body_length", 0 );
@@ -2695,14 +2417,10 @@ Stream::Status ONCRPCRequest::serialize( OutputStream& output_stream, size_t* ou
     credential->serialize( credential_auth_body_xdr_output_stream );
     xdr_output_stream.writeString( "credential_auth_body", *credential_auth_body );
   }
-
   xdr_output_stream.writeUint32( "verf_auth_flavor", AUTH_NONE );
   xdr_output_stream.writeUint32( "verf_auth_body_length", 0 );
-
   xdr_output_stream.writeObject( XDROutputStream::Declaration(), *body );
-
   oncrpc_record_output_stream.freeze();
-
   Stream::Status write_status = output_stream.write( oncrpc_record_output_stream, out_bytes_written );
   if ( write_status == Stream::STREAM_STATUS_OK && log != NULL )
   {
@@ -2724,13 +2442,9 @@ Stream::Status ONCRPCRequest::serialize( OutputStream& output_stream, size_t* ou
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* out_bytes_read )
 {
   XDRInputStream xdr_input_stream( get_oncrpc_record_input_stream( input_stream ) );
-
   try
   {
     xid = xdr_input_stream.readUint32( "xid" );
@@ -2759,7 +2473,6 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* o
             }
             catch ( ONCRPCRecordInputStream::ReadException& )
             { }
-
             if ( body == NULL )
             {
               switch ( accept_stat )
@@ -2771,10 +2484,8 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* o
                 case 5:
                 default: body = new ExceptionResponse( "ONC-RPC exception: system error" ); break;
               }
-
               if ( log != NULL )
                 log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
-
               return Stream::STREAM_STATUS_OK;
             }
           }
@@ -2782,10 +2493,8 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* o
         else
         {
           body = new ExceptionResponse( "ONC-RPC exception: received unexpected verification body on response" );
-
           if ( log != NULL )
             log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
-
           return Stream::STREAM_STATUS_OK;
         }
       }
@@ -2795,25 +2504,19 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* o
           body = new ExceptionResponse( "ONC-RPC exception: received MSG_REJECTED reply_stat" );
         else
           body = new ExceptionResponse( "ONC-RPC exception: received unknown reply_stat" );
-
         if ( log != NULL )
           log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
-
         return Stream::STREAM_STATUS_OK;
       }
     }
     else
     {
       body = new ExceptionResponse( "ONC-RPC exception: received unknown msg_type" );
-
       if ( log != NULL )
         log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
-
       return Stream::STREAM_STATUS_OK;
     }
-
     xdr_input_stream.readObject( XDRInputStream::Declaration(), body.get() );
-
     if ( log != NULL )
     {
       if ( log->get_level() >= Log::LOG_DEBUG )
@@ -2827,23 +2530,19 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* o
       else
         log->getStream( Log::LOG_INFO ) << get_type_name() << ": successfully read body = " << body->get_type_name() << ".";
     }
-
     return Stream::STREAM_STATUS_OK;
   }
   catch ( ONCRPCRecordInputStream::ReadException& exc )
   {
     if ( log != NULL )
       log->getStream( Log::LOG_INFO ) << get_type_name() << ": caught ONCRPCRecordInputStream::ReadException with status = " << static_cast<uint32_t>( exc.get_status() ) << ".";
-
     return exc.get_status();
   }
 }
-
 Stream::Status ONCRPCResponse::serialize( OutputStream& output_stream, size_t* out_bytes_written )
 {
   ONCRPCRecordOutputStream oncrpc_record_output_stream;
   XDROutputStream xdr_output_stream( oncrpc_record_output_stream );
-
   xdr_output_stream.writeUint32( "xid", xid ); // xid of original request
   xdr_output_stream.writeUint32( "msg_type", 1 ); // MSG_REPLY
   xdr_output_stream.writeUint32( "reply_stat", 0 ); // MSG_ACCEPTED
@@ -2853,11 +2552,8 @@ Stream::Status ONCRPCResponse::serialize( OutputStream& output_stream, size_t* o
     xdr_output_stream.writeUint32( "accept_stat", 0 ); // SUCCESS
   else
     xdr_output_stream.writeUint32( "accept_stat", 5 ); // SYSTEM_ERR
-
   xdr_output_stream.writeObject( XDROutputStream::Declaration(), *body );
-
   oncrpc_record_output_stream.freeze();
-
   return output_stream.write( oncrpc_record_output_stream, out_bytes_written );
 }
 
@@ -2865,9 +2561,6 @@ Stream::Status ONCRPCResponse::serialize( OutputStream& output_stream, size_t* o
 // rfc822_headers.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 RFC822Headers::RFC822Headers()
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
@@ -2880,12 +2573,10 @@ RFC822Headers::RFC822Headers()
   heap_iovecs = NULL;
   iovecs_filled = 0;
 }
-
 RFC822Headers::~RFC822Headers()
 {
   delete [] heap_buffer;
 }
-
 void RFC822Headers::allocateHeapBuffer()
 {
   if ( heap_buffer_len == 0 )
@@ -2905,7 +2596,6 @@ void RFC822Headers::allocateHeapBuffer()
     heap_buffer = new_heap_buffer;
   }
 }
-
 void RFC822Headers::copy_iovec( const char* data, size_t len )
 {
   if ( heap_buffer == NULL )
@@ -2934,14 +2624,12 @@ void RFC822Headers::copy_iovec( const char* data, size_t len )
     delete [] heap_buffer;
     heap_buffer = new_heap_buffer;
   }
-
   char* buffer_p_before = buffer_p;
   memcpy( buffer_p, data, len );
   buffer_p += len;
   if ( data[len-1] == 0 ) len--;
   set_iovec( buffer_p_before, len );
 }
-
 Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* bytes_read )
 {
   for ( ;; )
@@ -2971,7 +2659,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
         }
       }
       // Fall through
-
       case DESERIALIZING_HEADER_NAME:
       {
         char c;
@@ -2982,14 +2669,11 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
           {
             case '\r':
             case '\n': deserialize_state = DESERIALIZING_TRAILING_CRLF; continue;
-
             // TODO: support folded lines here (look for isspace( c ), if so it's an extension of the previous line
-
             default:
             {
               *buffer_p = c;
               advanceBufferPointer();
-
               for ( ;; )
               {
                 read_status = input_stream.read( buffer_p, 1, NULL );
@@ -3016,7 +2700,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
           return read_status;
       }
       // Fall through
-
       case DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR:
       {
         char c;
@@ -3040,7 +2723,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
         }
       }
       // Fall through
-
       case DESERIALIZING_HEADER_VALUE:
       {
         for ( ;; )
@@ -3063,7 +2745,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
         }
       }
       // Fall through
-
       case DESERIALIZING_HEADER_VALUE_TERMINATOR:
       {
         char c;
@@ -3083,7 +2764,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
         }
       }
       continue; // To the next header name
-
       case DESERIALIZING_TRAILING_CRLF:
       {
         char c;
@@ -3095,7 +2775,6 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
             if ( c == '\n' )
             {
               *buffer_p = 0;
-
               // Fill the iovecs so get_header will work
               // TODO: do this as we're parsing
               const char* temp_buffer_p = heap_buffer ? heap_buffer : stack_buffer;
@@ -3112,22 +2791,18 @@ Stream::Status RFC822Headers::deserialize( InputStream& input_stream, size_t* by
                 set_iovec( header_value, header_value_len );
                 set_iovec( "\r\n", 2 );
               }
-
               deserialize_state = DESERIALIZE_DONE;
-
               return Stream::STREAM_STATUS_OK;
             }
           }
           else
             return read_status;
         }
-
         case DESERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
       }
     } // switch
   } // for ( ;; )
 }
-
 char* RFC822Headers::get_header( const char* header_name, const char* default_value )
 {
   struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
@@ -3136,16 +2811,13 @@ char* RFC822Headers::get_header( const char* header_name, const char* default_va
     if ( strncmp( static_cast<const char*>( iovecs[iovec_i].iov_base ), header_name, iovecs[iovec_i].iov_len ) == 0 )
       return static_cast<char*>( iovecs[iovec_i+2].iov_base );
   }
-
   return const_cast<char*>( default_value );
 }
-
 Stream::Status RFC822Headers::serialize( OutputStream& output_stream, size_t* out_bytes_written )
 {
   struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
   return output_stream.writev( iovecs, iovecs_filled, out_bytes_written );
 }
-
 void RFC822Headers::set_header( const char* header, size_t header_len )
 {
   DebugBreak(); // TODO: Separate header name and value
@@ -3159,7 +2831,6 @@ void RFC822Headers::set_header( const char* header, size_t header_len )
     copy_iovec( header, header_len );
     */
 }
-
 void RFC822Headers::set_header( const char* header_name, const char* header_value )
 {
   set_iovec( header_name, strlen( header_name ) );
@@ -3167,7 +2838,6 @@ void RFC822Headers::set_header( const char* header_name, const char* header_valu
   set_iovec( header_value, strlen( header_value ) );
   set_iovec( "\r\n", 2 );
 }
-
 void RFC822Headers::set_header( const char* header_name, char* header_value )
 {
   set_iovec( header_name, strlen( header_name ) );
@@ -3175,7 +2845,6 @@ void RFC822Headers::set_header( const char* header_name, char* header_value )
   copy_iovec( header_value, strlen( header_value ) );
   set_iovec( "\r\n", 2 );
 }
-
 void RFC822Headers::set_header( char* header_name, char* header_value )
 {
   copy_iovec( header_name, strlen( header_name ) );
@@ -3183,7 +2852,6 @@ void RFC822Headers::set_header( char* header_name, char* header_value )
   copy_iovec( header_value, strlen( header_value ) );
   set_iovec( "\r\n", 2 );
 }
-
 void RFC822Headers::set_header( const std::string& header_name, const std::string& header_value )
 {
   copy_iovec( header_name.c_str(), header_name.size() );
@@ -3191,7 +2859,6 @@ void RFC822Headers::set_header( const std::string& header_name, const std::strin
   copy_iovec( header_value.c_str(), header_value.size() );
   set_iovec( "\r\n", 2 );
 }
-
 void RFC822Headers::set_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
@@ -3209,7 +2876,6 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
     heap_iovecs[iovecs_filled] = iovec;
   else
     DebugBreak();
-
   iovecs_filled++;
 }
 
@@ -3546,12 +3212,9 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
 }
 
 
-
 // socket_address.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #else
@@ -3559,13 +3222,10 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
 #include <netdb.h>
 #include <sys/socket.h>
 #endif
-
-
 SocketAddress::SocketAddress()
 {
   init( "localhost", 0 ); // Use "localhost" instead of the IPv6 loopback constant to allow for IPv4-only systems
 }
-
 SocketAddress::SocketAddress( uint16_t port, bool loopback )
 {
   if ( loopback )
@@ -3584,41 +3244,33 @@ SocketAddress::SocketAddress( uint16_t port, bool loopback )
 #else
     ::close( test_socket );
 #endif
-
     reinterpret_cast<sockaddr_in6*>( _sockaddr_storage )->sin6_port = htons( port );
   }
 }
-
 SocketAddress::SocketAddress( const char* hostname )
 {
   init( hostname, 0 );
 }
-
 SocketAddress::SocketAddress( const char* hostname, uint16_t port )
 {
   init( hostname, port );
 }
-
 SocketAddress::SocketAddress( const URI& uri )
 {
   init( uri.get_host().c_str(), uri.get_port() );
 }
-
 SocketAddress::SocketAddress( const struct sockaddr_storage& _sockaddr_storage )
 {
   init( _sockaddr_storage );
 }
-
 SocketAddress::SocketAddress( const SocketAddress& other )
 {
   init( *other._sockaddr_storage );
 }
-
 SocketAddress::~SocketAddress()
 {
   delete _sockaddr_storage;
 }
-
 bool SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
 {
   char nameinfo[NI_MAXHOST];
@@ -3630,12 +3282,10 @@ bool SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
   else
     return false;
 }
-
 bool SocketAddress::getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric ) const
 {
   return ::getnameinfo( reinterpret_cast<struct sockaddr*>( _sockaddr_storage ), sizeof( *_sockaddr_storage ), out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0;
 }
-
 uint16_t SocketAddress::get_port() const
 {
   switch ( _sockaddr_storage->ss_family )
@@ -3645,29 +3295,24 @@ uint16_t SocketAddress::get_port() const
     default: return 0;
   }
 }
-
 SocketAddress::operator struct sockaddr_storage() const
 {
   return *_sockaddr_storage;
 }
-
 bool SocketAddress::operator==( const SocketAddress& other ) const
 {
   return std::memcmp( _sockaddr_storage, other._sockaddr_storage, sizeof( *_sockaddr_storage ) ) == 0;
 }
-
 bool SocketAddress::operator!=( const SocketAddress& other ) const
 {
   return std::memcmp( _sockaddr_storage, other._sockaddr_storage, sizeof( *_sockaddr_storage ) ) != 0;
 }
-
 void SocketAddress::init( const char* hostname, uint16_t port )
 {
   if ( hostname != NULL && std::strlen( hostname ) > 0 )
   {
     std::ostringstream servname; // ltoa is not very portable
     servname << port; // servname = decimal port or service name. Great interface, guys.
-
     struct addrinfo addrinfo_hints;
     memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
 #ifdef _WIN32
@@ -3676,9 +3321,7 @@ void SocketAddress::init( const char* hostname, uint16_t port )
     addrinfo_hints.ai_family = AF_INET6; // Linux seems to prefer IPv4 over IPv6 if you allow both, so force it to map.
 #endif
     addrinfo_hints.ai_flags = AI_ALL|AI_V4MAPPED;
-
     struct addrinfo *addrinfo_list = NULL;
-
     if ( ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list ) == 0 )
     {
       _sockaddr_storage = new struct sockaddr_storage;
@@ -3695,7 +3338,6 @@ void SocketAddress::init( const char* hostname, uint16_t port )
   else
     init( "localhost", port );
 }
-
 void SocketAddress::init( const struct sockaddr_storage& _sockaddr_storage )
 {
   this->_sockaddr_storage = new sockaddr_storage;
@@ -3706,8 +3348,6 @@ void SocketAddress::init( const struct sockaddr_storage& _sockaddr_storage )
 // tcp_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <ws2tcpip.h>
 #else
@@ -3715,22 +3355,17 @@ void SocketAddress::init( const struct sockaddr_storage& _sockaddr_storage )
 #include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
-
 #include <cstring>
-
-
 TCPSocket::TCPSocket( auto_Object<Log> log )
   : Socket( AF_INET6, SOCK_STREAM, IPPROTO_TCP, log )
 {
   partial_write_len = 0;
 }
-
 TCPSocket::TCPSocket( socket_t _socket, auto_Object<Log> log )
   : Socket( _socket, log )
 {
   partial_write_len = 0;
 }
-
 auto_Object<TCPSocket> TCPSocket::accept()
 {
   socket_t peer_socket = _accept();
@@ -3739,14 +3374,12 @@ auto_Object<TCPSocket> TCPSocket::accept()
   else
     return NULL;
 }
-
 socket_t TCPSocket::_accept()
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
   return static_cast<socket_t>( ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len ) );
 }
-
 bool TCPSocket::listen()
 {
   int flag = 1;
@@ -3759,7 +3392,6 @@ bool TCPSocket::listen()
   setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
-
 bool TCPSocket::shutdown()
 {
 #ifdef _WIN32
@@ -3768,23 +3400,19 @@ bool TCPSocket::shutdown()
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
 }
-
 Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
-
   if ( out_bytes_written )
     *out_bytes_written = 0;
-
   for ( ;; )
   {
     // Recalculate these every time we do a socket writev
     // Less efficient than other ways but it reduces the number of (rarely-tested) branches
     uint32_t wrote_until_buffer_i = 0;
     size_t wrote_until_buffer_i_pos = 0;
-
     if ( partial_write_len > 0 )
     {
       size_t temp_partial_write_len = partial_write_len;
@@ -3808,7 +3436,6 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
         }
       }
     }
-
     Stream::Status writev_status;
     size_t temp_bytes_written = 0;
     if ( wrote_until_buffer_i_pos == 0 ) // Writing whole buffers
@@ -3820,12 +3447,10 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
       temp_iovec.iov_len = buffers[wrote_until_buffer_i].iov_len - wrote_until_buffer_i_pos;
       writev_status = Socket::writev( &temp_iovec, 1, &temp_bytes_written );
     }
-
     if ( writev_status == STREAM_STATUS_OK )
     {
       if ( out_bytes_written )
         *out_bytes_written += temp_bytes_written;
-
       partial_write_len += temp_bytes_written;
       if ( partial_write_len == buffers_len )
       {
@@ -3839,7 +3464,6 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
     {
       if ( temp_bytes_written > 0 )
         DebugBreak();
-
       return writev_status;
     }
   }
@@ -3849,20 +3473,15 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
 // udp_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <ws2tcpip.h>
 #else
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
-
-
 UDPSocket::UDPSocket( auto_Object<Log> log )
   : Socket( AF_INET6, SOCK_DGRAM, IPPROTO_UDP, log )
 { }
-
 bool UDPSocket::joinMulticastGroup( const SocketAddress& multicast_group_sockaddr, bool loopback )
 {
   /*
@@ -3880,7 +3499,6 @@ bool UDPSocket::joinMulticastGroup( const SocketAddress& multicast_group_sockadd
   */
   return false;
 }
-
 bool UDPSocket::leaveMulticastGroup( const SocketAddress& multicast_group_sockaddr )
 {
   /*
@@ -3892,12 +3510,10 @@ bool UDPSocket::leaveMulticastGroup( const SocketAddress& multicast_group_sockad
   */
   return false;
 }
-
 Stream::Status UDPSocket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
   sockaddr_storage recvfrom_sockaddr_storage;
   socklen_t recvfrom_sockaddr_storage_len = sizeof( recvfrom_sockaddr_storage );
-
   int read_ret = ::recvfrom( *this,
                              static_cast<char*>( buffer ),
 #ifdef _WIN32
@@ -3908,19 +3524,16 @@ Stream::Status UDPSocket::read( void* buffer, size_t buffer_len, size_t* out_byt
                              0,
                              reinterpret_cast<struct sockaddr*>( &recvfrom_sockaddr_storage ),
                              &recvfrom_sockaddr_storage_len );
-
   if ( read_ret > 0 )
   {
     if ( out_bytes_read )
       *out_bytes_read = static_cast<size_t>( read_ret );
-
     if ( log != NULL )
     {
       log->write( "Socket read: ", Log::LOG_DEBUG );
       log->write( buffer, static_cast<size_t>( read_ret ), Log::LOG_DEBUG );
       log->write( "\n", Log::LOG_DEBUG );
     }
-
     return STREAM_STATUS_OK;
   }
   else
@@ -3931,19 +3544,14 @@ Stream::Status UDPSocket::read( void* buffer, size_t buffer_len, size_t* out_byt
 // uri.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 extern "C"
 {
   #include <uriparser.h>
 };
-
-
 URI::URI( const URI& other )
 : scheme( other.scheme ), user( other.user ), password( other.password ),
   host( other.host ), port( other.port ), resource( other.resource )
 { }
-
 auto_Object<URI> URI::parse( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
@@ -3961,7 +3569,6 @@ auto_Object<URI> URI::parse( const char* uri, size_t uri_len )
     return NULL;
   }
 }
-
 void URI::init( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
@@ -3978,18 +3585,14 @@ void URI::init( const char* uri, size_t uri_len )
     throw Exception( "invalid URI" );
   }
 }
-
 void URI::init( UriUriA& parsed_uri )
 {
   scheme.assign( parsed_uri.scheme.first, parsed_uri.scheme.afterLast - parsed_uri.scheme.first );
-
   host.assign( parsed_uri.hostText.first, parsed_uri.hostText.afterLast - parsed_uri.hostText.first );
-
   if ( parsed_uri.portText.first != NULL )
     port = static_cast<uint16_t>( strtol( parsed_uri.portText.first, NULL, 0 ) );
   else
     port = 0;
-
   if ( parsed_uri.userInfo.first != NULL )
   {
     const char* userInfo_p = parsed_uri.userInfo.first;
@@ -4003,11 +3606,9 @@ void URI::init( UriUriA& parsed_uri )
       }
       userInfo_p++;
     }
-
     if ( user.empty() ) // No colon found => no password, just the user
       user.assign( parsed_uri.userInfo.first, parsed_uri.userInfo.afterLast - parsed_uri.userInfo.first );
   }
-
   if ( parsed_uri.pathHead != NULL )
   {
     UriPathSegmentA* path_segment = parsed_uri.pathHead;
@@ -4018,7 +3619,6 @@ void URI::init( UriUriA& parsed_uri )
       path_segment = path_segment->next;
     }
     while ( path_segment != NULL );
-
     if ( parsed_uri.query.first != NULL )
     {
       resource.append( "?" );

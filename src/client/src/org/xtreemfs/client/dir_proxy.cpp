@@ -59,24 +59,7 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid
   dir_interface.xtreemfs_address_mappings_get( uuid, address_mappings, this );
   if ( !address_mappings.empty() )
   {
-    const org::xtreemfs::interfaces::AddressMapping& address_mapping = address_mappings[0];
-    std::ostringstream uri_str;
-    uri_str << address_mapping.get_protocol() << "://";
-    if ( address_mapping.get_address().find( ':' ) != std::string::npos ) // IPv6
-    {
-      uri_str << "[";
-      std::string::size_type percent_sign_pos = address_mapping.get_address().find( '%' );
-      if ( percent_sign_pos != std::string::npos ) // Cut off the "zone index, %n at the end of the IPv6 representation
-        uri_str << address_mapping.get_address().substr( 0, percent_sign_pos );
-      else
-        uri_str << address_mapping.get_address();
-      uri_str << "]";
-    }
-    else
-      uri_str << address_mapping.get_address();
-    uri_str << ":" << address_mapping.get_port();
-//    uri_str << address_mapping.get_protocol() << "://" << "localhost" << ":" << address_mapping.get_port();
-    CachedAddressMappingURI* uri = new CachedAddressMappingURI( uri_str.str(), address_mapping.get_ttl_s() );
+    CachedAddressMappingURI* uri = new CachedAddressMappingURI( address_mappings[0].get_uri(), address_mappings[0].get_ttl_s() );
     uuid_to_uri_cache_lock.acquire();
     uuid_to_uri_cache[uuid] = &uri->incRef();
     uuid_to_uri_cache_lock.release();
