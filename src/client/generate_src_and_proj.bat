@@ -19,7 +19,7 @@ set DEPEND_XTREEMFS_CLIENT_FLAGS=-I %XTREEMFS_CLIENT_PATH%\include -L %XTREEMFS_
 
 REM Generate source
 REM Don't include share\* in the scan here
-python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\src\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces
+python %YIELD_PATH%\bin\generate_yield_cpp.py -i %XTREEMFS_PATH%\src\interfaces\org\xtreemfs\interfaces -o %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs\interfaces
 python %YIELD_PATH%\bin\generate_test_main_cpp.py
 python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIENT_PATH%\include -s %XTREEMFS_CLIENT_PATH%\proj -s %XTREEMFS_CLIENT_PATH%\src
 REM python %XTREEMFS_PATH%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH%\interfaces -o %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client
@@ -28,7 +28,7 @@ REM python %XTREEMFS_PATH%\bin\generate_xtreemfs_fuzzer_cpp.py -i %XTREEMFS_PATH
 REM Generate project files 
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client
 REM Library projects
-python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\interfaces -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\src\interfaces\org\xtreemfs -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
 
 REM Binary projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_fuzz -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_fuzz.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\*_fuzzer.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS%

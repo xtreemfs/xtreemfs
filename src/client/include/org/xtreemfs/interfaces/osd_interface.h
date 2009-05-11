@@ -210,7 +210,15 @@ namespace org
         virtual void xtreemfs_shutdown() { xtreemfs_shutdown( NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target ) { xtreemfs_shutdown( send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
         virtual void xtreemfs_shutdown( YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_shutdown( NULL, response_timeout_ns ); }
-        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_shutdownSyncRequest> __req = new xtreemfs_shutdownSyncRequest(); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_shutdownResponse> __resp = static_cast<xtreemfs_shutdownResponse&>( __req->waitForDefaultResponse( response_timeout_ns ) ); }  // Request/response pair Event type definitions for the operations in OSDInterface
+        virtual void xtreemfs_shutdown( YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_shutdownSyncRequest> __req = new xtreemfs_shutdownSyncRequest(); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_shutdownResponse> __resp = static_cast<xtreemfs_shutdownResponse&>( __req->waitForDefaultResponse( response_timeout_ns ) ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) { xtreemfs_broadcast_gmax( fileId, truncateEpoch, lastObject, fileSize, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize, YIELD::EventTarget* send_target ) { xtreemfs_broadcast_gmax( fileId, truncateEpoch, lastObject, fileSize, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_broadcast_gmax( fileId, truncateEpoch, lastObject, fileSize, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_broadcast_gmaxSyncRequest> __req = new xtreemfs_broadcast_gmaxSyncRequest( fileId, truncateEpoch, lastObject, fileSize ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_broadcast_gmaxResponse> __resp = static_cast<xtreemfs_broadcast_gmaxResponse&>( __req->waitForDefaultResponse( response_timeout_ns ) ); }
+        virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) { xtreemfs_ping( coordinates, remote_coordinates, NULL, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, YIELD::EventTarget* send_target ) { xtreemfs_ping( coordinates, remote_coordinates, send_target, static_cast<YIELD::timeout_ns_t>( -1 ) ); }
+        virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, YIELD::timeout_ns_t response_timeout_ns ) { xtreemfs_ping( coordinates, remote_coordinates, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, YIELD::EventTarget* send_target, YIELD::timeout_ns_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_pingSyncRequest> __req = new xtreemfs_pingSyncRequest( coordinates ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_pingResponse> __resp = static_cast<xtreemfs_pingResponse&>( __req->waitForDefaultResponse( response_timeout_ns ) ); remote_coordinates = __resp->get_remote_coordinates(); }  // Request/response pair Event type definitions for the operations in OSDInterface
 
       class readResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
       {
@@ -1006,6 +1014,152 @@ namespace org
         YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
       };
 
+      class xtreemfs_broadcast_gmaxResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_broadcast_gmaxResponse() { }
+        virtual ~xtreemfs_broadcast_gmaxResponse() { }
+
+        bool operator==( const xtreemfs_broadcast_gmaxResponse& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse", 1566381598UL );
+
+      };
+
+      class xtreemfs_broadcast_gmaxRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_broadcast_gmaxRequest() : truncateEpoch( 0 ), lastObject( 0 ), fileSize( 0 ) { }
+        xtreemfs_broadcast_gmaxRequest( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : fileId( fileId ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
+        xtreemfs_broadcast_gmaxRequest( const char* fileId, size_t fileId_len, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : fileId( fileId, fileId_len ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
+        virtual ~xtreemfs_broadcast_gmaxRequest() { }
+
+        void set_fileId( const std::string& fileId ) { set_fileId( fileId.c_str(), fileId.size() ); }
+        void set_fileId( const char* fileId, size_t fileId_len = 0 ) { this->fileId.assign( fileId, ( fileId_len != 0 ) ? fileId_len : std::strlen( fileId ) ); }
+        const std::string& get_fileId() const { return fileId; }
+        void set_truncateEpoch( uint64_t truncateEpoch ) { this->truncateEpoch = truncateEpoch; }
+        uint64_t get_truncateEpoch() const { return truncateEpoch; }
+        void set_lastObject( uint64_t lastObject ) { this->lastObject = lastObject; }
+        uint64_t get_lastObject() const { return lastObject; }
+        void set_fileSize( uint64_t fileSize ) { this->fileSize = fileSize; }
+        uint64_t get_fileSize() const { return fileSize; }
+
+        bool operator==( const xtreemfs_broadcast_gmaxRequest& other ) const { return fileId == other.fileId && truncateEpoch == other.truncateEpoch && lastObject == other.lastObject && fileSize == other.fileSize; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxRequest", 600336597UL );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "fileId" ), fileId ); truncateEpoch = input_stream.readUint64( YIELD::StructuredStream::Declaration( "truncateEpoch" ) ); lastObject = input_stream.readUint64( YIELD::StructuredStream::Declaration( "lastObject" ) ); fileSize = input_stream.readUint64( YIELD::StructuredStream::Declaration( "fileSize" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "fileId" ), fileId ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "truncateEpoch" ), truncateEpoch ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "lastObject" ), lastObject ); output_stream.writeUint64( YIELD::StructuredStream::Declaration( "fileSize" ), fileSize ); }
+
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 1000; }
+
+        virtual uint32_t getDefaultResponseTypeId() const { return 1566381598UL; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_broadcast_gmaxResponse; }
+
+
+      protected:
+        std::string fileId;
+        uint64_t truncateEpoch;
+        uint64_t lastObject;
+        uint64_t fileSize;
+      };
+
+      class xtreemfs_broadcast_gmaxSyncRequest : public xtreemfs_broadcast_gmaxRequest
+      {
+      public:
+        xtreemfs_broadcast_gmaxSyncRequest() : xtreemfs_broadcast_gmaxRequest( std::string(), 0, 0, 0 ) { }
+        xtreemfs_broadcast_gmaxSyncRequest( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : xtreemfs_broadcast_gmaxRequest( fileId, truncateEpoch, lastObject, fileSize ) { }
+        xtreemfs_broadcast_gmaxSyncRequest( const char* fileId, size_t fileId_len, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : xtreemfs_broadcast_gmaxRequest( fileId, fileId_len, truncateEpoch, lastObject, fileSize ) { }
+        virtual ~xtreemfs_broadcast_gmaxSyncRequest() { }
+
+        bool operator==( const xtreemfs_broadcast_gmaxSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse>( timeout_ns ); }
+
+      private:
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_pingResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_pingResponse() { }
+        xtreemfs_pingResponse( const org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) : remote_coordinates( remote_coordinates ) { }
+        virtual ~xtreemfs_pingResponse() { }
+
+        void set_remote_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates&  remote_coordinates ) { this->remote_coordinates = remote_coordinates; }
+        const org::xtreemfs::interfaces::VivaldiCoordinates& get_remote_coordinates() const { return remote_coordinates; }
+
+        bool operator==( const xtreemfs_pingResponse& other ) const { return remote_coordinates == other.remote_coordinates; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( RESPONSE, "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse", 3611454713UL );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::VivaldiCoordinates", "remote_coordinates" ), &remote_coordinates ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::VivaldiCoordinates", "remote_coordinates" ), remote_coordinates ); }
+
+      protected:
+        org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates;
+      };
+
+      class xtreemfs_pingRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_pingRequest() { }
+        xtreemfs_pingRequest( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates ) : coordinates( coordinates ) { }
+        virtual ~xtreemfs_pingRequest() { }
+
+        void set_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates&  coordinates ) { this->coordinates = coordinates; }
+        const org::xtreemfs::interfaces::VivaldiCoordinates& get_coordinates() const { return coordinates; }
+
+        bool operator==( const xtreemfs_pingRequest& other ) const { return coordinates == other.coordinates; }
+
+        // YIELD::Object
+        YIELD_OBJECT_TYPE_INFO( REQUEST, "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest", 117119622UL );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::VivaldiCoordinates", "coordinates" ), &coordinates ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::VivaldiCoordinates", "coordinates" ), coordinates ); }
+
+        // YIELD::Request
+        virtual uint32_t getInterfaceNumber() const { return 3; }
+        virtual uint32_t getOperationNumber() const { return 1001; }
+
+        virtual uint32_t getDefaultResponseTypeId() const { return 3611454713UL; }
+        virtual YIELD::Response* createDefaultResponse() { return new xtreemfs_pingResponse; }
+
+
+      protected:
+        org::xtreemfs::interfaces::VivaldiCoordinates coordinates;
+      };
+
+      class xtreemfs_pingSyncRequest : public xtreemfs_pingRequest
+      {
+      public:
+        xtreemfs_pingSyncRequest() : xtreemfs_pingRequest( org::xtreemfs::interfaces::VivaldiCoordinates() ) { }
+        xtreemfs_pingSyncRequest( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates ) : xtreemfs_pingRequest( coordinates ) { }
+        virtual ~xtreemfs_pingSyncRequest() { }
+
+        bool operator==( const xtreemfs_pingSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+        YIELD::Response& waitForDefaultResponse( YIELD::timeout_ns_t timeout_ns ) { return response_queue.timed_dequeue_typed<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse>( timeout_ns ); }
+
+      private:
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
         class OSDException : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
@@ -1054,6 +1208,8 @@ namespace org
           object_factories.registerObjectFactory( 2996883011UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_truncateRequest> ); object_factories.registerObjectFactory( 3574935183UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_truncateSyncRequest> ); object_factories.registerObjectFactory( 666509058UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_truncateResponse> );
           object_factories.registerObjectFactory( 3939848817UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_read_localRequest> ); object_factories.registerObjectFactory( 3473632705UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_read_localSyncRequest> ); object_factories.registerObjectFactory( 2259419931UL, new YIELD::ObjectFactoryImpl<xtreemfs_internal_read_localResponse> );
           object_factories.registerObjectFactory( 1977271802UL, new YIELD::ObjectFactoryImpl<xtreemfs_shutdownRequest> ); object_factories.registerObjectFactory( 1832510619UL, new YIELD::ObjectFactoryImpl<xtreemfs_shutdownSyncRequest> ); object_factories.registerObjectFactory( 3362631755UL, new YIELD::ObjectFactoryImpl<xtreemfs_shutdownResponse> );
+          object_factories.registerObjectFactory( 600336597UL, new YIELD::ObjectFactoryImpl<xtreemfs_broadcast_gmaxRequest> ); object_factories.registerObjectFactory( 1057565098UL, new YIELD::ObjectFactoryImpl<xtreemfs_broadcast_gmaxSyncRequest> ); object_factories.registerObjectFactory( 1566381598UL, new YIELD::ObjectFactoryImpl<xtreemfs_broadcast_gmaxResponse> );
+          object_factories.registerObjectFactory( 117119622UL, new YIELD::ObjectFactoryImpl<xtreemfs_pingRequest> ); object_factories.registerObjectFactory( 293880953UL, new YIELD::ObjectFactoryImpl<xtreemfs_pingSyncRequest> ); object_factories.registerObjectFactory( 3611454713UL, new YIELD::ObjectFactoryImpl<xtreemfs_pingResponse> );
           object_factories.registerObjectFactory( 863197607UL, new YIELD::ObjectFactoryImpl<OSDException> );;
         }
 
@@ -1077,6 +1233,8 @@ namespace org
               case 2996883011UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
               case 3939848817UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
               case 1977271802UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 600336597UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
+              case 117119622UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -1108,6 +1266,8 @@ namespace org
         virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& req ) { xtreemfs_internal_truncateResponse* resp = NULL; try { resp = new xtreemfs_internal_truncateResponse; org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _xtreemfs_internal_truncate( req.get_file_credentials(), req.get_file_id(), req.get_new_file_size(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req ) { xtreemfs_internal_read_localResponse* resp = NULL; try { resp = new xtreemfs_internal_read_localResponse; org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = _xtreemfs_internal_read_local( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_length() ); resp->set__return_value( _return_value ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { xtreemfs_shutdownResponse* resp = NULL; try { resp = new xtreemfs_shutdownResponse; _xtreemfs_shutdown(); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& req ) { xtreemfs_broadcast_gmaxResponse* resp = NULL; try { resp = new xtreemfs_broadcast_gmaxResponse; _xtreemfs_broadcast_gmax( req.get_fileId(), req.get_truncateEpoch(), req.get_lastObject(), req.get_fileSize() ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
+        virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& req ) { xtreemfs_pingResponse* resp = NULL; try { resp = new xtreemfs_pingResponse; org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates; _xtreemfs_ping( req.get_coordinates(), remote_coordinates ); resp->set_remote_coordinates( remote_coordinates ); req.respond( *resp ); YIELD::Object::decRef( req ); } catch ( ... ) { throw; }; }
 
       virtual void _read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data ) { }
         virtual void _truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
@@ -1119,6 +1279,8 @@ namespace org
         virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) { return org::xtreemfs::interfaces::InternalReadLocalResponse(); }
         virtual void _xtreemfs_shutdown() { }
+        virtual void _xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) { }
+        virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) { }
       };
 
       // Use this macro in an implementation class to get all of the prototypes for the operations in OSDInterface
@@ -1132,7 +1294,9 @@ namespace org
       virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length );\
-      virtual void _xtreemfs_shutdown();
+      virtual void _xtreemfs_shutdown();\
+      virtual void _xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize );\
+      virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates );
 
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handlereadRequestRequest( readRequest& req );\
@@ -1144,7 +1308,9 @@ namespace org
       virtual void handlextreemfs_internal_get_file_sizeRequestRequest( xtreemfs_internal_get_file_sizeRequest& req );\
       virtual void handlextreemfs_internal_truncateRequestRequest( xtreemfs_internal_truncateRequest& req );\
       virtual void handlextreemfs_internal_read_localRequestRequest( xtreemfs_internal_read_localRequest& req );\
-      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );
+      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );\
+      virtual void handlextreemfs_broadcast_gmaxRequestRequest( xtreemfs_broadcast_gmaxRequest& req );\
+      virtual void handlextreemfs_pingRequestRequest( xtreemfs_pingRequest& req );
 
     };
 

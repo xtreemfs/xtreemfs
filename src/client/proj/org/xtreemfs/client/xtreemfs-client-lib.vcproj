@@ -229,6 +229,106 @@
     >
 </File>
 </Filter>
+<Filter Name="interfaces">
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\constants.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\dir_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\exceptions.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_osd_types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\osd_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+</Filter>
 
         </Filter>
 
