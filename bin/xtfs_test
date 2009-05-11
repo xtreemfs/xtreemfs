@@ -6,6 +6,9 @@ from optparse import OptionParser
 from subprocess import Popen, call
 
 
+original_cwd = os.getcwd()
+
+
 # Constants
 # Private key passphrases
 CLIENT_PKCS12_PASSPHRASE = "passphrase"
@@ -29,6 +32,8 @@ TRUSTED_CERTS_JKS_FILE_PATH = os.path.join( CERT_DIR_PATH, "trusted.jks" )
 CLASSPATH = ( os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "dist", "XtreemFS.jar" ),
               os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "lib", "BabuDB-0.1.0-RC.jar" ) )
 
+CLIENT_SSL_ARGS = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s" % globals(), "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" % globals() )
+MNT_DIR_PATH_DEFAULT = os.path.abspath( os.path.join( original_cwd, "mnt" ) )
 XTFS_MKVOL_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "xtfs_mkvol" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
 XTFS_MOUNT_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "xtfs_mount" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
 
@@ -44,13 +49,10 @@ OSD_ONCRPC_PORT = 32640
 # Option defaults
 DEBUG_LEVEL_DEFAULT = 0
 NUM_OSDS_DEFAULT = 1
-SSL_ENABLED_DEFAULT = False
+ENABLE_SSL_DEFAULT = False
 STRIPE_SIZE_DEFAULT = 128
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
 
-
-# Singletons
-original_cwd = os.getcwd()
 
 
 def check_environment():
@@ -76,52 +78,26 @@ def check_environment():
     
     return True
 
+
+def create_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost" ):
+    for osdnum in xrange( num_osds ):
+        xtfs_mkvol_args = [XTFS_MKVOL_FILE_PATH]
+        xtfs_mkvol_args.extend( ( "-d", str( debug_level ) ) )
+        if enable_ssl: xtfs_mkvol_args.extend( CLIENT_SSL_ARGS )                
+        xtfs_mkvol_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
+        xtfs_mkvol_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
+        xtfs_mkvol_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
+        xtfs_mkvol_args.append( "%(service_host)s/test_%(osdnum)u" % locals() )
+        xtfs_mkvol_args = " ".join( xtfs_mkvol_args )                            
+        print "Creating volume test_%(osdnum)s with command line" % locals(), xtfs_mkvol_args
+        retcode = call( xtfs_mkvol_args, shell=True )
+#            if retcode != 0 and retcode != EEXIST:
+#                print "FAILED: cannot create volume test_%(osdnum)u" % locals()
+#                stop_services( num_osds )
+#                sys.exit( 1 )
     
-def execute_tests( num_osds=NUM_OSDS_DEFAULT, verbose=False ):
-    sys.path.append( XTREEMFS_TESTS_DIR_PATH )
-    test_suites = {}
-    for file_name in os.listdir( XTREEMFS_TESTS_DIR_PATH ):
-        if file_name.endswith( ".py" ):
-            test_module_name = os.path.splitext( file_name )[0]
-            print "Trying to import test", test_module_name
-            try:
-                test_module = __import__( test_module_name )
-            except ImportError:
-                print "Could not import", test_module_name, "from tests"
-                traceback.print_exc()
-                continue
 
-            if hasattr( test_module, "createTestSuite" ):
-                createTestSuite = getattr( test_module, "createTestSuite" )
-                if verbose:
-                    test_suite = createTestSuite( stdout=sys.stdout, stderr=sys.stderr )
-                else:
-                    test_suite = createTestSuite( stdout=subprocess.PIPE, stderr=subprocess.STDOUT )                   
-                if test_suite is not None:
-                    test_suites[test_module_name] = test_suite
-            else:
-                print "Test module", test_module_name, "does not have a createTestSuite global function"
-
-    test_module_names = test_suites.keys()
-    test_module_names.sort()
-    for test_module_name in test_module_names:
-        test_suite = test_suites[test_module_name]
-        for mount_point_dir_name in os.listdir( os.path.join( original_cwd, "mnt" ) ):
-            mount_point_dir_path = os.path.join( original_cwd, "mnt", mount_point_dir_name )
-            print "Running", test_module_name, "in", mount_point_dir_path
-            test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
-            try: os.mkdir( test_run_dir_path )
-            except: pass                                         
-            os.chdir( test_run_dir_path )
-            unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
-            os.chdir( mount_point_dir_path )
-            try: shutil.rmtree( test_run_dir_path )
-            except: traceback.print_exc()
-
-    os.chdir( original_cwd )                    
-
-
-def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT ):
+def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     database_dir = os.path.join( "data", "dir" )
     open( os.path.join( "config", "dir.config" ), "w+" ).write( """\
@@ -131,9 +107,9 @@ listen.port = %(DIR_ONCRPC_PORT)u
 http_port = %(DIR_HTTP_PORT)u
 database.dir = %(database_dir)s
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
-""" % locals() + _generate_ssl_config( ssl_enabled, DIR_PKCS12_FILE_PATH, DIR_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, DIR_PKCS12_FILE_PATH, DIR_PKCS12_PASSPHRASE ) )
  
-def generate_mrc_config( debug_level=DEBUG_LEVEL_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT ):
+def generate_mrc_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     database_log = os.path.join( "data", "mrc" )
     database_dir = os.path.join( "data", "mrc" )
@@ -156,9 +132,9 @@ database.checkpoint.idle_interval = 1000
 database.checkpoint.logfile_size = 16384
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 capability_secret = testsecret
-""" % locals() + _generate_ssl_config( ssl_enabled, MRC_PKCS12_FILE_PATH, MRC_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, MRC_PKCS12_FILE_PATH, MRC_PKCS12_PASSPHRASE ) )
 
-def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT, osdnum=1 ):
+def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, osdnum=1 ):
     locals().update( globals() )
     listen_port = OSD_ONCRPC_PORT + int( osdnum )
     http_port = OSD_HTTP_PORT + int( osdnum )
@@ -176,11 +152,11 @@ remote_time_sync = 60000
 report_free_space = true
 checksums.enabled = false
 capability_secret = testsecret
-""" % locals() + _generate_ssl_config( ssl_enabled, OSD_PKCS12_FILE_PATH, OSD_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, OSD_PKCS12_FILE_PATH, OSD_PKCS12_PASSPHRASE ) )
 
-def _generate_ssl_config( ssl_enabled, pkcs12_file_path, pkcs12_passphrase ):
+def _generate_ssl_config( enable_ssl, pkcs12_file_path, pkcs12_passphrase ):
     locals().update( globals() )
-    if ssl_enabled:            
+    if enable_ssl:            
         return """\
 ssl.enabled = true
 ssl.service_creds = %(pkcs12_file_path)s
@@ -194,18 +170,97 @@ ssl.trusted_certs.container = JKS
         return """\
 ssl.enabled = false        
 """            
-    
 
-def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, ssl_enabled=SSL_ENABLED_DEFAULT, create_volumes=True, mount_volumes=True ):
-    # prepare_test_directory   
-    for subdir_name in ( "config", "data", "log", "mnt", "run" ):
+
+def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost" ):
+    assert os.getcwd() == original_cwd
+    try: os.mkdir( mnt_dir_path )
+    except: pass
+    for osdnum in xrange( num_osds ):
+        for direct_io in ( False, True ):
+            mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
+            mount_dir_path = os.path.join( mnt_dir_path, mount_dir_name ) 
+            xtfs_mount_args = [XTFS_MOUNT_FILE_PATH]
+            xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
+            xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
+            if enable_ssl: xtfs_mount_args.extend( client_ssl_args )
+            if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
+            DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
+            xtfs_mount_args.append( "%(service_host)s:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
+            xtfs_mount_args.append( mount_dir_path )
+            xtfs_mount_args = " ".join( xtfs_mount_args )
+            print "Mounting volume test_%(osdnum)s with command line" % locals(), xtfs_mount_args
+            if not os.path.exists( mount_dir_path ): os.mkdir( mount_dir_path )
+            if not os.path.exists( "log" ): os.mkdir( "log" )        
+            log_file_path = os.path.join( "log", "client" + mount_dir_name + ".log" )
+            stderr = stdout = open( log_file_path, "a" )
+            xtfs_mount_process = Popen( xtfs_mount_args, shell=True, stdout=stdout, stderr=stderr )
+        
+
+def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, verbose=False ):
+    try:
+        sys.path.append( XTREEMFS_TESTS_DIR_PATH )
+        test_suites = {}
+        for file_name in os.listdir( XTREEMFS_TESTS_DIR_PATH ):
+            if file_name.endswith( ".py" ):
+                test_module_name = os.path.splitext( file_name )[0]
+                print "Trying to import test", test_module_name
+                try:
+                    test_module = __import__( test_module_name )
+                except ImportError:
+                    print "Could not import", test_module_name, "from tests"
+                    traceback.print_exc()
+                    continue
+    
+                if hasattr( test_module, "createTestSuite" ):
+                    createTestSuite = getattr( test_module, "createTestSuite" )
+                    if verbose:
+                        test_suite = createTestSuite( stdout=sys.stdout, stderr=sys.stderr )
+                    else:
+                        test_suite = createTestSuite( stdout=subprocess.PIPE, stderr=subprocess.STDOUT )                   
+                    if test_suite is not None:
+                        test_suites[test_module_name] = test_suite
+                else:
+                    print "Test module", test_module_name, "does not have a createTestSuite global function"
+    
+        test_module_names = test_suites.keys()
+        test_module_names.sort()
+        for test_module_name in test_module_names:
+            test_suite = test_suites[test_module_name]
+            for mount_point_dir_name in os.listdir( mnt_dir_path ):
+                mount_point_dir_path = os.path.join( mnt_dir_path, mount_point_dir_name )
+                print "Running", test_module_name, "in", mount_point_dir_path
+                test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
+                try: os.mkdir( test_run_dir_path )
+                except: pass                                         
+                os.chdir( test_run_dir_path )
+                unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
+                os.chdir( mount_point_dir_path )
+                try: shutil.rmtree( test_run_dir_path )
+                except: traceback.print_exc()
+    
+        os.chdir( original_cwd )
+        return 0
+    except KeyboardInterrupt:
+        os.chdir( original_cwd )
+        return 1
+    except:
+        traceback.print_exc()
+        os.chdir( original_cwd )
+        return 1
+    
+    
+def start_services( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
+    stop_services( num_osds=options.num_osds )
+
+    for subdir_name in ( "config", "data", "log", "run" ):
         if not os.path.exists( subdir_name ):
             os.mkdir( subdir_name )
     
-    generate_dir_config( debug_level, ssl_enabled )
-    generate_mrc_config( debug_level, ssl_enabled )
+    generate_dir_config( debug_level, enable_ssl )
+    generate_mrc_config( debug_level, enable_ssl )
     for osdnum in xrange( num_osds ):
-        generate_osd_config( debug_level, ssl_enabled, osdnum )
+        generate_osd_config( debug_level, enable_ssl, osdnum )
 
     _start_service( "dir" )
     _start_service( "mrc" )    
@@ -213,50 +268,6 @@ def start_environment( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAUL
         _start_service( "osd", str( osdnum ) )
 
     time.sleep( 1.0 ) # Wait for the servers to start
-
-    if ssl_enabled:
-        client_ssl_args = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s", "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" )
-
-    if create_volumes:
-        for osdnum in xrange( num_osds ):
-            xtfs_mkvol_args = [XTFS_MKVOL_FILE_PATH]
-            xtfs_mkvol_args.extend( ( "-d", str( debug_level ) ) )
-            if ssl_enabled: xtfs_mkvol_args.extend( client_ssl_args )                
-            xtfs_mkvol_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
-            xtfs_mkvol_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
-            xtfs_mkvol_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
-            xtfs_mkvol_args.append( "localhost/test_%(osdnum)u" % locals() )
-            xtfs_mkvol_args = " ".join( xtfs_mkvol_args )                            
-            print "Creating volume test_%(osdnum)s with command line" % locals(), xtfs_mkvol_args
-            retcode = call( xtfs_mkvol_args, shell=True )
-#            if retcode != 0 and retcode != EEXIST:
-#                print "FAILED: cannot create volume test_%(osdnum)u" % locals()
-#                stop_environment( num_osds )
-#                sys.exit( 1 )
-
-    if mount_volumes:
-        assert os.getcwd() == original_cwd
-        try: os.mkdir( "mnt" )
-        except: pass
-        for osdnum in xrange( num_osds ):
-            for direct_io in ( False, True ):
-                mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
-                mount_dir_path = os.path.join( original_cwd, "mnt", mount_dir_name ) 
-                xtfs_mount_args = [XTFS_MOUNT_FILE_PATH]
-                xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
-                xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
-                if ssl_enabled: xtfs_mount_args.extend( client_ssl_args )
-                if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
-                DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
-                xtfs_mount_args.append( "localhost:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
-                xtfs_mount_args.append( mount_dir_path )
-                xtfs_mount_args = " ".join( xtfs_mount_args )
-                print "Mounting volume test_%(osdnum)s with command line" % locals(), xtfs_mount_args
-                if not os.path.exists( mount_dir_path ): os.mkdir( mount_dir_path )                
-                log_file_path = os.path.join( "log", "client" + mount_dir_name + ".log" )
-                stderr = stdout = open( log_file_path, "a" )
-                xtfs_mount_process = Popen( xtfs_mount_args, shell=True, stdout=stdout, stderr=stderr )
-            
 
 def _start_service( service_name, service_num="" ):        
     args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
@@ -271,23 +282,13 @@ def _start_service( service_name, service_num="" ):
     p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
     time.sleep( 1.0 )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
-
-
-def stop_environment( num_osds=NUM_OSDS_DEFAULT ):
+           
+           
+def stop_services( num_osds=NUM_OSDS_DEFAULT ):
     for osdnum in xrange( num_osds ):
         _stop_service( "osd", str( osdnum ) )
     _stop_service( "mrc" )
     _stop_service( "dir" ) # Stop the DIR last so the other services can deregister
-
-    mnt_dir_path = os.path.abspath( os.path.join( original_cwd, "mnt" ) )
-    for mounts_line in open( "/proc/mounts" ).readlines():
-       mounts_line_parts = mounts_line.split()
-       device = mounts_line_parts[0]
-       mount_point_dir_path = mounts_line_parts[1]
-       if device == "/dev/fuse" and mount_point_dir_path.startswith( mnt_dir_path ):
-           fusermount_args = " ".join( ["fusermount", "-u", mount_point_dir_path] )
-           print "Unmounting volume with", fusermount_args
-           call( fusermount_args, shell=True )
 
 def _stop_service( service_name, service_num="" ):
     run_file_path = os.path.join( "run", service_name + service_num + ".run" )
@@ -304,48 +305,59 @@ def _stop_service( service_name, service_num="" ):
         os.unlink( run_file_path )
     else:
         print "ERROR:", run_file_path, "does not exist,", service_name.upper(), "service is not running."
+
+
+def unmount_volumes( mnt_dir_path=os.path.abspath( os.path.join( original_cwd, "mnt" ) ) ):
+    for mounts_line in open( "/proc/mounts" ).readlines():
+       mounts_line_parts = mounts_line.split()
+       device = mounts_line_parts[0]
+       mount_point_dir_path = mounts_line_parts[1]
+       if device == "/dev/fuse" and mount_point_dir_path.startswith( mnt_dir_path ):
+           fusermount_args = " ".join( ["fusermount", "-u", mount_point_dir_path] )
+           print "Unmounting volume with", fusermount_args
+           call( fusermount_args, shell=True )
         
 
 if __name__ == "__main__":
     if not check_environment():
         sys.exit( 1 )
 
-    
-    option_parser = OptionParser()
-    option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT )
-    option_parser.add_option( "--execute_tests", action="store_true", dest="execute_tests" )
-    option_parser.add_option( "-m", action="store_true", dest="disable_create_volumes" )
-    option_parser.add_option( "-n", action="store_true", dest="disable_mount_volumes" )
-    option_parser.add_option( "-o", action="store", dest="num_osds", type="int", default=NUM_OSDS_DEFAULT )
-    option_parser.add_option( "--start", action="store_true", dest="start_environment" )
-    option_parser.add_option( "--start_environment", action="store_true", dest="start_environment" )
-    option_parser.add_option( "--stop", action="store_true", dest="stop_environment" )
-    option_parser.add_option( "--stop_environment", action="store_true", dest="stop_environment" )
-    option_parser.add_option( "-s", action="store_true", dest="ssl_enabled", default=SSL_ENABLED_DEFAULT )
-    option_parser.add_option( "--test", action="store_true", dest="execute_tests" )
-    option_parser.add_option( "-v", "--verbose", action="store_true", dest="verbose" )
-    options, ignore = option_parser.parse_args()
-
+    usage = "usage: %prog [options] <server_host>"    
+    option_parser = OptionParser( usage )
+    option_parser.add_option( "--autotest", action="store_true", dest="autotest", help="run the autotests: start servers on localhost, create and mount volumes on localhost, then run all tests" )
+    option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )    
+    option_parser.add_option( "--enable-ssl", action="store_true", dest="enable_ssl", default=ENABLE_SSL_DEFAULT )
+    option_parser.add_option( "-o", action="store", dest="num_osds", type="int", default=NUM_OSDS_DEFAULT, help="number of OSDs to start" )
+    option_parser.add_option( "--start", action="store_true", dest="start_services", help="start local servers" )
+    option_parser.add_option( "--stop", action="store_true", dest="stop", help="unmount any XtreemFS volumes and stop local clients and servers" ) 
+    options, positional_args = option_parser.parse_args()
         
-    if options.execute_tests:
-        execute_tests( verbose=options.verboses )
-    elif options.stop_environment:
-        stop_environment()
-    else:
-        stop_environment()
-        start_environment( debug_level=options.debug_level, ssl_enabled=options.ssl_enabled, num_osds=options.num_osds, create_volumes=not options.disable_create_volumes, mount_volumes=not options.disable_mount_volumes )
-        time.sleep( 1.0 ) # Wait for clients and servers to start up
-        if not options.start_environment: # i.e. no options were specified
-            try:
-                execute_tests( num_osds=options.num_osds, verbose=options.verbose )
-                ret = 0
-            except KeyboardInterrupt:
-                pass
-            except:
-                traceback.print_exc()
-                ret = 1
-            os.chdir( original_cwd )
-            stop_environment()
-            sys.exit( ret )
-    
+    if options.start_services:
+        start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
+        
+    elif options.stop:
+        stop_services( num_osds=options.num_osds )
+        unmount_volumes()
+                                 
+    else:            
+        if len( positional_args ) > 1:        
+            service_host = positional_args[0]
+        else:
+            service_host = "localhost"
+            if options.autotest:
+                start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
+        
+        try:
+            create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
+            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
+        except KeyboardInterrupt:
+            sys.exit( 1 )
+        except:
+            traceback.print_exc()
+            sys.exit( 1 )
+            
+#        ret = run_tests( num_osds=options.num_osds, verbose=True )        
+#        stop_services( num_osds=options.num_osds )
+#        unmount_volumes()
+#        sys.exit( ret )
         

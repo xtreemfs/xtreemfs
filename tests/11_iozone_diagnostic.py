@@ -9,7 +9,7 @@ class iozoneDiagnosticTest(unittest.TestCase):
         
     def runTest( self ):
         if "nondirect" in os.getcwd():
-            pass
+            print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
         else:            
             args = "iozone -a -+d"
             p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )

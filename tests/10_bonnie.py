@@ -6,10 +6,10 @@ class bonnieTest(unittest.TestCase):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
-		
+        
     def runTest( self ):
         if "nondirect" in os.getcwd():
-            pass
+            print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
         else:
             args = "bonnie -d ." #  -s 100"
             p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
@@ -19,7 +19,7 @@ class bonnieTest(unittest.TestCase):
 
 def createTestSuite( *args, **kwds ): 
     if not sys.platform.startswith( "win" ):
-    	return unittest.TestSuite( [bonnieTest( *args, **kwds )] )
+        return unittest.TestSuite( [bonnieTest( *args, **kwds )] )
         
 
 if __name__ == "__main__":
