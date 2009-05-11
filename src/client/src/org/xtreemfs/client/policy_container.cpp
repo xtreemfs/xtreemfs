@@ -7,7 +7,7 @@ using namespace org::xtreemfs::client;
 #include "org/xtreemfs/interfaces/exceptions.h"
 
 #ifdef _WIN32
-#include "yield/platform/windows.h"
+#include <windows.h>
 #include <lm.h>
 #pragma comment( lib, "Netapi32.lib" )
 #else

@@ -42,8 +42,8 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs_d.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client_d.lib"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
@@ -53,8 +53,8 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs_d.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client_d.lib"
                 IgnoreAllDefaultLibraries="false"
                 IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
@@ -87,8 +87,8 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs_d.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
@@ -98,8 +98,8 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
@@ -131,8 +131,8 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs_d.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
@@ -142,8 +142,8 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="yieldfs.lib libeay32.lib ssleay32.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\share\yieldfs\lib"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
@@ -237,7 +237,9 @@
             Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
-            <File
+            <Filter Name="xtreemfs">
+<Filter Name="client">
+<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
     >
 </File>
@@ -277,6 +279,34 @@
     RelativePath="..\..\..\..\src\org\xtreemfs\client\volume.cpp"
     >
 </File>
+</Filter>
+</Filter>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\src\yieldfs.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\uriparser.c"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yajl.c"
+    >
+</File>
+<Filter Name="yield">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\arch.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\ipc.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\platform.cpp"
+    >
+</File>
+</Filter>
 
         </Filter>
     </Files>

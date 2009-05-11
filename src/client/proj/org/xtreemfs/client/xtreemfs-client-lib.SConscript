@@ -1,7 +1,5 @@
 import sys, os.path, platform
 
-SConscript( '../../../../share/yieldfs/proj/yieldfs/yieldfs.SConscript' )
-
 
 try:
     Import( "build_env", "build_conf" )
@@ -62,12 +60,8 @@ include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/inc
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-lib_dir_paths = [os.path.abspath( '../../../../share/yieldfs/lib' )]
-for lib_dir_path in lib_dir_paths:
-    if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
-
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in ["yieldfs"]:
+for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 if sys.platform.startswith( "win" ):
     for lib in ["libeay32.lib", "ssleay32.lib", "libeay32.lib", "ssleay32.lib"]:
@@ -86,4 +80,10 @@ build_env.Library( "../../../../lib/xtreemfs-client", (
     r"../../../../src/org/xtreemfs/client/path.cpp",
     r"../../../../src/org/xtreemfs/client/policy_container.cpp",
     r"../../../../src/org/xtreemfs/client/proxy_exception_response.cpp",
-    r"../../../../src/org/xtreemfs/client/volume.cpp" ) )
+    r"../../../../src/org/xtreemfs/client/volume.cpp",
+    r"../../../../share/yieldfs/src/yieldfs.cpp",
+    r"../../../../share/yieldfs/share/yield/src/uriparser.c",
+    r"../../../../share/yieldfs/share/yield/src/yajl.c",
+    r"../../../../share/yieldfs/share/yield/src/yield/arch.cpp",
+    r"../../../../share/yieldfs/share/yield/src/yield/ipc.cpp",
+    r"../../../../share/yieldfs/share/yield/src/yield/platform.cpp" ) )

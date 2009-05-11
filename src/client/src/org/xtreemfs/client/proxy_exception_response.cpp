@@ -5,7 +5,7 @@
 using namespace org::xtreemfs::client;
 
 #ifdef _WIN32
-#include "yield/platform/windows.h"
+#include <windows.h>
 #endif
 
 #include <errno.h>

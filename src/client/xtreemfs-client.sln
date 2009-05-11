@@ -1,13 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yield", "share\yieldfs\share\yield\proj\yield\yield.vcproj", "{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yieldfs", "share\yieldfs\proj\yieldfs\yieldfs.vcproj", "{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7} = {2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xos_ams_flog", "proj\org\xtreemfs\client\xos_ams_flog.vcproj", "{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_lsvol", "proj\org\xtreemfs\client\xtfs_lsvol.vcproj", "{02C4D457-D09C-4097-B3B4-13F1086EA10F}"
@@ -47,14 +40,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_stat", "proj\org\xtree
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib", "proj\org\xtreemfs\client\xtreemfs-client-lib.vcproj", "{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E} = {45E2EA96-EB95-488D-BEBF-658DB15BFF3E}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-lib_test", "proj\org\xtreemfs\client\xtreemfs-client-lib_test.vcproj", "{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google-breakpad", "proj\google-breakpad\google-breakpad.vcproj", "{AF7AE548-AC85-424F-87CD-417ECBC12291}"
 EndProject
@@ -64,14 +49,6 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Debug|Win32.Build.0 = Debug|Win32
-		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Release|Win32.ActiveCfg = Release|Win32
-		{2E3F2B0E-4152-4ECB-B3C9-7A3FBDD7DFD7}.Release|Win32.Build.0 = Release|Win32
-		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Debug|Win32.ActiveCfg = Debug|Win32
-		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Debug|Win32.Build.0 = Debug|Win32
-		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Release|Win32.ActiveCfg = Release|Win32
-		{45E2EA96-EB95-488D-BEBF-658DB15BFF3E}.Release|Win32.Build.0 = Release|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.ActiveCfg = Debug|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.Build.0 = Debug|Win32
 		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.ActiveCfg = Release|Win32
@@ -104,10 +81,6 @@ Global
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Debug|Win32.Build.0 = Debug|Win32
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.ActiveCfg = Release|Win32
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.Build.0 = Release|Win32
-		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Debug|Win32.Build.0 = Debug|Win32
-		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Release|Win32.ActiveCfg = Release|Win32
-		{27F4A047-00D8-4CA7-B5F3-13C2C1D5B36B}.Release|Win32.Build.0 = Release|Win32
 		{AF7AE548-AC85-424F-87CD-417ECBC12291}.Debug|Win32.ActiveCfg = Debug|Win32
 		{AF7AE548-AC85-424F-87CD-417ECBC12291}.Debug|Win32.Build.0 = Debug|Win32
 		{AF7AE548-AC85-424F-87CD-417ECBC12291}.Release|Win32.ActiveCfg = Release|Win32

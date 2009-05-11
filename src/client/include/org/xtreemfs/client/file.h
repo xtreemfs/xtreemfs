@@ -20,7 +20,7 @@ namespace org
       class File : public YIELD::File
       {
       public:
-        YIELD_PLATFORM_FILE_PROTOTYPES;
+        YIELD_FILE_PROTOTYPES;
 
       private:
         friend class Volume;

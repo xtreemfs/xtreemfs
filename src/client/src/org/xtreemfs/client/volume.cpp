@@ -9,7 +9,7 @@ using namespace org::xtreemfs::client;
 
 #include <errno.h>
 #ifdef _WIN32
-#include "yield/platform/windows.h"
+#include <windows.h>
 #else
 #include <sys/statvfs.h>
 #endif

@@ -31,7 +31,7 @@ namespace org
         YIELD::auto_Object<OSDProxy> get_osd_proxy( const std::string& osd_uuid );
 
         // YIELD::Volume
-        YIELD_PLATFORM_VOLUME_PROTOTYPES;
+        YIELD_VOLUME_PROTOTYPES;
         YIELD::auto_Object<YIELD::Stat> getattr( const Path& path );
         bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
         bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
