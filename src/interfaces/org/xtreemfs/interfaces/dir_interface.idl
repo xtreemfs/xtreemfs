@@ -17,6 +17,7 @@ module org
         uint16_t port;
         string match_network;
         uint32_t ttl_s;
+	string uri;
       };
 
       typedef sequence<AddressMapping> AddressMappingSet;
