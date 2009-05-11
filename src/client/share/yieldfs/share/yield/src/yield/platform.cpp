@@ -1,4 +1,4 @@
-// Revision: 1399
+// Revision: 1400
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -7,8 +7,6 @@ using namespace YIELD;
 // counting_semaphore.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -20,8 +18,6 @@ using namespace YIELD;
 #include <mach/task.h>
 #endif
 #endif
-
-
 CountingSemaphore::CountingSemaphore()
 {
 #if defined(_WIN32)
@@ -32,7 +28,6 @@ CountingSemaphore::CountingSemaphore()
   sem_init( &sem, 0, 0 );
 #endif
 }
-
 CountingSemaphore::~CountingSemaphore()
 {
 #if defined(_WIN32)
@@ -43,7 +38,6 @@ CountingSemaphore::~CountingSemaphore()
   sem_destroy( &sem );
 #endif
 }
-
 bool CountingSemaphore::acquire()
 {
 #if defined(_WIN32)
@@ -55,7 +49,6 @@ bool CountingSemaphore::acquire()
   return sem_wait( &sem ) == 0;
 #endif
 }
-
 bool CountingSemaphore::try_acquire()
 {
 #if defined(_WIN32)
@@ -68,7 +61,6 @@ bool CountingSemaphore::try_acquire()
   return sem_trywait( &sem ) == 0;
 #endif
 }
-
 bool CountingSemaphore::timed_acquire( timeout_ns_t timeout_ns )
 {
 #if defined(_WIN32)
@@ -83,7 +75,6 @@ bool CountingSemaphore::timed_acquire( timeout_ns_t timeout_ns )
   return sem_timedwait( &sem, &timeout_ts ) == 0;
 #endif
 }
-
 void CountingSemaphore::release()
 {
 #if defined(_WIN32)
@@ -99,16 +90,12 @@ void CountingSemaphore::release()
 // exception.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #include <lmerr.h>
 #else
 #include <errno.h>
 #endif
-
-
 uint32_t Exception::get_errno()
 {
 #ifdef _WIN32
@@ -117,7 +104,6 @@ uint32_t Exception::get_errno()
   return static_cast<uint32_t>( errno );
 #endif
 }
-
 void Exception::set_errno( uint32_t error_code )
 {
 #ifdef _WIN32
@@ -126,21 +112,18 @@ void Exception::set_errno( uint32_t error_code )
   errno = static_cast<int>( error_code );
 #endif
 }
-
 std::string Exception::strerror( uint32_t error_code )
 {
   std::string out_str;
   strerror( error_code, out_str );
   return out_str;
 }
-
 void Exception::strerror( uint32_t error_code, std::string& out_str )
 {
   char strerror_buffer[YIELD_EXCEPTION_WHAT_BUFFER_LENGTH];
   strerror( error_code, strerror_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
   out_str.assign( strerror_buffer );
 }
-
 void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len )
 {
 #ifdef _WIN32
@@ -170,7 +153,6 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
     else if ( error_code >= NERR_BASE || error_code <= MAX_NERR )
     {
       HMODULE hModule = LoadLibraryEx( TEXT( "netmsg.dll" ), NULL, LOAD_LIBRARY_AS_DATAFILE ); // Let's hope this is cheap..
-
       if ( hModule != NULL )
       {
         dwMessageLength = FormatMessageA( FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_IGNORE_INSERTS, hModule, error_code, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), out_str, static_cast<DWORD>( out_str_len ), NULL );
@@ -200,24 +182,20 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
           FreeLibrary( hModule );
       }
     }
-
     sprintf_s( out_str, out_str_len, "error_code = %u", error_code );
   }
 #else
   snprintf( out_str, out_str_len, "errno = %u, strerror = %s", error_code, std::strerror( error_code ) );
 #endif
 }
-
 Exception::Exception()
 {
   strerror( get_errno(), what_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
 }
-
 Exception::Exception( uint32_t error_code )
 {
   strerror( error_code, what_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
 }
-
 void Exception::init( const char* what )
 {
 #ifdef _WIN32
@@ -232,8 +210,6 @@ void Exception::init( const char* what )
 // file.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -271,7 +247,6 @@ extern off64_t lseek64(int, off64_t, int);
 #endif
 #endif
 #endif
-
 /*
 #if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
 typedef struct
@@ -284,7 +259,6 @@ typedef struct
   File::aio_read_completion_routine_t aio_read_completion_routine;
   void* aio_read_completion_routine_context;
 } aio_read_operation_t;
-
 typedef struct
 {
 #if defined(_WIN32)
@@ -297,39 +271,33 @@ typedef struct
 } aio_write_operation_t;
 #endif
 */
-
 File::File()
   : fd( INVALID_HANDLE_VALUE )
 { }
-
 File::File( const Path& path )
 {
   fd = _open( path, DEFAULT_FLAGS, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 File::File( const Path& path, uint32_t flags )
 {
   fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 File::File( const Path& path, uint32_t flags, mode_t mode )
 {
   fd = _open( path, flags, mode, DEFAULT_ATTRIBUTES );
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 File::File( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   fd = _open( path, flags, mode, attributes );
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 #ifdef _WIN32
 File::File( char* path )
 {
@@ -337,21 +305,18 @@ File::File( char* path )
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 File::File( char* path, uint32_t flags )
 {
   fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
   if ( fd == INVALID_HANDLE_VALUE )
     throw YIELD::Exception();
 }
-
 File::File( const char* path )
 {
   fd = _open( path, DEFAULT_FLAGS, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
   if ( fd == INVALID_HANDLE_VALUE  )
     throw YIELD::Exception();
 }
-
 File::File( const char* path, uint32_t flags )
 {
   fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
@@ -359,11 +324,9 @@ File::File( const char* path, uint32_t flags )
     throw YIELD::Exception();
 }
 #endif
-
 File::File( fd_t fd )
 : fd( fd )
 { }
-
 auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   fd_t fd = _open( path, flags, mode, attributes );
@@ -372,7 +335,6 @@ auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uin
   else
     return NULL;
 }
-
 /*
 int File::aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine_t aio_read_completion_routine, void* aio_read_completion_routine_context )
 {
@@ -381,7 +343,6 @@ int File::aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine
   memset( aio_read_op, 0, sizeof( *aio_read_op ) );
   aio_read_op->aio_read_completion_routine = aio_read_completion_routine;
   aio_read_op->aio_read_completion_routine_context = aio_read_completion_routine_context;
-
 #if defined(_WIN32)
   if ( ReadFileEx( fd, buffer, static_cast<DWORD>( buffer_len ), ( LPOVERLAPPED )aio_read_op, ( LPOVERLAPPED_COMPLETION_ROUTINE )overlapped_read_completion ) != 0 )
     return 0;
@@ -403,7 +364,6 @@ int File::aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine
   return -1;
 #endif
 }
-
 int File::aio_write( const void* buffer, size_t buffer_len, aio_write_completion_routine_t aio_write_completion_routine, void* aio_write_completion_routine_context )
 {
 #if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
@@ -411,7 +371,6 @@ int File::aio_write( const void* buffer, size_t buffer_len, aio_write_completion
   memset( aio_write_op, 0, sizeof( *aio_write_op ) );
   aio_write_op->aio_write_completion_routine = aio_write_completion_routine;
   aio_write_op->aio_write_completion_routine_context = aio_write_completion_routine_context;
-
 #if defined(_WIN32)
   if ( WriteFileEx( fd, buffer, static_cast<DWORD>( buffer_len ), ( LPOVERLAPPED )aio_write_op, ( LPOVERLAPPED_COMPLETION_ROUTINE )overlapped_write_completion ) != 0 )
     return 0;
@@ -433,42 +392,34 @@ int File::aio_write( const void* buffer, size_t buffer_len, aio_write_completion
   return -1;
 #endif
 }
-
 #if defined(_WIN32)
-
 void __stdcall File::overlapped_read_completion( DWORD dwError, DWORD dwBytesTransferred, LPVOID lpOverlapped )
 {
   aio_read_operation_t* aio_read_op = reinterpret_cast<aio_read_operation_t*>( lpOverlapped );
   aio_read_op->aio_read_completion_routine( dwError, dwBytesTransferred, aio_read_op->aio_read_completion_routine_context );
   delete aio_read_op;
 }
-
 void __stdcall File::overlapped_write_completion( DWORD dwError, DWORD dwBytesTransferred, LPVOID lpOverlapped )
 {
   aio_write_operation_t* aio_write_op = reinterpret_cast<aio_write_operation_t*>( lpOverlapped );
   aio_write_op->aio_write_completion_routine( dwError, dwBytesTransferred, aio_write_op->aio_write_completion_routine_context );
   delete aio_write_op;
 }
-
 #elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-
 void File::aio_read_notify( sigval_t sigval )
 {
   aio_read_operation_t* aio_read_op = reinterpret_cast<aio_read_operation_t*>( sigval.sival_ptr );
   aio_read_op->aio_read_completion_routine( static_cast<unsigned long>( aio_error( &aio_read_op->aiocb ) ), static_cast<size_t>( aio_return( &aio_read_op->aiocb ) ), aio_read_op->aio_read_completion_routine_context );
   delete aio_read_op;
 }
-
 void File::aio_write_notify( sigval_t sigval )
 {
   aio_write_operation_t* aio_write_op = reinterpret_cast<aio_write_operation_t*>( sigval.sival_ptr );
   aio_write_op->aio_write_completion_routine( static_cast<unsigned long>( aio_error( &aio_write_op->aiocb ) ), static_cast<size_t>( aio_return( &aio_write_op->aiocb ) ), aio_write_op->aio_write_completion_routine_context );
   delete aio_write_op;
 }
-
 #endif
 */
-
 bool File::close()
 {
   if ( fd != INVALID_HANDLE_VALUE ) // Have to test this, since CloseHandle on an invalid handle crashes instead of simply failing
@@ -484,7 +435,6 @@ bool File::close()
   else
     return false;
 }
-
 bool File::_close( fd_t fd )
 {
 #ifdef _WIN32
@@ -493,7 +443,6 @@ bool File::_close( fd_t fd )
   return ::close( fd ) >= 0;
 #endif
 }
-
 bool File::datasync()
 {
 #if defined(_WIN32) || defined(__MACH__)
@@ -502,7 +451,6 @@ bool File::datasync()
   return fdatasync( fd ) != -1;
 #endif
 }
-
 bool File::flush()
 {
 #ifdef _WIN32
@@ -511,12 +459,10 @@ bool File::flush()
   return true;
 #endif
 }
-
 auto_Object<Stat> File::getattr()
 {
   return new Stat( fd );
 }
-
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -535,7 +481,6 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return false;
 #endif
 }
-
 bool File::listxattr( std::vector<std::string>& out_names )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -559,14 +504,12 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return false;
 #endif
 }
-
 fd_t File::_open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
 #ifdef _WIN32
   DWORD file_access_flags = 0,
         file_create_flags = 0,
         file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
-
   if ( ( flags & O_RDWR ) == O_RDWR )
     file_access_flags |= GENERIC_READ|GENERIC_WRITE;
   else if ( ( flags & O_WRONLY ) == O_WRONLY )
@@ -579,7 +522,6 @@ fd_t File::_open( const Path& path, uint32_t flags, mode_t mode, uint32_t attrib
       file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
   else
     file_access_flags |= GENERIC_READ;
-
   if ( ( flags & O_CREAT ) == O_CREAT )
   {
     if ( ( flags & O_TRUNC ) == O_TRUNC )
@@ -589,24 +531,17 @@ fd_t File::_open( const Path& path, uint32_t flags, mode_t mode, uint32_t attrib
   }
   else
     file_create_flags = OPEN_EXISTING;
-
 //  if ( ( flags & O_SPARSE ) == O_SPARSE )
 //    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
-
   if ( ( flags & O_SYNC ) == O_SYNC )
     file_open_flags |= FILE_FLAG_WRITE_THROUGH;
-
   if ( ( flags & O_DIRECT ) == O_DIRECT )
     file_open_flags |= FILE_FLAG_NO_BUFFERING;
-
   if ( ( flags & O_ASYNC ) == O_ASYNC )
     file_open_flags |= FILE_FLAG_OVERLAPPED;
-
   if ( ( flags & O_HIDDEN ) == O_HIDDEN )
     file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-
   HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
-
   if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
   {
     SetFilePointer( fd, 0, NULL, FILE_BEGIN );
@@ -615,10 +550,8 @@ fd_t File::_open( const Path& path, uint32_t flags, mode_t mode, uint32_t attrib
 #else
   int fd = ::open( path, flags, mode );
 #endif
-
   return fd;
 }
-
 Stream::Status File::read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read )
 {
   if ( seek( offset, SEEK_SET ) )
@@ -626,7 +559,6 @@ Stream::Status File::read( void* buffer, size_t buffer_len, uint64_t offset, siz
   else
     return STREAM_STATUS_ERROR;
 }
-
 Stream::Status File::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #ifdef _WIN32
@@ -651,7 +583,6 @@ Stream::Status File::read( void* buffer, size_t buffer_len, size_t* out_bytes_re
     return STREAM_STATUS_ERROR;
 #endif
 }
-
 bool File::removexattr( const std::string& name )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -660,7 +591,6 @@ bool File::removexattr( const std::string& name )
   return false;
 #endif
 }
-
 bool File::setxattr( const std::string& name, const std::string& value, int flags )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -669,12 +599,10 @@ bool File::setxattr( const std::string& name, const std::string& value, int flag
   return false;
 #endif
 }
-
 bool File::seek( uint64_t offset )
 {
   return seek( offset, SEEK_SET );
 }
-
 bool File::seek( uint64_t offset, unsigned char whence )
 {
 #ifdef _WIN32
@@ -704,7 +632,6 @@ bool File::seek( uint64_t offset, unsigned char whence )
     return false;
 #endif
 }
-
 bool File::sync()
 {
 #ifdef _WIN32
@@ -713,7 +640,6 @@ bool File::sync()
   return fsync( fd ) != -1;
 #endif
 }
-
 bool File::truncate( uint64_t new_size )
 {
 #ifdef _WIN32
@@ -725,7 +651,6 @@ bool File::truncate( uint64_t new_size )
   return ::ftruncate( fd, new_size ) != -1;
 #endif
 }
-
 Stream::Status File::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
 {
   if ( seek( offset ) )
@@ -733,7 +658,6 @@ Stream::Status File::writev( const iovec* buffers, uint32_t buffers_count, uint6
   else
     return STREAM_STATUS_ERROR;
 }
-
 Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
 #ifdef _WIN32
@@ -747,10 +671,8 @@ Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count
     else
       return STREAM_STATUS_ERROR;
   }
-
   if ( out_bytes_written )
     *out_bytes_written = total_bytes_written;
-
   return STREAM_STATUS_OK;
 #else
   ssize_t writev_ret = ::writev( fd, reinterpret_cast<const ::iovec*>( buffers ), buffers_count );
@@ -769,9 +691,6 @@ Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count
 // log.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 namespace YIELD
 {
   class ostreamWrapper : public Object, public OutputStream
@@ -780,7 +699,6 @@ namespace YIELD
     ostreamWrapper( std::ostream& os )
       : os( os )
     { }
-
     // OutputStream
     Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 )
     {
@@ -794,20 +712,16 @@ namespace YIELD
         *out_bytes_written = bytes_written;
       return STREAM_STATUS_OK;
     }
-
   private:
     std::ostream& os;
   };
 };
-
-Log::Stream::Stream( auto_Object<Log>, Log::Level level )
+Log::Stream::Stream( auto_Object<Log> log, Log::Level level )
   : log( log ), level( level )
 { }
-
 Log::Stream::Stream( const Stream& other )
   : log( other.log ), level( other.level )
 { }
-
 Log::Stream::~Stream()
 {
   if ( level <= log->get_level() && !oss.str().empty() )
@@ -834,7 +748,6 @@ Log::Stream::~Stream()
     log->write( stamped_oss.str(), level );
   }
 }
-
 OutputStream::Status Log::Stream::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
   if ( level <= log->get_level() )
@@ -848,32 +761,24 @@ OutputStream::Status Log::Stream::writev( const struct iovec* buffers, uint32_t 
         *out_bytes_written += buffers[buffer_i].iov_len;
     }
   }
-
   return STREAM_STATUS_OK;
 }
-
-
-
 Log::Log( const Path& file_path, Level level )
   : level( level )
 {
   underlying_output_stream.reset( new File( file_path, O_CREAT|O_WRONLY|O_APPEND ) );
 }
-
 Log::Log( std::ostream& os, Level level )
   : level( level )
 {
   underlying_output_stream.reset( new ostreamWrapper( os ) );
 }
-
 Log::Log( std::auto_ptr<OutputStream> underlying_output_stream, Level level )
   : underlying_output_stream( underlying_output_stream ), level( level )
 { }
-
 char* Log::sanitize( const unsigned char* str, size_t str_len )
 {
   char *sanitized_str = new char[str_len];
-
   for ( size_t str_i = 0; str_i < str_len; str_i++ )
   {
     if ( str[str_i] == '\r' || str[str_i] == '\n' || ( str[str_i] >= 32 && str[str_i] <= 126 ) )
@@ -881,10 +786,8 @@ char* Log::sanitize( const unsigned char* str, size_t str_len )
     else
       sanitized_str[str_i] = '.';
   }
-
   return sanitized_str;
 }
-
 void Log::write( const unsigned char* str, size_t str_len )
 {
   char* sanitized_str = sanitize( str, str_len );
@@ -896,8 +799,6 @@ void Log::write( const unsigned char* str, size_t str_len )
 // machine.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -909,12 +810,9 @@ void Log::write( const unsigned char* str, size_t str_len )
 #include <kstat.h> // For kstat
 #endif
 #endif
-
-
 uint16_t Machine::getOnlineLogicalProcessorCount()
 {
   uint16_t online_logical_processor_count = 0;
-
 #if defined(_WIN32)
   SYSTEM_INFO available_info;
   GetSystemInfo( &available_info );
@@ -927,7 +825,6 @@ uint16_t Machine::getOnlineLogicalProcessorCount()
   host_info_t info = (host_info_t)&basic_info;
   host_flavor_t flavor = HOST_BASIC_INFO;
   mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
-
   if ( host_info( mach_host_self(), flavor, info, &count ) == KERN_SUCCESS )
     online_logical_processor_count = basic_info.avail_cpus;
 #elif defined(__sun)
@@ -939,18 +836,15 @@ uint16_t Machine::getOnlineLogicalProcessorCount()
       online_logical_processor_count++;
   }
 #endif
-
   if ( online_logical_processor_count > 0 )
     return online_logical_processor_count;
   else
     return 1;
 }
-
 uint16_t Machine::getOnlinePhysicalProcessorCount()
 {
 #if defined(__sun)
   kstat_ctl_t* kc;
-
   kc = kstat_open();
   if ( kc )
   {
@@ -973,16 +867,13 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
       }
       ksp = ksp->ks_next;
     }
-
     kstat_close( kc );
-
     if ( online_physical_processor_count > 0 )
       return online_physical_processor_count;
     else
       return 1;
   }
 #endif
-
   return getOnlineLogicalProcessorCount();
 }
 
@@ -1167,19 +1058,14 @@ void MemoryMappedFile::writeBack( void* ptr, size_t length )
 }
 
 
-
 // mutex.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__sun)
 #define YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
 #endif
-
-
 Mutex::Mutex()
 {
 #ifdef _WIN32
@@ -1189,7 +1075,6 @@ Mutex::Mutex()
   if ( pthread_mutex_init( static_cast<pthread_mutex_t*>( os_handle ), NULL ) != 0 ) DebugBreak();
 #endif
 }
-
 Mutex::~Mutex()
 {
 #ifdef _WIN32
@@ -1199,7 +1084,6 @@ Mutex::~Mutex()
   delete ( pthread_mutex_t* ) os_handle;
 #endif
 }
-
 bool Mutex::acquire()
 {
 #ifdef _WIN32
@@ -1210,7 +1094,6 @@ bool Mutex::acquire()
   return true;
 #endif
 }
-
 bool Mutex::try_acquire()
 {
 #ifdef _WIN32
@@ -1220,7 +1103,6 @@ bool Mutex::try_acquire()
   return pthread_mutex_trylock( static_cast<pthread_mutex_t*>( os_handle ) ) == 0;
 #endif
 }
-
 bool Mutex::timed_acquire( timeout_ns_t timeout_ns )
 {
 #ifdef _WIN32
@@ -1242,7 +1124,6 @@ bool Mutex::timed_acquire( timeout_ns_t timeout_ns )
 #endif
 #endif
 }
-
 void Mutex::release()
 {
 #ifdef _WIN32
@@ -1256,44 +1137,37 @@ void Mutex::release()
 // path.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
-#define ICONV_SOURCE_CAST const char**
-#else
-#define ICONV_SOURCE_CAST char**
+//#include <iconv.h>
+//#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
+//#define ICONV_SOURCE_CAST const char**
+//#else
+//#define ICONV_SOURCE_CAST char**
+//#endif
 #endif
-#endif
-
 // Paths from UTF-8
 //#ifdef _WIN32
 //    wide_path.assign( _wide_path, MultiByteToWideChar( CP_UTF8, 0, utf8_path.c_str(), ( int )utf8_path.size(), _wide_path, MAX_PATH ) );
 //#else
 //    MultiByteToMultiByte( "UTF-8", utf8_path, "", host_charset_path );
 //#endif
-
-
 Path::Path( const char* host_charset_path )
   : host_charset_path( host_charset_path )
 {
   init_from_host_charset_path();
 }
-
 Path::Path( const char* host_charset_path, size_t host_charset_path_len )
   : host_charset_path( host_charset_path, host_charset_path_len )
 {
   init_from_host_charset_path();
 }
-
 Path::Path( const std::string& host_charset_path )
   : host_charset_path( host_charset_path )
 {
   init_from_host_charset_path();
 }
-
 void Path::init_from_host_charset_path()
 {
 #ifdef _WIN32
@@ -1301,26 +1175,22 @@ void Path::init_from_host_charset_path()
   wide_path.assign( _wide_path, MultiByteToWideChar( GetACP(), 0, host_charset_path.c_str(), static_cast<int>( host_charset_path.size() ), _wide_path, MAX_PATH ) );
 #endif
 }
-
 #ifdef _WIN32
 Path::Path( const wchar_t* wide_path )
   : wide_path( wide_path )
 {
   init_from_wide_path();
 }
-
 Path::Path( const wchar_t* wide_path, size_t wide_path_len )
   : wide_path( wide_path, wide_path_len )
 {
   init_from_wide_path();
 }
-
 Path::Path( const std::wstring& wide_path )
   : wide_path( wide_path )
 {
   init_from_wide_path();
 }
-
 void Path::init_from_wide_path()
 {
   char _host_charset_path[MAX_PATH];
@@ -1328,14 +1198,12 @@ void Path::init_from_wide_path()
   host_charset_path.assign( _host_charset_path, _host_charset_path_len );
 }
 #endif
-
 Path::Path( const Path &other )
 : host_charset_path( other.host_charset_path )
 #ifdef _WIN32
 , wide_path( other.wide_path )
 #endif
 { }
-
 /*
 const std::string& Path::get_utf8_path()
 {
@@ -1353,20 +1221,16 @@ const std::string& Path::get_utf8_path()
      MultiByteToMultiByte( "", host_charset_path, "UTF-8", utf8_path ); // "" = local host charset
 #endif
   }
-
   return utf8_path;
 }
-
 #ifndef _WIN32
 void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompath, const char* tocode, std::string& topath )
 {
   iconv_t converter;
-
   if ( ( converter = iconv_open( fromcode, tocode ) ) != ( iconv_t )-1 )
   {
     char* _frompath = const_cast<char*>( frompath.c_str() ); char _topath[MAX_PATH], *_topath_p = _topath;
     size_t _frompath_size = frompath.size(), _topath_size = MAX_PATH;
-
 	//::iconv( converter, NULL, 0, NULL, 0 ) != -1 &&
     size_t iconv_ret;
     if ( ( iconv_ret = ::iconv( converter, ( ICONV_SOURCE_CAST )&_frompath, &_frompath_size, &_topath_p, &_topath_size ) ) != static_cast<size_t>( -1 ) )
@@ -1376,7 +1240,6 @@ void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompa
 //			cerr << "Path: iconv could not convert path " << frompath << " from code " << fromcode << " to code " << tocode;
       topath = frompath;
     }
-
     iconv_close( converter );
   }
   else
@@ -1384,19 +1247,16 @@ void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompa
 }
 #endif
 */
-
 #ifdef _WIN32
 bool Path::operator==( const wchar_t* other ) const
 {
   return wide_path == other;
 }
-
 bool Path::operator!=( const wchar_t* other ) const
 {
   return wide_path != other;
 }
 #endif
-
 bool Path::operator==( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1405,7 +1265,6 @@ bool Path::operator==( const Path& other ) const
   return host_charset_path == other.host_charset_path;
 #endif
 }
-
 bool Path::operator!=( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1414,17 +1273,14 @@ bool Path::operator!=( const Path& other ) const
   return host_charset_path != other.host_charset_path;
 #endif
 }
-
 bool Path::operator==( const char* other ) const
 {
   return host_charset_path == other;
 }
-
 bool Path::operator!=( const char* other ) const
 {
   return host_charset_path != other;
 }
-
 Path Path::join( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1464,11 +1320,9 @@ Path Path::join( const Path& other ) const
 //  }
 #endif
 }
-
 std::pair<Path, Path> Path::split() const
 {
   std::string::size_type last_sep = host_charset_path.find_last_of( PATH_SEPARATOR );
-
   if ( last_sep == host_charset_path.length() )
     return std::make_pair( *this, Path() );
   else if ( last_sep != std::string::npos )
@@ -1476,7 +1330,6 @@ std::pair<Path, Path> Path::split() const
   else
     return std::make_pair( Path(), *this );
 }
-
 void Path::split_all( std::vector<Path>& parts ) const
 {
   std::string::size_type last_sep = host_charset_path.find_first_not_of( PATH_SEPARATOR, 0 );
@@ -1488,17 +1341,14 @@ void Path::split_all( std::vector<Path>& parts ) const
     next_sep = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
   }
 }
-
 std::pair<Path, Path> Path::splitext() const
 {
   std::string::size_type last_dot = host_charset_path.find_last_of( "." );
-
   if ( last_dot == 0 || last_dot == std::string::npos )
     return std::make_pair( *this, Path() );
   else
     return std::make_pair( host_charset_path.substr( 0, last_dot ), host_charset_path.substr( last_dot ) );
 }
-
 Path Path::abspath() const
 {
 #ifdef _WIN32
@@ -1516,35 +1366,27 @@ Path Path::abspath() const
 // pretty_print_output_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 PrettyPrintOutputStream::PrettyPrintOutputStream( OutputStream& underlying_output_stream )
   : underlying_output_stream( underlying_output_stream )
 { }
-
 void PrettyPrintOutputStream::writeBool( const Declaration& decl, bool value )
 {
   underlying_output_stream.write( ( ( value ) ? "true, " : "false, " ) );
 }
-
 void PrettyPrintOutputStream::writeDouble( const Declaration& decl, double value )
 {
   std::ostringstream value_oss; value_oss << value << ", ";
   underlying_output_stream.write( value_oss.str() );
 }
-
 void PrettyPrintOutputStream::writeInt64( const Declaration& decl, int64_t value )
 {
   std::ostringstream value_oss; value_oss << value << ", ";
   underlying_output_stream.write( value_oss.str() );
 }
-
 void PrettyPrintOutputStream::writeObject( const Declaration& decl, Object& value, Object::GeneralType value_general_type )
 {
   if ( value_general_type == Object::UNKNOWN )
     value_general_type = value.get_general_type();
-
   if ( value_general_type == Object::SEQUENCE )
   {
     underlying_output_stream.write( "[ " );
@@ -1559,7 +1401,6 @@ void PrettyPrintOutputStream::writeObject( const Declaration& decl, Object& valu
     underlying_output_stream.write( " ), " );
   }
 }
-
 void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
   underlying_output_stream.write( value, value_len );
@@ -1570,8 +1411,6 @@ void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* 
 // process.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <windows.h>
 #else
@@ -1580,8 +1419,6 @@ void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* 
 <mach-o/dyld.h> // For _NSGetExecutablePath
 #endif
 #endif
-
-
 Path Process::getExeFilePath( const char* argv0 )
 {
 #if defined(_WIN32)
@@ -1602,34 +1439,27 @@ Path Process::getExeFilePath( const char* argv0 )
   if ( _NSGetExecutablePath( exe_file_path, &bufsize ) == 0 )
   {
     exe_file_path[bufsize] = 0;
-
     char linked_exe_file_path[MAX_PATH]; int ret;
     if ( ( ret = readlink( exe_file_path, linked_exe_file_path, MAX_PATH ) ) != -1 )
     {
       linked_exe_file_path[ret] = 0;
       return linked_exe_file_path;
     }
-
     char absolute_exe_file_path[MAX_PATH];
     if ( realpath( exe_file_path, absolute_exe_file_path ) != NULL )
       return absolute_exe_file_path;
-
     return exe_file_path;
   }
 #endif
-
   return argv0;
 }
-
 Path Process::getExeDirPath( const char* argv0 )
 {
   Path exe_file_path = getExeFilePath( argv0 );
   return exe_file_path.split().first;
 }
-
 #ifdef _WIN32
 CountingSemaphore pause_semaphore;
-
 BOOL CtrlHandler( DWORD fdwCtrlType )
 {
   if ( fdwCtrlType == CTRL_C_EVENT )
@@ -1641,7 +1471,6 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
     return FALSE;
 }
 #endif
-
 void Process::pause()
 {
 #ifdef _WIN32
@@ -1651,7 +1480,6 @@ void Process::pause()
   ::pause();
 #endif
 }
-
 #ifdef _WIN32
 int Process::getArgvFromCommandLine( const char* command_line, argv_vector& argv )
 {
@@ -1659,9 +1487,7 @@ int Process::getArgvFromCommandLine( const char* command_line, argv_vector& argv
   GetModuleFileNameA( NULL, exec_name, MAX_PATH );
   argv.push_back( new char[ strlen( exec_name ) + 1 ] );
   strcpy( argv.back(), exec_name );
-
   const char *start_p = command_line, *p = start_p;
-
   while ( *p != 0 )
   {
     while ( *p != ' ' && *p != 0 ) p++;
@@ -1675,10 +1501,8 @@ int Process::getArgvFromCommandLine( const char* command_line, argv_vector& argv
       start_p = p;
     }
   }
-
   return ( int )argv.size();
 }
-
 int Process::WinMainTomain( LPSTR lpszCmdLine, int ( *main )( int, char** ) )
 {
   argv_vector argv;
@@ -1687,8 +1511,6 @@ int Process::WinMainTomain( LPSTR lpszCmdLine, int ( *main )( int, char** ) )
   return ret;
 }
 #endif
-
-
 Process::Process( const Path& executable_file_path, const char** argv )
 {
 #ifdef _WIN32
@@ -1702,7 +1524,6 @@ Process::Process( const Path& executable_file_path, const char** argv )
     catted_argv.append( executable_file_path_str );
     catted_argv.append( "\"", 1 );
   }
-
   size_t argv_i = 0;
   while ( argv[argv_i] != NULL )
   {
@@ -1710,13 +1531,11 @@ Process::Process( const Path& executable_file_path, const char** argv )
     catted_argv.append( argv[argv_i] );
     argv_i++;
   }
-
   {
     SECURITY_ATTRIBUTES pipe_security_attributes;
     pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
     pipe_security_attributes.bInheritHandle = TRUE;
     pipe_security_attributes.lpSecurityDescriptor = NULL;
-
     if ( !CreatePipe( &hChildStdInput_read, &hChildStdInput_write, &pipe_security_attributes, 0 ) ) throw Exception();
     if ( !SetHandleInformation( hChildStdInput_write, HANDLE_FLAG_INHERIT, 0 ) ) throw Exception();
     if ( !CreatePipe( &hChildStdOutput_read, &hChildStdOutput_write, &pipe_security_attributes, 0 ) ) throw Exception();
@@ -1724,7 +1543,6 @@ Process::Process( const Path& executable_file_path, const char** argv )
     if ( !CreatePipe( &hChildStdError_read, &hChildStdError_write, &pipe_security_attributes, 0 ) ) throw Exception();
     if ( !SetHandleInformation( hChildStdError_read, HANDLE_FLAG_INHERIT, 0 ) ) throw Exception();
   }
-
   STARTUPINFO startup_info;
   ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
   startup_info.cb = sizeof( STARTUPINFO );
@@ -1732,10 +1550,8 @@ Process::Process( const Path& executable_file_path, const char** argv )
   startup_info.hStdOutput = hChildStdOutput_write;
   startup_info.hStdError = hChildStdError_write;
   startup_info.dwFlags = STARTF_USESTDHANDLES;
-
   PROCESS_INFORMATION proc_info;
   ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-
   if ( CreateProcess( executable_file_path, ( LPWSTR )catted_argv.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
   {
     hChildProcess = proc_info.hProcess;
@@ -1747,7 +1563,6 @@ Process::Process( const Path& executable_file_path, const char** argv )
   if ( pipe( child_stdin_pipe ) == -1 ) throw Exception();
   if ( pipe( child_stdout_pipe ) == -1 ) throw Exception();
   if ( pipe( child_stderr_pipe ) == -1 ) throw Exception();
-
   child_pid = fork();
   if ( child_pid == -1 )
     throw Exception();
@@ -1757,18 +1572,14 @@ Process::Process( const Path& executable_file_path, const char** argv )
     dup2( child_stdin_pipe[0], STDIN_FILENO ); // Set stdin to read end of stdin pipe
     close( child_stdin_pipe[0] );
     close( child_stdin_pipe[1] );
-
     close( STDOUT_FILENO );
     dup2( child_stdout_pipe[1], STDOUT_FILENO ); // Set stdout to write end of stdout pipe
     close( child_stdout_pipe[0] );
     close( child_stdout_pipe[1] );
-
     close( STDERR_FILENO );
     dup2( child_stderr_pipe[1], STDERR_FILENO ); // Set stderr to write end of stderr pipe
     close( child_stderr_pipe[0] );
     close( child_stderr_pipe[1] );
-
-
     std::vector<char*> argv_with_executable_file_path;
     argv_with_executable_file_path.push_back( const_cast<char*>( static_cast<const char*>( executable_file_path ) ) );
     size_t argv_i = 0;
@@ -1778,7 +1589,6 @@ Process::Process( const Path& executable_file_path, const char** argv )
       argv_i++;
     }
     argv_with_executable_file_path.push_back( NULL );
-
     execv( executable_file_path, &argv_with_executable_file_path[0] );
   }
   else // Parent
@@ -1789,7 +1599,6 @@ Process::Process( const Path& executable_file_path, const char** argv )
   }
 #endif
 }
-
 Process::~Process()
 {
 #ifdef _WIN32
@@ -1807,7 +1616,6 @@ Process::~Process()
   close( child_stderr_pipe[0] );
 #endif
 }
-
 bool Process::poll( int* out_return_code )
 {
 #ifdef _WIN32
@@ -1819,7 +1627,6 @@ bool Process::poll( int* out_return_code )
       GetExitCodeProcess( hChildProcess, &dwChildExitCode );
       *out_return_code = ( int )dwChildExitCode;
     }
-
     return true;
   }
   else
@@ -1828,7 +1635,6 @@ bool Process::poll( int* out_return_code )
   return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
 #endif
 }
-
 Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #ifdef _WIN32
@@ -1837,7 +1643,6 @@ Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* ou
   return _read( child_stdout_pipe[0], buffer, buffer_len, out_bytes_read );
 #endif
 }
-
 Stream::Status Process::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #ifdef _WIN32
@@ -1846,7 +1651,6 @@ Stream::Status Process::read( void* buffer, size_t buffer_len, size_t* out_bytes
   return _read( child_stderr_pipe[0], buffer, buffer_len, out_bytes_read );
 #endif
 }
-
 Stream::Status Process::_read( fd_t fd, void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #ifdef _WIN32
@@ -1871,7 +1675,6 @@ Stream::Status Process::_read( fd_t fd, void* buffer, size_t buffer_len, size_t*
     return STREAM_STATUS_ERROR;
 #endif
 }
-
 Stream::Status Process::write( const void* buffer, size_t buffer_len, size_t* out_bytes_written )
 {
 #ifdef _WIN32
@@ -1896,7 +1699,6 @@ Stream::Status Process::write( const void* buffer, size_t buffer_len, size_t* ou
     return STREAM_STATUS_ERROR;
 #endif
 }
-
 int Process::wait()
 {
 #ifdef _WIN32
@@ -1917,8 +1719,6 @@ int Process::wait()
 // processor_set.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux)
@@ -1926,8 +1726,6 @@ int Process::wait()
 #elif defined(__sun)
 #include <sys/pset.h>
 #endif
-
-
 ProcessorSet::ProcessorSet()
 {
 #if defined(_WIN32)
@@ -1941,7 +1739,6 @@ ProcessorSet::ProcessorSet()
   YIELD::DebugBreak();
 #endif
 }
-
 ProcessorSet::ProcessorSet( uint32_t from_mask )
 {
 #if defined(_WIN32)
@@ -1965,7 +1762,6 @@ ProcessorSet::ProcessorSet( uint32_t from_mask )
   }
 #endif
 }
-
 ProcessorSet::ProcessorSet( const ProcessorSet& other )
 {
 #if defined(_WIN32)
@@ -1980,7 +1776,6 @@ ProcessorSet::ProcessorSet( const ProcessorSet& other )
     YIELD::DebugBreak(); // Processors cannot belong to more than one processor set on Solaris, so it makes no sense to copy
 #endif
 }
-
 ProcessorSet::~ProcessorSet()
 {
 #if defined(__linux)
@@ -1989,7 +1784,6 @@ ProcessorSet::~ProcessorSet()
   if ( psetid != PS_NONE ) pset_destroy( psetid );
 #endif
 }
-
 void ProcessorSet::clear()
 {
 #if defined(_WIN32)
@@ -2004,7 +1798,6 @@ void ProcessorSet::clear()
   }
 #endif
 }
-
 void ProcessorSet::clear( uint16_t processor_i )
 {
 #if defined(_WIN32)
@@ -2018,7 +1811,6 @@ void ProcessorSet::clear( uint16_t processor_i )
     pset_assign( PS_NONE, processor_i, NULL );
 #endif
 }
-
 uint16_t ProcessorSet::count() const
 {
   uint16_t count = 0;
@@ -2029,7 +1821,6 @@ uint16_t ProcessorSet::count() const
   }
   return count;
 }
-
 bool ProcessorSet::empty() const
 {
 #if defined(_WIN32)
@@ -2038,7 +1829,6 @@ bool ProcessorSet::empty() const
   return count() == 0;
 #endif
 }
-
 bool ProcessorSet::isset( uint16_t processor_i ) const
 {
 #if defined(_WIN32)
@@ -2057,7 +1847,6 @@ bool ProcessorSet::isset( uint16_t processor_i ) const
   return false;
 #endif
 }
-
 void ProcessorSet::set( uint16_t processor_i )
 {
 #if defined(_WIN32)
@@ -2074,9 +1863,6 @@ void ProcessorSet::set( uint16_t processor_i )
 // rrd.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 Stream::Status RRD::Record::deserialize( InputStream& input_stream )
 {
   size_t bytes_read;
@@ -2090,7 +1876,6 @@ Stream::Status RRD::Record::deserialize( InputStream& input_stream )
   else
     return read_status;
 }
-
 Stream::Status RRD::Record::serialize( OutputStream& output_stream )
 {
   uint64_t time_uint64 = time;
@@ -2100,24 +1885,19 @@ Stream::Status RRD::Record::serialize( OutputStream& output_stream )
   else
     return write_status;
 }
-
-
 RRD::RRD( const Path& file_path, uint32_t file_flags )
   : current_file_path( file_path )
 {
   current_file = new File( current_file_path, file_flags|O_CREAT|O_WRONLY|O_APPEND );
 }
-
 RRD::~RRD()
 {
   Object::decRef( current_file );
 }
-
 void RRD::append( double value )
 {
   Record( value ).serialize( *current_file );
 }
-
 void RRD::fetch( std::vector<Record>& out_records )
 {
   File* current_file = new File( current_file_path );
@@ -2126,7 +1906,6 @@ void RRD::fetch( std::vector<Record>& out_records )
     out_records.push_back( record );
   Object::decRef( *current_file );
 }
-
 void RRD::fetch( const Time& start_time, std::vector<Record>& out_records )
 {
   File* current_file = new File( current_file_path );
@@ -2138,7 +1917,6 @@ void RRD::fetch( const Time& start_time, std::vector<Record>& out_records )
   }
   Object::decRef( *current_file );
 }
-
 void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records )
 {
   File* current_file = new File( current_file_path );
@@ -2155,8 +1933,6 @@ void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Recor
 // shared_library.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #define snprintf _snprintf_s
@@ -2164,15 +1940,11 @@ void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Recor
 #include <dlfcn.h>
 #include <cctype>
 #endif
-
-
 #ifdef _WIN32
 #define DLOPEN( file_path ) LoadLibraryExA( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
-
-
 SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 {
   SharedLibrary* shared_library = new SharedLibrary;
@@ -2184,16 +1956,13 @@ SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
     return NULL;
   }
 }
-
 SharedLibrary::SharedLibrary() : handle( NULL )
 { }
-
 SharedLibrary::SharedLibrary( const Path& file_prefix, const char* argv0 ) : handle( NULL )
 {
   if ( !init( file_prefix, argv0 ) )
     throw Exception();
 }
-
 SharedLibrary::~SharedLibrary()
 {
   if ( handle )
@@ -2207,11 +1976,9 @@ SharedLibrary::~SharedLibrary()
 #endif
   }
 }
-
 bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
 {
   char file_path[MAX_PATH];
-
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
     return true;
   else
@@ -2240,7 +2007,6 @@ bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
                 return true;
             }
-
             last_slash--;
             while ( *last_slash != PATH_SEPARATOR ) last_slash--;
           }
@@ -2248,10 +2014,8 @@ bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
       }
     }
   }
-
   return false;
 }
-
 void* SharedLibrary::getFunction( const char* func_name )
 {
   void* func_handle;
@@ -2271,28 +2035,21 @@ void* SharedLibrary::getFunction( const char* func_name )
 // stat.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
-
 #ifdef _WIN32
 Stat::Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes )
 : mode( mode ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), attributes( attributes )
 { }
-
 Stat::Stat( const WIN32_FIND_DATA& find_data )
 {
   init( find_data.nFileSizeHigh, find_data.nFileSizeLow, &find_data.ftLastWriteTime, &find_data.ftCreationTime, &find_data.ftLastAccessTime, find_data.dwFileAttributes );
 }
-
 Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
 {
   init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
 }
-
 Stat::Stat( const Stat& other )
 : mode( other.mode ), size( other.size ), atime( other.atime ), mtime( other.mtime ), ctime( other.ctime ), attributes( other.attributes )
 { }
@@ -2300,16 +2057,13 @@ Stat::Stat( const Stat& other )
 Stat::Stat( mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
 : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
 { }
-
 Stat::Stat( const Stat& other )
 : mode( other.mode ), nlink( other.nlink ), uid( other.uid ), gid( other.gid ), size( other.size ), atime( other.atime ), mtime( other.mtime ), ctime( other.ctime )
 { }
 #endif
-
 void Stat::init( const Path& path )
 {
   fd_t fd = File::_open( path, O_RDONLY, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES );
-
   if ( fd != INVALID_HANDLE_VALUE )
   {
     try
@@ -2326,7 +2080,6 @@ void Stat::init( const Path& path )
   else
     throw Exception();
 }
-
 void Stat::init( fd_t fd )
 {
 #ifdef _WIN32
@@ -2360,7 +2113,6 @@ void Stat::init( fd_t fd )
     throw Exception();
 #endif
 }
-
 #ifdef _WIN32
 void Stat::init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
 {
@@ -2377,7 +2129,6 @@ void Stat::init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* 
     atime = *ftLastAccessTime;
   attributes = dwFileAttributes;
 }
-
 uint32_t Stat::get_attributes() const
 {
 #ifdef _WIN32
@@ -2396,14 +2147,12 @@ uint32_t Stat::get_attributes() const
 #endif
 }
 #endif
-
 Stat::operator std::string() const
 {
   std::ostringstream os;
   operator<<( os, *this );
   return os.str();
 }
-
 Stat::operator struct stat() const
 {
   struct stat stbuf;
@@ -2425,7 +2174,6 @@ Stat::operator struct stat() const
 #endif
   return stbuf;
 }
-
 #ifdef _WIN32
 Stat::operator WIN32_FIND_DATA() const
 {
@@ -2440,7 +2188,6 @@ Stat::operator WIN32_FIND_DATA() const
   find_data.dwFileAttributes = get_attributes();
   return find_data;
 }
-
 Stat::operator BY_HANDLE_FILE_INFORMATION() const
 {
   BY_HANDLE_FILE_INFORMATION HandleFileInformation;
@@ -2454,26 +2201,19 @@ Stat::operator BY_HANDLE_FILE_INFORMATION() const
   HandleFileInformation.dwFileAttributes = get_attributes();
   return HandleFileInformation;
 }
-
 #endif
 
 
 // test_runner.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #include <iostream>
-
-
 int TestRunner::run( TestSuite& test_suite )
 {
   int ret_code = 0;
-
   for ( TestSuite::iterator i = test_suite.begin(); i != test_suite.end(); i++ )
   {
     bool called_runTest = false, called_tearDown = false;
-
     try
     {
       std::cerr << ( *i )->__short_description;
@@ -2497,13 +2237,10 @@ int TestRunner::run( TestSuite& test_suite )
     {
       std::cerr << " threw unknown non-exception" << std::endl;
     }
-
     if ( called_runTest && !called_tearDown )
       try { ( *i )->tearDown(); } catch ( ... ) { }
-
     ret_code |= 1;
   }
-
   return ret_code;
 }
 
@@ -2511,9 +2248,6 @@ int TestRunner::run( TestSuite& test_suite )
 // test_suite.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 TestSuite::~TestSuite()
 {
   for ( std::vector<TestCase*>::size_type test_case_i = 0; test_case_i < size(); test_case_i++ )
@@ -2522,7 +2256,6 @@ TestSuite::~TestSuite()
       delete at( test_case_i );
   }
 }
-
 void TestSuite::addTest( TestCase* test_case, bool own_test_case )
 {
   if ( test_case )
@@ -2531,7 +2264,6 @@ void TestSuite::addTest( TestCase* test_case, bool own_test_case )
     own_test_cases.push_back( own_test_case );
   }
 }
-
 void TestSuite::addTest( TestCase& test_case, bool own_test_case )
 {
   push_back( &test_case );
@@ -2750,24 +2482,17 @@ void* Thread::thread_stub( void* pnt )
 }
 
 
-
 // time.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #include <windows.h> // For FILETIME
 #include <winsock.h> // For timeval
 #elif defined(__MACH__)
 #include <sys/time.h> // For gettimeofday
 #endif
-
-
 const char* HTTPDaysOfWeek[] = {  "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 const char* ISOMonths[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-
-
 #ifdef _WIN32
 static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
 {
@@ -2778,12 +2503,10 @@ static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
   file_time_combined.QuadPart *= 100; // Into nanoseconds
   return file_time_combined.QuadPart;
 }
-
 static inline ULONG FILETIMEToUnixTimeS( const FILETIME& file_time )
 {
   return static_cast<ULONG>( FILETIMEToUnixTimeNS( file_time ) / 1000000000 );
 }
-
 static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME* file_time )
 {
   if ( file_time )
@@ -2791,7 +2514,6 @@ static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME* file_time )
   else
     return 0;
 }
-
 // Adapted from http://support.microsoft.com/kb/167296
 static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
 {
@@ -2801,7 +2523,6 @@ static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
  file_time.dwHighDateTime = ll >> 32;
  return file_time;
 }
-
 static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
 {
   unix_time_ns += 11644473600000000000; // The difference in ns between January 1, 1601 (start of the Windows epoch) and January 1, 1970 (start of the Unix epoch)
@@ -2811,7 +2532,6 @@ static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
   file_time.dwHighDateTime = unix_time_100_ns_intervals >> 32;
   return file_time;
 }
-
 static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
 {
   FILETIME file_time = UnixTimeNSToFILETIME( unix_time_ns );
@@ -2819,7 +2539,6 @@ static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
   FileTimeToSystemTime( &file_time, &system_time );
   return system_time;
 }
-
 static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
 {
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
@@ -2830,8 +2549,6 @@ static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
   return local_system_time;
 }
 #endif
-
-
 uint64_t Time::getCurrentUnixTimeNS()
 {
 #if defined(_WIN32)
@@ -2849,18 +2566,15 @@ uint64_t Time::getCurrentUnixTimeNS()
   return ts.tv_sec * NS_IN_S + ts.tv_nsec;
 #endif
 }
-
 Time::Time( const struct timeval& tv )
 {
   unix_time_ns = tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
 }
-
 #ifdef _WIN32
 Time::Time( const FILETIME& file_time )
 {
   unix_time_ns = FILETIMEToUnixTimeNS( file_time );
 }
-
 Time::Time( const FILETIME* file_time )
 {
   unix_time_ns = FILETIMEToUnixTimeNS( file_time );
@@ -2871,14 +2585,12 @@ Time::Time( const struct timespec& ts )
   unix_time_ns = ts.tv_sec * NS_IN_S + ts.tv_nsec;
 }
 #endif
-
 void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
   TIME_ZONE_INFORMATION win_tz;
   GetTimeZoneInformation( &win_tz );
-
   // 10/Oct/2000:13:55:36 -0700
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%02d/%s/%04d:%02d:%02d:%02d %+0.4d",
@@ -2893,7 +2605,6 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
-
   snprintf( out_str, out_str_len,
           "%02d/%s/%04d:%02d:%02d:%02d %d",
             unix_tm.tm_mday,
@@ -2905,12 +2616,10 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
             0 ); // Could use the extern timezone, which is supposed to be secs west of GMT..
 #endif
 }
-
 void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
-
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%s, %02d %s %04d %02d:%02d:%02d GMT",
             HTTPDaysOfWeek [ utc_system_time.wDayOfWeek ],
@@ -2924,7 +2633,6 @@ void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   gmtime_r( &unix_time_s, &unix_tm );
-
   snprintf( out_str, out_str_len,
           "%s, %02d %s %04d %02d:%02d:%02d GMT",
             HTTPDaysOfWeek [ unix_tm.tm_wday ],
@@ -2936,15 +2644,12 @@ void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
             unix_tm.tm_sec );
 #endif
 }
-
 /*
 uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
 {
   char day[4], month[4];
-
 #ifdef _WIN32
   SYSTEMTIME utc_system_time;
-
   int sf_ret = sscanf( date_str, "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
                        &day,
                        &utc_system_time.wDay,
@@ -2953,23 +2658,18 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
                        &utc_system_time.wHour,
                        &utc_system_time.wMinute,
                        &utc_system_time.wSecond );
-
   if ( sf_ret != 7 )
     return 0;
-
   for ( utc_system_time.wDayOfWeek = 0; utc_system_time.wDayOfWeek < 7; utc_system_time.wDayOfWeek++ )
     if ( strcmp( day, HTTPDaysOfWeek[utc_system_time.wDayOfWeek] ) == 0 ) break;
-
   for ( utc_system_time.wMonth = 0; utc_system_time.wMonth < 12; utc_system_time.wMonth++ )
     if ( strcmp( month, ISOMonths[utc_system_time.wMonth] ) == 0 ) break;
   utc_system_time.wMonth++; // Windows starts the months from 1
-
   FILETIME file_time;
   SystemTimeToFileTime( &utc_system_time, &file_time );
   return FILETIMEToUnixTimeNS( file_time );
 #else
   struct tm unix_tm;
-
   int sf_ret = sscanf( date_str, "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
                        &day,
                        &unix_tm.tm_mday,
@@ -2978,25 +2678,18 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
                        &unix_tm.tm_hour,
                        &unix_tm.tm_min,
                        &unix_tm.tm_sec );
-
   if ( sf_ret != 7 )
     return 0;
-
   unix_tm.tm_year -= 1900;
-
   for ( unix_tm.tm_wday = 0; unix_tm.tm_wday < 7; unix_tm.tm_wday++ )
     if ( strcmp( day, HTTPDaysOfWeek[unix_tm.tm_wday] ) == 0 ) break;
-
   for ( unix_tm.tm_mon = 0; unix_tm.tm_mon < 12; unix_tm.tm_mon++ )
     if ( strcmp( month, ISOMonths[unix_tm.tm_mon] ) == 0 ) break;
-
   time_t unix_time_s = mktime( &unix_tm ); // mktime is thread-safe
-
   return unix_time_s * NS_IN_S;
 #endif
 }
 */
-
 void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
@@ -3009,12 +2702,10 @@ void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
   snprintf( out_str, out_str_len, "%04d-%02d-%02d", unix_tm.tm_year + 1900, unix_tm.tm_mon + 1, unix_tm.tm_mday );
 #endif
 }
-
 void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
         local_system_time.wYear,
@@ -3027,7 +2718,6 @@ void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
-
   snprintf( out_str, out_str_len,
           "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
         unix_tm.tm_year + 1900,
@@ -3038,7 +2728,6 @@ void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
         unix_tm.tm_sec );
 #endif
 }
-
 Time::operator struct timeval() const
 {
   struct timeval tv;
@@ -3050,7 +2739,6 @@ Time::operator struct timeval() const
   tv.tv_usec = ( unix_time_ns % NS_IN_S ) / NS_IN_US;
   return tv;
 }
-
 #ifdef _WIN32
 Time::operator FILETIME() const
 {
@@ -3065,7 +2753,6 @@ Time::operator struct timespec() const
   return ts;
 }
 #endif
-
 Time::operator std::string() const
 {
   char iso_date_time[30];
@@ -3077,19 +2764,13 @@ Time::operator std::string() const
 // timer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <sys/signal.h>
 #include <sys/time.h>
 #endif
-
-
 #define SIGTIMER SIGRTMAX
-
-
 #ifdef _WIN32
 void CALLBACK TimerRoutine( PVOID _timer, BOOLEAN )
 {
@@ -3103,8 +2784,6 @@ void timer_notify_function( sigval_t s )
   timer->fire();
 }
 #endif
-
-
 void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
 {
 #ifdef _WIN32
@@ -3122,25 +2801,21 @@ void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
   se.sigev_value.sival_ptr = this;
   se.sigev_notify_function = timer_notify_function;
   se.sigev_notify_attributes = NULL;
-
   if ( timer_create( CLOCK_REALTIME, &se, &timer_id ) != -1 )
   {
     struct itimerspec ts;
     memset( &ts, 0, sizeof( ts ) );
     ts.it_value = Time( timeout_ns );
     ts.it_interval = Time( period_ns );
-
     if ( timer_settime( timer_id, 0, &ts, 0 ) != -1 )
       return;
     else
       timer_delete( timer_id );
   }
-
   timer_id = NULL;
   throw Exception();
 #endif
 }
-
 Timer::~Timer()
 {
 #ifdef _WIN32
@@ -3156,9 +2831,6 @@ Timer::~Timer()
 // volume.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -3182,8 +2854,6 @@ Timer::~Timer()
 #endif
 #endif
 #endif
-
-
 namespace YIELD
 {
   class readdir_to_listdirCallback : public Volume::readdirCallback
@@ -3192,19 +2862,15 @@ namespace YIELD
     readdir_to_listdirCallback( Volume::listdirCallback& listdir_callback )
       : listdir_callback( listdir_callback )
     { }
-
     // Volume::readdirCallback
     bool operator()( const Path& dirent_name, const Stat& stbuf )
     {
       return listdir_callback( dirent_name );
     }
-
   private:
     Volume::listdirCallback& listdir_callback;
   };
 };
-
-
 bool Volume::access( const YIELD::Path& path, int amode )
 {
 #ifdef _WIN32
@@ -3214,7 +2880,6 @@ bool Volume::access( const YIELD::Path& path, int amode )
   return ::access( path, amode ) >= 0;
 #endif
 }
-
 bool Volume::chmod( const YIELD::Path& path, mode_t mode )
 {
 #ifdef _WIN32
@@ -3224,7 +2889,6 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return ::chmod( path, mode ) != -1;
 #endif
 }
-
 bool Volume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
 {
 #ifdef _WIN32
@@ -3234,7 +2898,6 @@ bool Volume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
   return ::chown( path, uid, gid ) != -1;
 #endif
 }
-
 bool Volume::exists( const Path& path )
 {
 #ifdef _WIN32
@@ -3244,12 +2907,10 @@ bool Volume::exists( const Path& path )
   return ::stat( path, &temp_stat ) == 0;
 #endif
 }
-
 YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 {
   return new Stat( path );
 }
-
 bool Volume::getxattr( const Path& path, const std::string& name, std::string& out_value )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3267,10 +2928,8 @@ bool Volume::getxattr( const Path& path, const std::string& name, std::string& o
 #else
   errno = ENOTSUP;
 #endif
-
   return false;
 }
-
 bool Volume::link( const Path& old_path, const Path& new_path )
 {
 #ifdef _WIN32
@@ -3279,13 +2938,11 @@ bool Volume::link( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
-
 bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
 {
   readdir_to_listdirCallback readdir_callback( callback );
   return readdir( path, match_file_name_prefix, readdir_callback );
 }
-
 bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3310,10 +2967,8 @@ bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 #else
   errno = ENOTSUP;
 #endif
-
   return false;
 }
-
 bool Volume::mkdir( const Path& path, mode_t mode )
 {
 #ifdef _WIN32
@@ -3322,33 +2977,26 @@ bool Volume::mkdir( const Path& path, mode_t mode )
   return ::mkdir( path, mode ) != -1;
 #endif
 }
-
 bool Volume::mktree( const Path& path, mode_t mode )
 {
   bool ret = true;
-
   std::pair<Path, Path> path_parts = path.split();
   if ( !path_parts.first.empty() )
     ret &= mktree( path_parts.first, mode );
-
   if ( !exists( path ) && !mkdir( path, mode ) )
       return false;
-
   return ret;
 }
-
 auto_Object<File> Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   return File::open( path, flags, mode, attributes );
 }
-
 bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefix, readdirCallback& callback )
 {
 #ifdef _WIN32
   std::wstring search_pattern( path );
   if ( search_pattern.size() > 0 && search_pattern[search_pattern.size()-1] != L'\\' ) search_pattern.append( L"\\" );
   search_pattern.append( static_cast<const std::wstring&>( match_file_name_prefix ) ).append( L"*" );
-
   WIN32_FIND_DATA find_data;
   HANDLE dir_handle = FindFirstFileW( search_pattern.c_str(), &find_data );
   if ( dir_handle != INVALID_HANDLE_VALUE )
@@ -3364,9 +3012,7 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
         }
       }
     } while ( FindNextFileW( dir_handle, &find_data ) );
-
     FindClose( dir_handle );
-
     return true;
   }
   else
@@ -3390,12 +3036,9 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
           }
         }
       }
-
       next_dirent = ::readdir( dir_handle );
     }
-
     closedir( dir_handle );
-
     return true;
   }
   else
@@ -3404,7 +3047,6 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
   return false;
 #endif
 }
-
 auto_Object<Path> Volume::readlink( const Path& path )
 {
 #ifdef _WIN32
@@ -3419,7 +3061,6 @@ auto_Object<Path> Volume::readlink( const Path& path )
     return NULL;
 #endif
 }
-
 bool Volume::removexattr( const Path& path, const std::string& name )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3431,7 +3072,6 @@ bool Volume::removexattr( const Path& path, const std::string& name )
 #endif
   return false;
 }
-
 bool Volume::rename( const Path& from_path, const Path& to_path )
 {
 #ifdef _WIN32
@@ -3440,7 +3080,6 @@ bool Volume::rename( const Path& from_path, const Path& to_path )
   return ::rename( from_path, to_path ) != -1;
 #endif
 }
-
 bool Volume::rmdir( const Path& path )
 {
 #ifdef _WIN32
@@ -3449,7 +3088,6 @@ bool Volume::rmdir( const Path& path )
   return ::rmdir( path ) != -1;
 #endif
 }
-
 namespace YIELD
 {
   class rmtree_readdirCallback : public Volume::readdirCallback
@@ -3457,7 +3095,6 @@ namespace YIELD
   public:
     rmtree_readdirCallback( Volume& volume ) : volume( volume )
     { }
-
     virtual bool operator()( const Path& path, const Stat& stbuf )
     {
       if ( stbuf.ISDIR() )
@@ -3465,12 +3102,10 @@ namespace YIELD
       else
         return volume.unlink( path );
     }
-
   private:
     Volume& volume;
   };
 };
-
 bool Volume::rmtree( const Path& path )
 {
   Stat path_stat( path );
@@ -3485,7 +3120,6 @@ bool Volume::rmtree( const Path& path )
   else
     return unlink( path );
 }
-
 bool Volume::setattr( const Path& path, uint32_t file_attributes )
 {
 #ifdef _WIN32
@@ -3494,7 +3128,6 @@ bool Volume::setattr( const Path& path, uint32_t file_attributes )
   return false;
 #endif
 }
-
 bool Volume::setxattr( const Path& path, const std::string& name, const std::string& value, int flags )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3506,7 +3139,6 @@ bool Volume::setxattr( const Path& path, const std::string& name, const std::str
 #endif
   return false;
 }
-
 bool Volume::statvfs( const Path& path, struct statvfs* buffer )
 {
   if ( buffer )
@@ -3533,7 +3165,6 @@ bool Volume::statvfs( const Path& path, struct statvfs* buffer )
   else
     return false;
 }
-
 bool Volume::symlink( const Path& old_path, const Path& new_path )
 {
 #ifdef _WIN32
@@ -3543,13 +3174,11 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
-
 bool Volume::touch( const Path& path, mode_t mode )
 {
   auto_Object<File> file = creat( path, mode );
   return file != NULL;
 }
-
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
@@ -3565,7 +3194,6 @@ bool Volume::truncate( const Path& path, uint64_t new_size )
   return ::truncate( path, new_size ) >= 0;
 #endif
 }
-
 bool Volume::unlink( const Path& path )
 {
 #ifdef _WIN32
@@ -3574,7 +3202,6 @@ bool Volume::unlink( const Path& path )
   return ::unlink( path ) >= 0;
 #endif
 }
-
 bool Volume::utimens( const Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
 #ifdef _WIN32
@@ -3593,7 +3220,6 @@ bool Volume::utimens( const Path& path, const YIELD::Time& atime, const YIELD::T
   return ::utimes( path, tv ) != 0;
 #endif
 }
-
 Path Volume::volname( const Path& path )
 {
 #ifdef _WIN32
@@ -3619,24 +3245,17 @@ Path Volume::volname( const Path& path )
 // xdr_input_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 #define XDR_ARRAY_LENGTH_MAX 16 * 1024
 #define XDR_STRING_LENGTH_MAX 32 * 1024
-
-
 XDRInputStream::XDRInputStream( InputStream& underlying_input_stream )
   : underlying_input_stream( underlying_input_stream )
 { }
-
 Object* XDRInputStream::readObject( const Declaration& decl, Object* value, Object::GeneralType value_general_type )
 {
   if ( value )
   {
     if ( value_general_type == Object::UNKNOWN )
       value_general_type = value->get_general_type();
-
     switch ( value_general_type )
     {
       case Object::SEQUENCE:
@@ -3651,7 +3270,6 @@ Object* XDRInputStream::readObject( const Declaration& decl, Object* value, Obje
           throw Exception( "read array length beyond maximum" );
       }
       break;
-
       case Object::MAP:
       {
         size_t size = readInt32( decl );
@@ -3659,7 +3277,6 @@ Object* XDRInputStream::readObject( const Declaration& decl, Object* value, Obje
           value->deserialize( *this );
       }
       break;
-
       default:
       {
         beforeRead( decl );
@@ -3681,14 +3298,11 @@ Object* XDRInputStream::readObject( const Declaration& decl, Object* value, Obje
       throw;
     }
   }
-
   return value;
 }
-
 void XDRInputStream::readString( const Declaration& decl, std::string& str )
 {
   size_t str_len = readInt32( decl );
-
 //  if ( str_len < XDR_STRING_LENGTH_MAX ) // Sanity check
 //  {
 // Bypassing the sanity check, since the XDR_STRING_LENGTH of 32K is too small for file system reads
@@ -3699,14 +3313,12 @@ void XDRInputStream::readString( const Declaration& decl, std::string& str )
         padded_str_len = str_len;
       else
         padded_str_len = str_len + 4 - padded_str_len;
-
       str.resize( padded_str_len );
       underlying_input_stream.read( const_cast<char*>( str.c_str() ), padded_str_len );
       str.resize( str_len );
     }
 //  }
 }
-
 int32_t XDRInputStream::_readInt32()
 {
   int32_t value;
@@ -3717,7 +3329,6 @@ int32_t XDRInputStream::_readInt32()
   return Machine::ntohl( value );
 #endif
 }
-
 int64_t XDRInputStream::_readInt64()
 {
   int64_t value;
@@ -3729,24 +3340,18 @@ int64_t XDRInputStream::_readInt64()
 // xdr_output_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 XDROutputStream::XDROutputStream( OutputStream& underlying_output_stream, bool in_map )
   : underlying_output_stream( underlying_output_stream ), in_map( in_map )
 { }
-
 void XDROutputStream::beforeWrite( const Declaration& decl )
 {
   if ( in_map && decl.identifier )
     writeString( Declaration(), decl.identifier );
 }
-
 void XDROutputStream::writeObject( const Declaration& decl, Object& value, Object::GeneralType value_type )
 {
   if ( value_type == Object::UNKNOWN )
     value_type = value.get_general_type();
-
   switch ( value_type )
   {
     case Object::MAP:
@@ -3756,20 +3361,17 @@ void XDROutputStream::writeObject( const Declaration& decl, Object& value, Objec
       value.serialize( child_xdr_underlying_output_stream );
     }
     break;
-
     case Object::SEQUENCE:
     {
       writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
       value.serialize( *this );
     }
     break;
-
     case Object::STRING:
     {
       writeString( decl, static_cast<String&>( value ) );
     }
     break;
-
     default:
     {
       beforeWrite( decl );
@@ -3778,7 +3380,6 @@ void XDROutputStream::writeObject( const Declaration& decl, Object& value, Objec
     break;
   }
 }
-
 void XDROutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
   beforeWrite( decl );
@@ -3790,7 +3391,6 @@ void XDROutputStream::writeString( const Declaration& decl, const char* value, s
     underlying_output_stream.write( zeros, 4 - ( value_len % 4 ) );
   }
 }
-
 void XDROutputStream::_writeInt32( int32_t value )
 {
 #ifdef __MACH__
@@ -3800,7 +3400,6 @@ void XDROutputStream::_writeInt32( int32_t value )
 #endif
   underlying_output_stream.write( &value, 4 );
 }
-
 void XDROutputStream::_writeInt64( int64_t value )
 {
   value = Machine::htonll( value );
