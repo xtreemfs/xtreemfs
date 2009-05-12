@@ -98,6 +98,7 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
@@ -622,6 +623,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
                         "received GMAX packet for: %s from %s", rq.getFileId(),msg.getAddress());
 
+                BufferPool.free(msg.getPayload());
                 stStage.receivedGMAX_ASYNC(rq.getFileId(), rq.getTruncateEpoch(), rq.getLastObject());
             } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
                 xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
