@@ -15,7 +15,7 @@ public class DIRInterface
     public static final int DEFAULT_HTTP_PORT = 30638;
 
 
-    public static int getVersion() { return 2; }
+    public static int getVersion() { return 1; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
