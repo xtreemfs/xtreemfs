@@ -470,9 +470,12 @@ public class BabuDBStorageManager implements StorageManager {
             if (valBufs[FileMetadata.RC_METADATA] == null)
                 return null;
             
+            byte[][] keyBufs = new byte[][] { null,
+                BabuDBStorageHelper.createFileKey(0, "", FileMetadata.RC_METADATA), null };
+            
             // otherwise, a hard link target is contained in the index; create a
             // new metadata object in this case
-            return new BufferBackedFileMetadata(null, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
+            return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
