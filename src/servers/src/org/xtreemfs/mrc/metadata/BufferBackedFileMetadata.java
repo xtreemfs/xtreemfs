@@ -291,7 +291,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         if (fcKeyBuf != null) {
             byte[] tmp = new byte[fcKeyBuf.limit()];
             System.arraycopy(fcKeyBuf.array(), 0, tmp, 0, tmp.length);
-            xLocKeyBuf = ByteBuffer.wrap(tmp).put(12, (byte) XLOC_METADATA);
+            xLocKeyBuf = ByteBuffer.wrap(tmp).put(fcKeyBuf.limit() - 1, (byte) XLOC_METADATA);
         }
         xLocList = new BufferBackedXLocList(xloc.getBuffer());
     }
