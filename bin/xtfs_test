@@ -303,8 +303,8 @@ def _stop_service( service_name, service_num="" ):
             except:
                traceback.print_exc()
         os.unlink( run_file_path )
-    else:
-        print "ERROR:", run_file_path, "does not exist,", service_name.upper(), "service is not running."
+#    else:
+#        print "ERROR:", run_file_path, "does not exist,", service_name.upper(), "service is not running."
 
 
 def unmount_volumes( mnt_dir_path=os.path.abspath( os.path.join( original_cwd, "mnt" ) ) ):
@@ -325,14 +325,21 @@ if __name__ == "__main__":
     usage = "usage: %prog [options] <server_host>"    
     option_parser = OptionParser( usage )
     option_parser.add_option( "--autotest", action="store_true", dest="autotest", help="run the autotests: start servers on localhost, create and mount volumes on localhost, then run all tests" )
-    option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )    
+    option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )
+    option_parser.add_option( "-c", "--clean", action="store_true", dest="clean", help="--stop and remove any directories used by the autotests" )
     option_parser.add_option( "--enable-ssl", action="store_true", dest="enable_ssl", default=ENABLE_SSL_DEFAULT )
     option_parser.add_option( "-o", action="store", dest="num_osds", type="int", default=NUM_OSDS_DEFAULT, help="number of OSDs to start" )
     option_parser.add_option( "--start", action="store_true", dest="start_services", help="start local servers" )
     option_parser.add_option( "--stop", action="store_true", dest="stop", help="unmount any XtreemFS volumes and stop local clients and servers" ) 
     options, positional_args = option_parser.parse_args()
+      
+    if options.clean:
+        stop_services( num_osds=options.num_osds )
+        unmount_volumes()
+        for subdir_name in ( "config", "data", "log", "mnt", "run" ):
+            shutil.rmtree( subdir_name, ignore_errors=True ) 
         
-    if options.start_services:
+    elif options.start_services:
         start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
         
     elif options.stop:
