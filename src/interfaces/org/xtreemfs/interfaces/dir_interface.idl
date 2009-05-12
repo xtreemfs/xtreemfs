@@ -44,7 +44,7 @@ module org
       typedef sequence<Service> ServiceSet;
 
 
-      interface DIRInterface #1 
+      interface DIRInterface # 2 
       {
         const uint32_t DEFAULT_ONCRPC_PORT = 32638;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32638;
