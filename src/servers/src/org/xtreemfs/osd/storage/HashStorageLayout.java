@@ -88,7 +88,7 @@ public class HashStorageLayout extends StorageLayout {
 
     private int               prefixLength;
 
-    private StringChecksumAlgorithm hashAlgo;
+    //private StringChecksumAlgorithm hashAlgo;
 
     private int               hashCutLength;
 
@@ -118,11 +118,11 @@ public class HashStorageLayout extends StorageLayout {
 
         super(config, cache);
 
-        if (hashAlgo.equals(JAVA_HASH)) {
+        /*if (hashAlgo.equals(JAVA_HASH)) {
         	this.hashAlgo = new JavaHash();
         }else if (hashAlgo.equals(SDBM_HASH)) {
             this.hashAlgo = new SDBM();
-        }
+        }*/
 
         this.checksumsEnabled = config.isUseChecksums();
         if (config.isUseChecksums()) {
@@ -549,9 +549,10 @@ public class HashStorageLayout extends StorageLayout {
      */
     private String hash(String str) {
         assert(str != null);
-    	this.hashAlgo.digest(str);
+    	//this.hashAlgo.digest(str);
         StringBuffer sb = new StringBuffer(16);
-        final long hashValue = this.hashAlgo.getValue();
+        //final long hashValue = this.hashAlgo.getValue();
+        final long hashValue = str.hashCode();
     	OutputUtils.writeHexLong(sb, hashValue);
 
         if (sb.length() > this.hashCutLength) {
