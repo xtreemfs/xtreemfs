@@ -412,10 +412,11 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( truncate )
   {
-    YIELD::File* file = YIELD::Volume::open( path, O_TRUNC ).release();
-    file->truncate( new_size );
-    YIELD::Object::decRef( file );
-    return true;
+    YIELD::auto_Object<YIELD::File> file = YIELD::Volume::open( path, O_TRUNC );
+    if ( file != NULL )
+      return file->truncate( new_size );
+    else
+      return false;
   }
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( truncate );
   return false;
