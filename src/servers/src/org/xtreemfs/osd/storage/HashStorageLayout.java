@@ -548,9 +548,11 @@ public class HashStorageLayout extends StorageLayout {
      * @return
      */
     private String hash(String str) {
+        assert(str != null);
     	this.hashAlgo.digest(str);
         StringBuffer sb = new StringBuffer(16);
-    	OutputUtils.writeHexLong(sb, this.hashAlgo.getValue());
+        final long hashValue = this.hashAlgo.getValue();
+    	OutputUtils.writeHexLong(sb, hashValue);
 
         if (sb.length() > this.hashCutLength) {
             return sb.substring(0, this.hashCutLength);
