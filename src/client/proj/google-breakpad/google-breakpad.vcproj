@@ -169,6 +169,10 @@
 </File>
 </Filter>
 <Filter Name="client">
+<File
+    RelativePath="..\..\share\google-breakpad\src\client\minidump_file_writer-inl.h"
+    >
+</File>
 <Filter Name="windows">
 <Filter Name="common">
 <File

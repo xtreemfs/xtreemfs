@@ -2,7 +2,7 @@
 
 set GOOGLE_BREAKPAD_PATH=%CD%\share\google-breakpad
 set GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS=-s %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src -e google_breakpad -I %XTREEMFS_CLIENT_PATH%\share\google-breakpad\src
-set GOOGLE_BREAKPAD_WINDOWS_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -D UNICODE -e linux -e mac -e solaris -e minidump_file_writer* -e md5.* -e crash_generation_server.cc
+set GOOGLE_BREAKPAD_WINDOWS_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -D UNICODE -e linux -e mac -e solaris -e "minidump_file_writer.*" -e "md5.*" -e crash_generation_server.cc
 set GOOGLE_BREAKPAD_LINUX_SOURCE_FLAGS=%GOOGLE_BREAKPAD_COMMON_SOURCE_FLAGS% -e windows -e mac -e solaris
 set XTREEMFS_PATH=%CD%\..\..
 set XTREEMFS_CLIENT_PATH=%CD%

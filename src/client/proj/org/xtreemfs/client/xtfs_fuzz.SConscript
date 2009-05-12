@@ -10,6 +10,7 @@ except:
 
     include_dir_paths = os.environ.has_key( "CPPPATH" ) and os.environ["CPPPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
 
+    if os.environ.get( "CXX" ): build_env["CXX"] = os.environ.get( "CXX" )
     build_env["CCFLAGS"] = os.environ.get( "CCFLAGS", "" ).strip()
     lib_dir_paths = os.environ.has_key( "LIBPATH" ) and os.environ["LIBPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
     build_env["LINKFLAGS"] = os.environ.get( "LINKFLAGS", "" ).strip()
