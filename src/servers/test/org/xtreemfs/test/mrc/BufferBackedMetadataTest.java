@@ -270,7 +270,7 @@ public class BufferBackedMetadataTest extends TestCase {
             
             // create dir object
             BufferBackedFileMetadata dirObj = new BufferBackedFileMetadata(parentId, dirName, owner, group,
-                fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1, (short) 0);
+                fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1);
             checkDirObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, dirObj);
             
             fileId = 77;
@@ -311,8 +311,7 @@ public class BufferBackedMetadataTest extends TestCase {
             String group = "afdsafdsafds";
             // create file object
             BufferBackedFileMetadata fileObj = new BufferBackedFileMetadata(parentId, fileName, owner, group,
-                fileId, atime, ctime, mtime, size, perms, w32Attrs, linkcount, epoch, issuedEpoch, readonly,
-                (short) 0);
+                fileId, atime, ctime, mtime, size, perms, w32Attrs, linkcount, epoch, issuedEpoch, readonly);
             checkFileObject(owner, group, fileId, atime, ctime, mtime, perms, w32Attrs, size, linkcount,
                 epoch, issuedEpoch, readonly, fileObj);
         }

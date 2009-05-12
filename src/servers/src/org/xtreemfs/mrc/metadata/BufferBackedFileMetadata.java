@@ -62,21 +62,21 @@ public class BufferBackedFileMetadata implements FileMetadata {
      */
     public BufferBackedFileMetadata(byte[][] keyBufs, byte[][] valBufs, int indexId) {
         
-        assert (keyBufs == null || keyBufs.length == NUM_BUFFERS);
+        assert (keyBufs.length == NUM_BUFFERS);
         assert (valBufs.length == NUM_BUFFERS);
         
         // frequently changed metadata
-        fcKeyBuf = keyBufs == null ? null : ByteBuffer.wrap(keyBufs[FC_METADATA]);
+        fcKeyBuf = keyBufs[FC_METADATA] == null ? null : ByteBuffer.wrap(keyBufs[FC_METADATA]);
         fcValBuf = ByteBuffer.wrap(valBufs[FC_METADATA]);
         
         // rarely changed metadata
-        rcMetadata = new BufferBackedRCMetadata(keyBufs == null ? null : keyBufs[RC_METADATA],
+        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA],
             valBufs[RC_METADATA]);
         
         // XLocList metadata
         if (valBufs[XLOC_METADATA] != null) {
             xLocList = new BufferBackedXLocList(valBufs[XLOC_METADATA]);
-            if (keyBufs != null)
+            if (keyBufs[XLOC_METADATA] != null)
                 xLocKeyBuf = ByteBuffer.wrap(keyBufs[XLOC_METADATA]);
         }
         
@@ -103,15 +103,15 @@ public class BufferBackedFileMetadata implements FileMetadata {
      */
     public BufferBackedFileMetadata(long parentId, String fileName, String ownerId, String groupId,
         long fileId, int atime, int ctime, int mtime, long size, int perms, long w32Atrrs, short linkCount,
-        int epoch, int issEpoch, boolean readOnly, short collCount) {
+        int epoch, int issEpoch, boolean readOnly) {
         
         // frequently changed metadata
-        fcKeyBuf = generateKeyBuf(parentId, fileName, FC_METADATA, collCount);
+        fcKeyBuf = generateKeyBuf(parentId, fileName, FC_METADATA);
         fcValBuf = ByteBuffer.wrap(new byte[20]).putInt(atime).putInt(ctime).putInt(mtime).putLong(size);
         
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId, perms,
-            w32Atrrs, linkCount, epoch, issEpoch, readOnly, collCount);
+            w32Atrrs, linkCount, epoch, issEpoch, readOnly);
         
         // xLocList metadata
         xLocList = null;
@@ -131,16 +131,15 @@ public class BufferBackedFileMetadata implements FileMetadata {
      * @param perms
      */
     public BufferBackedFileMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, int atime, int ctime, int mtime, int perms, long w32Attrs, short linkCount,
-        short collCount) {
+        long fileId, int atime, int ctime, int mtime, int perms, long w32Attrs, short linkCount) {
         
         // frequently changed metadata
-        fcKeyBuf = generateKeyBuf(parentId, dirName, FC_METADATA, collCount);
+        fcKeyBuf = generateKeyBuf(parentId, dirName, FC_METADATA);
         fcValBuf = ByteBuffer.wrap(new byte[12]).putInt(atime).putInt(ctime).putInt(mtime);
         
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms, w32Attrs,
-            linkCount, collCount);
+            linkCount);
         
         // xLocList metadata
         xLocList = null;
@@ -302,10 +301,9 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
             owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
-                    .getLinkCount(), (short) 0) : new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
-            owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
-                    .getLinkCount(), rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata
-                    .isReadOnly(), (short) 0);
+                    .getLinkCount()) : new BufferBackedRCMetadata(0, rcMetadata.getFileName(), owner, group,
+            rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata.getLinkCount(),
+            rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata.isReadOnly());
         
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(), tmp
                 .getValue());
@@ -363,24 +361,24 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return indexId;
     }
     
-//    public String toString() {
-//        
-//        String s = isDirectory() ? "dir" : "file" + " id=" + getId() + " name=" + getFileName() + " mode="
-//            + getPerms() + " w32Attrs=" + getW32Attrs() + " atime=" + getAtime() + " mtime=" + getMtime()
-//            + " ctime=" + getCtime() + " owner=" + getOwnerId() + " group=" + getOwningGroupId();
-//        if (!isDirectory())
-//            s += " size=" + getSize() + " epoch=" + getEpoch() + " issEpoch=" + getIssuedEpoch();
-//        
-//        return s;
-//    }
-    
-    private ByteBuffer generateKeyBuf(long parentId, String fileName, int type, short collCount) {
+    public String toString() {
         
-        byte[] tmp = new byte[collCount == 0 ? 13 : 15];
+        String s = (isDirectory() ? "dir" : "file") + " id=" + getId() + " name=" + getFileName() + " mode="
+            + getPerms() + " w32Attrs=" + getW32Attrs() + " atime=" + getAtime() + " mtime=" + getMtime()
+            + " ctime=" + getCtime() + " owner=" + getOwnerId() + " group=" + getOwningGroupId();
+        if (!isDirectory())
+            s += " size=" + getSize() + " epoch=" + getEpoch() + " issEpoch=" + getIssuedEpoch();
+        
+        return s;
+    }
+    
+    protected static ByteBuffer generateKeyBuf(long parentId, String fileName, int type) {
+        
+        byte[] bytes = fileName.getBytes();
+        
+        byte[] tmp = new byte[9 + bytes.length];
         ByteBuffer buf = ByteBuffer.wrap(tmp);
-        buf.putLong(parentId).putInt(fileName.hashCode()).put((byte) type);
-        if (collCount != 0)
-            buf.putShort(collCount);
+        buf.putLong(parentId).put(bytes).put((byte) type);
         
         return buf;
     }

@@ -44,19 +44,13 @@ public class BufferBackedRCMetadata {
     
     protected static final int RC_READONLY              = 31;
     
-    protected static final int RC_DIR_OWNER_OFFSET      = 23;
+    protected static final int RC_DIR_GROUP_OFFSET      = 23;
     
-    protected static final int RC_DIR_GROUP_OFFSET      = 25;
+    protected static final int DIR_VAR_LEN_PART_OFFSET  = 25;
     
-    protected static final int DIR_VAR_LEN_PART_OFFSET  = 27;
+    protected static final int RC_FILE_GROUP_OFFSET     = 32;
     
-    protected static final int RC_FILE_OWNER_OFFSET     = 32;
-    
-    protected static final int RC_FILE_GROUP_OFFSET     = 34;
-    
-    protected static final int FILE_VAR_LEN_PART_OFFSET = 36;
-    
-    private final short        ownerOffset;
+    protected static final int FILE_VAR_LEN_PART_OFFSET = 34;
     
     private final short        groupOffset;
     
@@ -82,7 +76,6 @@ public class BufferBackedRCMetadata {
         this.valBuf = ByteBuffer.wrap(valBuf);
         
         directory = valBuf[0] == 1;
-        ownerOffset = this.valBuf.getShort(directory ? RC_DIR_OWNER_OFFSET : RC_FILE_OWNER_OFFSET);
         groupOffset = this.valBuf.getShort(directory ? RC_DIR_GROUP_OFFSET : RC_FILE_GROUP_OFFSET);
     }
     
@@ -101,26 +94,23 @@ public class BufferBackedRCMetadata {
      * @param readOnly
      */
     public BufferBackedRCMetadata(long parentId, String fileName, String ownerId, String groupId,
-        long fileId, int perms, long w32Attrs, short linkCount, int epoch, int issEpoch,
-        boolean readOnly, short collCount) {
+        long fileId, int perms, long w32Attrs, short linkCount, int epoch, int issEpoch, boolean readOnly) {
         
         // assign the key
-        keyBuf = generateKeyBuf(parentId, fileName, BufferBackedFileMetadata.RC_METADATA, collCount);
+        keyBuf = BufferBackedFileMetadata.generateKeyBuf(parentId, fileName,
+            BufferBackedFileMetadata.RC_METADATA);
         
         // assign the value
-        byte[] fnBytes = fileName.getBytes();
         byte[] oBytes = ownerId.getBytes();
         byte[] gBytes = groupId.getBytes();
         
-        final int bufSize = FILE_VAR_LEN_PART_OFFSET + fnBytes.length + oBytes.length
-            + gBytes.length;
-        ownerOffset = (short) (bufSize - oBytes.length - gBytes.length);
+        final int bufSize = FILE_VAR_LEN_PART_OFFSET + oBytes.length + gBytes.length;
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
         valBuf.put((byte) 0).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs)
-                .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0))
-                .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
+                .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0)).putShort(groupOffset).put(
+                    oBytes).put(gBytes);
         
         directory = false;
     }
@@ -135,25 +125,23 @@ public class BufferBackedRCMetadata {
      * @param fileId
      * @param perms
      */
-    public BufferBackedRCMetadata(long parentId, String dirName, String ownerId, String groupId,
-        long fileId, int perms, long w32Attrs, short linkCount, short collCount) {
+    public BufferBackedRCMetadata(long parentId, String dirName, String ownerId, String groupId, long fileId,
+        int perms, long w32Attrs, short linkCount) {
         
         // assign the key
-        keyBuf = generateKeyBuf(parentId, dirName, BufferBackedFileMetadata.RC_METADATA, collCount);
+        keyBuf = BufferBackedFileMetadata.generateKeyBuf(parentId, dirName,
+            BufferBackedFileMetadata.RC_METADATA);
         
         // assign the value
-        byte[] fnBytes = dirName.getBytes();
         byte[] oBytes = ownerId.getBytes();
         byte[] gBytes = groupId.getBytes();
         
-        final int bufSize = DIR_VAR_LEN_PART_OFFSET + fnBytes.length + oBytes.length
-            + gBytes.length;
-        ownerOffset = (short) (bufSize - oBytes.length - gBytes.length);
+        final int bufSize = DIR_VAR_LEN_PART_OFFSET + oBytes.length + gBytes.length;
         groupOffset = (short) (bufSize - gBytes.length);
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
-        valBuf.put((byte) 1).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs)
-                .putShort(ownerOffset).putShort(groupOffset).put(fnBytes).put(oBytes).put(gBytes);
+        valBuf.put((byte) 1).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs).putShort(
+            groupOffset).put(oBytes).put(gBytes);
         
         directory = true;
     }
@@ -215,13 +203,12 @@ public class BufferBackedRCMetadata {
     }
     
     public String getFileName() {
-        int index = directory ? DIR_VAR_LEN_PART_OFFSET : FILE_VAR_LEN_PART_OFFSET;
-        int length = ownerOffset - index;
-        return new String(valBuf.array(), index, length);
+        byte[] bytes = keyBuf.array();
+        return new String(bytes, 8, bytes.length - 9);
     }
     
     public String getOwnerId() {
-        int index = ownerOffset;
+        int index = directory ? DIR_VAR_LEN_PART_OFFSET : FILE_VAR_LEN_PART_OFFSET;
         int length = groupOffset - index;
         return new String(valBuf.array(), index, length);
     }
@@ -252,15 +239,4 @@ public class BufferBackedRCMetadata {
         return valBuf.array();
     }
     
-    private static ByteBuffer generateKeyBuf(long parentId, String fileName, int type,
-        short collCount) {
-        
-        byte[] tmp = new byte[collCount == 0 ? 13 : 15];
-        ByteBuffer buf = ByteBuffer.wrap(tmp);
-        buf.putLong(parentId).putInt(fileName.hashCode()).put((byte) type);
-        if (collCount != 0)
-            buf.putShort(collCount);
-        
-        return buf;
-    }
 }

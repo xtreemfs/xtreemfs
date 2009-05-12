@@ -85,11 +85,8 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
  which are frequently accessed w/ I/O operations but rarely changed are
  defined as type-3 metadata. Each such type has its own key in the index.
 |----------------------------------------------------------------------------|
-|key   | parentID   hash(filename)   type                                    |
-|      | 8          4                1                                       |
-|      |---------------------------------------------------------------------|
-|      | parentID   hash(filename)   type   collisionCount  (hash collision) |
-|      | 8          4                1      2                                |
+|key   | parentID   filename         type                                    |
+|      | 8          var              1                                       |
 |----------------------------------------------------------------------------|
 |value | frequentlyChangedMetadata                                           |
 |type=0| 20 (files), 12 (directories), 8 (link targets)                      |
@@ -197,17 +194,14 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
 |type  id  permissions  linkCount  w32attrs  epoch  issuedEpoch  readOnlyFlag|
 |1     8   4            2          8         4      4            1           |
 |                                                                            |
-|ownerOffset  groupOffset  fileName  owner  group                            |
-|2            2            var       var    var                              |
+|groupOffset  owner  group                                                   |
+|2            var    var                                                     |
 |----------------------------------------------------------------------------|
 
  directories:
 |----------------------------------------------------------------------------|
-|type id  permissions  linkCount  w32attrs  ownerOffset  groupOffset         |
-|1    8   4            2          8         2            2                   |
-|                                                                            |
-|fileName   owner    group                                                   |
-|var        var      var                                                     |
+|type  id   permissions  linkCount  w32attrs  groupOffset  owner  group      |
+|1     8    4            2          8         2            var    var        |
 |----------------------------------------------------------------------------|
 
  link targets:

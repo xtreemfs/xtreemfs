@@ -210,20 +210,6 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertTrue(tmp.contains(dirName));
         assertTrue(tmp.contains(fileName));
         
-        // try to create an existing dir
-        try {
-            update = mngr.createAtomicDBUpdate(listener, null);
-            mngr.createDir(77, rootDir.getId(), fileName, 2, 2, 2, userId, groupId, perms,
-                w32Attrs, update);
-            update.execute();
-            waitForResponse();
-            
-            fail();
-            
-        } catch (DatabaseException exc) {
-            assertEquals(exc.getType(), ExceptionType.FILE_EXISTS);
-        }
-        
         // delete file
         update = mngr.createAtomicDBUpdate(listener, null);
         mngr.delete(rootDir.getId(), fileName, update);
