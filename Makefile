@@ -56,4 +56,4 @@ server_distclean: check
 	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
 
 test: client server
-	$(XTFS_BINDIR)/xtfs_test
+	$(XTFS_BINDIR)/xtfs_test --autotest
