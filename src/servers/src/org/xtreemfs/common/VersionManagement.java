@@ -38,7 +38,7 @@ package org.xtreemfs.common;
  */
 public class VersionManagement {
 
-    private static final long   mrcDataVersion            = 6;
+    private static final long   mrcDataVersion            = 7;
 
     private static final long   osdDataVersion            = 1;
 

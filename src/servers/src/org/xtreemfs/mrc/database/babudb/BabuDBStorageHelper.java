@@ -82,8 +82,10 @@ public class BabuDBStorageHelper {
                 
                 final String currFileName = new String(next.getKey(), 8, next.getKey().length - 9);
                 
-                if (prevFileName != null && !prevFileName.equals(currFileName))
+                if (prevFileName != null && !prevFileName.equals(currFileName)) {
+                    assert (valBufs[FileMetadata.RC_METADATA] != null) : "*** DATABASE CORRUPTED *** incomplete file metadata";
                     break;
+                }
                 
                 final byte currType = next.getKey()[next.getKey().length - 1];
                 
@@ -101,10 +103,10 @@ public class BabuDBStorageHelper {
             prevFileName = null;
             
             // in case of a hardlink ...
-            if (tmpVals[BufferBackedFileMetadata.RC_METADATA][0] == 2)
+            if (tmpVals[FileMetadata.RC_METADATA][0] == 2)
                 try {
                     return BabuDBStorageHelper.resolveLink(database, dbName,
-                        tmpVals[BufferBackedFileMetadata.RC_METADATA]);
+                        tmpVals[FileMetadata.RC_METADATA]);
                 } catch (BabuDBException exc) {
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this, "could not resolve hard link");
                     return null;
@@ -371,13 +373,11 @@ public class BabuDBStorageHelper {
         return buf;
     }
     
-    public static byte[] createLinkTarget(long fileId, String fileName) {
-        
-        byte[] nameBytes = fileName.getBytes();
-        
-        byte[] buf = new byte[9 + nameBytes.length];
+    public static byte[] createLinkTarget(long fileId) {
+                
+        byte[] buf = new byte[9];
         ByteBuffer tmp = ByteBuffer.wrap(buf);
-        tmp.put((byte) 2).putLong(fileId).put(nameBytes);
+        tmp.put((byte) 2).putLong(fileId);
         
         return buf;
     }

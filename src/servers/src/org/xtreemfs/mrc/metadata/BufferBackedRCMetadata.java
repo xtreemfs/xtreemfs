@@ -227,10 +227,6 @@ public class BufferBackedRCMetadata {
         return directory;
     }
     
-    public short getCollisionCount() {
-        return keyBuf == null ? 0 : keyBuf.array().length == 13 ? 0 : keyBuf.getShort(13);
-    }
-    
     public byte[] getKey() {
         return keyBuf == null ? null : keyBuf.array();
     }

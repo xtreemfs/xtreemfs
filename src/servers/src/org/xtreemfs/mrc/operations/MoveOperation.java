@@ -38,6 +38,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
@@ -162,10 +163,8 @@ public class MoveOperation extends MRCOperation {
             {
                 // relink the metadata object to the parent directory of
                 // the target path and remove the former link
-                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                source.setLinkCount(newLinkCount);
-                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
+                        .getFileName(), update);
                 
                 break;
             }
@@ -186,10 +185,8 @@ public class MoveOperation extends MRCOperation {
                 
                 // relink the metadata object to the parent directory of
                 // the target path and remove the former link
-                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                source.setLinkCount(newLinkCount);
-                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
+                        .getFileName(), update);
                 
                 break;
             }
@@ -214,10 +211,8 @@ public class MoveOperation extends MRCOperation {
                 
                 // relink the metadata object to the parent directory of
                 // the target path and remove the former link
-                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                source.setLinkCount(newLinkCount);
-                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
+                        .getFileName(), update);
                 
                 break;
             }
@@ -252,10 +247,8 @@ public class MoveOperation extends MRCOperation {
                 
                 // relink the metadata object to the parent directory of
                 // the target path and remove the former link
-                short newLinkCount = sMan.unlink(sRes.getParentDirId(), sRes.getFileName(), update);
-                source.setLinkCount(newLinkCount);
-                source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
-                sMan.link(source, tRes.getParentDirId(), tRes.getFileName(), update);
+                relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
+                        .getFileName(), update);
                 
                 break;
             }
@@ -276,6 +269,16 @@ public class MoveOperation extends MRCOperation {
         
         update.execute();
         
+    }
+    
+    private static void relink(StorageManager sMan, long sourceParentDirId, String sourceFileName,
+        FileMetadata source, long targetParentDirId, String targetFileName, AtomicDBUpdate update)
+        throws DatabaseException {
+        
+        short newLinkCount = sMan.unlink(sourceParentDirId, sourceFileName, update);
+        source.setLinkCount(newLinkCount);
+        source.setCtime((int) (TimeSync.getGlobalTime() / 1000));
+        sMan.link(source, targetParentDirId, targetFileName, update);
     }
     
 }

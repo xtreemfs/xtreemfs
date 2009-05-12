@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -261,19 +262,18 @@ public class BabuDBStorageManager implements StorageManager {
             BufferBackedFileMetadata file = BabuDBStorageHelper.getMetadata(database, dbName, parentId,
                 fileName);
             
-            // check whether there is only one link remaining
-            boolean lastLink = file.getLinkCount() == 1;
-            
-            // decrement the link count
-            file.setLinkCount((short) (file.getLinkCount() - 1));
+            // determine and set the new link count
+            short newLinkCount = (short) (file.getLinkCount() - 1);
+            file.setLinkCount(newLinkCount);
             
             // if there will be links remaining after the deletion, update the
-            // link count
-            if (!lastLink)
+            // link count; it must be in the FILE_ID_INDEX, because there have
+            // been at least two links
+            if (newLinkCount > 0)
                 update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file.getId(),
                     FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
             
-            // remove the entries from the file index
+            // remove all entries from the file index
             update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
                 FileMetadata.FC_METADATA), null);
             update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
@@ -281,7 +281,7 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
                 FileMetadata.XLOC_METADATA), null);
             
-            return file.getLinkCount();
+            return newLinkCount;
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
@@ -300,14 +300,15 @@ public class BabuDBStorageManager implements StorageManager {
                 fileName);
             
             // check whether there is only one link remaining
-            boolean lastLink = file.getLinkCount() == 1;
+            short newLinkCount = (short) (file.getLinkCount() - 1);
+            assert (newLinkCount >= 0);
             
             // decrement the link count
-            file.setLinkCount((short) (file.getLinkCount() - 1));
+            file.setLinkCount(newLinkCount);
             
             // if there will be links remaining after the deletion, update the
             // link count
-            if (!lastLink)
+            if (newLinkCount > 0)
                 update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file.getId(),
                     FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
             
@@ -323,7 +324,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // if the last link to the file is supposed to be deleted, remove
             // the remaining metadata, including ACLs and XAttrs
-            if (lastLink) {
+            if (newLinkCount == 0) {
                 
                 // remove the back link from the file ID index
                 update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
@@ -586,14 +587,14 @@ public class BabuDBStorageManager implements StorageManager {
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), (byte) 3),
             null);
         
-        // if the metadata was retrieved from the file index and hasn't
+        // if the metadata was retrieved from the FILE_INDEX and hasn't
         // been deleted before (i.e. links == 0), ensure that the original
         // file in the file index now points to the file ID index, and
         // remove the FC and XLoc metadata entries
         if (links != 0 && md.getIndexId() == FILE_INDEX) {
             
-            update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper.createLinkTarget(
-                metadata.getId(), metadata.getFileName()));
+            update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
+                    .createLinkTarget(metadata.getId()));
             update.addUpdate(FILE_INDEX, md.getFCMetadataKey(), null);
             if (md.getXLocListKey() != null)
                 update.addUpdate(FILE_INDEX, md.getXLocListKey(), null);
@@ -602,7 +603,7 @@ public class BabuDBStorageManager implements StorageManager {
         // create an entry for the new link to the metadata in the file
         // index
         update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(newParentId, newFileName,
-            FileMetadata.RC_METADATA), BabuDBStorageHelper.createLinkTarget(metadata.getId(), newFileName));
+            FileMetadata.RC_METADATA), BabuDBStorageHelper.createLinkTarget(metadata.getId()));
         
     }
     
@@ -654,13 +655,18 @@ public class BabuDBStorageManager implements StorageManager {
         int index = md.getIndexId();
         if (type == -1)
             for (byte i = 0; i < BufferBackedFileMetadata.NUM_BUFFERS; i++) {
+                byte[] valBuf = md.getValueBuffer(i);
+                assert (valBuf != null);
                 update.addUpdate(index, index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(
-                    metadata.getId(), i) : md.getKeyBuffer(i), md.getValueBuffer(i));
+                    metadata.getId(), i) : md.getKeyBuffer(i), valBuf);
             }
         
-        else
+        else {
+            byte[] valBuf = md.getValueBuffer(type);
+            assert (valBuf != null);
             update.addUpdate(index, index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(
-                metadata.getId(), type) : md.getKeyBuffer(type), md.getValueBuffer(type));
+                metadata.getId(), type) : md.getKeyBuffer(type), valBuf);
+        }
     }
     
     @Override
@@ -680,28 +686,24 @@ public class BabuDBStorageManager implements StorageManager {
         
     }
     
-    // public void dump() throws BabuDBException {
-    //        
-    // System.out.println("FILE_ID_INDEX");
-    //        
-    // Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName,
-    // FILE_ID_INDEX,
-    // new byte[0]);
-    // while (it.hasNext()) {
-    // Entry<byte[], byte[]> next = it.next();
-    // System.out.println(Arrays.toString(next.getKey()) + " = "
-    // + Arrays.toString(next.getValue()));
-    // }
-    //        
-    // System.out.println("\nFILE_INDEX");
-    //        
-    // it = database.directPrefixLookup(dbName, FILE_INDEX, new byte[0]);
-    // while (it.hasNext()) {
-    // Entry<byte[], byte[]> next = it.next();
-    // System.out.println(Arrays.toString(next.getKey()) + " = "
-    // + Arrays.toString(next.getValue()));
-    // }
-    // }
+    public void dump() throws BabuDBException {
+        
+        System.out.println("FILE_ID_INDEX");
+        
+        Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName, FILE_ID_INDEX, new byte[0]);
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> next = it.next();
+            System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
+        }
+        
+        System.out.println("\nFILE_INDEX");
+        
+        it = database.directPrefixLookup(dbName, FILE_INDEX, new byte[0]);
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> next = it.next();
+            System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
+        }
+    }
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
         DBAdminHelper.dumpVolume(xmlWriter, this);

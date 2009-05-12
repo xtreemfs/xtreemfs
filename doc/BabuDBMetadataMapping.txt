@@ -89,13 +89,13 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |      | 8          var              1                                       |
 |----------------------------------------------------------------------------|
 |value | frequentlyChangedMetadata                                           |
-|type=0| 20 (files), 12 (directories), 8 (link targets)                      |
+|type=0| 20 (files), 12 (directories)                                        |
 |----------------------------------------------------------------------------|
 |value | rarelyChangedMetadata                                               |
-|type=1| var                                                                 |
+|type=1| var (files & directories), 9 (link targets)                         |
 |----------------------------------------------------------------------------|
 |value | xLocList                                                            |
-|type=2| var (files & directories), 8 (link targets)                         |
+|type=2| var (files & directories)                                           |
 |----------------------------------------------------------------------------|
 
 
@@ -206,8 +206,8 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
 
  link targets:
 |----------------------------------------------------------------------------|
-|type   fileId    fileName                                                   |
-|1      8         var                                                        |
+|type  id                                                                    |
+|1     8                                                                     |
 |----------------------------------------------------------------------------|
 
 
