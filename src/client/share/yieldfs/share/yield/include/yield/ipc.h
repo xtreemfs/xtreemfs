@@ -426,7 +426,6 @@ namespace YIELD
 
     std::vector<Connection*> connections;
     Connection* createConnection();
-    void destroyConnection( Connection& connection );
 
 
     class ConnectionActivityCheckRequest : public Request

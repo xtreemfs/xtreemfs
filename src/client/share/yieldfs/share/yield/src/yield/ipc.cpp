@@ -247,12 +247,6 @@ Client::Connection* Client::createConnection()
   _socket->set_blocking_mode( false );
   return new Connection( _socket );
 }
-void Client::destroyConnection( Client::Connection& connection )
-{
-  connection.shutdown();
-  connection.close();
-  YIELD::Object::decRef( connection );
-}
 void Client::handleEvent( Event& ev )
 {
   Connection* connection = NULL;
@@ -452,13 +446,13 @@ void Client::handleEvent( Event& ev )
       if ( **connection_i == *connection )
       {
         auto_Object<Request> protocol_request = connection->get_protocol_request();
+        fd_event_queue->detach( *connnection );
+        YIELD::Object::decRef( connection );
         if ( ++reconnect_tries < reconnect_tries_max )
         {
-          destroyConnection( *connection );
           connection = createConnection();
           *connection_i = connection; // Don't erase and push_back from connections, just re-use the same position
           connection->set_protocol_request( protocol_request );
-          fd_event_queue->attach( *connection, connection, false, false );
           fd_event_error_code = 0;
           break; // Out of the for connections loop, back up to the main loop to retry the connection
         }
@@ -466,7 +460,6 @@ void Client::handleEvent( Event& ev )
         {
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": exhausted connection retries to " << peer_sockaddr << ".";
-          destroyConnection( *connection );
           connections.erase( connection_i );
           // We've lost errno here
 #ifdef _WIN32
