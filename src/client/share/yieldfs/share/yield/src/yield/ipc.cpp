@@ -2899,36 +2899,8 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
 Socket::Socket( int domain, int type, int protocol, auto_Object<Log> log )
   : log( log ), domain( domain ), type( type ), protocol( protocol )
 {
+  _socket = static_cast<socket_t>( -1 );
   blocking_mode = true;
-
-  _socket = static_cast<socket_t>( ::socket( domain, type, protocol ) );
-#ifdef _WIN32
-  if ( _socket != static_cast<socket_t>( -1 ) )
-  {
-    // Allow dual-stack sockets
-    DWORD ipv6only = 0;
-    setsockopt( _socket, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
-  }
-  else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
-  {
-    _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
-    if ( _socket == static_cast<socket_t>( -1 ) )
-      throw Exception();
-  }
-  else
-    throw Exception();
-#else
-  if ( _socket != static_cast<socket_t>( -1 ) )
-    return;
-  else if ( domain == AF_INET6 && errno == EAFNOSUPPORT )
-  {
-    _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
-    if ( _socket == static_cast<socket_t>( -1 ) )
-      throw Exception();
-  }
-  else
-    throw Exception();
-#endif
 }
 
 Socket::Socket( socket_t _socket, auto_Object<Log> log )
@@ -2944,9 +2916,10 @@ bool Socket::bind( const SocketAddress& bind_to_sockaddr )
 //	int flag = 1;
 //	setsockopt( bound_socket, SOL_SOCKET, SO_REUSEADDR, ( const char* ) & flag, 1 );
   // No SO_REUSEADDR: we want the bind to fail if an old port is still active, otherwise we won't be able to accept connections correctly
-
+  if ( _socket == static_cast<socket_t>( -1 ) )
+    domain = bind_to_sockaddr.get_family();
   struct sockaddr_storage bind_to_sockaddr_storage = bind_to_sockaddr;
-  return ::bind( _socket, reinterpret_cast<struct sockaddr*>( &bind_to_sockaddr_storage ), sizeof( bind_to_sockaddr_storage ) ) != -1;
+  return ::bind( *this, reinterpret_cast<struct sockaddr*>( &bind_to_sockaddr_storage ), sizeof( bind_to_sockaddr_storage ) ) != -1;
 }
 
 bool Socket::close()
@@ -2962,7 +2935,7 @@ bool Socket::close()
       return false;
   }
   else
-    return false;
+    return true;
 }
 
 bool Socket::_close( socket_t _socket )
@@ -2976,10 +2949,13 @@ bool Socket::_close( socket_t _socket )
 
 Stream::Status Socket::connect( const SocketAddress& connect_to_sockaddr )
 {
+  if ( _socket == static_cast<socket_t>( -1 ) )
+    domain = connect_to_sockaddr.get_family();
+
   for ( ;; )
   {
     struct sockaddr_storage connect_to_sockaddr_storage = connect_to_sockaddr;
-    if ( ::connect( _socket, reinterpret_cast<struct sockaddr*>( &connect_to_sockaddr_storage ), sizeof( connect_to_sockaddr_storage ) ) != -1 )
+    if ( ::connect( *this, reinterpret_cast<struct sockaddr*>( &connect_to_sockaddr_storage ), sizeof( connect_to_sockaddr_storage ) ) != -1 )
       return STREAM_STATUS_OK;
     else
     {
@@ -2994,15 +2970,10 @@ Stream::Status Socket::connect( const SocketAddress& connect_to_sockaddr )
         {
           if ( domain == AF_INET6 )
           {
-            // Fall back to IPv4
             ::closesocket( _socket );
-            _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
-            if ( _socket != static_cast<socket_t>( -1 ) )
-            {
-              if ( !get_blocking_mode() )
-                set_blocking_mode( false );
-              continue; // Try to connect again
-            }
+            _socket = static_cast<socket_t>( -1 );
+            domain = AF_INET; // Fall back to IPv4
+            continue; // Try to connect again
           }
         }
         break;
@@ -3017,15 +2988,10 @@ Stream::Status Socket::connect( const SocketAddress& connect_to_sockaddr )
         {
           if ( domain == AF_INET6 )
           {
-            // Fall back to IPv4
             ::close( _socket );
-            _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
-            if ( _socket != static_cast<socket_t>( -1 ) )
-            {
-              if ( !get_blocking_mode() )
-                set_blocking_mode( false );
-              continue; // Try to connect again
-            }
+            _socket = static_cast<socket_t>( -1 );
+            domain = AF_INET; // Fall back to IPv4
+            continue; // Try to connect again
           }
         }
         break;
@@ -3037,36 +3003,62 @@ Stream::Status Socket::connect( const SocketAddress& connect_to_sockaddr )
   }
 }
 
-auto_Object<SocketAddress> Socket::getpeername() const
+auto_Object<SocketAddress> Socket::getpeername()
 {
   struct sockaddr_storage peername_sockaddr_storage;
   memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
   socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
-  if ( ::getpeername( _socket, reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ), &peername_sockaddr_storage_len ) != -1 )
+  if ( ::getpeername( *this, reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ), &peername_sockaddr_storage_len ) != -1 )
     return new SocketAddress( peername_sockaddr_storage );
   else
     return NULL;
 }
 
-auto_Object<SocketAddress> Socket::getsockname() const
+auto_Object<SocketAddress> Socket::getsockname()
 {
   struct sockaddr_storage sockname_sockaddr_storage;
   memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
   socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
-  if ( ::getsockname( _socket, reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ), &sockname_sockaddr_storage_len ) != -1 )
+  if ( ::getsockname( *this, reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ), &sockname_sockaddr_storage_len ) != -1 )
     return new SocketAddress( sockname_sockaddr_storage );
   else
     return NULL;
 }
 
+Socket::operator socket_t()
+{
+  if  ( _socket == static_cast<socket_t>( -1 ) )
+  {
+    _socket = static_cast<socket_t>( ::socket( domain, type, protocol ) );
+#ifdef _WIN32
+    if ( _socket != static_cast<socket_t>( -1 ) )
+    {
+      // Allow dual-stack sockets
+      DWORD ipv6only = 0;
+      setsockopt( _socket, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
+    }
+    else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
+      _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
+#else
+    if ( _socket == static_cast<socket_t>( -1 ) && domain == AF_INET6 && errno == EAFNOSUPPORT )
+      _socket = static_cast<socket_t>( ::socket( AF_INET, type, protocol ) );
+#endif
+
+    if ( !get_blocking_mode() )
+      set_blocking_mode( false );
+  }
+
+  return _socket;
+}
+
 Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #if defined(_WIN32)
-  int recv_ret = ::recv( _socket, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer..
+  int recv_ret = ::recv( *this, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer..
 #elif defined(__linux)
-  ssize_t recv_ret = ::recv( _socket, buffer, buffer_len, MSG_NOSIGNAL );
+  ssize_t recv_ret = ::recv( *this, buffer, buffer_len, MSG_NOSIGNAL );
 #else
-  ssize_t recv_ret = ::recv( _socket, buffer, buffer_len, 0 );
+  ssize_t recv_ret = ::recv( *this, buffer, buffer_len, 0 );
 #endif
 
   if ( recv_ret > 0 )
@@ -3120,7 +3112,7 @@ bool Socket::set_blocking_mode( bool blocking )
 {
 #ifdef _WIN32
   unsigned long val = blocking ? 0 : 1;
-  if ( ioctlsocket( _socket, FIONBIO, &val ) != SOCKET_ERROR )
+  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
   {
     this->blocking_mode = blocking;
     return true;
@@ -3128,12 +3120,12 @@ bool Socket::set_blocking_mode( bool blocking )
   else
     return false;
 #else
-  int current_fcntl_flags = fcntl( _socket, F_GETFL, 0 );
+  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
   if ( blocking )
   {
     if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
     {
-      if ( fcntl( _socket, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
+      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
       {
         this->blocking_mode = true;
         return true;
@@ -3146,7 +3138,7 @@ bool Socket::set_blocking_mode( bool blocking )
   }
   else
   {
-    if ( fcntl( _socket, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
+    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
     {
       this->blocking_mode = false;
       return true;
@@ -3161,7 +3153,7 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
 {
 #ifdef _WIN32
   DWORD dwWrittenLength;
-  int send_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  int send_ret = ::WSASend( *this, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
 #else
   // Use sendmsg instead of writev to pass flags on Linux
   struct msghdr _msghdr;
@@ -3169,9 +3161,9 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
   _msghdr.msg_iov = const_cast<iovec*>( buffers );
   _msghdr.msg_iovlen = buffers_count;
 #ifdef __linux
-  ssize_t send_ret = ::sendmsg( _socket, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+  ssize_t send_ret = ::sendmsg( *this, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
 #else
-  ssize_t send_ret = ::sendmsg( _socket, &_msghdr, 0 );
+  ssize_t send_ret = ::sendmsg( *this, &_msghdr, 0 );
 #endif
 #endif
   if ( send_ret >= 0 )
@@ -3272,6 +3264,10 @@ SocketAddress::~SocketAddress()
 {
   delete _sockaddr_storage;
 }
+int SocketAddress::get_family() const
+{
+  return _sockaddr_storage->ss_family;
+}
 bool SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
 {
   char nameinfo[NI_MAXHOST];
@@ -3316,11 +3312,7 @@ void SocketAddress::init( const char* hostname, uint16_t port )
     servname << port; // servname = decimal port or service name. Great interface, guys.
     struct addrinfo addrinfo_hints;
     memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
-#ifdef _WIN32
     addrinfo_hints.ai_family = AF_UNSPEC;
-#else
-    addrinfo_hints.ai_family = AF_INET6; // Linux seems to prefer IPv4 over IPv6 if you allow both, so force it to map.
-#endif
     addrinfo_hints.ai_flags = AI_ALL|AI_V4MAPPED;
     struct addrinfo *addrinfo_list = NULL;
     int getaddrinfo_ret = ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list );

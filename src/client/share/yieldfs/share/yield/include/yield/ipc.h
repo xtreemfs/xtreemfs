@@ -86,6 +86,7 @@ namespace YIELD
     SocketAddress( const SocketAddress& );
     ~SocketAddress();
 
+    int get_family() const;
     bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
     bool getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric = true ) const;
     uint16_t get_port() const;
@@ -124,9 +125,9 @@ namespace YIELD
     virtual bool close();
     bool get_blocking_mode() const { return blocking_mode; }
     auto_Object<Log> get_log() const { return log; }
-    auto_Object<SocketAddress> getpeername() const;
-    auto_Object<SocketAddress> getsockname() const;
-    operator socket_t() const { return _socket; }
+    auto_Object<SocketAddress> getpeername();
+    auto_Object<SocketAddress> getsockname();
+    operator socket_t();
     bool operator==( socket_t _socket ) const { return this->_socket == _socket; }
     std::ostream& operator<<( std::ostream& os ) const { os << "socket #" << static_cast<int>( _socket ); return os; }
     OutputStream& operator<<( OutputStream& output_stream ) const { output_stream.write( "socket" ); return output_stream; }
@@ -1033,7 +1034,6 @@ namespace YIELD
       : TCPSocket( log ), ctx( ctx )
     {
       ssl = SSL_new( ctx->get_ssl_ctx() );
-      SSL_set_fd( ssl, *this );
 //      SSL_set_mode( ssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER );
       init( log );
     }
@@ -1137,6 +1137,7 @@ namespace YIELD
     // TCPSocket
     auto_Object<SSLSocket> accept()
     {
+      SSL_set_fd( ssl, *this );
       socket_t peer_socket = TCPSocket::_accept();
       if ( peer_socket != static_cast<socket_t>( -1 ) )
       {
@@ -1154,7 +1155,7 @@ namespace YIELD
       Stream::Status connect_status = TCPSocket::connect( peer_sockaddr );
       if ( connect_status == STREAM_STATUS_OK )
       {
-        SSL_set_fd( ssl, *this ); // Have to SSL_set_fd again in case connect had to re-create the socket falling back to IPv4 to IPv6
+        SSL_set_fd( ssl, *this );
         SSL_set_connect_state( ssl );
       }
       return connect_status;
