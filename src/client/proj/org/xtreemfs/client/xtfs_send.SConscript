@@ -29,26 +29,27 @@ except:
     else:
         build_env["CCFLAGS"] += " -Wall -Wunused-macros "
         if sys.platform == "linux2":
-            build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 "
+            build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )
         elif sys.platform == "darwin":
             build_env["CCFLAGS"] += " -D_FILE_OFFSET_BITS=64 "
             # build_env["LINKFLAGS"] += "-framework Carbon "
             build_env["LIBS"].append( "iconv" )
         elif sys.platform.startswith( "freebsd" ):
-            build_env["CCFLAGS"] += "-fno-rtti -D_FILE_OFFSET_BITS=64 "
+            build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "intl", "iconv" ) )
         elif sys.platform == "sunos5":
             build_env["tools"] = ["gcc", "g++", "gnulink", "ar"]
-            build_env["CCFLAGS"] += "-fno-rtti -Dupgrade_the_compiler_to_use_STL=1 -D_REENTRANT "
+            build_env["CCFLAGS"] += "-Dupgrade_the_compiler_to_use_STL=1 -D_REENTRANT "
             build_env["LIBS"].extend( ( "stdc++", "m", "socket", "nsl", "kstat", "rt", "iconv", "cpc" ) )
 
         if ARGUMENTS.get( "coverage", 0 ): build_env["CCFLAGS"] += "-pg --coverage "; build_env["LINKFLAGS"] += "-pg --coverage "
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
         if ARGUMENTS.get( "profile-heap", 0 ): build_env["CCFLAGS"] += "-fno-omit-frame-pointer "; build_env["LIBS"].append( "tcmalloc" )
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
-        else: build_env["CCFLAGS"] += "-g -D_DEBUG "
+        else: build_env["CCFLAGS"] += "-g -D_DEBUG "        
         if ARGUMENTS.get( "shared", 0 ): build_env["CCFLAGS"] += "-fPIC "
+        if not ARGUMENTS.get( "with-rtti", 0 ) and sys.platform != "darwin": build_env["CCFLAGS"] += "-fno-rtti " # Disable RTTI by default
 
     build_env["CPPPATH"] = list( set( [os.path.abspath( include_dir_path ) for include_dir_path in include_dir_paths] ) )
     build_env["LIBPATH"] = list( set( [os.path.abspath( lib_dir_path ) for lib_dir_path in lib_dir_paths] ) )
