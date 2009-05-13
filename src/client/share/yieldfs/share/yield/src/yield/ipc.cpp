@@ -1,4 +1,4 @@
-// Revision: 1409
+// Revision: 1411
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -3323,7 +3323,8 @@ void SocketAddress::init( const char* hostname, uint16_t port )
 #endif
     addrinfo_hints.ai_flags = AI_ALL|AI_V4MAPPED;
     struct addrinfo *addrinfo_list = NULL;
-    if ( ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list ) == 0 )
+    int getaddrinfo_ret = ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list );
+    if ( getaddrinfo_ret == 0 )
     {
       _sockaddr_storage = new struct sockaddr_storage;
       memset( _sockaddr_storage, 0, sizeof( *_sockaddr_storage ) );
@@ -3333,7 +3334,11 @@ void SocketAddress::init( const char* hostname, uint16_t port )
     else
     {
       _sockaddr_storage = NULL;
-      throw Exception();
+#ifdef _WIN32
+      throw Exception( getaddrinfo_ret );
+#else
+      throw Exception( gai_strerror( getaddrinfo_ret ) );
+#endif
     }
   }
   else
