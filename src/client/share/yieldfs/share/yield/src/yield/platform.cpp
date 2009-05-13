@@ -1,4 +1,4 @@
-// Revision: 1400
+// Revision: 1409
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1416,7 +1416,7 @@ void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* 
 #else
 #include <sys/wait.h> // For waitpid
 #ifdef __MACH__
-<mach-o/dyld.h> // For _NSGetExecutablePath
+#include <mach-o/dyld.h> // For _NSGetExecutablePath
 #endif
 #endif
 Path Process::getExeFilePath( const char* argv0 )
@@ -2409,15 +2409,15 @@ bool Thread::set_processor_affinity( unsigned short logical_processor_i )
   {
 #if defined(_WIN32)
     return SetThreadAffinityMask( handle, ( 1L << logical_processor_i ) ) != 0;
-#else
-#if defined(__linux__)
+#elif defined(__linux__)
     cpu_set_t cpu_set;
     CPU_ZERO( &cpu_set );
     CPU_SET( logical_processor_i, &cpu_set );
     return sched_setaffinity( 0, sizeof( cpu_set ), &cpu_set ) == 0;
 #elif defined(__sun)
     return processor_bind( P_LWPID, thr_self(), logical_processor_i, NULL ) == 0;
-#endif
+#else
+    return false;
 #endif
   }
   else
@@ -2434,6 +2434,8 @@ bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
     return sched_setaffinity( 0, sizeof( cpu_set_t ), static_cast<cpu_set_t*>( logical_processor_set.cpu_set ) ) == 0;
 #elif defined(__sun)
     return pset_bind( logical_processor_set.psetid, P_LWPID, id, NULL ) == 0;
+#else
+    return false;
 #endif
   }
   else
@@ -2770,14 +2772,13 @@ Time::operator std::string() const
 #include <sys/signal.h>
 #include <sys/time.h>
 #endif
-#define SIGTIMER SIGRTMAX
-#ifdef _WIN32
+#if defined(_WIN32)
 void CALLBACK TimerRoutine( PVOID _timer, BOOLEAN )
 {
   Timer* timer = static_cast<Timer*>( _timer );
   timer->fire();
 }
-#else
+#elif defined(__linux)
 void timer_notify_function( sigval_t s )
 {
   Timer* timer = static_cast<Timer*>( s.sival_ptr );
@@ -2786,7 +2787,7 @@ void timer_notify_function( sigval_t s )
 #endif
 void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   if ( CreateTimerQueueTimer( &hTimer, NULL, TimerRoutine, this, static_cast<DWORD>( timeout_ns / NS_IN_MS ), static_cast<DWORD>( period_ns / NS_IN_MS ), WT_EXECUTEONLYONCE ) )
     return;
   else
@@ -2794,7 +2795,7 @@ void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
     hTimer = NULL;
     throw Exception();
   }
-#else
+#elif defined(__linux)
   struct sigevent se;
   std::memset( &se, 0, sizeof( se ) );
   se.sigev_notify = SIGEV_THREAD;
@@ -2814,14 +2815,16 @@ void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
   }
   timer_id = NULL;
   throw Exception();
+#else
+  DebugBreak();
 #endif
 }
 Timer::~Timer()
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   if ( hTimer != NULL )
     DeleteTimerQueueTimer( NULL, hTimer, NULL );
-#else
+#elif defined(__linux)
   if ( timer_id != NULL )
     timer_delete( timer_id );
 #endif
@@ -3246,7 +3249,7 @@ Path Volume::volname( const Path& path )
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #define XDR_ARRAY_LENGTH_MAX 16 * 1024
-#define XDR_STRING_LENGTH_MAX 32 * 1024
+// #define XDR_STRING_LENGTH_MAX 32 * 1024
 XDRInputStream::XDRInputStream( InputStream& underlying_input_stream )
   : underlying_input_stream( underlying_input_stream )
 { }

@@ -1,3 +1,5 @@
+// Revision: 1409
+
 #include "yield/ipc.h"
 using namespace YIELD;
 using std::memset;
@@ -599,7 +601,6 @@ Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 #include <cstring>
 #include <iostream>
 #define MAX_EVENTS_PER_POLL 8192
-#define MAX_CONCURRENT_FDS 32767
 void FDEvent::serialize( StructuredOutputStream& output_stream )
 {
   output_stream.writeInt32( "fd", static_cast<int32_t>( get_socket() ) );
@@ -612,7 +613,7 @@ FDEventQueue::FDEventQueue()
   signal_read_socket = NULL;
 #endif
 #if defined(YIELD_HAVE_LINUX_EPOLL)
-  poll_fd = epoll_create( MAX_CONCURRENT_FDS );
+  poll_fd = epoll_create( 32768 );
   returned_events = new epoll_event[MAX_EVENTS_PER_POLL];
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
   poll_fd = kqueue();
@@ -916,7 +917,7 @@ void FDEventQueue::fillStackFDEvent()
     if ( returned_events[active_fds].ident != 0 )
     {
       stack_fd_event.fd = returned_events[active_fds].ident;
-      stack_fd_event.context = returned_events[active_fds].udata;
+      stack_fd_event.context = static_cast<Object*>( returned_events[active_fds].udata );
       stack_fd_event._want_read = ( returned_events[active_fds].filter == EVFILT_READ );
       stack_fd_event.error_code = 0;
       break;
@@ -927,7 +928,7 @@ void FDEventQueue::fillStackFDEvent()
       if ( returned_events[active_fds].portev_object != 0 )
       {
         stack_fd_event.fd = returned_events[active_fds].portev_object;
-        stack_fd_event.context = returned_events[active_fds].portev_user;
+        stack_fd_event.context = static_cast<Object*>( returned_events[active_fds].portev_user );
         stack_fd_event._want_read = ( returned_events[active_fds].portev_events & POLLIN ) || ( returned_events[active_fds].portev_events & POLLRDNORM );
         if ( ( returned_events[active_fds].portev_events & POLLERR ) != POLLERR && ( returned_events[active_fds].portev_events & POLLHUP ) != POLLHUP )
           stack_fd_event.error_code = 0;

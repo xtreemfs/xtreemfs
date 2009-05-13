@@ -432,7 +432,7 @@ namespace YIELD
     {
     public:
       // Object
-      YIELD_OBJECT_TYPE_INFO( REQUEST, "ConnectionActivityCheckRequest", 3667953665 );
+      YIELD_OBJECT_TYPE_INFO( REQUEST, "ConnectionActivityCheckRequest", 3667953665UL );
     };
 
     class ConnectionActivityCheckTimer : public Timer

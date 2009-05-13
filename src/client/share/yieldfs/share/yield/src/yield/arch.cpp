@@ -1,4 +1,4 @@
-// Revision: 1399
+// Revision: 1409
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -43,13 +43,9 @@ bool EventHandler::send( Event& ev )
 }
 
 
-
 // seda_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 namespace YIELD
 {
   class SEDAStageGroupThread : public StageGroupThread
@@ -58,28 +54,20 @@ namespace YIELD
     SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, Stage& stage )
       : StageGroupThread( stage_group_name, limit_logical_processor_set, log ), stage( stage )
     { }
-
     Stage& get_stage() { return stage; }
-
     // Thread
     void run()
     {
       StageGroupThread::before_run( stage.get_stage_name() );
-
       stage.get_event_handler().handleEvent( *( new StageStartupEvent( stage ) ) );
-
       while ( shouldRun() )
         visitStage( stage );
     }
-
   private:
     ~SEDAStageGroupThread() { }
-
     Stage& stage;
   };
 };
-
-
 SEDAStageGroup::~SEDAStageGroup()
 {
   auto_Object<StageShutdownEvent> stage_shutdown_event = new StageShutdownEvent;
@@ -97,11 +85,9 @@ SEDAStageGroup::~SEDAStageGroup()
         break;
     }
   }
-
   for ( std::vector<SEDAStageGroupThread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     Object::decRef( **thread_i );
 }
-
 auto_Object<Stage> SEDAStageGroup::createStage( auto_Object<EventHandler> event_handler, int16_t threads, auto_Object<EventQueue> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log )
 {
   if ( event_queue == NULL )
@@ -109,7 +95,6 @@ auto_Object<Stage> SEDAStageGroup::createStage( auto_Object<EventHandler> event_
   else
     return createStage<EventHandler, EventQueue>( event_handler, threads, event_queue, stage_stats_event_target, log );
 }
-
 void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 {
   for ( unsigned short thread_i = 0; thread_i < threads; thread_i++ )
@@ -124,8 +109,6 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 // stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
 #ifdef __sun
 #include <cstdlib>
@@ -133,8 +116,6 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 #error
 #endif
 #endif
-
-
 StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, EventTarget* stage_stats_event_target, auto_Object<Log> log )
 : name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target ), log( log )
 {
@@ -143,7 +124,6 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
     limit_logical_processor_set = new ProcessorSet;
     uint16_t online_physical_processor_count = Machine::getOnlinePhysicalProcessorCount();
     uint16_t logical_processors_per_physical_processor = Machine::getOnlinePhysicalProcessorCount();
-
     for ( uint16_t physical_processor_i = 0; physical_processor_i < online_physical_processor_count; physical_processor_i++ )
     {
       if ( limit_physical_processor_set->isset( physical_processor_i ) )
@@ -153,12 +133,9 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
       }
     }
   }
-
   running_stage_group_thread_tls_key = Thread::createTLSKey();
-
   memset( stages, 0, sizeof( stages ) );
 }
-
 StageGroup::~StageGroup()
 {
   for ( uint8_t stage_i = 0; stage_i < YIELD_ARCH_STAGES_PER_GROUP_MAX; stage_i++ )
@@ -169,8 +146,6 @@ StageGroup::~StageGroup()
 // stage_group_thread.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
 #ifdef __sun
 #include <cstdlib>
@@ -178,13 +153,10 @@ StageGroup::~StageGroup()
 #error
 #endif
 #endif
-
-
 StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log )
   : stage_group_name( stage_group_name ), limit_logical_processor_set( limit_logical_processor_set ), log( log )
 {
   should_run = true;
-
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
 #ifdef __sun
   if ( ( cpc = cpc_open( CPC_VER_CURRENT ) ) != NULL &&
@@ -194,7 +166,6 @@ StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Ob
     if ( pic0_str == NULL ) pic0_str = "L2_imiss";
     const char* pic1_str = getenv( "PIC1" );
     if ( pic1_str == NULL ) pic1_str = "L2_dmiss_ld";
-
     if ( ( pic0_index = cpc_set_add_request( cpc, cpc_set, pic0_str, 0, CPC_COUNT_USER, 0, NULL ) ) != -1 &&
        ( pic1_index = cpc_set_add_request( cpc, cpc_set, pic1_str, 0, CPC_COUNT_USER, 0, NULL ) ) != -1 )
     {
@@ -210,15 +181,12 @@ StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Ob
       }
     }
   }
-
   if ( cpc != NULL )
     cpc_close( cpc );
-
   throw Exception();
 #endif
 #endif
 }
-
 StageGroupThread::~StageGroupThread()
 {
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
@@ -229,24 +197,19 @@ StageGroupThread::~StageGroupThread()
 #endif
 #endif
 }
-
 void StageGroupThread::before_run( const char* thread_name )
 {
   if ( thread_name == NULL )
     thread_name = stage_group_name.c_str();
   this->set_name( thread_name );
-
   if ( log != NULL )
     log->getStream( Log::LOG_DEBUG ) << stage_group_name << ": starting thread #" << this->get_id() << " (name = " << thread_name;
-
   if ( limit_logical_processor_set != NULL )
   {
     if ( !this->set_processor_affinity( *limit_logical_processor_set ) && log != NULL )
       log->getStream( Log::LOG_DEBUG ) << stage_group_name << "could not set processor affinity of thread #" << this->get_id() << ", error: " << Exception::strerror();
   }
-
 //  Thread::setTLS( stage_group.get_running_stage_group_thread_tls_key(), this );
-
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
 #ifdef __sun
   cpc_bind_curlwp( cpc, cpc_set, 0 );
