@@ -4,7 +4,3 @@ SConscript( "proj/org/xtreemfs/client/xtfs_mount.SConscript" )
 SConscript( "proj/org/xtreemfs/client/xtfs_rmvol.SConscript" )
 SConscript( "proj/org/xtreemfs/client/xtfs_send.SConscript" )
 SConscript( "proj/org/xtreemfs/client/xtfs_stat.SConscript" )
-
-Import( "build_conf" )
-if build_conf.CheckCHeader( "xos_ams.h" ):
-    SConscript( "proj/org/xtreemfs/client/xos_ams_flog.SConscript" )

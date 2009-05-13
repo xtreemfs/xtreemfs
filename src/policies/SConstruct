@@ -1,0 +1,5 @@
+SConscript( "../client/proj/org/xtreemfs/client/xtreemfs-client-lib.SConscript" )
+
+Import( "build_conf" )
+if build_conf.CheckCHeader( "xos_ams.h" ):
+    SConscript( "proj/xos_ams_flog.SConscript" )
