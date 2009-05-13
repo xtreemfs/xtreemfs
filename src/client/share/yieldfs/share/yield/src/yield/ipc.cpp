@@ -3110,43 +3110,51 @@ Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_
 
 bool Socket::set_blocking_mode( bool blocking )
 {
+  if ( _socket != static_cast<socket_t>( -1 ) ) // The socket has already been created
+  {
 #ifdef _WIN32
-  unsigned long val = blocking ? 0 : 1;
-  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
-  {
-    this->blocking_mode = blocking;
-    return true;
-  }
-  else
-    return false;
-#else
-  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+    unsigned long val = blocking ? 0 : 1;
+    if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
     {
-      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
+      this->blocking_mode = blocking;
+      return true;
+    }
+    else
+      return false;
+#else
+    int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
+    if ( blocking )
+    {
+      if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
       {
-        this->blocking_mode = true;
+        if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
+        {
+          this->blocking_mode = true;
+          return true;
+        }
+        else
+          return false;
+      }
+      else
+        return true;
+    }
+    else
+    {
+      if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
+      {
+        this->blocking_mode = false;
         return true;
       }
       else
         return false;
     }
-    else
-      return true;
-  }
-  else
-  {
-    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
-    {
-      this->blocking_mode = false;
-      return true;
-    }
-    else
-      return false;
-  }
 #endif
+  }
+  else // The socket has not yet been created, simply set this->blocking_mode, which will then be effected when the socket is created
+  {
+    this->blocking_mode = blocking;
+    return true;
+  }
 }
 
 Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
