@@ -446,7 +446,7 @@ void Client::handleEvent( Event& ev )
       if ( **connection_i == *connection )
       {
         auto_Object<Request> protocol_request = connection->get_protocol_request();
-        fd_event_queue->detach( *connnection );
+        fd_event_queue->detach( *connection, connection );
         YIELD::Object::decRef( connection );
         if ( ++reconnect_tries < reconnect_tries_max )
         {
