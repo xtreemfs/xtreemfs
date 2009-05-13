@@ -33,7 +33,54 @@ import java.io.PrintStream;
 public class Logging {
     
     public enum Category {
-        all, lifecycle, net, auth, stage, proc, db, misc
+        /**
+         * enable logging for all categories (no real category)
+         */
+        all,
+        /**
+         * logs messages pertaining to buffers
+         */
+        buffer,
+        /**
+         * log messaages pertaining to service lifecycles (threads)
+         */
+        lifecycle,
+        /**
+         * network-related log messages
+         */
+        net,
+        /**
+         * authorization-related log messages
+         */
+        auth,
+        /**
+         * log messages pertaining to the request flow through the stages
+         */
+        stage,
+        /**
+         * log messages pertaining to any kind of request processing
+         */
+        proc,
+        /**
+         * 
+         */
+        misc,
+        /**
+         * log messages pertaining storage on OSD or database access on MRC/DIR
+         */
+        db, // TODO: rename to "storage"
+        /**
+         * logs messages pertaining to replication 
+         */
+        replication,
+        /**
+         * logs messages from additional tools
+         */
+        tool,
+        /**
+         * logs messages from tests
+         */
+        test
     }
     
     protected static final char      ABBREV_LEVEL_INFO  = 'I';

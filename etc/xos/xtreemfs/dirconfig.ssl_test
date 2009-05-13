@@ -11,12 +11,14 @@
 
 # optional debug categories - a space or comma-separated list of log message categories
 # all (default) - enable logging for all categories
-# lifecycle     - log messaages pertaining to service lifecycles
+# lifecycle     - log messaages pertaining to service lifecycles (threads)
+# buffer        - logs messages pertaining to buffers
 # net           - network-related log messages
 # auth          - authorization-related log messages
 # stage         - log messages pertaining to the request flow through the stages
 # proc          - log messages pertaining to any kind of request processing
-# db            - database access log messages
+# db            - log messages pertaining storage on OSD or database access on MRC/DIR
+# replication   - logs messages pertaining to replication 
 # misc          - any other log messages
 #debug.categories = all
 

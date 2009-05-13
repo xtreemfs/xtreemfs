@@ -643,7 +643,7 @@ public final class ReusableBuffer {
     protected void finalize() {
         if (!returned && reusable) {
             
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this,
                 "buffer was finalized but not freed before! this = %s", this.toString());
             
             byte[] data = new byte[(this.capacity() > 128) ? 128 : this.capacity()];
@@ -653,16 +653,16 @@ public final class ReusableBuffer {
             this.get(data);
             String content = new String(data);
             
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "content: %s", content);
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "stacktrace: %s", allocStack);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "content: %s", content);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "stacktrace: %s", allocStack);
             
             if (this.viewParent != null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "view parent: %s",
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "view parent: %s",
                     this.viewParent.toString());
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "ref count: %d",
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "ref count: %d",
                     this.viewParent.refCount.get());
             } else {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "ref count: %d", this.refCount
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "ref count: %d", this.refCount
                         .get());
             }
             
