@@ -101,7 +101,21 @@ public class BabuDBStorageHelper {
             keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             prevFileName = null;
-            
+
+            if (tmpVals[FileMetadata.RC_METADATA] == null) {
+                //dump the record
+                for (int i = 0; i < tmpVals.length; i++) {
+                    System.out.println("index "+i);
+                    if (tmpVals[i] == null) {
+                        System.out.println("IS NULL!");
+                        continue;
+                    }
+                    String content = new String(tmpVals[i]);
+                    System.out.println("content: "+content);
+                }
+                System.exit(1);
+            }
+
             // in case of a hardlink ...
             if (tmpVals[FileMetadata.RC_METADATA][0] == 2)
                 try {
