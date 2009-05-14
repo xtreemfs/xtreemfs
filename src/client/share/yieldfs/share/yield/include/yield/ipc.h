@@ -355,7 +355,7 @@ namespace YIELD
   class Client : public EventHandler
   {
   public:    
-    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_MS;
+    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
     const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = UINT8_MAX;
 
 

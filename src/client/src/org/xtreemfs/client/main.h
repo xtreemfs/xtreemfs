@@ -81,7 +81,7 @@ namespace org
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
-          operation_timeout = 5 * NS_IN_MS;
+          operation_timeout = 5 * NS_IN_S;
         }
 
         virtual ~Main()
