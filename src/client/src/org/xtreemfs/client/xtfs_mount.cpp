@@ -129,7 +129,7 @@ namespace org
               argvv.push_back( "-o" );
               argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
             }
-            if ( ( fuse_flags & FUSE_FLAG_DEBUG ) == FUSE_FLAG_DEBUG )
+            if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
               argvv.push_back( "-d" );
             argvv.push_back( NULL );
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
