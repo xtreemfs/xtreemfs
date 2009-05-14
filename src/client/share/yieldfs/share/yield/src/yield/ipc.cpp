@@ -1,4 +1,4 @@
-// Revision: 1411
+// Revision: 1416
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -225,16 +225,12 @@ namespace YIELD
 #include <ws2tcpip.h>
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
-Client::Client( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log )
-  : peer_sockaddr( peer_sockaddr ), socket_factory( socket_factory ), log( log )
+Client::Client( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+  : log( log ), operation_timeout( operation_timeout ), peer_sockaddr( peer_sockaddr ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
 {
   if ( this->socket_factory == NULL )
     this->socket_factory = new TCPSocketFactory;
-  reconnect_tries = 0;
-  reconnect_tries_max = static_cast<uint8_t>( -1 );
-  operation_timeout_ns = 5 * NS_IN_S;
   fd_event_queue = NULL;
-//  connection_activity_timer = new ConnectionActivityCheckTimer( *this );
 }
 Client::~Client()
 {
@@ -256,6 +252,7 @@ void Client::handleEvent( Event& ev )
     case YIELD_OBJECT_TYPE_ID( StageStartupEvent ):
     {
       fd_event_queue = static_cast<FDAndInternalEventQueue*>( &static_cast<StageStartupEvent&>( ev ).get_stage().get_event_queue() );
+      fd_event_queue->timer_create( operation_timeout, operation_timeout );
       Object::decRef( ev );
       return;
     }
@@ -268,20 +265,21 @@ void Client::handleEvent( Event& ev )
     break;
     case YIELD_OBJECT_TYPE_ID( FDEvent ):
     {
-      FDEvent& fd_ev = static_cast<FDEvent&>( ev );
-      switch ( fd_ev.get_context()->get_general_type() )
+      FDEvent& fd_event = static_cast<FDEvent&>( ev );
+      switch ( fd_event.get_context()->get_general_type() )
       {
         case YIELD::Object::UNKNOWN:
         {
-          connection = static_cast<Connection*>( fd_ev.get_context() );
-          fd_event_error_code = fd_ev.get_error_code();
+          connection = static_cast<Connection*>( fd_event.get_context() );
+          fd_event_error_code = fd_event.get_error_code();
         }
         break;
         default: YIELD::DebugBreak();
       }
+      Object::decRef( ev );
     }
     break;
-    case YIELD_OBJECT_TYPE_ID( ConnectionActivityCheckRequest ):
+    case YIELD_OBJECT_TYPE_ID( TimerEvent ):
     {
       for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
       {
@@ -289,7 +287,7 @@ void Client::handleEvent( Event& ev )
         if ( connection->get_state() != Connection::IDLE )
         {
           Time connection_idle_time = Time() - connection->get_last_activity_time();
-          if ( connection_idle_time > operation_timeout_ns )
+          if ( connection_idle_time > operation_timeout )
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_ERR ) << getEventHandlerName() << ": connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
@@ -301,7 +299,7 @@ void Client::handleEvent( Event& ev )
               connection->set_protocol_request( NULL );
               this->send( *protocol_request.release() ); // Re-enqueue the request
             }
-            fd_event_queue->detach( *connection, connection );
+            fd_event_queue->detach( *connection );
             connection->shutdown();
             connection->close();
             YIELD::Object::decRef( *connection );
@@ -313,7 +311,7 @@ void Client::handleEvent( Event& ev )
         else
           ++connection_i;
       }
-      // Don't decRef ev, it's on the timer's stack
+      Object::decRef( ev );
       return;
     }
     break;
@@ -366,7 +364,7 @@ void Client::handleEvent( Event& ev )
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully connected to " << peer_sockaddr << ".";
             reconnect_tries = 0; // Start from 0 tries every time we successfully connect so that the count doesn't reach the max in a long-running client
-            fd_event_queue->detach( *connection, connection );
+            fd_event_queue->detach( *connection );
             connection->set_state( Connection::WRITING );
             // Drop down to WRITING
       	  }
@@ -394,7 +392,7 @@ void Client::handleEvent( Event& ev )
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_INFO ) << getEventHandlerName() << ": successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
             connection->set_protocol_response( createProtocolResponse() );
-            fd_event_queue->detach( *connection, connection );
+            fd_event_queue->detach( *connection );
             connection->set_state( Connection::READING );
             // Drop down to READING
           }
@@ -413,7 +411,7 @@ void Client::handleEvent( Event& ev )
             respond( connection->get_protocol_request(), connection->get_protocol_response() );
             connection->set_protocol_request( NULL );
             connection->set_protocol_response( NULL );
-            fd_event_queue->detach( *connection, connection );
+            fd_event_queue->detach( *connection );
             connection->set_state( Connection::IDLE );
             return; // Done
           }
@@ -446,7 +444,7 @@ void Client::handleEvent( Event& ev )
       if ( **connection_i == *connection )
       {
         auto_Object<Request> protocol_request = connection->get_protocol_request();
-        fd_event_queue->detach( *connection, connection );
+        fd_event_queue->detach( *connection );
         YIELD::Object::decRef( connection );
         if ( ++reconnect_tries < reconnect_tries_max )
         {
@@ -493,13 +491,6 @@ Stream::Status Client::Connection::writev( const struct iovec* buffers, uint32_t
   last_activity_time = Time();
   return _socket->writev( buffers, buffers_count, out_bytes_written );
 }
-Client::ConnectionActivityCheckTimer::ConnectionActivityCheckTimer( Client& client )
-  : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), client( client )
-{ }
-void Client::ConnectionActivityCheckTimer::fire()
-{
-  client.send( stack_connection_activity_check_request );
-}
 
 
 // fd_and_internal_event_queue.cpp
@@ -508,13 +499,6 @@ void Client::ConnectionActivityCheckTimer::fire()
 FDAndInternalEventQueue::FDAndInternalEventQueue()
 {
   dequeue_blocked = true;
-}
-bool FDAndInternalEventQueue::enqueue( Event& ev )
-{
-  bool result = NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
-  if ( dequeue_blocked )
-    FDEventQueue::break_blocking_dequeue();
-  return result;
 }
 Event* FDAndInternalEventQueue::dequeue()
 {
@@ -535,17 +519,7 @@ Event* FDAndInternalEventQueue::dequeue()
     return ev;
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
-Event* FDAndInternalEventQueue::try_dequeue()
-{
-  Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-  if ( ev != NULL )
-    return ev;
-  ev = FDEventQueue::try_dequeue();
-  if ( ev )
-    return ev;
-  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-}
-Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
+Event* FDAndInternalEventQueue::dequeue( timeout_ns_t timeout_ns )
 {
   dequeue_blocked = true;
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
@@ -554,8 +528,25 @@ Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
     dequeue_blocked = false;
     return ev;
   }
-  ev = FDEventQueue::timed_dequeue( timeout_ns );
+  ev = FDEventQueue::dequeue( timeout_ns );
   dequeue_blocked = false;
+  if ( ev )
+    return ev;
+  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
+}
+bool FDAndInternalEventQueue::enqueue( Event& ev )
+{
+  bool result = NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
+  if ( dequeue_blocked )
+    FDEventQueue::signal();
+  return result;
+}
+Event* FDAndInternalEventQueue::try_dequeue()
+{
+  Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
+  if ( ev != NULL )
+    return ev;
+  ev = FDEventQueue::try_dequeue();
   if ( ev )
     return ev;
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
@@ -594,17 +585,14 @@ Event* FDAndInternalEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
 #include <cstring>
 #include <iostream>
 #define MAX_EVENTS_PER_POLL 8192
-void FDEvent::serialize( StructuredOutputStream& output_stream )
+static bool CompareTimerEvents( const TimerEvent* left, const TimerEvent* right )
 {
-  output_stream.writeInt32( "fd", static_cast<int32_t>( get_socket() ) );
-  output_stream.writeBool( "want_read", want_read() );
-  output_stream.writeUint32( "error_code", static_cast<uint32_t>( get_error_code() ) );
+  return left->get_fire_time() < right->get_fire_time(); // Reverse the comparison so that the earliest timer is at the back of the timers vector
 }
 FDEventQueue::FDEventQueue()
 {
-#ifndef YIELD_HAVE_LINUX_EVENTFD
-  signal_read_socket = NULL;
-#endif
+  active_fds = 0;
+  std::make_heap( timers.begin(), timers.end(), CompareTimerEvents );
 #if defined(YIELD_HAVE_LINUX_EPOLL)
   poll_fd = epoll_create( 32768 );
   returned_events = new epoll_event[MAX_EVENTS_PER_POLL];
@@ -622,26 +610,30 @@ FDEventQueue::FDEventQueue()
   except_fds = new fd_set; FD_ZERO( except_fds );
   except_fds_copy = new fd_set; FD_ZERO( except_fds_copy );
 #endif
-  active_fds = 0;
 #ifdef YIELD_HAVE_LINUX_EVENTFD
-  signal_eventfd = eventfd( 0, 0 );
-  if ( signal_eventfd != -1 &&
-       attach( signal_eventfd, NULL ) )
-      return;
-   else
-     throw Exception();
+  int signal_eventfd = eventfd( 0, 0 );
+  if ( signal_eventfd != -1 )
+  {
+    signal_read_end = new File( signal_eventfd );
+    if ( attach( signal_read_end, signal_read_end.get() )
+      signal_write_end = signal_read_end;
+    else
+      throw Exception();
+  }
+  else
+    throw Exception();
 #else
   auto_Object<TCPSocket> signal_listen_socket = new TCPSocket;
   if ( !signal_listen_socket->bind( SocketAddress() ) )
     throw Exception();
   if ( !signal_listen_socket->listen() )
     throw Exception();
-  signal_write_socket = new TCPSocket;
-  signal_write_socket->connect( *signal_listen_socket->getsockname() );
-  signal_write_socket->set_blocking_mode( false );
-  signal_read_socket = signal_listen_socket->accept();
-  signal_read_socket->set_blocking_mode( false );
-  if ( !attach( *signal_read_socket, NULL ) )
+  signal_write_end = new TCPSocket;
+  signal_write_end->connect( *signal_listen_socket->getsockname() );
+  signal_write_end->set_blocking_mode( false );
+  signal_read_end = signal_listen_socket->accept();
+  signal_read_end->set_blocking_mode( false );
+  if ( !attach( *signal_read_end, signal_read_end.get() ) )
     throw Exception();
 #endif
 }
@@ -655,14 +647,11 @@ FDEventQueue::~FDEventQueue()
   delete write_fds; delete write_fds_copy;
   delete except_fds; delete except_fds_copy;
 #endif
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-  ::close( signal_eventfd );
-#endif
 }
 #ifdef _WIN32
-bool FDEventQueue::attach( socket_t fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::attach( unsigned int fd, Object* context, bool enable_read, bool enable_write )
 #else
-bool FDEventQueue::attach( fd_t fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::attach( int fd, Object* context, bool enable_read, bool enable_write )
 #endif
 {
 #if defined(_WIN32)
@@ -679,12 +668,7 @@ bool FDEventQueue::attach( fd_t fd, Object* context, bool enable_read, bool enab
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
   struct epoll_event change_event;
   memset( &change_event, 0, sizeof( change_event ) );
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-  change_event.data.fd = fd;
-  fd_to_context_map.insert( fd, context );
-#else
   change_event.data.ptr = context;
-#endif
   change_event.events = 0;
   if ( enable_read ) change_event.events |= EPOLLIN;
   if ( enable_write ) change_event.events |= EPOLLOUT;
@@ -722,122 +706,202 @@ bool FDEventQueue::attach( fd_t fd, Object* context, bool enable_read, bool enab
   return true;
 #endif
 }
-void FDEventQueue::break_blocking_dequeue()
-{
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-  uint64_t m = 1;
-  ::write( signal_eventfd, &m, sizeof( m ) );
-#else
-  char m = 'M';
-  signal_write_socket->write( &m, sizeof( m ) );
-#endif
-}
-#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-void FDEventQueue::clearReturnedEvents( fd_t fd, Object* context )
-{
-  for ( int i = active_fds; i >= 0; i-- )
-  {
-#if defined(YIELD_HAVE_LINUX_EPOLL)
-    if ( returned_events[i].data.ptr == context )
-    {
-      memset( &returned_events[i].data, 0, sizeof( returned_events[i].data ) );
-      active_fds--;
-    }
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-    if ( returned_events[i].ident == fd )
-    {
-      returned_events[i].ident = 0;
-      active_fds--;
-    }
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-    if ( static_cast<fd_t>( returned_events[i].portev_object ) == fd )
-    {
-      returned_events[i].portev_object = 0;
-      active_fds--;
-    }
-#endif
-  }
-}
-#endif
 void FDEventQueue::clearSignal()
 {
-#ifdef YIELD_HAVE_LINUX_EVENTFD
   uint64_t m;
-  ::read( signal_eventfd, &m, sizeof( m ) );
-#else
-  char m;
-  signal_read_socket->read( reinterpret_cast<char*>( &m ), sizeof( m ) );
-#endif
+  signal_read_end->read( reinterpret_cast<char*>( &m ), sizeof( m ) );
 }
 Event* FDEventQueue::dequeue()
 {
+  if ( timers.empty() )
+  {
+    if ( active_fds <= 0 )
+    {
+      active_fds = poll();
+      if ( active_fds <= 0 )
+        return NULL;
+    }
+    return dequeueFDEvent();
+  }
+  else
+    return dequeue( static_cast<timeout_ns_t>( -1 ) );
+}
+Event* FDEventQueue::dequeue( timeout_ns_t timeout_ns )
+{
+  TimerEvent* timer_event = dequeueTimerEvent();
+  if ( timer_event != NULL )
+    return timer_event;
   if ( active_fds <= 0 )
   {
-    active_fds = poll();
+    if ( timers.empty() )
+      active_fds = poll( timeout_ns );
+    else
+    {
+      Time current_time;
+      const Time& next_fire_time = timers[0]->get_fire_time();
+      if ( next_fire_time > current_time )
+      {
+        timeout_ns = next_fire_time - current_time;
+        active_fds = poll( timeout_ns );
+      }
+      else
+        return dequeueTimerEvent();
+    }
     if ( active_fds <= 0 )
       return NULL;
   }
-  fillStackFDEvent();
-  if ( stack_fd_event.get_fd() != 0 )
+  timer_event = dequeueTimerEvent();
+  if ( timer_event != NULL )
+    return timer_event;
+  else
+    return dequeueFDEvent();
+}
+FDEvent* FDEventQueue::dequeueFDEvent()
+{
+#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+  while ( active_fds > 0 )
   {
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-    if ( stack_fd_event.get_fd() != signal_eventfd )
-#else
-    if ( stack_fd_event.get_socket() != *signal_read_socket )
+    active_fds--;
+#if defined(YIELD_HAVE_LINUX_EPOLL)
+    if ( returned_events[active_fds].data.ptr != signal_read_end.get() )
+      return new FDEvent( static_cast<Object*>( returned_events[active_fds].data.ptr ), 0, returned_events[active_fds].events & EPOLLIN ) == EPOLLIN );
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    if ( returned_events[active_fds].ident != *signal_read_end )
+      return new FDEvent( returned_events[active_fds].udata ), 0, returned_events[active_fds].filter == EVFILT_READ );
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    if ( returned_events[active_fds].portev_source == PORT_SOURCE_FD )
+    {
+      int fd = returned_events[active_fds].portev_object;
+      if ( fd != *signal_read_end )
+      {
+        Object* context = static_cast<Object*>( returned_events[active_fds].portev_user );
+        bool want_read = returned_events[active_fds].portev_events & POLLIN ) || ( returned_events[active_fds].portev_events & POLLRDNORM );
+        memset( &returned_events[active_fds], 0, sizeof( returned_events[active_fds] ) );
+        return new FDEvent( context, 0, want_read );
+      }
+    }
+    else
+      continue;
 #endif
-      return &stack_fd_event;
+    // The signal was set
+    clearSignal();
+    return NULL;
+  }
+#else
+#ifdef _WIN32
+  while ( active_fds > 0 && next_fd_to_check != fd_to_context_map.end() )
+  {
+    unsigned int fd = next_fd_to_check->first;
+    uint32_t error_code;
+    bool want_read;
+    if ( FD_ISSET( fd, read_fds_copy ) )
+    {
+      FD_CLR( fd, read_fds_copy );
+      if ( fd == *signal_read_end )
+      {
+        clearSignal();
+        next_fd_to_check++;
+        return NULL;
+      }
+      else
+      {
+        error_code = 0;
+        want_read = true;
+      }
+    }
+    else if ( FD_ISSET( fd, write_fds_copy ) )
+    {
+      FD_CLR( fd, write_fds_copy );
+      error_code = 0;
+      want_read = false;
+    }
+    else if ( FD_ISSET( fd, except_fds_copy ) )
+    {
+      FD_CLR( fd, except_fds_copy );
+      int so_error; int so_error_len = sizeof( so_error );
+      ::getsockopt( fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>( &so_error ), &so_error_len );
+      error_code = so_error;
+      want_read = false;
+    }
     else
     {
-      clearSignal();
-#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-      port_associate( poll_fd, PORT_SOURCE_FD, *signal_read_socket, POLLIN, NULL ); // Re-associate the signal pipe
+      next_fd_to_check++;
+      continue;
+    }
+    Object* context = fd_to_context_map.find( fd );
+    active_fds--;
+    return new FDEvent( context, error_code, want_read );
+  }
+#else
+  pollfd_vector::size_type pollfds_size = pollfds.size();
+  while ( active_fds > 0 && next_pollfd_to_check < pollfds_size )
+  {
+    if ( pollfds[next_pollfd_to_check].revents != 0 )
+    {
+      int fd = pollfds[next_pollfd_to_check].fd;
+      bool want_read = pollfds[next_pollfd_to_check].revents & POLLIN;
+      pollfds[next_pollfd_to_check].revents = 0;
+      next_pollfd_to_check++;
+      active_fds--;
+      if ( fd == *signal_read_end )
+      {
+        clearSignal();
+        return NULL;
+      }
+      else
+        return new FDEvent( fd_to_context_map.find( fd ), 0, want_read );
+    }
+    else
+      next_pollfd_to_check++;
+  }
 #endif
+#endif
+  active_fds = 0;
+  return NULL;
+}
+TimerEvent* FDEventQueue::dequeueTimerEvent()
+{
+  if ( !timers.empty() )
+  {
+    Time current_time;
+    if ( timers.back()->get_fire_time() <= current_time )
+    {
+      TimerEvent* timer_event = timers.back();
+      std::pop_heap( timers.begin(), timers.end(), CompareTimerEvents );
+      timers.pop_back();
+      if ( timer_event->get_period() != 0 )
+      {
+        TimerEvent* next_timer_event = new TimerEvent( Time() + timer_event->get_period(), timer_event->get_period(), timer_event->get_context() );
+        timers.push_back( next_timer_event );
+        std::push_heap( timers.begin(), timers.end(), CompareTimerEvents );
+      }
+      return timer_event;
     }
   }
   return NULL;
 }
 #ifdef _WIN32
-void FDEventQueue::detach( socket_t fd, Object* context, bool will_keep_fd_open )
+void FDEventQueue::detach( unsigned int fd )
 #else
-void FDEventQueue::detach( fd_t fd, Object* context, bool will_keep_fd_open )
+void FDEventQueue::detach( int fd )
 #endif
 {
+  active_fds = 0; // Have to discard all returned events because the fd may be in them and we have to assume its context is now invalid
 #if defined(_WIN32)
   FD_CLR( fd, read_fds ); FD_CLR( fd, read_fds_copy );
   FD_CLR( fd, write_fds ); FD_CLR( fd, write_fds_copy );
   FD_CLR( fd, except_fds ); FD_CLR( fd, except_fds_copy );
   fd_to_context_map.remove( fd );
   next_fd_to_check = fd_to_context_map.begin();
-  active_fds = 0;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
-  clearReturnedEvents( fd, context );
-  if ( will_keep_fd_open )
-  {
-    struct epoll_event change_event;
-    memset( &change_event, 0, sizeof( change_event ) );
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-    change_event.data.fd = fd;
-#else
-    change_event.data.ptr = context;
-#endif
-    epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
-  }
-  // else close() will remove the fd from the polling set
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-  fd_to_context_map.remove( fd );
-#endif
+  struct epoll_event change_event; // From the man page: In kernel versions before 2.6.9, the EPOLL_CTL_DEL operation required a non-NULL pointer in event, even though this argument is ignored. Since kernel 2.6.9, event can be specified as NULL when using EPOLL_CTL_DEL.
+  epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-  clearReturnedEvents( fd, context );
-  if ( will_keep_fd_open )
-  {
-    struct kevent change_events[2];
-    EV_SET( &change_events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, context );
-    EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, context );
-    kevent( poll_fd, change_events, 2, 0, 0, NULL );
-  }
-  // else close() will remove the fd from the polling set
+  struct kevent change_events[2];
+  EV_SET( &change_events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL );
+  EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL );
+  kevent( poll_fd, change_events, 2, 0, 0, NULL );
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  clearReturnedEvents( fd, context );
   port_dissociate( poll_fd, PORT_SOURCE_FD, fd );
 #elif !defined(_WIN32)
   if ( fd_to_context_map.remove( fd ) != 0 )
@@ -876,155 +940,6 @@ bool FDEventQueue::enqueue( Event& ev )
 #endif
   Object::decRef( ev );
   return true;
-}
-void FDEventQueue::fillStackFDEvent()
-{
-#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  do
-  {
-    active_fds--;
-#if defined(YIELD_HAVE_LINUX_EPOLL)
-    if ( returned_events[active_fds].data.fd != 0  ) // The event hasn't been cleared by clearReturnedEvents
-    {
-      stack_fd_event.fd = returned_events[active_fds].data.fd;
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-      if ( stack_fd_event.fd != signal_eventfd )
-#else
-      if ( stack_fd_event.fd != *signal_read_socket )
-#endif
-        stack_fd_event.context = fd_to_context_map.find( stack_fd_event.fd );
-#else
-      stack_fd_event.fd = 0;
-      stack_fd_event.context = returned_events[active_fds].data.ptr;
-#endif
-      stack_fd_event._want_read = ( ( returned_events[active_fds].events & EPOLLIN ) == EPOLLIN );
-      if ( ( ( returned_events[active_fds].events & EPOLLERR ) != EPOLLERR ) &&
-         ( ( returned_events[active_fds].events & EPOLLHUP ) != EPOLLHUP ) )
-           stack_fd_event.error_code = 0;
-      else
-          stack_fd_event.error_code = 1;
-      break;
-    }
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-    if ( returned_events[active_fds].ident != 0 )
-    {
-      stack_fd_event.fd = returned_events[active_fds].ident;
-      stack_fd_event.context = static_cast<Object*>( returned_events[active_fds].udata );
-      stack_fd_event._want_read = ( returned_events[active_fds].filter == EVFILT_READ );
-      stack_fd_event.error_code = 0;
-      break;
-    }
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-    if ( returned_events[active_fds].portev_source == PORT_SOURCE_FD )
-    {
-      if ( returned_events[active_fds].portev_object != 0 )
-      {
-        stack_fd_event.fd = returned_events[active_fds].portev_object;
-        stack_fd_event.context = static_cast<Object*>( returned_events[active_fds].portev_user );
-        stack_fd_event._want_read = ( returned_events[active_fds].portev_events & POLLIN ) || ( returned_events[active_fds].portev_events & POLLRDNORM );
-        if ( ( returned_events[active_fds].portev_events & POLLERR ) != POLLERR && ( returned_events[active_fds].portev_events & POLLHUP ) != POLLHUP )
-          stack_fd_event.error_code = 0;
-        else
-          stack_fd_event.error_code = 1;
-        memset( &returned_events[active_fds], 0, sizeof( returned_events[active_fds] ) );
-      }
-    }
-#endif
-  } while ( active_fds > 0 );
-#else
-#ifdef _WIN32
-  while ( next_fd_to_check != fd_to_context_map.end() )
-  {
-    socket_t fd = ( socket_t )next_fd_to_check->first;
-    if ( FD_ISSET( fd, read_fds_copy ) )
-    {
-      stack_fd_event._want_read = true;
-      FD_CLR( fd, read_fds_copy );
-      stack_fd_event.error_code = 0;
-    }
-    else if ( FD_ISSET( fd, write_fds_copy ) )
-    {
-      stack_fd_event._want_read = false;
-      FD_CLR( fd, write_fds_copy );
-      stack_fd_event.error_code = 0;
-    }
-    else if ( FD_ISSET( fd, except_fds_copy ) )
-    {
-      stack_fd_event._want_read = false;
-      FD_CLR( fd, except_fds_copy );
-      int so_error; int so_error_len = sizeof( so_error );
-      ::getsockopt( fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>( &so_error ), &so_error_len );
-      stack_fd_event.error_code = so_error;
-    }
-    else
-    {
-      next_fd_to_check++;
-      continue;
-    }
-    stack_fd_event._socket = fd;
-    stack_fd_event.context = fd_to_context_map.find( fd );
-    active_fds--;
-    break;
-  }
-  if ( next_fd_to_check == fd_to_context_map.end() )
-    active_fds = 0;
-#else
-  pollfd_vector::size_type pollfds_size = pollfds.size();
-  while ( next_pollfd_to_check < pollfds_size )
-  {
-    if ( pollfds[next_pollfd_to_check].revents != 0 )
-    {
-      active_fds--;
-      stack_fd_event.fd = pollfds[next_pollfd_to_check].fd;
-      if ( stack_fd_event.fd != *signal_read_socket )
-      {
-        int revents = pollfds[next_pollfd_to_check].revents;
-        stack_fd_event._want_read = revents & POLLIN;
-        if ( ( revents & POLLERR ) != POLLERR && ( revents & POLLHUP ) != POLLHUP )
-          stack_fd_event.error_code = 0;
-        else
-          stack_fd_event.error_code = 1;
-        stack_fd_event.context = fd_to_context_map.find( stack_fd_event.fd );
-      }
-      pollfds[next_pollfd_to_check].revents = 0;
-      next_pollfd_to_check++;
-      break;
-    }
-    else
-      next_pollfd_to_check++;
-  }
-  if ( next_pollfd_to_check == pollfds_size )
-    active_fds = 0;
-#endif
-#endif
-}
-Event* FDEventQueue::timed_dequeue( timeout_ns_t timeout_ns )
-{
-  if ( active_fds <= 0 )
-  {
-    active_fds = poll( timeout_ns );
-    if ( active_fds <= 0 )
-      return NULL;
-  }
-  fillStackFDEvent();
-  if ( stack_fd_event.get_fd() != 0 )
-  {
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-    if ( stack_fd_event.get_fd() != signal_eventfd )
-#else
-    if ( stack_fd_event.get_socket() != *signal_read_socket )
-#endif
-      return &stack_fd_event;
-    else
-    {
-      clearSignal();
-#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-      port_associate( poll_fd, PORT_SOURCE_FD, *signal_read_socket, POLLIN, NULL ); // Re-associate the signal pipe
-#endif
-    }
-  }
-  return NULL;
 }
 int FDEventQueue::poll()
 {
@@ -1077,10 +992,17 @@ int FDEventQueue::poll( timeout_ns_t timeout_ns )
     return ::poll( &pollfds[0], pollfds.size(), static_cast<int>( timeout_ns / NS_IN_MS ) );
 #endif
 }
+auto_Object<TimerEvent> FDEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
+{
+  TimerEvent* timer_event = new TimerEvent( Time() + timeout, period, context );
+  timers.push_back( timer_event );
+  std::push_heap( timers.begin(), timers.end(), CompareTimerEvents );
+  return timer_event->incRef();
+}
 #ifdef _WIN32
-bool FDEventQueue::toggle( socket_t fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::toggle( unsigned int fd, Object* context, bool enable_read, bool enable_write )
 #else
-bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enable_write )
 #endif
 {
 #if defined(_WIN32)
@@ -1102,11 +1024,7 @@ bool FDEventQueue::toggle( fd_t fd, Object* context, bool enable_read, bool enab
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
   struct epoll_event change_event;
   memset( &change_event, 0, sizeof( change_event ) );
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-  change_event.data.fd = fd;
-#else
   change_event.data.ptr = context;
-#endif
   change_event.events = 0;
   if ( enable_read ) change_event.events |= EPOLLIN;
   if ( enable_write ) change_event.events |= EPOLLOUT;
@@ -1186,7 +1104,7 @@ namespace YIELD
       if ( timeout_ns == static_cast<timeout_ns_t>( -1 ) )
         return http_response_queue.dequeue_typed<HTTPResponse>();
       else
-        return http_response_queue.timed_dequeue_typed<HTTPResponse>( timeout_ns );
+        return http_response_queue.dequeue_typed<HTTPResponse>( timeout_ns );
     }
   private:
     OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > http_response_queue;
@@ -1232,7 +1150,7 @@ auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const
   YIELD::URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
-  auto_Object<HTTPClient> http_client = HTTPClient::create( stage_group, checked_absolute_uri, NULL, log );
+  auto_Object<HTTPClient> http_client = HTTPClient::create( stage_group, checked_absolute_uri, log );
   auto_Object<SyncHTTPRequest> http_request = new SyncHTTPRequest( method, checked_absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
   http_client->send( http_request->incRef() );
@@ -2231,11 +2149,6 @@ void JSONOutputStream::writeStruct( Object* s )
 // oncrpc_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCClient::ONCRPCClient( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log )
-  : Client( peer_sockaddr, socket_factory, log )
-{
-  object_factories = new ObjectFactories;
-}
 auto_Object<Request> ONCRPCClient::createProtocolRequest( auto_Object<> body )
 {
   return new ONCRPCRequest( body, get_log() );
@@ -2312,10 +2225,10 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
       uint32_t rpcvers = xdr_input_stream.readUint32( "rpcvers" );
       if ( rpcvers == 2 )
       {
-        uint32_t prog = xdr_input_stream.readUint32( "prog" );
-        uint32_t vers = xdr_input_stream.readUint32( "vers" );
+        xdr_input_stream.readUint32( "prog" );
+        xdr_input_stream.readUint32( "vers" );
         uint32_t proc = xdr_input_stream.readUint32( "proc" );
-        uint32_t credential_auth_flavor = xdr_input_stream.readUint32( "credential_auth_flavor" );
+        xdr_input_stream.readUint32( "credential_auth_flavor" );
         uint32_t credential_auth_body_length = xdr_input_stream.readUint32( "credential_auth_body_length" );
         if ( credential_auth_body_length > 0 ) // TODO: read into credentials here
         {
@@ -2325,7 +2238,7 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* ou
           oncrpc_record_input_stream.read( credential_auth_body, credential_auth_body_length, NULL );
           delete [] credential_auth_body;
         }
-        uint32_t verf_auth_flavor = xdr_input_stream.readUint32( "verf_auth_flavor" );
+        xdr_input_stream.readUint32( "verf_auth_flavor" );
         uint32_t verf_auth_body_length = xdr_input_stream.readUint32( "credential_auth_body_length" );
         if ( verf_auth_body_length > 0 )
         {

@@ -134,6 +134,7 @@ namespace YIELD
     virtual EventQueue* clone() const = 0;
 
     virtual Event* dequeue() = 0; // Blocking
+    virtual Event* dequeue( timeout_ns_t timeout_ns ) = 0;
 
     template <class ExpectedEventType>
     ExpectedEventType& dequeue_typed()
@@ -145,21 +146,17 @@ namespace YIELD
         throw Exception( "EventQueue::dequeue_typed: blocking dequeue was broken" );
     }
 
-    virtual bool enqueue( Event& ev ) = 0;
-
-
-    virtual Event* timed_dequeue( timeout_ns_t timeout_ns ) = 0;
-
     template <class ExpectedEventType>
-    ExpectedEventType& timed_dequeue_typed( timeout_ns_t timeout_ns )
+    ExpectedEventType& dequeue_typed( timeout_ns_t timeout_ns )
     {
-      Event* dequeued_ev = this->timed_dequeue( timeout_ns );
+      Event* dequeued_ev = dequeue( timeout_ns );
       if ( dequeued_ev )
         return _checkDequeuedEventAgainstExpectedEventType<ExpectedEventType>( *dequeued_ev );
       else
-        throw Exception( "EventQueue::timed_dequeue_type: timed out" );
+        throw Exception( "EventQueue::dequeue_typed: timed out" );
     }
 
+    virtual bool enqueue( Event& ev ) = 0;
     virtual Event* try_dequeue() = 0;
 
     // EventTarget
@@ -225,18 +222,7 @@ namespace YIELD
       }
     }
 
-    bool enqueue( Event& ev )
-    {
-      if ( InternalQueueType::enqueue( &ev ) )
-      {
-        empty.release();
-        return true;
-      }
-      else
-        return false;
-    }
-
-    Event* timed_dequeue( timeout_ns_t timeout_ns )
+    Event* dequeue( timeout_ns_t timeout_ns )
     {
       Event* result = InternalQueueType::try_dequeue();
 
@@ -263,6 +249,17 @@ namespace YIELD
 
         return result;
       }
+    }
+
+    bool enqueue( Event& ev )
+    {
+      if ( InternalQueueType::enqueue( &ev ) )
+      {
+        empty.release();
+        return true;
+      }
+      else
+        return false;
     }
 
     inline Event* try_dequeue()
@@ -397,12 +394,10 @@ namespace YIELD
       if ( lock.try_acquire() )
       {
         Event* ev = event_queue->dequeue();
-        if ( ev )
+        if ( ev != NULL )
         {
           --event_queue_length;
           _callEventHandler( *ev );
-          while ( ( ev = event_queue->try_dequeue() ) != NULL )
-            _callEventHandler( *ev );
           lock.release();
           return true;
         }
@@ -420,17 +415,11 @@ namespace YIELD
     {
       if ( lock.try_acquire() )
       {
-        Event* ev = event_queue->timed_dequeue( timeout_ns );
-        if ( ev )
+        Event* ev = event_queue->dequeue( timeout_ns );
+        if ( ev != NULL )
         {
+          --event_queue_length;
           _callEventHandler( *ev );
-          ev = event_queue->try_dequeue();
-          while ( ev != NULL )
-          {
-            --event_queue_length;
-            _callEventHandler( *ev );
-            ev = event_queue->try_dequeue();
-          }
           lock.release();
           return true;
         }

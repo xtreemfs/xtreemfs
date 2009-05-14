@@ -12,12 +12,6 @@
 struct kevent;
 #elif defined(__linux__)
 #define YIELD_HAVE_LINUX_EPOLL 1
-struct epoll_event;
-// epoll_event's context (.data) member is a union of fd, u32, u64, and a Object*, which means
-// that (unlike with kqueue) you can either get the context or the fd back, but not both
-// In order to keep both I also a hash_map for fd->context. This may become a performance issue.
-// If so, we'll have to find another way to satisfy callers who need the fd and/or the context.
-#define YIELD_LINUX_EPOLL_RETURN_FD 1
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
 struct port_event;
 typedef port_event port_event_t;
@@ -227,28 +221,46 @@ namespace YIELD
   class FDEvent : public Event
   {
   public:
+    FDEvent( Object* context, uint32_t error_code, bool _want_read )
+      : context( context ), error_code( error_code ), _want_read( _want_read )
+    { }
+
     inline Object* get_context() const { return context; }
     inline uint32_t get_error_code() const { return error_code; }
-    fd_t get_fd() const { return fd; }
-    inline socket_t get_socket() const { return _socket; }
     inline bool want_read() const { return _want_read; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "FDEvent", 3294357755UL )
-    void serialize( StructuredOutputStream& );
+    YIELD_OBJECT_TYPE_INFO( EVENT, "FDEvent", 3294357755UL );
 
   private:
-    friend class FDEventQueue;
-
-    union
-    {
-      fd_t fd;
-      socket_t _socket;
-    };
+    ~FDEvent() { }
 
     Object* context;
     bool _want_read;
     uint32_t error_code;
+  };
+
+
+  class TimerEvent : public Event
+  {
+  public:
+    TimerEvent( const Time& fire_time, const Time& period, auto_Object<> context = NULL )
+      : fire_time( fire_time ), period( period ), context( context )
+    { }
+
+    auto_Object<> get_context() const { return context; }
+    const Time& get_fire_time() const { return fire_time; }
+    const Time& get_period() const { return period; }
+
+    // Object
+    YIELD_OBJECT_TYPE_INFO( EVENT, "TimerEvent", 422444629UL );
+    TimerEvent& incRef() { return Object::incRef( *this ); }
+
+  private:
+    ~TimerEvent() { }
+
+    Time fire_time, period;
+    auto_Object<> context;
   };
 
 
@@ -258,44 +270,43 @@ namespace YIELD
     FDEventQueue();
 
 #ifdef _WIN32
-    bool attach( socket_t fd, Object* context, bool enable_read = true, bool enable_write = false );
-    void detach( socket_t fd, Object* context, bool will_keep_fd_open = true );
-    bool toggle( socket_t fd, Object* context, bool enable_read, bool enable_write );
+    bool attach( unsigned int _socket, Object* context, bool enable_read = true, bool enable_write = false );
+    void detach( unsigned int _socket );
+    bool toggle( unsigned int _socket, Object* context, bool enable_read, bool enable_write );
 #else
-    bool attach( fd_t fd, Object* context,  bool enable_read = true, bool enable_write = false );
-    void detach( fd_t fd, Object* context, bool will_keep_fd_open = true );
-    bool toggle( fd_t fd, Object* context, bool enable_read, bool enable_write );
+    bool attach( int fd, Object* context, bool enable_read = true, bool enable_write = false );
+    void detach( int fd );
+    bool toggle( int fd, Object* context, bool enable_read, bool enable_write );
 #endif
 
-    virtual void break_blocking_dequeue();
+    inline void signal() { uint64_t m = 1; signal_write_end->write( &m, sizeof( m ) ); }
+    auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, static_cast<uint64_t>( 0 ), context ); }
+    auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
     // EventQueue
     virtual EventQueue* clone() const { return new FDEventQueue; }
     virtual bool enqueue( Event& ); // Discards events
     virtual Event* dequeue();
-    virtual Event* try_dequeue() { return FDEventQueue::timed_dequeue( 0 ); }
-    virtual Event* timed_dequeue( timeout_ns_t timeout_ns );
+    virtual Event* dequeue( timeout_ns_t timeout_ns );
+    virtual Event* try_dequeue() { return FDEventQueue::dequeue( 0 ); }    
 
   protected:
     virtual ~FDEventQueue();
 
   private:
 #ifdef YIELD_HAVE_LINUX_EVENTFD
-    int signal_eventfd;
+    auto_Object<File> signal_read_end, signal_write_end;
 #else
-    auto_Object<TCPSocket> signal_read_socket, signal_write_socket;
+    auto_Object<TCPSocket> signal_read_end, signal_write_end;
 #endif
     int active_fds;
 
 #if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-    fd_t poll_fd;
+    int poll_fd;
 #endif
 
 #if defined(YIELD_HAVE_LINUX_EPOLL)
     struct epoll_event* returned_events;
-#ifdef YIELD_LINUX_EPOLL_RETURN_FD
-    STLHashMap<Object*> fd_to_context_map;
-#endif
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
     struct kevent* returned_events;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
@@ -312,13 +323,11 @@ namespace YIELD
 #endif
 #endif
 
-    FDEvent stack_fd_event;
-    void fillStackFDEvent();
+    std::vector<TimerEvent*> timers;
 
-#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-    void clearReturnedEvents( fd_t, Object* );
-#endif
     void clearSignal();
+    FDEvent* dequeueFDEvent();
+    TimerEvent* dequeueTimerEvent();
     int poll();
     int poll( timeout_ns_t timeout_ns );
   };
@@ -331,10 +340,10 @@ namespace YIELD
 
     // EventQueue
     virtual EventQueue* clone() const { return new FDAndInternalEventQueue; }
-    bool enqueue( Event& );
     Event* dequeue();
-    Event* try_dequeue();
-    Event* timed_dequeue( timeout_ns_t timeout_ns );
+    Event* dequeue( timeout_ns_t timeout_ns );
+    bool enqueue( Event& );
+    Event* try_dequeue();    
 
   private:
     ~FDAndInternalEventQueue() { }
@@ -345,27 +354,29 @@ namespace YIELD
 
   class Client : public EventHandler
   {
-  public:
+  public:    
+    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_MS;
+    const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = UINT8_MAX;
+
+
     auto_Object<Log> get_log() const { return log; }
+    const Time& get_operation_timeout() const { return operation_timeout; }
     uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
-    uint64_t get_operation_timeout_ns() const { return operation_timeout_ns; }
     auto_Object<SocketFactory> get_socket_factory() const { return socket_factory; }
-    void set_reconnect_tries_max( uint8_t reconnect_tries_max ) { this->reconnect_tries_max = reconnect_tries_max; }
-    void set_operation_timeout_ns( uint64_t operation_timeout_ns ) { this->operation_timeout_ns = operation_timeout_ns; }
 
     // EventHandler
     virtual void handleEvent( Event& );
 
   protected:
     template <class ClientType, class StageGroupType>
-    static auto_Object<ClientType> create( auto_Object<StageGroupType> stage_group, const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory = NULL, auto_Object<Log> log = NULL )
+    static auto_Object<ClientType> create( auto_Object<StageGroupType> stage_group, auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
     {
-      ClientType* client = new ClientType( peer_sockaddr, socket_factory, log );
+      ClientType* client = new ClientType( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
       static_cast<StageGroup*>( stage_group.get() )->createStage<ClientType, FDAndInternalEventQueue>( client->incRef(), new FDAndInternalEventQueue );
       return client;
     }
 
-    Client( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log );
+    Client( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
     virtual ~Client();
 
     virtual auto_Object<Request> createProtocolRequest( auto_Object<Object> body ) = 0;
@@ -373,12 +384,13 @@ namespace YIELD
     virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response ) = 0;
 
   private:
-    SocketAddress peer_sockaddr;
-    auto_Object<SocketFactory> socket_factory;
     auto_Object<Log> log;
+    Time operation_timeout;
+    SocketAddress peer_sockaddr;
+    uint8_t reconnect_tries_max;
+    auto_Object<SocketFactory> socket_factory;    
 
-    uint8_t reconnect_tries, reconnect_tries_max;
-    uint64_t operation_timeout_ns;
+    uint8_t reconnect_tries;
 
     FDAndInternalEventQueue* fd_event_queue;
 
@@ -426,30 +438,6 @@ namespace YIELD
 
     std::vector<Connection*> connections;
     Connection* createConnection();
-
-
-    class ConnectionActivityCheckRequest : public Request
-    {
-    public:
-      // Object
-      YIELD_OBJECT_TYPE_INFO( REQUEST, "ConnectionActivityCheckRequest", 3667953665UL );
-    };
-
-    class ConnectionActivityCheckTimer : public Timer
-    {
-    public:
-      ConnectionActivityCheckTimer( Client& client );
-
-      // Timer
-      void fire();
-
-    private:
-      Client& client;
-
-      ConnectionActivityCheckRequest stack_connection_activity_check_request;
-    };
-
-    auto_Object<ConnectionActivityCheckTimer> connection_activity_timer;
   };
 
 
@@ -573,9 +561,9 @@ namespace YIELD
   {
   public:
     template <class StageGroupType>
-    static auto_Object<HTTPClient> create( auto_Object<StageGroupType>& stage_group, const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory = NULL, auto_Object<Log> log = NULL )
+    static auto_Object<HTTPClient> create( auto_Object<StageGroupType> stage_group, const SocketAddress& peer_sockaddr, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
     {
-      return Client::create<HTTPClient, StageGroupType>( stage_group, peer_sockaddr, socket_factory, log );
+      return Client::create<HTTPClient, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
     }
 
     static auto_Object<HTTPResponse> GET( const URI& absolute_uri, auto_Object<Log> log = NULL );
@@ -591,8 +579,8 @@ namespace YIELD
   protected:
     friend class Client;
 
-    HTTPClient( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log )
-      : Client( peer_sockaddr, socket_factory, log )
+    HTTPClient( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
     { }
 
     virtual ~HTTPClient() { }
@@ -729,9 +717,10 @@ namespace YIELD
   class ONCRPCClient : public Client
   {
   public:
-    static auto_Object<ONCRPCClient>create( auto_Object<StageGroup> stage_group, const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory = NULL, auto_Object<Log> log = NULL )
+    template <class StageGroupType>
+    static auto_Object<ONCRPCClient> create( auto_Object<StageGroupType> stage_group, const SocketAddress& peer_sockaddr, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
     {
-      return Client::create<ONCRPCClient>( stage_group, peer_sockaddr, socket_factory, log );
+      return Client::create<ONCRPCClient, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
     }
 
     // Object
@@ -743,7 +732,12 @@ namespace YIELD
   protected:
     friend class Client;
 
-    ONCRPCClient( const SocketAddress& peer_sockaddr, auto_Object<SocketFactory> socket_factory, auto_Object<Log> log );
+    ONCRPCClient( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+    {
+      object_factories = new ObjectFactories;
+    }
+
     virtual ~ONCRPCClient() { }
 
     auto_Object<ObjectFactories> object_factories;

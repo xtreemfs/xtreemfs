@@ -81,7 +81,7 @@ namespace org
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
-          timeout_ms = 0;
+          operation_timeout = 5 * NS_IN_MS;
         }
 
         virtual ~Main()
@@ -162,7 +162,15 @@ namespace org
             case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = arg; break;
             case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = arg; break;
             case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = arg; break;
-            case OPTION_TIMEOUT_MS: timeout_ms = atof( arg ); break;
+
+            case OPTION_TIMEOUT_MS:
+            {
+              double timeout_ms = atof( arg );
+              if ( timeout_ms != 0 )
+                operation_timeout = YIELD::Time( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
+            }
+            break;
+
             default: YIELD::Main::parseOption( id, arg ); break;
           }
         }
@@ -170,7 +178,7 @@ namespace org
       private:
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
-        double timeout_ms;
+        YIELD::Time operation_timeout;
 
         YIELD::auto_Object<YIELD::Log> log;
         YIELD::auto_Object<YIELD::SocketFactory> socket_factory;
@@ -182,11 +190,8 @@ namespace org
         {
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
-            checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_socket_factory(), get_log() );
-          proxy->set_reconnect_tries_max( 3 );
-          if ( timeout_ms != 0 )
-            proxy->set_operation_timeout_ns( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
+            checked_uri.set_port( default_port );          
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_log(), operation_timeout, 3, get_socket_factory() );
           return proxy;
         }
 

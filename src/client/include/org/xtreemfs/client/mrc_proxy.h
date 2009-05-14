@@ -21,12 +21,11 @@ namespace org
       class MRCProxy : public YIELD::ONCRPCClient
       {
       public:       
-        static YIELD::auto_Object<MRCProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        template <class StageGroupType>
+        static YIELD::auto_Object<MRCProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
         {
-          YIELD::auto_Object<MRCProxy> proxy = new MRCProxy( peer_sockaddr, socket_factory, log );
-          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
-          return proxy;
-        }       
+          return YIELD::Client::create<MRCProxy, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+        }
 
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
@@ -58,11 +57,16 @@ namespace org
         void update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
         void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
 
+        // YIELD::Object
+        MRCProxy& incRef() { return Object::incRef( *this ); }
+
         // YIELD::EventHandler
         const char* getEventHandlerName() const { return "MRCProxy"; }
 
       private:
-        MRCProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, YIELD::auto_Object<YIELD::Log> log );
+        friend class YIELD::Client;
+
+        MRCProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~MRCProxy();
 
 

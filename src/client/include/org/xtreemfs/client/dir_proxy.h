@@ -23,21 +23,25 @@ namespace org
       class DIRProxy : public YIELD::ONCRPCClient
       {
       public:
-        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<YIELD::StageGroup> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL, YIELD::auto_Object<YIELD::Log> log = NULL )
+        template <class StageGroupType>
+        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
         {
-          YIELD::auto_Object<DIRProxy> proxy = new DIRProxy( peer_sockaddr, socket_factory, log );
-          stage_group->createStage( proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue>( new YIELD::FDAndInternalEventQueue ), log );
-          return proxy;
-        }       
+          return YIELD::Client::create<DIRProxy, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+        }
 
         YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
         YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
+
+        // YIELD::Object
+        DIRProxy& incRef() { return Object::incRef( *this ); }
 
         // YIELD::EventHandler
         const char* getEventHandlerName() const { return "DIRProxy"; }
 
       private:
-        DIRProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, YIELD::auto_Object<YIELD::Log> log );
+        friend class YIELD::Client;
+
+        DIRProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~DIRProxy();
 
 

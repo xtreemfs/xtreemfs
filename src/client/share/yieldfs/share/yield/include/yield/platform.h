@@ -697,6 +697,9 @@ namespace YIELD
 #endif
     Time operator+( const Time& other ) const { return Time( unix_time_ns + other.unix_time_ns ); }
     Time operator-( const Time& other ) const { return Time( unix_time_ns - other.unix_time_ns ); }
+    bool operator<( const Time& other ) const { return unix_time_ns < other.unix_time_ns; }
+    bool operator>( const Time& other ) const { return unix_time_ns > other.unix_time_ns; }
+    bool operator>=( const Time& other ) const { return unix_time_ns >= other.unix_time_ns; }
     Time& operator=( uint64_t unix_time_ns ) { this->unix_time_ns = unix_time_ns; return *this; }
     Time& operator=( uint32_t unix_time_s ) { this->unix_time_ns = unix_time_s * NS_IN_S; return *this; }
     operator std::string() const;
@@ -2907,36 +2910,14 @@ namespace YIELD
     virtual const char* shortDescription() { return __short_description.c_str(); }
 
   protected:
-    friend class TestRunner;
     std::string __short_description;
   };
-
 
 
   class TestRunner
   {
   public:
     int run( TestSuite& test_suite );
-  };
-
-
-  class Timer : public Object
-  {
-  public:
-    Timer( uint64_t timeout_ns ) { init( timeout_ns, 0 ); }
-    Timer( uint64_t timeout_ns, uint64_t period_ns ) { init( timeout_ns, period_ns ); }
-    virtual ~Timer();
-
-    virtual void fire() = 0;
-
-  private:
-    void init( uint64_t timeout_ns, uint64_t period_ns );
-
-#ifdef _WIN32
-    void* hTimer;
-#else
-    void* timer_id;
-#endif
   };
 
 

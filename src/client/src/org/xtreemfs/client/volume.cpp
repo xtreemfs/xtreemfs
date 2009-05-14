@@ -33,9 +33,9 @@ Volume::Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& nam
   : name( name ), flags( flags ), log( log )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( stage_group, dir_sockaddr, socket_factory, log );
+  dir_proxy = DIRProxy::create( stage_group, dir_sockaddr, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, socket_factory, log );
+  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
 }
 
 Volume::~Volume()
@@ -108,9 +108,7 @@ YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid 
 
   if ( osd_proxy == NULL )
   {
-    osd_proxy = OSDProxy::create( stage_group, *osd_uri, dir_proxy->get_socket_factory(), dir_proxy->get_log() ).release();
-    osd_proxy->set_operation_timeout_ns( dir_proxy->get_operation_timeout_ns() );
-    osd_proxy->set_reconnect_tries_max( dir_proxy->get_reconnect_tries_max() );
+    osd_proxy = OSDProxy::create( stage_group, *osd_uri, dir_proxy->get_log(), dir_proxy->get_operation_timeout(), dir_proxy->get_reconnect_tries_max(), dir_proxy->get_socket_factory() ).release();
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();

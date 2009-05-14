@@ -7,8 +7,8 @@
 using namespace org::xtreemfs::client;
 
 
-MRCProxy::MRCProxy( const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, YIELD::auto_Object<YIELD::Log> log )
-  : YIELD::ONCRPCClient( peer_sockaddr, socket_factory, log )
+MRCProxy::MRCProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory )
+  : YIELD::ONCRPCClient( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
 {
   mrc_interface.registerObjectFactories( *object_factories );
   org::xtreemfs::interfaces::Exceptions().registerObjectFactories( *object_factories );

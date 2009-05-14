@@ -1,4 +1,4 @@
-// Revision: 1409
+// Revision: 1416
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -2216,7 +2216,7 @@ int TestRunner::run( TestSuite& test_suite )
     bool called_runTest = false, called_tearDown = false;
     try
     {
-      std::cerr << ( *i )->__short_description;
+      std::cerr << ( *i )->shortDescription();
       ( *i )->setUp();
       called_runTest = true;
       ( *i )->runTest();
@@ -2760,74 +2760,6 @@ Time::operator std::string() const
   char iso_date_time[30];
   as_iso_date_time( iso_date_time, 30 );
   return iso_date_time;
-}
-
-
-// timer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <sys/signal.h>
-#include <sys/time.h>
-#endif
-#if defined(_WIN32)
-void CALLBACK TimerRoutine( PVOID _timer, BOOLEAN )
-{
-  Timer* timer = static_cast<Timer*>( _timer );
-  timer->fire();
-}
-#elif defined(__linux)
-void timer_notify_function( sigval_t s )
-{
-  Timer* timer = static_cast<Timer*>( s.sival_ptr );
-  timer->fire();
-}
-#endif
-void Timer::init( uint64_t timeout_ns, uint64_t period_ns )
-{
-#if defined(_WIN32)
-  if ( CreateTimerQueueTimer( &hTimer, NULL, TimerRoutine, this, static_cast<DWORD>( timeout_ns / NS_IN_MS ), static_cast<DWORD>( period_ns / NS_IN_MS ), WT_EXECUTEONLYONCE ) )
-    return;
-  else
-  {
-    hTimer = NULL;
-    throw Exception();
-  }
-#elif defined(__linux)
-  struct sigevent se;
-  std::memset( &se, 0, sizeof( se ) );
-  se.sigev_notify = SIGEV_THREAD;
-  se.sigev_value.sival_ptr = this;
-  se.sigev_notify_function = timer_notify_function;
-  se.sigev_notify_attributes = NULL;
-  if ( timer_create( CLOCK_REALTIME, &se, &timer_id ) != -1 )
-  {
-    struct itimerspec ts;
-    memset( &ts, 0, sizeof( ts ) );
-    ts.it_value = Time( timeout_ns );
-    ts.it_interval = Time( period_ns );
-    if ( timer_settime( timer_id, 0, &ts, 0 ) != -1 )
-      return;
-    else
-      timer_delete( timer_id );
-  }
-  timer_id = NULL;
-  throw Exception();
-#else
-  DebugBreak();
-#endif
-}
-Timer::~Timer()
-{
-#if defined(_WIN32)
-  if ( hTimer != NULL )
-    DeleteTimerQueueTimer( NULL, hTimer, NULL );
-#elif defined(__linux)
-  if ( timer_id != NULL )
-    timer_delete( timer_id );
-#endif
 }
 
 
