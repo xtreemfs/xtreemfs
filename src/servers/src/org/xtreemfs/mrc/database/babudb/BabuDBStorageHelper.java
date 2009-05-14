@@ -100,34 +100,37 @@ public class BabuDBStorageHelper {
             byte[][] tmpVals = valBufs;
             keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
-            prevFileName = null;
-
-            if (tmpVals[FileMetadata.RC_METADATA] == null) {
-                //dump the record
-                for (int i = 0; i < tmpVals.length; i++) {
-                    System.out.println("index "+i);
-                    if (tmpVals[i] == null) {
-                        System.out.println("IS NULL!");
-                        continue;
-                    }
-                    String content = new String(tmpVals[i]);
-                    System.out.println("content: "+content);
-                }
-                System.exit(1);
-            }
-
+            
+            // if (tmpVals[FileMetadata.RC_METADATA] == null) {
+            // //dump the record
+            // for (int i = 0; i < tmpVals.length; i++) {
+            // System.out.println("index "+i);
+            // if (tmpVals[i] == null) {
+            // System.out.println("IS NULL!");
+            // continue;
+            // }
+            // String content = new String(tmpVals[i]);
+            // System.out.println("content: "+content);
+            // }
+            // System.exit(1);
+            // }
+            
+            BufferBackedFileMetadata md = null;
+            
             // in case of a hardlink ...
             if (tmpVals[FileMetadata.RC_METADATA][0] == 2)
                 try {
-                    return BabuDBStorageHelper.resolveLink(database, dbName,
-                        tmpVals[FileMetadata.RC_METADATA]);
+                    md = BabuDBStorageHelper.resolveLink(database, dbName, tmpVals[FileMetadata.RC_METADATA],
+                        prevFileName);
                 } catch (BabuDBException exc) {
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this, "could not resolve hard link");
-                    return null;
                 }
             
             else
-                return new BufferBackedFileMetadata(tmpKeys, tmpVals, BabuDBStorageManager.FILE_INDEX);
+                md = new BufferBackedFileMetadata(tmpKeys, tmpVals, BabuDBStorageManager.FILE_INDEX);
+            
+            prevFileName = null;
+            return md;
         }
         
         @Override
@@ -388,7 +391,7 @@ public class BabuDBStorageHelper {
     }
     
     public static byte[] createLinkTarget(long fileId) {
-                
+        
         byte[] buf = new byte[9];
         ByteBuffer tmp = ByteBuffer.wrap(buf);
         tmp.put((byte) 2).putLong(fileId);
@@ -418,7 +421,7 @@ public class BabuDBStorageHelper {
             
             // if the value refers to a link, resolve the link
             if (rcValue[0] == 2)
-                return resolveLink(database, dbName, rcValue);
+                return resolveLink(database, dbName, rcValue, fileName);
             
             byte[][] keyBufs = new byte[][] {
                 BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), rcKey,
@@ -451,14 +454,13 @@ public class BabuDBStorageHelper {
         return key[index == BabuDBStorageManager.FILE_ID_INDEX ? 8 : 12];
     }
     
-    public static BufferBackedFileMetadata resolveLink(BabuDB database, String dbName, byte[] target)
-        throws BabuDBException {
+    public static BufferBackedFileMetadata resolveLink(BabuDB database, String dbName, byte[] target,
+        String fileName) throws BabuDBException {
         
         // determine the key for the link index
         byte[] fileIdBytes = new byte[8];
         System.arraycopy(target, 1, fileIdBytes, 0, fileIdBytes.length);
         
-        String fileName = new String(target, 9, target.length - 9);
         byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
         
         // retrieve the metadata from the link index
