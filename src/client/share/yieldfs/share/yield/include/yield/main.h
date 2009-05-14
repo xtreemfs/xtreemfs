@@ -17,9 +17,12 @@
 
 #include "SimpleOpt.h"
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <winsock2.h>
 #pragma comment( lib, "ws2_32.lib" )
+#elif defined(__MACH__)
+#include <mach-o/dyld.h> // For _NSGetExecutablePath
+#include <signal.h>
 #else
 #include <signal.h>
 #endif
@@ -32,6 +35,39 @@ namespace YIELD
   public:
     Log::Level get_log_level() const { return log_level; }
     const char* get_program_name() const { return program_name; }
+
+#ifdef _WIN32
+    virtual int main( char* args ) // From WinMain
+    {
+      std::vector<char*> argvv;
+
+      char argv0[MAX_PATH];
+      GetModuleFileNameA( NULL, argv0, MAX_PATH );
+      argvv.push_back( argv0 );
+
+      const char *start_args_p = args, *args_p = start_args_p;
+      while ( *args_p != 0 )
+      {
+        while ( *args_p != ' ' && *args_p != 0 ) args_p++;
+        char* arg = new char[ ( args_p - start_args_p + 1 ) ];
+        memcpy( arg, start_args_p, args_p - start_args_p );
+        arg[args_p-start_args_p] = 0;
+        argvv.push_back( arg );
+        if ( *args_p != 0 )
+        {
+          args_p++;
+          start_args_p = args_p;
+        }
+      }
+
+      int ret = main( static_cast<int>( argvv.size() ), &argvv[0] );
+      
+      for ( std::vector<char*>::size_type argvv_i = 1; argvv_i < argvv.size(); argvv_i++ )
+        delete [] argvv[argvv_i];
+
+      return ret;
+    }
+#endif
 
     virtual int main( int argc, char** argv )
     {
@@ -116,7 +152,53 @@ namespace YIELD
 
         parseFiles( args.FileCount(), args.Files() );
 
-        return _main( argc, argv );
+        std::vector<char*> argvv;
+
+        // Replace argv[0] with the absolute path to the executable
+        char argv0[MAX_PATH];
+#if defined(_WIN32)
+        if ( GetModuleFileNameA( NULL, argv0, MAX_PATH ) )
+          argvv.push_back( argv0 );
+        else
+          argvv.push_back( argv[0] );
+#elif defined(__linux__)
+        int ret;
+        if ( ( ret = readlink( "/proc/self/exe", argv0, MAX_PATH ) ) != -1 )
+        {
+          argv0[ret] = 0;
+          argvv.push_back( argv0 );
+        }
+        else
+          argvv.push_back( argv[0] );
+#elif defined(__MACH__)
+        uint32_t bufsize = MAX_PATH;
+        if ( _NSGetExecutablePath( argv0, &bufsize ) == 0 )
+        {
+          argv0[bufsize] = 0;
+
+          char linked_argv0[MAX_PATH]; int ret;
+          if ( ( ret = readlink( argv0, linked_argv0, MAX_PATH ) ) != -1 )
+          {
+            linked_argv0[ret] = 0;
+            argvv.push_back( linked_argv0 );
+          }
+          else
+          {
+            char absolute_argv0[MAX_PATH];
+            if ( realpath( argv0, absolute_argv0 ) != NULL )
+              argvv.push_back( absolute_argv0 );
+            else
+              argvv.push_back( argv0 );
+          }
+        }
+        else
+          argvv.push_back( argv[0] );
+#endif
+
+        for ( int arg_i = 1; arg_i < argc; arg_i++ )
+          argvv.push_back( argv[arg_i] );
+
+        return _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
       catch ( YIELD::Exception& exc ) // Don't catch std::exceptions like bad_alloc
       {
@@ -150,6 +232,16 @@ namespace YIELD
     void addOption( int id, const char* short_arg, const char* long_arg = NULL, const char* default_values = NULL )
     {
       options.push_back( Option( id, short_arg, long_arg, default_values ) );
+    }
+
+    void pause()
+    {
+#ifdef _WIN32
+      SetConsoleCtrlHandler( ConsoleCtrlHandler, TRUE );
+      pause_semaphore.acquire();
+#else
+      ::pause();
+#endif
     }
 
     void printUsage()
@@ -215,6 +307,21 @@ namespace YIELD
     };
 
     std::vector<Option> options;
+
+#ifdef _WIN32
+    static CountingSemaphore pause_semaphore;
+
+    static BOOL WINAPI ConsoleCtrlHandler( DWORD fdwCtrlType )
+    {
+      if ( fdwCtrlType == CTRL_C_EVENT )
+      {
+        pause_semaphore.release();
+        return TRUE;
+      }
+      else
+        return FALSE;
+    }
+#endif
   };
 };
 

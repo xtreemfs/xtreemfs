@@ -2314,29 +2314,6 @@ namespace YIELD
   class Process : public InputStream, public OutputStream
   {
   public:
-    static Path getExeFilePath( const char* argv0 );
-    static Path getExeDirPath( const char* argv0 );
-    static void pause();
-
-  #ifdef _WIN32
-    class argv_vector : public std::vector<char*>
-    {
-    public:
-      ~argv_vector()
-      {
-        while ( size() > 1 )
-        {
-          delete [] back();
-          pop_back();
-        }
-      }
-    };
-
-    static int getArgvFromCommandLine( const char* command_line, argv_vector& argv );
-    static int WinMainTomain( char* lpszCmdLine, int ( *main )( int, char** ) );
-  #endif
-
-
     Process( const Path& executable_file_path, const char** argv );
     ~Process();
 
