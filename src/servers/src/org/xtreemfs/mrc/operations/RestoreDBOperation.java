@@ -81,6 +81,7 @@ public class RestoreDBOperation extends MRCOperation {
             // operation for security reasons.
             if (vMan.getVolumes().size() != 0)
                 throw new UserException(
+                    ErrNo.EPERM,
                     "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
             
             SAXParserFactory spf = SAXParserFactory.newInstance();

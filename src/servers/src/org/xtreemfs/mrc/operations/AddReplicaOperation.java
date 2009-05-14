@@ -124,12 +124,14 @@ public class AddReplicaOperation extends MRCOperation {
         XLocList xLocList = file.getXLocList();
         
         if (!MRCHelper.isAddable(xLocList, newRepl.getOsd_uuids()))
-            throw new UserException("at least one OSD already used in current X-Locations list '"
-                + Converter.xLocListToXLocSet(xLocList).toString() + "'");
+            throw new UserException(ErrNo.EINVAL,
+                "at least one OSD already used in current X-Locations list '"
+                    + Converter.xLocListToXLocSet(xLocList).toString() + "'");
         
         // create a new replica and add it to the client's X-Locations list
         // (this will automatically increment the X-Locations list version)
-        XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]), newRepl.getReplication_flags());
+        XLoc replica = sMan.createXLoc(sPol, osds.toArray(new String[osds.size()]), newRepl
+                .getReplication_flags());
         if (xLocList == null)
             xLocList = sMan.createXLocList(new XLoc[] { replica },
                 file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : Constants.REPL_UPDATE_PC_NONE, 1);

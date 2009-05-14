@@ -31,15 +31,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
@@ -50,7 +47,6 @@ import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.PolicyContainer;
-import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -59,7 +55,6 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
-import org.xtreemfs.mrc.operations.AddReplicaOperation;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
@@ -79,7 +74,7 @@ public class MRCHelper {
                 volumeId = globalFileId.substring(0, i);
                 localFileId = Long.parseLong(globalFileId.substring(i + 1));
             } catch (Exception exc) {
-                throw new UserException("invalid global file ID: " + globalFileId
+                throw new UserException(ErrNo.EINVAL, "invalid global file ID: " + globalFileId
                     + "; expected pattern: <volume_ID>:<local_file_ID>");
             }
         }
@@ -269,7 +264,9 @@ public class MRCHelper {
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url:
-                return "oncrpc"+ (config.isUsingSSL() ? "s" : "")+"://" + config.getUUID().getAddress().getHostName()+":"+config.getUUID().getAddress().getPort() + "/" + path;
+                return "oncrpc" + (config.isUsingSSL() ? "s" : "") + "://"
+                    + config.getUUID().getAddress().getHostName() + ":"
+                    + config.getUUID().getAddress().getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
             case group:
@@ -295,14 +292,14 @@ public class MRCHelper {
                     return "";
                 
                 return String.valueOf(file.isReadOnly());
-
+                
             case usable_osds: {
                 ServiceSet srvs = osdMan.getUsableOSDs(volume.getId());
-                Map<String,String> osds = new HashMap();
-                for (Service srv:srvs) {
+                Map<String, String> osds = new HashMap();
+                for (Service srv : srvs) {
                     ServiceUUID uuid = new ServiceUUID(srv.getUuid());
                     InetAddress ia = uuid.getAddress().getAddress();
-                    osds.put(uuid.toString(),ia.getCanonicalHostName());
+                    osds.put(uuid.toString(), ia.getCanonicalHostName());
                 }
                 return JSONParser.writeJSON(osds);
             }
@@ -401,23 +398,22 @@ public class MRCHelper {
             
             break;
         
-
         case add_replica: {
-                try {
-                    Replica newReplica = Converter.replicaFromJSON(value);
-                    //FIXME: execute add replica here!
-                } catch (JSONException exc) {
-                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-                } catch (ClassCastException exc) {
-                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-                } catch (NullPointerException exc) {
-                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-                } catch (IllegalArgumentException exc) {
-                    throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-                }
-                break;
+            try {
+                Replica newReplica = Converter.replicaFromJSON(value);
+                // FIXME: execute add replica here!
+            } catch (JSONException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (ClassCastException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (NullPointerException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
+            } catch (IllegalArgumentException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
             }
-
+            break;
+        }
+            
         case read_only:
 
             if (file.isDirectory())

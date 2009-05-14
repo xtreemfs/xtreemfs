@@ -61,11 +61,11 @@ public class TruncateOperation extends MRCOperation {
         
         // check whether the capability has a valid signature
         if (!writeCap.hasValidSignature())
-            throw new UserException(writeCap + " does not have a valid signature");
+            throw new UserException(ErrNo.EPERM, writeCap + " does not have a valid signature");
         
         // check whether the capability has expired
         if (writeCap.hasExpired())
-            throw new UserException(writeCap + " has expired");
+            throw new UserException(ErrNo.EPERM, writeCap + " has expired");
         
         // check whether the capability grants write permissions
         if ((writeCap.getAccessMode() & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR | FileAccessManager.O_TRUNC)) == 0)

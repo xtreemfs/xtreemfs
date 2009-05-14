@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -58,11 +59,11 @@ public class RenewOperation extends MRCOperation {
         
         // check whether the capability has a valid signature
         if (!cap.hasValidSignature())
-            throw new UserException(cap + " does not have a valid signature");
+            throw new UserException(ErrNo.EPERM, cap + " does not have a valid signature");
         
         // check whether the capability has expired
         if (cap.hasExpired() && !renewTimedOutCaps)
-            throw new UserException(cap + " has expired");
+            throw new UserException(ErrNo.EPERM, cap + " has expired");
         
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
             / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), master

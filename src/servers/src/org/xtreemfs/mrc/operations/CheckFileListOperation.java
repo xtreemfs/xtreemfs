@@ -24,6 +24,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.mrc.MRCException;
@@ -58,7 +59,7 @@ public class CheckFileListOperation extends MRCOperation {
         if (sMan != null)
             try {
                 if (rqArgs.getFile_ids().size() == 0)
-                    throw new UserException("fileList was empty!");
+                    throw new UserException(ErrNo.EINVAL, "fileList was empty!");
                 for (String fileId : rqArgs.getFile_ids()) {
                     if (fileId == null)
                         throw new MRCException("file ID was null!");

@@ -63,11 +63,11 @@ public class UpdateFileSizeOperation extends MRCOperation {
         
         // check whether the capability has a valid signature
         if (!cap.hasValidSignature())
-            throw new UserException(cap + " does not have a valid signature");
+            throw new UserException(ErrNo.EPERM, cap + " does not have a valid signature");
         
         // check whether the capability has expired
         if (cap.hasExpired())
-            throw new UserException(cap + " has expired");
+            throw new UserException(ErrNo.EPERM, cap + " has expired");
         
         // parse volume and file ID from global file ID
         GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());

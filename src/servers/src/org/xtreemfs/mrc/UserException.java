@@ -44,10 +44,6 @@ public class UserException extends java.lang.Exception {
         this.errno = errno;
     }
 
-    public UserException(String message) {
-        super(message);
-    }
-
     public UserException(int errno, String message) {
         super(message + " (errno=" + errno + ")");
         this.errno = errno;
