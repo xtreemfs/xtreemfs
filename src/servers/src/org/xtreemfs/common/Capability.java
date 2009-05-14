@@ -59,7 +59,7 @@ public class Capability {
     /**
      * default validity for capabilities in seconds
      */
-    public static final long DEFAULT_VALIDITY = Long.MAX_VALUE;
+    public static final long DEFAULT_VALIDITY = 60 * 60 * 24 * 2;
         //10 * 60;
 
     private XCap             xcap;
