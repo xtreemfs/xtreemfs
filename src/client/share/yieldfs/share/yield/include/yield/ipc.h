@@ -12,6 +12,7 @@
 struct kevent;
 #elif defined(__linux__)
 #define YIELD_HAVE_LINUX_EPOLL 1
+struct epoll_event;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
 struct port_event;
 typedef port_event port_event_t;
@@ -236,8 +237,8 @@ namespace YIELD
     ~FDEvent() { }
 
     Object* context;
-    bool _want_read;
     uint32_t error_code;
+    bool _want_read;
   };
 
 
@@ -279,7 +280,7 @@ namespace YIELD
     bool toggle( int fd, Object* context, bool enable_read, bool enable_write );
 #endif
 
-    inline void signal() { uint64_t m = 1; signal_write_end->write( &m, sizeof( m ) ); }
+    inline void signal() { uint64_t m = 1; signal_write_end->write( &m, sizeof( m ), NULL ); }
     auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, static_cast<uint64_t>( 0 ), context ); }
     auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
