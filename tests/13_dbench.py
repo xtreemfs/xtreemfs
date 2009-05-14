@@ -14,7 +14,8 @@ class dbenchTest(unittest.TestCase):
         assert os.stat( "dbench-client.txt" ).st_size > 0
         
         args = "dbench -c dbench-client.txt -D . 5"
-        p = subprocess.Popen( args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+        stdout = open( "dbench-stdout.txt", "a+" )
+        p = subprocess.Popen( args, shell=True, stdout=stdout, stderr=subprocess.STDOUT )
         retcode = p.wait()
         self.assertEqual( retcode, 0 )
 

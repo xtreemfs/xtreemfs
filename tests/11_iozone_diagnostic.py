@@ -2,19 +2,20 @@ import unittest, subprocess, sys, os
 
 
 class iozoneDiagnosticTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
+    def __init__( self, direct_io=True, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
+        self.direct_io = direct_io
         self.stdout = stdout
         self.stderr = stderr
         
     def runTest( self ):
-        if "nondirect" in os.getcwd():
-            print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
-        else:            
+        if self.direct_io:
             args = "iozone -a -+d"
             p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
             retcode = p.wait()
             self.assertEqual( retcode, 0 )
+        else:
+            print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
 
             
 def createTestSuite( *args, **kwds ): 

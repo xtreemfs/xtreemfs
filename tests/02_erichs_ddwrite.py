@@ -3,7 +3,7 @@ from glob import glob
 
 
 class ErichsddwriteTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr

@@ -6,19 +6,23 @@ have_called_createTestSuite = False
 
 
 class makextreemfsTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
         
     def runTest( self ):
-        try: shutil.rmtree( "xtreemfs" )
-        except: pass
+        if os.path.exists( "xtreemfs" ):
+            shutil.rmtree( "xtreemfs" )
+            
         retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         #
         self.assertEqual( retcode, 0 )
 
         retcode = subprocess.call( "make -C xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         
         self.assertEqual( retcode, 0 )
+
+        if os.path.exists( "xtreemfs" ):
+            shutil.rmtree( "xtreemfs" )
 
 
 def createTestSuite( *args, **kwds ):     

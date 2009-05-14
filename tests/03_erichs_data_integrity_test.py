@@ -7,7 +7,7 @@ MARKED_BLOCK_PL_FILE_PATH = os.path.join( MY_DIR_PATH, "marked_block.pl" )
                                
 
 class ErichsDataIntegrityTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr

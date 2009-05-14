@@ -5,7 +5,7 @@ TAR_GZ_URL = "ftp://ftp.hpl.hp.com/pub/httperf/httperf-0.9.0.tar.gz"
 
 
 class findgreptarTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr ):
+    def __init__( self, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
