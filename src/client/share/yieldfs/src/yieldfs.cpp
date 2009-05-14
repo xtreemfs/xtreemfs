@@ -1,3 +1,5 @@
+// Revision: 131
+
 #include "yieldfs.h"
 using namespace yieldfs;
 
@@ -50,8 +52,8 @@ namespace yieldfs
   class FUSEUnix
   {
   public:
-    FUSEUnix( YIELD::auto_Object<YIELD::Volume> volume, YIELD::auto_Object<YIELD::Log> log, uint32_t flags )
-      : volume( volume ), log( log ), flags( flags )
+    FUSEUnix( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
+      : volume( volume ), flags( flags ), log( log )
     { }
 
     int main( char* argv0, const char* mount_point )
@@ -443,8 +445,8 @@ namespace yieldfs
 
   private:
     YIELD::auto_Object<YIELD::Volume> volume;
-    YIELD::auto_Object<YIELD::Log> log;
     uint32_t flags;
+    YIELD::auto_Object<YIELD::Log> log;
 
     static inline YIELD::File* get_file( fuse_file_info* fi )
     {
@@ -485,8 +487,8 @@ namespace yieldfs
   class FUSEWin32
   {
   public:
-    FUSEWin32( YIELD::auto_Object<YIELD::Volume> volume, YIELD::auto_Object<YIELD::Log> log, uint32_t flags )
-      : volume( volume ), log( log ), flags( flags )
+    FUSEWin32( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
+      : volume( volume ), flags( flags ), log( log )
     { }
 
     int main( const char* mount_point )
@@ -1055,8 +1057,8 @@ namespace yieldfs
 
   private:
     YIELD::auto_Object<YIELD::Volume> volume;
-    YIELD::auto_Object<YIELD::Log> log;
     uint32_t flags;
+    YIELD::auto_Object<YIELD::Log> log;
 
 
     static inline YIELD::File* get_file( PDOKAN_FILE_INFO DokanFileInfo )
@@ -1366,20 +1368,12 @@ int FUSE::getegid()
 }
 #endif
 */
-FUSE::FUSE( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags )
+FUSE::FUSE( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
 {
 #ifdef _WIN32
-  fuse_win32 = new FUSEWin32( volume, NULL, flags );
+  fuse_win32 = new FUSEWin32( volume, flags, log );
 #else
-  fuse_unix = new FUSEUnix( volume, NULL, flags );
-#endif
-}
-FUSE::FUSE( YIELD::auto_Object<YIELD::Volume> volume, YIELD::auto_Object<YIELD::Log> log, uint32_t flags )
-{
-#ifdef _WIN32
-  fuse_win32 = new FUSEWin32( volume, log, flags );
-#else
-  fuse_unix = new FUSEUnix( volume, log, flags );
+  fuse_unix = new FUSEUnix( volume, flags, log );
 #endif
 }
 FUSE::~FUSE()
