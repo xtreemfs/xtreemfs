@@ -347,22 +347,26 @@ namespace yieldfs
 
         if ( strcmp( path, "/" ) != 0 )
         {
-         yield_stbuf = volume.getattr( YIELD::Path( path ).split().first );
-         if ( yield_stbuf != NULL )
-         {
-           stbuf = *yield_stbuf;
-           filler( buf, "..", &stbuf, 0 );
-         }
+          yield_stbuf = volume.getattr( YIELD::Path( path ).split().first );
+          if ( yield_stbuf != NULL )
+          {
+            stbuf = *yield_stbuf;
+            filler( buf, "..", &stbuf, 0 );
+          }
+          else
+            return -1 * errno;
         }
 
         readdirCallback readdir_callback( buf, filler );
         if ( volume.readdir( path, readdir_callback ) )
           return 0;
-        else
+        else if ( errno != 0 )
           return -1 * errno;
+        else
+          return -1 * EINTR;
       }
       else
-       return -1 * ENOENT;
+        return -1 * errno;
     }
 
     static int readlink( const char* path, char *linkbuf, size_t size )
