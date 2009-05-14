@@ -83,6 +83,7 @@ namespace org
 
           YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_socket_factory(), volume_flags, get_log() );
 
+          // Stack volumes as indicated
           if ( cache_files )
           {
             volume = new yieldfs::FileCachingVolume( volume, get_log() );
@@ -101,18 +102,21 @@ namespace org
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
           }
 
+          // Set flags to pass to FUSE based on command line options
           uint32_t fuse_flags = 0;
           if ( get_log_level() >= YIELD::Log::LOG_INFO )
           {
-    	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
-    	      get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
+            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
           }
+
           if ( direct_io )
           {
-    	      fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
           }
 
+          // Create the FUSE object then run forever in its main()
           YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, fuse_flags, get_log() );
           int ret;
 #ifdef _WIN32
@@ -124,15 +128,19 @@ namespace org
           {
             std::vector<char*> argvv;
             argvv.push_back( argv[0] );
+
+            if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
+              argvv.push_back( "-d" );
+
             if ( !fuse_o_args.empty() )
             {
               argvv.push_back( "-o" );
               argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
             }
-            if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
-              argvv.push_back( "-d" );
+
             argvv.push_back( NULL );
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+
             struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
             ret = fuse->main( fuse_args_, mount_point.c_str() );
           }
