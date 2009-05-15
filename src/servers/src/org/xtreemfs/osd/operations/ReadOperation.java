@@ -28,6 +28,8 @@ import java.util.List;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -208,6 +210,9 @@ public final class ReadOperation extends OSDOperation {
         datasize += data.getZero_padding();
         assert((isLastObjectOrEOF && datasize <= args.getLength()) ||
                 (!isLastObjectOrEOF && datasize == args.getLength()));
+        if (Logging.isDebug() && (datasize == 0)) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "zero data response (EOF), file %s",args.getFile_id());
+        }
         master.objectSent();
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
