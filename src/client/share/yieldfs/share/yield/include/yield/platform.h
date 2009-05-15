@@ -126,32 +126,50 @@ extern "C"
 #define YIELD_EXCEPTION_WHAT_BUFFER_LENGTH 128
 
 #define YIELD_FILE_PROTOTYPES \
-    virtual bool close(); \
-    virtual bool datasync(); \
-    virtual bool flush(); \
-    virtual YIELD::auto_Object<YIELD::Stat> getattr(); \
-    virtual bool getxattr( const std::string& name, std::string& out_value ); \
-    virtual bool listxattr( std::vector<std::string>& out_names ); \
-    virtual Stream::Status read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read ); \
-    virtual bool removexattr( const std::string& name ); \
-    virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
-    virtual bool sync(); \
-    virtual bool truncate( uint64_t offset ); \
-    virtual Stream::Status writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written );
+  virtual bool close(); \
+  virtual bool datasync(); \
+  virtual bool flush(); \
+  virtual YIELD::auto_Object<YIELD::Stat> getattr(); \
+  virtual bool getxattr( const std::string& name, std::string& out_value ); \
+  virtual bool listxattr( std::vector<std::string>& out_names ); \
+  virtual Stream::Status read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read ); \
+  virtual bool removexattr( const std::string& name ); \
+  virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
+  virtual bool sync(); \
+  virtual bool truncate( uint64_t offset ); \
+  virtual Stream::Status writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written );
+
+#define YIELD_INPUT_STREAM_PROTOTYPES \
+  virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+
+#define YIELD_OBJECT_PROTOTYPES( type_name, type_id )\
+    virtual const char* get_type_name() const { return #type_name; }\
+    virtual uint32_t get_type_id() const { return __type_id; }\
+    const static uint32_t __type_id = static_cast<uint32_t>( type_id ); \
+    type_name & incRef() { return YIELD::Object::incRef( *this ); }
+
+#define YIELD_OBJECT_TYPE_ID( type ) type::__type_id
+
+#define YIELD_OUTPUT_STREAM_PROTOTYPES \
+  virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
 
 #define YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES \
-virtual bool readBool( const Declaration& decl ); \
-virtual double readDouble( const Declaration& decl ); \
-virtual int64_t readInt64( const Declaration& decl ); \
-virtual YIELD::Object* readObject( const Declaration& decl, YIELD::Object* value = NULL, YIELD::Object::GeneralType value_general_type = YIELD::Object::UNKNOWN ); \
-virtual void readString( const Declaration& decl, std::string& ); \
+  virtual bool readBool( const Declaration& decl ); \
+  virtual double readDouble( const Declaration& decl ); \
+  virtual int64_t readInt64( const Declaration& decl ); \
+  virtual Object* readMap( const Declaration& decl, Object* value = NULL ); \
+  virtual Object* readSequence( const Declaration& decl, Object* value = NULL ); \
+  virtual void readString( const Declaration& decl, std::string& ); \
+  virtual Object* readStruct( const Declaration& decl, Object* value = NULL );  
 
 #define YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES \
-virtual void writeBool( const Declaration& decl, bool value ); \
-virtual void writeDouble( const Declaration& decl, double value ); \
-virtual void writeInt64( const Declaration& decl, int64_t value ); \
-virtual void writeObject( const Declaration& decl, YIELD::Object& value, YIELD::Object::GeneralType value_general_type = YIELD::Object::UNKNOWN ); \
-virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
+  virtual void writeBool( const Declaration& decl, bool value ); \
+  virtual void writeDouble( const Declaration& decl, double value ); \
+  virtual void writeInt64( const Declaration& decl, int64_t value ); \
+  virtual void writeMap( const Declaration& decl, YIELD::Object& value ); \
+  virtual void writeSequence( const Declaration& decl, YIELD::Object& value ); \
+  virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
+  virtual void writeStruct( const Declaration& decl, YIELD::Object& value );
 
 #define YIELD_STRING_HASH_NEXT( c, hash ) hash = hash ^ ( ( hash << 5 ) + ( hash >> 2 ) + c )
 
@@ -254,17 +272,6 @@ struct timeval;
 
 namespace YIELD
 {
-#ifdef _WIN32
-  typedef void* fd_t;
-  typedef uint64_t timeout_ns_t;
-#else
-  typedef int fd_t;
-#ifdef __sun
-  typedef uint32_t timeout_ns_t;
-#else
-  typedef uint64_t timeout_ns_t;
-#endif
-#endif
   class Path;
   class Stat;
   class StructuredInputStream;
@@ -528,13 +535,6 @@ namespace YIELD
     Object() : refcnt( 1 )
     { }
 
-    enum GeneralType {
-                       UNKNOWN = 0, EVENT,
-                       REQUEST, RESPONSE, EXCEPTION_RESPONSE,
-                       SEQUENCE, MAP, STRUCT, STRING
-                     };
-
-
     static inline void decRef( Object& object )
     {
       if ( atomic_dec( &object.refcnt ) == 0 )
@@ -568,22 +568,13 @@ namespace YIELD
       return *this;
     }
 
-    virtual Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read = 0 ) { return Stream::STREAM_STATUS_ERROR; }
+    virtual Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read = 0 ) { return Stream::STREAM_STATUS_OK; }
     virtual void deserialize( StructuredInputStream& ) { }
-    virtual GeneralType get_general_type() const { return UNKNOWN; };
     virtual uint64_t get_size() const { return 0; } // For arrays
-    virtual const char* get_type_name() const { return 0; }
-    virtual uint32_t get_type_id() const { return 0; }
-    virtual Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 ) { return Stream::STREAM_STATUS_ERROR; }
+    virtual const char* get_type_name() const = 0;
+    virtual uint32_t get_type_id() const = 0;
+    virtual Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 ) { return Stream::STREAM_STATUS_OK; }
     virtual void serialize( StructuredOutputStream& ) { }
-
-#define YIELD_OBJECT_TYPE_INFO( general_type, type_name, type_id )\
-    virtual const char* get_type_name() const { return type_name; }\
-    virtual uint32_t get_type_id() const { return __type_id; }\
-    virtual YIELD::Object::GeneralType get_general_type() const { return general_type; }\
-    const static uint32_t __type_id = static_cast<uint32_t>( type_id );
-
-#define YIELD_OBJECT_TYPE_ID( type ) type::__type_id
 
   protected:
     virtual ~Object()
@@ -626,9 +617,11 @@ namespace YIELD
     virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
     virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
     virtual int64_t readInt64( const Declaration& decl ) = 0;
+    virtual Object* readMap( const Declaration& decl, Object* value = NULL ) = 0;
     virtual void* readPointer( const Declaration& decl ) { return 0; }
-    virtual Object* readObject( const Declaration&, Object* value = NULL, Object::GeneralType object_general_type = Object::UNKNOWN ) = 0; // value_general_type = Object::UKNONWN will check value's get_general_type()
-    virtual void readString( const Declaration&, std::string& value ) = 0;
+    virtual Object* readSequence( const Declaration& decl, Object* value = NULL ) = 0;
+    virtual void readString( const Declaration& decl, std::string& value ) = 0;
+    virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
     virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
     virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
     virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
@@ -648,14 +641,16 @@ namespace YIELD
     virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
     virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
     virtual void writeInt64( const Declaration&, int64_t ) = 0;
+    virtual void writeMap( const Declaration& decl, YIELD::Object& value ) = 0;
     virtual void writePointer( const Declaration&, void* ) { }
-    virtual void writeObject( const Declaration&, Object&, Object::GeneralType = Object::UNKNOWN ) = 0; // value_general_type = Object::UKNONWN will check value's get_general_type()
+    virtual void writeSequence( const Declaration& decl, YIELD::Object& value ) = 0;
     virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
     virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, std::strlen( value ) ); }
     virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
-    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeUint16( decl, value ); }
-    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeUint32( decl, value ); }
-    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeUint64( decl, value ); }
+    virtual void writeStruct( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
+    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
+    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
     virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
   };
 
@@ -771,8 +766,8 @@ namespace YIELD
     ~CountingSemaphore();
 
     bool acquire(); // Blocking
+    bool timed_acquire( uint64_t timeout_ns ); // May block for timeout_ns
     bool try_acquire(); // Never blocks
-    bool timed_acquire( timeout_ns_t timeout_ns ); // May block for timeout_ns
     void release();
 
   private:
@@ -1054,41 +1049,36 @@ namespace YIELD
   class File : public Object, public InputStream, public OutputStream
   {
   public:
-//    typedef void ( *aio_read_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
-//    typedef void ( *aio_write_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
-
-
     const static uint32_t DEFAULT_FLAGS = O_RDONLY;
     const static mode_t DEFAULT_MODE = S_IREAD|S_IWRITE;
     const static uint32_t DEFAULT_ATTRIBUTES = 0;
 
-
-    // Constructors throw exceptions if an open fails
-    explicit File( const Path& path );
-    explicit File( const Path& path, uint32_t flags );
-    explicit File( const Path& path, uint32_t flags, mode_t mode );
-    explicit File( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    // Construct from a platform file descriptor; takes ownership of the descriptor
 #ifdef _WIN32
-    // Since fd_t is void* on Windows we need these to delegate to the const Path& variant rather than the fd_t one
-    explicit File( char* path );
-    explicit File( char* path, uint32_t flags );
-    explicit File( const char* path );
-    explicit File( const char* path, uint32_t flags );
+    File( void* fd ) : fd( fd ) { }
+#else
+    File( int fd ) : fd( fd ) { }
 #endif
-    explicit File( fd_t fd );
-    // A factory method that returns NULL instead of throwing exceptions
+
     static auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
     static auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-    operator fd_t() const { return fd; }
+#ifdef _WIN32
+    operator void*() const { return fd; }
+#else
+    operator int() const { return fd; }
+#endif
 
-    YIELD_FILE_PROTOTYPES;
+     YIELD_FILE_PROTOTYPES;
 
+//    typedef void ( *aio_read_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
+//    typedef void ( *aio_write_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
 //    virtual int aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine_t, void* context );
 //    virtual int aio_write( const void* buffer, size_t buffer_len, aio_write_completion_routine_t, void* context );
     virtual bool seek( uint64_t offset ); // from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
+    virtual auto_Object<Stat> stat() { return getattr(); }
 
     virtual Stream::Status write( const void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_written = 0 )
     {
@@ -1099,16 +1089,20 @@ namespace YIELD
     }
 
     // Object
-    inline File& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( File, 2526501UL );
 
     // InputStream
-    virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
-     // OutputStream
-    virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
+    // OutputStream
+    YIELD_OUTPUT_STREAM_PROTOTYPES;    
 
   protected:
-    File();
+#ifdef _WIN32
+    File() : fd( ( void* )-1 ) { }
+#else
+    File() : fd( -1 ) { }
+#endif
     virtual ~File() { close(); }
 
   private:
@@ -1117,11 +1111,11 @@ namespace YIELD
       DebugBreak();
     }
 
-    fd_t fd;
-
-    friend class Stat;
-    static fd_t _open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-    static bool _close( fd_t fd );
+#ifdef _WIN32
+    void* fd;
+#else
+    int fd;
+#endif
 
     /*
 #if defined(_WIN32)
@@ -1888,7 +1882,7 @@ namespace YIELD
     };
 
 
-    Log( const Path& file_path, Level level );
+    static auto_Object<Log> open( const Path& file_path, Level level );
     Log( std::ostream&, Level level );
     Log( std::auto_ptr<OutputStream> underlying_output_stream, Level level );
 
@@ -1930,15 +1924,12 @@ namespace YIELD
       if ( level <= this->level )
         writev( buffers, buffers_count );
     }
-
+    
     // Object
-    inline Log& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( Log, 83700UL );
 
     // OutputStream
-    OutputStream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 )
-    {
-      return underlying_output_stream->writev( buffers, buffers_count, out_bytes_written );
-    }
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   private:
     ~Log() { }
@@ -2025,41 +2016,38 @@ namespace YIELD
   };
 
 
-  class MemoryMappedFile : public File
+  class MemoryMappedFile : public Object
   {
   public:
-    MemoryMappedFile( const Path& path );
-    MemoryMappedFile( const Path& path, size_t minimum_size );
-    MemoryMappedFile( const Path& path, size_t minimum_size, uint32_t flags );
+    static auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
 
-    void resize( size_t );
-    inline char* getRegionStart() { return start; }
-    inline char* getRegionEnd() { return start + size; }
-    inline size_t getRegionSize() { return size; }
-
-    virtual void writeBack();
-    virtual void writeBack( size_t offset, size_t length );
-    virtual void writeBack( void* ptr, size_t length );
+    virtual bool close();
+    inline uint64_t get_size() const { return size; }
+    inline operator char*() const { return start; }
+    inline operator void*() const { return start; }
+    bool resize( size_t );
+    virtual bool sync();
+    virtual bool sync( size_t offset, size_t length );
+    virtual bool sync( void* ptr, size_t length );
 
     // Object
-    inline MemoryMappedFile& incRef() { return Object::incRef( *this ); }
-
-    // File
-    virtual bool close();
+    YIELD_OBJECT_PROTOTYPES( MemoryMappedFile, 2901594654UL );
 
   protected:
+    MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags );
     virtual ~MemoryMappedFile() { close(); }
 
   private:
-    uint32_t flags;
+    auto_Object<File> underlying_file;
+    uint32_t open_flags;
 
-    size_t size;
-    char* start;
 #ifdef _WIN32
     void* mapping;
 #endif
-
-    void init( const Path& path, size_t minimum_size, uint32_t flags );
+    char* start;
+    size_t size;
   };
 
 
@@ -2073,11 +2061,40 @@ namespace YIELD
     // Have a separate function for timeout_ns == 0 (never block) to avoid an if branch on a critical path
     bool acquire(); // Blocking
     bool try_acquire(); // Never blocks
-    bool timed_acquire( timeout_ns_t timeout_ns ); // May block for timeout_ns
+    bool timed_acquire( uint64_t timeout_ns ); // May block for timeout_ns
     void release();
 
   private:
     void* os_handle;
+  };
+
+
+  class NamedPipe : public Object, public InputStream, public OutputStream
+  {
+  public:
+    static auto_Object<NamedPipe> open( const Path& path, uint32_t flags = O_RDWR, mode_t mode = File::DEFAULT_MODE );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( NamedPipe, 721034682UL );
+
+    // InputStream
+    YIELD_INPUT_STREAM_PROTOTYPES;
+
+    // OutputStream
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
+
+  private:
+#ifdef WIN32
+    NamedPipe( auto_Object<File> underlying_file, bool connected );
+#else
+    NamedPipe( auto_Object<File> underlying_file );
+#endif
+    ~NamedPipe() { }
+
+    auto_Object<File> underlying_file;
+#ifdef _WIN32
+    bool connected;
+#endif
   };
 
 
@@ -2230,7 +2247,7 @@ namespace YIELD
   public:
     inline bool acquire() { return true; }
     inline bool try_acquire() { return true; }
-    inline bool timed_acquire( timeout_ns_t ) { return true; }
+    inline bool timed_acquire( uint64_t timeout_ns ) { return true; }
     inline void release() { }
   };
 
@@ -2275,7 +2292,7 @@ namespace YIELD
     size_t size() const { return host_charset_path.size(); }
 
     // Object
-    inline Path& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( Path, 2836334UL );
 
   private:
     void init_from_host_charset_path();
@@ -2298,6 +2315,44 @@ namespace YIELD
   }
 
 
+  class Pipe : public Object, public InputStream, public OutputStream
+  {
+  public:
+    static auto_Object<Pipe> create();
+
+#ifdef _WIN32
+    void* get_read_end() const { return ends[0]; }
+    void* get_write_end() const { return ends[1]; }
+#else
+    int get_read_end() const { return ends[0]; }
+    int get_write_end() const { return ends[1]; }
+#endif
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Pipe, 2745700UL );
+
+    // InputStream
+    YIELD_INPUT_STREAM_PROTOTYPES;
+
+    // OutputStream
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
+
+  private:
+#ifdef _WIN32
+    Pipe( void* ends[2] );
+#else
+    Pipe( int ends[2] );
+#endif
+    ~Pipe();
+
+#ifdef _WIN32
+    void* ends[2];
+#else
+    int ends[2];
+#endif
+  };
+
+
   class PrettyPrintOutputStream : public StructuredOutputStream
   {
   public:
@@ -2311,30 +2366,43 @@ namespace YIELD
   };
 
 
-  class Process : public InputStream, public OutputStream
+  class Process : public Object, public InputStream, public OutputStream
   {
   public:
-    Process( const Path& executable_file_path, const char** argv );
-    ~Process();
+    static auto_Object<Process> create( const Path& executable_file_path ); // No arguments
+    static auto_Object<Process> create( int argc, char** argv );    
+    static auto_Object<Process> create( const Path& executable_file_path, const char** null_terminated_argv );
 
     bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG, out_return_code can be NULL
     Stream::Status read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
     int wait(); // Calls waitpid() and suspends the calling process until the child exits, use carefully
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Process, 795016765UL );
+
     // InputStream
-    Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
     // OutputStream
-    Stream::Status write( const void* buffer, size_t buffer_len, size_t* out_bytes_written );
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   private:
 #ifdef _WIN32
-    void *hChildStdInput_read, *hChildStdInput_write, *hChildStdOutput_read, *hChildStdOutput_write, *hChildStdError_read, *hChildStdError_write, *hChildProcess, *hChildThread;
+    static auto_Object<Process> create( const Path& executable_file_path, const char* catted_args );
+    Process( void* hChildProcess, void* hChildThread,       
 #else
-    int child_pid, child_stdin_pipe[2], child_stdout_pipe[2], child_stderr_pipe[2];
+    Process( int child_pid, 
 #endif
+      auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe );
 
-    Stream::Status _read( fd_t fd, void* buffer, size_t buffer_len, size_t* out_bytes_read );
+    ~Process();
+
+#ifdef _WIN32
+    void *hChildProcess, *hChildThread;
+#else
+    int child_pid;
+#endif
+    auto_Object<Pipe> child_stdin_pipe, child_stdout_pipe, child_stderr_pipe;  
   };
 
 
@@ -2343,7 +2411,6 @@ namespace YIELD
   public:
     ProcessorSet();
     ProcessorSet( uint32_t from_mask );
-    ProcessorSet( const ProcessorSet& );
 
     void clear();
     void clear( uint16_t processor_i );
@@ -2352,7 +2419,11 @@ namespace YIELD
     bool isset( uint16_t processor_i ) const;
     void set( uint16_t processor_i );    
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ProcessorSet, 1098491984UL );
+
   private:
+    ProcessorSet( const ProcessorSet& other ) { DebugBreak(); } // Prevent copying
     ~ProcessorSet();
 
     friend class Process;
@@ -2386,14 +2457,14 @@ namespace YIELD
         : time( time ), value( value )
       { }
 
-      Stream::Status deserialize( InputStream& input_stream );
       const Time& get_time() const { return time; }
       double get_value() const { return value; }
       operator double() const { return value; }
-      Stream::Status serialize( OutputStream& output_stream );
 
       // Object
-      inline Record& incRef() { return Object::incRef( *this ); }
+      YIELD_OBJECT_PROTOTYPES( RRD::Record, 1466212275UL );
+      Stream::Status deserialize( InputStream& input_stream );
+      Stream::Status serialize( OutputStream& output_stream );
 
     private:
       Time time;
@@ -2401,7 +2472,7 @@ namespace YIELD
     };
 
 
-    RRD( const Path& file_path, uint32_t file_flags = File::DEFAULT_FLAGS );
+    static auto_Object<RRD> open( const Path& file_path, uint32_t file_open_flags = File::DEFAULT_FLAGS );
 
     void append( double value );
     void fetch( std::vector<Record>& out_records );
@@ -2409,15 +2480,14 @@ namespace YIELD
     void fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records );
 
     // Object
-    inline RRD& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( RRD, 93045UL );
 
   private:
-    ~RRD();
-
+    RRD( const Path& current_file_path, auto_Object<File> current_file );
+    ~RRD() { }
 
     Path current_file_path;
-
-    File* current_file;
+    auto_Object<File> current_file;
   };
 
 
@@ -2518,7 +2588,7 @@ namespace YIELD
     void* getFunction( const char* function_name ); // Returns NULL instead of throwing exceptions
 
     // Object
-    SharedLibrary& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( SharedLibrary, 3903597476UL );
 
   private:
     SharedLibrary();
@@ -2532,21 +2602,18 @@ namespace YIELD
 
   class Stat : public Object
   {
-  public:
-    Stat( const Path& path ) { init( path ); } // Initialize the object from a stat() system call on path
-    Stat( fd_t fd ) { init( fd ); } // Initialize the object from an fstat() system call on fd
+  public:   
+    static auto_Object<Stat> stat( const Path& path );
+
 #ifdef _WIN32
-    // Since fd_t is void* on Windows we need these to delegate constructors to the const Path& variant rather than the fd_t one
-    Stat( char* path ) { init( Path( path ) ); }
-    Stat( const char* path ) { init( Path( path ) ); }
     Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes );
+    Stat( const BY_HANDLE_FILE_INFORMATION& );
     Stat( const WIN32_FIND_DATA& );
     Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes ); // For doing FILETIME -> Unix conversions in Dokan; deduces mode from dwFileAttributes
 #else
     Stat( mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
 #endif
-    Stat( const Stat& );
-    virtual ~Stat() { }
+    Stat( const struct stat& stbuf );
 
     mode_t get_mode() const { return mode; }
 #ifndef _WIN32
@@ -2572,17 +2639,17 @@ namespace YIELD
     virtual operator std::string() const;
     virtual operator struct stat() const;
 #ifdef _WIN32
-    virtual operator WIN32_FIND_DATA() const;
     virtual operator BY_HANDLE_FILE_INFORMATION() const;
+    virtual operator WIN32_FIND_DATA() const;
 #endif
 
     // Object
-    Stat& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( Stat, 2834429UL );
 
   protected:
-    void init( const Path& );  // Opens path, fstats the file descriptor, and closes it
-    void init( fd_t ); // fstats the file descriptor but doesn't close it
-#ifdef _WIN32
+    virtual ~Stat() { }
+
+#ifdef _WIN32    
     void init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes );
 #endif
 
@@ -2597,6 +2664,12 @@ namespace YIELD
 #ifdef _WIN32
     uint32_t attributes;
 #endif
+
+  private:
+    Stat( const Stat& other ) // Prevent copying
+    {
+      DebugBreak();
+    }
   };
 
 
@@ -2725,33 +2798,6 @@ namespace YIELD
     String( const char* str ) : std::string( str ), hash( 0 ), read_pos( 0 ) { }
     String( const char* str, size_t str_len ) : std::string( str, str_len ), hash( 0 ), read_pos( 0 ) { }
 
-    Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read )
-    {
-      if ( read_pos < size() )
-      {
-        size_t temp_bytes_read;
-        for ( ;; )
-        {
-          Stream::Status status = input_stream.read( const_cast<char*>( c_str() ) + read_pos, size() - read_pos, &temp_bytes_read );
-          if ( status == STREAM_STATUS_OK )
-          {
-            read_pos += temp_bytes_read;
-            if ( read_pos == size() )
-            {
-              read_pos = 0;              
-              if ( out_bytes_read )
-                *out_bytes_read = temp_bytes_read;
-              return STREAM_STATUS_OK;
-            }
-          }
-          else
-            return status;
-        }
-      }
-      else
-        return STREAM_STATUS_ERROR;
-    }
-
     uint32_t get_hash()
     {
       if ( hash == 0 )
@@ -2759,48 +2805,16 @@ namespace YIELD
       return hash;
     }
 
-    Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written )
-    {
-      return output_stream.write( c_str(), size(), out_bytes_written );
-    }
-
     // Object
-    YIELD_OBJECT_TYPE_INFO( STRING, "String", 3216070200UL );
-    inline String& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( String, 3216070200UL );
+    Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read );
+    Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 );
 
     // InputStream
-    Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-    {
-      size_t readable_len = size() - read_pos;
-      if ( readable_len > 0 )
-      {
-        if ( buffer_len > readable_len )
-          buffer_len = readable_len;
-        memcpy( buffer, c_str()+read_pos, static_cast<size_t>( buffer_len ) );
-        read_pos += buffer_len;
-        if ( out_bytes_read )
-          *out_bytes_read = buffer_len;
-        return STREAM_STATUS_OK;
-      }
-      else
-        return STREAM_STATUS_ERROR;
-    }
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
     // OutputStream
-    Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-    {
-      size_t total_buffers_len = 0;
-      for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-      {
-        append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-        total_buffers_len += buffers[buffer_i].iov_len;
-      }
-
-      if ( out_bytes_written )
-        *out_bytes_written = total_buffers_len;
-
-      return STREAM_STATUS_OK;
-    }
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   protected:
     virtual ~String() { }
@@ -2819,7 +2833,7 @@ namespace YIELD
     static void* getTLS( unsigned long key );
     static void setCurrentThreadName( const char* thread_name ) { setThreadName( getCurrentThreadId(), thread_name ); }
     static void setTLS( unsigned long key, void* value );
-    static void sleep( timeout_ns_t timeout_ns );
+    static void sleep( uint64_t timeout_ns );
     static void yield();
 
 
@@ -2833,6 +2847,9 @@ namespace YIELD
     virtual void start();
 
     virtual void run() = 0;
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Thread, 2953902784UL );
 
   protected:
     virtual ~Thread();
@@ -2921,8 +2938,11 @@ namespace YIELD
       virtual ~readdirCallback() { }
 
       // Return false to stop reading
-      virtual bool operator()( const Path& dirent_name, const Stat& stbuf ) = 0;
+      virtual bool operator()( const Path& dirent_name, auto_Object<Stat> stbuf ) = 0;
     };
+
+
+    YIELD_VOLUME_PROTOTYPES;
 
     // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
     virtual auto_Object<File> creat( const Path& path ) { return creat( path, DEFAULT_FILE_MODE ); }
@@ -2944,10 +2964,8 @@ namespace YIELD
     virtual bool touch( const YIELD::Path& path ) { return touch( path, DEFAULT_FILE_MODE ); }
     virtual bool touch( const YIELD::Path& path, mode_t mode );
 
-    YIELD_VOLUME_PROTOTYPES;
-
     // Object
-    inline Volume& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( Volume, 3106595381UL );
 
   protected:
     virtual ~Volume() { }
@@ -2960,13 +2978,9 @@ namespace YIELD
     XDRInputStream( InputStream& underlying_input_stream );
 
     // StructuredInputStream
-    bool readBool( const Declaration& decl ) { beforeRead( decl ); return ( _readInt32() == 1 ); }
-    double readDouble( const Declaration& decl ) { beforeRead( decl ); double value; underlying_input_stream.read( &value, sizeof( value ) ); return value; }
-    float readFloat( const Declaration& decl ) { beforeRead( decl ); float value; underlying_input_stream.read( &value, sizeof( value ) ); return value; }
-    int32_t readInt32( const Declaration& decl ) { beforeRead( decl ); return _readInt32(); }
-    int64_t readInt64( const Declaration& decl ) { beforeRead( decl ); return _readInt64(); }
-    virtual Object* readObject( const Declaration& decl, Object* value, Object::GeneralType = Object::UNKNOWN );
-    void readString( const Declaration&, std::string& );
+    YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES;
+    float readFloat( const Declaration& decl );
+    int32_t readInt32( const Declaration& decl );
 
   protected:
     InputStream& underlying_input_stream;
@@ -2983,17 +2997,9 @@ namespace YIELD
     XDROutputStream( OutputStream& underlying_output_stream, bool in_map = false );
 
     // StructuredOutputstream
-    void writeBool( const Declaration& decl, bool value ) { beforeWrite( decl ); _writeInt32( value ? 1 : 0 ); }
-    void writeDouble( const Declaration& decl, double value ) { beforeWrite( decl ); underlying_output_stream.write( &value, sizeof( value ) ); }
-    void writeFloat( const Declaration& decl, float value ) { beforeWrite( decl ); underlying_output_stream.write( &value, sizeof( value ) ); }
-    void writeInt32( const Declaration& decl, int32_t value ) { beforeWrite( decl ); _writeInt32( value ); }
-    void writeInt64( const Declaration& decl, int64_t value ) { beforeWrite( decl ); _writeInt64( value ); }
-    virtual void writeObject( const Declaration&, Object& value, Object::GeneralType value_general_type = Object::UNKNOWN );
-    void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, std::strlen( value ) ); }
-    void writeString( const Declaration& decl, const char* value, size_t value_len );
-    void writeUint32( const Declaration& decl, uint32_t value ) { beforeWrite( decl ); _writeInt32( value ); }
-    void writeUint64( const Declaration& decl, uint64_t value ) { beforeWrite( decl ); _writeInt64( value ); }
+    YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
+    void writeFloat( const Declaration& decl, float value );
+    void writeInt32( const Declaration& decl, int32_t value );
 
   protected:
     OutputStream& underlying_output_stream;

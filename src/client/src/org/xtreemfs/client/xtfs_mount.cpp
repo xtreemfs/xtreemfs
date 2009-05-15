@@ -42,6 +42,8 @@ namespace org
           foreground = false;
 
           addOption( XTFS_MOUNT_OPTION_FUSE_OPTION, "-o", NULL, "<fuse_option>" );
+
+          addOption( XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH, "--parent-named-pipe-path", "internal only" );
         }
 
       private:
@@ -51,7 +53,8 @@ namespace org
           XTFS_MOUNT_OPTION_CACHE_METADATA = 11,
           XTFS_MOUNT_OPTION_DIRECT_IO = 12,
           XTFS_MOUNT_OPTION_FOREGROUND = 13,
-          XTFS_MOUNT_OPTION_FUSE_OPTION = 14
+          XTFS_MOUNT_OPTION_FUSE_OPTION = 14,
+          XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH = 15
         };
 
         bool cache_files, cache_metadata;
@@ -60,95 +63,116 @@ namespace org
         bool foreground;
         std::string fuse_o_args;
         std::string mount_point, volume_name;
+        YIELD::Path parent_named_pipe_path;
 
 
         // YIELD::Main
         int _main( int argc, char** argv )
         {
           if ( foreground )
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": running in foreground.";
-          else
           {
-#ifndef _WIN32
-            if ( daemon( 1, 0 ) == -1 )
-              return errno;
-#endif
-          }
+            uint32_t volume_flags = 0;
+            if ( cache_files )
+              volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
+            if ( cache_metadata )
+              volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
 
-          uint32_t volume_flags = 0;
-          if ( cache_files )
-            volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
-          if ( cache_metadata )
-            volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
+            YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_socket_factory(), volume_flags, get_log() );
 
-          YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_socket_factory(), volume_flags, get_log() );
-
-          // Stack volumes as indicated
-          if ( cache_files )
-          {
-            volume = new yieldfs::FileCachingVolume( volume, get_log() );
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
-          }
-
-          if ( cache_metadata )
-          {
-            volume = new yieldfs::StatCachingVolume( volume, get_log(), 5 );
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
-          }
-
-          if ( get_log_level() >= YIELD::Log::LOG_INFO )
-          {
-            volume = new yieldfs::TracingVolume( volume, get_log() );
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
-          }
-
-          // Set flags to pass to FUSE based on command line options
-          uint32_t fuse_flags = 0;
-          if ( get_log_level() >= YIELD::Log::LOG_INFO )
-          {
-            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
-          }
-
-          if ( direct_io )
-          {
-            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
-          }
-
-          // Create the FUSE object then run forever in its main()
-          YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, fuse_flags, get_log() );
-          int ret;
-#ifdef _WIN32
-          ret = fuse->main( mount_point.c_str() );
-#else
-          if ( fuse_o_args.empty() && fuse_flags == 0 )
-            ret = fuse->main( argv[0], mount_point.c_str() );
-          else
-          {
-            std::vector<char*> argvv;
-            argvv.push_back( argv[0] );
-
-            if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
-              argvv.push_back( "-d" );
-
-            if ( !fuse_o_args.empty() )
+            // Stack volumes as indicated
+            if ( cache_files )
             {
-              argvv.push_back( "-o" );
-              argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+              volume = new yieldfs::FileCachingVolume( volume, get_log() );
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
             }
 
-            argvv.push_back( NULL );
+            if ( cache_metadata )
+            {
+              volume = new yieldfs::StatCachingVolume( volume, get_log(), 5 );
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
+            }
 
-            struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-            ret = fuse->main( fuse_args_, mount_point.c_str() );
-          }
+            if ( get_log_level() >= YIELD::Log::LOG_INFO )
+            {
+              volume = new yieldfs::TracingVolume( volume, get_log() );
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
+            }
+
+            // Set flags to pass to FUSE based on command line options
+            uint32_t fuse_flags = 0;
+            if ( get_log_level() >= YIELD::Log::LOG_INFO )
+            {
+              fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
+            }
+
+            if ( direct_io )
+            {
+              fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+            }
+
+            if ( !parent_named_pipe_path.empty() )
+            {
+              YIELD::auto_Object<YIELD::NamedPipe> parent_named_pipe = YIELD::NamedPipe::open( parent_named_pipe_path );
+              if ( parent_named_pipe != NULL )
+              {
+                int parent_ret = 0;
+                parent_named_pipe->write( &parent_ret, sizeof( parent_ret ) );
+              }
+            }
+
+            // Create the FUSE object then run forever in its main()
+            YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, fuse_flags, get_log() );
+            int ret;
+#ifdef _WIN32
+            ret = fuse->main( mount_point.c_str() );
+#else
+            if ( fuse_o_args.empty() && fuse_flags == 0 )
+              ret = fuse->main( argv[0], mount_point.c_str() );
+            else
+            {
+              std::vector<char*> argvv;
+              argvv.push_back( argv[0] );
+
+              if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
+                argvv.push_back( "-d" );
+
+              if ( !fuse_o_args.empty() )
+              {
+                argvv.push_back( "-o" );
+                argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+                get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+              }
+
+              argvv.push_back( NULL );
+
+              struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
+              ret = fuse->main( fuse_args_, mount_point.c_str() );
+            }
 #endif
 
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
+            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
 
-          return ret;
+            return ret;
+          }
+          else // !foreground
+          {
+            YIELD::Path named_pipe_path( "xtfs_mount" );
+            YIELD::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
+            std::vector<char*> argvv;
+            for ( int arg_i = 1; arg_i < argc; arg_i++ )
+              argvv.push_back( argv[arg_i] );
+            argvv.push_back( const_cast<char*>( "--parent-named-pipe-path" ) );
+            argvv.push_back( const_cast<char*>( static_cast<const char*>( named_pipe_path ) ) );
+            argvv.push_back( NULL );
+            YIELD::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&argvv[0] );
+            int ret;
+            YIELD::Stream::Status read_status = server_named_pipe->read( &ret, sizeof( ret ) );
+            if ( read_status != YIELD::Stream::STREAM_STATUS_OK )
+              ret = child_process->wait();
+            return ret;
+          }
         }
 
         void parseOption( int id, char* arg )
@@ -170,6 +194,13 @@ namespace org
             }
             break;
 
+            case XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH:
+            {
+              parent_named_pipe_path = arg;
+              foreground = true;
+            }
+            break;
+              
             default: Main::parseOption( id, arg ); break;
           }
         }

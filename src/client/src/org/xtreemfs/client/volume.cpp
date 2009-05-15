@@ -270,11 +270,10 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
     {
       const org::xtreemfs::interfaces::Stat& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
 #ifdef _WIN32
-      YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() );
+      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() ) ) )
 #else
-      YIELD::Stat yield_stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() );
+      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() ) ) )
 #endif
-      if ( !callback( ( *directory_entry_i ).get_name(), yield_stat ) )
         return false;
     }
     return true;

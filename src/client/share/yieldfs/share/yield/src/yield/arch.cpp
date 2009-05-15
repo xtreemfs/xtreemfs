@@ -1,4 +1,4 @@
-// Revision: 1416
+// Revision: 1437
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -19,7 +19,7 @@ void EventHandler::handleUnknownEvent( Event& ev )
 
     default:
     {
-      std::cerr << getEventHandlerName() << " dropping unknown event: " << ev.get_type_name() << std::endl;
+      std::cerr << get_type_name() << " dropping unknown event: " << ev.get_type_name() << std::endl;
       Object::decRef( ev );
     }
     break;
@@ -55,6 +55,8 @@ namespace YIELD
       : StageGroupThread( stage_group_name, limit_logical_processor_set, log ), stage( stage )
     { }
     Stage& get_stage() { return stage; }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SEDAStageGroupThread, 583423745UL );
     // Thread
     void run()
     {

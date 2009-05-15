@@ -25,7 +25,7 @@ namespace org
         virtual ~StringSet() { }
 
         // YIELD::Object
-        YIELD_OBJECT_TYPE_INFO( SEQUENCE, "org::xtreemfs::interfaces::StringSet", 1366254439UL );
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::interfaces::StringSet, 1366254439UL );
         void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string value; input_stream.readString( YIELD::StructuredStream::Declaration( "value" ), value ); push_back( value ); }
         uint64_t get_size() const { return std::vector<std::string>::size(); }
         void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "value" ), ( *this )[value_i] ); } }
@@ -51,11 +51,11 @@ namespace org
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
 
         // YIELD::Object
-        YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::UserCredentials", 3975375778UL );
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::interfaces::UserCredentials, 3975375778UL );
 
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), &group_ids ); input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeObject( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), group_ids ); output_stream.writeString( YIELD::StructuredStream::Declaration( "password" ), password ); }
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readSequence( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), &group_ids ); input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeSequence( YIELD::StructuredStream::Declaration( "org::xtreemfs::interfaces::StringSet", "group_ids" ), group_ids ); output_stream.writeString( YIELD::StructuredStream::Declaration( "password" ), password ); }
 
       protected:
         std::string user_id;
@@ -80,7 +80,7 @@ namespace org
         bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
 
         // YIELD::Object
-        YIELD_OBJECT_TYPE_INFO( STRUCT, "org::xtreemfs::interfaces::VivaldiCoordinates", 3973037335UL );
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::interfaces::VivaldiCoordinates, 3973037335UL );
 
         // YIELD::Object
         void deserialize( YIELD::StructuredInputStream& input_stream ) { x_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "x_coordinate" ) ); y_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "y_coordinate" ) ); local_error = input_stream.readDouble( YIELD::StructuredStream::Declaration( "local_error" ) ); }

@@ -29,10 +29,7 @@ namespace org
         void write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
 
         // YIELD::Object
-        OSDProxy& incRef() { return YIELD::Object::incRef( *this ); }
-
-        // YIELD::EventHandler
-        const char* getEventHandlerName() const { return "OSDProxy"; }
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::OSDProxy, 1368936964UL );
 
       private:
         friend class YIELD::Client;

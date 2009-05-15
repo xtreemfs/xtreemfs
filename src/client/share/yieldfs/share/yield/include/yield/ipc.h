@@ -89,6 +89,9 @@ namespace YIELD
     bool operator==( const SocketAddress& other ) const;
     bool operator!=( const SocketAddress& other ) const;
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SocketAddress, 1243996573UL );
+
   private:
     struct sockaddr_storage* _sockaddr_storage;
 
@@ -130,10 +133,10 @@ namespace YIELD
     virtual bool shutdown() { return true; }
 
     // InputStream
-    virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
     // OutputStream
-    virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   protected:
     virtual ~Socket()
@@ -184,11 +187,10 @@ namespace YIELD
     virtual bool shutdown();
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "TCPSocket", 2622352664UL );
-    inline TCPSocket& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( TCPSocket, 2622352664UL );
 
     // OutputStream
-    virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   protected:
     TCPSocket( socket_t, auto_Object<Log> log );
@@ -207,6 +209,9 @@ namespace YIELD
     TCPSocketFactory( auto_Object<Log> log = NULL )
       : SocketFactory( log )
     { }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( TCPSocketFactory, 3650834884UL );
 
     // SocketFactory
     auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
@@ -231,7 +236,7 @@ namespace YIELD
     inline bool want_read() const { return _want_read; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "FDEvent", 3294357755UL );
+    YIELD_OBJECT_PROTOTYPES( FDEvent, 3294357755UL );
 
   private:
     ~FDEvent() { }
@@ -254,8 +259,7 @@ namespace YIELD
     const Time& get_period() const { return period; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "TimerEvent", 422444629UL );
-    TimerEvent& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( TimerEvent, 422444629UL );    
 
   private:
     ~TimerEvent() { }
@@ -284,11 +288,14 @@ namespace YIELD
     auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, static_cast<uint64_t>( 0 ), context ); }
     auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( FDEventQueue, 1422990087UL );
+
     // EventQueue
     virtual EventQueue* clone() const { return new FDEventQueue; }
     virtual bool enqueue( Event& ); // Discards events
     virtual Event* dequeue();
-    virtual Event* dequeue( timeout_ns_t timeout_ns );
+    virtual Event* dequeue( uint64_t timeout_ns );
     virtual Event* try_dequeue() { return FDEventQueue::dequeue( 0 ); }    
 
   protected:
@@ -330,7 +337,7 @@ namespace YIELD
     FDEvent* dequeueFDEvent();
     TimerEvent* dequeueTimerEvent();
     int poll();
-    int poll( timeout_ns_t timeout_ns );
+    int poll( uint64_t timeout_ns );
   };
 
 
@@ -339,10 +346,13 @@ namespace YIELD
   public:
     FDAndInternalEventQueue();
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 718667851UL );
+
     // EventQueue
     virtual EventQueue* clone() const { return new FDAndInternalEventQueue; }
     Event* dequeue();
-    Event* dequeue( timeout_ns_t timeout_ns );
+    Event* dequeue( uint64_t timeout_ns );
     bool enqueue( Event& );
     Event* try_dequeue();    
 
@@ -419,11 +429,14 @@ namespace YIELD
       bool shutdown() { return _socket->shutdown(); }
       void touch() { last_activity_time = Time(); }
 
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Client::Connection, 2905178147UL );
+
       // InputStream
-      Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+      YIELD_INPUT_STREAM_PROTOTYPES;
 
       // OutputStream
-      Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
+      YIELD_OUTPUT_STREAM_PROTOTYPES;
 
     private:
       ~Connection() { }
@@ -507,7 +520,7 @@ namespace YIELD
     virtual bool respond( Response& response ) { return Request::respond( response ); }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( REQUEST, "HTTPRequest", 2869724743UL );
+    YIELD_OBJECT_PROTOTYPES( HTTPRequest, 2869724743UL );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -541,8 +554,7 @@ namespace YIELD
     void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( RESPONSE, "HTTPResponse", 231649460UL );
-    HTTPResponse& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 231649460UL );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -572,10 +584,7 @@ namespace YIELD
     static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log = NULL );
 
     // Object
-    HTTPClient& incRef() { return Object::incRef( *this ); }
-
-    // EventHandler
-    virtual const char* getEventHandlerName() const { return "HTTPClient"; }
+    YIELD_OBJECT_PROTOTYPES( HTTPClient, 645665801UL );
 
   protected:
     friend class Client;
@@ -594,69 +603,14 @@ namespace YIELD
     static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<> body, auto_Object<Log> log );
   };
 
-
-  class JSONValue;
-
-  class JSONInputStream : public StructuredInputStream
-  {
-  public:
-    JSONInputStream( InputStream& underlying_input_stream );
-    virtual ~JSONInputStream();
-
-    // StructuredInputStream
-    YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES;
-
-  protected:
-    JSONInputStream( const Declaration& root_decl, JSONValue& root_json_value );
-
-  private:
-    const Declaration* root_decl;
-    JSONValue *root_json_value, *next_json_value; // next_json_value is for arrays and maps
-
-    virtual void readSequence( Object& );
-    virtual void readMap( Object& );
-    virtual void readStruct( Object& );
-    JSONValue* readJSONValue( const Declaration&, Object::GeneralType = Object::UNKNOWN );
-  };
-
-
-  class JSONOutputStream : public StructuredOutputStream
-  {
-  public:
-    JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings = true );
-    virtual ~JSONOutputStream(); // If the stream is wrapped in map, sequence, etc. then the constructor will append the final } or [, so the underlying output stream should not be deleted before this object!
-
-    // StructuredOutputStream
-    YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
-    virtual void writePointer( const Declaration& decl, void* value );
-
-  protected:
-    JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings, yajl_gen writer, const Declaration& root_decl );
-
-    virtual void writeDeclaration( const Declaration& );
-    virtual void writeSequence( Object* ); // Can be NULL for empty arrays
-    virtual void writeMap( Object* ); // Can be NULL for empty maps
-    virtual void writeStruct( Object* );
-
-  private:
-    OutputStream& underlying_output_stream;
-    bool write_empty_strings;
-
-    const Declaration* root_decl; // Mostly for debugging, also used to indicate if this is the root JSONOutputStream
-    yajl_gen writer;
-    bool in_map;
-
-    void flushYAJLBuffer();
-  };
-
-
+ 
   class ObjectFactory : public Object
   {
   public:
     virtual Object* createObject() const = 0;
 
     // Object
-    ObjectFactory& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( ObjectFactory, 4119141628UL );
 
   protected:
     virtual ~ObjectFactory() { }
@@ -706,6 +660,9 @@ namespace YIELD
       CuckooHashTable<ObjectFactory*>::insert( type_id, object_factory.release() );
     }
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ObjectFactories, 1822541756UL );
+
   private:
     ~ObjectFactories()
     {
@@ -725,10 +682,7 @@ namespace YIELD
     }
 
     // Object
-    ONCRPCClient& incRef() { return Object::incRef( *this ); }
-
-    // EventHandler
-    virtual const char* getEventHandlerName() const { return "ONCRPCClient"; }
+    YIELD_OBJECT_PROTOTYPES( ONCRPCClient, 3599397095UL );
 
   protected:
     friend class Client;
@@ -821,8 +775,7 @@ namespace YIELD
     auto_Object<> get_credential() const { return credential; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( REQUEST, "ONCRPCRequest", 3095736087UL );
-    ONCRPCRequest& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( ONCRPCRequest, 3095736087UL );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
@@ -848,7 +801,7 @@ namespace YIELD
     }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( REQUEST, "ONCRPCResponse", 2752670386UL );
+    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 2752670386UL );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
@@ -967,7 +920,7 @@ namespace YIELD
     SSL_CTX* get_ssl_ctx() const { return ctx; }
 
     // Object
-    inline SSLContext& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( SSLContext, 600160790UL );
 
   private:
     ~SSLContext()
@@ -1033,8 +986,7 @@ namespace YIELD
     }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "SSLSocket", 2540210862UL );
-    inline SSLSocket& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( SSLSocket, 2540210862UL );
 
     // InputStream
     Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
@@ -1257,6 +1209,9 @@ namespace YIELD
       : SocketFactory( log ), ssl_context( ssl_context )
     { }
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SSLSocketFactory, 2425521817UL );
+
     // SocketFactory
     virtual auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
     {
@@ -1281,11 +1236,10 @@ namespace YIELD
     bool leaveMulticastGroup( const SocketAddress& multicast_group_sockaddr );
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "UDPSocket", 2607589533UL );
-    inline UDPSocket& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( UDPSocket, 2607589533UL );
 
     // InputStream
-    Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
   private:
     ~UDPSocket() { }
@@ -1316,7 +1270,7 @@ namespace YIELD
     void set_port( unsigned short port ) { this->port = port; }
 
     // Object
-    URI& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( URI, 91663UL );
 
   private:
     URI( UriUriStructA& parsed_uri )

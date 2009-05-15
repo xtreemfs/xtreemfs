@@ -121,8 +121,8 @@ YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size
       org::xtreemfs::interfaces::ObjectData object_data;
       get_osd_proxy( object_number )->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
-      YIELD::String* data = static_cast<YIELD::String*>( object_data.get_data().get() );
-      if ( data && !data->empty() )
+      YIELD::String* data = object_data.get_data().get();
+      if ( !data->empty() )
       {
         memcpy( rbuf_p, data->c_str(), data->size() );
         rbuf_p += data->size();
@@ -139,7 +139,7 @@ YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size
         file_offset += zero_padding;
       }
 
-      if ( data && data->size() < object_size )
+      if ( data->size() < object_size )
         break;
     }
 

@@ -109,6 +109,9 @@ namespace yieldfs
     int main( struct fuse_args&, const char* mount_point );
 #endif
 
+    // YIELD::Object
+    YIELD_OBJECT_PROTOTYPES( yieldfs::FUSE, 2891744549UL );
+
   protected:
 #ifdef _WIN32
     FUSEWin32* fuse_win32;
@@ -126,10 +129,6 @@ namespace yieldfs
   public:
     StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s );
     StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log, double ttl_s );
-
-    void evict( const YIELD::Path& path );
-    YIELD::auto_Object<YIELD::Stat> find( const YIELD::Path& path );
-    void insert( const YIELD::Path& path, YIELD::Stat& stat );
 
     // YIELD::Volume
     bool chmod( const YIELD::Path& path, mode_t mode );
@@ -159,7 +158,8 @@ namespace yieldfs
 
     YIELD::Mutex lock;
 
-
+    void evict( const YIELD::Path& path );
+    YIELD::auto_Object<> find( const YIELD::Path& path );
     YIELD::Path getParentDirectoryPath( const YIELD::Path& );
     void insert( const YIELD::Path& path, CachedStat* cached_stat );
   };

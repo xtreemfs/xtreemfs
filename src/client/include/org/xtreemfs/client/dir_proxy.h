@@ -33,10 +33,7 @@ namespace org
         YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
 
         // YIELD::Object
-        DIRProxy& incRef() { return Object::incRef( *this ); }
-
-        // YIELD::EventHandler
-        const char* getEventHandlerName() const { return "DIRProxy"; }
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::DIRProxy, 547158291UL );
 
       private:
         friend class YIELD::Client;

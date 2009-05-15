@@ -88,9 +88,6 @@ namespace org
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
 
-          // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::ProtocolException", 1268393568UL );
-
           // YIELD::ExceptionResponse
           virtual ExceptionResponse* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
           virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
@@ -122,9 +119,6 @@ namespace org
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
 
-          // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::errnoException", 405273943UL );
-
           // YIELD::ExceptionResponse
           virtual ExceptionResponse* clone() const { return new errnoException( error_code, error_message, stack_trace); }
           virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
@@ -151,9 +145,6 @@ namespace org
         void set_to_uuid( const char* to_uuid, size_t to_uuid_len = 0 ) { this->to_uuid.assign( to_uuid, ( to_uuid_len != 0 ) ? to_uuid_len : std::strlen( to_uuid ) ); }
         const std::string& get_to_uuid() const { return to_uuid; }
 
-          // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::RedirectException", 3273969329UL );
-
           // YIELD::ExceptionResponse
           virtual ExceptionResponse* clone() const { return new RedirectException( to_uuid); }
           virtual void throwStackClone() const { throw RedirectException( to_uuid); }
@@ -177,9 +168,6 @@ namespace org
         void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
         void set_stack_trace( const char* stack_trace, size_t stack_trace_len = 0 ) { this->stack_trace.assign( stack_trace, ( stack_trace_len != 0 ) ? stack_trace_len : std::strlen( stack_trace ) ); }
         const std::string& get_stack_trace() const { return stack_trace; }
-
-          // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException", 769608203UL );
 
           // YIELD::ExceptionResponse
           virtual ExceptionResponse* clone() const { return new ConcurrentModificationException( stack_trace); }
@@ -205,9 +193,6 @@ namespace org
         void set_error_message( const char* error_message, size_t error_message_len = 0 ) { this->error_message.assign( error_message, ( error_message_len != 0 ) ? error_message_len : std::strlen( error_message ) ); }
         const std::string& get_error_message() const { return error_message; }
 
-          // YIELD::Object
-          YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException", 690678936UL );
-
           // YIELD::ExceptionResponse
           virtual ExceptionResponse* clone() const { return new InvalidArgumentException( error_message); }
           virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
@@ -230,8 +215,11 @@ namespace org
           object_factories.registerObjectFactory( 690678936UL, new YIELD::ObjectFactoryImpl<InvalidArgumentException> );;
         }
 
-        // EventHandler
-        virtual const char* getEventHandlerName() const { return "Exceptions"; }    virtual void handleEvent( YIELD::Event& ev ) { YIELD::EventHandler::handleUnknownEvent( ev ); }
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::interfaces::Exceptions, 584199291UL );
+
+        // YIELD::EventHandler
+          virtual void handleEvent( YIELD::Event& ev ) { YIELD::EventHandler::handleUnknownEvent( ev ); }
 
 
       protected:

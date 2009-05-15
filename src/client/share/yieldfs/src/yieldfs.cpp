@@ -1,4 +1,4 @@
-// Revision: 131
+// Revision: 133
 
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -323,9 +323,9 @@ namespace yieldfs
       { }
 
       // YIELD::Volume::readdirCallback
-      bool operator()( const YIELD::Path& name, const YIELD::Stat& stbuf )
+      bool operator()( const YIELD::Path& name, YIELD::auto_Object<YIELD::Stat> stbuf )
       {
-        struct stat struct_stat_stbuf = stbuf;
+        struct stat struct_stat_stbuf = *stbuf;
         filler( buf, static_cast<const std::string&>( name ).c_str(), &struct_stat_stbuf, 0 );
         return true;
       }
@@ -755,9 +755,9 @@ namespace yieldfs
       { }
 
       // YIELD::Volume::readdirCallback
-      bool operator()( const YIELD::Path& path, const YIELD::Stat& stbuf )
+      bool operator()( const YIELD::Path& path, YIELD::auto_Object<YIELD::Stat> stbuf )
       {
-        WIN32_FIND_DATA find_data = stbuf;
+        WIN32_FIND_DATA find_data = *stbuf;
         wcsncpy( find_data.cFileName, path, 260 );
         FillFindData( &find_data, DokanFileInfo );
         return true;
@@ -1410,20 +1410,22 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 namespace yieldfs
 {
-  class CachedStat : public YIELD::Stat
+  class CachedStat : public YIELD::Object
   {
   public:
-    CachedStat( const YIELD::Path& path, const YIELD::Stat& other )
-      : YIELD::Stat( other ), path( path )
+    CachedStat( const YIELD::Path& path, YIELD::auto_Object<YIELD::Stat> stbuf )
+      : path( path ), stbuf( stbuf )
     {
       creation_epoch_time_s = YIELD::Time::getCurrentUnixTimeS();
     }
     const YIELD::Path& get_path() const { return path; }
+    YIELD::auto_Object<YIELD::Stat> get_stat() const { return stbuf; }
     double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
     // Object
-    inline CachedStat& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( yieldfs::CachedStat, 2711482493 );
   private:
     YIELD::Path path;
+    YIELD::auto_Object<YIELD::Stat> stbuf;
     double creation_epoch_time_s;
   };
   class StatCachingVolumereaddirCallback : public YIELD::Volume::listdirCallback, public YIELD::Volume::readdirCallback
@@ -1440,7 +1442,7 @@ namespace yieldfs
     void flush()
     {
       for ( std::vector<CachedStat*>::iterator cached_stat_i = cached_stats.begin(); cached_stat_i != cached_stats.end(); cached_stat_i++ )
-        copy_to_readdir_callback( ( *cached_stat_i )->get_path(), **cached_stat_i );
+        copy_to_readdir_callback( ( *cached_stat_i )->get_path(), ( *cached_stat_i )->get_stat() );
     }
     // YIELD::Volume::listdirCallback
     bool operator()( const YIELD::Path& path )
@@ -1455,14 +1457,11 @@ namespace yieldfs
         return false;
     }
     // YIELD::Volume::readdirCallback
-    bool operator()( const YIELD::Path& path, const YIELD::Stat& stbuf )
+    bool operator()( const YIELD::Path& path, YIELD::auto_Object<YIELD::Stat> stbuf )
     {
       CachedStat* cached_stat = static_cast<CachedStat*>( volume.find( path ).release() );
       if ( cached_stat == NULL )
-      {
-        cached_stat = new CachedStat( path, stbuf );
-        volume.insert( path, *cached_stat );
-      }
+        volume.insert( path, new CachedStat( path, stbuf ) );
       return copy_to_readdir_callback( path, stbuf );
     }
   private:
@@ -1516,7 +1515,7 @@ void StatCachingVolume::evicttree( const YIELD::Path& path )
   }
 }
 */
-YIELD::auto_Object<YIELD::Stat> StatCachingVolume::find( const YIELD::Path& path )
+YIELD::auto_Object<> StatCachingVolume::find( const YIELD::Path& path )
 {
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
@@ -1551,17 +1550,13 @@ YIELD::auto_Object<YIELD::Stat> StatCachingVolume::find( const YIELD::Path& path
     return NULL;
   }
 }
-void StatCachingVolume::insert( const YIELD::Path& path, YIELD::Stat& stbuf )
-{
-  insert( path, new CachedStat( path, stbuf ) );
-}
-void StatCachingVolume::insert( const YIELD::Path& path, CachedStat* cached_stat  )
+void StatCachingVolume::insert( const YIELD::Path& path, CachedStat* cached_stat )
 {
   lock.acquire();
   YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
-  lock.release();
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "StatCachingVolume: caching " << cached_stat->get_path() << ".";
+  lock.release();
 }
 bool StatCachingVolume::chmod( const YIELD::Path& path, mode_t mode )
 {
@@ -1575,15 +1570,15 @@ bool StatCachingVolume::chown( const YIELD::Path& path, int32_t uid, int32_t gid
 }
 YIELD::auto_Object<YIELD::Stat> StatCachingVolume::getattr( const YIELD::Path& path )
 {
-  YIELD::auto_Object<YIELD::Stat> stbuf = find( path );
-  if ( stbuf!= NULL )
-    return stbuf.release();
+  YIELD::auto_Object<> cached_stat = find( path );
+  if ( cached_stat != NULL )
+    return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
   else
   {
-    stbuf = underlying_volume->getattr( path );
+    YIELD::auto_Object<YIELD::Stat> stbuf = underlying_volume->getattr( path );
     if ( stbuf != NULL )
     {
-      insert( path, new CachedStat( path, *stbuf ) );
+      insert( path, new CachedStat( path, stbuf ) );
       return stbuf;
     }
     else
@@ -1801,9 +1796,9 @@ namespace yieldfs
     { }
 
     // YIELD::Volume::readdirCallback
-    bool operator()( const YIELD::Path& path, const YIELD::Stat& stbuf )
+    bool operator()( const YIELD::Path& path, YIELD::auto_Object<YIELD::Stat> stbuf )
     {
-      log->getStream( YIELD::Log::LOG_DEBUG ) << "TracingVolume: readdir: returning directory entry " << path << ": " << static_cast<std::string>( stbuf ) << ".";
+      log->getStream( YIELD::Log::LOG_DEBUG ) << "TracingVolume: readdir: returning directory entry " << path << ": " << static_cast<std::string>( *stbuf ) << ".";
       return user_readdir_callback( path, stbuf );
     }
 

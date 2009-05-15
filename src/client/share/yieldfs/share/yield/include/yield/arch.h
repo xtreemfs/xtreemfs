@@ -19,14 +19,12 @@ namespace YIELD
 {
   class Event : public Object
   {
-  public:
+  protected:
     Event() : enqueued_time_ns( 0 ) { }
+    virtual ~Event() { }
 
     // Object
-    inline Event& incRef() { return Object::incRef( *this ); }
-
-  protected:
-    virtual ~Event() { }
+    Event& incRef() { return Object::incRef( *this ); }
 
   private:
     template <class, class, class> friend class StageImpl;
@@ -37,12 +35,11 @@ namespace YIELD
   class Response : public Event
   {
   public:
-    Response() { }
-
     // Object
-    inline Response& incRef() { return Object::incRef( *this ); }
+    Response& incRef() { return Object::incRef( *this ); }
 
   protected:
+    Response() { }
     virtual ~Response() { }
   };
 
@@ -61,18 +58,16 @@ namespace YIELD
     virtual void throwStackClone() const { throw ExceptionResponse( what() ); }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EXCEPTION_RESPONSE, "ExceptionResponse", 639602091UL );
+    YIELD_OBJECT_PROTOTYPES( ExceptionResponse, 639602091UL );
   };
 
 
   class Request : public Event
   {
   public:
-    Request() { }
-
     virtual uint32_t getDefaultResponseTypeId() const { return 0; }
     //virtual auto_Object<Response> createDefaultResponse() { return 0; }
-    virtual Response& waitForDefaultResponse( timeout_ns_t timeout_ns ) { throw new ExceptionResponse( "not implemented" ); }
+    virtual Response& waitForDefaultResponse( uint64_t timeout_ns ) { throw new ExceptionResponse( "not implemented" ); }
     virtual bool respond( Response& response) { Object::decRef( response ); return true; }
 
     // For IDL-generated Requests
@@ -83,6 +78,7 @@ namespace YIELD
     Request& incRef() { return Object::incRef( *this ); }
 
   protected:
+    Request() { }
     virtual ~Request() { }
   };
 
@@ -92,10 +88,8 @@ namespace YIELD
   public:
     virtual bool send( Event& ) = 0;
 
-    // Object
-    inline EventTarget& incRef() { return Object::incRef( *this ); }
-
   protected:
+    EventTarget() { }
     virtual ~EventTarget() { }
   };
 
@@ -103,17 +97,11 @@ namespace YIELD
   class EventHandler : public EventTarget
   {
   public:
-    EventHandler() : redirect_to_event_target( NULL ) { }
-
-    virtual const char* getEventHandlerName() const = 0;
     virtual bool isThreadSafe() const { return false; }
     virtual EventHandler* clone() const { return 0;  } // Some scheduling policies will try to replicate an EventHandler instead of sharing it (and possibly locking, if isThreadSafe() = false); EventHandlers that don't keep much state (such as e.g. caches) should implement this method
 
     virtual void handleEvent( Event& ) = 0;
     virtual void handleUnknownEvent( Event& );
-
-    // Object
-    inline EventHandler& incRef() { return Object::incRef( *this ); }
 
     // EventTarget
     bool send( Event& );
@@ -121,6 +109,7 @@ namespace YIELD
     EventTarget* redirect_to_event_target;
 
   protected:
+    EventHandler() : redirect_to_event_target( NULL ) { }
     virtual ~EventHandler() { }
 
   private:
@@ -134,7 +123,7 @@ namespace YIELD
     virtual EventQueue* clone() const = 0;
 
     virtual Event* dequeue() = 0; // Blocking
-    virtual Event* dequeue( timeout_ns_t timeout_ns ) = 0;
+    virtual Event* dequeue( uint64_t timeout_ns ) = 0;
 
     template <class ExpectedEventType>
     ExpectedEventType& dequeue_typed()
@@ -147,7 +136,7 @@ namespace YIELD
     }
 
     template <class ExpectedEventType>
-    ExpectedEventType& dequeue_typed( timeout_ns_t timeout_ns )
+    ExpectedEventType& dequeue_typed( uint64_t timeout_ns )
     {
       Event* dequeued_ev = dequeue( timeout_ns );
       if ( dequeued_ev )
@@ -166,30 +155,34 @@ namespace YIELD
     }
 
   protected:
+    EventQueue() { }
     virtual ~EventQueue() { }
 
   private:
     template <class ExpectedEventType>
     inline ExpectedEventType& _checkDequeuedEventAgainstExpectedEventType( Event& dequeued_ev )
     {
-      if ( dequeued_ev.get_type_id() == YIELD_OBJECT_TYPE_ID( ExpectedEventType ) )
-        return static_cast<ExpectedEventType&>( dequeued_ev );
-      else if ( dequeued_ev.get_general_type() == Object::EXCEPTION_RESPONSE )
+      switch ( dequeued_ev.get_type_id() )
       {
-        try
+        case YIELD_OBJECT_TYPE_ID( ExpectedEventType ): return static_cast<ExpectedEventType&>( dequeued_ev );
+
+        case YIELD_OBJECT_TYPE_ID( ExceptionResponse ):
         {
-          static_cast<ExceptionResponse&>( dequeued_ev ).throwStackClone();
-        }
-        catch ( ExceptionResponse& )
-        {
-          Object::decRef( dequeued_ev );
-          throw;
+          try
+          {
+            static_cast<ExceptionResponse&>( dequeued_ev ).throwStackClone();
+          }
+          catch ( ExceptionResponse& )
+          {
+            Object::decRef( dequeued_ev );
+            throw;
+          }
+
+          throw Exception( "should never reach this point" );
         }
 
-        throw Exception( "should never reach this point" );
-      }
-      else
-        throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+       default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+      }        
     }
   };
 
@@ -199,6 +192,9 @@ namespace YIELD
   {
   public:
     ~OneSignalEventQueue() { }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( OneSignalEventQueue, 1631491096UL );
 
     // EventQueue
     virtual EventQueue* clone() const { return new OneSignalEventQueue<InternalQueueType>; }
@@ -222,7 +218,7 @@ namespace YIELD
       }
     }
 
-    Event* dequeue( timeout_ns_t timeout_ns )
+    Event* dequeue( uint64_t timeout_ns )
     {
       Event* result = InternalQueueType::try_dequeue();
 
@@ -244,7 +240,7 @@ namespace YIELD
           if ( waited_ns >= timeout_ns )
             break;
           else
-            timeout_ns -= static_cast<timeout_ns_t>( waited_ns );
+            timeout_ns -= static_cast<uint64_t>( waited_ns );
         }
 
         return result;
@@ -282,9 +278,10 @@ namespace YIELD
     virtual double get_rho() const { return 0; }
 
     virtual bool visit() { return false; }; // Blocking visit, for SEDA
-    virtual bool visit( timeout_ns_t ) { return false; }; // Timed visit, for CohortS
+    virtual bool visit( uint64_t ) { return false; }; // Timed visit, for CohortS
 
-    inline Stage& incRef() { return Object::incRef( *this ); }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Stage, 89781919UL );
 
   protected:
     Stage()
@@ -348,7 +345,7 @@ namespace YIELD
       else
       {
         if ( event_queue_full_count++ < 10 )
-          std::cerr << Time() << ": queue full #" << static_cast<unsigned short>( event_queue_full_count ) << " at " << event_handler->getEventHandlerName() << " stage." << std::endl;
+          std::cerr << Time() << ": queue full #" << static_cast<unsigned short>( event_queue_full_count ) << " at " << event_handler->get_type_name() << " stage." << std::endl;
 
         /*
         StageGroupThread* running_stage_group_thread = stage_group.get_running_stage_group_thread();
@@ -356,7 +353,7 @@ namespace YIELD
         for ( unsigned char lock_acquire_tries = 0; lock_acquire_tries < 15; lock_acquire_tries++ )
         {
           // Acquire the lock on the receiving stage
-          if ( lock.timed_acquire( static_cast<timeout_ns_t>( lock_acquire_tries * NS_IN_MS ) ) )
+          if ( lock.timed_acquire( static_cast<uint64_t>( lock_acquire_tries * NS_IN_MS ) ) )
           {
             while ( running_stage_group_thread->shouldRun() )
             {
@@ -385,7 +382,7 @@ namespace YIELD
     }
 
     // Stage
-    const char* get_stage_name() const { return event_handler->getEventHandlerName(); }
+    const char* get_stage_name() const { return event_handler->get_type_name(); }
     EventHandler& get_event_handler() { return *event_handler; }
     EventQueue& get_event_queue() { return *event_queue; }
 
@@ -411,7 +408,7 @@ namespace YIELD
         return false;
     }
 
-    bool visit( timeout_ns_t timeout_ns )
+    bool visit( uint64_t timeout_ns )
     {
       if ( lock.try_acquire() )
       {
@@ -489,7 +486,7 @@ namespace YIELD
         return NULL;
       else
       {
-        StageStatsEvent* stage_stats_ev = new StageStatsEvent( get_event_handler().getEventHandlerName() );
+        StageStatsEvent* stage_stats_ev = new StageStatsEvent( get_event_handler().get_type_name() );
 
         stage_stats_ev->queue_length_samples_count = queue_length_sampler.getSamplesCount();
         stage_stats_ev->queue_length_statistics = queue_length_sampler.getStatistics();
@@ -525,9 +522,6 @@ namespace YIELD
     unsigned long get_running_stage_group_thread_tls_key() const { return running_stage_group_thread_tls_key; }
     inline StageGroupThread* get_running_stage_group_thread() const { return static_cast<StageGroupThread*>( Thread::getTLS( running_stage_group_thread_tls_key ) ); }
     inline EventTarget* get_stage_stats_event_target() const { return stage_stats_event_target; }
-
-    // Object
-    inline StageGroup& incRef() { return Object::incRef( *this ); }
 
   protected:
     StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set = NULL, EventTarget* stage_stats_event_target = NULL, auto_Object<Log> log = NULL );
@@ -593,7 +587,7 @@ namespace YIELD
       return success;
     }
 
-    inline bool visitStage( Stage& stage, timeout_ns_t timeout_ns )
+    inline bool visitStage( Stage& stage, uint64_t timeout_ns )
     {
 #ifdef YIELD_ARCH_RECORD_PERFCTRS
       startPerformanceCounterSampling();
@@ -661,7 +655,7 @@ namespace YIELD
     Stage& get_stage() { return stage; }
 
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "StageStartupEvent", 3496483221UL );
+    YIELD_OBJECT_PROTOTYPES( StageStartupEvent, 3496483221UL );
 
   private:
     Stage& stage;
@@ -672,7 +666,7 @@ namespace YIELD
   {
   public:
     // Object
-    YIELD_OBJECT_TYPE_INFO( EVENT, "StageShutdownEvent", 753093765UL );
+    YIELD_OBJECT_PROTOTYPES( StageShutdownEvent, 753093765UL );
   };
 
 
@@ -721,6 +715,9 @@ namespace YIELD
 
       return stage;
     }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 1176649847UL );
 
     // StageGroup
     auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t threads, auto_Object<EventQueue> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log );

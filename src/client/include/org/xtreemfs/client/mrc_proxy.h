@@ -58,10 +58,7 @@ namespace org
         void utimens( const Path& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );
 
         // YIELD::Object
-        MRCProxy& incRef() { return Object::incRef( *this ); }
-
-        // YIELD::EventHandler
-        const char* getEventHandlerName() const { return "MRCProxy"; }
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::MRCProxy, 722274302UL );
 
       private:
         friend class YIELD::Client;

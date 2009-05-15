@@ -1,4 +1,4 @@
-// Revision: 1419
+// Revision: 1437
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -49,19 +49,7 @@ bool CountingSemaphore::acquire()
   return sem_wait( &sem ) == 0;
 #endif
 }
-bool CountingSemaphore::try_acquire()
-{
-#if defined(_WIN32)
-  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, 0, TRUE );
-  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
-#elif defined(__MACH__)
-  mach_timespec_t timeout_m_ts = { 0, 0 };
-  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
-#else
-  return sem_trywait( &sem ) == 0;
-#endif
-}
-bool CountingSemaphore::timed_acquire( timeout_ns_t timeout_ns )
+bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
 {
 #if defined(_WIN32)
   DWORD timeout_ms = static_cast<DWORD>( timeout_ns / NS_IN_MS );
@@ -73,6 +61,18 @@ bool CountingSemaphore::timed_acquire( timeout_ns_t timeout_ns )
 #else
   struct timespec timeout_ts = Time( timeout_ns );
   return sem_timedwait( &sem, &timeout_ts ) == 0;
+#endif
+}
+bool CountingSemaphore::try_acquire()
+{
+#if defined(_WIN32)
+  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, 0, TRUE );
+  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
+#elif defined(__MACH__)
+  mach_timespec_t timeout_m_ts = { 0, 0 };
+  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
+#else
+  return sem_trywait( &sem ) == 0;
 #endif
 }
 void CountingSemaphore::release()
@@ -271,65 +271,52 @@ typedef struct
 } aio_write_operation_t;
 #endif
 */
-File::File()
-  : fd( INVALID_HANDLE_VALUE )
-{ }
-File::File( const Path& path )
-{
-  fd = _open( path, DEFAULT_FLAGS, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-File::File( const Path& path, uint32_t flags )
-{
-  fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-File::File( const Path& path, uint32_t flags, mode_t mode )
-{
-  fd = _open( path, flags, mode, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-File::File( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
-{
-  fd = _open( path, flags, mode, attributes );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-#ifdef _WIN32
-File::File( char* path )
-{
-  fd = _open( path, DEFAULT_FLAGS, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-File::File( char* path, uint32_t flags )
-{
-  fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE )
-    throw YIELD::Exception();
-}
-File::File( const char* path )
-{
-  fd = _open( path, DEFAULT_FLAGS, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE  )
-    throw YIELD::Exception();
-}
-File::File( const char* path, uint32_t flags )
-{
-  fd = _open( path, flags, DEFAULT_MODE, DEFAULT_ATTRIBUTES );
-  if ( fd == INVALID_HANDLE_VALUE  )
-    throw YIELD::Exception();
-}
-#endif
-File::File( fd_t fd )
-: fd( fd )
-{ }
 auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  fd_t fd = _open( path, flags, mode, attributes );
+#ifdef _WIN32
+  DWORD file_access_flags = 0,
+        file_create_flags = 0,
+        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
+  if ( ( flags & O_RDWR ) == O_RDWR )
+    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
+  else if ( ( flags & O_WRONLY ) == O_WRONLY )
+  {
+    file_access_flags |= GENERIC_WRITE;
+    if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= FILE_APPEND_DATA;
+  }
+  else if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
+  else
+    file_access_flags |= GENERIC_READ;
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if ( ( flags & O_TRUNC ) == O_TRUNC )
+      file_create_flags = CREATE_ALWAYS;
+    else
+      file_create_flags = OPEN_ALWAYS;
+  }
+  else
+    file_create_flags = OPEN_EXISTING;
+//  if ( ( flags & O_SPARSE ) == O_SPARSE )
+//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
+  if ( ( flags & O_SYNC ) == O_SYNC )
+    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
+  if ( ( flags & O_DIRECT ) == O_DIRECT )
+    file_open_flags |= FILE_FLAG_NO_BUFFERING;
+  if ( ( flags & O_ASYNC ) == O_ASYNC )
+    file_open_flags |= FILE_FLAG_OVERLAPPED;
+  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
+    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
+  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
+  if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
+  {
+    SetFilePointer( fd, 0, NULL, FILE_BEGIN );
+    SetEndOfFile( fd );
+  }
+#else
+  int fd = ::open( path, flags, mode );
+#endif
   if ( fd != INVALID_HANDLE_VALUE )
     return new File( fd );
   else
@@ -424,7 +411,11 @@ bool File::close()
 {
   if ( fd != INVALID_HANDLE_VALUE ) // Have to test this, since CloseHandle on an invalid handle crashes instead of simply failing
   {
-    if ( _close( fd ) )
+#ifdef _WIN32
+    if ( CloseHandle( fd ) != 0 )
+#else
+    if ( ::close( fd ) >= 0 )
+#endif
     {
       fd = INVALID_HANDLE_VALUE;
       return true;
@@ -434,14 +425,6 @@ bool File::close()
   }
   else
     return false;
-}
-bool File::_close( fd_t fd )
-{
-#ifdef _WIN32
-  return CloseHandle( fd ) != 0;
-#else
-  return ::close( fd ) >= 0;
-#endif
 }
 bool File::datasync()
 {
@@ -461,7 +444,16 @@ bool File::flush()
 }
 auto_Object<Stat> File::getattr()
 {
-  return new Stat( fd );
+#ifdef _WIN32
+  BY_HANDLE_FILE_INFORMATION by_handle_file_information;
+  if ( GetFileInformationByHandle( fd, &by_handle_file_information ) != 0 )
+    return new Stat( by_handle_file_information );
+#else
+  struct stat stbuf;
+  if ( fstat( fd, &stbuf ) != -1 )
+    return new Stat( stbuf );
+#endif
+  return NULL;
 }
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
@@ -503,54 +495,6 @@ bool File::listxattr( std::vector<std::string>& out_names )
 #else
   return false;
 #endif
-}
-fd_t File::_open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
-{
-#ifdef _WIN32
-  DWORD file_access_flags = 0,
-        file_create_flags = 0,
-        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
-  if ( ( flags & O_RDWR ) == O_RDWR )
-    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
-  else if ( ( flags & O_WRONLY ) == O_WRONLY )
-  {
-    file_access_flags |= GENERIC_WRITE;
-    if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= FILE_APPEND_DATA;
-  }
-  else if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
-  else
-    file_access_flags |= GENERIC_READ;
-  if ( ( flags & O_CREAT ) == O_CREAT )
-  {
-    if ( ( flags & O_TRUNC ) == O_TRUNC )
-      file_create_flags = CREATE_ALWAYS;
-    else
-      file_create_flags = OPEN_ALWAYS;
-  }
-  else
-    file_create_flags = OPEN_EXISTING;
-//  if ( ( flags & O_SPARSE ) == O_SPARSE )
-//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
-  if ( ( flags & O_SYNC ) == O_SYNC )
-    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
-  if ( ( flags & O_DIRECT ) == O_DIRECT )
-    file_open_flags |= FILE_FLAG_NO_BUFFERING;
-  if ( ( flags & O_ASYNC ) == O_ASYNC )
-    file_open_flags |= FILE_FLAG_OVERLAPPED;
-  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
-    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
-  if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
-  {
-    SetFilePointer( fd, 0, NULL, FILE_BEGIN );
-    SetEndOfFile( fd );
-  }
-#else
-  int fd = ::open( path, flags, mode );
-#endif
-  return fd;
 }
 Stream::Status File::read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read )
 {
@@ -699,6 +643,8 @@ namespace YIELD
     ostreamWrapper( std::ostream& os )
       : os( os )
     { }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ostreamWrapper, 405507389UL );
     // OutputStream
     Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 )
     {
@@ -763,10 +709,13 @@ OutputStream::Status Log::Stream::writev( const struct iovec* buffers, uint32_t 
   }
   return STREAM_STATUS_OK;
 }
-Log::Log( const Path& file_path, Level level )
-  : level( level )
+auto_Object<Log> Log::open( const Path& file_path, Level level )
 {
-  underlying_output_stream.reset( new File( file_path, O_CREAT|O_WRONLY|O_APPEND ) );
+  auto_Object<File> file = File::open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+  if ( file != NULL )
+    return new Log( std::auto_ptr<OutputStream>( file.release() ), level );
+  else
+    return NULL;
 }
 Log::Log( std::ostream& os, Level level )
   : level( level )
@@ -793,6 +742,10 @@ void Log::write( const unsigned char* str, size_t str_len )
   char* sanitized_str = sanitize( str, str_len );
   OutputStream::write( sanitized_str, str_len );
   delete [] sanitized_str;
+}
+OutputStream::Status Log::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  return underlying_output_stream->writev( buffers, buffers_count, out_bytes_written );
 }
 
 
@@ -891,56 +844,56 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #endif
 
 
-MemoryMappedFile::MemoryMappedFile( const Path& path )
-  : File( path, O_RDWR|O_SYNC ), flags( O_RDWR|O_SYNC )
+auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
 {
-  init( path, 0, flags );
-}
+  auto_Object<File> file = File::open( path, flags, mode, attributes );
 
-MemoryMappedFile::MemoryMappedFile( const Path& path, size_t minimum_size )
-  : File( path, flags ), flags( O_RDWR|O_SYNC )
-{
-  init( path, 0, flags );
-}
-
-MemoryMappedFile::MemoryMappedFile( const Path& path, size_t minimum_size, uint32_t flags )
-  : File( path, flags ), flags( flags )
-{
-  init( path, minimum_size, flags );
-}
-
-void MemoryMappedFile::init( const Path& path, size_t minimum_size, uint32_t flags )
-{
-  if ( ( flags & O_TRUNC ) == 0 )
+  if ( file != NULL )
   {
+    size_t current_file_size;
+    if ( ( flags & O_TRUNC ) != O_TRUNC )
+    {
 #ifdef _WIN32
-    ULARGE_INTEGER size;
-    size.LowPart = GetFileSize( *this, &size.HighPart );
-    this->size = static_cast<size_t>( size.QuadPart );
+      ULARGE_INTEGER uliFileSize;
+      uliFileSize.LowPart = GetFileSize( *file, &uliFileSize.HighPart );
+      current_file_size = static_cast<size_t>( uliFileSize.QuadPart );
 #else
-    struct stat temp_stat;
-    if ( stat( path, &temp_stat ) != -1 )
-      size = temp_stat.st_size;
-    else
-      size = 0;
+      auto_Object<Stat> stbuf = file->stat();
+      if ( stbuf != NULL )
+        current_file_size = stbuf->get_size();
+      else
+        current_file_size = 0;
 #endif
+    }
+    else
+      current_file_size = 0;
+
+    auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
+
+    if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
+      return memory_mapped_file;
+    else
+      return NULL;
   }
   else
-    size = 0;
+    return NULL;
+}
 
-  start = NULL;
+MemoryMappedFile::MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags )
+  : underlying_file( underlying_file ), open_flags( open_flags )
+{
 #ifdef _WIN32
   mapping = NULL;
 #endif
-
-  resize( std::max( minimum_size, size ) );
+  size = 0;
+  start = NULL;
 }
 
 bool MemoryMappedFile::close()
 {
   if ( start != NULL )
   {
-    writeBack();
+    sync();
 #ifdef _WIN32
     UnmapViewOfFile( start );
 #else
@@ -957,103 +910,103 @@ bool MemoryMappedFile::close()
   }
 #endif
 
-  return File::close();
+  return underlying_file->close();
 }
 
-void MemoryMappedFile::resize( size_t new_size )
+bool MemoryMappedFile::resize( size_t new_size )
 {
   if ( new_size > 0 )
   {
-    if ( new_size < 4 )
-      new_size = 4;
-
 #ifdef _WIN32
     if ( start != NULL )
-      UnmapViewOfFile( start );
+    {
+      if ( UnmapViewOfFile( start ) != TRUE )
+        return false;
+    }
 
     if ( mapping != NULL )
-      CloseHandle( mapping );
-
-    if ( size == new_size || truncate( new_size ) )
     {
+      if ( CloseHandle( mapping ) != TRUE )
+        return false;
+    }
+#else
+    if ( start != NULL )
+    {
+      sync();
+      if ( munmap( start, size ) == -1 )
+        return false;
+    }
+#endif
+
+    if ( size == new_size || underlying_file->truncate( new_size ) )
+    {
+#ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
-      if ( ( flags & O_RDWR ) == O_RDWR || ( flags & O_WRONLY ) == O_WRONLY )
+      if ( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
         map_flags = PAGE_READWRITE;
 
       ULARGE_INTEGER uliNewSize; uliNewSize.QuadPart = new_size;
-      mapping = CreateFileMapping( *this, NULL, map_flags, uliNewSize.HighPart, uliNewSize.LowPart, NULL );
+      mapping = CreateFileMapping( *underlying_file, NULL, map_flags, uliNewSize.HighPart, uliNewSize.LowPart, NULL );
       if ( mapping != NULL )
       {
         map_flags = FILE_MAP_READ;
-        if( ( flags & O_RDWR ) || ( flags & O_WRONLY ) )
+        if( ( open_flags & O_RDWR ) || ( open_flags & O_WRONLY ) )
           map_flags = FILE_MAP_ALL_ACCESS;
 
         start = static_cast<char*>( MapViewOfFile( mapping, map_flags, 0, 0, 0 ) );
         if ( start != NULL )
+        {
           size = new_size;
-        else
-          throw Exception();
+          return true;
+        }
       }
-      else
-        throw Exception();
-    }
-    else
-      throw Exception();
 #else
-    if ( start != NULL )
-    {
-      writeBack();
-      if ( munmap( start, size ) == -1 )
-        throw Exception();
-    }
-
-    if ( size == new_size || truncate( new_size ) )
-    {
       unsigned long mmap_flags = PROT_READ;
-      if( ( flags & O_RDWR ) == O_RDWR || ( flags & O_WRONLY ) == O_WRONLY )
+      if( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
         mmap_flags |= PROT_WRITE;
 
-      void* mmap_ret = mmap( 0, new_size, mmap_flags, MAP_SHARED, *this, 0 );
+      void* mmap_ret = mmap( 0, new_size, mmap_flags, MAP_SHARED, *underlying_file, 0 );
       if ( mmap_ret != MAP_FAILED )
       {
         start = static_cast<char*>( mmap_ret );
         size = new_size;
+        return true;
       }
-      else
-        throw Exception();
+#endif
     }
-    else
-      throw Exception();
-#endif
   }
+  else
+    return true;
+
+  return false;
 }
 
-void MemoryMappedFile::writeBack()
+bool MemoryMappedFile::sync()
 {
 #ifdef _WIN32
-  FlushViewOfFile( start, 0 );
+  return FlushViewOfFile( start, 0 ) == TRUE;
 #else
-  msync( start, size, MS_SYNC );
+  return msync( start, size, MS_SYNC ) == 0;
 #endif
 }
 
-void MemoryMappedFile::writeBack( size_t offset, size_t length )
+bool MemoryMappedFile::sync( size_t offset, size_t length )
 {
 #ifdef _WIN32
-  FlushViewOfFile( start + offset, length );
+  return FlushViewOfFile( start + offset, length ) == TRUE;
 #else
-  msync( start + offset, length, MS_SYNC );
+  return msync( start + offset, length, MS_SYNC ) == 0;
 #endif
 }
 
-void MemoryMappedFile::writeBack( void* ptr, size_t length )
+bool MemoryMappedFile::sync( void* ptr, size_t length )
 {
 #if defined(_WIN32)
-  FlushViewOfFile( ptr, length );
+  return FlushViewOfFile( ptr, length ) == TRUE;
 #elif defined(__sun)
-  msync( static_cast<char*>( ptr ), length, MS_SYNC );
+  return msync( static_cast<char*>( ptr ), length, MS_SYNC ) == 0;
 #else
-  msync( ptr, length, MS_SYNC );
+  return msync( ptr, length, MS_SYNC ) == 0;
 #endif
 }
 
@@ -1103,7 +1056,7 @@ bool Mutex::try_acquire()
   return pthread_mutex_trylock( static_cast<pthread_mutex_t*>( os_handle ) ) == 0;
 #endif
 }
-bool Mutex::timed_acquire( timeout_ns_t timeout_ns )
+bool Mutex::timed_acquire( uint64_t timeout_ns )
 {
 #ifdef _WIN32
   DWORD timeout_ms = static_cast<DWORD>( timeout_ns / NS_IN_MS );
@@ -1131,6 +1084,81 @@ void Mutex::release()
 #else
   pthread_mutex_unlock( static_cast<pthread_mutex_t*>( os_handle ) );
 #endif
+}
+
+
+// named_pipe.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#include <windows.h>
+#endif
+auto_Object<NamedPipe> NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
+{
+#ifdef _WIN32
+  Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
+  Path named_pipe_path( named_pipe_base_dir_path + path );
+  if ( ( flags & O_CREAT ) == O_CREAT ) // Server
+  {
+    HANDLE hPipe = CreateNamedPipe( named_pipe_path, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, NULL );
+    if ( hPipe != INVALID_HANDLE_VALUE )
+      return new NamedPipe( new File( hPipe ), false );
+  }
+  else // Client
+  {
+    auto_Object<File> underlying_file = File::open( named_pipe_path, flags );
+    if ( underlying_file != NULL )
+      return new NamedPipe( underlying_file, true );
+  }
+#else
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if ( ::mkfifo( path, mode ) != -1 )
+      flags ^= O_CREAT;
+    else
+      return NULL;
+  }
+  auto_Object<File> underlying_file = File::open( path, flags );
+  if ( underlying_file != NULL )
+    return new NamedPipe( underlying_file );
+#endif
+  return NULL;
+}
+#ifdef _WIN32
+NamedPipe::NamedPipe( auto_Object<File> underlying_file, bool connected )
+  : underlying_file( underlying_file ), connected( connected )
+{ }
+#else
+NamedPipe::NamedPipe( auto_Object<File> underlying_file )
+  : underlying_file( underlying_file )
+{ }
+#endif
+Stream::Status NamedPipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_read  )
+{
+#ifdef _WIN32
+  if ( !connected )
+  {
+    if ( ConnectNamedPipe( *underlying_file, NULL ) != 0 ||
+         GetLastError() == ERROR_PIPE_CONNECTED )
+      connected = true;
+    else
+      return STREAM_STATUS_ERROR;
+  }
+#endif
+  return underlying_file->read( buffer, buffer_len, out_bytes_read );
+}
+Stream::Status NamedPipe::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+#ifdef _WIN32
+  if ( !connected )
+  {
+    if ( ConnectNamedPipe( *underlying_file, NULL ) )
+      connected = true;
+    else
+      return STREAM_STATUS_ERROR;
+  }
+#endif
+  return underlying_file->writev( buffers, buffers_count, out_bytes_written );
 }
 
 
@@ -1363,6 +1391,117 @@ Path Path::abspath() const
 }
 
 
+// pipe.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#include <windows.h>
+#endif
+auto_Object<Pipe> Pipe::create()
+{
+#ifdef _WIN32
+  SECURITY_ATTRIBUTES pipe_security_attributes;
+  pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
+  pipe_security_attributes.bInheritHandle = TRUE;
+  pipe_security_attributes.lpSecurityDescriptor = NULL;
+  void* ends[2];
+  if ( CreatePipe( &ends[0], &ends[1], &pipe_security_attributes, 0 ) )
+  {
+    if ( SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
+         SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 ) )
+      return new Pipe( ends );
+    else
+    {
+      CloseHandle( ends[0] );
+      CloseHandle( ends[1] );
+    }
+  }
+#else
+  int ends[2];
+  if ( ::pipe( ends ) != -1 )
+    return new Pipe( ends );
+#endif
+  return NULL;
+}
+#ifdef _WIN32
+Pipe::Pipe( void* ends[2] )
+{
+  memcpy( this->ends, ends, sizeof( this->ends ) );
+}
+#else
+Pipe::Pipe( int ends[2] )
+{
+  memcpy( this->ends, ends, sizeof( this->ends ) );
+}
+#endif
+Pipe::~Pipe()
+{
+#ifdef _WIN32
+  CloseHandle( ends[0] );
+  CloseHandle( ends[1] );
+#else
+  ::close( ends[0] );
+  ::close( ends[1] );
+#endif
+}
+Stream::Status Pipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+{
+#ifdef _WIN32
+  DWORD dwBytesRead;
+  if ( ReadFile( ends[0], buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
+  {
+    if ( out_bytes_read )
+      *out_bytes_read = dwBytesRead;
+    return STREAM_STATUS_OK;
+  }
+  else
+    return STREAM_STATUS_ERROR;
+#else
+  ssize_t read_ret = ::read( ends[0], buffer, buffer_len );
+  if ( read_ret >= 0 )
+  {
+    if ( out_bytes_read )
+      *out_bytes_read = static_cast<size_t>( read_ret );
+    return STREAM_STATUS_OK;
+  }
+  else
+    return STREAM_STATUS_ERROR;
+#endif
+}
+Stream::Status Pipe::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+#ifdef _WIN32
+  if ( buffers_count == 1 )
+  {
+    DWORD dwBytesWritten;
+    if ( WriteFile( ends[1], buffers[0].iov_base, static_cast<DWORD>( buffers[0].iov_len ), &dwBytesWritten, NULL ) )
+    {
+      if ( out_bytes_written )
+        *out_bytes_written = dwBytesWritten;
+      return STREAM_STATUS_OK;
+    }
+    else
+      return STREAM_STATUS_ERROR;
+  }
+  else
+  {
+    ::SetLastError( ERROR_NOT_SUPPORTED );
+    return STREAM_STATUS_ERROR;
+  }
+#else
+  ssize_t writev_ret = ::writev( ends[1], buffers, buffers_count );
+  if ( writev_ret >= 0 )
+  {
+    if ( out_bytes_written )
+      *out_bytes_written = static_cast<size_t>( writev_ret );
+    return STREAM_STATUS_OK;
+  }
+  else
+    return STREAM_STATUS_ERROR;
+#endif
+}
+
+
 // pretty_print_output_stream.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1383,28 +1522,30 @@ void PrettyPrintOutputStream::writeInt64( const Declaration& decl, int64_t value
   std::ostringstream value_oss; value_oss << value << ", ";
   underlying_output_stream.write( value_oss.str() );
 }
-void PrettyPrintOutputStream::writeObject( const Declaration& decl, Object& value, Object::GeneralType value_general_type )
+void PrettyPrintOutputStream::writeMap( const Declaration& decl, Object& value )
 {
-  if ( value_general_type == Object::UNKNOWN )
-    value_general_type = value.get_general_type();
-  if ( value_general_type == Object::SEQUENCE )
-  {
-    underlying_output_stream.write( "[ " );
-    value.serialize( *this );
-    underlying_output_stream.write( " ], " );
-  }
-  else
-  {
-    underlying_output_stream.write( value.get_type_name() );
-    underlying_output_stream.write( "( " );
-    value.serialize( *this );
-    underlying_output_stream.write( " ), " );
-  }
+  underlying_output_stream.write( value.get_type_name() );
+  underlying_output_stream.write( "( " );
+  value.serialize( *this );
+  underlying_output_stream.write( " ), " );
+}
+void PrettyPrintOutputStream::writeSequence( const Declaration& decl, Object& value )
+{
+  underlying_output_stream.write( "[ " );
+  value.serialize( *this );
+  underlying_output_stream.write( " ], " );
 }
 void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
   underlying_output_stream.write( value, value_len );
   underlying_output_stream.write( ", " );
+}
+void PrettyPrintOutputStream::writeStruct( const Declaration& decl, Object& value )
+{
+  underlying_output_stream.write( value.get_type_name() );
+  underlying_output_stream.write( "( " );
+  value.serialize( *this );
+  underlying_output_stream.write( " ), " );
 }
 
 
@@ -1416,94 +1557,101 @@ void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* 
 #else
 #include <sys/wait.h> // For waitpid
 #endif
-Process::Process( const Path& executable_file_path, const char** argv )
+auto_Object<Process> Process::create( const Path& executable_file_path )
+{
+  const char* argv[] = { static_cast<const char*>( NULL ) };
+  return create( executable_file_path, argv );
+}
+auto_Object<Process> Process::create( int argc, char** argv )
+{
+  std::vector<char*> argvv;
+  for ( int arg_i = 1; arg_i < argc; arg_i++ )
+    argvv.push_back( argv[arg_i] );
+  argvv.push_back( NULL );
+  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
+}
+auto_Object<Process> Process::create( const Path& executable_file_path, const char** null_terminated_argv )
 {
 #ifdef _WIN32
   const std::string& executable_file_path_str = static_cast<const std::string&>( executable_file_path );
-  std::string catted_argv;
+  std::string catted_args;
   if ( executable_file_path_str.find( ' ' ) == -1 )
-    catted_argv.append( executable_file_path_str );
+    catted_args.append( executable_file_path_str );
   else
   {
-    catted_argv.append( "\"", 1 );
-    catted_argv.append( executable_file_path_str );
-    catted_argv.append( "\"", 1 );
+    catted_args.append( "\"", 1 );
+    catted_args.append( executable_file_path_str );
+    catted_args.append( "\"", 1 );
   }
-  size_t argv_i = 0;
-  while ( argv[argv_i] != NULL )
+  size_t arg_i = 0;
+  while ( null_terminated_argv[arg_i] != NULL )
   {
-    catted_argv.append( " ", 1 );
-    catted_argv.append( argv[argv_i] );
-    argv_i++;
+    catted_args.append( " ", 1 );
+    catted_args.append( null_terminated_argv[arg_i] );
+    arg_i++;
   }
-  {
-    SECURITY_ATTRIBUTES pipe_security_attributes;
-    pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
-    pipe_security_attributes.bInheritHandle = TRUE;
-    pipe_security_attributes.lpSecurityDescriptor = NULL;
-    if ( !CreatePipe( &hChildStdInput_read, &hChildStdInput_write, &pipe_security_attributes, 0 ) ) throw Exception();
-    if ( !SetHandleInformation( hChildStdInput_write, HANDLE_FLAG_INHERIT, 0 ) ) throw Exception();
-    if ( !CreatePipe( &hChildStdOutput_read, &hChildStdOutput_write, &pipe_security_attributes, 0 ) ) throw Exception();
-    if ( !SetHandleInformation( hChildStdOutput_read, HANDLE_FLAG_INHERIT, 0 ) ) throw Exception();
-    if ( !CreatePipe( &hChildStdError_read, &hChildStdError_write, &pipe_security_attributes, 0 ) ) throw Exception();
-    if ( !SetHandleInformation( hChildStdError_read, HANDLE_FLAG_INHERIT, 0 ) ) throw Exception();
-  }
-  STARTUPINFO startup_info;
-  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
-  startup_info.cb = sizeof( STARTUPINFO );
-  startup_info.hStdInput = hChildStdInput_read;
-  startup_info.hStdOutput = hChildStdOutput_write;
-  startup_info.hStdError = hChildStdError_write;
-  startup_info.dwFlags = STARTF_USESTDHANDLES;
-  PROCESS_INFORMATION proc_info;
-  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-  if ( CreateProcess( executable_file_path, ( LPWSTR )catted_argv.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
-  {
-    hChildProcess = proc_info.hProcess;
-    hChildThread = proc_info.hThread;
-  }
-  else
-    throw Exception();
+  return create( executable_file_path, catted_args.c_str() );
 #else
-  if ( pipe( child_stdin_pipe ) == -1 ) throw Exception();
-  if ( pipe( child_stdout_pipe ) == -1 ) throw Exception();
-  if ( pipe( child_stderr_pipe ) == -1 ) throw Exception();
-  child_pid = fork();
+  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
+                    child_stdout_pipe = Pipe::create(),
+                    child_stderr_pipe = Pipe::create();
+  pid_t child_pid = fork();
   if ( child_pid == -1 )
-    throw Exception();
+    return NULL;
   else if ( child_pid == 0 ) // Child
   {
     close( STDIN_FILENO );
-    dup2( child_stdin_pipe[0], STDIN_FILENO ); // Set stdin to read end of stdin pipe
-    close( child_stdin_pipe[0] );
-    close( child_stdin_pipe[1] );
+    dup2( child_stdin_pipe->get_read_end(), STDIN_FILENO ); // Set stdin to read end of stdin pipe
     close( STDOUT_FILENO );
-    dup2( child_stdout_pipe[1], STDOUT_FILENO ); // Set stdout to write end of stdout pipe
-    close( child_stdout_pipe[0] );
-    close( child_stdout_pipe[1] );
+    dup2( child_stdout_pipe->get_write_end(), STDOUT_FILENO ); // Set stdout to write end of stdout pipe
     close( STDERR_FILENO );
-    dup2( child_stderr_pipe[1], STDERR_FILENO ); // Set stderr to write end of stderr pipe
-    close( child_stderr_pipe[0] );
-    close( child_stderr_pipe[1] );
+    dup2( child_stderr_pipe->get_write_end(), STDERR_FILENO ); // Set stderr to write end of stderr pipe
     std::vector<char*> argv_with_executable_file_path;
     argv_with_executable_file_path.push_back( const_cast<char*>( static_cast<const char*>( executable_file_path ) ) );
-    size_t argv_i = 0;
-    while ( argv[argv_i] != NULL )
+    size_t arg_i = 0;
+    while ( null_terminated_argv[arg_i] != NULL )
     {
-      argv_with_executable_file_path.push_back( const_cast<char*>( argv[argv_i] ) );
-      argv_i++;
+      argv_with_executable_file_path.push_back( const_cast<char*>( null_terminated_argv[arg_i] ) );
+      arg_i++;
     }
     argv_with_executable_file_path.push_back( NULL );
     execv( executable_file_path, &argv_with_executable_file_path[0] );
+    return NULL;
   }
   else // Parent
-  {
-    close( child_stdin_pipe[0] ); // Close read end of stdin pipe
-    close( child_stdout_pipe[1] ); // Close write end of stdout
-    close( child_stderr_pipe[1] ); // Close write end of stderr
-  }
+    return new Process( child_pid, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
 #endif
 }
+#ifdef _WIN32
+auto_Object<Process> Process::create( const Path& executable_file_path, const char* catted_args )
+{
+  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
+                    child_stdout_pipe = Pipe::create(),
+                    child_stderr_pipe = Pipe::create();
+  STARTUPINFO startup_info;
+  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
+  startup_info.cb = sizeof( STARTUPINFO );
+  startup_info.hStdInput = child_stdin_pipe->get_read_end();
+  startup_info.hStdOutput = child_stdout_pipe->get_write_end();
+  startup_info.hStdError = child_stdout_pipe->get_write_end();
+  startup_info.dwFlags = STARTF_USESTDHANDLES;
+  PROCESS_INFORMATION proc_info;
+  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+  if ( CreateProcess( executable_file_path, ( LPWSTR )catted_args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
+    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
+  else
+    return NULL;
+}
+Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe )
+  : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
+    child_stdin_pipe( child_stdin_pipe ), child_stdout_pipe( child_stdout_pipe ), child_stderr_pipe( child_stderr_pipe )
+{ }
+#else
+Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe )
+  : child_pid( child_pid ),
+    child_stdin_pipe( child_stdin_pipe ), child_stdout_pipe( child_stdout_pipe ), child_stderr_pipe( child_stderr_pipe )
+{ }
+#endif
 Process::~Process()
 {
 #ifdef _WIN32
@@ -1511,14 +1659,6 @@ Process::~Process()
   WaitForSingleObject( hChildProcess, INFINITE );
   CloseHandle( hChildProcess );
   CloseHandle( hChildThread );
-  CloseHandle( hChildStdInput_read );
-  CloseHandle( hChildStdInput_write );
-  CloseHandle( hChildStdOutput_read );
-  CloseHandle( hChildStdOutput_write );
-#else
-  close( child_stdin_pipe[1] );
-  close( child_stdout_pipe[0] );
-  close( child_stderr_pipe[0] );
 #endif
 }
 bool Process::poll( int* out_return_code )
@@ -1540,69 +1680,13 @@ bool Process::poll( int* out_return_code )
   return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
 #endif
 }
-Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-{
-#ifdef _WIN32
-  return _read( hChildStdOutput_read, buffer, buffer_len, out_bytes_read );
-#else
-  return _read( child_stdout_pipe[0], buffer, buffer_len, out_bytes_read );
-#endif
-}
 Stream::Status Process::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
-#ifdef _WIN32
-  return _read( hChildStdError_read, buffer, buffer_len, out_bytes_read );
-#else
-  return _read( child_stderr_pipe[0], buffer, buffer_len, out_bytes_read );
-#endif
+  return child_stdout_pipe->read( buffer, buffer_len, out_bytes_read );
 }
-Stream::Status Process::_read( fd_t fd, void* buffer, size_t buffer_len, size_t* out_bytes_read )
+Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
-#ifdef _WIN32
-  DWORD dwBytesRead;
-  if ( ReadFile( fd, buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = dwBytesRead;
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
-#else
-  ssize_t read_ret = ::read( child_stdout_pipe[0], buffer, buffer_len );
-  if ( read_ret >= 0 )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<size_t>( read_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
-#endif
-}
-Stream::Status Process::write( const void* buffer, size_t buffer_len, size_t* out_bytes_written )
-{
-#ifdef _WIN32
-  DWORD dwBytesWritten;
-  if ( WriteFile( hChildStdInput_write, buffer, static_cast<DWORD>( buffer_len ), &dwBytesWritten, NULL ) )
-  {
-    if ( out_bytes_written )
-      *out_bytes_written = dwBytesWritten;
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
-#else
-  ssize_t write_ret = ::write( child_stdin_pipe[1], buffer, buffer_len );
-  if ( write_ret >= 0 )
-  {
-    if ( out_bytes_written )
-      *out_bytes_written = static_cast<size_t>( write_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
-#endif
+  return child_stderr_pipe->read( buffer, buffer_len, out_bytes_read );
 }
 int Process::wait()
 {
@@ -1616,8 +1700,12 @@ int Process::wait()
   if ( waitpid( child_pid, &stat_loc, 0 ) >= 0 )
     return stat_loc;
   else
-    throw Exception();
+    return -1;
 #endif
+}
+Stream::Status Process::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  return child_stdin_pipe->writev( buffers, buffers_count, out_bytes_written );
 }
 
 
@@ -1665,20 +1753,6 @@ ProcessorSet::ProcessorSet( uint32_t from_mask )
         set( processor_i );
     }
   }
-#endif
-}
-ProcessorSet::ProcessorSet( const ProcessorSet& other )
-{
-#if defined(_WIN32)
-  mask = other.mask;
-#elif defined(__linux__)
-  cpu_set = new cpu_set_t;
-  std::memcpy( cpu_set, other.cpu_set, sizeof( cpu_set_t ) );
-#elif defined(__sun)
-  if ( other.psetid == PS_NONE )
-    psetid = PS_NONE;
-  else
-    YIELD::DebugBreak(); // Processors cannot belong to more than one processor set on Solaris, so it makes no sense to copy
 #endif
 }
 ProcessorSet::~ProcessorSet()
@@ -1790,48 +1864,56 @@ Stream::Status RRD::Record::serialize( OutputStream& output_stream )
   else
     return write_status;
 }
-RRD::RRD( const Path& file_path, uint32_t file_flags )
-  : current_file_path( file_path )
+auto_Object<RRD> RRD::open( const Path& file_path, uint32_t file_open_flags )
 {
-  current_file = new File( current_file_path, file_flags|O_CREAT|O_WRONLY|O_APPEND );
+  auto_Object<File> current_file = File::open( file_path, file_open_flags|O_CREAT|O_WRONLY|O_APPEND );
+  if ( current_file != NULL )
+    return new RRD( file_path, current_file );
+  else
+    return NULL;
 }
-RRD::~RRD()
-{
-  Object::decRef( current_file );
-}
+RRD::RRD( const Path& current_file_path, auto_Object<File> current_file )
+  : current_file_path( current_file_path ), current_file( current_file )
+{ }
 void RRD::append( double value )
 {
   Record( value ).serialize( *current_file );
 }
 void RRD::fetch( std::vector<Record>& out_records )
 {
-  File* current_file = new File( current_file_path );
-  Record record;
-  while ( record.deserialize( *current_file ) )
-    out_records.push_back( record );
-  Object::decRef( *current_file );
+  auto_Object<File> current_file = File::open( current_file_path );
+  if ( current_file != NULL )
+  {
+    Record record;
+    while ( record.deserialize( *current_file ) )
+      out_records.push_back( record );
+  }
 }
 void RRD::fetch( const Time& start_time, std::vector<Record>& out_records )
 {
-  File* current_file = new File( current_file_path );
-  Record record;
-  while ( record.deserialize( *current_file ) )
+  auto_Object<File> current_file = File::open( current_file_path );
+  if ( current_file != NULL )
   {
-    if ( record.get_time() >= start_time )
-      out_records.push_back( record );
+    Record record;
+    while ( record.deserialize( *current_file ) )
+    {
+      if ( record.get_time() >= start_time )
+        out_records.push_back( record );
+    }
   }
-  Object::decRef( *current_file );
 }
 void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records )
 {
-  File* current_file = new File( current_file_path );
-  Record record;
-  while ( record.deserialize( *current_file ) )
+  auto_Object<File> current_file = File::open( current_file_path );
+  if ( current_file != NULL )
   {
-    if ( record.get_time() >= start_time && record.get_time() <= end_time )
-      out_records.push_back( record );
+    Record record;
+    while ( record.deserialize( *current_file ) )
+    {
+      if ( record.get_time() >= start_time && record.get_time() <= end_time )
+        out_records.push_back( record );
+    }
   }
-  Object::decRef( *current_file );
 }
 
 
@@ -1943,10 +2025,39 @@ void* SharedLibrary::getFunction( const char* func_name )
 #ifdef _WIN32
 #include <windows.h>
 #endif
+auto_Object<Stat> Stat::stat( const Path& path )
+{
+#ifdef _WIN32
+  WIN32_FIND_DATA find_data;
+  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
+  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
+  {
+    FindClose( hFindFirstFile );
+    return new Stat( find_data );
+  }
+#else
+  struct stat stbuf;
+  if ( ::stat( path, &stbuf ) != -1 )
+    return new Stat( stbuf );
+#endif
+  return NULL;
+}
 #ifdef _WIN32
 Stat::Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes )
 : mode( mode ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), attributes( attributes )
 { }
+Stat::Stat( const BY_HANDLE_FILE_INFORMATION& by_handle_file_information )
+{
+  mode = ( by_handle_file_information.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG;
+  ULARGE_INTEGER size;
+  size.LowPart = by_handle_file_information.nFileSizeLow;
+  size.HighPart = by_handle_file_information.nFileSizeHigh;
+  this->size = static_cast<size_t>( size.QuadPart );
+  ctime = by_handle_file_information.ftCreationTime;
+  atime = by_handle_file_information.ftLastAccessTime;
+  mtime = by_handle_file_information.ftLastWriteTime;
+  attributes = by_handle_file_information.dwFileAttributes;
+}
 Stat::Stat( const WIN32_FIND_DATA& find_data )
 {
   init( find_data.nFileSizeHigh, find_data.nFileSizeLow, &find_data.ftLastWriteTime, &find_data.ftCreationTime, &find_data.ftLastAccessTime, find_data.dwFileAttributes );
@@ -1955,67 +2066,20 @@ Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLas
 {
   init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
 }
-Stat::Stat( const Stat& other )
-: mode( other.mode ), size( other.size ), atime( other.atime ), mtime( other.mtime ), ctime( other.ctime ), attributes( other.attributes )
-{ }
 #else
 Stat::Stat( mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
 : mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
 { }
-Stat::Stat( const Stat& other )
-: mode( other.mode ), nlink( other.nlink ), uid( other.uid ), gid( other.gid ), size( other.size ), atime( other.atime ), mtime( other.mtime ), ctime( other.ctime )
-{ }
 #endif
-void Stat::init( const Path& path )
+Stat::Stat( const struct stat& stbuf )
 {
-  fd_t fd = File::_open( path, O_RDONLY, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES );
-  if ( fd != INVALID_HANDLE_VALUE )
-  {
-    try
-    {
-      init( fd );
-      File::_close( fd );
-    }
-    catch ( std::exception& )
-    {
-      File::_close( fd );
-      throw;
-    }
-  }
-  else
-    throw Exception();
-}
-void Stat::init( fd_t fd )
-{
-#ifdef _WIN32
-  BY_HANDLE_FILE_INFORMATION temp_file_info;
-  if ( GetFileInformationByHandle( fd, &temp_file_info ) != 0 )
-  {
-    mode = ( temp_file_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG;
-    ULARGE_INTEGER size;
-    size.LowPart = temp_file_info.nFileSizeLow;
-    size.HighPart = temp_file_info.nFileSizeHigh;
-    this->size = static_cast<size_t>( size.QuadPart );
-    ctime = temp_file_info.ftCreationTime;
-    atime = temp_file_info.ftLastAccessTime;
-    mtime = temp_file_info.ftLastWriteTime;
-    attributes = temp_file_info.dwFileAttributes;
-  }
-  else
-    throw Exception();
-#else
-  struct stat temp_stat;
-  if ( fstat( fd, &temp_stat ) != -1 )
-  {
-    mode = temp_stat.st_mode;
-    size = temp_stat.st_size;
-    ctime = static_cast<uint32_t>( temp_stat.st_ctime );
-    atime = static_cast<uint32_t>( temp_stat.st_atime );
-    mtime = static_cast<uint32_t>( temp_stat.st_mtime );
-    nlink = temp_stat.st_nlink;
-  }
-  else
-    throw Exception();
+  mode = stbuf.st_mode;
+  size = stbuf.st_size;
+  ctime = static_cast<uint32_t>( stbuf.st_ctime );
+  atime = static_cast<uint32_t>( stbuf.st_atime );
+  mtime = static_cast<uint32_t>( stbuf.st_mtime );
+#ifndef _WIN32
+  nlink = stbuf.st_nlink;
 #endif
 }
 #ifdef _WIN32
@@ -2080,19 +2144,6 @@ Stat::operator struct stat() const
   return stbuf;
 }
 #ifdef _WIN32
-Stat::operator WIN32_FIND_DATA() const
-{
-  WIN32_FIND_DATA find_data;
-  memset( &find_data, 0, sizeof( find_data ) );
-  find_data.ftCreationTime = get_ctime();
-  find_data.ftLastWriteTime = get_mtime();
-  find_data.ftLastAccessTime = get_atime();
-  ULARGE_INTEGER size; size.QuadPart = get_size();
-  find_data.nFileSizeLow = size.LowPart;
-  find_data.nFileSizeHigh = size.HighPart;
-  find_data.dwFileAttributes = get_attributes();
-  return find_data;
-}
 Stat::operator BY_HANDLE_FILE_INFORMATION() const
 {
   BY_HANDLE_FILE_INFORMATION HandleFileInformation;
@@ -2106,7 +2157,83 @@ Stat::operator BY_HANDLE_FILE_INFORMATION() const
   HandleFileInformation.dwFileAttributes = get_attributes();
   return HandleFileInformation;
 }
+Stat::operator WIN32_FIND_DATA() const
+{
+  WIN32_FIND_DATA find_data;
+  memset( &find_data, 0, sizeof( find_data ) );
+  find_data.ftCreationTime = get_ctime();
+  find_data.ftLastWriteTime = get_mtime();
+  find_data.ftLastAccessTime = get_atime();
+  ULARGE_INTEGER size; size.QuadPart = get_size();
+  find_data.nFileSizeLow = size.LowPart;
+  find_data.nFileSizeHigh = size.HighPart;
+  find_data.dwFileAttributes = get_attributes();
+  return find_data;
+}
 #endif
+
+
+// string.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+Stream::Status String::deserialize( InputStream& input_stream, size_t* out_bytes_read )
+{
+  if ( read_pos < size() )
+  {
+    size_t temp_bytes_read;
+    for ( ;; )
+    {
+      Stream::Status status = input_stream.read( const_cast<char*>( c_str() ) + read_pos, size() - read_pos, &temp_bytes_read );
+      if ( status == STREAM_STATUS_OK )
+      {
+        read_pos += temp_bytes_read;
+        if ( read_pos == size() )
+        {
+          read_pos = 0;
+          if ( out_bytes_read )
+            *out_bytes_read = temp_bytes_read;
+          return STREAM_STATUS_OK;
+        }
+      }
+      else
+        return status;
+    }
+  }
+  else
+    return STREAM_STATUS_ERROR;
+}
+Stream::Status String::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+{
+  size_t readable_len = size() - read_pos;
+  if ( readable_len > 0 )
+  {
+    if ( buffer_len > readable_len )
+      buffer_len = readable_len;
+    memcpy( buffer, c_str()+read_pos, static_cast<size_t>( buffer_len ) );
+    read_pos += buffer_len;
+    if ( out_bytes_read )
+      *out_bytes_read = buffer_len;
+    return STREAM_STATUS_OK;
+  }
+  else
+    return STREAM_STATUS_ERROR;
+}
+Stream::Status String::serialize( OutputStream& output_stream, size_t* out_bytes_written )
+{
+  return output_stream.write( c_str(), size(), out_bytes_written );
+}
+Stream::Status String::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  size_t total_buffers_len = 0;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+  {
+    append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
+    total_buffers_len += buffers[buffer_i].iov_len;
+  }
+  if ( out_bytes_written )
+    *out_bytes_written = total_buffers_len;
+  return STREAM_STATUS_OK;
+}
 
 
 // test_runner.cpp
@@ -2271,7 +2398,7 @@ void Thread::setTLS( unsigned long key, void* value )
 #endif
 }
 
-void Thread::sleep( timeout_ns_t timeout_ns )
+void Thread::sleep( uint64_t timeout_ns )
 {
 #ifdef _WIN32
   Sleep( static_cast<DWORD>( timeout_ns / NS_IN_MS ) );
@@ -2703,7 +2830,7 @@ namespace YIELD
       : listdir_callback( listdir_callback )
     { }
     // Volume::readdirCallback
-    bool operator()( const Path& dirent_name, const Stat& stbuf )
+    bool operator()( const Path& dirent_name, auto_Object<Stat> stbuf )
     {
       return listdir_callback( dirent_name );
     }
@@ -2749,7 +2876,7 @@ bool Volume::exists( const Path& path )
 }
 YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 {
-  return new Stat( path );
+  return Stat::stat( path );
 }
 bool Volume::getxattr( const Path& path, const std::string& name, std::string& out_value )
 {
@@ -2845,7 +2972,7 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
     {
       if ( find_data.cFileName[0] != '.' )
       {
-        if ( !callback( find_data.cFileName, Stat( find_data ) ) )
+        if ( !callback( find_data.cFileName, new Stat( find_data ) ) )
         {
           FindClose( dir_handle );
           return false;
@@ -2869,10 +2996,14 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
         if ( match_file_name_prefix.empty() ||
              strstr( next_dirent->d_name, match_file_name_prefix ) == next_dirent->d_name )
         {
-          if ( !callback( next_dirent->d_name, Stat( path + next_dirent->d_name ) ) )
+          auto_Object<Stat> stbuf = stat( path + next_dirent->d_name );
+          if ( stbuf != NULL )
           {
-            closedir( dir_handle );
-            return false;
+            if ( !callback( next_dirent->d_name, stbuf ) )
+            {
+              closedir( dir_handle );
+              return false;
+            }
           }
         }
       }
@@ -2935,9 +3066,9 @@ namespace YIELD
   public:
     rmtree_readdirCallback( Volume& volume ) : volume( volume )
     { }
-    virtual bool operator()( const Path& path, const Stat& stbuf )
+    virtual bool operator()( const Path& path, auto_Object<Stat> stbuf )
     {
-      if ( stbuf.ISDIR() )
+      if ( stbuf->ISDIR() )
         return volume.rmtree( path );
       else
         return volume.unlink( path );
@@ -2948,8 +3079,8 @@ namespace YIELD
 };
 bool Volume::rmtree( const Path& path )
 {
-  Stat path_stat( path );
-  if ( path_stat.ISDIR() )
+  auto_Object<Stat> path_stat = Stat::stat( path );
+  if ( path_stat != NULL && path_stat->ISDIR() )
   {
     rmtree_readdirCallback readdir_callback( *this );
     if ( readdir( path, readdir_callback ) )
@@ -3090,53 +3221,64 @@ Path Volume::volname( const Path& path )
 XDRInputStream::XDRInputStream( InputStream& underlying_input_stream )
   : underlying_input_stream( underlying_input_stream )
 { }
-Object* XDRInputStream::readObject( const Declaration& decl, Object* value, Object::GeneralType value_general_type )
+bool XDRInputStream::readBool( const Declaration& decl )
+{
+  return readInt32( decl ) == 1;
+}
+double XDRInputStream::readDouble( const Declaration& decl )
+{
+  beforeRead( decl );
+  double value;
+  underlying_input_stream.read( &value, sizeof( value ) );
+  return value;
+}
+float XDRInputStream::readFloat( const Declaration& decl )
+{
+  beforeRead( decl );
+  float value;
+  underlying_input_stream.read( &value, sizeof( value ) );
+  return value;
+}
+int32_t XDRInputStream::readInt32( const Declaration& decl )
+{
+  beforeRead( decl );
+  int32_t value;
+  underlying_input_stream.read( &value, sizeof( value ) );
+#ifdef __MACH__
+  return ntohl( value );
+#else
+  return Machine::ntohl( value );
+#endif
+}
+int64_t XDRInputStream::readInt64( const Declaration& decl )
+{
+  beforeRead( decl );
+  int64_t value;
+  underlying_input_stream.read( &value, sizeof( value ) );
+  return Machine::ntohll( value );
+}
+Object* XDRInputStream::readMap( const Declaration& decl, Object* value )
 {
   if ( value )
   {
-    if ( value_general_type == Object::UNKNOWN )
-      value_general_type = value->get_general_type();
-    switch ( value_general_type )
-    {
-      case Object::SEQUENCE:
-      {
-        size_t size = readInt32( decl );
-        if ( size <= XDR_ARRAY_LENGTH_MAX )
-        {
-          for ( size_t i = 0; i < size; i++ )
-            value->deserialize( *this );
-        }
-        else
-          throw Exception( "read array length beyond maximum" );
-      }
-      break;
-      case Object::MAP:
-      {
-        size_t size = readInt32( decl );
-        for ( size_t i = 0; i < size; i++ )
-          value->deserialize( *this );
-      }
-      break;
-      default:
-      {
-        beforeRead( decl );
-        value->deserialize( *this );
-      }
-      break;
-    }
+    size_t size = readInt32( decl );
+    for ( size_t i = 0; i < size; i++ )
+      value->deserialize( *this );
   }
-  else // Reading an arbitrary Object, assume it's a string
+  return value;
+}
+Object* XDRInputStream::readSequence( const Declaration& decl, Object* value )
+{
+  if ( value )
   {
-    value = new YIELD::String();
-    try
+    size_t size = readInt32( decl );
+    if ( size <= XDR_ARRAY_LENGTH_MAX )
     {
-      readString( decl, static_cast<String&>( *value ) );
+      for ( size_t i = 0; i < size; i++ )
+        value->deserialize( *this );
     }
-    catch ( ... )
-    {
-      Object::decRef( value );
-      throw;
-    }
+    else
+      throw Exception( "read array length beyond maximum" );
   }
   return value;
 }
@@ -3159,21 +3301,14 @@ void XDRInputStream::readString( const Declaration& decl, std::string& str )
     }
 //  }
 }
-int32_t XDRInputStream::_readInt32()
+Object* XDRInputStream::readStruct( const Declaration& decl, Object* value )
 {
-  int32_t value;
-  underlying_input_stream.read( &value, sizeof( value ) );
-#ifdef __MACH__
-  return ntohl( value );
-#else
-  return Machine::ntohl( value );
-#endif
-}
-int64_t XDRInputStream::_readInt64()
-{
-  int64_t value;
-  underlying_input_stream.read( &value, sizeof( value ) );
-  return Machine::ntohll( value );
+  if ( value )
+  {
+    beforeRead( decl );
+    value->deserialize( *this );
+  }
+  return value;
 }
 
 
@@ -3186,53 +3321,25 @@ XDROutputStream::XDROutputStream( OutputStream& underlying_output_stream, bool i
 void XDROutputStream::beforeWrite( const Declaration& decl )
 {
   if ( in_map && decl.identifier )
-    writeString( Declaration(), decl.identifier );
+    StructuredOutputStream::writeString( Declaration(), decl.identifier );
 }
-void XDROutputStream::writeObject( const Declaration& decl, Object& value, Object::GeneralType value_type )
+void XDROutputStream::writeBool( const Declaration& decl, bool value )
 {
-  if ( value_type == Object::UNKNOWN )
-    value_type = value.get_general_type();
-  switch ( value_type )
-  {
-    case Object::MAP:
-    {
-      writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-      XDROutputStream child_xdr_underlying_output_stream( underlying_output_stream, true );
-      value.serialize( child_xdr_underlying_output_stream );
-    }
-    break;
-    case Object::SEQUENCE:
-    {
-      writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-      value.serialize( *this );
-    }
-    break;
-    case Object::STRING:
-    {
-      writeString( decl, static_cast<String&>( value ) );
-    }
-    break;
-    default:
-    {
-      beforeWrite( decl );
-      value.serialize( *this );
-    }
-    break;
-  }
+  writeInt32( decl, value ? 1 : 0 );
 }
-void XDROutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
+void XDROutputStream::writeDouble( const Declaration& decl, double value )
 {
   beforeWrite( decl );
-  _writeInt32( static_cast<int32_t>( value_len ) );
-  underlying_output_stream.write( value, value_len );
-  if ( value_len % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    underlying_output_stream.write( zeros, 4 - ( value_len % 4 ) );
-  }
+  underlying_output_stream.write( &value, sizeof( value ) );
 }
-void XDROutputStream::_writeInt32( int32_t value )
+void XDROutputStream::writeFloat( const Declaration& decl, float value )
 {
+  beforeWrite( decl );
+  underlying_output_stream.write( &value, sizeof( value ) );
+}
+void XDROutputStream::writeInt32( const Declaration& decl, int32_t value )
+{
+  beforeWrite( decl );
 #ifdef __MACH__
   value = htonl( value );
 #else
@@ -3240,9 +3347,36 @@ void XDROutputStream::_writeInt32( int32_t value )
 #endif
   underlying_output_stream.write( &value, 4 );
 }
-void XDROutputStream::_writeInt64( int64_t value )
+void XDROutputStream::writeInt64( const Declaration& decl, int64_t value )
 {
+  beforeWrite( decl );
   value = Machine::htonll( value );
   underlying_output_stream.write( &value, 8 );
+}
+void XDROutputStream::writeMap( const Declaration& decl, Object& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  XDROutputStream child_xdr_underlying_output_stream( underlying_output_stream, true );
+  value.serialize( child_xdr_underlying_output_stream );
+}
+void XDROutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
+{
+  writeInt32( decl, value_len );
+  underlying_output_stream.write( value, value_len );
+  if ( value_len % 4 != 0 )
+  {
+    static char zeros[] = { 0, 0, 0 };
+    underlying_output_stream.write( zeros, 4 - ( value_len % 4 ) );
+  }
+}
+void XDROutputStream::writeSequence( const Declaration& decl, Object& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  value.serialize( *this );
+}
+void XDROutputStream::writeStruct( const Declaration& decl, Object& value )
+{
+  beforeWrite( decl );
+  value.serialize( *this );
 }
 

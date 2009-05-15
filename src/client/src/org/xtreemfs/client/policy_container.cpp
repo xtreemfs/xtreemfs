@@ -27,15 +27,15 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainerreaddirCallback : public YIELD::Volume::readdirCallback
+      class PolicyContainerlistdirCallback : public YIELD::Volume::listdirCallback
       {
       public:
-        PolicyContainerreaddirCallback( PolicyContainer& policy_container, const YIELD::Path& root_dir_path )
+        PolicyContainerlistdirCallback( PolicyContainer& policy_container, const YIELD::Path& root_dir_path )
           : policy_container( policy_container ), root_dir_path( root_dir_path )
         { }
 
-        // YIELD::Volume::readdirCallback
-        bool operator()( const YIELD::Path& name, const YIELD::Stat& stbuf )
+        // YIELD::Volume::listdirCallback
+        bool operator()( const YIELD::Path& name )
         {
           const std::string& name_str = static_cast<const std::string&>( name );
           std::string::size_type dll_pos = name_str.find( SHLIBSUFFIX );
@@ -85,9 +85,9 @@ PolicyContainer::~PolicyContainer()
 
 void PolicyContainer::loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path )
 {
-  PolicyContainerreaddirCallback readdir_callback( *this, policy_shared_libraries_dir_path );
+  PolicyContainerlistdirCallback listdir_callback( *this, policy_shared_libraries_dir_path );
   YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
-  volume->readdir( policy_shared_libraries_dir_path, readdir_callback );
+  volume->listdir( policy_shared_libraries_dir_path, listdir_callback );
 }
 
 void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_library_file_path )

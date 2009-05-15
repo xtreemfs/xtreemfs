@@ -27,6 +27,9 @@ namespace org
         void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
         void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
 
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::PolicyContainer, 2842142710UL );
+
       private:
         ~PolicyContainer();
 
@@ -39,7 +42,7 @@ namespace org
 
 
         void loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path );
-        friend class PolicyContainerreaddirCallback;
+        friend class PolicyContainerlistdirCallback;
         void loadPolicySharedLibrary( const YIELD::Path& policy_shared_library_file_path );
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
       };
