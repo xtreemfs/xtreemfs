@@ -117,7 +117,7 @@ public class RestoreFileOperation extends MRCOperation {
         XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, Constants.REPL_UPDATE_PC_NONE, 0);
         
         file.setXLocList(xLocList);
-        sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
         // set the response
         rq.setResponse(new xtreemfs_restore_fileResponse());

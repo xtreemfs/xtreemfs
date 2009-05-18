@@ -134,7 +134,7 @@ public class RemoveReplicaOperation extends MRCOperation {
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         // update the X-Locations list
-        sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
         // create a deletion capability for the replica
         Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),

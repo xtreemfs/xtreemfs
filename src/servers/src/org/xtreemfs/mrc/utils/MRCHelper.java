@@ -436,7 +436,7 @@ public class MRCHelper {
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
                     : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());
                 file.setXLocList(newXLoc);
-                sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+                sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
             
             // set the read-only flag

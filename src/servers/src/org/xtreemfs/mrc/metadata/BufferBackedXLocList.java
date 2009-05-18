@@ -31,9 +31,9 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
     
     private XLoc[] replicaCache;
     
-    public BufferBackedXLocList(byte[] buffer) {
+    public BufferBackedXLocList(byte[] buffer, int offset, int length) {
         
-        super(buffer, 0, buffer.length);
+        super(buffer, offset, length);
         
         ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
         int numReplicas = tmp.getInt(offset + 4);
@@ -85,7 +85,7 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
         // insert the repl update policy offset
         int offs = tmp.position();
         tmp.position(8);
-        tmp.putInt(offs);
+        tmp.putInt(replOffset);
         
         tmp.position(offs);
         tmp.put(replUpdatePolicyBytes);
@@ -113,7 +113,7 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
             if (length == 0)
                 return null;
             
-            replicaCache[replicaIndex] = new BufferBackedXLoc(buffer, offset + index, length);
+            replicaCache[replicaIndex] = new BufferBackedXLoc(buffer, index, length);
         }
         
         return replicaCache[replicaIndex];
@@ -124,7 +124,7 @@ public class BufferBackedXLocList extends BufferBackedMetadata implements XLocLi
         ByteBuffer tmp = ByteBuffer.wrap(buffer, offset, len);
         int offs = tmp.getInt(offset + 8);
         
-        return new String(buffer, offset + offs, len - (offset + offs));
+        return new String(buffer, offset + offs, len - offs);
     }
     
     public int getVersion() {

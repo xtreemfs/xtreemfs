@@ -250,7 +250,7 @@ public class DBAdminHelper {
             state.currentReplicaList.clear();
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-            sMan.setMetadata(state.currentEntity, FileMetadata.XLOC_METADATA, update);
+            sMan.setMetadata(state.currentEntity, FileMetadata.RC_METADATA, update);
             update.execute();
         }
     }

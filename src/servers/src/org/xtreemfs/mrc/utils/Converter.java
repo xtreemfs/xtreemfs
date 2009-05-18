@@ -234,7 +234,7 @@ public class Converter {
             org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
                 StripingPolicyType.valueOf(xSP.getPattern()), xSP.getStripeSize(), xSP.getWidth());
             
-            Replica repl = new Replica(sp, 0, osds); // TODO: replication flags
+            Replica repl = new Replica(sp, xRepl.getReplicationFlags(), osds);
             replicas.add(repl);
         }
 

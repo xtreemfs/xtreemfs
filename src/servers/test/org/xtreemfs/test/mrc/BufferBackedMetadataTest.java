@@ -243,7 +243,8 @@ public class BufferBackedMetadataTest extends TestCase {
             checkXLocList(replicas, version, updatePolicy, xlocList1);
             
             // copy XLocList
-            BufferBackedXLocList xlocList2 = new BufferBackedXLocList(xlocList1.getBuffer());
+            BufferBackedXLocList xlocList2 = new BufferBackedXLocList(xlocList1.getBuffer(), 0, xlocList1
+                    .getBuffer().length);
             checkXLocList(replicas, version, updatePolicy, xlocList2);
             
             // test iterator

@@ -278,8 +278,6 @@ public class BabuDBStorageManager implements StorageManager {
                 FileMetadata.FC_METADATA), null);
             update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
                 FileMetadata.RC_METADATA), null);
-            update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
-                FileMetadata.XLOC_METADATA), null);
             
             return newLinkCount;
             
@@ -319,8 +317,6 @@ public class BabuDBStorageManager implements StorageManager {
                 fileName, FileMetadata.FC_METADATA), null);
             update.addUpdate(BabuDBStorageManager.FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId,
                 fileName, FileMetadata.RC_METADATA), null);
-            update.addUpdate(BabuDBStorageManager.FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId,
-                fileName, FileMetadata.XLOC_METADATA), null);
             
             // if the last link to the file is supposed to be deleted, remove
             // the remaining metadata, including ACLs and XAttrs
@@ -335,8 +331,6 @@ public class BabuDBStorageManager implements StorageManager {
                         .createFileIdIndexKey(file.getId(), FileMetadata.FC_METADATA), null);
                 update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
                         .createFileIdIndexKey(file.getId(), FileMetadata.RC_METADATA), null);
-                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
-                        .createFileIdIndexKey(file.getId(), FileMetadata.XLOC_METADATA), null);
                 
                 byte[] idBytes = new byte[8];
                 ByteBuffer.wrap(idBytes).putLong(file.getId());
@@ -580,8 +574,6 @@ public class BabuDBStorageManager implements StorageManager {
             FileMetadata.FC_METADATA), md.getFCMetadataValue());
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(),
             FileMetadata.RC_METADATA), md.getRCMetadata().getValue());
-        update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(),
-            FileMetadata.XLOC_METADATA), md.getXLocListValue());
         
         // remove the back link
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), (byte) 3),
@@ -596,8 +588,6 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
                     .createLinkTarget(metadata.getId()));
             update.addUpdate(FILE_INDEX, md.getFCMetadataKey(), null);
-            if (md.getXLocListKey() != null)
-                update.addUpdate(FILE_INDEX, md.getXLocListKey(), null);
         }
         
         // create an entry for the new link to the metadata in the file

@@ -149,7 +149,7 @@ public class AddReplicaOperation extends MRCOperation {
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         // update the X-Locations list
-        sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
         // set the response
         rq.setResponse(new xtreemfs_replica_addResponse());

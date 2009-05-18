@@ -28,37 +28,43 @@ import java.nio.ByteBuffer;
 
 public class BufferBackedRCMetadata {
     
-    protected static final int RC_TYPE                  = 0;
+    protected static final int   RC_TYPE                  = 0;
     
-    protected static final int RC_ID                    = 1;
+    protected static final int   RC_ID                    = 1;
     
-    protected static final int RC_PERMS                 = 9;
+    protected static final int   RC_PERMS                 = 9;
     
-    protected static final int RC_LINKCOUNT             = 13;
+    protected static final int   RC_LINKCOUNT             = 13;
     
-    protected static final int RC_W32ATTRS              = 15;
+    protected static final int   RC_W32ATTRS              = 15;
     
-    protected static final int RC_EPOCH                 = 23;
+    protected static final int   RC_EPOCH                 = 23;
     
-    protected static final int RC_ISSEPOCH              = 27;
+    protected static final int   RC_ISSEPOCH              = 27;
     
-    protected static final int RC_READONLY              = 31;
+    protected static final int   RC_READONLY              = 31;
     
-    protected static final int RC_DIR_GROUP_OFFSET      = 23;
+    protected static final int   RC_DIR_GROUP_OFFSET      = 23;
     
-    protected static final int DIR_VAR_LEN_PART_OFFSET  = 25;
+    protected static final int   DIR_VAR_LEN_PART_OFFSET  = 25;
     
-    protected static final int RC_FILE_GROUP_OFFSET     = 32;
+    protected static final int   RC_FILE_GROUP_OFFSET     = 32;
     
-    protected static final int FILE_VAR_LEN_PART_OFFSET = 34;
+    protected static final int   RC_XLOC_OFFSET           = 34;
     
-    private final short        groupOffset;
+    protected static final int   FILE_VAR_LEN_PART_OFFSET = 36;
     
-    private final boolean      directory;
+    private final short          groupOffset;
     
-    private final ByteBuffer   keyBuf;
+    private final short          xLocOffset;
     
-    private final ByteBuffer   valBuf;
+    private final boolean        directory;
+    
+    private final ByteBuffer     keyBuf;
+    
+    private ByteBuffer           valBuf;
+    
+    private BufferBackedXLocList cachedXLocList;
     
     /**
      * Creates a new buffer-backed metadata object from a key and a value
@@ -77,6 +83,7 @@ public class BufferBackedRCMetadata {
         
         directory = valBuf[0] == 1;
         groupOffset = this.valBuf.getShort(directory ? RC_DIR_GROUP_OFFSET : RC_FILE_GROUP_OFFSET);
+        xLocOffset = directory ? (short) valBuf.length : this.valBuf.getShort(RC_XLOC_OFFSET);
     }
     
     /**
@@ -106,11 +113,12 @@ public class BufferBackedRCMetadata {
         
         final int bufSize = FILE_VAR_LEN_PART_OFFSET + oBytes.length + gBytes.length;
         groupOffset = (short) (bufSize - gBytes.length);
+        xLocOffset = (short) bufSize;
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
         valBuf.put((byte) 0).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs)
-                .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0)).putShort(groupOffset).put(
-                    oBytes).put(gBytes);
+                .putInt(epoch).putInt(issEpoch).put((byte) (readOnly ? 1 : 0)).putShort(groupOffset)
+                .putShort(xLocOffset).put(oBytes).put(gBytes);
         
         directory = false;
     }
@@ -138,6 +146,7 @@ public class BufferBackedRCMetadata {
         
         final int bufSize = DIR_VAR_LEN_PART_OFFSET + oBytes.length + gBytes.length;
         groupOffset = (short) (bufSize - gBytes.length);
+        xLocOffset = (short) bufSize;
         
         valBuf = ByteBuffer.wrap(new byte[bufSize]);
         valBuf.put((byte) 1).putLong(fileId).putInt(perms).putShort(linkCount).putLong(w32Attrs).putShort(
@@ -168,6 +177,20 @@ public class BufferBackedRCMetadata {
     
     public int getPerms() {
         return valBuf.getInt(RC_PERMS);
+    }
+    
+    public BufferBackedXLocList getXLocList() {
+        
+        if (cachedXLocList == null) {
+            
+            byte[] bytes = valBuf.array();
+            int index = valBuf.getShort(RC_XLOC_OFFSET);
+            
+            if (bytes.length - index > 0)
+                cachedXLocList = new BufferBackedXLocList(bytes, index, bytes.length - index);
+        }
+        
+        return cachedXLocList;
     }
     
     public boolean isReadOnly() {
@@ -202,6 +225,21 @@ public class BufferBackedRCMetadata {
         valBuf.putLong(RC_W32ATTRS, w32Attrs);
     }
     
+    public void setXLocList(BufferBackedXLocList xLocList) {
+        
+        int index = valBuf.getShort(RC_XLOC_OFFSET);
+        
+        byte[] bytes = this.valBuf.array();
+        byte[] xLocBytes = xLocList == null? new byte[0]: xLocList.getBuffer();
+        byte[] tmp = new byte[index + xLocBytes.length];
+        
+        System.arraycopy(bytes, 0, tmp, 0, index);
+        System.arraycopy(xLocBytes, 0, tmp, index, xLocBytes.length);
+        this.valBuf = ByteBuffer.wrap(tmp);
+        
+        cachedXLocList = xLocList;
+    }
+    
     public String getFileName() {
         byte[] bytes = keyBuf.array();
         return new String(bytes, 8, bytes.length - 9);
@@ -214,9 +252,10 @@ public class BufferBackedRCMetadata {
     }
     
     public String getOwningGroupId() {
-        int index = groupOffset;
-        int length = valBuf.limit() - index;
-        return new String(valBuf.array(), index, length);
+        int startIndex = groupOffset;
+        int endIndex = directory ? valBuf.limit() : xLocOffset;
+        int length = endIndex - startIndex;
+        return new String(valBuf.array(), startIndex, length);
     }
     
     public long getW32Attrs() {

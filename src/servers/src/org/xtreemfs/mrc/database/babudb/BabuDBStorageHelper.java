@@ -424,11 +424,9 @@ public class BabuDBStorageHelper {
                 return resolveLink(database, dbName, rcValue, fileName);
             
             byte[][] keyBufs = new byte[][] {
-                BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), rcKey,
-                BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.XLOC_METADATA) };
+                BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), rcKey};
             byte[][] valBufs = new byte[][] {
-                database.directLookup(dbName, BabuDBStorageManager.FILE_INDEX, keyBufs[0]), rcValue,
-                database.directLookup(dbName, BabuDBStorageManager.FILE_INDEX, keyBufs[2]) };
+                database.directLookup(dbName, BabuDBStorageManager.FILE_INDEX, keyBufs[0]), rcValue};
             
             return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_INDEX);
         }
@@ -492,7 +490,7 @@ public class BabuDBStorageHelper {
                 .getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp.getLinkCount(), tmp
                 .getEpoch(), tmp.getIssuedEpoch(), tmp.isReadOnly());
         valBufs[FileMetadata.RC_METADATA] = tmp2.getValue();
-        byte[][] keyBufs = new byte[][] { null, tmp2.getKey(), null };
+        byte[][] keyBufs = new byte[][] { null, tmp2.getKey() };
         
         return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
     }

@@ -193,7 +193,7 @@ public class OpenOperation extends MRCOperation {
                 : Constants.REPL_UPDATE_PC_NONE, 0);
             
             file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
-            sMan.setMetadata(file, FileMetadata.XLOC_METADATA, update);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,

@@ -94,9 +94,6 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |value | rarelyChangedMetadata                                               |
 |type=1| var (files & directories), 9 (link targets)                         |
 |----------------------------------------------------------------------------|
-|value | xLocList                                                            |
-|type=2| var (files & directories)                                           |
-|----------------------------------------------------------------------------|
 
 
  XATTR_INDEX (BabuDB index #1)
@@ -145,11 +142,8 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
 |value | rarelyChangedMetadata                                               |
 |type=1| var                                                                 |
 |----------------------------------------------------------------------------|
-|value | xLocList                                                            |
-|type=2| var                                                                 |
-|----------------------------------------------------------------------------|
 |value | parentID  fileName                                                  |
-|type=3| 8         var                                                       |
+|type=2| 8         var                                                       |
 |----------------------------------------------------------------------------|
 
 
@@ -194,8 +188,8 @@ rarelyChangedMetadata - comprises file/directory metadata that is rarely
 |type  id  permissions  linkCount  w32attrs  epoch  issuedEpoch  readOnlyFlag|
 |1     8   4            2          8         4      4            1           |
 |                                                                            |
-|groupOffset  owner  group                                                   |
-|2            var    var                                                     |
+|groupOffset  xLocOffset  owner  group  xLocList                             |
+|2            2           var    var    var                                  |
 |----------------------------------------------------------------------------|
 
  directories:
@@ -216,7 +210,7 @@ xLocList - represents an X-Locations list of a file
 |version  numReplicas  replUpdPolOffs  repl1Offs ... replNOffs               |
 |4        4            4               4             4                       |
 |                                                                            |
-|xLoc1  ...  xLocN    replUpdPolOffs                                         |
+|xLoc1  ...  xLocN    replUpdPol                                             |
 |var         var      var                                                    |
 |----------------------------------------------------------------------------|
 

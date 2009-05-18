@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 
 public class BufferBackedFileMetadata implements FileMetadata {
     
-    public static final short      NUM_BUFFERS = 3;
+    public static final short      NUM_BUFFERS = 2;
     
     protected static final int     FC_ATIME    = 0;
     
@@ -41,11 +41,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     private final ByteBuffer       fcValBuf;
     
-    private ByteBuffer             xLocKeyBuf;
-    
     private BufferBackedRCMetadata rcMetadata;
-    
-    private BufferBackedXLocList   xLocList;
     
     private int                    indexId;
     
@@ -70,15 +66,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         fcValBuf = ByteBuffer.wrap(valBufs[FC_METADATA]);
         
         // rarely changed metadata
-        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA],
-            valBufs[RC_METADATA]);
-        
-        // XLocList metadata
-        if (valBufs[XLOC_METADATA] != null) {
-            xLocList = new BufferBackedXLocList(valBufs[XLOC_METADATA]);
-            if (keyBufs[XLOC_METADATA] != null)
-                xLocKeyBuf = ByteBuffer.wrap(keyBufs[XLOC_METADATA]);
-        }
+        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA], valBufs[RC_METADATA]);
         
         this.indexId = indexId;
     }
@@ -112,9 +100,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, fileName, ownerId, groupId, fileId, perms,
             w32Atrrs, linkCount, epoch, issEpoch, readOnly);
-        
-        // xLocList metadata
-        xLocList = null;
     }
     
     /**
@@ -140,9 +125,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         // rarely changed metadata
         rcMetadata = new BufferBackedRCMetadata(parentId, dirName, ownerId, groupId, fileId, perms, w32Attrs,
             linkCount);
-        
-        // xLocList metadata
-        xLocList = null;
     }
     
     @Override
@@ -272,7 +254,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
     
     @Override
     public XLocList getXLocList() {
-        return xLocList;
+        return rcMetadata.getXLocList();
     }
     
     @Override
@@ -286,18 +268,14 @@ public class BufferBackedFileMetadata implements FileMetadata {
         assert (!isDirectory()) : "cannot assign locations list to directory";
         assert (xlocList instanceof BufferBackedXLocList);
         
-        BufferBackedXLocList xloc = (BufferBackedXLocList) xlocList;
-        
-        if (fcKeyBuf != null) {
-            byte[] tmp = new byte[fcKeyBuf.limit()];
-            System.arraycopy(fcKeyBuf.array(), 0, tmp, 0, tmp.length);
-            xLocKeyBuf = ByteBuffer.wrap(tmp).put(fcKeyBuf.limit() - 1, (byte) XLOC_METADATA);
-        }
-        xLocList = new BufferBackedXLocList(xloc.getBuffer());
+        BufferBackedXLocList bbXLocList = (BufferBackedXLocList) xlocList;
+        rcMetadata.setXLocList(bbXLocList);
     }
     
     @Override
     public void setOwnerAndGroup(String owner, String group) {
+        
+        BufferBackedXLocList xLocList = rcMetadata.getXLocList();
         
         BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
             owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
@@ -307,6 +285,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(), tmp
                 .getValue());
+        rcMetadata.setXLocList(xLocList);
     }
     
     public byte[] getFCMetadataKey() {
@@ -321,14 +300,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
         return rcMetadata;
     }
     
-    public byte[] getXLocListKey() {
-        return xLocKeyBuf == null ? null : xLocKeyBuf.array();
-    }
-    
-    public byte[] getXLocListValue() {
-        return xLocList == null ? null : xLocList.getBuffer();
-    }
-    
     public byte[] getKeyBuffer(int type) {
         
         switch (type) {
@@ -336,8 +307,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
             return fcKeyBuf.array();
         case 1:
             return rcMetadata.getKey();
-        case 2:
-            return xLocKeyBuf.array();
         }
         
         return null;
@@ -350,8 +319,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
             return fcValBuf.array();
         case 1:
             return rcMetadata.getValue();
-        case 2:
-            return xLocList.getBuffer();
         }
         
         return null;
