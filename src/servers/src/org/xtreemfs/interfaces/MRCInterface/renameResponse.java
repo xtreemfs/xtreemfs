@@ -19,8 +19,8 @@ public class renameResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentialsSet getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }    
-    public long getTypeId() { return 14; }
+    public long getTag() { return 1214; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class renameResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 14; }
+    public int getOperationNumber() { return 1214; }
 
 
-    private FileCredentialsSet file_credentials;
+    private FileCredentialsSet file_credentials;    
 
 }
 

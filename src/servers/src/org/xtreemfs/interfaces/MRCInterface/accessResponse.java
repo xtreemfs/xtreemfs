@@ -19,8 +19,8 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
     public boolean getReturnValue() { return returnValue; }
     public void setReturnValue( boolean returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }    
-    public long getTypeId() { return 1; }
+    public long getTag() { return 1201; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 1; }
+    public int getOperationNumber() { return 1201; }
 
 
-    private boolean returnValue;
+    private boolean returnValue;    
 
 }
 

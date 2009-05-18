@@ -17,20 +17,16 @@ XTREEMFS_COMMON_IMPORTS = [
                           ]
 
 
-class XtreemFSJavaInterface(JavaInterface, JavaClass):
-    def __init__( self, *args, **kwds ):
-        JavaInterface.__init__( self, *args, **kwds )
-        assert self.getUID() > 0, "interface "  + self.getQualifiedName() + " requires a positive UID for the XtreemFS Java generator (current uid = %i)" % self.getUID()
-    
+class XtreemFSJavaInterface(JavaInterface, JavaClass):    
     def generate( self ):                            
         JavaInterface.generate( self ) 
            
         class_header = self.getClassHeader()        
         constants = pad( "\n" + INDENT_SPACES, ( "\n" + INDENT_SPACES ).join( [repr( constant ) for constant in self.getConstants()] ), "\n\n" )        
-        uid = self.getUID()            
+        tag = self.getTag()            
         out = """\
 %(class_header)s%(constants)s
-    public static int getVersion() { return %(uid)s; }
+    public static int getVersion() { return %(tag)s; }
 """ % locals()
                             
         request_factories = "".join( [operation.getRequestFactory() for operation in self.getOperations()] )
@@ -283,7 +279,7 @@ class XtreemFSJavaStructType(JavaStructType, XtreemFSJavaCompoundType):
                      
 
 class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaCompoundType):
-    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getUID(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
+    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
     def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
     
     
@@ -292,16 +288,16 @@ class XtreemFSJavaOperation(JavaOperation):
         self._getRequestType().generate()
         self._getResponseType( "returnValue" ).generate()
                 
-    def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getUID(), self.getName() )                    
-    def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getUID(), self.getName() ) ) or ""                
+    def getRequestFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getTag(), self.getName() )                    
+    def getResponseFactory( self ): return not self.isOneway() and ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getTag(), self.getName() ) ) or ""                
 
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
     def getOtherMethods( self ):        
-        uid = self.getUID()     
+        tag = self.getTag()     
         response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
         return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Request
-    public int getOperationNumber() { return %(uid)s; }
+    public int getOperationNumber() { return %(tag)s; }
     public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
 
@@ -310,10 +306,10 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
 
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):    
     def getOtherMethods( self ):
-        uid = self.getUID()
+        tag = self.getTag()
         return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Response
-    public int getOperationNumber() { return %(uid)s; }
+    public int getOperationNumber() { return %(tag)s; }
 """ % locals()
 
     def getParentTypeNames( self ):

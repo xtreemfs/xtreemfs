@@ -21,8 +21,8 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }    
-    public long getTypeId() { return 2; }
+    public long getTag() { return 1202; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 2; }
+    public int getOperationNumber() { return 1202; }
     public Response createDefaultResponse() { return new chmodResponse(); }
 
 
     private String path;
-    private int mode;
+    private int mode;    
 
 }
 

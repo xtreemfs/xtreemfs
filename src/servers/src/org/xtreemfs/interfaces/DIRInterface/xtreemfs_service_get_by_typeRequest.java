@@ -19,8 +19,8 @@ public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfa
     public ServiceType getType() { return type; }
     public void setType( ServiceType type ) { this.type = type; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }    
-    public long getTypeId() { return 6; }
+    public long getTag() { return 1106; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfa
     }
 
     // Request
-    public int getOperationNumber() { return 6; }
+    public int getOperationNumber() { return 1106; }
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_typeResponse(); }
 
 
-    private ServiceType type;
+    private ServiceType type;    
 
 }
 

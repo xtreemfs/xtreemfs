@@ -19,8 +19,8 @@ public class xtreemfs_service_get_by_nameResponse implements org.xtreemfs.interf
     public ServiceSet getServices() { return services; }
     public void setServices( ServiceSet services ) { this.services = services; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameResponse"; }    
-    public long getTypeId() { return 9; }
+    public long getTag() { return 1109; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_service_get_by_nameResponse implements org.xtreemfs.interf
     }
 
     // Response
-    public int getOperationNumber() { return 9; }
+    public int getOperationNumber() { return 1109; }
 
 
-    private ServiceSet services;
+    private ServiceSet services;    
 
 }
 

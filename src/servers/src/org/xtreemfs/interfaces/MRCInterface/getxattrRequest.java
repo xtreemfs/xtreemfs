@@ -21,8 +21,8 @@ public class getxattrRequest implements org.xtreemfs.interfaces.utils.Request
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrRequest"; }    
-    public long getTypeId() { return 6; }
+    public long getTag() { return 1206; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class getxattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 6; }
+    public int getOperationNumber() { return 1206; }
     public Response createDefaultResponse() { return new getxattrResponse(); }
 
 
     private String path;
-    private String name;
+    private String name;    
 
 }
 

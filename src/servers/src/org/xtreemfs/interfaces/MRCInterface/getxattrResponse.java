@@ -19,8 +19,8 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public String getValue() { return value; }
     public void setValue( String value ) { this.value = value; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }    
-    public long getTypeId() { return 6; }
+    public long getTag() { return 1206; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 6; }
+    public int getOperationNumber() { return 1206; }
 
 
-    private String value;
+    private String value;    
 
 }
 

@@ -19,8 +19,8 @@ public class xtreemfs_internal_get_file_sizeResponse implements org.xtreemfs.int
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }    
-    public long getTypeId() { return 104; }
+    public long getTag() { return 1404; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_internal_get_file_sizeResponse implements org.xtreemfs.int
     }
 
     // Response
-    public int getOperationNumber() { return 104; }
+    public int getOperationNumber() { return 1404; }
 
 
-    private long returnValue;
+    private long returnValue;    
 
 }
 

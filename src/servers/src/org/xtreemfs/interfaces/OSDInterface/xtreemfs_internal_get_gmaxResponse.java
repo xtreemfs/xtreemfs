@@ -19,8 +19,8 @@ public class xtreemfs_internal_get_gmaxResponse implements org.xtreemfs.interfac
     public InternalGmax getReturnValue() { return returnValue; }
     public void setReturnValue( InternalGmax returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse"; }    
-    public long getTypeId() { return 100; }
+    public long getTag() { return 1400; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_internal_get_gmaxResponse implements org.xtreemfs.interfac
     }
 
     // Response
-    public int getOperationNumber() { return 100; }
+    public int getOperationNumber() { return 1400; }
 
 
-    private InternalGmax returnValue;
+    private InternalGmax returnValue;    
 
 }
 

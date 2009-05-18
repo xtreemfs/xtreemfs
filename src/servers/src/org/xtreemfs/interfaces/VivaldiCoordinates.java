@@ -22,8 +22,8 @@ public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Seriali
     public double getLocal_error() { return local_error; }
     public void setLocal_error( double local_error ) { this.local_error = local_error; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1003; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
 
     public String toString()
     {
@@ -85,7 +85,7 @@ public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Seriali
 
     private double x_coordinate;
     private double y_coordinate;
-    private double local_error;
+    private double local_error;    
 
 }
 

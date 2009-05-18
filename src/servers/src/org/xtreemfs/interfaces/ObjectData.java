@@ -24,8 +24,8 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
     public boolean getInvalid_checksum_on_osd() { return invalid_checksum_on_osd; }
     public void setInvalid_checksum_on_osd( boolean invalid_checksum_on_osd ) { this.invalid_checksum_on_osd = invalid_checksum_on_osd; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1051; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
 
     public String toString()
     {
@@ -94,7 +94,7 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
     private ReusableBuffer data;
     private int checksum;
     private int zero_padding;
-    private boolean invalid_checksum_on_osd;
+    private boolean invalid_checksum_on_osd;    
 
 }
 

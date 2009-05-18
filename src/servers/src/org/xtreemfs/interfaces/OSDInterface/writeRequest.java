@@ -31,8 +31,8 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     public ObjectData getObject_data() { return object_data; }
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }    
-    public long getTypeId() { return 4; }
+    public long getTag() { return 1304; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }
 
     public String toString()
     {
@@ -116,7 +116,7 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 4; }
+    public int getOperationNumber() { return 1304; }
     public Response createDefaultResponse() { return new writeResponse(); }
 
 
@@ -126,7 +126,7 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     private long object_version;
     private int offset;
     private long lease_timeout;
-    private ObjectData object_data;
+    private ObjectData object_data;    
 
 }
 

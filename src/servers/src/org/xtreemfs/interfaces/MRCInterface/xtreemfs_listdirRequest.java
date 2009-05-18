@@ -19,8 +19,8 @@ public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Re
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }    
-    public long getTypeId() { return 33; }
+    public long getTag() { return 1233; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Re
     }
 
     // Request
-    public int getOperationNumber() { return 33; }
+    public int getOperationNumber() { return 1233; }
     public Response createDefaultResponse() { return new xtreemfs_listdirResponse(); }
 
 
-    private String path;
+    private String path;    
 
 }
 

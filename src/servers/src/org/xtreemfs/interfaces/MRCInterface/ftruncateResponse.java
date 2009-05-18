@@ -19,8 +19,8 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
     public XCap getTruncate_xcap() { return truncate_xcap; }
     public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }    
-    public long getTypeId() { return 30; }
+    public long getTag() { return 1230; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 30; }
+    public int getOperationNumber() { return 1230; }
 
 
-    private XCap truncate_xcap;
+    private XCap truncate_xcap;    
 
 }
 

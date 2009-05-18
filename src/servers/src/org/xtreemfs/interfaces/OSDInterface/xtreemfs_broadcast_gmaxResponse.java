@@ -15,8 +15,8 @@ public class xtreemfs_broadcast_gmaxResponse implements org.xtreemfs.interfaces.
     public xtreemfs_broadcast_gmaxResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_broadcast_gmaxResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse"; }    
-    public long getTypeId() { return 1000; }
+    public long getTag() { return 2300; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 1000; }
-
+    public int getOperationNumber() { return 2300; }
+    
 
 }
 

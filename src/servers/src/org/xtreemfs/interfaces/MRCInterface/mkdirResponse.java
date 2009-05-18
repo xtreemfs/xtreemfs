@@ -15,8 +15,8 @@ public class mkdirResponse implements org.xtreemfs.interfaces.utils.Response
     public mkdirResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public mkdirResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirResponse"; }    
-    public long getTypeId() { return 9; }
+    public long getTag() { return 1209; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 9; }
-
+    public int getOperationNumber() { return 1209; }
+    
 
 }
 

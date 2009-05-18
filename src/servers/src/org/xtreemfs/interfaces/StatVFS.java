@@ -24,8 +24,8 @@ public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
     public int getNamelen() { return namelen; }
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1043; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
 
     public String toString()
     {
@@ -94,7 +94,7 @@ public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
     private int bsize;
     private long bfree;
     private String fsid;
-    private int namelen;
+    private int namelen;    
 
 }
 

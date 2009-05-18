@@ -46,8 +46,8 @@ public class Stat implements org.xtreemfs.interfaces.utils.Serializable
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1040; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
 
     public String toString()
     {
@@ -193,7 +193,7 @@ public class Stat implements org.xtreemfs.interfaces.utils.Serializable
     private String file_id;
     private String link_target;
     private int truncate_epoch;
-    private int attributes;
+    private int attributes;    
 
 }
 

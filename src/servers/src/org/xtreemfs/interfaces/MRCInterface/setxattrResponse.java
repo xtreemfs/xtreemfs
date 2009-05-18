@@ -15,8 +15,8 @@ public class setxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public setxattrResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public setxattrResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrResponse"; }    
-    public long getTypeId() { return 18; }
+    public long getTag() { return 1218; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 18; }
-
+    public int getOperationNumber() { return 1218; }
+    
 
 }
 

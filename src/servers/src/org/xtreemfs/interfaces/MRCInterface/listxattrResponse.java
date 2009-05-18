@@ -19,8 +19,8 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }    
-    public long getTypeId() { return 8; }
+    public long getTag() { return 1208; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 8; }
+    public int getOperationNumber() { return 1208; }
 
 
-    private StringSet names;
+    private StringSet names;    
 
 }
 

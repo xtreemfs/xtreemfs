@@ -19,8 +19,8 @@ public class xtreemfs_check_objectResponse implements org.xtreemfs.interfaces.ut
     public ObjectData getReturnValue() { return returnValue; }
     public void setReturnValue( ObjectData returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse"; }    
-    public long getTypeId() { return 103; }
+    public long getTag() { return 1403; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_check_objectResponse implements org.xtreemfs.interfaces.ut
     }
 
     // Response
-    public int getOperationNumber() { return 103; }
+    public int getOperationNumber() { return 1403; }
 
 
-    private ObjectData returnValue;
+    private ObjectData returnValue;    
 
 }
 

@@ -19,8 +19,8 @@ public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Res
     public VolumeSet getVolumes() { return volumes; }
     public void setVolumes( VolumeSet volumes ) { this.volumes = volumes; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }    
-    public long getTypeId() { return 31; }
+    public long getTag() { return 1231; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Res
     }
 
     // Response
-    public int getOperationNumber() { return 31; }
+    public int getOperationNumber() { return 1231; }
 
 
-    private VolumeSet volumes;
+    private VolumeSet volumes;    
 
 }
 

@@ -19,8 +19,8 @@ public class xtreemfs_service_get_by_nameRequest implements org.xtreemfs.interfa
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameRequest"; }    
-    public long getTypeId() { return 9; }
+    public long getTag() { return 1109; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_service_get_by_nameRequest implements org.xtreemfs.interfa
     }
 
     // Request
-    public int getOperationNumber() { return 9; }
+    public int getOperationNumber() { return 1109; }
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_nameResponse(); }
 
 
-    private String name;
+    private String name;    
 
 }
 

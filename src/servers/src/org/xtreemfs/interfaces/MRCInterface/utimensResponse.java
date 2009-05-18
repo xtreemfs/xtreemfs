@@ -15,8 +15,8 @@ public class utimensResponse implements org.xtreemfs.interfaces.utils.Response
     public utimensResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public utimensResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensResponse"; }    
-    public long getTypeId() { return 22; }
+    public long getTag() { return 1222; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 22; }
-
+    public int getOperationNumber() { return 1222; }
+    
 
 }
 

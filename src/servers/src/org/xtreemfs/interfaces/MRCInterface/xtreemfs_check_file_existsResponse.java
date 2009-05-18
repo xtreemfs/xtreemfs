@@ -19,8 +19,8 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
     public String getBitmap() { return bitmap; }
     public void setBitmap( String bitmap ) { this.bitmap = bitmap; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }    
-    public long getTypeId() { return 23; }
+    public long getTag() { return 1223; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
     }
 
     // Response
-    public int getOperationNumber() { return 23; }
+    public int getOperationNumber() { return 1223; }
 
 
-    private String bitmap;
+    private String bitmap;    
 
 }
 

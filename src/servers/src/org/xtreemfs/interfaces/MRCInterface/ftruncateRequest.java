@@ -19,8 +19,8 @@ public class ftruncateRequest implements org.xtreemfs.interfaces.utils.Request
     public XCap getWrite_xcap() { return write_xcap; }
     public void setWrite_xcap( XCap write_xcap ) { this.write_xcap = write_xcap; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest"; }    
-    public long getTypeId() { return 30; }
+    public long getTag() { return 1230; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class ftruncateRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 30; }
+    public int getOperationNumber() { return 1230; }
     public Response createDefaultResponse() { return new ftruncateResponse(); }
 
 
-    private XCap write_xcap;
+    private XCap write_xcap;    
 
 }
 

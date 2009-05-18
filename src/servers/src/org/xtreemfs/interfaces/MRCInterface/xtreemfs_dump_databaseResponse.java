@@ -15,8 +15,8 @@ public class xtreemfs_dump_databaseResponse implements org.xtreemfs.interfaces.u
     public xtreemfs_dump_databaseResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_dump_databaseResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_dump_databaseResponse"; }    
-    public long getTypeId() { return 52; }
+    public long getTag() { return 1252; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_dump_databaseResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 52; }
-
+    public int getOperationNumber() { return 1252; }
+    
 
 }
 

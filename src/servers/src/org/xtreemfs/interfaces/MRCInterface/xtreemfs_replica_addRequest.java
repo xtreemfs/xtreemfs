@@ -21,8 +21,8 @@ public class xtreemfs_replica_addRequest implements org.xtreemfs.interfaces.util
     public Replica getNew_replica() { return new_replica; }
     public void setNew_replica( Replica new_replica ) { this.new_replica = new_replica; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }    
-    public long getTypeId() { return 26; }
+    public long getTag() { return 1226; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class xtreemfs_replica_addRequest implements org.xtreemfs.interfaces.util
     }
 
     // Request
-    public int getOperationNumber() { return 26; }
+    public int getOperationNumber() { return 1226; }
     public Response createDefaultResponse() { return new xtreemfs_replica_addResponse(); }
 
 
     private String file_id;
-    private Replica new_replica;
+    private Replica new_replica;    
 
 }
 

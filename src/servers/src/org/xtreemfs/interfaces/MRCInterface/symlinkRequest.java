@@ -21,8 +21,8 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getLink_path() { return link_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }    
-    public long getTypeId() { return 20; }
+    public long getTag() { return 1220; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 20; }
+    public int getOperationNumber() { return 1220; }
     public Response createDefaultResponse() { return new symlinkResponse(); }
 
 
     private String target_path;
-    private String link_path;
+    private String link_path;    
 
 }
 

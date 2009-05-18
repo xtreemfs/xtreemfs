@@ -15,8 +15,8 @@ public class symlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public symlinkResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public symlinkResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkResponse"; }    
-    public long getTypeId() { return 20; }
+    public long getTag() { return 1220; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 20; }
-
+    public int getOperationNumber() { return 1220; }
+    
 
 }
 

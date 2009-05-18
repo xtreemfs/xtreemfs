@@ -19,8 +19,8 @@ public class statvfsRequest implements org.xtreemfs.interfaces.utils.Request
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsRequest"; }    
-    public long getTypeId() { return 19; }
+    public long getTag() { return 1219; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class statvfsRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 19; }
+    public int getOperationNumber() { return 1219; }
     public Response createDefaultResponse() { return new statvfsResponse(); }
 
 
-    private String volume_name;
+    private String volume_name;    
 
 }
 

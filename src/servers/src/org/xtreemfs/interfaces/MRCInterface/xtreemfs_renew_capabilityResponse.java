@@ -19,8 +19,8 @@ public class xtreemfs_renew_capabilityResponse implements org.xtreemfs.interface
     public XCap getRenewed_xcap() { return renewed_xcap; }
     public void setRenewed_xcap( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }    
-    public long getTypeId() { return 25; }
+    public long getTag() { return 1225; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_renew_capabilityResponse implements org.xtreemfs.interface
     }
 
     // Response
-    public int getOperationNumber() { return 25; }
+    public int getOperationNumber() { return 1225; }
 
 
-    private XCap renewed_xcap;
+    private XCap renewed_xcap;    
 
 }
 

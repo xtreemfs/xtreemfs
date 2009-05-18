@@ -22,8 +22,8 @@ public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializab
     public String getPassword() { return password; }
     public void setPassword( String password ) { this.password = password; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1002; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
 
     public String toString()
     {
@@ -85,7 +85,7 @@ public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializab
 
     private String user_id;
     private StringSet group_ids;
-    private String password;
+    private String password;    
 
 }
 

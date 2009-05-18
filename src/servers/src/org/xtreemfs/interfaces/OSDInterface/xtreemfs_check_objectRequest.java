@@ -25,8 +25,8 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     public long getObject_version() { return object_version; }
     public void setObject_version( long object_version ) { this.object_version = object_version; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }    
-    public long getTypeId() { return 103; }
+    public long getTag() { return 1403; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
 
     public String toString()
     {
@@ -92,14 +92,14 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Request
-    public int getOperationNumber() { return 103; }
+    public int getOperationNumber() { return 1403; }
     public Response createDefaultResponse() { return new xtreemfs_check_objectResponse(); }
 
 
     private FileCredentials file_credentials;
     private String file_id;
     private long object_number;
-    private long object_version;
+    private long object_version;    
 
 }
 

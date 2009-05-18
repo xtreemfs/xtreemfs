@@ -19,8 +19,8 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
     public InternalReadLocalResponse getReturnValue() { return returnValue; }
     public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }    
-    public long getTypeId() { return 102; }
+    public long getTag() { return 1402; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
     }
 
     // Response
-    public int getOperationNumber() { return 102; }
+    public int getOperationNumber() { return 1402; }
 
 
-    private InternalReadLocalResponse returnValue;
+    private InternalReadLocalResponse returnValue;    
 
 }
 

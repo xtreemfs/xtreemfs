@@ -19,8 +19,8 @@ public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }    
-    public long getTypeId() { return 12; }
+    public long getTag() { return 1212; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 12; }
+    public int getOperationNumber() { return 1212; }
     public Response createDefaultResponse() { return new readdirResponse(); }
 
 
-    private String path;
+    private String path;    
 
 }
 

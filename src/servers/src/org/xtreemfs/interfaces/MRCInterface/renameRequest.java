@@ -21,8 +21,8 @@ public class renameRequest implements org.xtreemfs.interfaces.utils.Request
     public String getTarget_path() { return target_path; }
     public void setTarget_path( String target_path ) { this.target_path = target_path; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }    
-    public long getTypeId() { return 14; }
+    public long getTag() { return 1214; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class renameRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 14; }
+    public int getOperationNumber() { return 1214; }
     public Response createDefaultResponse() { return new renameResponse(); }
 
 
     private String source_path;
-    private String target_path;
+    private String target_path;    
 
 }
 

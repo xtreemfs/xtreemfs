@@ -19,8 +19,8 @@ public class xtreemfs_service_registerRequest implements org.xtreemfs.interfaces
     public Service getService() { return service; }
     public void setService( Service service ) { this.service = service; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_registerRequest"; }    
-    public long getTypeId() { return 4; }
+    public long getTag() { return 1104; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_registerRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_service_registerRequest implements org.xtreemfs.interfaces
     }
 
     // Request
-    public int getOperationNumber() { return 4; }
+    public int getOperationNumber() { return 1104; }
     public Response createDefaultResponse() { return new xtreemfs_service_registerResponse(); }
 
 
-    private Service service;
+    private Service service;    
 
 }
 

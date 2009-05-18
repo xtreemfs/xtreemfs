@@ -32,8 +32,8 @@ public class Volume implements org.xtreemfs.interfaces.utils.Serializable
     public String getOwner_group_id() { return owner_group_id; }
     public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1044; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
 
     public String toString()
     {
@@ -130,7 +130,7 @@ public class Volume implements org.xtreemfs.interfaces.utils.Serializable
     private AccessControlPolicyType access_control_policy;
     private String id;
     private String owner_user_id;
-    private String owner_group_id;
+    private String owner_group_id;    
 
 }
 

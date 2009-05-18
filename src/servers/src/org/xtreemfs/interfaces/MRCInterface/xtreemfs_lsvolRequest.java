@@ -15,8 +15,8 @@ public class xtreemfs_lsvolRequest implements org.xtreemfs.interfaces.utils.Requ
     public xtreemfs_lsvolRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_lsvolRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolRequest"; }    
-    public long getTypeId() { return 31; }
+    public long getTag() { return 1231; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolRequest"; }
 
     public String toString()
     {
@@ -63,9 +63,9 @@ return to_hash_map;
     }
 
     // Request
-    public int getOperationNumber() { return 31; }
+    public int getOperationNumber() { return 1231; }
     public Response createDefaultResponse() { return new xtreemfs_lsvolResponse(); }
-
+    
 
 }
 

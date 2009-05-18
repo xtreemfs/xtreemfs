@@ -21,8 +21,8 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public StringSet getFile_ids() { return file_ids; }
     public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }    
-    public long getTypeId() { return 23; }
+    public long getTag() { return 1223; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public int getOperationNumber() { return 23; }
+    public int getOperationNumber() { return 1223; }
     public Response createDefaultResponse() { return new xtreemfs_check_file_existsResponse(); }
 
 
     private String volume_id;
-    private StringSet file_ids;
+    private StringSet file_ids;    
 
 }
 

@@ -15,8 +15,8 @@ public class xtreemfs_shutdownResponse implements org.xtreemfs.interfaces.utils.
     public xtreemfs_shutdownResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_shutdownResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_shutdownResponse"; }    
-    public long getTypeId() { return 50; }
+    public long getTag() { return 1250; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_shutdownResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 50; }
-
+    public int getOperationNumber() { return 1250; }
+    
 
 }
 

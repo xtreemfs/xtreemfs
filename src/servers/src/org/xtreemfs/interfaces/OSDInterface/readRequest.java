@@ -29,8 +29,8 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     public int getLength() { return length; }
     public void setLength( int length ) { this.length = length; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }    
-    public long getTypeId() { return 1; }
+    public long getTag() { return 1301; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }
 
     public String toString()
     {
@@ -108,7 +108,7 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1; }
+    public int getOperationNumber() { return 1301; }
     public Response createDefaultResponse() { return new readResponse(); }
 
 
@@ -117,7 +117,7 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     private long object_number;
     private long object_version;
     private int offset;
-    private int length;
+    private int length;    
 
 }
 

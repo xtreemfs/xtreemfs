@@ -19,8 +19,8 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }    
-    public long getTypeId() { return 12; }
+    public long getTag() { return 1212; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 12; }
+    public int getOperationNumber() { return 1212; }
 
 
-    private DirectoryEntrySet directory_entries;
+    private DirectoryEntrySet directory_entries;    
 
 }
 

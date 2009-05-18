@@ -22,8 +22,8 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
     public int getWidth() { return width; }
     public void setWidth( int width ) { this.width = width; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1019; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
 
     public String toString()
     {
@@ -85,7 +85,7 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
 
     private StripingPolicyType type;
     private int stripe_size;
-    private int width;
+    private int width;    
 
 }
 

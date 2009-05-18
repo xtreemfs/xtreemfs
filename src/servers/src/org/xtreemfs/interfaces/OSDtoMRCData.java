@@ -20,12 +20,12 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
     public String getData() { return data; }
     public void setData( String data ) { this.data = data; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1013; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
 
     public String toString()
     {
-        return "OSDtoMRCData( " + Integer.toString( caching_policy ) + ", " + "\"" + data + "\"" + " )"; 
+        return "OSDtoMRCData( " + Integer.toString( caching_policy ) + ", " + "\"" + data + "\"" + " )";
     }
 
 
@@ -76,7 +76,7 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
 
 
     private int caching_policy;
-    private String data;
+    private String data;    
 
 }
 

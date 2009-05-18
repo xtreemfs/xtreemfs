@@ -23,8 +23,8 @@ public class xtreemfs_internal_truncateRequest implements org.xtreemfs.interface
     public long getNew_file_size() { return new_file_size; }
     public void setNew_file_size( long new_file_size ) { this.new_file_size = new_file_size; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateRequest"; }    
-    public long getTypeId() { return 101; }
+    public long getTag() { return 1401; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateRequest"; }
 
     public String toString()
     {
@@ -84,13 +84,13 @@ public class xtreemfs_internal_truncateRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public int getOperationNumber() { return 101; }
+    public int getOperationNumber() { return 1401; }
     public Response createDefaultResponse() { return new xtreemfs_internal_truncateResponse(); }
 
 
     private FileCredentials file_credentials;
     private String file_id;
-    private long new_file_size;
+    private long new_file_size;    
 
 }
 

@@ -19,8 +19,8 @@ public class xtreemfs_service_offlineRequest implements org.xtreemfs.interfaces.
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineRequest"; }    
-    public long getTypeId() { return 10; }
+    public long getTag() { return 1110; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_service_offlineRequest implements org.xtreemfs.interfaces.
     }
 
     // Request
-    public int getOperationNumber() { return 10; }
+    public int getOperationNumber() { return 1110; }
     public Response createDefaultResponse() { return new xtreemfs_service_offlineResponse(); }
 
 
-    private String uuid;
+    private String uuid;    
 
 }
 

@@ -19,8 +19,8 @@ public class xtreemfs_global_time_s_getResponse implements org.xtreemfs.interfac
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_global_time_s_getResponse"; }    
-    public long getTypeId() { return 8; }
+    public long getTag() { return 1108; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_global_time_s_getResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_global_time_s_getResponse implements org.xtreemfs.interfac
     }
 
     // Response
-    public int getOperationNumber() { return 8; }
+    public int getOperationNumber() { return 1108; }
 
 
-    private long returnValue;
+    private long returnValue;    
 
 }
 

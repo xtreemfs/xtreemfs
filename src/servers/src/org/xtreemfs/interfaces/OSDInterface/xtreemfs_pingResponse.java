@@ -19,8 +19,8 @@ public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Resp
     public VivaldiCoordinates getRemote_coordinates() { return remote_coordinates; }
     public void setRemote_coordinates( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }    
-    public long getTypeId() { return 1001; }
+    public long getTag() { return 2301; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Resp
     }
 
     // Response
-    public int getOperationNumber() { return 1001; }
+    public int getOperationNumber() { return 2301; }
 
 
-    private VivaldiCoordinates remote_coordinates;
+    private VivaldiCoordinates remote_coordinates;    
 
 }
 

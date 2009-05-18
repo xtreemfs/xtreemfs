@@ -28,8 +28,8 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     public ServiceDataMap getData() { return data; }
     public void setData( ServiceDataMap data ) { this.data = data; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1034; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
 
     public String toString()
     {
@@ -112,7 +112,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     private long version;
     private String name;
     private long last_updated_s;
-    private ServiceDataMap data;
+    private ServiceDataMap data;    
 
 }
 

@@ -21,8 +21,8 @@ public class xtreemfs_internal_get_file_sizeRequest implements org.xtreemfs.inte
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeRequest"; }    
-    public long getTypeId() { return 104; }
+    public long getTag() { return 1404; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class xtreemfs_internal_get_file_sizeRequest implements org.xtreemfs.inte
     }
 
     // Request
-    public int getOperationNumber() { return 104; }
+    public int getOperationNumber() { return 1404; }
     public Response createDefaultResponse() { return new xtreemfs_internal_get_file_sizeResponse(); }
 
 
     private FileCredentials file_credentials;
-    private String file_id;
+    private String file_id;    
 
 }
 

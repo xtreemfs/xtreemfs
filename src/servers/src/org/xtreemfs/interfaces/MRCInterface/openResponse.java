@@ -19,8 +19,8 @@ public class openResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }    
-    public long getTypeId() { return 11; }
+    public long getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class openResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 11; }
+    public int getOperationNumber() { return 1211; }
 
 
-    private FileCredentials file_credentials;
+    private FileCredentials file_credentials;    
 
 }
 

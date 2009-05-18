@@ -19,8 +19,8 @@ public class xtreemfs_rmvolRequest implements org.xtreemfs.interfaces.utils.Requ
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolRequest"; }    
-    public long getTypeId() { return 16; }
+    public long getTag() { return 1216; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_rmvolRequest implements org.xtreemfs.interfaces.utils.Requ
     }
 
     // Request
-    public int getOperationNumber() { return 16; }
+    public int getOperationNumber() { return 1216; }
     public Response createDefaultResponse() { return new xtreemfs_rmvolResponse(); }
 
 
-    private String volume_name;
+    private String volume_name;    
 
 }
 

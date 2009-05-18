@@ -15,8 +15,8 @@ public class xtreemfs_service_offlineResponse implements org.xtreemfs.interfaces
     public xtreemfs_service_offlineResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_service_offlineResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }    
-    public long getTypeId() { return 10; }
+    public long getTag() { return 1110; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 10; }
-
+    public int getOperationNumber() { return 1110; }
+    
 
 }
 

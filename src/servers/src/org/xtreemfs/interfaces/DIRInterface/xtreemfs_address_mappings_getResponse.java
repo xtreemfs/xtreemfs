@@ -19,8 +19,8 @@ public class xtreemfs_address_mappings_getResponse implements org.xtreemfs.inter
     public AddressMappingSet getAddress_mappings() { return address_mappings; }
     public void setAddress_mappings( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getResponse"; }    
-    public long getTypeId() { return 1; }
+    public long getTag() { return 1101; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_address_mappings_getResponse implements org.xtreemfs.inter
     }
 
     // Response
-    public int getOperationNumber() { return 1; }
+    public int getOperationNumber() { return 1101; }
 
 
-    private AddressMappingSet address_mappings;
+    private AddressMappingSet address_mappings;    
 
 }
 

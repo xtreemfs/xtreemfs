@@ -23,8 +23,8 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     public String getGroup_id() { return group_id; }
     public void setGroup_id( String group_id ) { this.group_id = group_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }    
-    public long getTypeId() { return 3; }
+    public long getTag() { return 1203; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }
 
     public String toString()
     {
@@ -84,13 +84,13 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 3; }
+    public int getOperationNumber() { return 1203; }
     public Response createDefaultResponse() { return new chownResponse(); }
 
 
     private String path;
     private String user_id;
-    private String group_id;
+    private String group_id;    
 
 }
 

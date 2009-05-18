@@ -15,8 +15,8 @@ public class rmdirResponse implements org.xtreemfs.interfaces.utils.Response
     public rmdirResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public rmdirResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }    
-    public long getTypeId() { return 15; }
+    public long getTag() { return 1215; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 15; }
-
+    public int getOperationNumber() { return 1215; }
+    
 
 }
 

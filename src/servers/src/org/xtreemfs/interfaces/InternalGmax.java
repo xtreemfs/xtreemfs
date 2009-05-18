@@ -22,12 +22,12 @@ public class InternalGmax implements org.xtreemfs.interfaces.utils.Serializable
     public long getFile_size() { return file_size; }
     public void setFile_size( long file_size ) { this.file_size = file_size; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::InternalGmax"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1050; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::InternalGmax"; }
 
     public String toString()
     {
-        return "InternalGmax( " + Long.toString( epoch ) + ", " + Long.toString( last_object_id ) + ", " + Long.toString( file_size ) + " )"; 
+        return "InternalGmax( " + Long.toString( epoch ) + ", " + Long.toString( last_object_id ) + ", " + Long.toString( file_size ) + " )";
     }
 
 
@@ -85,7 +85,7 @@ public class InternalGmax implements org.xtreemfs.interfaces.utils.Serializable
 
     private long epoch;
     private long last_object_id;
-    private long file_size;
+    private long file_size;    
 
 }
 

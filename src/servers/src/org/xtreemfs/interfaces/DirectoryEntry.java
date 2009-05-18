@@ -20,8 +20,8 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     public Stat getStbuf() { return stbuf; }
     public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1041; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }
 
     public String toString()
     {
@@ -76,7 +76,7 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
 
 
     private String name;
-    private Stat stbuf;
+    private Stat stbuf;    
 
 }
 

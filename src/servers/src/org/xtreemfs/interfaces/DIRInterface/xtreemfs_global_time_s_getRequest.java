@@ -15,8 +15,8 @@ public class xtreemfs_global_time_s_getRequest implements org.xtreemfs.interface
     public xtreemfs_global_time_s_getRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_global_time_s_getRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_global_time_s_getRequest"; }    
-    public long getTypeId() { return 8; }
+    public long getTag() { return 1108; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_global_time_s_getRequest"; }
 
     public String toString()
     {
@@ -63,9 +63,9 @@ return to_hash_map;
     }
 
     // Request
-    public int getOperationNumber() { return 8; }
+    public int getOperationNumber() { return 1108; }
     public Response createDefaultResponse() { return new xtreemfs_global_time_s_getResponse(); }
-
+    
 
 }
 

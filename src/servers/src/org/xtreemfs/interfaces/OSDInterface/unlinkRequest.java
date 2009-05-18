@@ -21,8 +21,8 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }    
-    public long getTypeId() { return 3; }
+    public long getTag() { return 1303; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 3; }
+    public int getOperationNumber() { return 1303; }
     public Response createDefaultResponse() { return new unlinkResponse(); }
 
 
     private FileCredentials file_credentials;
-    private String file_id;
+    private String file_id;    
 
 }
 

@@ -15,8 +15,8 @@ public class xtreemfs_rmvolResponse implements org.xtreemfs.interfaces.utils.Res
     public xtreemfs_rmvolResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_rmvolResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolResponse"; }    
-    public long getTypeId() { return 16; }
+    public long getTag() { return 1216; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 16; }
-
+    public int getOperationNumber() { return 1216; }
+    
 
 }
 

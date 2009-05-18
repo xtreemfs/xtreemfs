@@ -21,8 +21,8 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirRequest"; }    
-    public long getTypeId() { return 9; }
+    public long getTag() { return 1209; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 9; }
+    public int getOperationNumber() { return 1209; }
     public Response createDefaultResponse() { return new mkdirResponse(); }
 
 
     private String path;
-    private int mode;
+    private int mode;    
 
 }
 

@@ -15,8 +15,8 @@ public class xtreemfs_restore_databaseResponse implements org.xtreemfs.interface
     public xtreemfs_restore_databaseResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_restore_databaseResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseResponse"; }    
-    public long getTypeId() { return 53; }
+    public long getTag() { return 1253; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 53; }
-
+    public int getOperationNumber() { return 1253; }
+    
 
 }
 

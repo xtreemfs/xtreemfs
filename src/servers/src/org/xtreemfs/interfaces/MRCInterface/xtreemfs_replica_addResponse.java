@@ -15,8 +15,8 @@ public class xtreemfs_replica_addResponse implements org.xtreemfs.interfaces.uti
     public xtreemfs_replica_addResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_replica_addResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse"; }    
-    public long getTypeId() { return 26; }
+    public long getTag() { return 1226; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 26; }
-
+    public int getOperationNumber() { return 1226; }
+    
 
 }
 

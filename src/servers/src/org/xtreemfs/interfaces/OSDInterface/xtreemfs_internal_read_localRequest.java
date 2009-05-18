@@ -29,8 +29,8 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     public long getLength() { return length; }
     public void setLength( long length ) { this.length = length; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localRequest"; }    
-    public long getTypeId() { return 102; }
+    public long getTag() { return 1402; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localRequest"; }
 
     public String toString()
     {
@@ -108,7 +108,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     }
 
     // Request
-    public int getOperationNumber() { return 102; }
+    public int getOperationNumber() { return 1402; }
     public Response createDefaultResponse() { return new xtreemfs_internal_read_localResponse(); }
 
 
@@ -117,7 +117,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     private long object_number;
     private long object_version;
     private long offset;
-    private long length;
+    private long length;    
 
 }
 

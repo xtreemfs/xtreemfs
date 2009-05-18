@@ -19,8 +19,8 @@ public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
     public StatVFS getStbuf() { return stbuf; }
     public void setStbuf( StatVFS stbuf ) { this.stbuf = stbuf; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }    
-    public long getTypeId() { return 19; }
+    public long getTag() { return 1219; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 19; }
+    public int getOperationNumber() { return 1219; }
 
 
-    private StatVFS stbuf;
+    private StatVFS stbuf;    
 
 }
 

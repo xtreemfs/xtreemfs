@@ -28,8 +28,8 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public String getServer_signature() { return server_signature; }
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1022; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
 
     public String toString()
     {
@@ -112,7 +112,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     private long expires_s;
     private String client_identity;
     private int truncate_epoch;
-    private String server_signature;
+    private String server_signature;    
 
 }
 

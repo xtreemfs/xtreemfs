@@ -21,8 +21,8 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }    
-    public long getTypeId() { return 29; }
+    public long getTag() { return 1229; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     }
 
     // Request
-    public int getOperationNumber() { return 29; }
+    public int getOperationNumber() { return 1229; }
     public Response createDefaultResponse() { return new xtreemfs_update_file_sizeResponse(); }
 
 
     private XCap xcap;
-    private OSDWriteResponse osd_write_response;
+    private OSDWriteResponse osd_write_response;    
 
 }
 

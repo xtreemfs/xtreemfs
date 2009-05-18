@@ -21,8 +21,8 @@ public class xtreemfs_internal_get_gmaxRequest implements org.xtreemfs.interface
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxRequest"; }    
-    public long getTypeId() { return 100; }
+    public long getTag() { return 1400; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class xtreemfs_internal_get_gmaxRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public int getOperationNumber() { return 100; }
+    public int getOperationNumber() { return 1400; }
     public Response createDefaultResponse() { return new xtreemfs_internal_get_gmaxResponse(); }
 
 
     private FileCredentials file_credentials;
-    private String file_id;
+    private String file_id;    
 
 }
 

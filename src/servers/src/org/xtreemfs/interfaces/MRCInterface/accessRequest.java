@@ -21,8 +21,8 @@ public class accessRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessRequest"; }    
-    public long getTypeId() { return 1; }
+    public long getTag() { return 1201; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class accessRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1; }
+    public int getOperationNumber() { return 1201; }
     public Response createDefaultResponse() { return new accessResponse(); }
 
 
     private String path;
-    private int mode;
+    private int mode;    
 
 }
 

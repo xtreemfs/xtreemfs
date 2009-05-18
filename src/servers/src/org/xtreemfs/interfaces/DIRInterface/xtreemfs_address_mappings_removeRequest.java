@@ -19,8 +19,8 @@ public class xtreemfs_address_mappings_removeRequest implements org.xtreemfs.int
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeRequest"; }    
-    public long getTypeId() { return 3; }
+    public long getTag() { return 1103; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_address_mappings_removeRequest implements org.xtreemfs.int
     }
 
     // Request
-    public int getOperationNumber() { return 3; }
+    public int getOperationNumber() { return 1103; }
     public Response createDefaultResponse() { return new xtreemfs_address_mappings_removeResponse(); }
 
 
-    private String uuid;
+    private String uuid;    
 
 }
 

@@ -25,8 +25,8 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }    
-    public long getTypeId() { return 11; }
+    public long getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
 
     public String toString()
     {
@@ -92,14 +92,14 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 11; }
+    public int getOperationNumber() { return 1211; }
     public Response createDefaultResponse() { return new openResponse(); }
 
 
     private String path;
     private int flags;
     private int mode;
-    private int attributes;
+    private int attributes;    
 
 }
 

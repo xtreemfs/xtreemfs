@@ -15,8 +15,8 @@ public class xtreemfs_checkpointRequest implements org.xtreemfs.interfaces.utils
     public xtreemfs_checkpointRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_checkpointRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointRequest"; }    
-    public long getTypeId() { return 51; }
+    public long getTag() { return 1251; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointRequest"; }
 
     public String toString()
     {
@@ -63,9 +63,9 @@ return to_hash_map;
     }
 
     // Request
-    public int getOperationNumber() { return 51; }
+    public int getOperationNumber() { return 1251; }
     public Response createDefaultResponse() { return new xtreemfs_checkpointResponse(); }
-
+    
 
 }
 

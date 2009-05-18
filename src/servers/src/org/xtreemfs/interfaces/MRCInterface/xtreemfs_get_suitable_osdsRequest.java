@@ -19,8 +19,8 @@ public class xtreemfs_get_suitable_osdsRequest implements org.xtreemfs.interface
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest"; }    
-    public long getTypeId() { return 24; }
+    public long getTag() { return 1224; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_get_suitable_osdsRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public int getOperationNumber() { return 24; }
+    public int getOperationNumber() { return 1224; }
     public Response createDefaultResponse() { return new xtreemfs_get_suitable_osdsResponse(); }
 
 
-    private String file_id;
+    private String file_id;    
 
 }
 

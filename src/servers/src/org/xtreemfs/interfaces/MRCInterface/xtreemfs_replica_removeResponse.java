@@ -19,8 +19,8 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
     public XCap getDelete_xcap() { return delete_xcap; }
     public void setDelete_xcap( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }    
-    public long getTypeId() { return 27; }
+    public long getTag() { return 1227; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
     }
 
     // Response
-    public int getOperationNumber() { return 27; }
+    public int getOperationNumber() { return 1227; }
 
 
-    private XCap delete_xcap;
+    private XCap delete_xcap;    
 
 }
 

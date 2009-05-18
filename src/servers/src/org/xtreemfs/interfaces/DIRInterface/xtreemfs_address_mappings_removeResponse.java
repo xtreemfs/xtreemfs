@@ -15,8 +15,8 @@ public class xtreemfs_address_mappings_removeResponse implements org.xtreemfs.in
     public xtreemfs_address_mappings_removeResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_address_mappings_removeResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeResponse"; }    
-    public long getTypeId() { return 3; }
+    public long getTag() { return 1103; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 3; }
-
+    public int getOperationNumber() { return 1103; }
+    
 
 }
 

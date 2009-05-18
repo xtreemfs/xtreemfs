@@ -25,8 +25,8 @@ public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
     public long getCtime_ns() { return ctime_ns; }
     public void setCtime_ns( long ctime_ns ) { this.ctime_ns = ctime_ns; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensRequest"; }    
-    public long getTypeId() { return 22; }
+    public long getTag() { return 1222; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensRequest"; }
 
     public String toString()
     {
@@ -92,14 +92,14 @@ public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 22; }
+    public int getOperationNumber() { return 1222; }
     public Response createDefaultResponse() { return new utimensResponse(); }
 
 
     private String path;
     private long atime_ns;
     private long mtime_ns;
-    private long ctime_ns;
+    private long ctime_ns;    
 
 }
 

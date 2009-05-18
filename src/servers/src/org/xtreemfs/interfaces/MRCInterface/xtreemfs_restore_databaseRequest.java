@@ -19,8 +19,8 @@ public class xtreemfs_restore_databaseRequest implements org.xtreemfs.interfaces
     public String getDump_file() { return dump_file; }
     public void setDump_file( String dump_file ) { this.dump_file = dump_file; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseRequest"; }    
-    public long getTypeId() { return 53; }
+    public long getTag() { return 1253; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_restore_databaseRequest implements org.xtreemfs.interfaces
     }
 
     // Request
-    public int getOperationNumber() { return 53; }
+    public int getOperationNumber() { return 1253; }
     public Response createDefaultResponse() { return new xtreemfs_restore_databaseResponse(); }
 
 
-    private String dump_file;
+    private String dump_file;    
 
 }
 

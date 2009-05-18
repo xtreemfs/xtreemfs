@@ -19,8 +19,8 @@ public class xtreemfs_service_deregisterRequest implements org.xtreemfs.interfac
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_deregisterRequest"; }    
-    public long getTypeId() { return 5; }
+    public long getTag() { return 1105; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_deregisterRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_service_deregisterRequest implements org.xtreemfs.interfac
     }
 
     // Request
-    public int getOperationNumber() { return 5; }
+    public int getOperationNumber() { return 1105; }
     public Response createDefaultResponse() { return new xtreemfs_service_deregisterResponse(); }
 
 
-    private String uuid;
+    private String uuid;    
 
 }
 

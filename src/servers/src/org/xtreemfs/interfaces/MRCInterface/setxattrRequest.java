@@ -25,8 +25,8 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     public int getFlags() { return flags; }
     public void setFlags( int flags ) { this.flags = flags; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }    
-    public long getTypeId() { return 18; }
+    public long getTag() { return 1218; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
 
     public String toString()
     {
@@ -92,14 +92,14 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 18; }
+    public int getOperationNumber() { return 1218; }
     public Response createDefaultResponse() { return new setxattrResponse(); }
 
 
     private String path;
     private String name;
     private String value;
-    private int flags;
+    private int flags;    
 
 }
 

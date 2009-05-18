@@ -19,8 +19,8 @@ public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.ut
     public ReplicaSet getReplicas() { return replicas; }
     public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }    
-    public long getTypeId() { return 32; }
+    public long getTag() { return 1232; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.ut
     }
 
     // Response
-    public int getOperationNumber() { return 32; }
+    public int getOperationNumber() { return 1232; }
 
 
-    private ReplicaSet replicas;
+    private ReplicaSet replicas;    
 
 }
 

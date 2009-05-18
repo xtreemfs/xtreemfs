@@ -19,8 +19,8 @@ public class xtreemfs_internal_truncateResponse implements org.xtreemfs.interfac
     public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateResponse"; }    
-    public long getTypeId() { return 101; }
+    public long getTag() { return 1401; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_internal_truncateResponse implements org.xtreemfs.interfac
     }
 
     // Response
-    public int getOperationNumber() { return 101; }
+    public int getOperationNumber() { return 1401; }
 
 
-    private OSDWriteResponse osd_write_response;
+    private OSDWriteResponse osd_write_response;    
 
 }
 

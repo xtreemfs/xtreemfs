@@ -19,8 +19,8 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }    
-    public long getTypeId() { return 24; }
+    public long getTag() { return 1224; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
     }
 
     // Response
-    public int getOperationNumber() { return 24; }
+    public int getOperationNumber() { return 1224; }
 
 
-    private StringSet osd_uuids;
+    private StringSet osd_uuids;    
 
 }
 

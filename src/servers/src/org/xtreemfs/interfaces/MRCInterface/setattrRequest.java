@@ -21,8 +21,8 @@ public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
     public Stat getStbuf() { return stbuf; }
     public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }    
-    public long getTypeId() { return 17; }
+    public long getTag() { return 1217; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }
 
     public String toString()
     {
@@ -76,12 +76,12 @@ public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 17; }
+    public int getOperationNumber() { return 1217; }
     public Response createDefaultResponse() { return new setattrResponse(); }
 
 
     private String path;
-    private Stat stbuf;
+    private Stat stbuf;    
 
 }
 

@@ -19,8 +19,8 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentialsSet getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }    
-    public long getTypeId() { return 21; }
+    public long getTag() { return 1221; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 21; }
+    public int getOperationNumber() { return 1221; }
 
 
-    private FileCredentialsSet file_credentials;
+    private FileCredentialsSet file_credentials;    
 
 }
 

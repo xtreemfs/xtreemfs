@@ -32,8 +32,8 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public String getUri() { return uri; }
     public void setUri( String uri ) { this.uri = uri; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1030; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }
 
     public String toString()
     {
@@ -130,7 +130,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     private int port;
     private String match_network;
     private int ttl_s;
-    private String uri;
+    private String uri;    
 
 }
 

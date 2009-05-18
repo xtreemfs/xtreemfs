@@ -23,8 +23,8 @@ public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::MRCException"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::MRCException"; }
 
     public String toString()
     {
@@ -86,7 +86,7 @@ public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
 
     private int error_code;
     private String error_message;
-    private String stack_trace;
+    private String stack_trace;    
 
 }
 

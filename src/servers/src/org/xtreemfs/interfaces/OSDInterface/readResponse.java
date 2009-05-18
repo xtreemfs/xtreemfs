@@ -19,8 +19,8 @@ public class readResponse implements org.xtreemfs.interfaces.utils.Response
     public ObjectData getObject_data() { return object_data; }
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readResponse"; }    
-    public long getTypeId() { return 1; }
+    public long getTag() { return 1301; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class readResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Response
-    public int getOperationNumber() { return 1; }
+    public int getOperationNumber() { return 1301; }
 
 
-    private ObjectData object_data;
+    private ObjectData object_data;    
 
 }
 

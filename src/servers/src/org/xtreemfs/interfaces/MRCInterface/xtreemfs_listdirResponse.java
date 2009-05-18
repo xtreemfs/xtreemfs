@@ -19,8 +19,8 @@ public class xtreemfs_listdirResponse implements org.xtreemfs.interfaces.utils.R
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse"; }    
-    public long getTypeId() { return 33; }
+    public long getTag() { return 1233; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse"; }
 
     public String toString()
     {
@@ -68,10 +68,10 @@ public class xtreemfs_listdirResponse implements org.xtreemfs.interfaces.utils.R
     }
 
     // Response
-    public int getOperationNumber() { return 33; }
+    public int getOperationNumber() { return 1233; }
 
 
-    private StringSet names;
+    private StringSet names;    
 
 }
 

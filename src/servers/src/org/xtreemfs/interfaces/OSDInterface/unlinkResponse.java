@@ -15,8 +15,8 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     public unlinkResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public unlinkResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }    
-    public long getTypeId() { return 3; }
+    public long getTag() { return 1303; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 3; }
-
+    public int getOperationNumber() { return 1303; }
+    
 
 }
 

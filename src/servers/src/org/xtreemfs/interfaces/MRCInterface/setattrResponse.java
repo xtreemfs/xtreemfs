@@ -15,8 +15,8 @@ public class setattrResponse implements org.xtreemfs.interfaces.utils.Response
     public setattrResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public setattrResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrResponse"; }    
-    public long getTypeId() { return 17; }
+    public long getTag() { return 1217; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrResponse"; }
 
     public String toString()
     {
@@ -63,8 +63,8 @@ return to_hash_map;
     }
 
     // Response
-    public int getOperationNumber() { return 17; }
-
+    public int getOperationNumber() { return 1217; }
+    
 
 }
 

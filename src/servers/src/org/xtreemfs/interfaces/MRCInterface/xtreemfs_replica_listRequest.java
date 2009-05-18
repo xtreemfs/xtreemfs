@@ -19,8 +19,8 @@ public class xtreemfs_replica_listRequest implements org.xtreemfs.interfaces.uti
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }    
-    public long getTypeId() { return 32; }
+    public long getTag() { return 1232; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class xtreemfs_replica_listRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Request
-    public int getOperationNumber() { return 32; }
+    public int getOperationNumber() { return 1232; }
     public Response createDefaultResponse() { return new xtreemfs_replica_listResponse(); }
 
 
-    private String file_id;
+    private String file_id;    
 
 }
 

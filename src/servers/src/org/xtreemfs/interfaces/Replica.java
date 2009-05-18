@@ -22,8 +22,8 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1020; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
 
     public String toString()
     {
@@ -85,7 +85,7 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
 
     private StripingPolicy striping_policy;
     private int replication_flags;
-    private StringSet osd_uuids;
+    private StringSet osd_uuids;    
 
 }
 

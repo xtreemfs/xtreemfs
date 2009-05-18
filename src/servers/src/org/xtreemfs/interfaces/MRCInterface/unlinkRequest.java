@@ -19,8 +19,8 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }    
-    public long getTypeId() { return 21; }
+    public long getTag() { return 1221; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }
 
     public String toString()
     {
@@ -68,11 +68,11 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 21; }
+    public int getOperationNumber() { return 1221; }
     public Response createDefaultResponse() { return new unlinkResponse(); }
 
 
-    private String path;
+    private String path;    
 
 }
 

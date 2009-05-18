@@ -22,8 +22,8 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }    
-    public long getTypeId() { return 0; }
+    public long getTag() { return 1052; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
 
     public String toString()
     {
@@ -85,7 +85,7 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
 
     private NewFileSize new_file_size;
     private int zero_padding;
-    private ObjectData data;
+    private ObjectData data;    
 
 }
 
