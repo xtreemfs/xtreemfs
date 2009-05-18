@@ -230,6 +230,9 @@ public class Logging {
                 catMask |= 2 << cat.ordinal();
             }
             
+            if(categories.length == 0)
+                catMask = -1;
+            
             instance = new Logging(level, catMask);
         }
     }
