@@ -58,13 +58,16 @@ extern "C"
 #include <utility>
 #include <vector>
 
+#ifdef _WIN32
+#include <banned.h>
+#endif
 
 #ifdef _WIN32
 #ifndef DLLEXPORT
 #define DLLEXPORT extern "C" __declspec(dllexport)
 #endif
-#ifndef MAX_PATH
-#define MAX_PATH 260
+#ifndef PATH_MAX
+#define PATH_MAX 260
 #endif
 #define O_SYNC 010000
 #define O_ASYNC 020000
@@ -86,12 +89,6 @@ extern "C"
 #else
 #define DLLEXPORT extern "C"
 #endif
-#endif
-#define INVALID_HANDLE_VALUE -1
-#ifdef __MACH__
-#define MAX_PATH PATH_MAX
-#else
-#define MAX_PATH 512
 #endif
 #define PATH_SEPARATOR '/'
 #define PATH_SEPARATOR_STRING "/"
@@ -123,6 +120,8 @@ extern "C"
 
 #define YIELD_CUCKOO_HASH_TABLE_MAX_LG_TABLE_SIZE_IN_BINS 20
 
+// #define YIELD_DEBUG_REFERENCE_COUNTING 1
+
 #define YIELD_EXCEPTION_WHAT_BUFFER_LENGTH 128
 
 #define YIELD_FILE_PROTOTYPES \
@@ -142,13 +141,13 @@ extern "C"
 #define YIELD_INPUT_STREAM_PROTOTYPES \
   virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
 
-#define YIELD_OBJECT_PROTOTYPES( type_name, type_id )\
-    virtual const char* get_type_name() const { return #type_name; }\
-    virtual uint32_t get_type_id() const { return __type_id; }\
-    const static uint32_t __type_id = static_cast<uint32_t>( type_id ); \
-    type_name & incRef() { return YIELD::Object::incRef( *this ); }
+#define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
+    type_name & incRef() { return YIELD::Object::incRef( *this ); } \
+    const static uint32_t __tag = static_cast<uint32_t>( tag ); \
+    virtual uint32_t get_tag() const { return __tag; } \
+    const char* get_type_name() const { return #type_name; }
 
-#define YIELD_OBJECT_TYPE_ID( type ) type::__type_id
+#define YIELD_OBJECT_TAG( type ) type::__tag
 
 #define YIELD_OUTPUT_STREAM_PROTOTYPES \
   virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
@@ -203,7 +202,7 @@ void TestCaseName##Test::runTest()
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
     virtual bool chmod( const YIELD::Path& path, mode_t mode ); \
-    virtual bool chown( const YIELD::Path& path, int32_t uid, int32_t gid ); \
+    virtual bool chown( const YIELD::Path& path, int32_t tag, int32_t gid ); \
     virtual YIELD::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ); \
     virtual bool getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value ); \
     virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
@@ -278,16 +277,16 @@ namespace YIELD
   class StructuredOutputStream;
 
 
-  static inline uint32_t atomic_cas( volatile uint32_t* current_value, uint32_t new_value, uint32_t old_value )
+  static inline int32_t atomic_cas( volatile int32_t* current_value, int32_t new_value, int32_t old_value )
   {
 #if defined(_WIN32)
-    return static_cast<uint32_t>( InterlockedCompareExchange( reinterpret_cast<volatile long*>( reinterpret_cast<volatile int32_t*>( current_value ) ), static_cast<long>( new_value ), static_cast<long>( old_value ) ) );
+    return InterlockedCompareExchange( reinterpret_cast<volatile long*>( current_value ), new_value, old_value );
 #elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
     return __sync_val_compare_and_swap( current_value, old_value, new_value );
 #elif defined(__sun)
     return atomic_cas_32( current_value, old_value, new_value );
 #elif defined(__i386__) || defined(__x86_64__)
-    uint32_t prev;
+    int32_t prev;
     asm volatile(	"lock\n"
             "cmpxchgl %1,%2\n"
           : "=a" ( prev )
@@ -296,7 +295,7 @@ namespace YIELD
               );
     return prev;
 #elif defined(__ppc__)
-    uint32_t prev;
+    int32_t prev;
     asm volatile(	"					\n\
             1:	lwarx   %0,0,%2 \n\
             cmpw    0,%0,%3 \n\
@@ -315,16 +314,16 @@ namespace YIELD
 #endif
   }
 
-  static inline uint64_t atomic_cas( volatile uint64_t* current_value, uint64_t new_value, uint64_t old_value )
+  static inline int64_t atomic_cas( volatile int64_t* current_value, int64_t new_value, int64_t old_value )
   {
 #if defined(_WIN32)
-    return static_cast<uint64_t>( InterlockedCompareExchange64( reinterpret_cast<volatile long long*>( reinterpret_cast<volatile int64_t*>( current_value ) ), static_cast<long>( new_value ), static_cast<long>( old_value ) ) );
+    return InterlockedCompareExchange64( current_value, new_value, old_value );
 #elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
     return __sync_val_compare_and_swap( current_value, old_value, new_value );
 #elif defined(__sun)
     return atomic_cas_64( current_value, old_value, new_value );
 #elif defined(__x86_64__)
-    uint64_t prev;
+    int64_t prev;
     asm volatile(	"lock\n"
             "cmpxchgq %1,%2\n"
           : "=a" ( prev )
@@ -333,7 +332,7 @@ namespace YIELD
               );
     return prev;
 #elif defined(__ppc__)
-    uint64_t prev;
+    int64_t prev;
     asm volatile(	"					\n\
             1:	ldarx   %0,0,%2 \n\
             cmpd    0,%0,%3 \n\
@@ -354,38 +353,16 @@ namespace YIELD
 #endif
   }
 
-  static inline uint32_t atomic_inc( volatile uint32_t* current_value )
+  static inline int32_t atomic_dec( volatile int32_t* current_value )
   {
 #if defined(_WIN32)
-    return static_cast<uint32_t>( InterlockedIncrement( reinterpret_cast<volatile long*>( reinterpret_cast<volatile int32_t*>( current_value ) ) ) );
-#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-    return __sync_add_and_fetch( current_value, 1 );
-#elif defined(__sun)
-    return atomic_inc_32_nv( current_value );
-#else
-    uint32_t old_value, new_value;
-
-    do
-    {
-      old_value = *current_value;
-      new_value = old_value + 1;
-    }
-    while ( atomic_cas( current_value, new_value, old_value ) != old_value );
-
-    return new_value;
-#endif
-  }
-
-  static inline uint32_t atomic_dec( volatile uint32_t* current_value )
-  {
-#if defined(_WIN32)
-    return static_cast<uint32_t>( InterlockedDecrement( reinterpret_cast<volatile long*>( reinterpret_cast<volatile int32_t*>( current_value ) ) ) );
+    return InterlockedDecrement( reinterpret_cast<volatile long*>( current_value ) );
 #elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
     return __sync_sub_and_fetch( current_value, 1 );
 #elif defined(__sun)
     return atomic_dec_32_nv( current_value );
 #else
-    uint32_t old_value, new_value;
+    int32_t old_value, new_value;
 
     do
     {
@@ -401,6 +378,27 @@ namespace YIELD
 #endif
   }
 
+  static inline int32_t atomic_inc( volatile int32_t* current_value )
+  {
+#if defined(_WIN32)
+    return InterlockedIncrement( reinterpret_cast<volatile long*>( current_value ) );
+#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
+    return __sync_add_and_fetch( current_value, 1 );
+#elif defined(__sun)
+    return atomic_inc_32_nv( current_value );
+#else
+    int32_t old_value, new_value;
+
+    do
+    {
+      old_value = *current_value;
+      new_value = old_value + 1;
+    }
+    while ( atomic_cas( current_value, new_value, old_value ) != old_value );
+
+    return new_value;
+#endif
+  }
 
 #ifdef _WIN32
   static inline void DebugBreak()
@@ -414,6 +412,13 @@ namespace YIELD
   }
 #endif
 
+
+#ifndef _WIN32
+  inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
+  {
+    memcpy( dest, src, count );
+  }
+#endif
 
   static inline uint32_t string_hash( const char* str )
   {
@@ -515,13 +520,15 @@ namespace YIELD
   class OutputStream : public Stream
   {
   public:
+    const static size_t BUFFER_LEN_MAX = UINT16_MAX;
+
     virtual ~OutputStream() { }
 
     OutputStream& operator<<( const char* buffer ) { write( buffer ); return *this; }
     OutputStream& operator<<( const std::string& buffer ) { write( buffer ); return *this; }
     OutputStream& operator<<( const struct iovec& buffer ) { write( buffer ); return *this; }
 
-    virtual Stream::Status write( const char* buffer, size_t* out_bytes_written = 0 ) { return write( buffer, std::strlen( buffer ), out_bytes_written ); }
+    virtual Stream::Status write( const char* buffer, size_t* out_bytes_written = 0 ) { return write( buffer, strnlen( buffer, BUFFER_LEN_MAX ), out_bytes_written ); }
     virtual Stream::Status write( const std::string& buffer, size_t* out_bytes_written = 0 ) { return write( buffer.c_str(), buffer.size(), out_bytes_written ); }
     virtual Stream::Status write( const void* buffer, size_t buffer_len, size_t* out_bytes_written = 0 ) { struct iovec buffers; buffers.iov_base = const_cast<void*>( buffer ); buffers.iov_len = static_cast<size_t>( buffer_len ); return writev( &buffers, 1, out_bytes_written ); }
     virtual Stream::Status write( const struct iovec& buffer, size_t* out_bytes_written = 0 ) { return writev( &buffer, 1, out_bytes_written ); }
@@ -537,8 +544,13 @@ namespace YIELD
 
     static inline void decRef( Object& object )
     {
+#ifdef YIELD_DEBUG_REFERENCE_COUNTING
+      if ( atomic_dec( &object.refcnt ) < 0 )
+        DebugBreak();
+#else
       if ( atomic_dec( &object.refcnt ) == 0 )
         delete &object;
+#endif
     }
 
     static inline void decRef( Object* object )
@@ -568,12 +580,12 @@ namespace YIELD
       return *this;
     }
 
-    virtual Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read = 0 ) { return Stream::STREAM_STATUS_OK; }
+    virtual Stream::Status deserialize( InputStream&, size_t* = 0 ) { return Stream::STREAM_STATUS_OK; }
     virtual void deserialize( StructuredInputStream& ) { }
     virtual uint64_t get_size() const { return 0; } // For arrays
+    virtual uint32_t get_tag() const = 0;
     virtual const char* get_type_name() const = 0;
-    virtual uint32_t get_type_id() const = 0;
-    virtual Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 ) { return Stream::STREAM_STATUS_OK; }
+    virtual Stream::Status serialize( OutputStream&, size_t* = 0 ) { return Stream::STREAM_STATUS_OK; }
     virtual void serialize( StructuredOutputStream& ) { }
 
   protected:
@@ -581,7 +593,7 @@ namespace YIELD
     { }
 
   private:
-    volatile uint32_t refcnt;
+    volatile int32_t refcnt;
   };
 
 
@@ -591,15 +603,16 @@ namespace YIELD
     class Declaration
     {
     public:
-      Declaration() : type_name( 0 ), identifier( 0 ), uid( 0 ) { }
-      Declaration( const char* identifier ) : type_name( 0 ), identifier( identifier ), uid( 0 ) { }
-      Declaration( const char* identifier, uint32_t uid ) : type_name( 0 ), identifier( identifier ), uid( uid ) { }
-      Declaration( const char* type_name, const char* identifier ) : type_name( type_name ), identifier( identifier ), uid( 0 ) { }
-      Declaration( const char* type_name, const char* identifier, uint32_t uid ) : type_name( type_name ), identifier( identifier ), uid( uid ) { }
+      Declaration() : identifier( 0 ), tag( 0 ) { }
+      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
+      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
 
-      const char* type_name;
+      const char* get_identifier() const { return identifier; }
+      uint32_t get_tag() const { return tag; }
+
+    private:
       const char* identifier;
-      uint32_t uid;
+      uint32_t tag;
     };
   };
 
@@ -618,7 +631,7 @@ namespace YIELD
     virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
     virtual int64_t readInt64( const Declaration& decl ) = 0;
     virtual Object* readMap( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual void* readPointer( const Declaration& decl ) { return 0; }
+    virtual void* readPointer( const Declaration& ) { return 0; }
     virtual Object* readSequence( const Declaration& decl, Object* value = NULL ) = 0;
     virtual void readString( const Declaration& decl, std::string& value ) = 0;
     virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
@@ -645,7 +658,7 @@ namespace YIELD
     virtual void writePointer( const Declaration&, void* ) { }
     virtual void writeSequence( const Declaration& decl, YIELD::Object& value ) = 0;
     virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, std::strlen( value ) ); }
+    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, OutputStream::BUFFER_LEN_MAX ) ); }
     virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
     virtual void writeStruct( const Declaration& decl, YIELD::Object& value ) = 0;
     virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
@@ -800,6 +813,8 @@ namespace YIELD
       delete [] tables;
     }
 
+    CuckooHashTable<ValueType>& operator=( const CuckooHashTable<ValueType>& ) { return *this; }
+
     void clear()
     {
       std::memset( tables, 0, sizeof( Record ) * table_size_in_records * table_count );
@@ -876,6 +891,13 @@ namespace YIELD
     public:
       iterator( CuckooHashTable<ValueType>& cht, size_t record_i ) : cht( cht ), record_i( record_i ) { }
       iterator( const iterator& other ) : cht( other.cht ), record_i( other.record_i ) { }
+
+      iterator& operator=( const iterator& other ) 
+      { 
+        if ( &cht == &other.cht )
+          this->record_i = other.record_i;
+        return *this;        
+      }
 
       iterator& operator++()
       {
@@ -1089,7 +1111,7 @@ namespace YIELD
     }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( File, 2526501UL );
+    YIELD_OBJECT_PROTOTYPES( File, 1 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -1106,7 +1128,7 @@ namespace YIELD
     virtual ~File() { close(); }
 
   private:
-    File( const File& other )  // Prevent copying
+    File( const File& )  // Prevent copying
     {
       DebugBreak();
     }
@@ -1142,9 +1164,9 @@ namespace YIELD
       public:
         Entry( const unsigned char* data_p )
         {
-          memcpy( &key_len, data_p, sizeof( key_len ) ); data_p += sizeof( key_len );
+          memcpy_s( &key_len, sizeof( key_len ), data_p, sizeof( key_len ) ); data_p += sizeof( key_len );
           key = data_p; data_p += key_len;
-          memcpy( &value, data_p, sizeof( value ) );
+          memcpy_s( &value, sizeof( value ), data_p, sizeof( value ) );
         }
 
         Entry( const unsigned char* key, uint16_t key_len )
@@ -1173,9 +1195,9 @@ namespace YIELD
 
         unsigned char* serialize( unsigned char* data_p ) const
         {
-          std::memcpy( data_p, &key_len, sizeof( key_len ) ); data_p += sizeof( key_len );
-          std::memcpy( data_p, key, key_len ); data_p += key_len;
-          std::memcpy( data_p, &value, sizeof( value ) ); data_p += sizeof( value );
+          memcpy_s( data_p, sizeof( key_len ), &key_len, sizeof( key_len ) ); data_p += sizeof( key_len );
+          memcpy_s( data_p, key_len, key, key_len ); data_p += key_len;
+          memcpy_s( data_p, sizeof( value ), &value, sizeof( value ) ); data_p += sizeof( value );
           return data_p;
         }
 
@@ -1299,7 +1321,7 @@ namespace YIELD
             }
             else
             {
-              std::memcpy( new_data_p, data_p, test_entry.size() );
+              memcpy_s( new_data_p, test_entry.size(), data_p, test_entry.size() );
               new_data_p += test_entry.size();
             }
 
@@ -1378,7 +1400,7 @@ namespace YIELD
             Entry test_entry( data_p );
             if ( test_entry == insert_entry )
             {
-              memcpy( data_p + test_entry.get_value_offset(), &value, sizeof( value ) );
+              memcpy_s( data_p + test_entry.get_value_offset(), sizeof( value ), &value, sizeof( value ) );
               return;
             }
             else
@@ -1386,7 +1408,7 @@ namespace YIELD
           }
 
           unsigned char *new_data = new unsigned char[data_len + insert_entry.size()], *new_data_p = new_data;
-          memcpy( new_data_p, data, data_len );
+          memcpy_s( new_data_p, data_len, data, data_len );
           new_data_p += data_len;
           delete [] data;
           new_data_p = insert_entry.serialize( new_data_p );
@@ -1449,7 +1471,7 @@ namespace YIELD
     inline bool empty() const { return size() == 0; }
 
     inline void erase( const std::string& key ) { erase( key.c_str(), key.size() ); }
-    inline void erase( const unsigned char* key ) { erase( key, std::strlen( key ) ); }
+    inline void erase( const unsigned char* key ) { erase( key, strnlen( key, UINT16_MAX ) ); }
     inline void erase( const char* key, size_t key_len ) { erase( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
     ValueType erase( const unsigned char* key, uint16_t key_len )
     {
@@ -1458,7 +1480,7 @@ namespace YIELD
     }
 
     inline ValueType find( const std::string& key ) const { return find( key.c_str(), key.size() ); }
-    inline ValueType find( const char* key ) const { return find( key, std::strlen( key ) ); }
+    inline ValueType find( const char* key ) const { return find( key, strnlen( key, UINT16_MAX ) ); }
     inline ValueType find( const char* key, size_t key_len ) const { return find( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
     ValueType find( const unsigned char* key, uint16_t key_len ) const
     {
@@ -1467,7 +1489,7 @@ namespace YIELD
     }
 
     inline void insert( const std::string& key, ValueType value ) { insert( key.c_str(), key.size(), value ); }
-    inline void insert( const char* key, ValueType value ) { insert( key, std::strlen( key ), value ); }
+    inline void insert( const char* key, ValueType value ) { insert( key, strnlen( key, UINT16_MAX ), value ); }
     inline void insert( const char* key, size_t key_len, ValueType value ) { insert( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ), value ); }
     void insert( const unsigned char* key, uint16_t key_len, ValueType value )
     {
@@ -1502,27 +1524,27 @@ namespace YIELD
     inline bool empty() const { return size() == 0; }
 
     inline ValueType erase( const std::string& key ) { return erase( key.c_str(), key.size() ); }
-    inline ValueType erase( const unsigned char* key ) { return erase( key, std::strlen( key ) ); }
+    inline ValueType erase( const unsigned char* key ) { return erase( key, strnlen( key, UINT16_MAX ) ); }
     inline ValueType erase( const char* key, size_t key_len ) { return erase( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
     inline ValueType erase( const unsigned char* key, uint16_t key_len ) { return root_bucket.erase( key, key_len ); }
 
     inline void erase_by_prefix( const std::string& key_prefix, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( key_prefix.c_str(), key_prefix.size(), out_values );  }
-    inline void erase_by_prefix( const char* key_prefix, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( key_prefix, std::strlen( key_prefix ), out_values );  }
+    inline void erase_by_prefix( const char* key_prefix, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( key_prefix, strnlen( key_prefix, UINT16_MAX ), out_values );  }
     inline void erase_by_prefix( const char* key_prefix, size_t key_prefix_len, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( reinterpret_cast<const unsigned char*>( key_prefix ), static_cast<uint16_t>( key_prefix_len ), out_values );  }
     inline void erase_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>* out_values = NULL ) { root_bucket.erase_by_prefix( key_prefix, key_prefix_len, out_values ); }
 
     inline ValueType find( const std::string& key ) const { return find( key.c_str(), key.size() ); }
-    inline ValueType find( const char* key ) const { return find( key, std::strlen( key ) ); }
+    inline ValueType find( const char* key ) const { return find( key, strnlen( key, UINT16_MAX ) ); }
     inline ValueType find( const char* key, size_t key_len ) const { return find( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
     inline ValueType find( const unsigned char* key, uint16_t key_len ) const { return root_bucket.find( key, key_len ); }
 
     inline void find_by_prefix( const std::string& key_prefix, std::vector<ValueType>& out_values ) const { find_by_prefix( key_prefix.c_str(), key_prefix.size(), out_values );  }
-    inline void find_by_prefix( const char* key_prefix, std::vector<ValueType>& out_values ) const { find_by_prefix( key_prefix, std::strlen( key_prefix ), out_values );  }
+    inline void find_by_prefix( const char* key_prefix, std::vector<ValueType>& out_values ) const { find_by_prefix( key_prefix, strnlen( key_prefix, UINT16_MAX ), out_values );  }
     inline void find_by_prefix( const char* key_prefix, size_t key_prefix_len, std::vector<ValueType>& out_values ) const { find_by_prefix( reinterpret_cast<const unsigned char*>( key_prefix ), static_cast<uint16_t>( key_prefix_len ), out_values );  }
     inline void find_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>& out_values ) const { root_bucket.find_by_prefix( key_prefix, key_prefix_len, out_values ); }
 
     inline void insert( const std::string& key, ValueType value ) { insert( key.c_str(), key.size(), value ); }
-    inline void insert( const char* key, ValueType value ) { insert( key, std::strlen( key ), value ); }
+    inline void insert( const char* key, ValueType value ) { insert( key, strnlen( key, UINT16_MAX ), value ); }
     inline void insert( const char* key, size_t key_len, ValueType value ) { insert( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ), value ); }
     inline void insert( const unsigned char* key, uint16_t key_len, ValueType value ) { root_bucket.insert( key, key_len, value ); }
 
@@ -1894,7 +1916,7 @@ namespace YIELD
 
     inline void write( const char* str, Level level )
     {
-      write( str, std::strlen( str ), level );
+      write( str, strnlen( str, OutputStream::BUFFER_LEN_MAX ), level );
     }
 
     inline void write( const std::string& str, Level level )
@@ -1926,7 +1948,7 @@ namespace YIELD
     }
     
     // Object
-    YIELD_OBJECT_PROTOTYPES( Log, 83700UL );
+    YIELD_OBJECT_PROTOTYPES( Log, 2 );
 
     // OutputStream
     YIELD_OUTPUT_STREAM_PROTOTYPES;
@@ -2033,7 +2055,7 @@ namespace YIELD
     virtual bool sync( void* ptr, size_t length );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( MemoryMappedFile, 2901594654UL );
+    YIELD_OBJECT_PROTOTYPES( MemoryMappedFile, 3 );
 
   protected:
     MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags );
@@ -2065,7 +2087,11 @@ namespace YIELD
     void release();
 
   private:
-    void* os_handle;
+#ifdef _WIN32
+    void* hMutex;
+#else
+    pthread_mutex_t pthread_mutex;
+#endif
   };
 
 
@@ -2075,7 +2101,7 @@ namespace YIELD
     static auto_Object<NamedPipe> open( const Path& path, uint32_t flags = O_RDWR, mode_t mode = File::DEFAULT_MODE );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( NamedPipe, 721034682UL );
+    YIELD_OBJECT_PROTOTYPES( NamedPipe, 4 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -2119,7 +2145,7 @@ namespace YIELD
       element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
 //			if ( ( uint_ptr )element & PTR_HIGH_BIT ) DebugBreak();
 
-      uint32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
+      int32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
       ElementType try_element;
 
       for ( ;; )
@@ -2181,7 +2207,7 @@ namespace YIELD
 
     ElementType try_dequeue()
     {
-      uint32_t copied_head, try_pos;
+      int32_t copied_head, try_pos;
       ElementType try_element;
 
       for ( ;; )
@@ -2228,14 +2254,14 @@ namespace YIELD
 
   private:
     volatile ElementType elements[QueueLength+2]; // extra 2 for sentinels
-    volatile uint32_t head, tail;
+    volatile int32_t head, tail;
 
 #if defined(__LLP64__) || defined(__LP64__)
-    typedef uint64_t uint_ptr;
+    typedef int64_t uint_ptr;
     const static uint_ptr PTR_HIGH_BIT = 0x8000000000000000;
     const static uint_ptr PTR_LOW_BITS = 0x7fffffffffffffff;
 #else
-    typedef uint32_t uint_ptr;
+    typedef int32_t uint_ptr;
     const static uint_ptr PTR_HIGH_BIT = 0x80000000;
     const static uint_ptr PTR_LOW_BITS = 0x7fffffff;
 #endif
@@ -2247,7 +2273,7 @@ namespace YIELD
   public:
     inline bool acquire() { return true; }
     inline bool try_acquire() { return true; }
-    inline bool timed_acquire( uint64_t timeout_ns ) { return true; }
+    inline bool timed_acquire( uint64_t ) { return true; }
     inline void release() { }
   };
 
@@ -2292,7 +2318,7 @@ namespace YIELD
     size_t size() const { return host_charset_path.size(); }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Path, 2836334UL );
+    YIELD_OBJECT_PROTOTYPES( Path, 5 );
 
   private:
     void init_from_host_charset_path();
@@ -2329,7 +2355,7 @@ namespace YIELD
 #endif
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Pipe, 2745700UL );
+    YIELD_OBJECT_PROTOTYPES( Pipe, 6 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -2357,6 +2383,7 @@ namespace YIELD
   {
   public:
     PrettyPrintOutputStream( OutputStream& underlying_output_stream );
+    PrettyPrintOutputStream& operator=( const PrettyPrintOutputStream& ) { return *this; }
 
     // StructuredOutputStream
     YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
@@ -2378,7 +2405,7 @@ namespace YIELD
     int wait(); // Calls waitpid() and suspends the calling process until the child exits, use carefully
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Process, 795016765UL );
+    YIELD_OBJECT_PROTOTYPES( Process, 7 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -2420,10 +2447,10 @@ namespace YIELD
     void set( uint16_t processor_i );    
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ProcessorSet, 1098491984UL );
+    YIELD_OBJECT_PROTOTYPES( ProcessorSet, 8 );
 
   private:
-    ProcessorSet( const ProcessorSet& other ) { DebugBreak(); } // Prevent copying
+    ProcessorSet( const ProcessorSet& ) { DebugBreak(); } // Prevent copying
     ~ProcessorSet();
 
     friend class Process;
@@ -2462,7 +2489,7 @@ namespace YIELD
       operator double() const { return value; }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( RRD::Record, 1466212275UL );
+      YIELD_OBJECT_PROTOTYPES( RRD::Record, 9 );
       Stream::Status deserialize( InputStream& input_stream );
       Stream::Status serialize( OutputStream& output_stream );
 
@@ -2480,7 +2507,7 @@ namespace YIELD
     void fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( RRD, 93045UL );
+    YIELD_OBJECT_PROTOTYPES( RRD, 10 );
 
   private:
     RRD( const Path& current_file_path, auto_Object<File> current_file );
@@ -2588,7 +2615,7 @@ namespace YIELD
     void* getFunction( const char* function_name ); // Returns NULL instead of throwing exceptions
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SharedLibrary, 3903597476UL );
+    YIELD_OBJECT_PROTOTYPES( SharedLibrary, 11 );
 
   private:
     SharedLibrary();
@@ -2611,14 +2638,14 @@ namespace YIELD
     Stat( const WIN32_FIND_DATA& );
     Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes ); // For doing FILETIME -> Unix conversions in Dokan; deduces mode from dwFileAttributes
 #else
-    Stat( mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
+    Stat( mode_t mode, nlink_t nlink, uid_t tag, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
 #endif
     Stat( const struct stat& stbuf );
 
     mode_t get_mode() const { return mode; }
 #ifndef _WIN32
     nlink_t get_nlink() const { return nlink; }
-    uid_t get_uid() const { return uid; }
+    uid_t get_uid() const { return tag; }
     gid_t get_gid() const { return gid; }
 #endif
     uint64_t get_size() const { return size; }
@@ -2644,7 +2671,7 @@ namespace YIELD
 #endif
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Stat, 2834429UL );
+    YIELD_OBJECT_PROTOTYPES( Stat, 12 );
 
   protected:
     virtual ~Stat() { }
@@ -2656,7 +2683,7 @@ namespace YIELD
     mode_t mode;
 #ifndef _WIN32
     nlink_t nlink;
-    uid_t uid;
+    uid_t tag;
     gid_t gid;
 #endif
     uint64_t size;
@@ -2666,10 +2693,7 @@ namespace YIELD
 #endif
 
   private:
-    Stat( const Stat& other ) // Prevent copying
-    {
-      DebugBreak();
-    }
+    Stat( const Stat& ) { DebugBreak(); } // Prevent copying
   };
 
 
@@ -2806,7 +2830,7 @@ namespace YIELD
     }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( String, 3216070200UL );
+    YIELD_OBJECT_PROTOTYPES( String, 13 );
     Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read );
     Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 );
 
@@ -2849,7 +2873,7 @@ namespace YIELD
     virtual void run() = 0;
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Thread, 2953902784UL );
+    YIELD_OBJECT_PROTOTYPES( Thread, 14 );
 
   protected:
     virtual ~Thread();
@@ -2877,7 +2901,7 @@ namespace YIELD
   class TestSuite : public std::vector<TestCase*>
   {
   public:
-    TestSuite( const char* test_suite_name = NULL )
+    TestSuite( const char* = NULL )
     { }
 
     virtual ~TestSuite();
@@ -2965,7 +2989,7 @@ namespace YIELD
     virtual bool touch( const YIELD::Path& path, mode_t mode );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Volume, 3106595381UL );
+    YIELD_OBJECT_PROTOTYPES( Volume, 15 );
 
   protected:
     virtual ~Volume() { }
@@ -2976,6 +3000,7 @@ namespace YIELD
   {
   public:
     XDRInputStream( InputStream& underlying_input_stream );
+    XDRInputStream& operator=( const XDRInputStream& ) { return *this; }
 
     // StructuredInputStream
     YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES;
@@ -2984,10 +3009,6 @@ namespace YIELD
 
   protected:
     InputStream& underlying_input_stream;
-
-    virtual void beforeRead( const Declaration& ) { }
-    int32_t _readInt32();
-    int64_t _readInt64();
   };
 
 
@@ -2995,6 +3016,7 @@ namespace YIELD
   {
   public:
     XDROutputStream( OutputStream& underlying_output_stream, bool in_map = false );
+    XDROutputStream& operator=( const XDROutputStream& ) { return *this; }
 
     // StructuredOutputstream
     YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
@@ -3005,8 +3027,6 @@ namespace YIELD
     OutputStream& underlying_output_stream;
 
     virtual void beforeWrite( const Declaration& decl );
-    void _writeInt32( int32_t value );
-    void _writeInt64( int64_t value );
 
   private:
     bool in_map;

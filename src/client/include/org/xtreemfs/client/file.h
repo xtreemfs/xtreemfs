@@ -6,6 +6,7 @@
 
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy.h"
+#include "org/xtreemfs/interfaces/mrc_osd_types.h"
 
 
 namespace org
@@ -20,6 +21,8 @@ namespace org
       class File : public YIELD::File
       {
       public:
+        File& operator=( const File& ) { return *this; }
+
         YIELD_FILE_PROTOTYPES;
 
       private:

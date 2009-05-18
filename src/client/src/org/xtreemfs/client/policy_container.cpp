@@ -4,8 +4,6 @@
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
 
-#include "org/xtreemfs/interfaces/exceptions.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #include <lm.h>
@@ -33,6 +31,8 @@ namespace org
         PolicyContainerlistdirCallback( PolicyContainer& policy_container, const YIELD::Path& root_dir_path )
           : policy_container( policy_container ), root_dir_path( root_dir_path )
         { }
+
+        PolicyContainerlistdirCallback& operator=( const PolicyContainerlistdirCallback& ) { return *this; }
 
         // YIELD::Volume::listdirCallback
         bool operator()( const YIELD::Path& name )
@@ -120,14 +120,14 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
     {
       if ( user_info !=NULL )
       {
-        int username_wcslen = static_cast<int>( wcslen( user_info->wkui1_username ) );
+        int username_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_username, UINT16_MAX ) );
         int username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
         char* user_id = new char[username_strlen+1];
         WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, user_id, username_strlen+1, 0, NULL );
         out_user_credentials.set_user_id( user_id, username_strlen );
         delete [] user_id;
 
-        int logon_domain_wcslen = static_cast<int>( wcslen( user_info->wkui1_logon_domain ) );
+        int logon_domain_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_logon_domain, UINT16_MAX ) );
         int logon_domain_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, NULL, 0, 0, NULL );
         char* group_id = new char[logon_domain_strlen+1];
         WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, group_id, logon_domain_strlen+1, 0, NULL );

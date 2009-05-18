@@ -5,7 +5,6 @@
 #define ORG_XTREEMFS_CLIENT_DIR_PROXY_H
 
 #include "org/xtreemfs/client/proxy_exception_response.h"
-#include "org/xtreemfs/interfaces/dir_interface.h"
 
 #include <map>
 #include <string>
@@ -15,6 +14,12 @@ namespace org
 {
   namespace xtreemfs
   {
+    namespace interfaces
+    {
+      class DIRInterface;
+    };
+
+
     namespace client
     {
       class PolicyContainer;
@@ -24,9 +29,9 @@ namespace org
       {
       public:
         template <class StageGroupType>
-        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
+        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::URI& uri, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
         {
-          return YIELD::Client::create<DIRProxy, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+          return YIELD::Client::create<DIRProxy, StageGroupType>( stage_group, log, operation_timeout, uri, reconnect_tries_max, socket_factory );
         }
 
         YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
@@ -38,11 +43,10 @@ namespace org
       private:
         friend class YIELD::Client;
 
-        DIRProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
+        DIRProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~DIRProxy();
 
 
-        org::xtreemfs::interfaces::DIRInterface dir_interface;
         PolicyContainer* policies;
 
 
@@ -73,7 +77,7 @@ namespace org
 
 
         // YIELD::Client
-        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<> body );
+        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
     };
   };

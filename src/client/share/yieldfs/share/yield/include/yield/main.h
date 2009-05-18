@@ -15,7 +15,14 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#endif
 #include "SimpleOpt.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 #if defined(_WIN32)
 #include <winsock2.h>
@@ -41,17 +48,18 @@ namespace YIELD
     {
       std::vector<char*> argvv;
 
-      char argv0[MAX_PATH];
-      GetModuleFileNameA( NULL, argv0, MAX_PATH );
+      char argv0[PATH_MAX];
+      GetModuleFileNameA( NULL, argv0, PATH_MAX );
       argvv.push_back( argv0 );
 
       const char *start_args_p = args, *args_p = start_args_p;
       while ( *args_p != 0 )
       {
         while ( *args_p != ' ' && *args_p != 0 ) args_p++;
-        char* arg = new char[ ( args_p - start_args_p + 1 ) ];
-        memcpy( arg, start_args_p, args_p - start_args_p );
-        arg[args_p-start_args_p] = 0;
+        size_t arg_len = args_p - start_args_p;
+        char* arg = new char[arg_len+1];
+        memcpy_s( arg, arg_len, start_args_p, arg_len );
+        arg[arg_len] = 0;
         argvv.push_back( arg );
         if ( *args_p != 0 )
         {
@@ -155,15 +163,15 @@ namespace YIELD
         std::vector<char*> argvv;
 
         // Replace argv[0] with the absolute path to the executable
-        char argv0[MAX_PATH];
+        char argv0[PATH_MAX];
 #if defined(_WIN32)
-        if ( GetModuleFileNameA( NULL, argv0, MAX_PATH ) )
+        if ( GetModuleFileNameA( NULL, argv0, PATH_MAX ) )
           argvv.push_back( argv0 );
         else
           argvv.push_back( argv[0] );
 #elif defined(__linux__)
         int ret;
-        if ( ( ret = readlink( "/proc/self/exe", argv0, MAX_PATH ) ) != -1 )
+        if ( ( ret = readlink( "/proc/self/exe", argv0, PATH_MAX ) ) != -1 )
         {
           argv0[ret] = 0;
           argvv.push_back( argv0 );
@@ -171,20 +179,20 @@ namespace YIELD
         else
           argvv.push_back( argv[0] );
 #elif defined(__MACH__)
-        uint32_t bufsize = MAX_PATH;
+        uint32_t bufsize = PATH_MAX;
         if ( _NSGetExecutablePath( argv0, &bufsize ) == 0 )
         {
           argv0[bufsize] = 0;
 
-          char linked_argv0[MAX_PATH]; int ret;
-          if ( ( ret = readlink( argv0, linked_argv0, MAX_PATH ) ) != -1 )
+          char linked_argv0[PATH_MAX]; int ret;
+          if ( ( ret = readlink( argv0, linked_argv0, PATH_MAX ) ) != -1 )
           {
             linked_argv0[ret] = 0;
             argvv.push_back( linked_argv0 );
           }
           else
           {
-            char absolute_argv0[MAX_PATH];
+            char absolute_argv0[PATH_MAX];
             if ( realpath( argv0, absolute_argv0 ) != NULL )
               argvv.push_back( absolute_argv0 );
             else
@@ -274,8 +282,8 @@ namespace YIELD
 
     // Methods for subclasses to override
     virtual int _main( int argc, char** argv ) = 0;
-    virtual void parseOption( int id, char* sep_arg ) { }
-    virtual void parseFiles( int file_count, char** files ) { }
+    virtual void parseOption( int, char* ) { }
+    virtual void parseFiles( int, char** ) { }
 
   private:
     const char *program_name, *program_description, *files_usage;

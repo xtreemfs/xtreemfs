@@ -1,4 +1,4 @@
-// Revision: 1437
+// Revision: 1451
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -12,10 +12,10 @@ using namespace YIELD;
 
 void EventHandler::handleUnknownEvent( Event& ev )
 {
-  switch ( ev.get_type_id() )
+  switch ( ev.get_tag() )
   {
-    case YIELD_OBJECT_TYPE_ID( StageStartupEvent ):
-    case YIELD_OBJECT_TYPE_ID( StageShutdownEvent ): Object::decRef( ev ); break;
+    case YIELD_OBJECT_TAG( StageStartupEvent ):
+    case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); break;
 
     default:
     {
@@ -51,23 +51,23 @@ namespace YIELD
   class SEDAStageGroupThread : public StageGroupThread
   {
   public:
-    SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, Stage& stage )
+    SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, auto_Object<Stage> stage )
       : StageGroupThread( stage_group_name, limit_logical_processor_set, log ), stage( stage )
     { }
-    Stage& get_stage() { return stage; }
+    auto_Object<Stage> get_stage() { return stage; }
     // Object
-    YIELD_OBJECT_PROTOTYPES( SEDAStageGroupThread, 583423745UL );
+    YIELD_OBJECT_PROTOTYPES( SEDAStageGroupThread, 0 );
     // Thread
     void run()
     {
-      StageGroupThread::before_run( stage.get_stage_name() );
-      stage.get_event_handler().handleEvent( *( new StageStartupEvent( stage ) ) );
+      StageGroupThread::before_run( stage->get_stage_name() );
+      stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
       while ( shouldRun() )
-        visitStage( stage );
+        visitStage( *stage );
     }
   private:
     ~SEDAStageGroupThread() { }
-    Stage& stage;
+    auto_Object<Stage> stage;
   };
 };
 SEDAStageGroup::~SEDAStageGroup()
@@ -80,7 +80,7 @@ SEDAStageGroup::~SEDAStageGroup()
     {
       // Keep sending thread_i StageShutdownEvents until it stops
       // thread_i may not actually be the thread that processes the event if there are multiple threads dequeueing, which is why we have to keep trying until thread_i stops.
-      ( *thread_i )->get_stage().send( stage_shutdown_event->incRef() );
+      ( *thread_i )->get_stage()->send( stage_shutdown_event->incRef() );
       if ( ( *thread_i )->is_running() )
         Thread::sleep( 50 * NS_IN_MS );
       else

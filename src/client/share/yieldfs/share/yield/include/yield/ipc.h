@@ -45,9 +45,9 @@ struct fd_set;
 #include "zlib.h"
 #endif
 
-struct in6_addr;
+struct addrinfo;
+struct sockaddr;
 struct sockaddr_storage;
-struct sockaddr_in6;
 struct UriUriStructA;
 struct yajl_gen_t;
 typedef struct yajl_gen_t* yajl_gen;
@@ -59,13 +59,9 @@ typedef struct yajl_gen_t* yajl_gen;
 
 namespace YIELD
 {
+  class FDEventQueue;
   class FDAndInternalEventQueue;
   class ONCRPCRecordInputStream;
-#ifdef _WIN32
-  typedef unsigned int socket_t;
-#else
-  typedef int socket_t;
-#endif
   class URI;
 
 
@@ -76,38 +72,40 @@ namespace YIELD
     SocketAddress( uint16_t port, bool loopback = true ); // port is in host byte order, loopback = false => INADDR_ANY
     SocketAddress( const char* hostname );
     SocketAddress( const char* hostname, uint16_t port );
-    SocketAddress( const URI& ); // URI ports should obviously be in host byte order
+    SocketAddress( const URI& ); // URI ports should obviously be in host byte order    
     SocketAddress( const struct sockaddr_storage& );
-    SocketAddress( const SocketAddress& );
-    ~SocketAddress();
 
-    int get_family() const;
+#ifdef _WIN32
+    bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, int32_t& out_sockaddrlen );
+#else
+    bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, uint32_t& out_sockaddrlen );
+#endif
     bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
     bool getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric = true ) const;
     uint16_t get_port() const;
-    operator struct sockaddr_storage() const;
-    bool operator==( const SocketAddress& other ) const;
-    bool operator!=( const SocketAddress& other ) const;
+    bool operator==( const SocketAddress& ) const;
+    bool operator!=( const SocketAddress& other ) const { return !operator==( other ); }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SocketAddress, 1243996573UL );
+    YIELD_OBJECT_PROTOTYPES( SocketAddress, 201 );
 
   private:
-    struct sockaddr_storage* _sockaddr_storage;
+    SocketAddress( const SocketAddress& ) { DebugBreak(); } // Prevent copying
+    ~SocketAddress();
+
+    struct addrinfo* addrinfo_list; // Multiple sockaddr's obtained from getaddrinfo(3)
+    struct sockaddr_storage* _sockaddr_storage; // A single sockaddr passed in the constructor and copied
 
     void init( const char* hostname, uint16_t port );
-    void init( const struct in6_addr&, uint16_t port );
-    void init( const struct sockaddr_storage& );
   };
 
-  static inline std::ostream& operator<<( std::ostream& os, const SocketAddress& sockaddr )
+  static inline std::ostream& operator<<( std::ostream& os, auto_Object<SocketAddress> sockaddr )
   {
     char nameinfo[1025];
-    if ( sockaddr.getnameinfo( nameinfo, 1025, true ) )
+    if ( sockaddr->getnameinfo( nameinfo, 1025, true ) )
       os << "[" << nameinfo << "]";
     else
       os << "[could not resolve socket address]";
-    os << ":" << sockaddr.get_port();
     return os;
   }
 
@@ -115,18 +113,21 @@ namespace YIELD
   class Socket : public Event, public InputStream, public OutputStream
   {
   public:
-    Socket( int domain, int type, int protocol, auto_Object<Log> log = NULL );
-    Socket( socket_t _socket, auto_Object<Log> log = NULL );
-
-    bool bind( const SocketAddress& bind_to_sockaddr );
-    virtual Stream::Status connect( const SocketAddress& connect_to_sockaddr );
+    bool attach( auto_Object<FDEventQueue> to_fd_event_queue );
+    bool bind( auto_Object<SocketAddress> to_sockaddr );
+    virtual Stream::Status connect( auto_Object<SocketAddress> to_sockaddr );
     virtual bool close();
     bool get_blocking_mode() const { return blocking_mode; }
+    int get_domain() const { return domain; }
     auto_Object<Log> get_log() const { return log; }
     auto_Object<SocketAddress> getpeername();
     auto_Object<SocketAddress> getsockname();
-    operator socket_t();
-    bool operator==( socket_t _socket ) const { return this->_socket == _socket; }
+#ifdef _WIN32
+    operator unsigned int() const { return _socket; }
+#else
+    operator int() const { return _socket; }
+#endif    
+    bool operator==( const Socket& other ) const { return this->_socket == other._socket; }
     std::ostream& operator<<( std::ostream& os ) const { os << "socket #" << static_cast<int>( _socket ); return os; }
     OutputStream& operator<<( OutputStream& output_stream ) const { output_stream.write( "socket" ); return output_stream; }
     bool set_blocking_mode( bool blocking );
@@ -139,25 +140,36 @@ namespace YIELD
     YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   protected:
+    Socket( int domain, int type, int protocol, auto_Object<Log> log ); // Creates a socket
+#ifdef _WIN32
+    Socket( int domain, int type, int protocol, unsigned int _socket, auto_Object<Log> log )
+#else
+    Socket( int domain, int type, int protocol, int _socket, auto_Object<Log> log )
+#endif
+      : log( log ), domain( domain ), type( type ), protocol( protocol ), _socket( _socket )
+    { 
+      blocking_mode = true;
+    }
+
     virtual ~Socket()
     {
       close();
     }
 
+    auto_Object<FDEventQueue> attached_to_fd_event_queue;
     auto_Object<Log> log;
 
   private:
-    Socket( const Socket& other )
-    {
-      DebugBreak();
-    } // Prevent copying
+    Socket( const Socket& ) { DebugBreak(); } // Prevent copying
 
     int domain, type, protocol;
-    socket_t _socket;
+#ifdef _WIN32
+    unsigned int _socket;
+#else
+    int _socket;
+#endif
 
     bool blocking_mode;
-
-    static bool _close( socket_t );
   };
 
 
@@ -180,23 +192,32 @@ namespace YIELD
   class TCPSocket : public Socket
   {
   public:
-    TCPSocket( auto_Object<Log> log = NULL );
+    TCPSocket( auto_Object<Log> log = NULL ); // Defaults to domain = AF_INET6
 
     auto_Object<TCPSocket> accept();
     virtual bool listen();
     virtual bool shutdown();
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TCPSocket, 2622352664UL );
+    YIELD_OBJECT_PROTOTYPES( TCPSocket, 202 );
 
     // OutputStream
     YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   protected:
-    TCPSocket( socket_t, auto_Object<Log> log );
+#ifdef _WIN32
+    TCPSocket( int domain, unsigned int _socket, auto_Object<Log> log ); // Accepted socket
+#else
+    TCPSocket( int domain, int _socket, auto_Object<Log> log ); // Accepted socket
+#endif
+
     virtual ~TCPSocket() { }
 
-    socket_t _accept();
+#ifdef _WIN32
+    unsigned int _accept();
+#else
+    int _accept();
+#endif
 
   private:
     size_t partial_write_len;
@@ -211,7 +232,7 @@ namespace YIELD
     { }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TCPSocketFactory, 3650834884UL );
+    YIELD_OBJECT_PROTOTYPES( TCPSocketFactory, 203 );
 
     // SocketFactory
     auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
@@ -236,7 +257,7 @@ namespace YIELD
     inline bool want_read() const { return _want_read; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDEvent, 3294357755UL );
+    YIELD_OBJECT_PROTOTYPES( FDEvent, 204 );
 
   private:
     ~FDEvent() { }
@@ -259,7 +280,7 @@ namespace YIELD
     const Time& get_period() const { return period; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TimerEvent, 422444629UL );    
+    YIELD_OBJECT_PROTOTYPES( TimerEvent, 205 );    
 
   private:
     ~TimerEvent() { }
@@ -289,7 +310,7 @@ namespace YIELD
     auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDEventQueue, 1422990087UL );
+    YIELD_OBJECT_PROTOTYPES( FDEventQueue, 206 );
 
     // EventQueue
     virtual EventQueue* clone() const { return new FDEventQueue; }
@@ -347,7 +368,7 @@ namespace YIELD
     FDAndInternalEventQueue();
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 718667851UL );
+    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 207 );
 
     // EventQueue
     virtual EventQueue* clone() const { return new FDAndInternalEventQueue; }
@@ -380,30 +401,35 @@ namespace YIELD
 
   protected:
     template <class ClientType, class StageGroupType>
-    static auto_Object<ClientType> create( auto_Object<StageGroupType> stage_group, auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+    static auto_Object<ClientType> create( auto_Object<StageGroupType> stage_group, auto_Object<Log> log, const Time& operation_timeout, const URI& peer_uri, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
     {
-      ClientType* client = new ClientType( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
-      static_cast<StageGroup*>( stage_group.get() )->createStage<ClientType, FDAndInternalEventQueue>( client->incRef(), new FDAndInternalEventQueue );
-      return client;
+      auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( peer_uri );
+      if ( peer_sockaddr != NULL )
+      {
+        ClientType* client = new ClientType( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+        static_cast<StageGroup*>( stage_group.get() )->createStage<ClientType, FDAndInternalEventQueue>( client->incRef(), new FDAndInternalEventQueue );
+        return client;
+      }
+      else
+        return NULL;
     }
 
-    Client( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
+    Client( auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
     virtual ~Client();
 
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<Object> body ) = 0;
-    virtual auto_Object<Response> createProtocolResponse() = 0;
+    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request ) = 0;
+    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request ) = 0;
     virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response ) = 0;
 
   private:
     auto_Object<Log> log;
     Time operation_timeout;
-    SocketAddress peer_sockaddr;
+    auto_Object<SocketAddress> peer_sockaddr;
     uint8_t reconnect_tries_max;
     auto_Object<SocketFactory> socket_factory;    
 
+    auto_Object<FDEventQueue> fd_event_queue;
     uint8_t reconnect_tries;
-
-    FDAndInternalEventQueue* fd_event_queue;
 
 
     class Connection : public Object, public InputStream, public OutputStream
@@ -418,19 +444,19 @@ namespace YIELD
       auto_Object<Request> get_protocol_request() const { return protocol_request; }
       void set_protocol_request( auto_Object<Request> protocol_request ) { this->protocol_request = protocol_request; }
       auto_Object<Response> get_protocol_response() const { return protocol_response; }
+      auto_Object<Socket> get_socket() const { return _socket; }
       void set_protocol_response( auto_Object<Response> protocol_response ) { this->protocol_response = protocol_response; }
       inline void set_state( State state ) { this->state = state; }
 
-      operator socket_t() const { return *_socket; }
       bool operator==( const Connection& other ) const { return _socket == other._socket; }
 
       bool close() { return _socket->close(); }
-      Stream::Status connect( const SocketAddress& connect_to_sockaddr );
+      Stream::Status connect( auto_Object<SocketAddress> connect_to_sockaddr );
       bool shutdown() { return _socket->shutdown(); }
       void touch() { last_activity_time = Time(); }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( Client::Connection, 2905178147UL );
+      YIELD_OBJECT_PROTOTYPES( Connection, 208 );
 
       // InputStream
       YIELD_INPUT_STREAM_PROTOTYPES;
@@ -464,7 +490,7 @@ namespace YIELD
     Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read );
     char* get_header( const char* header_name, const char* default_value="" );
     char* operator[]( const char* header_name ) { return get_header( header_name ); }
-    void set_header( const char* header, size_t header_len ); // Mutable header with name: value in one string, will copy both
+    // void set_header( const char* header, size_t header_len ); // Mutable header with name: value in one string, will copy both
     void set_header( const char* header_name, const char* header_value ); // Literal header
     void set_header( const char* header_name, char* header_value ); // Mutable header, will copy value
     void set_header( char* header_name, char* header_value ); // Mutable name and mutable value, will copy both
@@ -517,10 +543,10 @@ namespace YIELD
 
     bool respond( uint16_t status_code );
     bool respond( uint16_t status_code, auto_Object<Object> body );
-    virtual bool respond( Response& response ) { return Request::respond( response ); }
+    bool respond( Response& response ) { return Request::respond( response ); }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPRequest, 2869724743UL );
+    YIELD_OBJECT_PROTOTYPES( HTTPRequest, 209 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -554,7 +580,7 @@ namespace YIELD
     void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 231649460UL );
+    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 210 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -574,9 +600,9 @@ namespace YIELD
   {
   public:
     template <class StageGroupType>
-    static auto_Object<HTTPClient> create( auto_Object<StageGroupType> stage_group, const SocketAddress& peer_sockaddr, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
+    static auto_Object<HTTPClient> create( auto_Object<StageGroupType> stage_group, const URI& peer_uri, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
     {
-      return Client::create<HTTPClient, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+      return Client::create<HTTPClient, StageGroupType>( stage_group, log, operation_timeout, peer_uri, reconnect_tries_max, socket_factory );
     }
 
     static auto_Object<HTTPResponse> GET( const URI& absolute_uri, auto_Object<Log> log = NULL );
@@ -584,123 +610,111 @@ namespace YIELD
     static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log = NULL );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPClient, 645665801UL );
+    YIELD_OBJECT_PROTOTYPES( HTTPClient, 211 );
 
   protected:
     friend class Client;
 
-    HTTPClient( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+    HTTPClient( auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
       : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
     { }
 
     virtual ~HTTPClient() { }
 
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<> body );
-    virtual auto_Object<Response> createProtocolResponse();
+    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request );
+    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request );
     virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response );
 
   private:
     static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<> body, auto_Object<Log> log );
   };
 
- 
-  class ObjectFactory : public Object
+
+  class JSONValue;
+
+  class JSONInputStream : public StructuredInputStream
   {
   public:
-    virtual Object* createObject() const = 0;
+    JSONInputStream( InputStream& underlying_input_stream );
+    virtual ~JSONInputStream();
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ObjectFactory, 4119141628UL );
+    // StructuredInputStream
+    YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES;
 
   protected:
-    virtual ~ObjectFactory() { }
-  };
-
-  template <class ObjectType>
-  class ObjectFactoryImpl : public ObjectFactory
-  {
-  public:
-    // ObjectFactory
-    Object* createObject() const { return new ObjectType; }
+    JSONInputStream( const Declaration& root_decl, JSONValue& root_json_value );
 
   private:
-    ~ObjectFactoryImpl() { }
+    const Declaration* root_decl;
+    JSONValue *root_json_value, *next_json_value;
+
+    void readSequence( Object& );
+    void readMap( Object& );
+    void readStruct( Object& );
+    JSONValue* readJSONValue( const Declaration& decl );
   };
 
-  class ObjectFactories : public Object, private CuckooHashTable<ObjectFactory*>
+
+  class JSONOutputStream : public StructuredOutputStream
   {
   public:
-    auto_Object<> createObject( const std::string& type_name ) { return createObject( type_name.c_str() ); }
-    auto_Object<> createObject( const char* type_name ) { return createObject( string_hash( type_name ) ); }
-    auto_Object<> createObject( uint32_t type_id )
-    {
-      auto_Object<ObjectFactory> object_factory = getObjectFactory( type_id );
-      if ( object_factory != NULL )
-        return object_factory->createObject();
-      else
-        return 0;
-    }
+    JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings = true );
+    virtual ~JSONOutputStream(); // If the stream is wrapped in map, sequence, etc. then the constructor will append the final } or [, so the underlying output stream should not be deleted before this object!
 
-    const auto_Object<ObjectFactory> getObjectFactory( const std::string& type_name ) { return getObjectFactory( type_name.c_str() ); }
-    const auto_Object<ObjectFactory> getObjectFactory( const char* type_name ) { return getObjectFactory( string_hash( type_name ) ); }
-    const auto_Object<ObjectFactory> getObjectFactory( uint32_t type_id )
-    {
-      ObjectFactory* object_factory = CuckooHashTable<ObjectFactory*>::find( type_id );
-      if ( object_factory != NULL )
-        return object_factory->incRef();
-      else
-        return NULL;
-    }
+    JSONOutputStream& operator=( const JSONOutputStream& ) { return *this; }
 
-    void registerObjectFactory( const std::string& type_name, auto_Object<ObjectFactory> object_factory ) { return registerObjectFactory( type_name.c_str(), object_factory ); }
-    void registerObjectFactory( const char* type_name, auto_Object<ObjectFactory> object_factory ) { registerObjectFactory( string_hash( type_name ), object_factory ); }
-    void registerObjectFactory( uint32_t type_id, auto_Object<ObjectFactory> object_factory )
-    {
-      Object::decRef( CuckooHashTable<ObjectFactory*>::erase( type_id ) );
-      CuckooHashTable<ObjectFactory*>::insert( type_id, object_factory.release() );
-    }
+    // StructuredOutputStream
+    YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
+    virtual void writePointer( const Declaration& decl, void* value );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ObjectFactories, 1822541756UL );
+  protected:
+    JSONOutputStream( OutputStream& underlying_output_stream, bool write_empty_strings, yajl_gen writer, const Declaration& root_decl );
+
+    virtual void writeDeclaration( const Declaration& );
+    virtual void writeSequence( Object* ); // Can be NULL for empty arrays
+    virtual void writeMap( Object* ); // Can be NULL for empty maps
+    virtual void writeStruct( Object* );
 
   private:
-    ~ObjectFactories()
-    {
-      for ( CuckooHashTable<ObjectFactory*>::iterator object_factory_i = begin(); object_factory_i != end(); object_factory_i++ )
-        Object::decRef( *object_factory_i );
-    }
-  };
+    OutputStream& underlying_output_stream;
+    bool write_empty_strings;
 
+    const Declaration* root_decl; // Mostly for debugging, also used to indicate if this is the root JSONOutputStream
+    yajl_gen writer;
+    bool in_map;
+
+    void flushYAJLBuffer();
+  };
+ 
 
   class ONCRPCClient : public Client
   {
   public:
     template <class StageGroupType>
-    static auto_Object<ONCRPCClient> create( auto_Object<StageGroupType> stage_group, const SocketAddress& peer_sockaddr, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
+    static auto_Object<ONCRPCClient> create( auto_Object<StageGroupType> stage_group, const URI& peer_uri, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
     {
-      return Client::create<ONCRPCClient, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+      return Client::create<ONCRPCClient, StageGroupType>( stage_group, log, operation_timeout, peer_uri, reconnect_tries_max, socket_factory );
     }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCClient, 3599397095UL );
+    YIELD_OBJECT_PROTOTYPES( ONCRPCClient, 212 );
 
   protected:
     friend class Client;
 
-    ONCRPCClient( auto_Object<Log> log, const Time& operation_timeout, const SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
-    {
-      object_factories = new ObjectFactories;
-    }
+    ONCRPCClient( auto_Object<Interface> _interface, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory ), _interface( _interface )
+    { }
 
     virtual ~ONCRPCClient() { }
 
-    auto_Object<ObjectFactories> object_factories;
-
     // Client
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<> body );
-    virtual auto_Object<Response> createProtocolResponse();
+    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request );
+    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request );
     virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response );
+
+
+    auto_Object<Interface> _interface;
   };
 
 
@@ -711,37 +725,19 @@ namespace YIELD
     uint32_t get_xid() const { return xid; }
 
   protected:
-    ONCRPCMessage( auto_Object<> body, auto_Object<Log> log )
-      : body( body ), log( log )
+    ONCRPCMessage( uint32_t xid, auto_Object<> body, auto_Object<Log> log )
+      : xid( xid ), body( body ), log( log )
     {
-      xid = 0;
-      oncrpc_record_input_stream = NULL;
-    }
-
-    ONCRPCMessage( auto_Object<ObjectFactories> object_factories, auto_Object<Log> log )
-      : object_factories( object_factories ), log( log )
-    {
-      xid = 0;
-      oncrpc_record_input_stream = NULL;
-    }
-
-    ONCRPCMessage( uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body, auto_Object<Log> log ) // Outgoing
-      : body( body ), log( log )
-    {
-      xid = 0;
       oncrpc_record_input_stream = NULL;
     }
 
     virtual ~ONCRPCMessage();
 
-
-    auto_Object<ObjectFactories> object_factories;
-    auto_Object<> body;
-    auto_Object<Log> log;
+    ONCRPCRecordInputStream& get_oncrpc_record_input_stream( InputStream& underlying_input_stream );
 
     uint32_t xid;
-
-    ONCRPCRecordInputStream& get_oncrpc_record_input_stream( InputStream& underlying_input_stream );
+    auto_Object<> body;
+    auto_Object<Log> log;
 
   private:
     ONCRPCRecordInputStream* oncrpc_record_input_stream;
@@ -753,36 +749,26 @@ namespace YIELD
   public:
     const static uint32_t AUTH_NONE = 0;
 
-
-    ONCRPCRequest( auto_Object<> body, auto_Object<Log> log = NULL )
-      : ONCRPCMessage( body, log )
-    {
-      credential_auth_flavor = AUTH_NONE;
-    }
-
-    ONCRPCRequest( auto_Object<ObjectFactories> object_factories, auto_Object<Log> log = NULL )
-      : ONCRPCMessage( object_factories, log )
-    {
-      credential_auth_flavor = AUTH_NONE;
-    }
-
-
-    ONCRPCRequest( uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body, auto_Object<Log> log = NULL )
-      : ONCRPCMessage( body, log ), credential_auth_flavor( credential_auth_flavor ), credential( credential )
-    { }
+    ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body, auto_Object<Log> log = NULL );
+    ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body, auto_Object<Log> log = NULL );
 
     uint32_t get_credential_auth_flavor() const { return credential_auth_flavor; }
     auto_Object<> get_credential() const { return credential; }
+    uint32_t get_prog() const { return prog; }
+    uint32_t get_proc() const { return proc; }
+    uint32_t get_vers() const { return vers; }
+    void set_credential_auth_flavor( uint32_t credential_auth_flavor ) { this->credential_auth_flavor = credential_auth_flavor; }
+    void set_credential( auto_Object<> credential ) { this->credential = credential; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCRequest, 3095736087UL );
+    YIELD_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
   private:
     ~ONCRPCRequest() { }
 
-    uint32_t credential_auth_flavor;
+    uint32_t prog, proc, vers, credential_auth_flavor;
     auto_Object<> credential;
   };
 
@@ -790,18 +776,16 @@ namespace YIELD
   class ONCRPCResponse : public Response, public ONCRPCMessage
   {
   public:
-    ONCRPCResponse( auto_Object<ObjectFactories> object_factories, auto_Object<Log> log = NULL ) // Incoming
-      : ONCRPCMessage( object_factories, log )
+    ONCRPCResponse( auto_Object<> body, auto_Object<Log> log = NULL ) // Incoming
+      : ONCRPCMessage( 0, body, log )
     { }
 
     ONCRPCResponse( uint32_t xid, auto_Object<> body, auto_Object<Log> log = NULL ) // Outgoing
-      : ONCRPCMessage( body, log )
-    {
-      this->xid = xid;
-    }
+      : ONCRPCMessage( xid, body, log )
+    { }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 2752670386UL );
+    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 214 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
@@ -920,7 +904,7 @@ namespace YIELD
     SSL_CTX* get_ssl_ctx() const { return ctx; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SSLContext, 600160790UL );
+    YIELD_OBJECT_PROTOTYPES( SSLContext, 215 );
 
   private:
     ~SSLContext()
@@ -957,12 +941,12 @@ namespace YIELD
       }
     }
 
-    static int pem_password_callback( char *buf, int size, int rwflag, void *userdata )
+    static int pem_password_callback( char *buf, int size, int, void *userdata )
     {
       SSLContext* this_ = static_cast<SSLContext*>( userdata );
       if ( size > static_cast<int>( this_->pem_private_key_passphrase.size() ) )
         size = static_cast<int>( this_->pem_private_key_passphrase.size() );
-      std::memcpy( buf, this_->pem_private_key_passphrase.c_str(), size );
+      memcpy_s( buf, size, this_->pem_private_key_passphrase.c_str(), size );
       return size;
     }
 
@@ -986,7 +970,7 @@ namespace YIELD
     }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SSLSocket, 2540210862UL );
+    YIELD_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // InputStream
     Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
@@ -1025,11 +1009,11 @@ namespace YIELD
         if ( write_buffer == NULL )
         {
           for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
- 	    write_buffer_len += buffers[buffer_i].iov_len;
+ 	          write_buffer_len += buffers[buffer_i].iov_len;
           write_buffer_p = write_buffer = new unsigned char[write_buffer_len];
           for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
           {
-            memcpy( write_buffer_p, buffers[buffer_i].iov_base, buffers[buffer_i].iov_len );
+            memcpy_s( write_buffer_p, buffers[buffer_i].iov_len, buffers[buffer_i].iov_base, buffers[buffer_i].iov_len );
             write_buffer_p += buffers[buffer_i].iov_len;
           }
           write_buffer_p = write_buffer;
@@ -1084,19 +1068,19 @@ namespace YIELD
     auto_Object<SSLSocket> accept()
     {
       SSL_set_fd( ssl, *this );
-      socket_t peer_socket = TCPSocket::_accept();
-      if ( peer_socket != static_cast<socket_t>( -1 ) )
+      int peer_socket = static_cast<int>( TCPSocket::_accept() );
+      if ( peer_socket != -1 )
       {
         SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
         SSL_set_fd( peer_ssl, peer_socket );
         SSL_set_accept_state( peer_ssl );
-        return new SSLSocket( *peer_ssl, log );
+        return new SSLSocket( get_domain(), *peer_ssl, log );
       }
       else
         return NULL;
     }
 
-    Stream::Status connect( const SocketAddress& peer_sockaddr )
+    Stream::Status connect( auto_Object<SocketAddress> peer_sockaddr )
     {
       Stream::Status connect_status = TCPSocket::connect( peer_sockaddr );
       if ( connect_status == STREAM_STATUS_OK )
@@ -1116,8 +1100,8 @@ namespace YIELD
     }
 
   private:
-    SSLSocket( SSL& ssl, auto_Object<Log> log )
-      : TCPSocket( static_cast<socket_t>( SSL_get_fd( &ssl ) ), log ),
+    SSLSocket( int domain, SSL& ssl, auto_Object<Log> log )
+      : TCPSocket( domain, SSL_get_fd( &ssl ), log ),
         ssl( &ssl )
     {
       ctx = NULL;
@@ -1210,7 +1194,7 @@ namespace YIELD
     { }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SSLSocketFactory, 2425521817UL );
+    YIELD_OBJECT_PROTOTYPES( SSLSocketFactory, 217 );
 
     // SocketFactory
     virtual auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
@@ -1232,11 +1216,11 @@ namespace YIELD
   public:
     UDPSocket( auto_Object<Log> log = NULL );
 
-    bool joinMulticastGroup( const SocketAddress& multicast_group_sockaddr, bool loopback );
-    bool leaveMulticastGroup( const SocketAddress& multicast_group_sockaddr );
+//    bool joinMulticastGroup( auto_Object<SocketAddress> multicast_group_sockaddr, bool loopback );
+//    bool leaveMulticastGroup( auto_Object<SocketAddress> multicast_group_sockaddr );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( UDPSocket, 2607589533UL );
+    YIELD_OBJECT_PROTOTYPES( UDPSocket, 218 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -1250,12 +1234,12 @@ namespace YIELD
   {
   public:
     // Factory methods return NULL instead of throwing exceptions
-    static auto_Object<URI> parse( const char* uri ) { return parse( uri, std::strlen( uri ) ); }
+    static auto_Object<URI> parse( const char* uri ) { return parse( uri, strnlen( uri, UINT16_MAX ) ); }
     static auto_Object<URI> parse( const std::string& uri ) { return parse( uri.c_str(), uri.size() ); }
     static auto_Object<URI> parse( const char* uri, size_t uri_len );
 
     // Constructors throw exceptions
-    URI( const char* uri ) { init( uri, std::strlen( uri ) ); }
+    URI( const char* uri ) { init( uri, strnlen( uri, UINT16_MAX ) ); }
     URI( const std::string& uri ) { init( uri.c_str(), uri.size() ); }
     URI( const char* uri, size_t uri_len ) { init( uri, uri_len ); }
     URI( const URI& other );
@@ -1270,7 +1254,7 @@ namespace YIELD
     void set_port( unsigned short port ) { this->port = port; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( URI, 91663UL );
+    YIELD_OBJECT_PROTOTYPES( URI, 219 );
 
   private:
     URI( UriUriStructA& parsed_uri )

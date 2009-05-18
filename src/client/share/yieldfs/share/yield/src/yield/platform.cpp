@@ -1,4 +1,4 @@
-// Revision: 1437
+// Revision: 1451
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -144,7 +144,7 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
       {
         if ( dwMessageLength > 2 )
           cMessage[dwMessageLength - 2] = 0;
-        strncpy( out_str, cMessage, out_str_len - 1 );
+        strncpy_s( out_str, out_str_len, cMessage, out_str_len - 1 );
         out_str[out_str_len - 1] = 0;
         LocalFree( cMessage );
         return;
@@ -171,7 +171,7 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
           {
             if ( dwMessageLength > 2 )
               cMessage[dwMessageLength - 2] = 0;
-            strncpy( out_str, cMessage, out_str_len - 1 );
+            strncpy_s( out_str, out_str_len, cMessage, out_str_len - 1 );
             out_str[out_str_len - 1] = 0;
             LocalFree( cMessage );
             FreeLibrary( hModule );
@@ -212,6 +212,8 @@ void Exception::init( const char* what )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
 #else
 #define _XOPEN_SOURCE 600
 #define _LARGEFILE64_SOURCE 1
@@ -309,18 +311,21 @@ auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uin
   if ( ( flags & O_HIDDEN ) == O_HIDDEN )
     file_open_flags = FILE_ATTRIBUTE_HIDDEN;
   HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
-  if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
+  if ( fd != INVALID_HANDLE_VALUE )
   {
-    SetFilePointer( fd, 0, NULL, FILE_BEGIN );
-    SetEndOfFile( fd );
+    if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
+    {
+      SetFilePointer( fd, 0, NULL, FILE_BEGIN );
+      SetEndOfFile( fd );
+    }
+    return new File( fd );
   }
 #else
   int fd = ::open( path, flags, mode );
-#endif
-  if ( fd != INVALID_HANDLE_VALUE )
+  if ( fd != -1 )
     return new File( fd );
-  else
-    return NULL;
+#endif
+  return NULL;
 }
 /*
 int File::aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine_t aio_read_completion_routine, void* aio_read_completion_routine_context )
@@ -409,19 +414,16 @@ void File::aio_write_notify( sigval_t sigval )
 */
 bool File::close()
 {
-  if ( fd != INVALID_HANDLE_VALUE ) // Have to test this, since CloseHandle on an invalid handle crashes instead of simply failing
-  {
 #ifdef _WIN32
-    if ( CloseHandle( fd ) != 0 )
+  if ( fd != INVALID_HANDLE_VALUE && CloseHandle( fd ) != 0 )
+  {
+    fd = INVALID_HANDLE_VALUE;
 #else
-    if ( ::close( fd ) >= 0 )
+  if ( ::close( fd ) >= 0 )
+  {
+    fd = -1;
 #endif
-    {
-      fd = INVALID_HANDLE_VALUE;
-      return true;
-    }
-    else
-      return false;
+    return true;
   }
   else
     return false;
@@ -630,6 +632,9 @@ Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count
     return STREAM_STATUS_ERROR;
 #endif
 }
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 
 // log.cpp
@@ -643,8 +648,9 @@ namespace YIELD
     ostreamWrapper( std::ostream& os )
       : os( os )
     { }
+    ostreamWrapper& operator=( const ostreamWrapper& ) { return *this; }
     // Object
-    YIELD_OBJECT_PROTOTYPES( ostreamWrapper, 405507389UL );
+    YIELD_OBJECT_PROTOTYPES( ostreamWrapper, 0 );
     // OutputStream
     Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 )
     {
@@ -1022,57 +1028,55 @@ bool MemoryMappedFile::sync( void* ptr, size_t length )
 Mutex::Mutex()
 {
 #ifdef _WIN32
-  if ( ( os_handle = CreateEvent( NULL, FALSE, TRUE, NULL ) ) == NULL ) DebugBreak();
+  if ( ( hMutex = CreateEvent( NULL, FALSE, TRUE, NULL ) ) == NULL ) DebugBreak();
 #else
-  os_handle = new pthread_mutex_t;
-  if ( pthread_mutex_init( static_cast<pthread_mutex_t*>( os_handle ), NULL ) != 0 ) DebugBreak();
+  if ( pthread_mutex_init( &pthread_mutex, NULL ) != 0 ) DebugBreak();
 #endif
 }
 Mutex::~Mutex()
 {
 #ifdef _WIN32
-  if ( os_handle ) CloseHandle( os_handle );
+  if ( hMutex ) CloseHandle( hMutex );
 #else
-  if ( os_handle ) pthread_mutex_destroy( static_cast<pthread_mutex_t*>( os_handle ) );
-  delete ( pthread_mutex_t* ) os_handle;
+  pthread_mutex_destroy( &pthread_mutex );
 #endif
 }
 bool Mutex::acquire()
 {
 #ifdef _WIN32
-  DWORD dwRet = WaitForSingleObjectEx( os_handle, INFINITE, TRUE );
+  DWORD dwRet = WaitForSingleObjectEx( hMutex, INFINITE, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
-  pthread_mutex_lock( static_cast<pthread_mutex_t*>( os_handle ) );
+  pthread_mutex_lock( static_cast<pthread_mutex_t*>( hMutex ) );
   return true;
 #endif
 }
 bool Mutex::try_acquire()
 {
 #ifdef _WIN32
-  DWORD dwRet = WaitForSingleObjectEx( os_handle, 0, TRUE );
+  DWORD dwRet = WaitForSingleObjectEx( hMutex, 0, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
-  return pthread_mutex_trylock( static_cast<pthread_mutex_t*>( os_handle ) ) == 0;
+  return pthread_mutex_trylock( static_cast<pthread_mutex_t*>( hMutex ) ) == 0;
 #endif
 }
 bool Mutex::timed_acquire( uint64_t timeout_ns )
 {
 #ifdef _WIN32
   DWORD timeout_ms = static_cast<DWORD>( timeout_ns / NS_IN_MS );
-  DWORD dwRet = WaitForSingleObjectEx( os_handle, timeout_ms, TRUE );
+  DWORD dwRet = WaitForSingleObjectEx( hMutex, timeout_ms, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
 #ifdef YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
   struct timespec timeout_ts = Time( timeout_ns );
-  return ( pthread_mutex_timedlock( static_cast<pthread_mutex_t*>( os_handle ), &timeout_ts ) == 0 );
+  return ( pthread_mutex_timedlock( &pthread_mutex, &timeout_ts ) == 0 );
 #else
-  if ( pthread_mutex_trylock( static_cast<pthread_mutex_t*>( os_handle ) ) == 0 )
+  if ( pthread_mutex_trylock( &pthread_mutex ) == 0 )
     return true;
   else
   {
     usleep( timeout_ns / 1000 );
-    return ( pthread_mutex_trylock( static_cast<pthread_mutex_t*>( os_handle ) ) == 0 );
+    return pthread_mutex_trylock( &pthread_mutex ) == 0;
   }
 #endif
 #endif
@@ -1080,9 +1084,9 @@ bool Mutex::timed_acquire( uint64_t timeout_ns )
 void Mutex::release()
 {
 #ifdef _WIN32
-  SetEvent( os_handle );
+  SetEvent( hMutex );
 #else
-  pthread_mutex_unlock( static_cast<pthread_mutex_t*>( os_handle ) );
+  pthread_mutex_unlock( &pthread_mutex );
 #endif
 }
 
@@ -1092,6 +1096,8 @@ void Mutex::release()
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
 #endif
 auto_Object<NamedPipe> NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
 {
@@ -1160,6 +1166,9 @@ Stream::Status NamedPipe::writev( const struct iovec* buffers, uint32_t buffers_
 #endif
   return underlying_file->writev( buffers, buffers_count, out_bytes_written );
 }
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 
 // path.cpp
@@ -1177,7 +1186,7 @@ Stream::Status NamedPipe::writev( const struct iovec* buffers, uint32_t buffers_
 #endif
 // Paths from UTF-8
 //#ifdef _WIN32
-//    wide_path.assign( _wide_path, MultiByteToWideChar( CP_UTF8, 0, utf8_path.c_str(), ( int )utf8_path.size(), _wide_path, MAX_PATH ) );
+//    wide_path.assign( _wide_path, MultiByteToWideChar( CP_UTF8, 0, utf8_path.c_str(), ( int )utf8_path.size(), _wide_path, PATH_MAX ) );
 //#else
 //    MultiByteToMultiByte( "UTF-8", utf8_path, "", host_charset_path );
 //#endif
@@ -1199,8 +1208,8 @@ Path::Path( const std::string& host_charset_path )
 void Path::init_from_host_charset_path()
 {
 #ifdef _WIN32
-  wchar_t _wide_path[MAX_PATH];
-  wide_path.assign( _wide_path, MultiByteToWideChar( GetACP(), 0, host_charset_path.c_str(), static_cast<int>( host_charset_path.size() ), _wide_path, MAX_PATH ) );
+  wchar_t _wide_path[PATH_MAX];
+  wide_path.assign( _wide_path, MultiByteToWideChar( GetACP(), 0, host_charset_path.c_str(), static_cast<int>( host_charset_path.size() ), _wide_path, PATH_MAX ) );
 #endif
 }
 #ifdef _WIN32
@@ -1221,8 +1230,8 @@ Path::Path( const std::wstring& wide_path )
 }
 void Path::init_from_wide_path()
 {
-  char _host_charset_path[MAX_PATH];
-  int _host_charset_path_len = WideCharToMultiByte( GetACP(), 0, this->wide_path.c_str(), ( int )this->wide_path.size(), _host_charset_path, MAX_PATH, 0, 0 );
+  char _host_charset_path[PATH_MAX];
+  int _host_charset_path_len = WideCharToMultiByte( GetACP(), 0, this->wide_path.c_str(), ( int )this->wide_path.size(), _host_charset_path, PATH_MAX, 0, 0 );
   host_charset_path.assign( _host_charset_path, _host_charset_path_len );
 }
 #endif
@@ -1240,8 +1249,8 @@ const std::string& Path::get_utf8_path()
 #ifdef _WIN32
     if ( !wide_path.empty() )
     {
-      char _utf8_path[MAX_PATH];
-      int _utf8_path_len = WideCharToMultiByte( CP_UTF8, 0, wide_path.c_str(), ( int )wide_path.size(), _utf8_path, MAX_PATH, 0, 0 );
+      char _utf8_path[PATH_MAX];
+      int _utf8_path_len = WideCharToMultiByte( CP_UTF8, 0, wide_path.c_str(), ( int )wide_path.size(), _utf8_path, PATH_MAX, 0, 0 );
       utf8_path.assign( _utf8_path, _utf8_path_len );
     }
 #else
@@ -1257,12 +1266,12 @@ void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompa
   iconv_t converter;
   if ( ( converter = iconv_open( fromcode, tocode ) ) != ( iconv_t )-1 )
   {
-    char* _frompath = const_cast<char*>( frompath.c_str() ); char _topath[MAX_PATH], *_topath_p = _topath;
-    size_t _frompath_size = frompath.size(), _topath_size = MAX_PATH;
+    char* _frompath = const_cast<char*>( frompath.c_str() ); char _topath[PATH_MAX], *_topath_p = _topath;
+    size_t _frompath_size = frompath.size(), _topath_size = PATH_MAX;
 	//::iconv( converter, NULL, 0, NULL, 0 ) != -1 &&
     size_t iconv_ret;
     if ( ( iconv_ret = ::iconv( converter, ( ICONV_SOURCE_CAST )&_frompath, &_frompath_size, &_topath_p, &_topath_size ) ) != static_cast<size_t>( -1 ) )
-      topath.assign( _topath, MAX_PATH - _topath_size );
+      topath.assign( _topath, PATH_MAX - _topath_size );
     else
     {
 //			cerr << "Path: iconv could not convert path " << frompath << " from code " << fromcode << " to code " << tocode;
@@ -1380,11 +1389,11 @@ std::pair<Path, Path> Path::splitext() const
 Path Path::abspath() const
 {
 #ifdef _WIN32
-  wchar_t abspath_buffer[MAX_PATH];
-  DWORD abspath_buffer_len = GetFullPathNameW( wide_path.c_str(), MAX_PATH, abspath_buffer, NULL );
+  wchar_t abspath_buffer[PATH_MAX];
+  DWORD abspath_buffer_len = GetFullPathNameW( wide_path.c_str(), PATH_MAX, abspath_buffer, NULL );
   return Path( abspath_buffer, abspath_buffer_len );
 #else
-  char abspath_buffer[MAX_PATH];
+  char abspath_buffer[PATH_MAX];
   realpath( host_charset_path.c_str(), abspath_buffer );
   return Path( abspath_buffer );
 #endif
@@ -1425,15 +1434,12 @@ auto_Object<Pipe> Pipe::create()
 }
 #ifdef _WIN32
 Pipe::Pipe( void* ends[2] )
-{
-  memcpy( this->ends, ends, sizeof( this->ends ) );
-}
 #else
 Pipe::Pipe( int ends[2] )
-{
-  memcpy( this->ends, ends, sizeof( this->ends ) );
-}
 #endif
+{
+  memcpy_s( this->ends, sizeof( this->ends ), ends, sizeof( this->ends ) );
+}
 Pipe::~Pipe()
 {
 #ifdef _WIN32
@@ -1508,39 +1514,39 @@ Stream::Status Pipe::writev( const struct iovec* buffers, uint32_t buffers_count
 PrettyPrintOutputStream::PrettyPrintOutputStream( OutputStream& underlying_output_stream )
   : underlying_output_stream( underlying_output_stream )
 { }
-void PrettyPrintOutputStream::writeBool( const Declaration& decl, bool value )
+void PrettyPrintOutputStream::writeBool( const Declaration&, bool value )
 {
   underlying_output_stream.write( ( ( value ) ? "true, " : "false, " ) );
 }
-void PrettyPrintOutputStream::writeDouble( const Declaration& decl, double value )
+void PrettyPrintOutputStream::writeDouble( const Declaration&, double value )
 {
   std::ostringstream value_oss; value_oss << value << ", ";
   underlying_output_stream.write( value_oss.str() );
 }
-void PrettyPrintOutputStream::writeInt64( const Declaration& decl, int64_t value )
+void PrettyPrintOutputStream::writeInt64( const Declaration&, int64_t value )
 {
   std::ostringstream value_oss; value_oss << value << ", ";
   underlying_output_stream.write( value_oss.str() );
 }
-void PrettyPrintOutputStream::writeMap( const Declaration& decl, Object& value )
+void PrettyPrintOutputStream::writeMap( const Declaration&, Object& value )
 {
   underlying_output_stream.write( value.get_type_name() );
   underlying_output_stream.write( "( " );
   value.serialize( *this );
   underlying_output_stream.write( " ), " );
 }
-void PrettyPrintOutputStream::writeSequence( const Declaration& decl, Object& value )
+void PrettyPrintOutputStream::writeSequence( const Declaration&, Object& value )
 {
   underlying_output_stream.write( "[ " );
   value.serialize( *this );
   underlying_output_stream.write( " ], " );
 }
-void PrettyPrintOutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
+void PrettyPrintOutputStream::writeString( const Declaration&, const char* value, size_t value_len )
 {
   underlying_output_stream.write( value, value_len );
   underlying_output_stream.write( ", " );
 }
-void PrettyPrintOutputStream::writeStruct( const Declaration& decl, Object& value )
+void PrettyPrintOutputStream::writeStruct( const Declaration&, Object& value )
 {
   underlying_output_stream.write( value.get_type_name() );
   underlying_output_stream.write( "( " );
@@ -1965,17 +1971,17 @@ SharedLibrary::~SharedLibrary()
 }
 bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
 {
-  char file_path[MAX_PATH];
+  char file_path[PATH_MAX];
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
     return true;
   else
   {
-    snprintf( file_path, MAX_PATH, "lib%c%s.%s", PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+    snprintf( file_path, PATH_MAX, "lib%c%s.%s", PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
     if ( ( handle = DLOPEN( file_path ) ) != NULL )
       return true;
     else
     {
-      snprintf( file_path, MAX_PATH, "%s.%s", static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+      snprintf( file_path, PATH_MAX, "%s.%s", static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
       if ( ( handle = DLOPEN( file_path ) ) != NULL )
         return true;
       else
@@ -1985,12 +1991,12 @@ bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
           const char* last_slash = strrchr( argv0, PATH_SEPARATOR );
           while ( last_slash != NULL && last_slash != argv0 )
           {
-            snprintf( file_path, MAX_PATH, "%.*s%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+            snprintf( file_path, PATH_MAX, "%.*s%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
             if ( ( handle = DLOPEN( file_path ) ) != NULL )
               return true;
             else
             {
-              snprintf( file_path, MAX_PATH, "%.*slib%c%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+              snprintf( file_path, PATH_MAX, "%.*slib%c%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
                 return true;
             }
@@ -2024,6 +2030,8 @@ void* SharedLibrary::getFunction( const char* func_name )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
 #endif
 auto_Object<Stat> Stat::stat( const Path& path )
 {
@@ -2067,8 +2075,8 @@ Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLas
   init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
 }
 #else
-Stat::Stat( mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
-: mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
+Stat::Stat( mode_t mode, nlink_t nlink, uid_t tag, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
+: mode( mode ), nlink( nlink ), tag( tag ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
 { }
 #endif
 Stat::Stat( const struct stat& stbuf )
@@ -2138,7 +2146,7 @@ Stat::operator struct stat() const
   stbuf.st_ctime = ctime.as_unix_time_s();
 #ifndef _WIN32
   stbuf.st_nlink = nlink;
-  stbuf.st_uid = uid;
+  stbuf.st_uid = tag;
   stbuf.st_gid = gid;
 #endif
   return stbuf;
@@ -2170,6 +2178,9 @@ Stat::operator WIN32_FIND_DATA() const
   find_data.dwFileAttributes = get_attributes();
   return find_data;
 }
+#endif
+#ifdef _WIN32
+#pragma warning( pop )
 #endif
 
 
@@ -2209,7 +2220,7 @@ Stream::Status String::read( void* buffer, size_t buffer_len, size_t* out_bytes_
   {
     if ( buffer_len > readable_len )
       buffer_len = readable_len;
-    memcpy( buffer, c_str()+read_pos, static_cast<size_t>( buffer_len ) );
+    memcpy_s( buffer, buffer_len, c_str()+read_pos, buffer_len );
     read_pos += buffer_len;
     if ( out_bytes_read )
       *out_bytes_read = buffer_len;
@@ -2800,6 +2811,8 @@ Time::operator std::string() const
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
 #else
 #include <dirent.h>
 #include <sys/statvfs.h>
@@ -2829,6 +2842,7 @@ namespace YIELD
     readdir_to_listdirCallback( Volume::listdirCallback& listdir_callback )
       : listdir_callback( listdir_callback )
     { }
+    readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& ) { return *this; }
     // Volume::readdirCallback
     bool operator()( const Path& dirent_name, auto_Object<Stat> stbuf )
     {
@@ -2856,13 +2870,13 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return ::chmod( path, mode ) != -1;
 #endif
 }
-bool Volume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
+bool Volume::chown( const YIELD::Path& path, int32_t tag, int32_t gid )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
   return false;
 #else
-  return ::chown( path, uid, gid ) != -1;
+  return ::chown( path, tag, gid ) != -1;
 #endif
 }
 bool Volume::exists( const Path& path )
@@ -3024,8 +3038,8 @@ auto_Object<Path> Volume::readlink( const Path& path )
   ::SetLastError( ERROR_NOT_SUPPORTED );
   return NULL;
 #else
-  char out_path[MAX_PATH];
-  ssize_t out_path_len = ::readlink( path, out_path, MAX_PATH );
+  char out_path[PATH_MAX];
+  ssize_t out_path_len = ::readlink( path, out_path, PATH_MAX );
   if ( out_path_len > 0 )
     return new Path( out_path, out_path_len );
   else
@@ -3066,6 +3080,7 @@ namespace YIELD
   public:
     rmtree_readdirCallback( Volume& volume ) : volume( volume )
     { }
+    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& ) { return *this; }
     virtual bool operator()( const Path& path, auto_Object<Stat> stbuf )
     {
       if ( stbuf->ISDIR() )
@@ -3124,7 +3139,7 @@ bool Volume::statvfs( const Path& path, struct statvfs* buffer )
       buffer->f_blocks = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
       buffer->f_bfree = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
       buffer->f_bavail = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
-      buffer->f_namemax = MAX_PATH;
+      buffer->f_namemax = PATH_MAX;
       return true;
     }
     else
@@ -3199,10 +3214,10 @@ Path Volume::volname( const Path& path )
   if ( !path_parts.empty() )
   {
     Path root_dir_path( static_cast<const std::string&>( path_parts[0] ) + PATH_SEPARATOR_STRING );
-    wchar_t volume_name[MAX_PATH], file_system_name[MAX_PATH];
-    if ( GetVolumeInformation( root_dir_path, volume_name, MAX_PATH, NULL, NULL, NULL, file_system_name, MAX_PATH ) != 0 )
+    wchar_t volume_name[PATH_MAX], file_system_name[PATH_MAX];
+    if ( GetVolumeInformation( root_dir_path, volume_name, PATH_MAX, NULL, NULL, NULL, file_system_name, PATH_MAX ) != 0 )
     {
-      if ( wcslen( volume_name ) > 0 )
+      if ( wcsnlen( volume_name, PATH_MAX ) > 0 )
         return Path( volume_name );
       else
         return static_cast<const std::string&>( path_parts[0] );
@@ -3211,6 +3226,9 @@ Path Volume::volname( const Path& path )
 #endif
   return Path();
 }
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 
 // xdr_input_stream.cpp
@@ -3225,23 +3243,20 @@ bool XDRInputStream::readBool( const Declaration& decl )
 {
   return readInt32( decl ) == 1;
 }
-double XDRInputStream::readDouble( const Declaration& decl )
+double XDRInputStream::readDouble( const Declaration& )
 {
-  beforeRead( decl );
   double value;
   underlying_input_stream.read( &value, sizeof( value ) );
   return value;
 }
-float XDRInputStream::readFloat( const Declaration& decl )
+float XDRInputStream::readFloat( const Declaration& )
 {
-  beforeRead( decl );
   float value;
   underlying_input_stream.read( &value, sizeof( value ) );
   return value;
 }
-int32_t XDRInputStream::readInt32( const Declaration& decl )
+int32_t XDRInputStream::readInt32( const Declaration& )
 {
-  beforeRead( decl );
   int32_t value;
   underlying_input_stream.read( &value, sizeof( value ) );
 #ifdef __MACH__
@@ -3250,9 +3265,8 @@ int32_t XDRInputStream::readInt32( const Declaration& decl )
   return Machine::ntohl( value );
 #endif
 }
-int64_t XDRInputStream::readInt64( const Declaration& decl )
+int64_t XDRInputStream::readInt64( const Declaration& )
 {
-  beforeRead( decl );
   int64_t value;
   underlying_input_stream.read( &value, sizeof( value ) );
   return Machine::ntohll( value );
@@ -3301,13 +3315,10 @@ void XDRInputStream::readString( const Declaration& decl, std::string& str )
     }
 //  }
 }
-Object* XDRInputStream::readStruct( const Declaration& decl, Object* value )
+Object* XDRInputStream::readStruct( const Declaration&, Object* value )
 {
   if ( value )
-  {
-    beforeRead( decl );
     value->deserialize( *this );
-  }
   return value;
 }
 
@@ -3320,8 +3331,8 @@ XDROutputStream::XDROutputStream( OutputStream& underlying_output_stream, bool i
 { }
 void XDROutputStream::beforeWrite( const Declaration& decl )
 {
-  if ( in_map && decl.identifier )
-    StructuredOutputStream::writeString( Declaration(), decl.identifier );
+  if ( in_map && decl.get_identifier() )
+    StructuredOutputStream::writeString( Declaration(), decl.get_identifier() );
 }
 void XDROutputStream::writeBool( const Declaration& decl, bool value )
 {

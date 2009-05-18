@@ -23,7 +23,7 @@ namespace org
         uint32_t get_platform_error_code() const;
         virtual const std::string& get_error_message() const { return empty_error_message; }
         virtual const std::string& get_stack_trace() const { return empty_stack_trace; }
-        virtual void set_error_code( uint32_t error_code ) { }
+        virtual void set_error_code( uint32_t ) { }
 
         // std::exception
         virtual const char* what() const throw()
@@ -45,7 +45,7 @@ namespace org
         ProxyExceptionResponse()
         { }
 
-        ProxyExceptionResponse( const char* what )
+        ProxyExceptionResponse( const char* )
         {
           YIELD::DebugBreak();
         }

@@ -5,22 +5,30 @@
 #define ORG_XTREEMFS_CLIENT_OSD_PROXY_H
 
 #include "org/xtreemfs/client/proxy_exception_response.h"
-#include "org/xtreemfs/interfaces/osd_interface.h"
 
 
 namespace org
 {
   namespace xtreemfs
   {
+    namespace interfaces 
+    { 
+      class FileCredentials;
+      class ObjectData;
+      class OSDInterface; 
+      class OSDWriteResponse;
+    }
+
+
     namespace client
     {
       class OSDProxy : public YIELD::ONCRPCClient
       {
       public:
         template <class StageGroupType>
-        static YIELD::auto_Object<OSDProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
+        static YIELD::auto_Object<OSDProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::URI& uri, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
         {
-          return YIELD::Client::create<OSDProxy, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+          return YIELD::Client::create<OSDProxy, StageGroupType>( stage_group, log, operation_timeout, uri, reconnect_tries_max, socket_factory );
         }
 
         void read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data );
@@ -34,10 +42,10 @@ namespace org
       private:
         friend class YIELD::Client;
 
-        OSDProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
+        OSDProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~OSDProxy() { }
 
-        org::xtreemfs::interfaces::OSDInterface osd_interface;
+        org::xtreemfs::interfaces::OSDInterface* osd_interface;
       };
     };
   };

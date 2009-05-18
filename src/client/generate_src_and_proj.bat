@@ -34,7 +34,6 @@ python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIEN
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mount -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mount.cpp -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\main.h -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_mkvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_mkvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_rmvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_rmvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%
-python %YIELD_PATH%\bin\generate_proj.py -n xtfs_send -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_send.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_stat -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_stat.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%
 
 REM Google Breakpad

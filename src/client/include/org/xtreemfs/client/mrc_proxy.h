@@ -6,15 +6,31 @@
 
 #include "org/xtreemfs/client/path.h"
 #include "org/xtreemfs/client/proxy_exception_response.h"
-#include "org/xtreemfs/interfaces/mrc_interface.h"
 
 
 namespace org
 {
   namespace xtreemfs
   {
+    namespace interfaces 
+    { 
+      class DirectoryEntrySet;
+      class FileCredentials;
+      class FileCredentialsSet;
+      class MRCInterface; 
+      class OSDWriteResponse;
+      class ReplicaSet;
+      class Stat; 
+      class StatVFS;
+      class StringSet;
+      class Volume;
+      class VolumeSet;
+      class XCap;
+    }
+
+
     namespace client
-    {
+    {    
       class PolicyContainer;
 
 
@@ -22,16 +38,15 @@ namespace org
       {
       public:       
         template <class StageGroupType>
-        static YIELD::auto_Object<MRCProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::SocketAddress& peer_sockaddr, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
+        static YIELD::auto_Object<MRCProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::URI& uri, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
         {
-          return YIELD::Client::create<MRCProxy, StageGroupType>( stage_group, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+          return YIELD::Client::create<MRCProxy, StageGroupType>( stage_group, log, operation_timeout, uri, reconnect_tries_max, socket_factory );
         }
 
         bool access( const Path& path, uint32_t mode );
         void chmod( const Path& path, uint32_t mode );
         void chown( const Path& path, int uid, int gid );
         void chown( const Path& path, const std::string& user_id, const std::string& group_id );
-        void create( const Path& path, uint32_t mode );
         void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );
         void getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf );
         void getxattr( const Path& path, const std::string& name, std::string& value );
@@ -63,16 +78,15 @@ namespace org
       private:
         friend class YIELD::Client;
 
-        MRCProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, const YIELD::SocketAddress& peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
+        MRCProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~MRCProxy();
 
 
-        org::xtreemfs::interfaces::MRCInterface mrc_interface;
         PolicyContainer* policies;
 
 
         // YIELD::Client
-        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<> body );
+        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
     };
   };

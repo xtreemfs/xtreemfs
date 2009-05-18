@@ -7,6 +7,15 @@
 #include "org/xtreemfs/client/volume.h"
 using namespace org::xtreemfs::client;
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+#include "org/xtreemfs/interfaces/osd_interface.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 
 #define ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( OperationName ) \
   try

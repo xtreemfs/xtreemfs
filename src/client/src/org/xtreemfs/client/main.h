@@ -11,6 +11,17 @@
 
 #include "org/xtreemfs/client.h"
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+#include "org/xtreemfs/interfaces/dir_interface.h"
+#include "org/xtreemfs/interfaces/mrc_interface.h"
+#include "org/xtreemfs/interfaces/osd_interface.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 #if defined(_WIN32)
 #include "client/windows/handler/exception_handler.h"
 #define ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD 1

@@ -7,6 +7,15 @@
 #include "org/xtreemfs/client/path.h"
 using namespace org::xtreemfs::client;
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+#include "org/xtreemfs/interfaces/mrc_interface.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 #include <errno.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -29,11 +38,11 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::SocketAddress& dir_sockaddr, const std::string& name, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
   : name( name ), flags( flags ), log( log )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( stage_group, dir_sockaddr, log, static_cast<uint64_t>( 5 * NS_IN_S ), YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
+  dir_proxy = DIRProxy::create( stage_group, dir_uri, log, static_cast<uint64_t>( 5 * NS_IN_S ), YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
   mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, log, static_cast<uint64_t>( 5 * NS_IN_S ), YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
 }
@@ -139,7 +148,7 @@ bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
   return false;
 }
 
-bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
+bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallback& callback )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( listdir )
   {
@@ -260,7 +269,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
   }
 }
 
-bool Volume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
+bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume::readdirCallback& callback )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( readdir )
   {
@@ -372,7 +381,7 @@ bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const s
   return false;
 }
 
-bool Volume::statvfs( const YIELD::Path& path, struct statvfs* statvfsbuf )
+bool Volume::statvfs( const YIELD::Path&, struct statvfs* statvfsbuf )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( statvfs )
   {

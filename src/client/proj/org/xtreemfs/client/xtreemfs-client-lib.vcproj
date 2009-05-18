@@ -36,7 +36,6 @@
                 WarningLevel="4"
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
-                DisableSpecificWarnings="4100;4311;4312;4512;4996"
                 CompileAs="0"
             />
             <Tool
@@ -209,10 +208,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\exceptions.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\mrc_interface.h"
     >
 </File>
@@ -246,20 +241,6 @@
 </File>
 <File
     RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\dir_interface.idl"
-    >
-    <FileConfiguration
-        Name="Debug|Win32"
-        ExcludedFromBuild="true"
-        >
-    </FileConfiguration>
-    <FileConfiguration
-        Name="Release|Win32"
-        ExcludedFromBuild="true"
-        >
-    </FileConfiguration>
-</File>
-<File
-    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\exceptions.idl"
     >
     <FileConfiguration
         Name="Debug|Win32"
