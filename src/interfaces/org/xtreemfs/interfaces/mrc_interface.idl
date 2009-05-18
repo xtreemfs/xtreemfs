@@ -2,13 +2,13 @@
 #include "mrc_osd_types.idl"
 
 
-module org
+module org # 1000
 {
-  module xtreemfs
+  module xtreemfs # 0
   {
-    module interfaces
+    module interfaces # 0
     {
-      struct Stat
+      struct Stat # 40
       {
         uint32_t mode;
         uint32_t nlink;
@@ -31,15 +31,15 @@ module org
         uint32_t attributes;
       };
 
-      struct DirectoryEntry
+      struct DirectoryEntry # 41
       {
         string name;
         Stat stbuf;
       };
 
-      typedef sequence<DirectoryEntry> DirectoryEntrySet;
+      typedef sequence<DirectoryEntry> DirectoryEntrySet # 42;
 
-      struct StatVFS
+      struct StatVFS # 43
       {
         uint32_t bsize;
         uint64_t bfree;
@@ -47,7 +47,7 @@ module org
         uint32_t namelen;
       };
 
-      struct Volume
+      struct Volume # 44
       {
         string name;
         uint32_t mode;
@@ -59,26 +59,28 @@ module org
         string owner_group_id;
       };
 
-      typedef sequence<Volume> VolumeSet;
+      typedef sequence<Volume> VolumeSet # 45;
 
 
-      interface MRCInterface #2
+      interface MRCInterface # 200
       {
         // Constants
         const uint32_t DEFAULT_ONCRPC_PORT = 32636;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32636;
         const uint32_t DEFAULT_HTTP_PORT = 30636;
 
-
         // Exceptions
-        exception MRCException { uint32_t error_code; string error_message; string stack_trace; };
+        exception ConcurrentModificationException # 6 { string stack_trace; };
+        exception errnoException # 7 { uint32_t error_code; string error_message; string stack_trace; };
+        exception InvalidArgumentException # 8 { string error_message; };
+        exception MRCException # 11 { uint32_t error_code; string error_message; string stack_trace; };
+        exception ProtocolException # 9 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
+        exception RedirectException # 10 { string to_uuid; };
 
-
-        // POSIX/FUSE functions
+        // POSIX/FUSE operations
         boolean access( string path, uint32_t mode ) # 1;
         void chmod( string path, uint32_t mode ) # 2;
         void chown( string path, string user_id, string group_id ) # 3;
-        void create( string path, uint32_t mode ) # 4;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 30;
         void getattr( string path, out Stat stbuf ) # 5;
         void getxattr( string path, string name, out string value ) # 6;
@@ -97,8 +99,7 @@ module org
         void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
         void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 22;
 
-
-        // XtreemFS-specific functions
+        // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 51;
         void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
         void xtreemfs_dump_database( string dump_file ) # 52;

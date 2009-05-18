@@ -1,8 +1,8 @@
-module org
+module org # 1000
 {
-  module xtreemfs
+  module xtreemfs # 0
   {
-    module interfaces
+    module interfaces # 0
     {
       const string ONCRPC_SCHEME = "oncrpc";
       const string ONCRPCS_SCHEME = "oncrpcs";

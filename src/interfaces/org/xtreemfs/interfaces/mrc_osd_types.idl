@@ -1,11 +1,11 @@
 #include "types.idl"
 
 
-module org
+module org # 1000
 {
-  module xtreemfs
+  module xtreemfs # 0
   {
-    module interfaces
+    module interfaces # 0
     {
       enum AccessControlPolicyType
       {
@@ -14,21 +14,21 @@ module org
         ACCESS_CONTROL_POLICY_VOLUME = 3
       };
 
-      struct NewFileSize
+      struct NewFileSize # 11
       {
         uint64_t size_in_bytes;
         uint32_t truncate_epoch;
       };
 
-      typedef sequence<NewFileSize> NewFileSizeSet;
+      typedef sequence<NewFileSize> NewFileSizeSet # 12;
 
-      struct OSDtoMRCData
+      struct OSDtoMRCData # 13
       {
         uint8_t caching_policy;
         string data;
       };
 
-      typedef sequence<OSDtoMRCData> OSDtoMRCDataSet;
+      typedef sequence<OSDtoMRCData> OSDtoMRCDataSet # 14;
 
       enum OSDSelectionPolicyType
       {
@@ -42,7 +42,7 @@ module org
         REPLICA_SELECTION_POLICY_SIMPLE = 1
       };
 
-      struct OSDWriteResponse 
+      struct OSDWriteResponse # 17
       {
         NewFileSizeSet new_file_size;
         OSDtoMRCDataSet opaque_data;
@@ -53,23 +53,23 @@ module org
         STRIPING_POLICY_RAID0 = 0
       };
 
-      struct StripingPolicy
+      struct StripingPolicy # 19
       {
         StripingPolicyType type;
         uint32_t stripe_size;
         uint32_t width;
       };
 
-      struct Replica
+      struct Replica # 20
       {
         StripingPolicy striping_policy;
         uint32_t  replication_flags;
         StringSet osd_uuids;
       };
 
-      typedef sequence<Replica> ReplicaSet;
+      typedef sequence<Replica> ReplicaSet # 21;
 
-      struct XCap
+      struct XCap # 22
       {
         string file_id;
         uint32_t access_mode;
@@ -79,7 +79,7 @@ module org
         string server_signature;
       };
 
-      struct XLocSet
+      struct XLocSet # 23
       {
         ReplicaSet replicas;
         uint32_t   version;
@@ -88,13 +88,13 @@ module org
         uint64_t   read_only_file_size;
       };
 
-      struct FileCredentials
+      struct FileCredentials # 24
       {
         XLocSet xlocs;
         XCap    xcap;
       };
 
-      typedef sequence<FileCredentials> FileCredentialsSet;
+      typedef sequence<FileCredentials> FileCredentialsSet # 25;
     };
   };
 };

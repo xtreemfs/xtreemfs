@@ -1,19 +1,19 @@
-module org
+module org # 1000
 {
-  module xtreemfs
+  module xtreemfs # 0
   {
-    module interfaces
+    module interfaces # 0
     {
-      typedef sequence<string> StringSet;
+      typedef sequence<string> StringSet # 1;
 
-      struct UserCredentials
+      struct UserCredentials # 2
       {
         string user_id;
         StringSet group_ids;
         string password;
       };
 
-      struct VivaldiCoordinates 
+      struct VivaldiCoordinates # 3
       {
          double x_coordinate;
          double y_coordinate;

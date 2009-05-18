@@ -2,13 +2,14 @@
 #include "types.idl"
 
 
-module org
+module org # 1000
 {
-  module xtreemfs
+  module xtreemfs # 0
   {
-    module interfaces
+    module interfaces # 0
     {
-      struct AddressMapping
+      // Types
+      struct AddressMapping # 30
       {
         string uuid;
         uint64_t version;
@@ -17,12 +18,12 @@ module org
         uint16_t port;
         string match_network;
         uint32_t ttl_s;
-	string uri;
+	      string uri;
       };
 
-      typedef sequence<AddressMapping> AddressMappingSet;
+      typedef sequence<AddressMapping> AddressMappingSet # 31;
 
-      typedef map<string, string> ServiceDataMap;
+      typedef map<string, string> ServiceDataMap # 32;
 
       enum ServiceType
       {
@@ -31,26 +32,32 @@ module org
         SERVICE_TYPE_VOLUME = 3
       };
 
-      struct Service 
+      struct Service # 34
       {
         ServiceType type;
         string uuid;
         uint64_t version;        
-        string   name;
+        string name;
         uint64_t last_updated_s;
         ServiceDataMap data;
       };
 
-      typedef sequence<Service> ServiceSet;
+      typedef sequence<Service> ServiceSet # 35;
 
 
-      interface DIRInterface # 2 
+      interface DIRInterface # 100
       {
+        // Constants
         const uint32_t DEFAULT_ONCRPC_PORT = 32638;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32638;
         const uint32_t DEFAULT_HTTP_PORT = 30638; 
 
-
+        // Exceptions
+        exception ConcurrentModificationException # 6 { string stack_trace; };
+        exception InvalidArgumentException # 8 { string error_message; };
+        exception ProtocolException # 9 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
+         
+        // Operations
         void xtreemfs_address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
         void xtreemfs_address_mappings_remove( string uuid ) # 3;
         uint64_t xtreemfs_address_mappings_set( AddressMappingSet address_mappings ) # 2;
