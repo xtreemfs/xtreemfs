@@ -1,4 +1,4 @@
-// Revision: 1451
+// Revision: 1456
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1047,7 +1047,7 @@ bool Mutex::acquire()
   DWORD dwRet = WaitForSingleObjectEx( hMutex, INFINITE, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
-  pthread_mutex_lock( static_cast<pthread_mutex_t*>( hMutex ) );
+  pthread_mutex_lock( &pthread_mutex );
   return true;
 #endif
 }
@@ -1057,7 +1057,7 @@ bool Mutex::try_acquire()
   DWORD dwRet = WaitForSingleObjectEx( hMutex, 0, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
-  return pthread_mutex_trylock( static_cast<pthread_mutex_t*>( hMutex ) ) == 0;
+  return pthread_mutex_trylock( &pthread_mutex ) == 0;
 #endif
 }
 bool Mutex::timed_acquire( uint64_t timeout_ns )
