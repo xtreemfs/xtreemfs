@@ -30,13 +30,11 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 
 /**
  *
@@ -50,8 +48,7 @@ public class ServiceOfflineOperation extends DIROperation {
 
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_service_offlineRequest tmp = new xtreemfs_service_offlineRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_service_offlineRequest.TAG;
         database = master.getDatabase();
     }
 
@@ -87,7 +84,7 @@ public class ServiceOfflineOperation extends DIROperation {
                 database.directInsert(ig);
             }
             
-            xtreemfs_service_registerResponse response = new xtreemfs_service_registerResponse(currentVersion);
+            xtreemfs_service_offlineResponse response = new xtreemfs_service_offlineResponse();
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);

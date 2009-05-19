@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_statusResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1407;
+
+    
     public xtreemfs_cleanup_statusResponse() { status = ""; }
     public xtreemfs_cleanup_statusResponse( String status ) { this.status = status; }
     public xtreemfs_cleanup_statusResponse( Object from_hash_map ) { status = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_cleanup_statusResponse implements org.xtreemfs.interfaces.
     public String getStatus() { return status; }
     public void setStatus( String status ) { this.status = status; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_statusResponse"; }    
-    public long getTypeId() { return 107; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_cleanup_statusResponse( " + "\"" + status + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1407; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_statusResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -67,11 +71,8 @@ public class xtreemfs_cleanup_statusResponse implements org.xtreemfs.interfaces.
         return my_size;
     }
 
-    // Response
-    public int getOperationNumber() { return 107; }
 
-
-    private String status;
+    private String status;    
 
 }
 

@@ -39,8 +39,8 @@ import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.osd.ErrorCodes;
@@ -266,11 +266,11 @@ public class PreprocStage extends Stage {
         }
         
         // everything ok, find the right operation
-        OSDOperation op = master.getOperation(hdr.getOperationNumber());
+        OSDOperation op = master.getOperation(hdr.getProcedure());
         if (op == null) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
+            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
                 ErrNo.EINVAL, "requested operation is not available on this OSD (proc # "
-                    + hdr.getOperationNumber() + ")"));
+                    + hdr.getProcedure() + ")"));
             return false;
         }
         rq.setOperation(op);
@@ -279,7 +279,7 @@ public class PreprocStage extends Stage {
             rq.setRequestArgs(op.parseRPCMessage(rpcRq.getRequestFragment(), rq));
         } catch (InvalidXLocationsException ex) {
             OSDException osdex = new OSDException(ErrorCodes.NOT_IN_XLOC, ex.getMessage(), "");
-            rpcRq.sendGenericException(osdex);
+            rpcRq.sendException(osdex);
             return false;
         } catch (Throwable ex) {
             if (Logging.isDebug())

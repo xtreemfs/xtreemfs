@@ -1,4 +1,4 @@
-package org.xtreemfs.interfaces.Exceptions;
+package org.xtreemfs.interfaces.DIRInterface;
 
 import org.xtreemfs.interfaces.*;
 import java.util.HashMap;
@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
+    public static final int TAG = 1106;
+
+    
     public ConcurrentModificationException() { stack_trace = ""; }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }
     public ConcurrentModificationException( Object from_hash_map ) { stack_trace = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::ConcurrentModificationException"; }    
-    public long getTypeId() { return 0; }
-
+    // Object
     public String toString()
     {
-        return "ConcurrentModificationException( " + "\"" + stack_trace + "\"" + " )"; 
+        return "ConcurrentModificationException( " + "\"" + stack_trace + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1106; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::ConcurrentModificationException"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,7 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     }
 
 
-    private String stack_trace;
+    private String stack_trace;    
 
 }
 

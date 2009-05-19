@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_get_resultsResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1409;
+
+    
     public xtreemfs_cleanup_get_resultsResponse() { results = new StringSet(); }
     public xtreemfs_cleanup_get_resultsResponse( StringSet results ) { this.results = results; }
     public xtreemfs_cleanup_get_resultsResponse( Object from_hash_map ) { results = new StringSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_cleanup_get_resultsResponse implements org.xtreemfs.interf
     public StringSet getResults() { return results; }
     public void setResults( StringSet results ) { this.results = results; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_get_resultsResponse"; }    
-    public long getTypeId() { return 109; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_cleanup_get_resultsResponse( " + results.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1409; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_get_resultsResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -67,11 +71,8 @@ public class xtreemfs_cleanup_get_resultsResponse implements org.xtreemfs.interf
         return my_size;
     }
 
-    // Response
-    public int getOperationNumber() { return 109; }
 
-
-    private StringSet results;
+    private StringSet results;    
 
 }
 

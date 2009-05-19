@@ -3,7 +3,6 @@ package org.xtreemfs.interfaces.OSDInterface;
 import org.xtreemfs.interfaces.utils.*;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.Exceptions.*;
 
 
 
@@ -17,7 +16,7 @@ public class OSDInterface
 
     public static int getVersion() { return 1300; }
 
-    public static Exception createException( int accept_stat ) throws Exception
+    public static ONCRPCException createException( int accept_stat ) throws Exception
     {
         switch( accept_stat )
         {
@@ -42,6 +41,11 @@ public class OSDInterface
             case 1304: return new writeRequest();
             case 2300: return new xtreemfs_broadcast_gmaxRequest();
             case 1403: return new xtreemfs_check_objectRequest();
+            case 1409: return new xtreemfs_cleanup_get_resultsRequest();
+            case 1408: return new xtreemfs_cleanup_is_runningRequest();
+            case 1405: return new xtreemfs_cleanup_startRequest();
+            case 1407: return new xtreemfs_cleanup_statusRequest();
+            case 1406: return new xtreemfs_cleanup_stopRequest();
             case 1400: return new xtreemfs_internal_get_gmaxRequest();
             case 1404: return new xtreemfs_internal_get_file_sizeRequest();
             case 1401: return new xtreemfs_internal_truncateRequest();
@@ -57,7 +61,7 @@ public class OSDInterface
     {
         switch( header.getXID() )
         {
-            case 1301: return new readResponse();            case 1302: return new truncateResponse();            case 1303: return new unlinkResponse();            case 1304: return new writeResponse();            case 2300: return new xtreemfs_broadcast_gmaxResponse();            case 1403: return new xtreemfs_check_objectResponse();            case 1400: return new xtreemfs_internal_get_gmaxResponse();            case 1404: return new xtreemfs_internal_get_file_sizeResponse();            case 1401: return new xtreemfs_internal_truncateResponse();            case 1402: return new xtreemfs_internal_read_localResponse();            case 1350: return new xtreemfs_shutdownResponse();            case 2301: return new xtreemfs_pingResponse();
+            case 1301: return new readResponse();            case 1302: return new truncateResponse();            case 1303: return new unlinkResponse();            case 1304: return new writeResponse();            case 2300: return new xtreemfs_broadcast_gmaxResponse();            case 1403: return new xtreemfs_check_objectResponse();            case 1409: return new xtreemfs_cleanup_get_resultsResponse();            case 1408: return new xtreemfs_cleanup_is_runningResponse();            case 1405: return new xtreemfs_cleanup_startResponse();            case 1407: return new xtreemfs_cleanup_statusResponse();            case 1406: return new xtreemfs_cleanup_stopResponse();            case 1400: return new xtreemfs_internal_get_gmaxResponse();            case 1404: return new xtreemfs_internal_get_file_sizeResponse();            case 1401: return new xtreemfs_internal_truncateResponse();            case 1402: return new xtreemfs_internal_read_localResponse();            case 1350: return new xtreemfs_shutdownResponse();            case 2301: return new xtreemfs_pingResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    

@@ -1,4 +1,4 @@
-package org.xtreemfs.interfaces.Exceptions;
+package org.xtreemfs.interfaces.OSDInterface;
 
 import org.xtreemfs.interfaces.*;
 import java.util.HashMap;
@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
+    public static final int TAG = 1308;
+
+    
     public InvalidArgumentException() { error_message = ""; }
     public InvalidArgumentException( String error_message ) { this.error_message = error_message; }
     public InvalidArgumentException( Object from_hash_map ) { error_message = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public String getError_message() { return error_message; }
     public void setError_message( String error_message ) { this.error_message = error_message; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::InvalidArgumentException"; }    
-    public long getTypeId() { return 0; }
-
+    // Object
     public String toString()
     {
-        return "InvalidArgumentException( " + "\"" + error_message + "\"" + " )"; 
+        return "InvalidArgumentException( " + "\"" + error_message + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1308; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::InvalidArgumentException"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,7 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     }
 
 
-    private String error_message;
+    private String error_message;    
 
 }
 

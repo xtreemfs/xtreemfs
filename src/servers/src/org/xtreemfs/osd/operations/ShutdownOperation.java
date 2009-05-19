@@ -25,8 +25,7 @@ public class ShutdownOperation extends OSDOperation {
 
     public ShutdownOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_shutdownRequest tmp = new xtreemfs_shutdownRequest();
-        procId = tmp.getOperationNumber();
+        procId = xtreemfs_shutdownRequest.TAG;
     }
 
     @Override

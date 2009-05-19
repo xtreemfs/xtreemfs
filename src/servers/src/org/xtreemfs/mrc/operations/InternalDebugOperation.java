@@ -24,21 +24,31 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.DatabaseException;
 
 /**
  * 
  * @author bjko
  */
 public class InternalDebugOperation extends MRCOperation {
-        
+
+    private Thread bgrChkptr;
+
+    private final AtomicBoolean asyncChkptRunning;
+    
     public InternalDebugOperation(MRCRequestDispatcher master) {
         super(master);
+        asyncChkptRunning = new AtomicBoolean(false);
     }
     
     @Override
@@ -49,18 +59,43 @@ public class InternalDebugOperation extends MRCOperation {
         // check password to ensure that user is authorized
         if (master.getConfig().getAdminPassword() != null
             && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
-            throw new UserException(ErrNo.EPERM, "invalid password");
+            throw new UserException(ErrNo.EPERM, "invalid password pwd="+rq.getDetails().password);
         
-        if (rqArgs.getCmd().equals("shutdown_babudb")) {
+        if (rqArgs.getOperation().equals("shutdown_babudb")) {
             master.getVolumeManager().checkpointDB();
             
             master.getVolumeManager().shutdown();
             
             // set the response
             rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
-        } else if (rqArgs.getCmd().equals("startup_babudb")) {
+        } else if (rqArgs.getOperation().equals("startup_babudb")) {
             master.getVolumeManager().init();
             rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
+        } else if (rqArgs.getOperation().equals("async_checkpoint")) {
+            Runnable asynChkpt = new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        asyncChkptRunning.set(true);
+                        final long tStart = System.currentTimeMillis();
+                        master.getVolumeManager().checkpointDB();
+                        final long tEnd = System.currentTimeMillis();
+                        asyncChkptRunning.set(false);
+                        Logging.logMessage(Logging.LEVEL_INFO, this,"checkpoint took "+(tEnd-tStart)+" ms ");
+                    } catch (DatabaseException ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                    }
+                }
+            };
+            bgrChkptr = new Thread(asynChkpt);
+            bgrChkptr.start();
+            rq.setResponse(new xtreemfs_internal_debugResponse("ok"));
+        } else if (rqArgs.getOperation().equals("checkpoint_done")) {
+            if (asyncChkptRunning.get() == false)
+                rq.setResponse(new xtreemfs_internal_debugResponse("yes"));
+            else
+                rq.setResponse(new xtreemfs_internal_debugResponse("no"));
         } else {
             rq.setResponse(new xtreemfs_internal_debugResponse("unknown command"));
         }

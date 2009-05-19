@@ -39,8 +39,7 @@ public final class CleanupGetStatusOperation extends OSDOperation {
 
     public CleanupGetStatusOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_cleanup_statusRequest rq = new xtreemfs_cleanup_statusRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_cleanup_statusRequest.TAG;
     }
 
     @Override

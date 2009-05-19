@@ -51,11 +51,12 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.interfaces.Exceptions.Exceptions;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.utils.ONCRPCError;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -403,47 +404,42 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }
         rec.setResponseFragments(con.getResponseFragments());
         con.clearResponseFragments();
-        
+
+        final int accept_stat = hdr.getAcceptStat();
+
         // check for result and exception stuff
-        if (hdr.getAcceptStat() == ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS) {
+        if (accept_stat == ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS) {
             rec.getListener().responseAvailable(rec);
         } else {
-            // check if there is an exception name and throw it
+
             ONCRPCException exception = null;
-            String exName = null;
-            if (firstFragment.hasRemaining()) {
+
+            if (accept_stat <= ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR) {
+                //ONC RPC error message
+                exception = new ONCRPCError(accept_stat);
+            } else {
+                //exception
                 try {
-                    final int exNameLen = firstFragment.getInt();
-                    final byte[] exBytes = new byte[exNameLen];
-                    firstFragment.get(exBytes);
-                    exName = new String(exBytes);
-                    if (exNameLen % 4 > 0) {
-                        for (int i = 0; i < (4 - exNameLen % 4); i++) {
-                            firstFragment.get();
-                        }
-                    }
-                    if (exName.startsWith("org::xtreemfs::interfaces::MRCInterface::")) {
-                        exception = MRCInterface.createException(exName);
-                    } else if (exName.startsWith("org::xtreemfs::interfaces::OSDInterface::")) {
-                        exception = OSDInterface.createException(exName);
+                    if (accept_stat >= DIRInterface.getVersion() && (accept_stat < DIRInterface.getVersion()+100)) {
+                        exception = DIRInterface.createException(accept_stat);
+                    } else if (accept_stat >= MRCInterface.getVersion() && (accept_stat < MRCInterface.getVersion()+100)) {
+                        exception = MRCInterface.createException(accept_stat);
+                    } else if (accept_stat >= OSDInterface.getVersion() && (accept_stat < OSDInterface.getVersion()+100)) {
+                        exception = OSDInterface.createException(accept_stat);
                     } else {
-                        exception = Exceptions.createException(exName);
+                        throw new Exception();
                     }
-                    Serializable exAsSer = (Serializable) exception;
-                    exAsSer.deserialize(firstFragment);
-                } catch (IOException ex) {
-                    exName = "IOException";
+                } catch (Exception ex) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this,"received invalid remote exception id %d",accept_stat);
+                        exception = new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR, 0, "received invalid remote exception with id "+accept_stat);
+                }
+                assert(exception != null);
+                try {
+                    exception.deserialize(firstFragment);
+                } catch (Throwable ex) {
                     rec.getListener().requestFailed(rec, new IOException("invalid exception data received"));
                     return;
                 }
-            }
-            if (exName == null) {
-                // throw exception deduced from accept stat type
-                exception = new ProtocolException(hdr.getAcceptStat(), ErrNo.EINVAL, "");
-            }
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                    "reveived remote exception: %s / %s", exName, OutputUtils.stackTraceToString(exception));
             }
             rec.getListener().remoteExceptionThrown(rec, exception);
         }

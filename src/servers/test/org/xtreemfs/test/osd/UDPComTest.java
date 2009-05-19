@@ -8,6 +8,7 @@ package org.xtreemfs.test.osd;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -32,7 +33,7 @@ import static org.junit.Assert.*;
  *
  * @author bjko
  */
-public class UDPComTest {
+public class UDPComTest extends TestCase {
 
     TestEnvironment env;
     private static final int COMPORT = 22333;
@@ -77,7 +78,7 @@ public class UDPComTest {
         udpcom.start();
 
         xtreemfs_broadcast_gmaxRequest payload = new xtreemfs_broadcast_gmaxRequest("1234", 1, 1, 1);
-        ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getOperationNumber());
+        ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getTag());
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         rq.serialize(wr);

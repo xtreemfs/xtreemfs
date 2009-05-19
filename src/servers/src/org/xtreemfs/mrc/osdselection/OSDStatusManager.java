@@ -384,4 +384,25 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         return free;
     }
+
+    public OSDSelectionPolicy getOSDSelectionPolicy(short policyId) {
+
+        OSDSelectionPolicy policy = policies.get(policyId);
+
+        // if the policy is not built-in, try to load it from the plug-in
+        // directory
+        if (policy == null) {
+            try {
+                policy = policyContainer.getOSDSelectionPolicy(policyId);
+                policies.put(policyId, policy);
+            } catch (Exception exc) {
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "could not load OSDSelectionPolicy with ID " + policyId);
+                Logging.logError(Logging.LEVEL_WARN, this, exc);
+            }
+        }
+
+        return policy;
+    }
+
 }

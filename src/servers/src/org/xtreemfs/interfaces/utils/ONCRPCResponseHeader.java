@@ -118,4 +118,9 @@ public class ONCRPCResponseHeader implements Serializable {
 
     private int accept_stat;
 
+    @Override
+    public int getTag() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

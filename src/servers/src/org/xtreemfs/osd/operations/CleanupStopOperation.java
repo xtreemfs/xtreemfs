@@ -41,8 +41,7 @@ public final class CleanupStopOperation extends OSDOperation {
 
     public CleanupStopOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_cleanup_stopRequest rq = new xtreemfs_cleanup_stopRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_cleanup_stopRequest.TAG;
     }
 
     @Override

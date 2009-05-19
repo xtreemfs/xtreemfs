@@ -51,8 +51,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
 
     public InternalGetFileSizeOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_internal_get_file_sizeRequest rq = new xtreemfs_internal_get_file_sizeRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_internal_get_file_sizeRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

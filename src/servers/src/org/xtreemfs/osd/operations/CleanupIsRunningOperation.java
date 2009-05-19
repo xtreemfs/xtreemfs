@@ -41,8 +41,7 @@ public final class CleanupIsRunningOperation extends OSDOperation {
 
     public CleanupIsRunningOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_cleanup_is_runningRequest rq = new xtreemfs_cleanup_is_runningRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_cleanup_is_runningRequest.TAG;
     }
 
     @Override

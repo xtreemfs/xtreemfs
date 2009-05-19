@@ -30,8 +30,8 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -84,7 +84,7 @@ public final class OSDRequest {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending protocol exception %s",
                 protocolException.toString());
         }
-        getRpcRequest().sendProtocolException(protocolException);
+        getRpcRequest().sendException(protocolException);
     }
 
     public void sendSuccess(Serializable response) {
@@ -107,7 +107,7 @@ public final class OSDRequest {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s", ex
                     .toString());
         }
-        getRpcRequest().sendGenericException(ex);
+        getRpcRequest().sendException(ex);
     }
 
     public void sendException(Exception ex) {
@@ -116,7 +116,7 @@ public final class OSDRequest {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending exception %s", ex
                         .toString());
             }
-            getRpcRequest().sendGenericException((ONCRPCException)ex);
+            getRpcRequest().sendException((ONCRPCException)ex);
         } else {
             sendInternalServerError(ex);
         }

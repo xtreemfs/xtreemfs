@@ -32,10 +32,10 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
-import org.xtreemfs.interfaces.Exceptions.InvalidArgumentException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
+import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setResponse;
 
@@ -51,8 +51,7 @@ public class SetAddressMappingOperation extends DIROperation {
 
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_address_mappings_setRequest tmp = new xtreemfs_address_mappings_setRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_address_mappings_setRequest.TAG;
         database = master.getDatabase();
     }
 

@@ -56,7 +56,6 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
@@ -64,7 +63,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.CrashReporter;
+import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 
 /**
  * 
@@ -189,7 +190,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             database.createDatabase("dirdbver", 1);
             try {
                 BabuDBInsertGroup ig = database.createInsertGroup("dirdbver");
-                ig.addInsert(0, versionKey, new byte[]{(byte)DIRInterface.getVersion()});
+                byte[] keyData = new byte[4];
+                ReusableBuffer rb = ReusableBuffer.wrap(keyData);
+                rb.putInt(DIRInterface.getVersion());
+                ig.addInsert(0, versionKey,keyData);
                 database.directInsert(ig);
             } catch (BabuDBException ex) {
                 ex.printStackTrace();
@@ -201,10 +205,12 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
                 try {
                     byte[] value = database.directLookup("dirdbver", 0, versionKey);
-                    byte ver = -1;
-                    if ((value != null) && (value.length > 0))
-                        ver = value[0];
-                    if (value[0] != DIRInterface.getVersion()) {
+                    int ver = -1;
+                    if ((value != null) && (value.length == 4)) {
+                        ReusableBuffer rb = ReusableBuffer.wrap(value);
+                        ver = rb.getInt();
+                    }
+                    if (ver != DIRInterface.getVersion()) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "the database was created contains data with version no %d, this DIR uses version %d.",
                                 ver,DIRInterface.getVersion());
@@ -283,15 +289,15 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
+            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
                 ErrNo.EINVAL, "invalid version requested"));
             return;
         }
         
         // everything ok, find the right operation
-        DIROperation op = registry.get(hdr.getOperationNumber());
+        DIROperation op = registry.get(hdr.getProcedure());
         if (op == null) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
+            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
                 ErrNo.EINVAL, "requested operation is not available on this DIR"));
             return;
         }

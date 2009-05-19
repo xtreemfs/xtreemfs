@@ -22,10 +22,10 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -124,7 +124,7 @@ public class SimpleRPCClientTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
         
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)
@@ -221,7 +221,7 @@ public class SimpleRPCClientTest extends TestCase {
         final UserCredentials uc = new UserCredentials("username", s, "password");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr,null,uc);
+                amr.getTag(),amr,null,uc);
 
         synchronized (result) {
             if (result.get() == null)
@@ -255,7 +255,7 @@ public class SimpleRPCClientTest extends TestCase {
                     System.out.println("request received");
                     ReusableBuffer buf = rq.getRequestFragment();
 
-                    rq.sendGenericException(new ConcurrentModificationException());
+                    rq.sendException(new ConcurrentModificationException());
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     fail();
@@ -300,7 +300,7 @@ public class SimpleRPCClientTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)
@@ -377,7 +377,7 @@ public class SimpleRPCClientTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)

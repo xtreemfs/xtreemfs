@@ -68,7 +68,7 @@ public class DIRRequest {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending exception return value");
             Logging.logUserError(Logging.LEVEL_DEBUG, Category.net, this, exception);
         }
-        rpcRequest.sendGenericException(exception);
+        rpcRequest.sendException(exception);
     }
     
 }

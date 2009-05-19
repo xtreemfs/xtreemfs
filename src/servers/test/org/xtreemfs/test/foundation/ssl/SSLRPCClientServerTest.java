@@ -24,10 +24,10 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.test.TestEnvironment;
@@ -138,7 +138,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)
@@ -175,7 +175,7 @@ public class SSLRPCClientServerTest extends TestCase {
                     System.out.println("request received");
                     ReusableBuffer buf = rq.getRequestFragment();
 
-                    rq.sendGenericException(new ConcurrentModificationException());
+                    rq.sendException(new ConcurrentModificationException());
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     fail();
@@ -220,7 +220,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)
@@ -297,7 +297,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getOperationNumber(),amr);
+                amr.getTag(),amr);
 
         synchronized (result) {
             if (result.get() == null)

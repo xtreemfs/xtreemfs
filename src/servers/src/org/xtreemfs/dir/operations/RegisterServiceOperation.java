@@ -30,10 +30,10 @@ import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.Exceptions.ConcurrentModificationException;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
 
@@ -49,8 +49,7 @@ public class RegisterServiceOperation extends DIROperation {
 
     public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_service_registerRequest tmp = new xtreemfs_service_registerRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_service_registerRequest.TAG;
         database = master.getDatabase();
     }
 

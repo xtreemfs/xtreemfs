@@ -49,8 +49,7 @@ public final class WriteOperation extends OSDOperation {
 
     public WriteOperation(OSDRequestDispatcher master) {
         super(master);
-        writeRequest rq = new writeRequest();
-        procId = rq.getOperationNumber();
+        procId = writeRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

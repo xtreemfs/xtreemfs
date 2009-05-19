@@ -1,4 +1,4 @@
-package org.xtreemfs.interfaces.Exceptions;
+package org.xtreemfs.interfaces.MRCInterface;
 
 import org.xtreemfs.interfaces.*;
 import java.util.HashMap;
@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
+    public static final int TAG = 1210;
+
+    
     public RedirectException() { to_uuid = ""; }
     public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
     public RedirectException( Object from_hash_map ) { to_uuid = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public String getTo_uuid() { return to_uuid; }
     public void setTo_uuid( String to_uuid ) { this.to_uuid = to_uuid; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::Exceptions::RedirectException"; }    
-    public long getTypeId() { return 0; }
-
+    // Object
     public String toString()
     {
-        return "RedirectException( " + "\"" + to_uuid + "\"" + " )"; 
+        return "RedirectException( " + "\"" + to_uuid + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1210; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::RedirectException"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,7 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     }
 
 
-    private String to_uuid;
+    private String to_uuid;    
 
 }
 

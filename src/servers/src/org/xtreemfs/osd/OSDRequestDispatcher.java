@@ -75,7 +75,6 @@ import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
-import org.xtreemfs.osd.operations.KeepFileOpenOperation;
 import org.xtreemfs.osd.operations.LocalReadOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
@@ -547,8 +546,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new TruncateOperation(this);
         operations.put(op.getProcedureId(),op);
 
-        op = new KeepFileOpenOperation(this);
-        operations.put(op.getProcedureId(),op);
+        /*op = new KeepFileOpenOperation(this);
+        operations.put(op.getProcedureId(),op);*/
 
         op = new InternalGetGmaxOperation(this);
         operations.put(op.getProcedureId(),op);

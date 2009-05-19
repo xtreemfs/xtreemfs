@@ -26,8 +26,8 @@ package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_s_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_s_getResponse;
 
 /**
  *
@@ -39,8 +39,7 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     public GetGlobalTimeOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_global_time_getRequest tmp = new xtreemfs_global_time_getRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_global_time_s_getRequest.TAG;
     }
 
     @Override
@@ -50,7 +49,7 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
-        xtreemfs_global_time_getResponse gtr = new xtreemfs_global_time_getResponse();
+        xtreemfs_global_time_s_getResponse gtr = new xtreemfs_global_time_s_getResponse();
         gtr.setReturnValue(System.currentTimeMillis());
         rq.sendSuccess(gtr);
     }
@@ -62,7 +61,7 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        xtreemfs_global_time_getRequest gtr = new xtreemfs_global_time_getRequest();
+        xtreemfs_global_time_s_getRequest gtr = new xtreemfs_global_time_s_getRequest();
         rq.deserializeMessage(gtr);
     }
 

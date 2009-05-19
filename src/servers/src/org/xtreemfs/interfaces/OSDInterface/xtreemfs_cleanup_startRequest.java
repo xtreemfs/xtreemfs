@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_startRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1405;
+
+    
     public xtreemfs_cleanup_startRequest() { remove_zombies = false; remove_unavail_volume = false; lost_and_found = false; }
     public xtreemfs_cleanup_startRequest( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) { this.remove_zombies = remove_zombies; this.remove_unavail_volume = remove_unavail_volume; this.lost_and_found = lost_and_found; }
     public xtreemfs_cleanup_startRequest( Object from_hash_map ) { remove_zombies = false; remove_unavail_volume = false; lost_and_found = false; this.deserialize( from_hash_map ); }
@@ -23,14 +26,15 @@ public class xtreemfs_cleanup_startRequest implements org.xtreemfs.interfaces.ut
     public boolean getLost_and_found() { return lost_and_found; }
     public void setLost_and_found( boolean lost_and_found ) { this.lost_and_found = lost_and_found; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startRequest"; }    
-    public long getTypeId() { return 105; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_cleanup_startRequest( " + Boolean.toString( remove_zombies ) + ", " + Boolean.toString( remove_unavail_volume ) + ", " + Boolean.toString( lost_and_found ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1405; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -84,13 +88,12 @@ public class xtreemfs_cleanup_startRequest implements org.xtreemfs.interfaces.ut
     }
 
     // Request
-    public int getOperationNumber() { return 105; }
     public Response createDefaultResponse() { return new xtreemfs_cleanup_startResponse(); }
 
 
     private boolean remove_zombies;
     private boolean remove_unavail_volume;
-    private boolean lost_and_found;
+    private boolean lost_and_found;    
 
 }
 

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class createRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1204;
+
+    
     public createRequest() { path = ""; mode = 0; }
     public createRequest( String path, int mode ) { this.path = path; this.mode = mode; }
     public createRequest( Object from_hash_map ) { path = ""; mode = 0; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class createRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createRequest"; }    
-    public long getTypeId() { return 4; }
-
+    // Object
     public String toString()
     {
         return "createRequest( " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1204; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,12 +80,11 @@ public class createRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 4; }
     public Response createDefaultResponse() { return new createResponse(); }
 
 
     private String path;
-    private int mode;
+    private int mode;    
 
 }
 

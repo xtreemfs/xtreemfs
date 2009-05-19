@@ -597,18 +597,19 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, String cmd) {
+    public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, UserCredentials creds, String cmd) {
         
         xtreemfs_internal_debugRequest rq = new xtreemfs_internal_debugRequest(cmd);
-        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
-            
-            @Override
-            public String getResult(ReusableBuffer data) {
-                final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
-                resp.deserialize(data);
-                return resp.getResult();
-            }
-        });
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq,
+            new RPCResponseDecoder<String>() {
+                
+                @Override
+                public String getResult(ReusableBuffer data) {
+                    final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
+                    resp.deserialize(data);
+                    return resp.getResult();
+                }
+            },creds);
         return r;
     }
     

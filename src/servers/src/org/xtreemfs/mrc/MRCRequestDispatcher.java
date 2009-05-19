@@ -60,7 +60,6 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.interfaces.Exceptions.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
@@ -82,6 +81,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
 
 /**
  * 
@@ -325,7 +325,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
             case USER_EXCEPTION: {
                 MRCException exc = new MRCException(error.getErrorCode(), error.getErrorMessage(), "");
-                rpcRequest.sendGenericException(exc);
+                rpcRequest.sendException(exc);
                 if (Logging.isDebug()) {
                     Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
                 }
@@ -340,8 +340,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case UNKNOWN_OPERATION: {
-                rpcRequest.sendProtocolException(new ProtocolException(
-                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getStackTrace()));
+                rpcRequest.sendException(new ProtocolException(
+                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getErrorMessage()+" "+error.getStackTrace()));
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
                         request.getRPCRequest().getRequestHeader().getTag());
@@ -557,7 +557,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         
         if (hdr.getInterfaceVersion() != MRCInterface.getVersion()) {
-            rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
+            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
                 ErrNo.EINVAL, "invalid version requested"));
             
             return;

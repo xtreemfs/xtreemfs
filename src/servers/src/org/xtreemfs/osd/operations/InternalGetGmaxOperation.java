@@ -49,9 +49,8 @@ public final class InternalGetGmaxOperation extends OSDOperation {
     final ServiceUUID localUUID;
 
     public InternalGetGmaxOperation(OSDRequestDispatcher master) {
-        super(master);
-        xtreemfs_internal_get_gmaxRequest rq = new xtreemfs_internal_get_gmaxRequest();
-        procId = rq.getOperationNumber();
+        super(master);;
+        procId = xtreemfs_internal_get_gmaxRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

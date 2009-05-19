@@ -11,22 +11,26 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_debugRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public xtreemfs_internal_debugRequest() { cmd = ""; }
-    public xtreemfs_internal_debugRequest( String cmd ) { this.cmd = cmd; }
-    public xtreemfs_internal_debugRequest( Object from_hash_map ) { cmd = ""; this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_debugRequest( Object[] from_array ) { cmd = "";this.deserialize( from_array ); }
+    public static final int TAG = 1254;
 
-    public String getCmd() { return cmd; }
-    public void setCmd( String cmd ) { this.cmd = cmd; }
+    
+    public xtreemfs_internal_debugRequest() { operation = ""; }
+    public xtreemfs_internal_debugRequest( String operation ) { this.operation = operation; }
+    public xtreemfs_internal_debugRequest( Object from_hash_map ) { operation = ""; this.deserialize( from_hash_map ); }
+    public xtreemfs_internal_debugRequest( Object[] from_array ) { operation = "";this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugRequest"; }    
-    public long getTypeId() { return 100; }
+    public String getOperation() { return operation; }
+    public void setOperation( String operation ) { this.operation = operation; }
 
+    // Object
     public String toString()
     {
-        return "xtreemfs_internal_debugRequest( " + "\"" + cmd + "\"" + " )";
+        return "xtreemfs_internal_debugRequest( " + "\"" + operation + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1254; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -35,44 +39,43 @@ public class xtreemfs_internal_debugRequest implements org.xtreemfs.interfaces.u
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.cmd = ( String )from_hash_map.get( "cmd" );
+        this.operation = ( String )from_hash_map.get( "operation" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.cmd = ( String )from_array[0];        
+        this.operation = ( String )from_array[0];        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        cmd = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
+        operation = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "cmd", cmd );
+        to_hash_map.put( "operation", operation );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( cmd, writer );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( operation, writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(cmd);
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(operation);
         return my_size;
     }
 
     // Request
-    public int getOperationNumber() { return 100; }
     public Response createDefaultResponse() { return new xtreemfs_internal_debugResponse(); }
 
 
-    private String cmd;
+    private String operation;    
 
 }
 

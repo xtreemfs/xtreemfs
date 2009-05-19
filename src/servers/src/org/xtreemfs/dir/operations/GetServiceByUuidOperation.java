@@ -47,8 +47,7 @@ public class GetServiceByUuidOperation extends DIROperation {
 
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_service_get_by_uuidRequest tmp = new xtreemfs_service_get_by_uuidRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_service_get_by_uuidRequest.TAG;
         database = master.getDatabase();
     }
 

@@ -54,8 +54,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     public CheckObjectOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_check_objectRequest rq = new xtreemfs_check_objectRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_check_objectRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

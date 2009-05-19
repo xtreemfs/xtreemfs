@@ -61,8 +61,7 @@ public final class ReadOperation extends OSDOperation {
 
     public ReadOperation(OSDRequestDispatcher master) {
         super(master);
-        readRequest rq = new readRequest();
-        procId = rq.getOperationNumber();
+        procId = readRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

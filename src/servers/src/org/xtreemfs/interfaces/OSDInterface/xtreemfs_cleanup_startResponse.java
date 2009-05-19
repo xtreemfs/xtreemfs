@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_startResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1405;
+
+    
     public xtreemfs_cleanup_startResponse() {  }
     public xtreemfs_cleanup_startResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_cleanup_startResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startResponse"; }    
-    public long getTypeId() { return 105; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_cleanup_startResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1405; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,10 +65,7 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 105; }
-
+    
 
 }
 

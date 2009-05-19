@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_debugResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1254;
+
+    
     public xtreemfs_internal_debugResponse() { result = ""; }
     public xtreemfs_internal_debugResponse( String result ) { this.result = result; }
     public xtreemfs_internal_debugResponse( Object from_hash_map ) { result = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_internal_debugResponse implements org.xtreemfs.interfaces.
     public String getResult() { return result; }
     public void setResult( String result ) { this.result = result; }
 
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugResponse"; }    
-    public long getTypeId() { return 100; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_internal_debugResponse( " + "\"" + result + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1254; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -67,11 +71,8 @@ public class xtreemfs_internal_debugResponse implements org.xtreemfs.interfaces.
         return my_size;
     }
 
-    // Response
-    public int getOperationNumber() { return 100; }
 
-
-    private String result;
+    private String result;    
 
 }
 

@@ -49,8 +49,7 @@ public class GetServiceByNameOperation extends DIROperation {
 
     public GetServiceByNameOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_service_get_by_nameRequest tmp = new xtreemfs_service_get_by_nameRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_service_get_by_nameRequest.TAG;
         database = master.getDatabase();
     }
 

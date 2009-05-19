@@ -96,7 +96,7 @@ public class MRC {
         
         Thread.currentThread().setName("MRC");
         
-        String cfgFile = (args.length > 0) ? args[0] : "config/mrcconfig.properties";
+        String cfgFile = (args.length > 0) ? args[0] : "../../etc/xos/xtreemfs/mrcconfig.test";
         MRCConfig config = new MRCConfig(cfgFile);
         
         Logging.start(config.getDebugLevel(), config.getDebugCategories());

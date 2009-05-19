@@ -47,8 +47,7 @@ public final class InternalTruncateOperation extends OSDOperation {
 
     public InternalTruncateOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_internal_truncateRequest rq = new xtreemfs_internal_truncateRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_internal_truncateRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

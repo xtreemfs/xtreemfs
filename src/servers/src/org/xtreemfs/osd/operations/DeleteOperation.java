@@ -50,8 +50,7 @@ public final class DeleteOperation extends OSDOperation {
 
     public DeleteOperation(OSDRequestDispatcher master) {
         super(master);
-        unlinkRequest rq = new unlinkRequest();
-        procId = rq.getOperationNumber();
+        procId = unlinkRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

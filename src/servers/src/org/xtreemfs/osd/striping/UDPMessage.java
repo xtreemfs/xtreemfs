@@ -64,7 +64,7 @@ public class UDPMessage {
     private final ReusableBuffer    payload;
 
     public UDPMessage(InetSocketAddress address, int xid, int proc, Request payload) {
-        requestHeader = new ONCRPCRequestHeader(payload.getOperationNumber(),  0 , OSDInterface.getVersion(), payload.getOperationNumber());
+        requestHeader = new ONCRPCRequestHeader(payload.getTag(),  0 , OSDInterface.getVersion(), payload.getTag());
         responseHeader = null;
         this.address = address;
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);

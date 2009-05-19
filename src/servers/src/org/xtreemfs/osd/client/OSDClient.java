@@ -84,7 +84,7 @@ public class OSDClient extends ONCRPCClient {
             int length) {
         readRequest rq = new readRequest(credentials, file_id, object_number, object_version, offset, length);
 
-        RPCResponse<ObjectData> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ObjectData>() {
+        RPCResponse<ObjectData> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ObjectData>() {
 
             @Override
             public ObjectData getResult(ReusableBuffer data) {
@@ -100,7 +100,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials, long new_file_size ) {
         truncateRequest rq = new truncateRequest(credentials, file_id, new_file_size);
 
-        RPCResponse<OSDWriteResponse> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<OSDWriteResponse>() {
+        RPCResponse<OSDWriteResponse> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<OSDWriteResponse>() {
 
             @Override
             public OSDWriteResponse getResult(ReusableBuffer data) {
@@ -116,7 +116,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials) {
         unlinkRequest rq = new unlinkRequest(credentials, file_id);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -134,7 +134,7 @@ public class OSDClient extends ONCRPCClient {
         assert((data.getData() == null) || (data.getData().position() == 0));
         writeRequest rq = new writeRequest(credentials, file_id, object_number, object_version, offset, lease_timeout, data);
 
-        RPCResponse<OSDWriteResponse> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<OSDWriteResponse>() {
+        RPCResponse<OSDWriteResponse> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<OSDWriteResponse>() {
 
             @Override
             public OSDWriteResponse getResult(ReusableBuffer data) {
@@ -152,7 +152,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials, long new_file_size ) {
         xtreemfs_internal_truncateRequest rq = new xtreemfs_internal_truncateRequest(credentials, file_id, new_file_size);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -168,7 +168,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials) {
         xtreemfs_internal_get_gmaxRequest rq = new xtreemfs_internal_get_gmaxRequest(credentials, file_id);
 
-        RPCResponse<InternalGmax> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<InternalGmax>() {
+        RPCResponse<InternalGmax> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<InternalGmax>() {
 
             @Override
             public InternalGmax getResult(ReusableBuffer data) {
@@ -184,7 +184,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials) {
         xtreemfs_internal_get_file_sizeRequest rq = new xtreemfs_internal_get_file_sizeRequest(credentials, file_id);
 
-        RPCResponse<Long> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<Long>() {
+        RPCResponse<Long> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
 
             @Override
             public Long getResult(ReusableBuffer data) {
@@ -200,7 +200,7 @@ public class OSDClient extends ONCRPCClient {
             FileCredentials credentials, long object_number, long object_version,long offset, long length) {
         xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest(credentials, file_id, object_number, object_version, offset, length);
 
-        RPCResponse<InternalReadLocalResponse> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<InternalReadLocalResponse>() {
+        RPCResponse<InternalReadLocalResponse> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<InternalReadLocalResponse>() {
 
             @Override
             public InternalReadLocalResponse getResult(ReusableBuffer data) {
@@ -217,7 +217,7 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_check_objectRequest rq = new xtreemfs_check_objectRequest(credentials, file_id, object_number, object_version);
 
-        RPCResponse<ObjectData> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ObjectData>() {
+        RPCResponse<ObjectData> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ObjectData>() {
 
             @Override
             public ObjectData getResult(ReusableBuffer data) {
@@ -235,7 +235,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -254,7 +254,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -272,7 +272,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -290,7 +290,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -308,7 +308,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -326,7 +326,7 @@ public class OSDClient extends ONCRPCClient {
 
         UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {

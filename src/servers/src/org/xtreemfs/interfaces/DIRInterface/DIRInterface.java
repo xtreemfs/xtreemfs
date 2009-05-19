@@ -3,7 +3,6 @@ package org.xtreemfs.interfaces.DIRInterface;
 import org.xtreemfs.interfaces.utils.*;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.Exceptions.*;
 
 
 
@@ -17,7 +16,7 @@ public class DIRInterface
 
     public static int getVersion() { return 1100; }
 
-    public static Exception createException( int accept_stat ) throws Exception
+    public static ONCRPCException createException( int accept_stat ) throws Exception
     {
         switch( accept_stat )
         {

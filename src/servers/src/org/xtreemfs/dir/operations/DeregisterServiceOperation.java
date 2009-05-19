@@ -45,8 +45,7 @@ public class DeregisterServiceOperation extends DIROperation {
 
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_service_deregisterRequest tmp = new xtreemfs_service_deregisterRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_service_deregisterRequest.TAG;
         database = master.getDatabase();
     }
 

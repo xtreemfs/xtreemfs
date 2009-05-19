@@ -54,7 +54,7 @@ public final class LocalReadOperation extends OSDOperation {
     public LocalReadOperation(OSDRequestDispatcher master) {
         super(master);
         xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest();
-        procId = rq.getOperationNumber();
+        procId = xtreemfs_internal_read_localRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

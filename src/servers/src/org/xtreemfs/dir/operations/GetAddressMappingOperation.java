@@ -49,8 +49,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        xtreemfs_address_mappings_getRequest tmp = new xtreemfs_address_mappings_getRequest();
-        operationNumber = tmp.getOperationNumber();
+        operationNumber = xtreemfs_address_mappings_getRequest.TAG;
         database = master.getDatabase();
     }
 

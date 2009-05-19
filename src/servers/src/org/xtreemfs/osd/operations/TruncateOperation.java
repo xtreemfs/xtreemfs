@@ -52,8 +52,7 @@ public final class TruncateOperation extends OSDOperation {
 
     public TruncateOperation(OSDRequestDispatcher master) {
         super(master);
-        truncateRequest rq = new truncateRequest();
-        procId = rq.getOperationNumber();
+        procId = truncateRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }

@@ -42,8 +42,8 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequ
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_setResponse;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_getResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_s_getRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_global_time_s_getResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
@@ -68,12 +68,12 @@ public class DIRClient extends ONCRPCClient {
     }
 
     public RPCResponse<Long> xtreemfs_global_time_get(InetSocketAddress server) {
-        xtreemfs_global_time_getRequest rq = new xtreemfs_global_time_getRequest();
+        xtreemfs_global_time_s_getRequest rq = new xtreemfs_global_time_s_getRequest();
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<Long>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
             @Override
             public Long getResult(ReusableBuffer data) {
-                final xtreemfs_global_time_getResponse resp = new xtreemfs_global_time_getResponse();
+                final xtreemfs_global_time_s_getResponse resp = new xtreemfs_global_time_s_getResponse();
                 resp.deserialize(data);
                 return resp.getReturnValue();
             }
@@ -84,7 +84,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse<AddressMappingSet> xtreemfs_address_mappings_get(InetSocketAddress server, String uuid) {
         xtreemfs_address_mappings_getRequest rq = new xtreemfs_address_mappings_getRequest(uuid);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<AddressMappingSet>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<AddressMappingSet>() {
 
             @Override
             public AddressMappingSet getResult(ReusableBuffer data) {
@@ -98,7 +98,7 @@ public class DIRClient extends ONCRPCClient {
 
     public RPCResponse<Long> xtreemfs_address_mappings_set(InetSocketAddress server, AddressMappingSet addressMappings) {
         xtreemfs_address_mappings_setRequest rq = new xtreemfs_address_mappings_setRequest(addressMappings);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<Long>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
 
             @Override
             public Long getResult(ReusableBuffer data) {
@@ -112,7 +112,7 @@ public class DIRClient extends ONCRPCClient {
 
     public RPCResponse xtreemfs_address_mappings_remove(InetSocketAddress server, String uuid) {
         xtreemfs_address_mappings_removeRequest rq = new xtreemfs_address_mappings_removeRequest(uuid);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -127,7 +127,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse<Long> xtreemfs_service_register(InetSocketAddress server, Service registry) {
         xtreemfs_service_registerRequest rq = new xtreemfs_service_registerRequest(registry);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<Long>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
 
             @Override
             public Long getResult(ReusableBuffer data) {
@@ -142,7 +142,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse xtreemfs_service_deregister(InetSocketAddress server, String uuid) {
         xtreemfs_service_deregisterRequest rq = new xtreemfs_service_deregisterRequest(uuid);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -157,7 +157,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse xtreemfs_service_offline(InetSocketAddress server, String uuid) {
         xtreemfs_service_offlineRequest rq = new xtreemfs_service_offlineRequest(uuid);
 
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -172,7 +172,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse<ServiceSet> xtreemfs_service_get_by_name(InetSocketAddress server, String volumeName) {
         xtreemfs_service_get_by_nameRequest rq = new xtreemfs_service_get_by_nameRequest(volumeName);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ServiceSet>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
 
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
@@ -187,7 +187,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse<ServiceSet> xtreemfs_service_get_by_type(InetSocketAddress server, ServiceType serviceType) {
         xtreemfs_service_get_by_typeRequest rq = new xtreemfs_service_get_by_typeRequest(serviceType);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ServiceSet>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
 
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
@@ -202,7 +202,7 @@ public class DIRClient extends ONCRPCClient {
     public RPCResponse<ServiceSet> xtreemfs_service_get_by_uuid(InetSocketAddress server, String uuid) {
         xtreemfs_service_get_by_uuidRequest rq = new xtreemfs_service_get_by_uuidRequest(uuid);
         
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder<ServiceSet>() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
 
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
