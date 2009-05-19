@@ -1,4 +1,4 @@
-// Revision: 1462
+// Revision: 1467
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -3026,11 +3026,31 @@ bool Socket::attach( auto_Object<FDEventQueue> to_fd_event_queue, Object* fd_eve
 
 bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
-  struct sockaddr* name; socklen_t namelen;
-  if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
-    return ::bind( *this, name, namelen ) != -1;
-  else
-    return false;
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
+    {
+      if ( ::bind( *this, name, namelen ) != -1 )
+        return true;
+    }
+
+    if ( domain == AF_INET6 &&
+#ifdef _WIN32
+        ::WSAGetLastError() == WSAEAFNOSUPPORT )
+#else
+        errno == EAFNOSUPPORT )
+#endif
+    {
+      close();
+      this->domain = AF_INET;
+      _socket = ::socket( AF_INET, type, protocol );
+      if ( attached_to_fd_event_queue != NULL )
+        attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
+    }
+    else
+      return false;
+  }
 }
 
 bool Socket::close()
