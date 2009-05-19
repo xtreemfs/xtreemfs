@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1223;
+
+    
     public xtreemfs_check_file_existsRequest() { volume_id = ""; file_ids = new StringSet(); }
     public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids ) { this.volume_id = volume_id; this.file_ids = file_ids; }
     public xtreemfs_check_file_existsRequest( Object from_hash_map ) { volume_id = ""; file_ids = new StringSet(); this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public StringSet getFile_ids() { return file_ids; }
     public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
 
-    public long getTag() { return 1223; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1223; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public int getOperationNumber() { return 1223; }
     public Response createDefaultResponse() { return new xtreemfs_check_file_existsResponse(); }
 
 

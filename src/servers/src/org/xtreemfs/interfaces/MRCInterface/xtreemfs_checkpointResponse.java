@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_checkpointResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1251;
+
+    
     public xtreemfs_checkpointResponse() {  }
     public xtreemfs_checkpointResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_checkpointResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1251; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_checkpointResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1251; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1251; }
     
 
 }

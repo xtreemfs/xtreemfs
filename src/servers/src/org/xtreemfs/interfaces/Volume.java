@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Volume implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1044;
+
+    
     public Volume() { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = ""; }
     public Volume( String name, int mode, OSDSelectionPolicyType osd_selection_policy, StripingPolicy default_striping_policy, AccessControlPolicyType access_control_policy, String id, String owner_user_id, String owner_group_id ) { this.name = name; this.mode = mode; this.osd_selection_policy = osd_selection_policy; this.default_striping_policy = default_striping_policy; this.access_control_policy = access_control_policy; this.id = id; this.owner_user_id = owner_user_id; this.owner_group_id = owner_group_id; }
     public Volume( Object from_hash_map ) { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = ""; this.deserialize( from_hash_map ); }
@@ -32,14 +35,15 @@ public class Volume implements org.xtreemfs.interfaces.utils.Serializable
     public String getOwner_group_id() { return owner_group_id; }
     public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
 
-    public long getTag() { return 1044; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
-
+    // Object
     public String toString()
     {
         return "Volume( " + "\"" + name + "\"" + ", " + Integer.toString( mode ) + ", " + osd_selection_policy.toString() + ", " + default_striping_policy.toString() + ", " + access_control_policy.toString() + ", " + "\"" + id + "\"" + ", " + "\"" + owner_user_id + "\"" + ", " + "\"" + owner_group_id + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1044; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
 
     public void deserialize( Object from_hash_map )
     {

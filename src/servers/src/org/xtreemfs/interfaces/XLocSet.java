@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1023;
+
+    
     public XLocSet() { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0; }
     public XLocSet( ReplicaSet replicas, int version, String repUpdatePolicy, long read_only_file_size ) { this.replicas = replicas; this.version = version; this.repUpdatePolicy = repUpdatePolicy; this.read_only_file_size = read_only_file_size; }
     public XLocSet( Object from_hash_map ) { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0; this.deserialize( from_hash_map ); }
@@ -24,14 +27,15 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     public long getRead_only_file_size() { return read_only_file_size; }
     public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
 
-    public long getTag() { return 1023; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
-
+    // Object
     public String toString()
     {
         return "XLocSet( " + replicas.toString() + ", " + Integer.toString( version ) + ", " + "\"" + repUpdatePolicy + "\"" + ", " + Long.toString( read_only_file_size ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1023; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
 
     public void deserialize( Object from_hash_map )
     {

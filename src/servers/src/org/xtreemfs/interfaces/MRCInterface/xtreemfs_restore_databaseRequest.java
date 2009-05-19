@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_restore_databaseRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1253;
+
+    
     public xtreemfs_restore_databaseRequest() { dump_file = ""; }
     public xtreemfs_restore_databaseRequest( String dump_file ) { this.dump_file = dump_file; }
     public xtreemfs_restore_databaseRequest( Object from_hash_map ) { dump_file = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_restore_databaseRequest implements org.xtreemfs.interfaces
     public String getDump_file() { return dump_file; }
     public void setDump_file( String dump_file ) { this.dump_file = dump_file; }
 
-    public long getTag() { return 1253; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_restore_databaseRequest( " + "\"" + dump_file + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1253; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_restore_databaseRequest implements org.xtreemfs.interfaces
     }
 
     // Request
-    public int getOperationNumber() { return 1253; }
     public Response createDefaultResponse() { return new xtreemfs_restore_databaseResponse(); }
 
 

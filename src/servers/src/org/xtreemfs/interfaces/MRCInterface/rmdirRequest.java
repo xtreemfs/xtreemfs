@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class rmdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1215;
+
+    
     public rmdirRequest() { path = ""; }
     public rmdirRequest( String path ) { this.path = path; }
     public rmdirRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class rmdirRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public long getTag() { return 1215; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirRequest"; }
-
+    // Object
     public String toString()
     {
         return "rmdirRequest( " + "\"" + path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1215; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class rmdirRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1215; }
     public Response createDefaultResponse() { return new rmdirResponse(); }
 
 

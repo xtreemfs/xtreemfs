@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Service implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1034;
+
+    
     public Service() { type = ServiceType.SERVICE_TYPE_MRC; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); }
     public Service( ServiceType type, String uuid, long version, String name, long last_updated_s, ServiceDataMap data ) { this.type = type; this.uuid = uuid; this.version = version; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
     public Service( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_MRC; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); this.deserialize( from_hash_map ); }
@@ -28,14 +31,15 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     public ServiceDataMap getData() { return data; }
     public void setData( ServiceDataMap data ) { this.data = data; }
 
-    public long getTag() { return 1034; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
-
+    // Object
     public String toString()
     {
         return "Service( " + type.toString() + ", " + "\"" + uuid + "\"" + ", " + Long.toString( version ) + ", " + "\"" + name + "\"" + ", " + Long.toString( last_updated_s ) + ", " + data.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1034; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
 
     public void deserialize( Object from_hash_map )
     {

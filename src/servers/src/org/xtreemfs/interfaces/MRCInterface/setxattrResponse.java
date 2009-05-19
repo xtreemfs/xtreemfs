@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class setxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1218;
+
+    
     public setxattrResponse() {  }
     public setxattrResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public setxattrResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1218; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrResponse"; }
-
+    // Object
     public String toString()
     {
         return "setxattrResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1218; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1218; }
     
 
 }

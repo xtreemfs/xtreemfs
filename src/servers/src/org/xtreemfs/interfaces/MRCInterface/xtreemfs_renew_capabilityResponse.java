@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_renew_capabilityResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1225;
+
+    
     public xtreemfs_renew_capabilityResponse() { renewed_xcap = new XCap(); }
     public xtreemfs_renew_capabilityResponse( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
     public xtreemfs_renew_capabilityResponse( Object from_hash_map ) { renewed_xcap = new XCap(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_renew_capabilityResponse implements org.xtreemfs.interface
     public XCap getRenewed_xcap() { return renewed_xcap; }
     public void setRenewed_xcap( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
 
-    public long getTag() { return 1225; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_renew_capabilityResponse( " + renewed_xcap.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1225; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_renew_capabilityResponse implements org.xtreemfs.interface
         my_size += renewed_xcap.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1225; }
 
 
     private XCap renewed_xcap;    

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_rmvolRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1216;
+
+    
     public xtreemfs_rmvolRequest() { volume_name = ""; }
     public xtreemfs_rmvolRequest( String volume_name ) { this.volume_name = volume_name; }
     public xtreemfs_rmvolRequest( Object from_hash_map ) { volume_name = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_rmvolRequest implements org.xtreemfs.interfaces.utils.Requ
     public String getVolume_name() { return volume_name; }
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
-    public long getTag() { return 1216; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_rmvolRequest( " + "\"" + volume_name + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1216; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_rmvolRequest implements org.xtreemfs.interfaces.utils.Requ
     }
 
     // Request
-    public int getOperationNumber() { return 1216; }
     public Response createDefaultResponse() { return new xtreemfs_rmvolResponse(); }
 
 

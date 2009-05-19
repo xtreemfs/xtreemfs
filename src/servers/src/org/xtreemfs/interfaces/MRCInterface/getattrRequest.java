@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1205;
+
+    
     public getattrRequest() { path = ""; }
     public getattrRequest( String path ) { this.path = path; }
     public getattrRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public long getTag() { return 1205; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrRequest"; }
-
+    // Object
     public String toString()
     {
         return "getattrRequest( " + "\"" + path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1205; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class getattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1205; }
     public Response createDefaultResponse() { return new getattrResponse(); }
 
 

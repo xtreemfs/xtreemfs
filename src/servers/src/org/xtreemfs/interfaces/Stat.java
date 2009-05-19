@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Stat implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1040;
+
+    
     public Stat() { mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime_ns = 0; mtime_ns = 0; ctime_ns = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; }
     public Stat( int mode, int nlink, int uid, int gid, int unused_dev, long size, long atime_ns, long mtime_ns, long ctime_ns, String user_id, String group_id, String file_id, String link_target, int truncate_epoch, int attributes ) { this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.unused_dev = unused_dev; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
     public Stat( Object from_hash_map ) { mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime_ns = 0; mtime_ns = 0; ctime_ns = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; this.deserialize( from_hash_map ); }
@@ -46,14 +49,15 @@ public class Stat implements org.xtreemfs.interfaces.utils.Serializable
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
-    public long getTag() { return 1040; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
-
+    // Object
     public String toString()
     {
         return "Stat( " + Integer.toString( mode ) + ", " + Integer.toString( nlink ) + ", " + Integer.toString( uid ) + ", " + Integer.toString( gid ) + ", " + Integer.toString( unused_dev ) + ", " + Long.toString( size ) + ", " + Long.toString( atime_ns ) + ", " + Long.toString( mtime_ns ) + ", " + Long.toString( ctime_ns ) + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + ", " + "\"" + file_id + "\"" + ", " + "\"" + link_target + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Integer.toString( attributes ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1040; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
 
     public void deserialize( Object from_hash_map )
     {

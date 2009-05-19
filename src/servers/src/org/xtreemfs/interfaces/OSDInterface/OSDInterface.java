@@ -19,7 +19,7 @@ public class OSDInterface
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
-        switch( header.getOperationNumber() )
+        switch( header.getProcedure() )
         {
             case 1301: return new readRequest();
             case 1302: return new truncateRequest();
@@ -34,7 +34,7 @@ public class OSDInterface
             case 1350: return new xtreemfs_shutdownRequest();
             case 2301: return new xtreemfs_pingRequest();
 
-            default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
+            default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
     }
             
@@ -43,7 +43,7 @@ public class OSDInterface
         switch( header.getXID() )
         {
             case 1301: return new readResponse();            case 1302: return new truncateResponse();            case 1303: return new unlinkResponse();            case 1304: return new writeResponse();            case 2300: return new xtreemfs_broadcast_gmaxResponse();            case 1403: return new xtreemfs_check_objectResponse();            case 1400: return new xtreemfs_internal_get_gmaxResponse();            case 1404: return new xtreemfs_internal_get_file_sizeResponse();            case 1401: return new xtreemfs_internal_truncateResponse();            case 1402: return new xtreemfs_internal_read_localResponse();            case 1350: return new xtreemfs_shutdownResponse();            case 2301: return new xtreemfs_pingResponse();
-            default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
+            default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
 

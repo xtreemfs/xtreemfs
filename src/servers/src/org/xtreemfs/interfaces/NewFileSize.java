@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1011;
+
+    
     public NewFileSize() { size_in_bytes = 0; truncate_epoch = 0; }
     public NewFileSize( long size_in_bytes, int truncate_epoch ) { this.size_in_bytes = size_in_bytes; this.truncate_epoch = truncate_epoch; }
     public NewFileSize( Object from_hash_map ) { size_in_bytes = 0; truncate_epoch = 0; this.deserialize( from_hash_map ); }
@@ -20,14 +23,15 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
 
-    public long getTag() { return 1011; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }
-
+    // Object
     public String toString()
     {
         return "NewFileSize( " + Long.toString( size_in_bytes ) + ", " + Integer.toString( truncate_epoch ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1011; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }
 
     public void deserialize( Object from_hash_map )
     {

@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1017;
+
+    
     public OSDWriteResponse() { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet(); }
     public OSDWriteResponse( NewFileSizeSet new_file_size, OSDtoMRCDataSet opaque_data ) { this.new_file_size = new_file_size; this.opaque_data = opaque_data; }
     public OSDWriteResponse( Object from_hash_map ) { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet(); this.deserialize( from_hash_map ); }
@@ -20,14 +23,15 @@ public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializa
     public OSDtoMRCDataSet getOpaque_data() { return opaque_data; }
     public void setOpaque_data( OSDtoMRCDataSet opaque_data ) { this.opaque_data = opaque_data; }
 
-    public long getTag() { return 1017; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
-
+    // Object
     public String toString()
     {
         return "OSDWriteResponse( " + new_file_size.toString() + ", " + opaque_data.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1017; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
 
     public void deserialize( Object from_hash_map )
     {

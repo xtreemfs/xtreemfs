@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class openRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1211;
+
+    
     public openRequest() { path = ""; flags = 0; mode = 0; attributes = 0; }
     public openRequest( String path, int flags, int mode, int attributes ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; }
     public openRequest( Object from_hash_map ) { path = ""; flags = 0; mode = 0; attributes = 0; this.deserialize( from_hash_map ); }
@@ -25,14 +28,15 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
-    public long getTag() { return 1211; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
-
+    // Object
     public String toString()
     {
         return "openRequest( " + "\"" + path + "\"" + ", " + Integer.toString( flags ) + ", " + Integer.toString( mode ) + ", " + Integer.toString( attributes ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -92,7 +96,6 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1211; }
     public Response createDefaultResponse() { return new openResponse(); }
 
 

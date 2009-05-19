@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1222;
+
+    
     public utimensRequest() { path = ""; atime_ns = 0; mtime_ns = 0; ctime_ns = 0; }
     public utimensRequest( String path, long atime_ns, long mtime_ns, long ctime_ns ) { this.path = path; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; }
     public utimensRequest( Object from_hash_map ) { path = ""; atime_ns = 0; mtime_ns = 0; ctime_ns = 0; this.deserialize( from_hash_map ); }
@@ -25,14 +28,15 @@ public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
     public long getCtime_ns() { return ctime_ns; }
     public void setCtime_ns( long ctime_ns ) { this.ctime_ns = ctime_ns; }
 
-    public long getTag() { return 1222; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensRequest"; }
-
+    // Object
     public String toString()
     {
         return "utimensRequest( " + "\"" + path + "\"" + ", " + Long.toString( atime_ns ) + ", " + Long.toString( mtime_ns ) + ", " + Long.toString( ctime_ns ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1222; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -92,7 +96,6 @@ public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1222; }
     public Response createDefaultResponse() { return new utimensResponse(); }
 
 

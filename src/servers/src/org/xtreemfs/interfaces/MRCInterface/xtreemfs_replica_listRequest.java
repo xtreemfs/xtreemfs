@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_listRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1232;
+
+    
     public xtreemfs_replica_listRequest() { file_id = ""; }
     public xtreemfs_replica_listRequest( String file_id ) { this.file_id = file_id; }
     public xtreemfs_replica_listRequest( Object from_hash_map ) { file_id = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_replica_listRequest implements org.xtreemfs.interfaces.uti
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public long getTag() { return 1232; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_replica_listRequest( " + "\"" + file_id + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1232; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_replica_listRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Request
-    public int getOperationNumber() { return 1232; }
     public Response createDefaultResponse() { return new xtreemfs_replica_listResponse(); }
 
 

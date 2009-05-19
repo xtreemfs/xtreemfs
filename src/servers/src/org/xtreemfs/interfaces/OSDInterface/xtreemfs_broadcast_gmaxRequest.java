@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 2300;
+
+    
     public xtreemfs_broadcast_gmaxRequest() { fileId = ""; truncateEpoch = 0; lastObject = 0; fileSize = 0; }
     public xtreemfs_broadcast_gmaxRequest( String fileId, long truncateEpoch, long lastObject, long fileSize ) { this.fileId = fileId; this.truncateEpoch = truncateEpoch; this.lastObject = lastObject; this.fileSize = fileSize; }
     public xtreemfs_broadcast_gmaxRequest( Object from_hash_map ) { fileId = ""; truncateEpoch = 0; lastObject = 0; fileSize = 0; this.deserialize( from_hash_map ); }
@@ -25,14 +28,15 @@ public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.u
     public long getFileSize() { return fileSize; }
     public void setFileSize( long fileSize ) { this.fileSize = fileSize; }
 
-    public long getTag() { return 2300; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_broadcast_gmaxRequest( " + "\"" + fileId + "\"" + ", " + Long.toString( truncateEpoch ) + ", " + Long.toString( lastObject ) + ", " + Long.toString( fileSize ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 2300; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -92,7 +96,6 @@ public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.u
     }
 
     // Request
-    public int getOperationNumber() { return 2300; }
     public Response createDefaultResponse() { return new xtreemfs_broadcast_gmaxResponse(); }
 
 

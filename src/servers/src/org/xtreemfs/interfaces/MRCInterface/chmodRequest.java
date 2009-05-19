@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1202;
+
+    
     public chmodRequest() { path = ""; mode = 0; }
     public chmodRequest( String path, int mode ) { this.path = path; this.mode = mode; }
     public chmodRequest( Object from_hash_map ) { path = ""; mode = 0; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     public int getMode() { return mode; }
     public void setMode( int mode ) { this.mode = mode; }
 
-    public long getTag() { return 1202; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }
-
+    // Object
     public String toString()
     {
         return "chmodRequest( " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1202; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1202; }
     public Response createDefaultResponse() { return new chmodResponse(); }
 
 

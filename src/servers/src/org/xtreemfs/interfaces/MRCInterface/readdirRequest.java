@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1212;
+
+    
     public readdirRequest() { path = ""; }
     public readdirRequest( String path ) { this.path = path; }
     public readdirRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public long getTag() { return 1212; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }
-
+    // Object
     public String toString()
     {
         return "readdirRequest( " + "\"" + path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1212; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class readdirRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1212; }
     public Response createDefaultResponse() { return new readdirResponse(); }
 
 

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
+    public static final int TAG = 1211;
+
+    
     public MRCException() { error_code = 0; error_message = ""; stack_trace = ""; }
     public MRCException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
     public MRCException( Object from_hash_map ) { error_code = 0; error_message = ""; stack_trace = ""; this.deserialize( from_hash_map ); }
@@ -23,14 +26,15 @@ public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    public long getTag() { return 1211; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::MRCException"; }
-
+    // Object
     public String toString()
     {
         return "MRCException( " + Integer.toString( error_code ) + ", " + "\"" + error_message + "\"" + ", " + "\"" + stack_trace + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::MRCException"; }
 
     public void deserialize( Object from_hash_map )
     {

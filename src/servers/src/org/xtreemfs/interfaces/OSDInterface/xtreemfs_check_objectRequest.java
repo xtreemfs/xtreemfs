@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1403;
+
+    
     public xtreemfs_check_objectRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; }
     public xtreemfs_check_objectRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; }
     public xtreemfs_check_objectRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; this.deserialize( from_hash_map ); }
@@ -25,14 +28,15 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     public long getObject_version() { return object_version; }
     public void setObject_version( long object_version ) { this.object_version = object_version; }
 
-    public long getTag() { return 1403; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_check_objectRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1403; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -92,7 +96,6 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Request
-    public int getOperationNumber() { return 1403; }
     public Response createDefaultResponse() { return new xtreemfs_check_objectResponse(); }
 
 

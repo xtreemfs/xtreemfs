@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1218;
+
+    
     public setxattrRequest() { path = ""; name = ""; value = ""; flags = 0; }
     public setxattrRequest( String path, String name, String value, int flags ) { this.path = path; this.name = name; this.value = value; this.flags = flags; }
     public setxattrRequest( Object from_hash_map ) { path = ""; name = ""; value = ""; flags = 0; this.deserialize( from_hash_map ); }
@@ -25,14 +28,15 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     public int getFlags() { return flags; }
     public void setFlags( int flags ) { this.flags = flags; }
 
-    public long getTag() { return 1218; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
-
+    // Object
     public String toString()
     {
         return "setxattrRequest( " + "\"" + path + "\"" + ", " + "\"" + name + "\"" + ", " + "\"" + value + "\"" + ", " + Integer.toString( flags ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1218; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -92,7 +96,6 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1218; }
     public Response createDefaultResponse() { return new setxattrResponse(); }
 
 

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 2301;
+
+    
     public xtreemfs_pingResponse() { remote_coordinates = new VivaldiCoordinates(); }
     public xtreemfs_pingResponse( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
     public xtreemfs_pingResponse( Object from_hash_map ) { remote_coordinates = new VivaldiCoordinates(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Resp
     public VivaldiCoordinates getRemote_coordinates() { return remote_coordinates; }
     public void setRemote_coordinates( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
 
-    public long getTag() { return 2301; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_pingResponse( " + remote_coordinates.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 2301; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Resp
         my_size += remote_coordinates.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 2301; }
 
 
     private VivaldiCoordinates remote_coordinates;    

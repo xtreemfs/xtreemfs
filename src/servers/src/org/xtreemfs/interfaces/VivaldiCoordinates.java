@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1003;
+
+    
     public VivaldiCoordinates() { x_coordinate = 0; y_coordinate = 0; local_error = 0; }
     public VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) { this.x_coordinate = x_coordinate; this.y_coordinate = y_coordinate; this.local_error = local_error; }
     public VivaldiCoordinates( Object from_hash_map ) { x_coordinate = 0; y_coordinate = 0; local_error = 0; this.deserialize( from_hash_map ); }
@@ -22,14 +25,15 @@ public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Seriali
     public double getLocal_error() { return local_error; }
     public void setLocal_error( double local_error ) { this.local_error = local_error; }
 
-    public long getTag() { return 1003; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
-
+    // Object
     public String toString()
     {
         return "VivaldiCoordinates( " + Double.toString( x_coordinate ) + ", " + Double.toString( y_coordinate ) + ", " + Double.toString( local_error ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1003; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
 
     public void deserialize( Object from_hash_map )
     {

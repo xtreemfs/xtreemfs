@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_get_by_nameResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1109;
+
+    
     public xtreemfs_service_get_by_nameResponse() { services = new ServiceSet(); }
     public xtreemfs_service_get_by_nameResponse( ServiceSet services ) { this.services = services; }
     public xtreemfs_service_get_by_nameResponse( Object from_hash_map ) { services = new ServiceSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_service_get_by_nameResponse implements org.xtreemfs.interf
     public ServiceSet getServices() { return services; }
     public void setServices( ServiceSet services ) { this.services = services; }
 
-    public long getTag() { return 1109; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_service_get_by_nameResponse( " + services.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1109; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_service_get_by_nameResponse implements org.xtreemfs.interf
         my_size += services.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1109; }
 
 
     private ServiceSet services;    

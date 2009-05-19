@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class rmdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1215;
+
+    
     public rmdirResponse() {  }
     public rmdirResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public rmdirResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1215; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }
-
+    // Object
     public String toString()
     {
         return "rmdirResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1215; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1215; }
     
 
 }

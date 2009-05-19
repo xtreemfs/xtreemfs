@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1019;
+
+    
     public StripingPolicy() { type = StripingPolicyType.STRIPING_POLICY_RAID0; stripe_size = 0; width = 0; }
     public StripingPolicy( StripingPolicyType type, int stripe_size, int width ) { this.type = type; this.stripe_size = stripe_size; this.width = width; }
     public StripingPolicy( Object from_hash_map ) { type = StripingPolicyType.STRIPING_POLICY_RAID0; stripe_size = 0; width = 0; this.deserialize( from_hash_map ); }
@@ -22,14 +25,15 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
     public int getWidth() { return width; }
     public void setWidth( int width ) { this.width = width; }
 
-    public long getTag() { return 1019; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
-
+    // Object
     public String toString()
     {
         return "StripingPolicy( " + type.toString() + ", " + Integer.toString( stripe_size ) + ", " + Integer.toString( width ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1019; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
 
     public void deserialize( Object from_hash_map )
     {

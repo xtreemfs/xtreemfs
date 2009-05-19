@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1217;
+
+    
     public setattrRequest() { path = ""; stbuf = new Stat(); }
     public setattrRequest( String path, Stat stbuf ) { this.path = path; this.stbuf = stbuf; }
     public setattrRequest( Object from_hash_map ) { path = ""; stbuf = new Stat(); this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
     public Stat getStbuf() { return stbuf; }
     public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
 
-    public long getTag() { return 1217; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }
-
+    // Object
     public String toString()
     {
         return "setattrRequest( " + "\"" + path + "\"" + ", " + stbuf.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1217; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class setattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1217; }
     public Response createDefaultResponse() { return new setattrResponse(); }
 
 

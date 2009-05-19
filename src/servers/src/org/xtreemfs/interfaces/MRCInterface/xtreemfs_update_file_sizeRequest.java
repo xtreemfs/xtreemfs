@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1229;
+
+    
     public xtreemfs_update_file_sizeRequest() { xcap = new XCap(); osd_write_response = new OSDWriteResponse(); }
     public xtreemfs_update_file_sizeRequest( XCap xcap, OSDWriteResponse osd_write_response ) { this.xcap = xcap; this.osd_write_response = osd_write_response; }
     public xtreemfs_update_file_sizeRequest( Object from_hash_map ) { xcap = new XCap(); osd_write_response = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
-    public long getTag() { return 1229; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_update_file_sizeRequest( " + xcap.toString() + ", " + osd_write_response.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1229; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     }
 
     // Request
-    public int getOperationNumber() { return 1229; }
     public Response createDefaultResponse() { return new xtreemfs_update_file_sizeResponse(); }
 
 

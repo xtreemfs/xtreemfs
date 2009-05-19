@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1051;
+
+    
     public ObjectData() { data = null; checksum = 0; zero_padding = 0; invalid_checksum_on_osd = false; }
     public ObjectData( ReusableBuffer data, int checksum, int zero_padding, boolean invalid_checksum_on_osd ) { this.data = data; this.checksum = checksum; this.zero_padding = zero_padding; this.invalid_checksum_on_osd = invalid_checksum_on_osd; }
     public ObjectData( Object from_hash_map ) { data = null; checksum = 0; zero_padding = 0; invalid_checksum_on_osd = false; this.deserialize( from_hash_map ); }
@@ -24,14 +27,15 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
     public boolean getInvalid_checksum_on_osd() { return invalid_checksum_on_osd; }
     public void setInvalid_checksum_on_osd( boolean invalid_checksum_on_osd ) { this.invalid_checksum_on_osd = invalid_checksum_on_osd; }
 
-    public long getTag() { return 1051; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
-
+    // Object
     public String toString()
     {
         return "ObjectData( " + "\"" + data + "\"" + ", " + Integer.toString( checksum ) + ", " + Integer.toString( zero_padding ) + ", " + Boolean.toString( invalid_checksum_on_osd ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1051; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
 
     public void deserialize( Object from_hash_map )
     {

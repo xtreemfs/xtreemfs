@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1233;
+
+    
     public xtreemfs_listdirRequest() { path = ""; }
     public xtreemfs_listdirRequest( String path ) { this.path = path; }
     public xtreemfs_listdirRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Re
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public long getTag() { return 1233; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_listdirRequest( " + "\"" + path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1233; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Re
     }
 
     // Request
-    public int getOperationNumber() { return 1233; }
     public Response createDefaultResponse() { return new xtreemfs_listdirResponse(); }
 
 

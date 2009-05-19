@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1303;
+
+    
     public unlinkResponse() {  }
     public unlinkResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public unlinkResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1303; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }
-
+    // Object
     public String toString()
     {
         return "unlinkResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1303; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1303; }
     
 
 }

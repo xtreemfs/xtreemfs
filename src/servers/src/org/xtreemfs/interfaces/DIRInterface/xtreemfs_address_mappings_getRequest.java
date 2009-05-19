@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_address_mappings_getRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1101;
+
+    
     public xtreemfs_address_mappings_getRequest() { uuid = ""; }
     public xtreemfs_address_mappings_getRequest( String uuid ) { this.uuid = uuid; }
     public xtreemfs_address_mappings_getRequest( Object from_hash_map ) { uuid = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_address_mappings_getRequest implements org.xtreemfs.interf
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public long getTag() { return 1101; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_address_mappings_getRequest( " + "\"" + uuid + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1101; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_address_mappings_getRequest implements org.xtreemfs.interf
     }
 
     // Request
-    public int getOperationNumber() { return 1101; }
     public Response createDefaultResponse() { return new xtreemfs_address_mappings_getResponse(); }
 
 

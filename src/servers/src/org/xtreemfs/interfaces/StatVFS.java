@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1043;
+
+    
     public StatVFS() { bsize = 0; bfree = 0; fsid = ""; namelen = 0; }
     public StatVFS( int bsize, long bfree, String fsid, int namelen ) { this.bsize = bsize; this.bfree = bfree; this.fsid = fsid; this.namelen = namelen; }
     public StatVFS( Object from_hash_map ) { bsize = 0; bfree = 0; fsid = ""; namelen = 0; this.deserialize( from_hash_map ); }
@@ -24,14 +27,15 @@ public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
     public int getNamelen() { return namelen; }
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
-    public long getTag() { return 1043; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
-
+    // Object
     public String toString()
     {
         return "StatVFS( " + Integer.toString( bsize ) + ", " + Long.toString( bfree ) + ", " + "\"" + fsid + "\"" + ", " + Integer.toString( namelen ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1043; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
 
     public void deserialize( Object from_hash_map )
     {

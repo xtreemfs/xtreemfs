@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1230;
+
+    
     public ftruncateResponse() { truncate_xcap = new XCap(); }
     public ftruncateResponse( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
     public ftruncateResponse( Object from_hash_map ) { truncate_xcap = new XCap(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
     public XCap getTruncate_xcap() { return truncate_xcap; }
     public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
-    public long getTag() { return 1230; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
-
+    // Object
     public String toString()
     {
         return "ftruncateResponse( " + truncate_xcap.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1230; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += truncate_xcap.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1230; }
 
 
     private XCap truncate_xcap;    

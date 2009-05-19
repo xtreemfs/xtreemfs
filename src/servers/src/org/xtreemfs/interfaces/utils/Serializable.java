@@ -30,6 +30,12 @@ import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 public interface Serializable {
     /**
+     * Gets the IDL module[::interface]::tag for this Serializable type
+     * @return
+     */
+    public int getTag();
+
+    /**
      * Gets the IDL module[::interface]::type_name for this Serializable type
      * @return
      */

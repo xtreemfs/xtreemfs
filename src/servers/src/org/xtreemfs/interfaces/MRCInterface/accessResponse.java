@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class accessResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1201;
+
+    
     public accessResponse() { returnValue = false; }
     public accessResponse( boolean returnValue ) { this.returnValue = returnValue; }
     public accessResponse( Object from_hash_map ) { returnValue = false; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
     public boolean getReturnValue() { return returnValue; }
     public void setReturnValue( boolean returnValue ) { this.returnValue = returnValue; }
 
-    public long getTag() { return 1201; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }
-
+    // Object
     public String toString()
     {
         return "accessResponse( " + Boolean.toString( returnValue ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1201; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class accessResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += 4;
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1201; }
 
 
     private boolean returnValue;    

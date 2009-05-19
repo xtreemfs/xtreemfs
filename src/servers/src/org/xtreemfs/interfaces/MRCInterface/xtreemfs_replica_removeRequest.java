@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1227;
+
+    
     public xtreemfs_replica_removeRequest() { file_id = ""; osd_uuid = ""; }
     public xtreemfs_replica_removeRequest( String file_id, String osd_uuid ) { this.file_id = file_id; this.osd_uuid = osd_uuid; }
     public xtreemfs_replica_removeRequest( Object from_hash_map ) { file_id = ""; osd_uuid = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.u
     public String getOsd_uuid() { return osd_uuid; }
     public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
-    public long getTag() { return 1227; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_replica_removeRequest( " + "\"" + file_id + "\"" + ", " + "\"" + osd_uuid + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1227; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.u
     }
 
     // Request
-    public int getOperationNumber() { return 1227; }
     public Response createDefaultResponse() { return new xtreemfs_replica_removeResponse(); }
 
 

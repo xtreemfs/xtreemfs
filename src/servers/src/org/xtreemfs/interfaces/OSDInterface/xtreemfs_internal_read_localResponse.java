@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1402;
+
+    
     public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse(); }
     public xtreemfs_internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
     public xtreemfs_internal_read_localResponse( Object from_hash_map ) { returnValue = new InternalReadLocalResponse(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
     public InternalReadLocalResponse getReturnValue() { return returnValue; }
     public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
-    public long getTag() { return 1402; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_internal_read_localResponse( " + returnValue.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1402; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
         my_size += returnValue.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1402; }
 
 
     private InternalReadLocalResponse returnValue;    

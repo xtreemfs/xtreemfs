@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1208;
+
+    
     public listxattrResponse() { names = new StringSet(); }
     public listxattrResponse( StringSet names ) { this.names = names; }
     public listxattrResponse( Object from_hash_map ) { names = new StringSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    public long getTag() { return 1208; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
-
+    // Object
     public String toString()
     {
         return "listxattrResponse( " + names.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1208; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += names.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1208; }
 
 
     private StringSet names;    

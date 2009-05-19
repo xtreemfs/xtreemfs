@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class openResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1211;
+
+    
     public openResponse() { file_credentials = new FileCredentials(); }
     public openResponse( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public openResponse( Object from_hash_map ) { file_credentials = new FileCredentials(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class openResponse implements org.xtreemfs.interfaces.utils.Response
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
 
-    public long getTag() { return 1211; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }
-
+    // Object
     public String toString()
     {
         return "openResponse( " + file_credentials.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1211; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class openResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += file_credentials.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1211; }
 
 
     private FileCredentials file_credentials;    

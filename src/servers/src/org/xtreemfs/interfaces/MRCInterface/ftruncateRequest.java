@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ftruncateRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1230;
+
+    
     public ftruncateRequest() { write_xcap = new XCap(); }
     public ftruncateRequest( XCap write_xcap ) { this.write_xcap = write_xcap; }
     public ftruncateRequest( Object from_hash_map ) { write_xcap = new XCap(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class ftruncateRequest implements org.xtreemfs.interfaces.utils.Request
     public XCap getWrite_xcap() { return write_xcap; }
     public void setWrite_xcap( XCap write_xcap ) { this.write_xcap = write_xcap; }
 
-    public long getTag() { return 1230; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest"; }
-
+    // Object
     public String toString()
     {
         return "ftruncateRequest( " + write_xcap.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1230; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class ftruncateRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1230; }
     public Response createDefaultResponse() { return new ftruncateResponse(); }
 
 

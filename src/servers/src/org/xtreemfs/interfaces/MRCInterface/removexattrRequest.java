@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class removexattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1213;
+
+    
     public removexattrRequest() { path = ""; name = ""; }
     public removexattrRequest( String path, String name ) { this.path = path; this.name = name; }
     public removexattrRequest( Object from_hash_map ) { path = ""; name = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class removexattrRequest implements org.xtreemfs.interfaces.utils.Request
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
 
-    public long getTag() { return 1213; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::removexattrRequest"; }
-
+    // Object
     public String toString()
     {
         return "removexattrRequest( " + "\"" + path + "\"" + ", " + "\"" + name + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1213; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::removexattrRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class removexattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1213; }
     public Response createDefaultResponse() { return new removexattrResponse(); }
 
 

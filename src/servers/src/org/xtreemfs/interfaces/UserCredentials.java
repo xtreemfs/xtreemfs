@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1002;
+
+    
     public UserCredentials() { user_id = ""; group_ids = new StringSet(); password = ""; }
     public UserCredentials( String user_id, StringSet group_ids, String password ) { this.user_id = user_id; this.group_ids = group_ids; this.password = password; }
     public UserCredentials( Object from_hash_map ) { user_id = ""; group_ids = new StringSet(); password = ""; this.deserialize( from_hash_map ); }
@@ -22,14 +25,15 @@ public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializab
     public String getPassword() { return password; }
     public void setPassword( String password ) { this.password = password; }
 
-    public long getTag() { return 1002; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
-
+    // Object
     public String toString()
     {
         return "UserCredentials( " + "\"" + user_id + "\"" + ", " + group_ids.toString() + ", " + "\"" + password + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1002; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
 
     public void deserialize( Object from_hash_map )
     {

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class writeResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1304;
+
+    
     public writeResponse() { osd_write_response = new OSDWriteResponse(); }
     public writeResponse( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
     public writeResponse( Object from_hash_map ) { osd_write_response = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class writeResponse implements org.xtreemfs.interfaces.utils.Response
     public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
-    public long getTag() { return 1304; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeResponse"; }
-
+    // Object
     public String toString()
     {
         return "writeResponse( " + osd_write_response.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1304; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class writeResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += osd_write_response.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1304; }
 
 
     private OSDWriteResponse osd_write_response;    

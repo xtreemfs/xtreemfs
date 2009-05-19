@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class XCap implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1022;
+
+    
     public XCap() { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; server_signature = ""; }
     public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.server_signature = server_signature; }
     public XCap( Object from_hash_map ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; server_signature = ""; this.deserialize( from_hash_map ); }
@@ -28,14 +31,15 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public String getServer_signature() { return server_signature; }
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
-    public long getTag() { return 1022; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
-
+    // Object
     public String toString()
     {
         return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires_s ) + ", " + "\"" + client_identity + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + "\"" + server_signature + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1022; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
 
     public void deserialize( Object from_hash_map )
     {

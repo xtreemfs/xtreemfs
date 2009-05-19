@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class readRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1301;
+
+    
     public readRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; }
     public readRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, int length ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; }
     public readRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; this.deserialize( from_hash_map ); }
@@ -29,14 +32,15 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     public int getLength() { return length; }
     public void setLength( int length ) { this.length = length; }
 
-    public long getTag() { return 1301; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }
-
+    // Object
     public String toString()
     {
         return "readRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Integer.toString( length ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1301; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -108,7 +112,6 @@ public class readRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1301; }
     public Response createDefaultResponse() { return new readResponse(); }
 
 

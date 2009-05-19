@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class FileCredentials implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1024;
+
+    
     public FileCredentials() { xlocs = new XLocSet(); xcap = new XCap(); }
     public FileCredentials( XLocSet xlocs, XCap xcap ) { this.xlocs = xlocs; this.xcap = xcap; }
     public FileCredentials( Object from_hash_map ) { xlocs = new XLocSet(); xcap = new XCap(); this.deserialize( from_hash_map ); }
@@ -20,14 +23,15 @@ public class FileCredentials implements org.xtreemfs.interfaces.utils.Serializab
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
 
-    public long getTag() { return 1024; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
-
+    // Object
     public String toString()
     {
         return "FileCredentials( " + xlocs.toString() + ", " + xcap.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1024; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
 
     public void deserialize( Object from_hash_map )
     {

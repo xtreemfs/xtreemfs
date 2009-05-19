@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1106;
+
+    
     public xtreemfs_service_get_by_typeRequest() { type = ServiceType.SERVICE_TYPE_MRC; }
     public xtreemfs_service_get_by_typeRequest( ServiceType type ) { this.type = type; }
     public xtreemfs_service_get_by_typeRequest( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_MRC; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfa
     public ServiceType getType() { return type; }
     public void setType( ServiceType type ) { this.type = type; }
 
-    public long getTag() { return 1106; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_service_get_by_typeRequest( " + type.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1106; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfa
     }
 
     // Request
-    public int getOperationNumber() { return 1106; }
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_typeResponse(); }
 
 

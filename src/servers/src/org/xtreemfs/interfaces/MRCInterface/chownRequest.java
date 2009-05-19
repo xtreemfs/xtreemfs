@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chownRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1203;
+
+    
     public chownRequest() { path = ""; user_id = ""; group_id = ""; }
     public chownRequest( String path, String user_id, String group_id ) { this.path = path; this.user_id = user_id; this.group_id = group_id; }
     public chownRequest( Object from_hash_map ) { path = ""; user_id = ""; group_id = ""; this.deserialize( from_hash_map ); }
@@ -23,14 +26,15 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     public String getGroup_id() { return group_id; }
     public void setGroup_id( String group_id ) { this.group_id = group_id; }
 
-    public long getTag() { return 1203; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }
-
+    // Object
     public String toString()
     {
         return "chownRequest( " + "\"" + path + "\"" + ", " + "\"" + user_id + "\"" + ", " + "\"" + group_id + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1203; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -84,7 +88,6 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1203; }
     public Response createDefaultResponse() { return new chownResponse(); }
 
 

@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1228;
+
+    
     public xtreemfs_restore_fileRequest() { file_path = ""; file_id = ""; file_size = 0; osd_uuid = ""; stripe_size = 0; }
     public xtreemfs_restore_fileRequest( String file_path, String file_id, long file_size, String osd_uuid, int stripe_size ) { this.file_path = file_path; this.file_id = file_id; this.file_size = file_size; this.osd_uuid = osd_uuid; this.stripe_size = stripe_size; }
     public xtreemfs_restore_fileRequest( Object from_hash_map ) { file_path = ""; file_id = ""; file_size = 0; osd_uuid = ""; stripe_size = 0; this.deserialize( from_hash_map ); }
@@ -27,14 +30,15 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
     public int getStripe_size() { return stripe_size; }
     public void setStripe_size( int stripe_size ) { this.stripe_size = stripe_size; }
 
-    public long getTag() { return 1228; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_restore_fileRequest( " + "\"" + file_path + "\"" + ", " + "\"" + file_id + "\"" + ", " + Long.toString( file_size ) + ", " + "\"" + osd_uuid + "\"" + ", " + Integer.toString( stripe_size ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1228; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -100,7 +104,6 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Request
-    public int getOperationNumber() { return 1228; }
     public Response createDefaultResponse() { return new xtreemfs_restore_fileResponse(); }
 
 

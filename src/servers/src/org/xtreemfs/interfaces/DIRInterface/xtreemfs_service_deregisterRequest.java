@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_deregisterRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1105;
+
+    
     public xtreemfs_service_deregisterRequest() { uuid = ""; }
     public xtreemfs_service_deregisterRequest( String uuid ) { this.uuid = uuid; }
     public xtreemfs_service_deregisterRequest( Object from_hash_map ) { uuid = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_service_deregisterRequest implements org.xtreemfs.interfac
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public long getTag() { return 1105; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_deregisterRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_service_deregisterRequest( " + "\"" + uuid + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1105; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_deregisterRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_service_deregisterRequest implements org.xtreemfs.interfac
     }
 
     // Request
-    public int getOperationNumber() { return 1105; }
     public Response createDefaultResponse() { return new xtreemfs_service_deregisterResponse(); }
 
 

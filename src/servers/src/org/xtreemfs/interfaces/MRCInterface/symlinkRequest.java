@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1220;
+
+    
     public symlinkRequest() { target_path = ""; link_path = ""; }
     public symlinkRequest( String target_path, String link_path ) { this.target_path = target_path; this.link_path = link_path; }
     public symlinkRequest( Object from_hash_map ) { target_path = ""; link_path = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getLink_path() { return link_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
-    public long getTag() { return 1220; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }
-
+    // Object
     public String toString()
     {
         return "symlinkRequest( " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1220; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1220; }
     public Response createDefaultResponse() { return new symlinkResponse(); }
 
 

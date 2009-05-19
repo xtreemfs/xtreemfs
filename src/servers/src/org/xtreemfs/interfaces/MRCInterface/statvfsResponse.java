@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1219;
+
+    
     public statvfsResponse() { stbuf = new StatVFS(); }
     public statvfsResponse( StatVFS stbuf ) { this.stbuf = stbuf; }
     public statvfsResponse( Object from_hash_map ) { stbuf = new StatVFS(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
     public StatVFS getStbuf() { return stbuf; }
     public void setStbuf( StatVFS stbuf ) { this.stbuf = stbuf; }
 
-    public long getTag() { return 1219; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }
-
+    // Object
     public String toString()
     {
         return "statvfsResponse( " + stbuf.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1219; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class statvfsResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += stbuf.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1219; }
 
 
     private StatVFS stbuf;    

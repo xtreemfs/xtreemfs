@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
+    public static final int TAG = 1311;
+
+    
     public OSDException() { error_code = 0; error_message = ""; stack_trace = ""; }
     public OSDException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
     public OSDException( Object from_hash_map ) { error_code = 0; error_message = ""; stack_trace = ""; this.deserialize( from_hash_map ); }
@@ -23,14 +26,15 @@ public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
     public String getStack_trace() { return stack_trace; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
-    public long getTag() { return 1311; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::OSDException"; }
-
+    // Object
     public String toString()
     {
         return "OSDException( " + Integer.toString( error_code ) + ", " + "\"" + error_message + "\"" + ", " + "\"" + stack_trace + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1311; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::OSDException"; }
 
     public void deserialize( Object from_hash_map )
     {

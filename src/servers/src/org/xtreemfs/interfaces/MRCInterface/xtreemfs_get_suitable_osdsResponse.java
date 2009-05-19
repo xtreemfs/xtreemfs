@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1224;
+
+    
     public xtreemfs_get_suitable_osdsResponse() { osd_uuids = new StringSet(); }
     public xtreemfs_get_suitable_osdsResponse( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
     public xtreemfs_get_suitable_osdsResponse( Object from_hash_map ) { osd_uuids = new StringSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    public long getTag() { return 1224; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_get_suitable_osdsResponse( " + osd_uuids.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1224; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
         my_size += osd_uuids.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1224; }
 
 
     private StringSet osd_uuids;    

@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Replica implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1020;
+
+    
     public Replica() { striping_policy = new StripingPolicy(); replication_flags = 0; osd_uuids = new StringSet(); }
     public Replica( StripingPolicy striping_policy, int replication_flags, StringSet osd_uuids ) { this.striping_policy = striping_policy; this.replication_flags = replication_flags; this.osd_uuids = osd_uuids; }
     public Replica( Object from_hash_map ) { striping_policy = new StripingPolicy(); replication_flags = 0; osd_uuids = new StringSet(); this.deserialize( from_hash_map ); }
@@ -22,14 +25,15 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    public long getTag() { return 1020; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
-
+    // Object
     public String toString()
     {
         return "Replica( " + striping_policy.toString() + ", " + Integer.toString( replication_flags ) + ", " + osd_uuids.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1020; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
 
     public void deserialize( Object from_hash_map )
     {

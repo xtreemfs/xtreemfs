@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_lsvolRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1231;
+
+    
     public xtreemfs_lsvolRequest() {  }
     public xtreemfs_lsvolRequest( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_lsvolRequest( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1231; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_lsvolRequest()";
     }
 
+    // Serializable
+    public int getTag() { return 1231; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -63,7 +67,6 @@ return to_hash_map;
     }
 
     // Request
-    public int getOperationNumber() { return 1231; }
     public Response createDefaultResponse() { return new xtreemfs_lsvolResponse(); }
     
 

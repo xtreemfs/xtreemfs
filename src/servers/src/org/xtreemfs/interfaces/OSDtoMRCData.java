@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1013;
+
+    
     public OSDtoMRCData() { caching_policy = 0; data = ""; }
     public OSDtoMRCData( int caching_policy, String data ) { this.caching_policy = caching_policy; this.data = data; }
     public OSDtoMRCData( Object from_hash_map ) { caching_policy = 0; data = ""; this.deserialize( from_hash_map ); }
@@ -20,14 +23,15 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
     public String getData() { return data; }
     public void setData( String data ) { this.data = data; }
 
-    public long getTag() { return 1013; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
-
+    // Object
     public String toString()
     {
         return "OSDtoMRCData( " + Integer.toString( caching_policy ) + ", " + "\"" + data + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1013; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
 
     public void deserialize( Object from_hash_map )
     {

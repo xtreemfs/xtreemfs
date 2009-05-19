@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_objectResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1403;
+
+    
     public xtreemfs_check_objectResponse() { returnValue = new ObjectData(); }
     public xtreemfs_check_objectResponse( ObjectData returnValue ) { this.returnValue = returnValue; }
     public xtreemfs_check_objectResponse( Object from_hash_map ) { returnValue = new ObjectData(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_check_objectResponse implements org.xtreemfs.interfaces.ut
     public ObjectData getReturnValue() { return returnValue; }
     public void setReturnValue( ObjectData returnValue ) { this.returnValue = returnValue; }
 
-    public long getTag() { return 1403; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_check_objectResponse( " + returnValue.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1403; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_check_objectResponse implements org.xtreemfs.interfaces.ut
         my_size += returnValue.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1403; }
 
 
     private ObjectData returnValue;    

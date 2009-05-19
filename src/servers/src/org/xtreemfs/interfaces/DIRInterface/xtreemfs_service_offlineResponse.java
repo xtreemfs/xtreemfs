@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_offlineResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1110;
+
+    
     public xtreemfs_service_offlineResponse() {  }
     public xtreemfs_service_offlineResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_service_offlineResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1110; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_service_offlineResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1110; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1110; }
     
 
 }

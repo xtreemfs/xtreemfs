@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1212;
+
+    
     public readdirResponse() { directory_entries = new DirectoryEntrySet(); }
     public readdirResponse( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
     public readdirResponse( Object from_hash_map ) { directory_entries = new DirectoryEntrySet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
-    public long getTag() { return 1212; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
-
+    // Object
     public String toString()
     {
         return "readdirResponse( " + directory_entries.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1212; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += directory_entries.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1212; }
 
 
     private DirectoryEntrySet directory_entries;    

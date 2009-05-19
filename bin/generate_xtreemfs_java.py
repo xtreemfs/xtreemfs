@@ -13,7 +13,6 @@ XTREEMFS_COMMON_IMPORTS = [
                             "import org.xtreemfs.interfaces.utils.*;",
                             "import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;",
                             "import org.xtreemfs.common.buffer.ReusableBuffer;",
-#                            "import org.xtreemfs.common.buffer.BufferPool;"
                           ]
 
 
@@ -34,10 +33,10 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
             out += """
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
-        switch( header.getOperationNumber() )
+        switch( header.getProcedure() )
         {
 %(request_factories)s
-            default: throw new Exception( "unknown request number " + Integer.toString( header.getOperationNumber() ) );
+            default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
     }
 """ % locals()
@@ -50,7 +49,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         switch( header.getXID() )
         {
 %(response_factories)s
-            default: throw new Exception( "unknown response number " + Integer.toString( header.getXID() ) );
+            default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
 """ % locals()
@@ -293,11 +292,9 @@ class XtreemFSJavaOperation(JavaOperation):
 
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
     def getOtherMethods( self ):        
-        tag = self.getTag()     
         response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
         return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Request
-    public int getOperationNumber() { return %(tag)s; }
     public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
 
@@ -305,13 +302,6 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
         return ( None, "org.xtreemfs.interfaces.utils.Request" )            
 
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):    
-    def getOtherMethods( self ):
-        tag = self.getTag()
-        return XtreemFSJavaStructType.getOtherMethods( self ) + """
-    // Response
-    public int getOperationNumber() { return %(tag)s; }
-""" % locals()
-
     def getParentTypeNames( self ):
         return ( None, "org.xtreemfs.interfaces.utils.Response" )
 

@@ -10,6 +10,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.Serializable
 {
+    public static final int TAG = 1052;
+
+    
     public InternalReadLocalResponse() { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); }
     public InternalReadLocalResponse( NewFileSize new_file_size, int zero_padding, ObjectData data ) { this.new_file_size = new_file_size; this.zero_padding = zero_padding; this.data = data; }
     public InternalReadLocalResponse( Object from_hash_map ) { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); this.deserialize( from_hash_map ); }
@@ -22,14 +25,15 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
 
-    public long getTag() { return 1052; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
-
+    // Object
     public String toString()
     {
         return "InternalReadLocalResponse( " + new_file_size.toString() + ", " + Integer.toString( zero_padding ) + ", " + data.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1052; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
 
     public void deserialize( Object from_hash_map )
     {

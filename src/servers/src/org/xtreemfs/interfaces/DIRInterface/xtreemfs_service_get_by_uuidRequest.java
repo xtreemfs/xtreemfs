@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_get_by_uuidRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1107;
+
+    
     public xtreemfs_service_get_by_uuidRequest() { uuid = ""; }
     public xtreemfs_service_get_by_uuidRequest( String uuid ) { this.uuid = uuid; }
     public xtreemfs_service_get_by_uuidRequest( Object from_hash_map ) { uuid = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_service_get_by_uuidRequest implements org.xtreemfs.interfa
     public String getUuid() { return uuid; }
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
-    public long getTag() { return 1107; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_uuidRequest"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_service_get_by_uuidRequest( " + "\"" + uuid + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1107; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_uuidRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class xtreemfs_service_get_by_uuidRequest implements org.xtreemfs.interfa
     }
 
     // Request
-    public int getOperationNumber() { return 1107; }
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_uuidResponse(); }
 
 

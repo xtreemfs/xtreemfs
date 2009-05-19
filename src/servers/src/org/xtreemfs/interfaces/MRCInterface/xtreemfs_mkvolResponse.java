@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_mkvolResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1210;
+
+    
     public xtreemfs_mkvolResponse() {  }
     public xtreemfs_mkvolResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_mkvolResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 1210; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_mkvolResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 1210; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1210; }
     
 
 }

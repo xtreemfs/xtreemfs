@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class writeRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1304;
+
+    
     public writeRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; object_data = new ObjectData(); }
     public writeRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, ObjectData object_data ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.lease_timeout = lease_timeout; this.object_data = object_data; }
     public writeRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; object_data = new ObjectData(); this.deserialize( from_hash_map ); }
@@ -31,14 +34,15 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     public ObjectData getObject_data() { return object_data; }
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
-    public long getTag() { return 1304; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }
-
+    // Object
     public String toString()
     {
         return "writeRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Integer.toString( offset ) + ", " + Long.toString( lease_timeout ) + ", " + object_data.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1304; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -116,7 +120,6 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1304; }
     public Response createDefaultResponse() { return new writeResponse(); }
 
 

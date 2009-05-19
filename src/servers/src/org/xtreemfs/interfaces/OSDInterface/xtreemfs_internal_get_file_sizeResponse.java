@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_get_file_sizeResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1404;
+
+    
     public xtreemfs_internal_get_file_sizeResponse() { returnValue = 0; }
     public xtreemfs_internal_get_file_sizeResponse( long returnValue ) { this.returnValue = returnValue; }
     public xtreemfs_internal_get_file_sizeResponse( Object from_hash_map ) { returnValue = 0; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_internal_get_file_sizeResponse implements org.xtreemfs.int
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    public long getTag() { return 1404; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_internal_get_file_sizeResponse( " + Long.toString( returnValue ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1404; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_internal_get_file_sizeResponse implements org.xtreemfs.int
         my_size += ( Long.SIZE / 8 );
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1404; }
 
 
     private long returnValue;    

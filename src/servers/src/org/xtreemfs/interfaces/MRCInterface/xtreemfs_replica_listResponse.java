@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1232;
+
+    
     public xtreemfs_replica_listResponse() { replicas = new ReplicaSet(); }
     public xtreemfs_replica_listResponse( ReplicaSet replicas ) { this.replicas = replicas; }
     public xtreemfs_replica_listResponse( Object from_hash_map ) { replicas = new ReplicaSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.ut
     public ReplicaSet getReplicas() { return replicas; }
     public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
 
-    public long getTag() { return 1232; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_replica_listResponse( " + replicas.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1232; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.ut
         my_size += replicas.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1232; }
 
 
     private ReplicaSet replicas;    

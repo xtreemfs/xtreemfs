@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1231;
+
+    
     public xtreemfs_lsvolResponse() { volumes = new VolumeSet(); }
     public xtreemfs_lsvolResponse( VolumeSet volumes ) { this.volumes = volumes; }
     public xtreemfs_lsvolResponse( Object from_hash_map ) { volumes = new VolumeSet(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Res
     public VolumeSet getVolumes() { return volumes; }
     public void setVolumes( VolumeSet volumes ) { this.volumes = volumes; }
 
-    public long getTag() { return 1231; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_lsvolResponse( " + volumes.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1231; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Res
         my_size += volumes.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1231; }
 
 
     private VolumeSet volumes;    

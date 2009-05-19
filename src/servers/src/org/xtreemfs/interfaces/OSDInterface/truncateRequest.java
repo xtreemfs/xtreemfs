@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1302;
+
+    
     public truncateRequest() { file_credentials = new FileCredentials(); file_id = ""; new_file_size = 0; }
     public truncateRequest( FileCredentials file_credentials, String file_id, long new_file_size ) { this.file_credentials = file_credentials; this.file_id = file_id; this.new_file_size = new_file_size; }
     public truncateRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; new_file_size = 0; this.deserialize( from_hash_map ); }
@@ -23,14 +26,15 @@ public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
     public long getNew_file_size() { return new_file_size; }
     public void setNew_file_size( long new_file_size ) { this.new_file_size = new_file_size; }
 
-    public long getTag() { return 1302; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateRequest"; }
-
+    // Object
     public String toString()
     {
         return "truncateRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( new_file_size ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1302; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -84,7 +88,6 @@ public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1302; }
     public Response createDefaultResponse() { return new truncateResponse(); }
 
 

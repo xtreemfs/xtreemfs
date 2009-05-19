@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1221;
+
+    
     public unlinkRequest() { path = ""; }
     public unlinkRequest( String path ) { this.path = path; }
     public unlinkRequest( Object from_hash_map ) { path = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
 
-    public long getTag() { return 1221; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }
-
+    // Object
     public String toString()
     {
         return "unlinkRequest( " + "\"" + path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1221; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -68,7 +72,6 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1221; }
     public Response createDefaultResponse() { return new unlinkResponse(); }
 
 

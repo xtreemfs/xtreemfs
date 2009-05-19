@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_address_mappings_setResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1102;
+
+    
     public xtreemfs_address_mappings_setResponse() { returnValue = 0; }
     public xtreemfs_address_mappings_setResponse( long returnValue ) { this.returnValue = returnValue; }
     public xtreemfs_address_mappings_setResponse( Object from_hash_map ) { returnValue = 0; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_address_mappings_setResponse implements org.xtreemfs.inter
     public long getReturnValue() { return returnValue; }
     public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
-    public long getTag() { return 1102; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_setResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_address_mappings_setResponse( " + Long.toString( returnValue ) + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1102; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_setResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_address_mappings_setResponse implements org.xtreemfs.inter
         my_size += ( Long.SIZE / 8 );
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1102; }
 
 
     private long returnValue;    

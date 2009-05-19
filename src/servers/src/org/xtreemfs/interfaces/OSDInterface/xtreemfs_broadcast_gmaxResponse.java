@@ -11,18 +11,22 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_broadcast_gmaxResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 2300;
+
+    
     public xtreemfs_broadcast_gmaxResponse() {  }
     public xtreemfs_broadcast_gmaxResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
     public xtreemfs_broadcast_gmaxResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    public long getTag() { return 2300; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_broadcast_gmaxResponse()";
     }
 
+    // Serializable
+    public int getTag() { return 2300; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -61,9 +65,6 @@ return to_hash_map;
 
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 2300; }
     
 
 }

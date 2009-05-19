@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1223;
+
+    
     public xtreemfs_check_file_existsResponse() { bitmap = ""; }
     public xtreemfs_check_file_existsResponse( String bitmap ) { this.bitmap = bitmap; }
     public xtreemfs_check_file_existsResponse( Object from_hash_map ) { bitmap = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
     public String getBitmap() { return bitmap; }
     public void setBitmap( String bitmap ) { this.bitmap = bitmap; }
 
-    public long getTag() { return 1223; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_check_file_existsResponse( " + "\"" + bitmap + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1223; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(bitmap);
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1223; }
 
 
     private String bitmap;    

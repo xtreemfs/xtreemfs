@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1227;
+
+    
     public xtreemfs_replica_removeResponse() { delete_xcap = new XCap(); }
     public xtreemfs_replica_removeResponse( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
     public xtreemfs_replica_removeResponse( Object from_hash_map ) { delete_xcap = new XCap(); this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
     public XCap getDelete_xcap() { return delete_xcap; }
     public void setDelete_xcap( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
 
-    public long getTag() { return 1227; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
-
+    // Object
     public String toString()
     {
         return "xtreemfs_replica_removeResponse( " + delete_xcap.toString() + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1227; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
         my_size += delete_xcap.calculateSize();
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1227; }
 
 
     private XCap delete_xcap;    

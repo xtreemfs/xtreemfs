@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class renameRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1214;
+
+    
     public renameRequest() { source_path = ""; target_path = ""; }
     public renameRequest( String source_path, String target_path ) { this.source_path = source_path; this.target_path = target_path; }
     public renameRequest( Object from_hash_map ) { source_path = ""; target_path = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class renameRequest implements org.xtreemfs.interfaces.utils.Request
     public String getTarget_path() { return target_path; }
     public void setTarget_path( String target_path ) { this.target_path = target_path; }
 
-    public long getTag() { return 1214; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }
-
+    // Object
     public String toString()
     {
         return "renameRequest( " + "\"" + source_path + "\"" + ", " + "\"" + target_path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1214; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class renameRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1214; }
     public Response createDefaultResponse() { return new renameResponse(); }
 
 

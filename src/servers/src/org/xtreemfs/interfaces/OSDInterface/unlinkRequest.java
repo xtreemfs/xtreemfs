@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1303;
+
+    
     public unlinkRequest() { file_credentials = new FileCredentials(); file_id = ""; }
     public unlinkRequest( FileCredentials file_credentials, String file_id ) { this.file_credentials = file_credentials; this.file_id = file_id; }
     public unlinkRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
-    public long getTag() { return 1303; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }
-
+    // Object
     public String toString()
     {
         return "unlinkRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1303; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1303; }
     public Response createDefaultResponse() { return new unlinkResponse(); }
 
 

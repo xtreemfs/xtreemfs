@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
+    public static final int TAG = 1206;
+
+    
     public getxattrResponse() { value = ""; }
     public getxattrResponse( String value ) { this.value = value; }
     public getxattrResponse( Object from_hash_map ) { value = ""; this.deserialize( from_hash_map ); }
@@ -19,14 +22,15 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
     public String getValue() { return value; }
     public void setValue( String value ) { this.value = value; }
 
-    public long getTag() { return 1206; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }
-
+    // Object
     public String toString()
     {
         return "getxattrResponse( " + "\"" + value + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1206; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -66,9 +70,6 @@ public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
         return my_size;
     }
-
-    // Response
-    public int getOperationNumber() { return 1206; }
 
 
     private String value;    

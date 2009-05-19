@@ -11,6 +11,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class linkRequest implements org.xtreemfs.interfaces.utils.Request
 {
+    public static final int TAG = 1207;
+
+    
     public linkRequest() { target_path = ""; link_path = ""; }
     public linkRequest( String target_path, String link_path ) { this.target_path = target_path; this.link_path = link_path; }
     public linkRequest( Object from_hash_map ) { target_path = ""; link_path = ""; this.deserialize( from_hash_map ); }
@@ -21,14 +24,15 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     public String getLink_path() { return link_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
-    public long getTag() { return 1207; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::linkRequest"; }
-
+    // Object
     public String toString()
     {
         return "linkRequest( " + "\"" + target_path + "\"" + ", " + "\"" + link_path + "\"" + " )";
     }
 
+    // Serializable
+    public int getTag() { return 1207; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::linkRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -76,7 +80,6 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public int getOperationNumber() { return 1207; }
     public Response createDefaultResponse() { return new linkResponse(); }
 
 
