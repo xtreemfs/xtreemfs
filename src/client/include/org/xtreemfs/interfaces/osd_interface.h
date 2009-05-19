@@ -195,6 +195,26 @@ namespace org
         virtual org::xtreemfs::interfaces::ObjectData xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, YIELD::EventTarget* send_target ) { return xtreemfs_check_object( file_credentials, file_id, object_number, object_version, send_target, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::ObjectData xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t response_timeout_ns ) { return xtreemfs_check_object( file_credentials, file_id, object_number, object_version, NULL, response_timeout_ns ); }
         virtual org::xtreemfs::interfaces::ObjectData xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_check_objectSyncRequest> __req( new xtreemfs_check_objectSyncRequest( file_credentials, file_id, object_number, object_version ) ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_check_objectResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_check_objectResponse>( response_timeout_ns ); org::xtreemfs::interfaces::ObjectData _return_value = __resp->get__return_value(); return _return_value; }
+        virtual void xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results ) { xtreemfs_cleanup_get_results( results, NULL, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results, YIELD::EventTarget* send_target ) { xtreemfs_cleanup_get_results( results, send_target, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results, uint64_t response_timeout_ns ) { xtreemfs_cleanup_get_results( results, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results, YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_cleanup_get_resultsSyncRequest> __req( new xtreemfs_cleanup_get_resultsSyncRequest() ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_cleanup_get_resultsResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_cleanup_get_resultsResponse>( response_timeout_ns ); results = __resp->get_results(); }
+        virtual void xtreemfs_cleanup_is_running( bool& is_running ) { xtreemfs_cleanup_is_running( is_running, NULL, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_is_running( bool& is_running, YIELD::EventTarget* send_target ) { xtreemfs_cleanup_is_running( is_running, send_target, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_is_running( bool& is_running, uint64_t response_timeout_ns ) { xtreemfs_cleanup_is_running( is_running, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_is_running( bool& is_running, YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_cleanup_is_runningSyncRequest> __req( new xtreemfs_cleanup_is_runningSyncRequest() ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_cleanup_is_runningResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_cleanup_is_runningResponse>( response_timeout_ns ); is_running = __resp->get_is_running(); }
+        virtual void xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found ) { xtreemfs_cleanup_start( remove_zombies, remove_unavail_volume, lost_and_found, NULL, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found, YIELD::EventTarget* send_target ) { xtreemfs_cleanup_start( remove_zombies, remove_unavail_volume, lost_and_found, send_target, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found, uint64_t response_timeout_ns ) { xtreemfs_cleanup_start( remove_zombies, remove_unavail_volume, lost_and_found, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found, YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_cleanup_startSyncRequest> __req( new xtreemfs_cleanup_startSyncRequest( remove_zombies, remove_unavail_volume, lost_and_found ) ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_cleanup_startResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_cleanup_startResponse>( response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_status( std::string& status ) { xtreemfs_cleanup_status( status, NULL, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_status( std::string& status, YIELD::EventTarget* send_target ) { xtreemfs_cleanup_status( status, send_target, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_status( std::string& status, uint64_t response_timeout_ns ) { xtreemfs_cleanup_status( status, NULL, response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_status( std::string& status, YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_cleanup_statusSyncRequest> __req( new xtreemfs_cleanup_statusSyncRequest() ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_cleanup_statusResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_cleanup_statusResponse>( response_timeout_ns ); status = __resp->get_status(); }
+        virtual void xtreemfs_cleanup_stop() { xtreemfs_cleanup_stop( NULL, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_stop( YIELD::EventTarget* send_target ) { xtreemfs_cleanup_stop( send_target, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_cleanup_stop( uint64_t response_timeout_ns ) { xtreemfs_cleanup_stop( NULL, response_timeout_ns ); }
+        virtual void xtreemfs_cleanup_stop( YIELD::EventTarget* send_target, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_cleanup_stopSyncRequest> __req( new xtreemfs_cleanup_stopSyncRequest() ); if ( send_target == NULL ) send_target = this; send_target->send( __req->incRef() ); YIELD::auto_Object<xtreemfs_cleanup_stopResponse> __resp = __req->response_queue.dequeue_typed<xtreemfs_cleanup_stopResponse>( response_timeout_ns ); }
         virtual org::xtreemfs::interfaces::InternalGmax xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return xtreemfs_internal_get_gmax( file_credentials, file_id, NULL, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::InternalGmax xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, YIELD::EventTarget* send_target ) { return xtreemfs_internal_get_gmax( file_credentials, file_id, send_target, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::InternalGmax xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t response_timeout_ns ) { return xtreemfs_internal_get_gmax( file_credentials, file_id, NULL, response_timeout_ns ); }
@@ -652,6 +672,270 @@ namespace org
         virtual ~xtreemfs_check_objectSyncRequest() { }
 
         bool operator==( const xtreemfs_check_objectSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+
+      private:
+        friend class OSDInterface;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_cleanup_get_resultsResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_get_resultsResponse() { }
+        xtreemfs_cleanup_get_resultsResponse( const org::xtreemfs::interfaces::StringSet& results ) : results( results ) { }
+        virtual ~xtreemfs_cleanup_get_resultsResponse() { }
+
+        void set_results( const org::xtreemfs::interfaces::StringSet&  results ) { this->results = results; }
+        const org::xtreemfs::interfaces::StringSet& get_results() const { return results; }
+
+        bool operator==( const xtreemfs_cleanup_get_resultsResponse& other ) const { return results == other.results; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 1409 );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readSequence( YIELD::StructuredStream::Declaration( "results" ), &results ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeSequence( YIELD::StructuredStream::Declaration( "results" ), results ); }
+
+      protected:
+        org::xtreemfs::interfaces::StringSet results;
+      };
+
+      class xtreemfs_cleanup_get_resultsRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_get_resultsRequest() { }
+        virtual ~xtreemfs_cleanup_get_resultsRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_get_resultsRequest& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 1409 );
+
+      };
+
+      class xtreemfs_cleanup_get_resultsSyncRequest : public xtreemfs_cleanup_get_resultsRequest
+      {
+      public:
+        xtreemfs_cleanup_get_resultsSyncRequest() { }
+        virtual ~xtreemfs_cleanup_get_resultsSyncRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_get_resultsSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+
+      private:
+        friend class OSDInterface;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_cleanup_is_runningResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_is_runningResponse() : is_running( false ) { }
+        xtreemfs_cleanup_is_runningResponse( bool is_running ) : is_running( is_running ) { }
+        virtual ~xtreemfs_cleanup_is_runningResponse() { }
+
+        void set_is_running( bool is_running ) { this->is_running = is_running; }
+        bool get_is_running() const { return is_running; }
+
+        bool operator==( const xtreemfs_cleanup_is_runningResponse& other ) const { return is_running == other.is_running; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 1408 );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { is_running = input_stream.readBool( YIELD::StructuredStream::Declaration( "is_running" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeBool( YIELD::StructuredStream::Declaration( "is_running" ), is_running ); }
+
+      protected:
+        bool is_running;
+      };
+
+      class xtreemfs_cleanup_is_runningRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_is_runningRequest() { }
+        virtual ~xtreemfs_cleanup_is_runningRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_is_runningRequest& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 1408 );
+
+      };
+
+      class xtreemfs_cleanup_is_runningSyncRequest : public xtreemfs_cleanup_is_runningRequest
+      {
+      public:
+        xtreemfs_cleanup_is_runningSyncRequest() { }
+        virtual ~xtreemfs_cleanup_is_runningSyncRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_is_runningSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+
+      private:
+        friend class OSDInterface;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_cleanup_startResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_startResponse() { }
+        virtual ~xtreemfs_cleanup_startResponse() { }
+
+        bool operator==( const xtreemfs_cleanup_startResponse& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 1405 );
+
+      };
+
+      class xtreemfs_cleanup_startRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_startRequest() : remove_zombies( false ), remove_unavail_volume( false ), lost_and_found( false ) { }
+        xtreemfs_cleanup_startRequest( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found ) : remove_zombies( remove_zombies ), remove_unavail_volume( remove_unavail_volume ), lost_and_found( lost_and_found ) { }
+        virtual ~xtreemfs_cleanup_startRequest() { }
+
+        void set_remove_zombies( bool remove_zombies ) { this->remove_zombies = remove_zombies; }
+        bool get_remove_zombies() const { return remove_zombies; }
+        void set_remove_unavail_volume( bool remove_unavail_volume ) { this->remove_unavail_volume = remove_unavail_volume; }
+        bool get_remove_unavail_volume() const { return remove_unavail_volume; }
+        void set_lost_and_found( bool lost_and_found ) { this->lost_and_found = lost_and_found; }
+        bool get_lost_and_found() const { return lost_and_found; }
+
+        bool operator==( const xtreemfs_cleanup_startRequest& other ) const { return remove_zombies == other.remove_zombies && remove_unavail_volume == other.remove_unavail_volume && lost_and_found == other.lost_and_found; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 1405 );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { remove_zombies = input_stream.readBool( YIELD::StructuredStream::Declaration( "remove_zombies" ) ); remove_unavail_volume = input_stream.readBool( YIELD::StructuredStream::Declaration( "remove_unavail_volume" ) ); lost_and_found = input_stream.readBool( YIELD::StructuredStream::Declaration( "lost_and_found" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeBool( YIELD::StructuredStream::Declaration( "remove_zombies" ), remove_zombies ); output_stream.writeBool( YIELD::StructuredStream::Declaration( "remove_unavail_volume" ), remove_unavail_volume ); output_stream.writeBool( YIELD::StructuredStream::Declaration( "lost_and_found" ), lost_and_found ); }
+
+      protected:
+        bool remove_zombies;
+        bool remove_unavail_volume;
+        bool lost_and_found;
+      };
+
+      class xtreemfs_cleanup_startSyncRequest : public xtreemfs_cleanup_startRequest
+      {
+      public:
+        xtreemfs_cleanup_startSyncRequest() : xtreemfs_cleanup_startRequest( false, false, false ) { }
+        xtreemfs_cleanup_startSyncRequest( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found ) : xtreemfs_cleanup_startRequest( remove_zombies, remove_unavail_volume, lost_and_found ) { }
+        virtual ~xtreemfs_cleanup_startSyncRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_startSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+
+      private:
+        friend class OSDInterface;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_cleanup_statusResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_statusResponse() { }
+        xtreemfs_cleanup_statusResponse( const std::string& status ) : status( status ) { }
+        xtreemfs_cleanup_statusResponse( const char* status, size_t status_len ) : status( status, status_len ) { }
+        virtual ~xtreemfs_cleanup_statusResponse() { }
+
+        void set_status( const std::string& status ) { set_status( status.c_str(), status.size() ); }
+        void set_status( const char* status, size_t status_len ) { this->status.assign( status, status_len ); }
+        const std::string& get_status() const { return status; }
+
+        bool operator==( const xtreemfs_cleanup_statusResponse& other ) const { return status == other.status; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 1407 );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "status" ), status ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "status" ), status ); }
+
+      protected:
+        std::string status;
+      };
+
+      class xtreemfs_cleanup_statusRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_statusRequest() { }
+        virtual ~xtreemfs_cleanup_statusRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_statusRequest& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 1407 );
+
+      };
+
+      class xtreemfs_cleanup_statusSyncRequest : public xtreemfs_cleanup_statusRequest
+      {
+      public:
+        xtreemfs_cleanup_statusSyncRequest() { }
+        virtual ~xtreemfs_cleanup_statusSyncRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_statusSyncRequest& ) const { return true; }
+
+
+        // YIELD::Request
+        bool respond( YIELD::Response& response ) { return response_queue.enqueue( response ); }
+
+      private:
+        friend class OSDInterface;
+        YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > response_queue;
+      };
+
+      class xtreemfs_cleanup_stopResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_stopResponse() { }
+        virtual ~xtreemfs_cleanup_stopResponse() { }
+
+        bool operator==( const xtreemfs_cleanup_stopResponse& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 1406 );
+
+      };
+
+      class xtreemfs_cleanup_stopRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+      {
+      public:
+        xtreemfs_cleanup_stopRequest() { }
+        virtual ~xtreemfs_cleanup_stopRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_stopRequest& ) const { return true; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 1406 );
+
+      };
+
+      class xtreemfs_cleanup_stopSyncRequest : public xtreemfs_cleanup_stopRequest
+      {
+      public:
+        xtreemfs_cleanup_stopSyncRequest() { }
+        virtual ~xtreemfs_cleanup_stopSyncRequest() { }
+
+        bool operator==( const xtreemfs_cleanup_stopSyncRequest& ) const { return true; }
 
 
         // YIELD::Request
@@ -1247,6 +1531,11 @@ namespace org
               case 1304UL: handlewriteRequest( static_cast<writeRequest&>( ev ) ); return;
               case 2300UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
               case 1403UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( ev ) ); return;
+              case 1409UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( ev ) ); return;
+              case 1408UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( ev ) ); return;
+              case 1405UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( ev ) ); return;
+              case 1407UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( ev ) ); return;
+              case 1406UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( ev ) ); return;
               case 1400UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( ev ) ); return;
               case 1404UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
               case 1401UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
@@ -1284,6 +1573,11 @@ namespace org
               case 1304: return new writeRequest;
               case 2300: return new xtreemfs_broadcast_gmaxRequest;
               case 1403: return new xtreemfs_check_objectRequest;
+              case 1409: return new xtreemfs_cleanup_get_resultsRequest;
+              case 1408: return new xtreemfs_cleanup_is_runningRequest;
+              case 1405: return new xtreemfs_cleanup_startRequest;
+              case 1407: return new xtreemfs_cleanup_statusRequest;
+              case 1406: return new xtreemfs_cleanup_stopRequest;
               case 1400: return new xtreemfs_internal_get_gmaxRequest;
               case 1404: return new xtreemfs_internal_get_file_sizeRequest;
               case 1401: return new xtreemfs_internal_truncateRequest;
@@ -1304,6 +1598,11 @@ namespace org
               case 1304: return new writeResponse;
               case 2300: return new xtreemfs_broadcast_gmaxResponse;
               case 1403: return new xtreemfs_check_objectResponse;
+              case 1409: return new xtreemfs_cleanup_get_resultsResponse;
+              case 1408: return new xtreemfs_cleanup_is_runningResponse;
+              case 1405: return new xtreemfs_cleanup_startResponse;
+              case 1407: return new xtreemfs_cleanup_statusResponse;
+              case 1406: return new xtreemfs_cleanup_stopResponse;
               case 1400: return new xtreemfs_internal_get_gmaxResponse;
               case 1404: return new xtreemfs_internal_get_file_sizeResponse;
               case 1401: return new xtreemfs_internal_truncateResponse;
@@ -1337,6 +1636,11 @@ namespace org
         virtual void handlewriteRequest( writeRequest& req ) { YIELD::auto_Object<writeResponse> resp( new writeResponse ); org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _write( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_lease_timeout(), req.get_object_data(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
         virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& req ) { YIELD::auto_Object<xtreemfs_broadcast_gmaxResponse> resp( new xtreemfs_broadcast_gmaxResponse ); _xtreemfs_broadcast_gmax( req.get_fileId(), req.get_truncateEpoch(), req.get_lastObject(), req.get_fileSize() ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
         virtual void handlextreemfs_check_objectRequest( xtreemfs_check_objectRequest& req ) { YIELD::auto_Object<xtreemfs_check_objectResponse> resp( new xtreemfs_check_objectResponse ); org::xtreemfs::interfaces::ObjectData _return_value = _xtreemfs_check_object( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
+        virtual void handlextreemfs_cleanup_get_resultsRequest( xtreemfs_cleanup_get_resultsRequest& req ) { YIELD::auto_Object<xtreemfs_cleanup_get_resultsResponse> resp( new xtreemfs_cleanup_get_resultsResponse ); org::xtreemfs::interfaces::StringSet results; _xtreemfs_cleanup_get_results( results ); resp->set_results( results ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
+        virtual void handlextreemfs_cleanup_is_runningRequest( xtreemfs_cleanup_is_runningRequest& req ) { YIELD::auto_Object<xtreemfs_cleanup_is_runningResponse> resp( new xtreemfs_cleanup_is_runningResponse ); bool is_running; _xtreemfs_cleanup_is_running( is_running ); resp->set_is_running( is_running ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
+        virtual void handlextreemfs_cleanup_startRequest( xtreemfs_cleanup_startRequest& req ) { YIELD::auto_Object<xtreemfs_cleanup_startResponse> resp( new xtreemfs_cleanup_startResponse ); _xtreemfs_cleanup_start( req.get_remove_zombies(), req.get_remove_unavail_volume(), req.get_lost_and_found() ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
+        virtual void handlextreemfs_cleanup_statusRequest( xtreemfs_cleanup_statusRequest& req ) { YIELD::auto_Object<xtreemfs_cleanup_statusResponse> resp( new xtreemfs_cleanup_statusResponse ); std::string status; _xtreemfs_cleanup_status( status ); resp->set_status( status ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
+        virtual void handlextreemfs_cleanup_stopRequest( xtreemfs_cleanup_stopRequest& req ) { YIELD::auto_Object<xtreemfs_cleanup_stopResponse> resp( new xtreemfs_cleanup_stopResponse ); _xtreemfs_cleanup_stop(); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
         virtual void handlextreemfs_internal_get_gmaxRequest( xtreemfs_internal_get_gmaxRequest& req ) { YIELD::auto_Object<xtreemfs_internal_get_gmaxResponse> resp( new xtreemfs_internal_get_gmaxResponse ); org::xtreemfs::interfaces::InternalGmax _return_value = _xtreemfs_internal_get_gmax( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
         virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& req ) { YIELD::auto_Object<xtreemfs_internal_get_file_sizeResponse> resp( new xtreemfs_internal_get_file_sizeResponse ); uint64_t _return_value = _xtreemfs_internal_get_file_size( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
         virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& req ) { YIELD::auto_Object<xtreemfs_internal_truncateResponse> resp( new xtreemfs_internal_truncateResponse ); org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _xtreemfs_internal_truncate( req.get_file_credentials(), req.get_file_id(), req.get_new_file_size(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp.release() ); YIELD::Object::decRef( req );; }
@@ -1350,6 +1654,11 @@ namespace org
         virtual void _write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
         virtual void _xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) { }
         virtual org::xtreemfs::interfaces::ObjectData _xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version ) { return org::xtreemfs::interfaces::ObjectData(); }
+        virtual void _xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results ) { }
+        virtual void _xtreemfs_cleanup_is_running( bool& is_running ) { }
+        virtual void _xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found ) { }
+        virtual void _xtreemfs_cleanup_status( std::string& status ) { }
+        virtual void _xtreemfs_cleanup_stop() { }
         virtual org::xtreemfs::interfaces::InternalGmax _xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return org::xtreemfs::interfaces::InternalGmax(); }
         virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return 0; }
         virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
@@ -1366,6 +1675,11 @@ namespace org
       virtual void _write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual void _xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize );\
       virtual org::xtreemfs::interfaces::ObjectData _xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version );\
+      virtual void _xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results );\
+      virtual void _xtreemfs_cleanup_is_running( bool& is_running );\
+      virtual void _xtreemfs_cleanup_start( bool remove_zombies, bool remove_unavail_volume, bool lost_and_found );\
+      virtual void _xtreemfs_cleanup_status( std::string& status );\
+      virtual void _xtreemfs_cleanup_stop();\
       virtual org::xtreemfs::interfaces::InternalGmax _xtreemfs_internal_get_gmax( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
@@ -1380,6 +1694,11 @@ namespace org
       virtual void handlewriteRequestRequest( writeRequest& req );\
       virtual void handlextreemfs_broadcast_gmaxRequestRequest( xtreemfs_broadcast_gmaxRequest& req );\
       virtual void handlextreemfs_check_objectRequestRequest( xtreemfs_check_objectRequest& req );\
+      virtual void handlextreemfs_cleanup_get_resultsRequestRequest( xtreemfs_cleanup_get_resultsRequest& req );\
+      virtual void handlextreemfs_cleanup_is_runningRequestRequest( xtreemfs_cleanup_is_runningRequest& req );\
+      virtual void handlextreemfs_cleanup_startRequestRequest( xtreemfs_cleanup_startRequest& req );\
+      virtual void handlextreemfs_cleanup_statusRequestRequest( xtreemfs_cleanup_statusRequest& req );\
+      virtual void handlextreemfs_cleanup_stopRequestRequest( xtreemfs_cleanup_stopRequest& req );\
       virtual void handlextreemfs_internal_get_gmaxRequestRequest( xtreemfs_internal_get_gmaxRequest& req );\
       virtual void handlextreemfs_internal_get_file_sizeRequestRequest( xtreemfs_internal_get_file_sizeRequest& req );\
       virtual void handlextreemfs_internal_truncateRequestRequest( xtreemfs_internal_truncateRequest& req );\

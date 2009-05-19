@@ -1,4 +1,4 @@
-// Revision: 1451
+// Revision: 1460
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -223,6 +223,46 @@ namespace YIELD
 };
 
 
+// tcp_listen_queue.h
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+
+namespace YIELD
+{
+  class TCPListenQueue : public FDEventQueue
+  {
+  public:
+    static auto_Object<TCPListenQueue> create( auto_Object<SocketAddress> listen_sockaddr, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory = NULL );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( TCPListenQueue, 222 );
+
+    // EventQueue
+    bool enqueue( Event& );
+    Event* dequeue();
+    Event* dequeue( uint64_t );
+    Event* try_dequeue() { return dequeue( 0 ); }
+
+  private:
+    TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket, auto_Object<Log> log );
+    ~TCPListenQueue() { }
+
+    auto_Object<TCPSocket> listen_tcp_socket;
+    auto_Object<Log> log;
+
+#if !defined(_WIN32) && defined(_DEBUG)
+    bool seen_too_many_open_files;
+#endif
+
+
+    TCPSocket* accept();
+  };
+};
+
+
 // client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -248,7 +288,47 @@ Client::Connection* Client::createConnection()
 {
   auto_Object<Socket> _socket = socket_factory->createSocket().release();
   _socket->set_blocking_mode( false );
-  return new Connection( _socket );
+  Connection* connection = new Connection( _socket, reconnect_tries_max );
+  return connection;
+}
+void Client::destroyConnection( Client::Connection* connection )
+{
+  for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
+  {
+    if ( **connection_i == *connection )
+    {
+      uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
+      auto_Object<Request> protocol_request = connection->get_protocol_request();
+      YIELD::Object::decRef( connection );
+      connection_i = connections.erase( connection_i );
+      if ( --reconnect_tries_left > 0 )
+      {
+        connection = createConnection();
+        connection->set_reconnect_tries_left( reconnect_tries_left );
+        if ( protocol_request != NULL )
+        {
+          connection->set_protocol_request( protocol_request );
+          fd_event_queue->timer_create( Time( 1 * NS_IN_S ), connection ); // Wait for a delay to attach, add to connections, and try to connect again
+        }
+      }
+      else
+      {
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": exhausted connection retries to " << peer_sockaddr << ".";
+        if ( protocol_request != NULL )
+        {
+          // We've lost errno here
+#ifdef _WIN32
+          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+#else
+          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+#endif
+        }
+      }
+    }
+    else
+      ++connection_i;
+  }
 }
 void Client::handleEvent( Event& ev )
 {
@@ -280,37 +360,38 @@ void Client::handleEvent( Event& ev )
     break;
     case YIELD_OBJECT_TAG( TimerEvent ):
     {
-      for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
+      TimerEvent& timer_event = static_cast<TimerEvent&>( ev );
+      auto_Object<> timer_event_context = timer_event.get_context();
+      if ( timer_event_context == NULL ) // Check connection timeouts
       {
-        Connection* connection = *connection_i;
-        if ( connection->get_state() != Connection::IDLE )
+        std::vector<Connection*>::size_type connection_i = 0;
+        for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
         {
-          Time connection_idle_time = Time() - connection->get_last_activity_time();
-          if ( connection_idle_time > operation_timeout )
+          Connection* connection = connections[connection_i];
+          if ( connection->get_state() != Connection::IDLE )
           {
-            if ( log != NULL )
-              log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
-            auto_Object<Request> protocol_request = connection->get_protocol_request();
-            if ( protocol_request != NULL )
+            Time connection_idle_time = Time() - connection->get_last_activity_time();
+            if ( connection_idle_time > operation_timeout )
             {
               if ( log != NULL )
-                log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": connection timed out while trying to " << ( connection->get_state() == Connection::READING ? "read" : "write" ) << " ONC-RPC request, responding with exception.";
-              connection->set_protocol_request( NULL );
-              this->send( *protocol_request.release() ); // Re-enqueue the request
+                log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
+              destroyConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
             }
-            connection->shutdown();
-            connection->close();
-            YIELD::Object::decRef( *connection );
-            connection_i = connections.erase( connection_i );
           }
-          else
-             ++connection_i;
         }
-        else
-          ++connection_i;
+        Object::decRef( ev );
+        return;
       }
-      Object::decRef( ev );
-      return;
+      else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
+      {
+        connection = static_cast<Connection*>( timer_event_context.release() );
+        connection->get_socket()->attach( fd_event_queue, connection );
+        connections.push_back( connection );
+        Object::decRef( ev );
+        // Drop down
+      }
+      else
+        DebugBreak();
     }
     break;
     default:
@@ -328,137 +409,115 @@ void Client::handleEvent( Event& ev )
             break;
           }
         }
-        if ( connection == NULL )
-        {
-          connection = createConnection();
-          connections.push_back( connection );
-        }
       }
-      else
+      if ( connection == NULL )
       {
         connection = createConnection();
+        connection->get_socket()->attach( fd_event_queue, connection );
         connections.push_back( connection );
       }
       connection->set_protocol_request( protocol_request );
-      connection->get_socket()->attach( fd_event_queue );
     }
     break;
   }
-  for ( ;; )
+  if ( fd_event_error_code == 0 )
   {
-    if ( fd_event_error_code == 0 )
+    switch ( connection->get_state() )
     {
-      Stream::Status read_write_status = Stream::STREAM_STATUS_OK;
-      switch ( connection->get_state() )
+      case Connection::IDLE:
+      case Connection::CONNECTING:
       {
-        case Connection::IDLE:
-        case Connection::CONNECTING:
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
+        Stream::Status connect_status = connection->connect( peer_sockaddr );
+        if ( connect_status == Stream::STREAM_STATUS_OK ) // Use ifs here instead of a switch to allow simple drop-throughs
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries ) << ".";
-          Stream::Status connect_status = connection->connect( peer_sockaddr );
-          if ( connect_status == Stream::STREAM_STATUS_OK )
-          {
-            if ( log != NULL )
-              log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully connected to " << peer_sockaddr << ".";
-            reconnect_tries = 0; // Start from 0 tries every time we successfully connect so that the count doesn't reach the max in a long-running client
-            connection->set_state( Connection::WRITING );
-            // Drop down to WRITING
-      	  }
-          else if ( connect_status == Stream::STREAM_STATUS_WANT_WRITE ) // Wait for non-blocking connect() to complete
-          {
-            if ( log != NULL )
-              log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
-            connection->set_state( Connection::CONNECTING );
-            return;
-          }
-          else if ( log != NULL )
-          {
-            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries ) << " to  " << peer_sockaddr << " failed: " << Exception::strerror();
-            break; // out of the switch, to check error codes
-          }
-        }
-        // No break here, to allow drop down to WRITING
-        case Connection::WRITING:
+            log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully connected to " << peer_sockaddr << ".";
+          connection->set_state( Connection::WRITING );
+          // Drop down to WRITING
+  	    }
+        else if ( connect_status == Stream::STREAM_STATUS_WANT_WRITE ) // Wait for non-blocking connect() to complete
         {
-          auto_Object<Request> protocol_request = connection->get_protocol_request();
-          read_write_status = protocol_request->serialize( *connection );
-          if ( read_write_status == Stream::STREAM_STATUS_OK )
-          {
-            if ( log != NULL )
-              log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
-            connection->set_protocol_response( createProtocolResponse( protocol_request ) );
-            connection->set_state( Connection::READING );
-            // Drop down to READING
-          }
-          else
-            break; // out of the switch, to check error codes
-        }
-        // No break here, to allow drop down to READING
-        case Connection::READING:
-        {
-          auto_Object<Response> protocol_response = connection->get_protocol_response();
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
-          read_write_status = protocol_response->deserialize( *connection );
-          if ( read_write_status == Stream::STREAM_STATUS_OK )
-          {
-            respond( connection->get_protocol_request(), connection->get_protocol_response() );
-            connection->set_protocol_request( NULL );
-            connection->set_protocol_response( NULL );
-            connection->set_state( Connection::IDLE );
-            return; // Done
-          }
-          else
-            break; // out of the switch, to check error codes
-        }
-        break;
-        default: DebugBreak();
-      }
-      // Read or write failed
-      if ( read_write_status == Stream::STREAM_STATUS_ERROR && log != NULL )
-        log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": lost connection to " << peer_sockaddr << " on " << ( connection->get_state() == Connection::READING ? "read" : "write" ) << ", error: " << Exception::strerror();
-      // Drop down
-    }
-    else if ( log != NULL ) // fd_event_error_code != 0
-      log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
-      // Drop down
-    // Clean up the connection and prepare for another try if we're under the reconnect limit
-    for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
-    {
-      if ( **connection_i == *connection )
-      {
-        auto_Object<Request> protocol_request = connection->get_protocol_request();
-        YIELD::Object::decRef( connection );
-        if ( ++reconnect_tries < reconnect_tries_max )
-        {
-          connection = createConnection();
-          *connection_i = connection; // Don't erase and push_back from connections, just re-use the same position
-          connection->set_protocol_request( protocol_request );
-          fd_event_error_code = 0;
-          break; // Out of the for connections loop, back up to the main loop to retry the connection
+            log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
+          connection->set_state( Connection::CONNECTING );
+          return;
         }
         else
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": exhausted connection retries to " << peer_sockaddr << ".";
-          connections.erase( connection_i );
-          // We've lost errno here
-#ifdef _WIN32
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
-#else
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
-#endif
-          return;
+            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << peer_sockaddr << " failed: " << Exception::strerror();
+          break; // Drop down to try to reconnect
         }
       }
+      // No break here, to allow drop down to WRITING
+      case Connection::WRITING:
+      {
+        auto_Object<Request> protocol_request = connection->get_protocol_request();
+        Stream::Status write_status = protocol_request->serialize( *connection );
+        if ( write_status == Stream::STREAM_STATUS_OK )
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
+          connection->set_protocol_response( createProtocolResponse( protocol_request ) );
+          connection->set_state( Connection::READING );
+          // Drop down to READING
+        }
+        else if ( write_status == Stream::STREAM_STATUS_WANT_WRITE || write_status == Stream::STREAM_STATUS_WANT_READ )
+          return;
+        else if ( write_status == Stream::STREAM_STATUS_ERROR )
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": lost connection to " << peer_sockaddr << " on write, error: " << Exception::strerror();
+          break; // Drop down to reconnect
+        }
+        else
+          DebugBreak();
+      }
+      // No break here, to allow drop down to READING
+      case Connection::READING:
+      {
+        auto_Object<Response> protocol_response = connection->get_protocol_response();
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
+        Stream::Status read_status = protocol_response->deserialize( *connection );
+        if ( read_status == Stream::STREAM_STATUS_OK )
+        {
+          respond( connection->get_protocol_request(), connection->get_protocol_response() );
+          connection->set_protocol_request( NULL );
+          connection->set_protocol_response( NULL );
+          connection->set_state( Connection::IDLE );
+          return; // Done
+        }
+        else if ( read_status == Stream::STREAM_STATUS_WANT_READ || read_status == Stream::STREAM_STATUS_WANT_WRITE )
+          return;
+        else if ( read_status == Stream::STREAM_STATUS_ERROR )
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": lost connection to " << peer_sockaddr << " on read, error: " << Exception::strerror();
+          break; // Drop down to reconnect
+        }
+        else
+          DebugBreak();
+      }
+      break;
+      default: DebugBreak();
     }
   }
+  else if ( log != NULL ) // fd_event_error_code != 0
+    log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
+    // Drop down to reconnect
+  destroyConnection( connection );
 }
-Client::Connection::Connection( auto_Object<Socket> _socket )
-  : _socket( _socket )
+Client::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
+  : _socket( _socket ), reconnect_tries_left( reconnect_tries_max )
 {
   state = IDLE;
+}
+bool Client::Connection::close()
+{
+  return _socket->close();
 }
 Stream::Status Client::Connection::connect( auto_Object<SocketAddress> connect_to_sockaddr )
 {
@@ -469,6 +528,10 @@ Stream::Status Client::Connection::read( void* buffer, size_t buffer_len, size_t
 {
   last_activity_time = Time();
   return _socket->read( buffer, buffer_len, out_bytes_read );
+}
+bool Client::Connection::shutdown()
+{
+  return _socket->shutdown();
 }
 Stream::Status Client::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
@@ -574,7 +637,7 @@ Event* FDAndInternalEventQueue::try_dequeue()
 #define MAX_EVENTS_PER_POLL 8192
 static bool CompareTimerEvents( const TimerEvent* left, const TimerEvent* right )
 {
-  return left->get_fire_time() < right->get_fire_time(); // Reverse the comparison so that the earliest timer is at the back of the timers vector
+  return left->get_fire_time() < right->get_fire_time();
 }
 FDEventQueue::FDEventQueue()
 {
@@ -854,11 +917,11 @@ TimerEvent* FDEventQueue::dequeueTimerEvent()
     if ( timers.back()->get_fire_time() <= current_time )
     {
       TimerEvent* timer_event = timers.back();
-      std::pop_heap( timers.begin(), timers.end(), CompareTimerEvents );
       timers.pop_back();
+      make_heap( timers.begin(), timers.end(), CompareTimerEvents );
       if ( timer_event->get_period() != 0 )
       {
-        TimerEvent* next_timer_event = new TimerEvent( Time() + timer_event->get_period(), timer_event->get_period(), timer_event->get_context() );
+        TimerEvent* next_timer_event = new TimerEvent( timer_event->get_period(), timer_event->get_period(), timer_event->get_context() );
         timers.push_back( next_timer_event );
         std::push_heap( timers.begin(), timers.end(), CompareTimerEvents );
       }
@@ -979,9 +1042,14 @@ int FDEventQueue::poll( uint64_t timeout_ns )
   return ::poll( &pollfds[0], pollfds.size(), static_cast<int>( timeout_ns / NS_IN_MS ) );
 #endif
 }
+void FDEventQueue::signal()
+{
+  uint64_t m = 1;
+  signal_write_end->write( &m, sizeof( m ), NULL );
+}
 auto_Object<TimerEvent> FDEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
 {
-  TimerEvent* timer_event = new TimerEvent( Time() + timeout, period, context );
+  TimerEvent* timer_event = new TimerEvent( timeout, period, context );
   timers.push_back( timer_event );
   std::push_heap( timers.begin(), timers.end(), CompareTimerEvents );
   return timer_event->incRef();
@@ -1073,30 +1141,9 @@ bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enabl
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-namespace YIELD
-{
-  class SyncHTTPRequest : public HTTPRequest
-  {
-  public:
-    SyncHTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body = NULL )
-      : HTTPRequest( method, absolute_uri, body )
-    { }
-    // Request
-    bool respond( Response& response )
-    {
-      return http_response_queue.enqueue( response );
-    }
-    HTTPResponse& waitForHTTPResponse( uint64_t timeout_ns )
-    {
-      if ( timeout_ns == static_cast<uint64_t>( -1 ) )
-        return http_response_queue.dequeue_typed<HTTPResponse>();
-      else
-        return http_response_queue.dequeue_typed<HTTPResponse>( timeout_ns );
-    }
-  private:
-    OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > http_response_queue;
-  };
-};
+
+
+
 auto_Object<Request> HTTPClient::createProtocolRequest( auto_Object<Request> body )
 {
   if ( body->get_tag() == YIELD_OBJECT_TAG( HTTPRequest ) )
@@ -1104,18 +1151,22 @@ auto_Object<Request> HTTPClient::createProtocolRequest( auto_Object<Request> bod
   else
     return NULL;
 }
+
 auto_Object<Response> HTTPClient::createProtocolResponse( auto_Object<Request> )
 {
   return new HTTPResponse;
 }
+
 auto_Object<HTTPResponse> HTTPClient::GET( const URI& absolute_uri, auto_Object<Log> log )
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
+
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
+
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log )
 {
   auto_Object<File> file = File::open( body_file_path );
@@ -1123,6 +1174,7 @@ auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& 
   file->read( const_cast<char*>( body->c_str() ), body->size(), NULL );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
+
 void HTTPClient::respond( auto_Object<Request> protocol_request, auto_Object<Response> response )
 {
   HTTPRequest* http_request = static_cast<HTTPRequest*>( protocol_request.get() );
@@ -1133,17 +1185,36 @@ void HTTPClient::respond( auto_Object<Request> protocol_request, auto_Object<Res
   else
     DebugBreak();
 }
+
 auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   auto_Object<SEDAStageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
   YIELD::URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
-  auto_Object<HTTPClient> http_client = HTTPClient::create( stage_group, checked_absolute_uri, log );
-  auto_Object<SyncHTTPRequest> http_request = new SyncHTTPRequest( method, checked_absolute_uri, body );
+  auto_Object<HTTPClient> http_client = HTTPClient::create( stage_group, checked_absolute_uri, log, Client::OPERATION_TIMEOUT_DEFAULT, 3 );
+  auto_Object<HTTPRequest> http_request = new HTTPRequest( method, checked_absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
   http_client->send( http_request->incRef() );
   return http_request->waitForHTTPResponse( static_cast<uint64_t>( -1 ) );
+}
+
+
+HTTPClient::HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body )
+  : YIELD::HTTPRequest( method, absolute_uri, body )
+{ }
+
+bool HTTPClient::HTTPRequest::respond( Response& response )
+{
+  return http_response_queue.enqueue( response );
+}
+
+HTTPResponse& HTTPClient::HTTPRequest::waitForHTTPResponse( uint64_t timeout_ns )
+{
+  if ( timeout_ns == static_cast<uint64_t>( -1 ) )
+    return http_response_queue.dequeue_typed<HTTPResponse>();
+  else
+    return http_response_queue.dequeue_typed<HTTPResponse>( timeout_ns );
 }
 
 
@@ -1418,6 +1489,80 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
 }
 
 
+// http_request_reader.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+void HTTPRequestReader::handleEvent( Event& ev )
+{
+  auto_Object<TCPSocket> tcp_socket;
+  HTTPRequest* http_request;
+
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( FDEvent ):
+    {
+      FDEvent& fd_event = static_cast<FDEvent&>( ev );
+      http_request = static_cast<HTTPRequest*>( fd_event.get_context() );
+      tcp_socket = http_request->get_tcp_socket();
+      Object::decRef( ev );
+    }
+    break; // Drop down to try to deserialize
+
+    case YIELD_OBJECT_TAG( TCPSocket ): // New connection from the TCPListener
+    {
+      tcp_socket = static_cast<TCPSocket*>( &ev );
+
+      http_request = new HTTPRequest( tcp_socket, http_response_writer_target );
+      tcp_socket->attach( fd_event_queue, http_request ); // Attach the original reference to http_request to the fd_event_queue
+    }
+    break; // Drop down to try to deserialize
+
+    default: handleUnknownEvent( ev ); return;
+  }
+
+
+  tcp_socket->set_blocking_mode( false );
+  Stream::Status deserialize_status = http_request->deserialize( *tcp_socket );
+
+  switch ( deserialize_status )
+  {
+    case Stream::STREAM_STATUS_OK:
+    {
+      http_request_target->send( http_request->incRef() );
+    }
+    break;
+
+    case Stream::STREAM_STATUS_ERROR:
+    {
+      tcp_socket->close(); // Force a detach
+      Object::decRef( *http_request ); // The reference that's attached to fd_event_queue
+      // tcp_socket should be dead here, since http_request should have had the last reference to it
+    }
+    break;
+  }
+}
+
+
+bool HTTPRequestReader::HTTPRequest::respond( uint16_t status_code )
+{
+  return http_response_writer_target->send( *( new HTTPResponseWriter::HTTPResponse( tcp_socket, status_code ) ) );
+}
+
+bool HTTPRequestReader::HTTPRequest::respond( uint16_t status_code, auto_Object<> body )
+{
+  return http_response_writer_target->send( *( new HTTPResponseWriter::HTTPResponse( tcp_socket, status_code, body ) ) );
+}
+
+bool HTTPRequestReader::HTTPRequest::respond( Response& )
+{
+  DebugBreak();
+  return false;
+}
+
+
 // http_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1653,6 +1798,40 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
     // Fall through
     case SERIALIZE_DONE: return Stream::STREAM_STATUS_OK;
     default: DebugBreak(); return Stream::STREAM_STATUS_ERROR;
+  }
+}
+
+
+// http_response_writer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+void HTTPResponseWriter::handleEvent( Event& ev )
+{
+  switch( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( HTTPResponse ):
+    {
+      HTTPResponseWriter::HTTPResponse& http_response = static_cast<HTTPResponseWriter::HTTPResponse&>( ev );
+      auto_Object<TCPSocket> tcp_socket = http_response.get_tcp_socket();
+      tcp_socket->set_blocking_mode( true );
+      Stream::Status serialize_status = http_response.serialize( *tcp_socket );
+      switch ( serialize_status )
+      {
+        case Stream::STREAM_STATUS_OK:
+        {
+          Object::decRef( http_response );
+        }
+        break;
+        case Stream::STREAM_STATUS_ERROR:
+        {
+          Object::decRef( http_response ); // Let the HTTPRequestReader detect that the connection has been lost
+        }
+        break;
+        default: DebugBreak(); break;
+      }
+    }
+    break;
+    default: handleUnknownEvent( ev ); break;
   }
 }
 
@@ -2182,7 +2361,7 @@ auto_Object<Response> ONCRPCClient::createProtocolResponse( auto_Object<Request>
   Request* request = static_cast<Request*>( static_cast<ONCRPCRequest*>( protocol_request.get() )->get_body().get() );
   auto_Object<Response> response = _interface->createResponse( request->get_tag() );
   if ( response != NULL )
-    return new ONCRPCResponse( response.release(), get_log() );
+    return new ONCRPCResponse( _interface, response.release(), get_log() );
   else
     return NULL;
 }
@@ -2221,13 +2400,13 @@ ONCRPCRecordInputStream& ONCRPCMessage::get_oncrpc_record_input_stream( InputStr
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body, auto_Object<Log> log )
-  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body, log ),
+  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body, log ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body, auto_Object<Log> log )
-  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body, log ),
+  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body, log ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
@@ -2347,6 +2526,12 @@ Stream::Status ONCRPCRequest::serialize( OutputStream& output_stream, size_t* ou
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+ONCRPCResponse::ONCRPCResponse( auto_Object<Interface> _interface, auto_Object<> body, auto_Object<Log> log )
+  : ONCRPCMessage( 0, _interface, body, log )
+{ }
+ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Object<> body, auto_Object<Log> log )
+  : ONCRPCMessage( xid, NULL, body, log )
+{ }
 Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* )
 {
   XDRInputStream xdr_input_stream( get_oncrpc_record_input_stream( input_stream ) );
@@ -2373,7 +2558,18 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* )
               case 3: body = new ExceptionResponse( "ONC-RPC exception: procedure unavailable" ); break;
               case 4: body = new ExceptionResponse( "ONC-RPC exception: garbage arguments" ); break;
               case 5: body = new ExceptionResponse( "ONC-RPC exception: system error" ); break;
-              default: DebugBreak(); // Look up in IDLInterface
+              default:
+              {
+                if ( _interface != NULL )
+                {
+                  body = _interface->createExceptionResponse( accept_stat ).release();
+                  if ( body == NULL )
+                    body = new ExceptionResponse( "ONC-RPC exception: system error" );
+                }
+                else
+                  body = new ExceptionResponse( "ONC-RPC exception: system error" );
+              }
+              break;
             }
             if ( log != NULL )
               log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
@@ -2808,14 +3004,17 @@ Socket::Socket( int domain, int type, int protocol, auto_Object<Log> log )
   if ( _socket == -1 && domain == AF_INET6 && errno == EAFNOSUPPORT )
     _socket = ::socket( AF_INET, type, protocol );
 #endif
+
   blocking_mode = true;
+  fd_event_queue_context = NULL;
 }
 
-bool Socket::attach( auto_Object<FDEventQueue> to_fd_event_queue )
+bool Socket::attach( auto_Object<FDEventQueue> to_fd_event_queue, Object* fd_event_queue_context )
 {
-  if ( to_fd_event_queue->attach( *this, this ) )
+  if ( to_fd_event_queue->attach( *this, fd_event_queue_context ) )
   {
     this->attached_to_fd_event_queue = to_fd_event_queue;
+    this->fd_event_queue_context = fd_event_queue_context;
     return true;
   }
   else
@@ -2884,7 +3083,7 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
               domain = AF_INET; // Fall back to IPv4
               _socket = ::socket( domain, type, protocol );
               if ( attached_to_fd_event_queue != NULL )
-                attached_to_fd_event_queue->attach( *this, this, false, false );
+                attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
               continue; // Try to connect again
             }
             else
@@ -2900,8 +3099,8 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
       {
         switch ( connect_status )
         {
-          case STREAM_STATUS_OK: attached_to_fd_event_queue->toggle( *this, this, false, false ); break;
-          case STREAM_STATUS_WANT_WRITE: attached_to_fd_event_queue->toggle( *this, this, false, true ); break;
+        case STREAM_STATUS_OK: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false ); break;
+          case STREAM_STATUS_WANT_WRITE: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true ); break;
           case STREAM_STATUS_ERROR: break;
           default: DebugBreak(); break;
         }
@@ -2915,7 +3114,7 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
       domain = AF_INET; // Fall back to IPv4
       _socket = ::socket( domain, type, protocol );
       if ( attached_to_fd_event_queue != NULL )
-        attached_to_fd_event_queue->attach( *this, this, false, false );
+        attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
       continue; // Try to connect again
     }
     else
@@ -2965,7 +3164,7 @@ Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_
     }
 
     if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, this, false, false );
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
 
     if ( out_bytes_read )
       *out_bytes_read = static_cast<size_t>( recv_ret );
@@ -2995,7 +3194,7 @@ Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_
       log->getStream( Log::LOG_INFO ) << "Socket: would block on read on " << this << ", tried to read buffer_len = " << buffer_len << ".";
 
     if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, this, true, false );
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, true, false );
 
     return STREAM_STATUS_WANT_READ;
   }
@@ -3076,7 +3275,7 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
     }
 
     if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, this, false, false );
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
 
     if ( out_bytes_written )
 #ifdef _WIN32
@@ -3097,7 +3296,7 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
       log->getStream( Log::LOG_INFO ) << "Socket: would block on write on " << this << ".";
 
     if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, this, false, true );
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true );
 
     return STREAM_STATUS_WANT_WRITE;
   }
@@ -3298,6 +3497,117 @@ void SocketAddress::init( const char* hostname, uint16_t port )
     throw Exception( gai_strerror( getaddrinfo_ret ) );
 #endif
   }
+}
+
+
+// tcp_listener.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+auto_Object<TCPListener> TCPListener::create( auto_Object<StageGroup> stage_group, auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory )
+{
+  auto_Object<TCPListenQueue> tcp_listen_queue = TCPListenQueue::create( local_sockaddr, log, tcp_socket_factory );
+  if ( tcp_listen_queue != NULL )
+  {
+    auto_Object<TCPListener> tcp_listener = new TCPListener( reader_target );
+    auto_Object<Stage> tcp_listener_stage = stage_group->createStage( tcp_listener, tcp_listen_queue );
+    if ( tcp_listener_stage != NULL )
+      return tcp_listener;
+  }
+
+  return NULL;
+}
+
+void TCPListener::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( TCPSocket ):
+    {
+      reader_target->send( ev );
+    }
+    break;
+
+    default: this->handleUnknownEvent( ev );
+  }
+}
+
+
+// tcp_listen_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#if !defined(_WIN32) && defined(_DEBUG)
+#include <errno.h>
+#endif
+auto_Object<TCPListenQueue> TCPListenQueue::create( auto_Object<SocketAddress> listen_sockaddr, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory )
+{
+  if ( tcp_socket_factory == NULL )
+    tcp_socket_factory = new TCPSocketFactory( log );
+  auto_Object<TCPSocket> listen_tcp_socket = tcp_socket_factory->createTCPSocket( log );
+  if ( listen_tcp_socket->bind( listen_sockaddr ) )
+  {
+    if ( listen_tcp_socket->listen() )
+      return new TCPListenQueue( listen_tcp_socket, log );
+  }
+  return NULL;
+}
+TCPListenQueue::TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket, auto_Object<Log> log )
+  : listen_tcp_socket( listen_tcp_socket ), log( log )
+{
+  this->attach( *listen_tcp_socket, NULL );
+#if !defined(_WIN32) && defined(_DEBUG)
+  seen_too_many_open_files = false;
+#endif
+}
+bool TCPListenQueue::enqueue( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( StageStartupEvent ):	break;
+    case YIELD_OBJECT_TAG( StageShutdownEvent ): listen_tcp_socket->close(); break;
+  }
+  Object::decRef( ev );
+  return true;
+}
+Event* TCPListenQueue::dequeue()
+{
+  return accept();
+}
+Event* TCPListenQueue::dequeue( uint64_t timeout_ns )
+{
+  if ( FDEventQueue::dequeue( timeout_ns ) )
+  {
+#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
+    Event* ev = accept();
+    // The event port automatically dissociates events, so we have to re-associate here
+    toggle( *listen_tcp_socket, NULL, true, false );
+    return ev;
+#else
+    return accept();
+#endif
+  }
+  else
+    return NULL;
+}
+TCPSocket* TCPListenQueue::accept()
+{
+  TCPSocket* peer_tcp_socket = listen_tcp_socket->accept().release();
+  if ( peer_tcp_socket != NULL )
+    return peer_tcp_socket;
+#if !defined(_WIN32) && defined(_DEBUG)
+  else
+  {
+    switch ( errno )
+    {
+      case EWOULDBLOCK: break;
+      case EMFILE: if ( seen_too_many_open_files ) break; else seen_too_many_open_files = true;
+      default: log->getStream( Log::LOG_ERR ) << "TCPListenQueue: error on accept: " << Exception::strerror(); break;
+    }
+  }
+#endif
+  return NULL;
 }
 
 

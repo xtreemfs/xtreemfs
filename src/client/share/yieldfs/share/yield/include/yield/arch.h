@@ -42,6 +42,9 @@ namespace YIELD
   public:
     virtual bool send( Event& ) = 0;
 
+    // Object
+    EventTarget& incRef() { return Object::incRef( *this ); }
+
   protected:
     EventTarget() { }
     virtual ~EventTarget() { }
@@ -52,10 +55,12 @@ namespace YIELD
   {
   public:
     virtual bool isThreadSafe() const { return false; }
-    virtual EventHandler* clone() const { return 0;  } // Some scheduling policies will try to replicate an EventHandler instead of sharing it (and possibly locking, if isThreadSafe() = false); EventHandlers that don't keep much state (such as e.g. caches) should implement this method
 
     virtual void handleEvent( Event& ) = 0;
     virtual void handleUnknownEvent( Event& );
+
+    // Object
+    EventHandler& incRef() { return Object::incRef( *this ); }
 
     // EventTarget
     bool send( Event& );
@@ -74,8 +79,6 @@ namespace YIELD
   class EventQueue : public EventTarget
   {
   public:
-    virtual EventQueue* clone() const = 0;
-
     virtual Event* dequeue() = 0; // Blocking
     virtual Event* dequeue( uint64_t timeout_ns ) = 0;
 
@@ -100,7 +103,7 @@ namespace YIELD
     }
 
     virtual bool enqueue( Event& ev ) = 0;
-    virtual Event* try_dequeue() = 0;
+    virtual Event* try_dequeue() { return dequeue( 0 ); }
 
     // EventTarget
     bool send( Event& ev )
@@ -128,8 +131,6 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( OneSignalEventQueue, 101 );
 
     // EventQueue
-    virtual EventQueue* clone() const { return new OneSignalEventQueue<InternalQueueType>; }
-
     Event* dequeue()
     {
       Event* result = InternalQueueType::try_dequeue();
@@ -394,7 +395,7 @@ namespace YIELD
 
     // Stage
     const char* get_stage_name() const { return event_handler->get_type_name(); }
-    auto_Object<EventHandler> get_event_handler() { return event_handler; }
+    auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }
     auto_Object<EventQueue> get_event_queue() { return static_cast<EventQueue&>( event_queue->incRef() ); }
 
     bool visit()

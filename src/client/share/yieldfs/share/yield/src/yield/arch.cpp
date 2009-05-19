@@ -1,4 +1,4 @@
-// Revision: 1451
+// Revision: 1460
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -101,7 +101,7 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 {
   for ( unsigned short thread_i = 0; thread_i < threads; thread_i++ )
   {
-    SEDAStageGroupThread* thread = new SEDAStageGroupThread( get_name(), NULL, get_log(), *stage );
+    SEDAStageGroupThread* thread = new SEDAStageGroupThread( get_name(), NULL, get_log(), stage );
     thread->start();
     this->threads.push_back( thread );
   }

@@ -562,6 +562,10 @@ namespace YIELD
     template <class ObjectType>
     static inline ObjectType& incRef( ObjectType& object )
     {
+#ifdef YIELD_DEBUG_REFERENCE_COUNTING
+      if ( object.refcnt <= 0 )
+        DebugBreak();
+#endif
       atomic_inc( &object.refcnt );
       return object;
     }
@@ -570,13 +574,13 @@ namespace YIELD
     static inline ObjectType* incRef( ObjectType* object )
     {
       if ( object )
-        atomic_inc( &object->refcnt );
+        incRef( *object );
       return object;
     }
 
     inline Object& incRef()
     {
-      atomic_inc( &this->refcnt );
+      incRef( *this );
       return *this;
     }
 
