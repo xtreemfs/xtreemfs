@@ -54,8 +54,8 @@ import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownResponse;
-import org.xtreemfs.interfaces.MRCInterface.createRequest;
-import org.xtreemfs.interfaces.MRCInterface.createResponse;
+import org.xtreemfs.interfaces.MRCInterface.creatRequest;
+import org.xtreemfs.interfaces.MRCInterface.creatResponse;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateResponse;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
@@ -246,12 +246,12 @@ public class MRCClient extends ONCRPCClient {
     
     public RPCResponse create(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
-        createRequest rq = new createRequest(path, mode);
+        creatRequest rq = new creatRequest(path, mode);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final createResponse resp = new createResponse();
+                final creatResponse resp = new creatResponse();
                 resp.deserialize(data);
                 return null;
             }
