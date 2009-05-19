@@ -1,4 +1,4 @@
-// Revision: 1460
+// Revision: 1462
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2571,9 +2571,6 @@ Stream::Status ONCRPCResponse::deserialize( InputStream& input_stream, size_t* )
               }
               break;
             }
-            if ( log != NULL )
-              log->getStream( Log::LOG_WARNING ) << get_type_name() << ": " << static_cast<ExceptionResponse*>( body.get() )->what();
-            return Stream::STREAM_STATUS_OK;
           }
         }
         else
@@ -2998,11 +2995,17 @@ Socket::Socket( int domain, int type, int protocol, auto_Object<Log> log )
       setsockopt( _socket, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
     }
     else if ( ::WSAGetLastError() == WSAEAFNOSUPPORT )
+    {
+      this->domain = AF_INET;
       _socket = ::socket( AF_INET, type, protocol );
+    }
   }
 #else
   if ( _socket == -1 && domain == AF_INET6 && errno == EAFNOSUPPORT )
+  {
+    this->domain = AF_INET;
     _socket = ::socket( AF_INET, type, protocol );
+  }
 #endif
 
   blocking_mode = true;
@@ -3027,14 +3030,7 @@ bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
   if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
     return ::bind( *this, name, namelen ) != -1;
   else
-  {
-#ifdef _WIN32
-    ::WSASetLastError( WSAEAFNOSUPPORT );
-#else
-    errno = EAFNOSUPPORT;
-#endif
     return false;
-  }
 }
 
 bool Socket::close()
