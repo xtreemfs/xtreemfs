@@ -81,6 +81,7 @@ module org # 1000
         boolean access( string path, uint32_t mode ) # 1;
         void chmod( string path, uint32_t mode ) # 2;
         void chown( string path, string user_id, string group_id ) # 3;
+        void create( string path, uint32_t mode ) # 4;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 30;
         void getattr( string path, out Stat stbuf ) # 5;
         void getxattr( string path, string name, out string value ) # 6;
@@ -104,6 +105,7 @@ module org # 1000
         void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
         void xtreemfs_dump_database( string dump_file ) # 52;
         void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
+        void xtreemfs_internal_debug( string operation, out string result ) # 54;
         void xtreemfs_lsvol( out VolumeSet volumes ) # 31;
         void xtreemfs_listdir( string path, out StringSet names ) # 33;
         void xtreemfs_mkvol( Volume volume ) # 10;
