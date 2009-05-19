@@ -17,6 +17,21 @@ public class OSDInterface
 
     public static int getVersion() { return 1300; }
 
+    public static Exception createException( int accept_stat ) throws Exception
+    {
+        switch( accept_stat )
+        {
+            case 1306: return new ConcurrentModificationException();
+            case 1307: return new errnoException();
+            case 1308: return new InvalidArgumentException();
+            case 1311: return new OSDException();
+            case 1309: return new ProtocolException();
+            case 1310: return new RedirectException();
+
+            default: throw new Exception( "unknown accept_stat " + Integer.toString( accept_stat ) );
+        }
+    }
+
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         switch( header.getProcedure() )
@@ -46,16 +61,5 @@ public class OSDInterface
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
-
-    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
-    {
-        if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::ConcurrentModificationException") ) return new ConcurrentModificationException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::errnoException") ) return new errnoException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::InvalidArgumentException") ) return new InvalidArgumentException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::OSDException") ) return new OSDException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::ProtocolException") ) return new ProtocolException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::OSDInterface::RedirectException") ) return new RedirectException();
-        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
-    }
 
 }

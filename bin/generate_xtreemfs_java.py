@@ -27,7 +27,20 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 %(class_header)s%(constants)s
     public static int getVersion() { return %(tag)s; }
 """ % locals()
-                            
+
+        exception_factories = "".join( [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()] )
+        if len( exception_factories ) > 0:                
+            out += """
+    public static Exception createException( int accept_stat ) throws Exception
+    {
+        switch( accept_stat )
+        {
+%(exception_factories)s
+            default: throw new Exception( "unknown accept_stat " + Integer.toString( accept_stat ) );
+        }
+    }
+""" % locals()
+        
         request_factories = "".join( [operation.getRequestFactory() for operation in self.getOperations()] )
         if len( request_factories ) > 0:                
             out += """
@@ -52,17 +65,6 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
-""" % locals()
-
-        exception_factories = [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()]
-        if len( exception_factories ) > 0:
-            exception_factories = ( "\n" + INDENT_SPACES * 2 + "else " ).join( exception_factories  )
-            out += """
-    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
-    {
-        %(exception_factories)s
-        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
-    }
 """ % locals()
 
         out += self.getClassFooter()
@@ -99,7 +101,12 @@ class XtreemFSJavaEnumeratedType(JavaEnumeratedType, XtreemFSJavaType):
     def getBufferDeserializeCall( self, identifier ): name = self.getName(); return "%(identifier)s = %(name)s.parseInt( buf.getInt() );" % locals()
     def getBufferSerializeCall( self, identifier ): return "writer.putInt( %(identifier)s.intValue() );" % locals()
     def getSize( self, identifier ): return "4"
-    
+
+
+class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaCompoundType):
+    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
+    def getExceptionFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %s();\n" % ( self.getTag(), self.getName() )
+
 
 class XtreemFSJavaMapType(JavaMapType, XtreemFSJavaCompoundType):
     def getDeserializeMethods( self ):
@@ -275,12 +282,7 @@ class XtreemFSJavaStructType(JavaStructType, XtreemFSJavaCompoundType):
 %(buffer_serialize_calls)s
     }
     """ % locals() 
-                     
-
-class XtreemFSJavaExceptionType(JavaExceptionType, XtreemFSJavaCompoundType):
-    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
-    def getExceptionFactory( self ): return "if ( exception_type_name.equals(\"%s\") ) return new %s();" % ( self.getQualifiedName( "::" ), self.getName() )
-    
+                        
     
 class XtreemFSJavaOperation(JavaOperation):        
     def generate( self ):

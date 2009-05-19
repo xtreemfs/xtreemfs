@@ -17,6 +17,18 @@ public class DIRInterface
 
     public static int getVersion() { return 1100; }
 
+    public static Exception createException( int accept_stat ) throws Exception
+    {
+        switch( accept_stat )
+        {
+            case 1106: return new ConcurrentModificationException();
+            case 1108: return new InvalidArgumentException();
+            case 1109: return new ProtocolException();
+
+            default: throw new Exception( "unknown accept_stat " + Integer.toString( accept_stat ) );
+        }
+    }
+
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         switch( header.getProcedure() )
@@ -46,13 +58,5 @@ public class DIRInterface
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
-
-    public static ONCRPCException createException( String exception_type_name ) throws java.io.IOException
-    {
-        if ( exception_type_name.equals("org::xtreemfs::interfaces::DIRInterface::ConcurrentModificationException") ) return new ConcurrentModificationException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::DIRInterface::InvalidArgumentException") ) return new InvalidArgumentException();
-        else if ( exception_type_name.equals("org::xtreemfs::interfaces::DIRInterface::ProtocolException") ) return new ProtocolException();
-        else throw new java.io.IOException( "unknown exception type " + exception_type_name );
-    }
 
 }
