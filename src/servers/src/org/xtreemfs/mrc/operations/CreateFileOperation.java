@@ -26,8 +26,8 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.interfaces.MRCInterface.createRequest;
-import org.xtreemfs.interfaces.MRCInterface.createResponse;
+import org.xtreemfs.interfaces.MRCInterface.creatRequest;
+import org.xtreemfs.interfaces.MRCInterface.creatResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -44,7 +44,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class CreateFileOperation extends MRCOperation {
-        
+    
     public CreateFileOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -52,7 +52,7 @@ public class CreateFileOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        final createRequest rqArgs = (createRequest) rq.getRequestArgs();
+        final creatRequest rqArgs = (creatRequest) rq.getRequestArgs();
         
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
@@ -99,7 +99,7 @@ public class CreateFileOperation extends MRCOperation {
         sMan.setLastFileId(fileId, update);
         
         // set the response
-        rq.setResponse(new createResponse());
+        rq.setResponse(new creatResponse());
         
         update.execute();
     }

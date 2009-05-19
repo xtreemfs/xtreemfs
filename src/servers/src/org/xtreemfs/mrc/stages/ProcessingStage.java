@@ -36,7 +36,7 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
-import org.xtreemfs.interfaces.MRCInterface.createRequest;
+import org.xtreemfs.interfaces.MRCInterface.creatRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getxattrRequest;
@@ -155,7 +155,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(accessRequest.TAG, new CheckAccessOperation(master));
         operations.put(readdirRequest.TAG, new ReadDirAndStatOperation(master));
         operations.put(xtreemfs_listdirRequest.TAG, new ReadDirOperation(master));
-        operations.put(createRequest.TAG, new CreateFileOperation(master));
+        operations.put(creatRequest.TAG, new CreateFileOperation(master));
         operations.put(mkdirRequest.TAG, new CreateDirOperation(master));
         operations.put(symlinkRequest.TAG, new CreateSymLinkOperation(master));
         operations.put(unlinkRequest.TAG, new DeleteOperation(master));
@@ -225,7 +225,7 @@ public class ProcessingStage extends MRCStage {
             master.requestFinished(rq);
             return;
         }
-
+        
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "operation for request %s: %s", rq
                     .toString(), op.getClass().getSimpleName());

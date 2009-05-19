@@ -9,15 +9,15 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class createRequest implements org.xtreemfs.interfaces.utils.Request
+public class creatRequest implements org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 1204;
 
     
-    public createRequest() { path = ""; mode = 0; }
-    public createRequest( String path, int mode ) { this.path = path; this.mode = mode; }
-    public createRequest( Object from_hash_map ) { path = ""; mode = 0; this.deserialize( from_hash_map ); }
-    public createRequest( Object[] from_array ) { path = ""; mode = 0;this.deserialize( from_array ); }
+    public creatRequest() { path = ""; mode = 0; }
+    public creatRequest( String path, int mode ) { this.path = path; this.mode = mode; }
+    public creatRequest( Object from_hash_map ) { path = ""; mode = 0; this.deserialize( from_hash_map ); }
+    public creatRequest( Object[] from_array ) { path = ""; mode = 0;this.deserialize( from_array ); }
 
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
@@ -27,12 +27,12 @@ public class createRequest implements org.xtreemfs.interfaces.utils.Request
     // Object
     public String toString()
     {
-        return "createRequest( " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
+        return "creatRequest( " + "\"" + path + "\"" + ", " + Integer.toString( mode ) + " )";
     }
 
     // Serializable
     public int getTag() { return 1204; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createRequest"; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::creatRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -80,7 +80,7 @@ public class createRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public Response createDefaultResponse() { return new createResponse(); }
+    public Response createDefaultResponse() { return new creatResponse(); }
 
 
     private String path;

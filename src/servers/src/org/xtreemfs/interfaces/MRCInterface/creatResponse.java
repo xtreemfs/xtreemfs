@@ -9,24 +9,24 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class createResponse implements org.xtreemfs.interfaces.utils.Response
+public class creatResponse implements org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 1204;
 
     
-    public createResponse() {  }
-    public createResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
-    public createResponse( Object[] from_array ) { this.deserialize( from_array ); }
+    public creatResponse() {  }
+    public creatResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
+    public creatResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
     // Object
     public String toString()
     {
-        return "createResponse()";
+        return "creatResponse()";
     }
 
     // Serializable
     public int getTag() { return 1204; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::createResponse"; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::creatResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
