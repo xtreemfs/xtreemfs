@@ -42,9 +42,9 @@ Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, YIELD::auto_
   : name( name ), flags( flags ), log( log )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( stage_group, dir_uri, log, static_cast<uint64_t>( 5 * NS_IN_S ), YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
+  dir_proxy = DIRProxy::create( stage_group, dir_uri, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, log, static_cast<uint64_t>( 5 * NS_IN_S ), YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
+  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
 }
 
 Volume::~Volume()

@@ -681,8 +681,6 @@ namespace YIELD
     static double getCurrentUnixTimeS() { return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_S ); }
 
     Time() : unix_time_ns( getCurrentUnixTimeNS() ) { }
-    Time( double unix_time_s ) : unix_time_ns( static_cast<uint64_t>( unix_time_s * NS_IN_S ) ) { }
-    Time( uint32_t unix_time_s ) : unix_time_ns( unix_time_s * NS_IN_S ) { }
     Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
     Time( const struct timeval& );
 #ifdef _WIN32
@@ -713,7 +711,6 @@ namespace YIELD
     bool operator>( const Time& other ) const { return unix_time_ns > other.unix_time_ns; }
     bool operator>=( const Time& other ) const { return unix_time_ns >= other.unix_time_ns; }
     Time& operator=( uint64_t unix_time_ns ) { this->unix_time_ns = unix_time_ns; return *this; }
-    Time& operator=( uint32_t unix_time_s ) { this->unix_time_ns = unix_time_s * NS_IN_S; return *this; }
     operator std::string() const;
 
   private:

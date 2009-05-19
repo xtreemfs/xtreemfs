@@ -200,7 +200,7 @@ namespace YIELD
 #endif
 
     void signal();
-    auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, static_cast<uint64_t>( 0 ), context ); }
+    auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, Time( static_cast<uint64_t>( 0 ) ), context ); }
     auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
     // Object
@@ -457,7 +457,7 @@ namespace YIELD
     static auto_Object<HTTPResponseWriter> create( auto_Object<StageGroupType> stage_group )
     {
       auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
-      auto_Object<Stage> http_response_writer_stage = stage_group->createStage<HTTPResponseWriter>( http_response_writer, 1, NULL, NULL );
+      auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, NULL, NULL );
       return http_response_writer;
     }
     
