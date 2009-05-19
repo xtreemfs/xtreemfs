@@ -31,7 +31,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         exception_factories = "".join( [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()] )
         if len( exception_factories ) > 0:                
             out += """
-    public static Exception createException( int accept_stat ) throws Exception
+    public static ONCRPCException createException( int accept_stat ) throws Exception
     {
         switch( accept_stat )
         {
@@ -72,7 +72,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         writeGeneratedFile( self.getFilePath(), out )            
 
     def getImports( self ): 
-        return JavaClass.getImports( self ) + XTREEMFS_COMMON_IMPORTS + ["import org.xtreemfs.interfaces.Exceptions.*;"]
+        return JavaClass.getImports( self ) + XTREEMFS_COMMON_IMPORTS
 
 
 class XtreemFSJavaType: pass
