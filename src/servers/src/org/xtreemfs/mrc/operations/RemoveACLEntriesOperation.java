@@ -32,9 +32,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  * @author stender
  */
 public class RemoveACLEntriesOperation extends MRCOperation {
-    
-    public static final int OP_ID = -1;
-    
+        
     public RemoveACLEntriesOperation(MRCRequestDispatcher master) {
         super(master);
     }

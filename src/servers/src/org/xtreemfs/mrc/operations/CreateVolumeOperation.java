@@ -52,9 +52,7 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
  * @author stender
  */
 public class CreateVolumeOperation extends MRCOperation {
-    
-    public static final int OP_ID = 10;
-    
+        
     public CreateVolumeOperation(MRCRequestDispatcher master) {
         super(master);
     }

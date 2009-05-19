@@ -35,9 +35,7 @@ import org.xtreemfs.mrc.UserException;
  * @author bjko
  */
 public class ShutdownOperation extends MRCOperation {
-    
-    public static final int OP_ID = 50;
-    
+        
     public ShutdownOperation(MRCRequestDispatcher master) {
         super(master);
     }

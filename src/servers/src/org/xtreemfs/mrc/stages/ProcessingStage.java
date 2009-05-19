@@ -33,6 +33,43 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.interfaces.MRCInterface.accessRequest;
+import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
+import org.xtreemfs.interfaces.MRCInterface.chownRequest;
+import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
+import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.getxattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.linkRequest;
+import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.openRequest;
+import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.renameRequest;
+import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.setxattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.statvfsRequest;
+import org.xtreemfs.interfaces.MRCInterface.symlinkRequest;
+import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
+import org.xtreemfs.interfaces.MRCInterface.utimensRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_checkpointRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_listdirRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_listRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -45,7 +82,6 @@ import org.xtreemfs.mrc.operations.CheckAccessOperation;
 import org.xtreemfs.mrc.operations.CheckFileListOperation;
 import org.xtreemfs.mrc.operations.CheckpointOperation;
 import org.xtreemfs.mrc.operations.CreateDirOperation;
-import org.xtreemfs.mrc.operations.CreateFileOperation;
 import org.xtreemfs.mrc.operations.CreateLinkOperation;
 import org.xtreemfs.mrc.operations.CreateSymLinkOperation;
 import org.xtreemfs.mrc.operations.CreateVolumeOperation;
@@ -63,13 +99,11 @@ import org.xtreemfs.mrc.operations.MoveOperation;
 import org.xtreemfs.mrc.operations.OpenOperation;
 import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.mrc.operations.ReadDirOperation;
-import org.xtreemfs.mrc.operations.RemoveACLEntriesOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
-import org.xtreemfs.mrc.operations.SetACLEntriesOperation;
 import org.xtreemfs.mrc.operations.SetXAttrOperation;
 import org.xtreemfs.mrc.operations.SetattrOperation;
 import org.xtreemfs.mrc.operations.ShutdownOperation;
@@ -111,46 +145,46 @@ public class ProcessingStage extends MRCStage {
     }
     
     public void installOperations() {
-        operations.put(ShutdownOperation.OP_ID, new ShutdownOperation(master));
-        operations.put(CreateVolumeOperation.OP_ID, new CreateVolumeOperation(master));
-        operations.put(DeleteVolumeOperation.OP_ID, new DeleteVolumeOperation(master));
-        operations.put(GetLocalVolumesOperation.OP_ID, new GetLocalVolumesOperation(master));
-        operations.put(StatOperation.OP_ID, new StatOperation(master));
-        operations.put(CheckAccessOperation.OP_ID, new CheckAccessOperation(master));
-        operations.put(ReadDirAndStatOperation.OP_ID, new ReadDirAndStatOperation(master));
-        operations.put(ReadDirOperation.OP_ID, new ReadDirOperation(master));
-        operations.put(CreateFileOperation.OP_ID, new CreateFileOperation(master));
-        operations.put(CreateDirOperation.OP_ID, new CreateDirOperation(master));
-        operations.put(CreateSymLinkOperation.OP_ID, new CreateSymLinkOperation(master));
-        operations.put(DeleteOperation.OP_ID_FILE, new DeleteOperation(master));
-        operations.put(DeleteOperation.OP_ID_DIR, new DeleteOperation(master));
-        operations.put(GetXAttrOperation.OP_ID, new GetXAttrOperation(master));
-        operations.put(GetXAttrsOperation.OP_ID, new GetXAttrsOperation(master));
-        operations.put(SetXAttrOperation.OP_ID, new SetXAttrOperation(master));
-        operations.put(RemoveXAttrOperation.OP_ID, new RemoveXAttrOperation(master));
-        operations.put(OpenOperation.OP_ID, new OpenOperation(master));
-        operations.put(UpdateFileSizeOperation.OP_ID, new UpdateFileSizeOperation(master));
-        operations.put(RenewOperation.OP_ID, new RenewOperation(master));
-        operations.put(ChangeOwnerOperation.OP_ID, new ChangeOwnerOperation(master));
-        operations.put(ChangeAccessModeOperation.OP_ID, new ChangeAccessModeOperation(master));
-        operations.put(AddReplicaOperation.OP_ID, new AddReplicaOperation(master));
-        operations.put(RemoveReplicaOperation.OP_ID, new RemoveReplicaOperation(master));
-        operations.put(MoveOperation.OP_ID, new MoveOperation(master));
-        operations.put(CreateLinkOperation.OP_ID, new CreateLinkOperation(master));
-        operations.put(StatFSOperation.OP_ID, new StatFSOperation(master));
-        operations.put(UtimeOperation.OP_ID, new UtimeOperation(master));
-        operations.put(SetACLEntriesOperation.OP_ID, new SetACLEntriesOperation(master));
-        operations.put(RemoveACLEntriesOperation.OP_ID, new RemoveACLEntriesOperation(master));
-        operations.put(DumpDBOperation.OP_ID, new DumpDBOperation(master));
-        operations.put(RestoreDBOperation.OP_ID, new RestoreDBOperation(master));
-        operations.put(CheckFileListOperation.OP_ID, new CheckFileListOperation(master));
-        operations.put(RestoreFileOperation.OP_ID, new RestoreFileOperation(master));
-        operations.put(CheckpointOperation.OP_ID, new CheckpointOperation(master));
-        operations.put(SetattrOperation.OP_ID, new SetattrOperation(master));
-        operations.put(GetSuitableOSDsOperation.OP_ID, new GetSuitableOSDsOperation(master));
-        operations.put(TruncateOperation.OP_ID, new TruncateOperation(master));
-        operations.put(InternalDebugOperation.OP_ID, new InternalDebugOperation(master));
-        operations.put(GetXLocListOperation.OP_ID, new GetXLocListOperation(master));
+        operations.put(xtreemfs_shutdownRequest.TAG, new ShutdownOperation(master));
+        operations.put(xtreemfs_mkvolRequest.TAG, new CreateVolumeOperation(master));
+        operations.put(xtreemfs_rmvolRequest.TAG, new DeleteVolumeOperation(master));
+        operations.put(xtreemfs_lsvolRequest.TAG, new GetLocalVolumesOperation(master));
+        operations.put(getattrRequest.TAG, new StatOperation(master));
+        operations.put(accessRequest.TAG, new CheckAccessOperation(master));
+        operations.put(readdirRequest.TAG, new ReadDirAndStatOperation(master));
+        operations.put(xtreemfs_listdirRequest.TAG, new ReadDirOperation(master));
+        // operations.put(CreateFileOperation.OP_ID, new CreateFileOperation(master));
+        operations.put(mkdirRequest.TAG, new CreateDirOperation(master));
+        operations.put(symlinkRequest.TAG, new CreateSymLinkOperation(master));
+        operations.put(unlinkRequest.TAG, new DeleteOperation(master));
+        operations.put(rmdirRequest.TAG, new DeleteOperation(master));
+        operations.put(getxattrRequest.TAG, new GetXAttrOperation(master));
+        operations.put(listxattrRequest.TAG, new GetXAttrsOperation(master));
+        operations.put(setxattrRequest.TAG, new SetXAttrOperation(master));
+        operations.put(removexattrRequest.TAG, new RemoveXAttrOperation(master));
+        operations.put(openRequest.TAG, new OpenOperation(master));
+        operations.put(xtreemfs_update_file_sizeRequest.TAG, new UpdateFileSizeOperation(master));
+        operations.put(xtreemfs_renew_capabilityRequest.TAG, new RenewOperation(master));
+        operations.put(chownRequest.TAG, new ChangeOwnerOperation(master));
+        operations.put(chmodRequest.TAG, new ChangeAccessModeOperation(master));
+        operations.put(xtreemfs_replica_addRequest.TAG, new AddReplicaOperation(master));
+        operations.put(xtreemfs_replica_removeRequest.TAG, new RemoveReplicaOperation(master));
+        operations.put(renameRequest.TAG, new MoveOperation(master));
+        operations.put(linkRequest.TAG, new CreateLinkOperation(master));
+        operations.put(statvfsRequest.TAG, new StatFSOperation(master));
+        operations.put(utimensRequest.TAG, new UtimeOperation(master));
+        // operations.put(-1, new SetACLEntriesOperation(master));
+        // operations.put(-1, new RemoveACLEntriesOperation(master));
+        operations.put(xtreemfs_dump_databaseRequest.TAG, new DumpDBOperation(master));
+        operations.put(xtreemfs_restore_databaseRequest.TAG, new RestoreDBOperation(master));
+        operations.put(xtreemfs_check_file_existsRequest.TAG, new CheckFileListOperation(master));
+        operations.put(xtreemfs_restore_fileRequest.TAG, new RestoreFileOperation(master));
+        operations.put(xtreemfs_checkpointRequest.TAG, new CheckpointOperation(master));
+        operations.put(setattrRequest.TAG, new SetattrOperation(master));
+        operations.put(xtreemfs_get_suitable_osdsRequest.TAG, new GetSuitableOSDsOperation(master));
+        operations.put(ftruncateRequest.TAG, new TruncateOperation(master));
+        // operations.put(xtreemfs_internal_debugRequest.TAG, new InternalDebugOperation(master));
+        operations.put(xtreemfs_replica_listRequest.TAG, new GetXLocListOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {
@@ -181,7 +215,7 @@ public class ProcessingStage extends MRCStage {
         final MRCRequest rq = method.getRq();
         final ONCRPCRequest rpcRequest = rq.getRPCRequest();
         
-        final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getOperationNumber());
+        final MRCOperation op = operations.get(rpcRequest.getRequestHeader().getTag());
         
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "operation for request %s: %s", rq
@@ -189,14 +223,14 @@ public class ProcessingStage extends MRCStage {
         
         if (op == null) {
             rq.setError(new ErrorRecord(ErrorClass.UNKNOWN_OPERATION, "requested operation ("
-                + rpcRequest.getRequestHeader().getOperationNumber() + ") is not available on this MRC"));
+                + rpcRequest.getRequestHeader().getTag() + ") is not available on this MRC"));
             master.requestFinished(rq);
             return;
         }
         
         if (statisticsEnabled) {
-            _opCountMap.put(rpcRequest.getRequestHeader().getOperationNumber(), _opCountMap.get(rpcRequest
-                    .getRequestHeader().getOperationNumber()) + 1);
+            _opCountMap.put(rpcRequest.getRequestHeader().getTag(), _opCountMap.get(rpcRequest
+                    .getRequestHeader().getTag()) + 1);
         }
         
         // parse request arguments

@@ -50,8 +50,6 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  */
 public class RestoreFileOperation extends MRCOperation {
     
-    public static final int OP_ID = 28;
-    
     public RestoreFileOperation(MRCRequestDispatcher master) {
         super(master);
     }

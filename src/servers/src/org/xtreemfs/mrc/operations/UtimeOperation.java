@@ -47,8 +47,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class UtimeOperation extends MRCOperation {
     
-    public static final int OP_ID = 22;
-    
     public UtimeOperation(MRCRequestDispatcher master) {
         super(master);
     }

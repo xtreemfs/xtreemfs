@@ -344,7 +344,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getStackTrace()));
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
-                        request.getRPCRequest().getRequestHeader().getOperationNumber());
+                        request.getRPCRequest().getRequestHeader().getTag());
                 break;
             }
                 

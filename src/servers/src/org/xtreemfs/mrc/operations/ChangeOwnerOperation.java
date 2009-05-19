@@ -47,9 +47,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class ChangeOwnerOperation extends MRCOperation {
-    
-    public static final int OP_ID = 3;
-    
+        
     public ChangeOwnerOperation(MRCRequestDispatcher master) {
         super(master);
     }

@@ -136,7 +136,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse xtreemfs_shutdown(InetSocketAddress server, UserCredentials credentials) {
         
         xtreemfs_shutdownRequest rq = new xtreemfs_shutdownRequest();
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -151,7 +151,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse xtreemfs_checkpoint(InetSocketAddress server, UserCredentials credentials) {
         
         xtreemfs_checkpointRequest rq = new xtreemfs_checkpointRequest();
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -167,7 +167,7 @@ public class MRCClient extends ONCRPCClient {
         String dumpFile) {
         
         xtreemfs_dump_databaseRequest rq = new xtreemfs_dump_databaseRequest(dumpFile);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -183,7 +183,7 @@ public class MRCClient extends ONCRPCClient {
         String dumpFile) {
         
         xtreemfs_restore_databaseRequest rq = new xtreemfs_restore_databaseRequest(dumpFile);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -201,23 +201,22 @@ public class MRCClient extends ONCRPCClient {
         int mode) {
         
         accessRequest rq = new accessRequest(path, mode);
-        RPCResponse<Boolean> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<Boolean>() {
-                
-                @Override
-                public Boolean getResult(ReusableBuffer data) {
-                    final accessResponse resp = new accessResponse();
-                    resp.deserialize(data);
-                    return resp.getReturnValue();
-                }
-            }, credentials);
+        RPCResponse<Boolean> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Boolean>() {
+            
+            @Override
+            public Boolean getResult(ReusableBuffer data) {
+                final accessResponse resp = new accessResponse();
+                resp.deserialize(data);
+                return resp.getReturnValue();
+            }
+        }, credentials);
         return r;
     }
     
     public RPCResponse chmod(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
         chmodRequest rq = new chmodRequest(path, mode);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -233,7 +232,7 @@ public class MRCClient extends ONCRPCClient {
         String newUID, String newGID) {
         
         chownRequest rq = new chownRequest(path, newUID, newGID);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -248,7 +247,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse create(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
         createRequest rq = new createRequest(path, mode);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -263,32 +262,30 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<XCap> ftruncate(InetSocketAddress server, XCap writeCap) {
         
         ftruncateRequest rq = new ftruncateRequest(writeCap);
-        RPCResponse<XCap> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<XCap>() {
-                
-                @Override
-                public XCap getResult(ReusableBuffer data) {
-                    final ftruncateResponse resp = new ftruncateResponse();
-                    resp.deserialize(data);
-                    return resp.getTruncate_xcap();
-                }
-            });
+        RPCResponse<XCap> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<XCap>() {
+            
+            @Override
+            public XCap getResult(ReusableBuffer data) {
+                final ftruncateResponse resp = new ftruncateResponse();
+                resp.deserialize(data);
+                return resp.getTruncate_xcap();
+            }
+        });
         return r;
     }
     
     public RPCResponse<Stat> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
         
         getattrRequest rq = new getattrRequest(path);
-        RPCResponse<Stat> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<Stat>() {
-                
-                @Override
-                public Stat getResult(ReusableBuffer data) {
-                    final getattrResponse resp = new getattrResponse();
-                    resp.deserialize(data);
-                    return resp.getStbuf();
-                }
-            }, credentials);
+        RPCResponse<Stat> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Stat>() {
+            
+            @Override
+            public Stat getResult(ReusableBuffer data) {
+                final getattrResponse resp = new getattrResponse();
+                resp.deserialize(data);
+                return resp.getStbuf();
+            }
+        }, credentials);
         return r;
     }
     
@@ -296,16 +293,15 @@ public class MRCClient extends ONCRPCClient {
         String name) {
         
         getxattrRequest rq = new getxattrRequest(path, name);
-        RPCResponse<String> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<String>() {
-                
-                @Override
-                public String getResult(ReusableBuffer data) {
-                    final getxattrResponse resp = new getxattrResponse();
-                    resp.deserialize(data);
-                    return resp.getValue();
-                }
-            }, credentials);
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
+            
+            @Override
+            public String getResult(ReusableBuffer data) {
+                final getxattrResponse resp = new getxattrResponse();
+                resp.deserialize(data);
+                return resp.getValue();
+            }
+        }, credentials);
         return r;
     }
     
@@ -313,7 +309,7 @@ public class MRCClient extends ONCRPCClient {
         String linkPath) {
         
         linkRequest rq = new linkRequest(targetPath, linkPath);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -328,32 +324,30 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<StringSet> listxattr(InetSocketAddress server, UserCredentials credentials, String path) {
         
         listxattrRequest rq = new listxattrRequest(path);
-        RPCResponse<StringSet> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<StringSet>() {
-                
-                @Override
-                public StringSet getResult(ReusableBuffer data) {
-                    final listxattrResponse resp = new listxattrResponse();
-                    resp.deserialize(data);
-                    return resp.getNames();
-                }
-            }, credentials);
+        RPCResponse<StringSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StringSet>() {
+            
+            @Override
+            public StringSet getResult(ReusableBuffer data) {
+                final listxattrResponse resp = new listxattrResponse();
+                resp.deserialize(data);
+                return resp.getNames();
+            }
+        }, credentials);
         return r;
     }
     
     public RPCResponse<VolumeSet> lsvol(InetSocketAddress server, UserCredentials credentials) {
         
         xtreemfs_lsvolRequest rq = new xtreemfs_lsvolRequest();
-        RPCResponse<VolumeSet> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<VolumeSet>() {
-                
-                @Override
-                public VolumeSet getResult(ReusableBuffer data) {
-                    final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
-                    resp.deserialize(data);
-                    return null;
-                }
-            }, credentials);
+        RPCResponse<VolumeSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<VolumeSet>() {
+            
+            @Override
+            public VolumeSet getResult(ReusableBuffer data) {
+                final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
+                resp.deserialize(data);
+                return null;
+            }
+        }, credentials);
         return r;
         
     }
@@ -361,7 +355,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse mkdir(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
         mkdirRequest rq = new mkdirRequest(path, mode);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -379,7 +373,7 @@ public class MRCClient extends ONCRPCClient {
         xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(volumeName, accessMode,
             OSDSelectionPolicyType.parseInt(osdSelectionPolicy), defaultStripingPolicy,
             AccessControlPolicyType.parseInt(accessControlPolicy), "", "", ""));
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -395,7 +389,7 @@ public class MRCClient extends ONCRPCClient {
         String path, int flags, int mode, int w32attrs) {
         
         openRequest rq = new openRequest(path, flags, mode, w32attrs);
-        RPCResponse<FileCredentials> r = sendRequest(server, rq.getOperationNumber(), rq,
+        RPCResponse<FileCredentials> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentials>() {
                 
                 @Override
@@ -412,7 +406,7 @@ public class MRCClient extends ONCRPCClient {
         String path) {
         
         readdirRequest rq = new readdirRequest(path);
-        RPCResponse<DirectoryEntrySet> r = sendRequest(server, rq.getOperationNumber(), rq,
+        RPCResponse<DirectoryEntrySet> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<DirectoryEntrySet>() {
                 
                 @Override
@@ -429,7 +423,7 @@ public class MRCClient extends ONCRPCClient {
         String name) {
         
         removexattrRequest rq = new removexattrRequest(path, name);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -445,7 +439,7 @@ public class MRCClient extends ONCRPCClient {
         String sourcePath, String targetPath) {
         
         renameRequest rq = new renameRequest(sourcePath, targetPath);
-        RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getOperationNumber(), rq,
+        RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentialsSet>() {
                 
                 @Override
@@ -461,7 +455,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse rmdir(InetSocketAddress server, UserCredentials credentials, String path) {
         
         rmdirRequest rq = new rmdirRequest(path);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -476,7 +470,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse rmvol(InetSocketAddress server, UserCredentials credentials, String volumeName) {
         
         xtreemfs_rmvolRequest rq = new xtreemfs_rmvolRequest(volumeName);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -492,7 +486,7 @@ public class MRCClient extends ONCRPCClient {
         Stat statInfo) {
         
         setattrRequest rq = new setattrRequest(path, statInfo);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -508,7 +502,7 @@ public class MRCClient extends ONCRPCClient {
         String name, String value, int flags) {
         
         setxattrRequest rq = new setxattrRequest(path, name, value, flags);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -524,16 +518,15 @@ public class MRCClient extends ONCRPCClient {
         String volumeName) {
         
         statvfsRequest rq = new statvfsRequest(volumeName);
-        RPCResponse<StatVFS> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<StatVFS>() {
-                
-                @Override
-                public StatVFS getResult(ReusableBuffer data) {
-                    final statvfsResponse resp = new statvfsResponse();
-                    resp.deserialize(data);
-                    return resp.getStbuf();
-                }
-            }, credentials);
+        RPCResponse<StatVFS> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StatVFS>() {
+            
+            @Override
+            public StatVFS getResult(ReusableBuffer data) {
+                final statvfsResponse resp = new statvfsResponse();
+                resp.deserialize(data);
+                return resp.getStbuf();
+            }
+        }, credentials);
         return r;
     }
     
@@ -541,7 +534,7 @@ public class MRCClient extends ONCRPCClient {
         String linkPath) {
         
         symlinkRequest rq = new symlinkRequest(targetPath, linkPath);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -557,7 +550,7 @@ public class MRCClient extends ONCRPCClient {
         String path) {
         
         unlinkRequest rq = new unlinkRequest(path);
-        RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getOperationNumber(), rq,
+        RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentialsSet>() {
                 
                 @Override
@@ -574,7 +567,7 @@ public class MRCClient extends ONCRPCClient {
         long ctime, long mtime) {
         
         utimensRequest rq = new utimensRequest(path, atime, ctime, mtime);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -592,64 +585,60 @@ public class MRCClient extends ONCRPCClient {
         StringSet fileIds) {
         
         xtreemfs_check_file_existsRequest rq = new xtreemfs_check_file_existsRequest(volumeId, fileIds);
-        RPCResponse<String> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<String>() {
-                
-                @Override
-                public String getResult(ReusableBuffer data) {
-                    final xtreemfs_check_file_existsResponse resp = new xtreemfs_check_file_existsResponse();
-                    resp.deserialize(data);
-                    return resp.getBitmap();
-                }
-            });
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
+            
+            @Override
+            public String getResult(ReusableBuffer data) {
+                final xtreemfs_check_file_existsResponse resp = new xtreemfs_check_file_existsResponse();
+                resp.deserialize(data);
+                return resp.getBitmap();
+            }
+        });
         return r;
     }
     
     public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, String cmd) {
         
         xtreemfs_internal_debugRequest rq = new xtreemfs_internal_debugRequest(cmd);
-        RPCResponse<String> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<String>() {
-                
-                @Override
-                public String getResult(ReusableBuffer data) {
-                    final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
-                    resp.deserialize(data);
-                    return resp.getResult();
-                }
-            });
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
+            
+            @Override
+            public String getResult(ReusableBuffer data) {
+                final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
+                resp.deserialize(data);
+                return resp.getResult();
+            }
+        });
         return r;
     }
     
     public RPCResponse<StringSet> xtreemfs_get_suitable_osds(InetSocketAddress server, String fileId) {
         
         xtreemfs_get_suitable_osdsRequest rq = new xtreemfs_get_suitable_osdsRequest(fileId);
-        RPCResponse<StringSet> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<StringSet>() {
-                
-                @Override
-                public StringSet getResult(ReusableBuffer data) {
-                    final xtreemfs_get_suitable_osdsResponse resp = new xtreemfs_get_suitable_osdsResponse();
-                    resp.deserialize(data);
-                    return resp.getOsd_uuids();
-                }
-            });
+        RPCResponse<StringSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StringSet>() {
+            
+            @Override
+            public StringSet getResult(ReusableBuffer data) {
+                final xtreemfs_get_suitable_osdsResponse resp = new xtreemfs_get_suitable_osdsResponse();
+                resp.deserialize(data);
+                return resp.getOsd_uuids();
+            }
+        });
         return r;
     }
     
     public RPCResponse<XCap> xtreemfs_renew_capability(InetSocketAddress server, XCap capability) {
         
         xtreemfs_renew_capabilityRequest rq = new xtreemfs_renew_capabilityRequest(capability);
-        RPCResponse<XCap> r = sendRequest(server, rq.getOperationNumber(), rq,
-            new RPCResponseDecoder<XCap>() {
-                
-                @Override
-                public XCap getResult(ReusableBuffer data) {
-                    final xtreemfs_renew_capabilityResponse resp = new xtreemfs_renew_capabilityResponse();
-                    resp.deserialize(data);
-                    return resp.getRenewed_xcap();
-                }
-            });
+        RPCResponse<XCap> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<XCap>() {
+            
+            @Override
+            public XCap getResult(ReusableBuffer data) {
+                final xtreemfs_renew_capabilityResponse resp = new xtreemfs_renew_capabilityResponse();
+                resp.deserialize(data);
+                return resp.getRenewed_xcap();
+            }
+        });
         return r;
     }
     
@@ -657,7 +646,7 @@ public class MRCClient extends ONCRPCClient {
         String fileId, Replica newReplica) {
         
         xtreemfs_replica_addRequest rq = new xtreemfs_replica_addRequest(fileId, newReplica);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -673,7 +662,7 @@ public class MRCClient extends ONCRPCClient {
         String fileId, String osdUUID) {
         
         xtreemfs_replica_removeRequest rq = new xtreemfs_replica_removeRequest(fileId, osdUUID);
-        RPCResponse<XCap> r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse<XCap> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -690,7 +679,7 @@ public class MRCClient extends ONCRPCClient {
         
         xtreemfs_restore_fileRequest rq = new xtreemfs_restore_fileRequest(filePath, fileId, fileSizeInBytes,
             osdUUID, stripeSizeInKB);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
@@ -698,7 +687,7 @@ public class MRCClient extends ONCRPCClient {
                 resp.deserialize(data);
                 return null;
             }
-        },credentials);
+        }, credentials);
         return r;
     }
     
@@ -706,7 +695,7 @@ public class MRCClient extends ONCRPCClient {
         OSDWriteResponse newFileSize) {
         
         xtreemfs_update_file_sizeRequest rq = new xtreemfs_update_file_sizeRequest(xcap, newFileSize);
-        RPCResponse r = sendRequest(server, rq.getOperationNumber(), rq, new RPCResponseDecoder() {
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {

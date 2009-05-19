@@ -43,9 +43,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class GetLocalVolumesOperation extends MRCOperation {
-    
-    public static final int OP_ID = 31;
-    
+        
     public GetLocalVolumesOperation(MRCRequestDispatcher master) {
         super(master);
     }

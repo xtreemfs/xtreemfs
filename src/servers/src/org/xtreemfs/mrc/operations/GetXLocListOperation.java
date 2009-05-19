@@ -42,9 +42,7 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  * @author stender
  */
 public class GetXLocListOperation extends MRCOperation {
-    
-    public static final int OP_ID = 32;
-    
+        
     public GetXLocListOperation(MRCRequestDispatcher master) {
         super(master);
     }

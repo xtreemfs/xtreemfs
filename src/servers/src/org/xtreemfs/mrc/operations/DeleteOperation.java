@@ -53,11 +53,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class DeleteOperation extends MRCOperation {
-    
-    public static final int OP_ID_DIR  = 15;
-    
-    public static final int OP_ID_FILE = 21;
-    
+        
     public DeleteOperation(MRCRequestDispatcher master) {
         super(master);
     }

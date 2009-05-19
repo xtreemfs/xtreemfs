@@ -38,8 +38,6 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
  */
 public class GetSuitableOSDsOperation extends MRCOperation {
     
-    public static final int OP_ID = 24;
-    
     public GetSuitableOSDsOperation(MRCRequestDispatcher master) {
         super(master);
     }

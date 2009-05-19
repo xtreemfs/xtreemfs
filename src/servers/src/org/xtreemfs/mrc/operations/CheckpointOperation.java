@@ -38,8 +38,6 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
  */
 public class CheckpointOperation extends MRCOperation {
     
-    public static final int OP_ID = 51;
-    
     public CheckpointOperation(MRCRequestDispatcher master) {
         super(master);
     }

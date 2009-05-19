@@ -47,8 +47,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class SetXAttrOperation extends MRCOperation {
     
-    public static final int OP_ID = 18;
-    
     public SetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }

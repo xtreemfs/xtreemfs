@@ -36,9 +36,7 @@ import org.xtreemfs.mrc.UserException;
  * @author bjko
  */
 public class InternalDebugOperation extends MRCOperation {
-    
-    public static final int OP_ID = 100;
-    
+        
     public InternalDebugOperation(MRCRequestDispatcher master) {
         super(master);
     }

@@ -46,8 +46,6 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
  */
 public class TruncateOperation extends MRCOperation {
     
-    public static final int OP_ID = 30;
-    
     public TruncateOperation(MRCRequestDispatcher master) {
         super(master);
     }

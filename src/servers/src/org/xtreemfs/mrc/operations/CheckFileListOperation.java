@@ -39,9 +39,7 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  * @author stender
  */
 public class CheckFileListOperation extends MRCOperation {
-    
-    public static final int OP_ID = 23;
-    
+        
     public CheckFileListOperation(MRCRequestDispatcher master) {
         super(master);
     }

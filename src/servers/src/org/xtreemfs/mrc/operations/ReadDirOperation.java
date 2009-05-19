@@ -49,9 +49,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class ReadDirOperation extends MRCOperation {
-    
-    public static final int OP_ID = 33;
-    
+        
     public ReadDirOperation(MRCRequestDispatcher master) {
         super(master);
     }

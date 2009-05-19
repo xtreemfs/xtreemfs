@@ -44,9 +44,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class CreateFileOperation extends MRCOperation {
-    
-    public static final int OP_ID = 4;
-    
+        
     public CreateFileOperation(MRCRequestDispatcher master) {
         super(master);
     }

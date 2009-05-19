@@ -54,9 +54,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class MoveOperation extends MRCOperation {
-    
-    public static final int OP_ID = 14;
-    
+        
     public MoveOperation(MRCRequestDispatcher master) {
         super(master);
     }

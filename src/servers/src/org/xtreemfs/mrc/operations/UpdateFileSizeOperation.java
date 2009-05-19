@@ -47,8 +47,6 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
  */
 public class UpdateFileSizeOperation extends MRCOperation {
     
-    public static final int OP_ID = 29;
-    
     public UpdateFileSizeOperation(MRCRequestDispatcher master) {
         super(master);
     }

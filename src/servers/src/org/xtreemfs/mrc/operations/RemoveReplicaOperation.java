@@ -52,9 +52,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class RemoveReplicaOperation extends MRCOperation {
-    
-    public static final int OP_ID = 27;
-    
+        
     public RemoveReplicaOperation(MRCRequestDispatcher master) {
         super(master);
     }

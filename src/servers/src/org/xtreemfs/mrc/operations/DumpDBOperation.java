@@ -43,9 +43,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class DumpDBOperation extends MRCOperation {
-    
-    public static final int OP_ID = 52;
-    
+        
     public DumpDBOperation(MRCRequestDispatcher master) {
         super(master);
     }

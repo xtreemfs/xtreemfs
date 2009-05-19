@@ -39,8 +39,6 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  */
 public class StatusPageOperation extends MRCOperation {
     
-    public static final int OP_ID = -1;
-    
     public enum Vars {
             LASTRQDATE("<!-- $LASTRQDATE -->"),
             TOTALNUMRQ("<!-- $TOTALNUMRQ -->"),

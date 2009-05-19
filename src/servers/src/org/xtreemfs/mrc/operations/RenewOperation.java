@@ -39,8 +39,6 @@ import org.xtreemfs.mrc.UserException;
  */
 public class RenewOperation extends MRCOperation {
     
-    public static final int OP_ID = 25;
-    
     public final boolean    renewTimedOutCaps;
     
     public RenewOperation(MRCRequestDispatcher master) {

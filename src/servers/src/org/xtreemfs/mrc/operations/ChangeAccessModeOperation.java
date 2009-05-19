@@ -46,9 +46,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class ChangeAccessModeOperation extends MRCOperation {
-    
-    public static final int OP_ID = 2;
-    
+        
     public ChangeAccessModeOperation(MRCRequestDispatcher master) {
         super(master);
     }

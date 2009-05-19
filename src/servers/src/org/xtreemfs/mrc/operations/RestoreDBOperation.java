@@ -56,8 +56,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  */
 public class RestoreDBOperation extends MRCOperation {
     
-    public static final int OP_ID = 53;
-    
     public RestoreDBOperation(MRCRequestDispatcher master) {
         super(master);
     }

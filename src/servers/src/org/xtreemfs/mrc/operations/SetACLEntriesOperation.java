@@ -33,8 +33,6 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
  */
 public class SetACLEntriesOperation extends MRCOperation {
     
-    public static final int OP_ID = -1;
-    
     public SetACLEntriesOperation(MRCRequestDispatcher master) {
         super(master);
     }
