@@ -230,11 +230,15 @@ public class BufferBackedRCMetadata {
         int index = valBuf.getShort(RC_XLOC_OFFSET);
         
         byte[] bytes = this.valBuf.array();
-        byte[] xLocBytes = xLocList == null? new byte[0]: xLocList.getBuffer();
+        assert (index <= bytes.length) : "index=" + index + ", bufsize=" + bytes.length;
+        
+        byte[] xLocBytes = xLocList == null ? new byte[0] : xLocList.getBuffer();
+        int xLocOffs = xLocList == null ? 0 : xLocList.getOffset();
+        int xLocLen = xLocList == null ? 0 : xLocList.getLength();
         byte[] tmp = new byte[index + xLocBytes.length];
         
         System.arraycopy(bytes, 0, tmp, 0, index);
-        System.arraycopy(xLocBytes, 0, tmp, index, xLocBytes.length);
+        System.arraycopy(xLocBytes, xLocOffs, tmp, index, xLocLen);
         this.valBuf = ByteBuffer.wrap(tmp);
         
         cachedXLocList = xLocList;

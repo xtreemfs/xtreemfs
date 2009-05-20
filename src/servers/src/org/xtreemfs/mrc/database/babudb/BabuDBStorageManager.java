@@ -466,7 +466,7 @@ public class BabuDBStorageManager implements StorageManager {
                 return null;
             
             byte[][] keyBufs = new byte[][] { null,
-                BabuDBStorageHelper.createFileKey(0, "", FileMetadata.RC_METADATA), null };
+                BabuDBStorageHelper.createFileKey(0, "", FileMetadata.RC_METADATA) };
             
             // otherwise, a hard link target is contained in the index; create a
             // new metadata object in this case
