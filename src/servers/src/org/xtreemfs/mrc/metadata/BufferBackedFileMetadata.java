@@ -285,7 +285,9 @@ public class BufferBackedFileMetadata implements FileMetadata {
         
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(), tmp
                 .getValue());
-        rcMetadata.setXLocList(xLocList);
+        
+        if (!rcMetadata.isDirectory())
+            rcMetadata.setXLocList(xLocList);
     }
     
     public byte[] getFCMetadataKey() {
