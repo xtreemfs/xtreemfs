@@ -1,4 +1,4 @@
-// Revision: 1467
+// Revision: 1472
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -273,32 +273,33 @@ namespace YIELD
 #pragma warning( pop )
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
-Client::Client( auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-  : log( log ), operation_timeout( operation_timeout ), peer_sockaddr( peer_sockaddr ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
-{
-  if ( this->socket_factory == NULL )
-    this->socket_factory = new TCPSocketFactory;
-}
-Client::~Client()
+template <class ProtocolRequestType, class ProtocolResponseType>
+Client<ProtocolRequestType, ProtocolResponseType>::Client( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+  : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peer_sockaddr( peer_sockaddr ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
+{ }
+template <class ProtocolRequestType, class ProtocolResponseType>
+Client<ProtocolRequestType, ProtocolResponseType>::~Client()
 {
   for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
     Object::decRef( **connection_i );
 }
-Client::Connection* Client::createConnection()
+template <class ProtocolRequestType, class ProtocolResponseType>
+typename Client<ProtocolRequestType, ProtocolResponseType>::Connection* Client<ProtocolRequestType, ProtocolResponseType>::createConnection()
 {
-  auto_Object<Socket> _socket = socket_factory->createSocket().release();
+  auto_Object<Socket> _socket = socket_factory->createSocket();
   _socket->set_blocking_mode( false );
   Connection* connection = new Connection( _socket, reconnect_tries_max );
   return connection;
 }
-void Client::destroyConnection( Client::Connection* connection )
+template <class ProtocolRequestType, class ProtocolResponseType>
+void Client<ProtocolRequestType, ProtocolResponseType>::destroyConnection( Connection* connection )
 {
   for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
   {
     if ( **connection_i == *connection )
     {
       uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
-      auto_Object<Request> protocol_request = connection->get_protocol_request();
+      auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
       YIELD::Object::decRef( connection );
       connection_i = connections.erase( connection_i );
       if ( --reconnect_tries_left > 0 )
@@ -314,7 +315,7 @@ void Client::destroyConnection( Client::Connection* connection )
       else
       {
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": exhausted connection retries to " << peer_sockaddr << ".";
+          log->getStream( YIELD::Log::LOG_ERR ) << "Client: exhausted connection retries to " << peer_sockaddr << ".";
         if ( protocol_request != NULL )
         {
           // We've lost errno here
@@ -330,26 +331,15 @@ void Client::destroyConnection( Client::Connection* connection )
       ++connection_i;
   }
 }
-void Client::handleEvent( Event& ev )
+template <class ProtocolRequestType, class ProtocolResponseType>
+void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
 {
   Connection* connection = NULL;
   uint32_t fd_event_error_code = 0;
   switch ( ev.get_tag() )
   {
     case YIELD_OBJECT_TAG( StageStartupEvent ):
-    {
-      fd_event_queue = static_cast<FDEventQueue*>( static_cast<StageStartupEvent&>( ev ).get_stage()->get_event_queue().release() );
-      fd_event_queue->timer_create( operation_timeout, operation_timeout );
-      Object::decRef( ev );
-      return;
-    }
-    break;
-    case YIELD_OBJECT_TAG( StageShutdownEvent ):
-    {
-      Object::decRef( ev );
-      return;
-    }
-    break;
+    case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); return;
     case YIELD_OBJECT_TAG( FDEvent ):
     {
       FDEvent& fd_event = static_cast<FDEvent&>( ev );
@@ -374,7 +364,7 @@ void Client::handleEvent( Event& ev )
             if ( connection_idle_time > operation_timeout )
             {
               if ( log != NULL )
-                log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
+                log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
               destroyConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
             }
           }
@@ -385,7 +375,7 @@ void Client::handleEvent( Event& ev )
       else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
       {
         connection = static_cast<Connection*>( timer_event_context.release() );
-        connection->get_socket()->attach( fd_event_queue, connection );
+        connection->get_socket()->attach( fd_event_queue->incRef(), connection );
         connections.push_back( connection );
         Object::decRef( ev );
         // Drop down
@@ -396,7 +386,7 @@ void Client::handleEvent( Event& ev )
     break;
     default:
     {
-      auto_Object<Request> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
+      auto_Object<ProtocolRequestType> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
       if ( !connections.empty() )
       {
         for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
@@ -413,7 +403,7 @@ void Client::handleEvent( Event& ev )
       if ( connection == NULL )
       {
         connection = createConnection();
-        connection->get_socket()->attach( fd_event_queue, connection );
+        connection->get_socket()->attach( fd_event_queue->incRef(), connection );
         connections.push_back( connection );
       }
       connection->set_protocol_request( protocol_request );
@@ -428,38 +418,38 @@ void Client::handleEvent( Event& ev )
       case Connection::CONNECTING:
       {
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
+          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
         Stream::Status connect_status = connection->connect( peer_sockaddr );
         if ( connect_status == Stream::STREAM_STATUS_OK ) // Use ifs here instead of a switch to allow simple drop-throughs
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully connected to " << peer_sockaddr << ".";
+            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully connected to " << peer_sockaddr << ".";
           connection->set_state( Connection::WRITING );
           // Drop down to WRITING
   	    }
         else if ( connect_status == Stream::STREAM_STATUS_WANT_WRITE ) // Wait for non-blocking connect() to complete
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
+            log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
           connection->set_state( Connection::CONNECTING );
           return;
         }
         else
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << peer_sockaddr << " failed: " << Exception::strerror();
+            log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << peer_sockaddr << " failed: " << Exception::strerror();
           break; // Drop down to try to reconnect
         }
       }
       // No break here, to allow drop down to WRITING
       case Connection::WRITING:
       {
-        auto_Object<Request> protocol_request = connection->get_protocol_request();
+        auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
         Stream::Status write_status = protocol_request->serialize( *connection );
         if ( write_status == Stream::STREAM_STATUS_OK )
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << get_type_name() << ": successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
+            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
           connection->set_protocol_response( createProtocolResponse( protocol_request ) );
           connection->set_state( Connection::READING );
           // Drop down to READING
@@ -469,7 +459,7 @@ void Client::handleEvent( Event& ev )
         else if ( write_status == Stream::STREAM_STATUS_ERROR )
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": lost connection to " << peer_sockaddr << " on write, error: " << Exception::strerror();
+            log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peer_sockaddr << " on write, error: " << Exception::strerror();
           break; // Drop down to reconnect
         }
         else
@@ -478,9 +468,9 @@ void Client::handleEvent( Event& ev )
       // No break here, to allow drop down to READING
       case Connection::READING:
       {
-        auto_Object<Response> protocol_response = connection->get_protocol_response();
+        auto_Object<ProtocolResponseType> protocol_response = connection->get_protocol_response();
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_DEBUG ) << get_type_name() << ": trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
+          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
         Stream::Status read_status = protocol_response->deserialize( *connection );
         if ( read_status == Stream::STREAM_STATUS_OK )
         {
@@ -495,7 +485,7 @@ void Client::handleEvent( Event& ev )
         else if ( read_status == Stream::STREAM_STATUS_ERROR )
         {
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": lost connection to " << peer_sockaddr << " on read, error: " << Exception::strerror();
+            log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peer_sockaddr << " on read, error: " << Exception::strerror();
           break; // Drop down to reconnect
         }
         else
@@ -506,38 +496,46 @@ void Client::handleEvent( Event& ev )
     }
   }
   else if ( log != NULL ) // fd_event_error_code != 0
-    log->getStream( YIELD::Log::LOG_ERR ) << get_type_name() << ": connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
+    log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
     // Drop down to reconnect
   destroyConnection( connection );
 }
-Client::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
+template <class ProtocolRequestType, class ProtocolResponseType>
+Client<ProtocolRequestType, ProtocolResponseType>::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
   : _socket( _socket ), reconnect_tries_left( reconnect_tries_max )
 {
   state = IDLE;
 }
-bool Client::Connection::close()
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool Client<ProtocolRequestType, ProtocolResponseType>::Connection::close()
 {
   return _socket->close();
 }
-Stream::Status Client::Connection::connect( auto_Object<SocketAddress> connect_to_sockaddr )
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::connect( auto_Object<SocketAddress> connect_to_sockaddr )
 {
   last_activity_time = Time();
   return _socket->connect( connect_to_sockaddr );
 }
-Stream::Status Client::Connection::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
   last_activity_time = Time();
   return _socket->read( buffer, buffer_len, out_bytes_read );
 }
-bool Client::Connection::shutdown()
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool Client<ProtocolRequestType, ProtocolResponseType>::Connection::shutdown()
 {
   return _socket->shutdown();
 }
-Stream::Status Client::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
   last_activity_time = Time();
   return _socket->writev( buffers, buffers_count, out_bytes_written );
 }
+template class Client<HTTPRequest, HTTPResponse>;
+template class Client<ONCRPCRequest, ONCRPCResponse>;
 
 
 // fd_and_internal_event_queue.cpp
@@ -1141,32 +1139,51 @@ bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enabl
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-auto_Object<Request> HTTPClient::createProtocolRequest( auto_Object<Request> body )
+auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri, auto_Object<StageGroup> stage_group, auto_Object<Log> log, const Time& operation_timeout, uint8_t reconnect_tries_max )
+{
+  YIELD::URI checked_absolute_uri( absolute_uri );
+  if ( checked_absolute_uri.get_port() == 0 )
+    checked_absolute_uri.set_port( 80 );
+  auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( absolute_uri );
+  if ( peer_sockaddr != NULL )
+  {
+    auto_Object<SocketFactory> socket_factory;
+#ifdef YIELD_HAVE_OPENSSL
+    if ( absolute_uri.get_scheme() == "https" )
+      socket_factory = new SSLSocketFactory( new SSLContext( SSLv23_client_method() ) );
+    else
+#endif
+      socket_factory = new TCPSocketFactory;
+    auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+    auto_Object<HTTPClient> http_client = new HTTPClient( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+    stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef() );
+    return http_client;
+  }
+  else
+    return NULL;
+}
+HTTPClient::HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+  : Client<HTTPRequest, HTTPResponse>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+{ }
+auto_Object<HTTPRequest> HTTPClient::createProtocolRequest( auto_Object<Request> body )
 {
   if ( body->get_tag() == YIELD_OBJECT_TAG( HTTPRequest ) )
     return static_cast<HTTPRequest*>( body.release() );
   else
     return NULL;
 }
-
-auto_Object<Response> HTTPClient::createProtocolResponse( auto_Object<Request> )
+auto_Object<HTTPResponse> HTTPClient::createProtocolResponse( auto_Object<HTTPRequest> )
 {
   return new HTTPResponse;
 }
-
 auto_Object<HTTPResponse> HTTPClient::GET( const URI& absolute_uri, auto_Object<Log> log )
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
-
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log )
 {
   auto_Object<File> file = File::open( body_file_path );
@@ -1174,47 +1191,24 @@ auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& 
   file->read( const_cast<char*>( body->c_str() ), body->size(), NULL );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
-
-void HTTPClient::respond( auto_Object<Request> protocol_request, auto_Object<Response> response )
+void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<HTTPResponse> http_response )
 {
-  HTTPRequest* http_request = static_cast<HTTPRequest*>( protocol_request.get() );
-  if ( response.get()->get_tag() == YIELD_OBJECT_TAG( HTTPResponse ) )
-    http_request->respond( *static_cast<HTTPResponse*>( response.release() ) );
-  else if ( response.get()->get_tag() == YIELD_OBJECT_TAG( ExceptionResponse ) )
-    http_request->respond( *response.release() );
-  else
-    DebugBreak();
+  http_request->respond( *http_response.release() );
 }
-
+void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<ExceptionResponse> exception_response )
+{
+  http_request->respond( *exception_response.release() );
+}
 auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
-  auto_Object<SEDAStageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
-  YIELD::URI checked_absolute_uri( absolute_uri );
-  if ( checked_absolute_uri.get_port() == 0 )
-    checked_absolute_uri.set_port( 80 );
-  auto_Object<HTTPClient> http_client = HTTPClient::create( stage_group, checked_absolute_uri, log, Client::OPERATION_TIMEOUT_DEFAULT, 3 );
-  auto_Object<HTTPRequest> http_request = new HTTPRequest( method, checked_absolute_uri, body );
+  auto_Object<StageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
+  auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log, Client::OPERATION_TIMEOUT_DEFAULT, 3 );
+  auto_Object<HTTPRequest> http_request = new HTTPRequest( method, absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
+  auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > http_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
+  http_request->set_response_target( http_response_queue->incRef() );
   http_client->send( http_request->incRef() );
-  return http_request->waitForHTTPResponse( static_cast<uint64_t>( -1 ) );
-}
-
-
-HTTPClient::HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body )
-  : YIELD::HTTPRequest( method, absolute_uri, body )
-{ }
-
-bool HTTPClient::HTTPRequest::respond( Response& response )
-{
-  return http_response_queue.enqueue( response );
-}
-
-HTTPResponse& HTTPClient::HTTPRequest::waitForHTTPResponse( uint64_t timeout_ns )
-{
-  if ( timeout_ns == static_cast<uint64_t>( -1 ) )
-    return http_response_queue.dequeue_typed<HTTPResponse>();
-  else
-    return http_response_queue.dequeue_typed<HTTPResponse>( timeout_ns );
+  return http_response_queue->dequeue_typed<HTTPResponse>();
 }
 
 
@@ -1489,80 +1483,6 @@ Stream::Status HTTPRequest::serialize( OutputStream& output_stream, size_t* out_
 }
 
 
-// http_request_reader.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-void HTTPRequestReader::handleEvent( Event& ev )
-{
-  auto_Object<TCPSocket> tcp_socket;
-  HTTPRequest* http_request;
-
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( FDEvent ):
-    {
-      FDEvent& fd_event = static_cast<FDEvent&>( ev );
-      http_request = static_cast<HTTPRequest*>( fd_event.get_context() );
-      tcp_socket = http_request->get_tcp_socket();
-      Object::decRef( ev );
-    }
-    break; // Drop down to try to deserialize
-
-    case YIELD_OBJECT_TAG( TCPSocket ): // New connection from the TCPListener
-    {
-      tcp_socket = static_cast<TCPSocket*>( &ev );
-
-      http_request = new HTTPRequest( tcp_socket, http_response_writer_target );
-      tcp_socket->attach( fd_event_queue, http_request ); // Attach the original reference to http_request to the fd_event_queue
-    }
-    break; // Drop down to try to deserialize
-
-    default: handleUnknownEvent( ev ); return;
-  }
-
-
-  tcp_socket->set_blocking_mode( false );
-  Stream::Status deserialize_status = http_request->deserialize( *tcp_socket );
-
-  switch ( deserialize_status )
-  {
-    case Stream::STREAM_STATUS_OK:
-    {
-      http_request_target->send( http_request->incRef() );
-    }
-    break;
-
-    case Stream::STREAM_STATUS_ERROR:
-    {
-      tcp_socket->close(); // Force a detach
-      Object::decRef( *http_request ); // The reference that's attached to fd_event_queue
-      // tcp_socket should be dead here, since http_request should have had the last reference to it
-    }
-    break;
-  }
-}
-
-
-bool HTTPRequestReader::HTTPRequest::respond( uint16_t status_code )
-{
-  return http_response_writer_target->send( *( new HTTPResponseWriter::HTTPResponse( tcp_socket, status_code ) ) );
-}
-
-bool HTTPRequestReader::HTTPRequest::respond( uint16_t status_code, auto_Object<> body )
-{
-  return http_response_writer_target->send( *( new HTTPResponseWriter::HTTPResponse( tcp_socket, status_code, body ) ) );
-}
-
-bool HTTPRequestReader::HTTPRequest::respond( Response& )
-{
-  DebugBreak();
-  return false;
-}
-
-
 // http_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1762,7 +1682,19 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
       {
         char http_datetime[32];
         Time().as_http_date_time( http_datetime, 32 );
-        RFC822Headers::set_header( "Date", http_datetime );
+        set_header( "Date", http_datetime );
+        if ( body != NULL &&
+             body->get_tag() == YIELD_OBJECT_TAG( String ) &&
+             get_header( "Content-Length", NULL ) == NULL )
+        {
+          char content_length_str[32];
+#ifdef _WIN32
+          sprintf_s( content_length_str, 32, "%u", static_cast<String*>( body.get() )->size() );
+#else
+          snprintf( content_length_str, 32, "%zu", static_cast<String*>( body.get() )->size() );
+#endif
+          set_header( "Content-Length", content_length_str );
+        }
         RFC822Headers::set_iovec( "\r\n", 2 );
         serialize_state = SERIALIZING_HEADERS;
       }
@@ -1802,38 +1734,60 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
 }
 
 
-// http_response_writer.cpp
+// http_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void HTTPResponseWriter::handleEvent( Event& ev )
+
+
+
+template <class StageGroupType>
+bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
+                         auto_Object<StageGroupType> stage_group,
+                         auto_Object<SocketAddress> local_sockaddr,
+                         auto_Object<Log> log )
 {
-  switch( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( HTTPResponse ):
-    {
-      HTTPResponseWriter::HTTPResponse& http_response = static_cast<HTTPResponseWriter::HTTPResponse&>( ev );
-      auto_Object<TCPSocket> tcp_socket = http_response.get_tcp_socket();
-      tcp_socket->set_blocking_mode( true );
-      Stream::Status serialize_status = http_response.serialize( *tcp_socket );
-      switch ( serialize_status )
-      {
-        case Stream::STREAM_STATUS_OK:
-        {
-          Object::decRef( http_response );
-        }
-        break;
-        case Stream::STREAM_STATUS_ERROR:
-        {
-          Object::decRef( http_response ); // Let the HTTPRequestReader detect that the connection has been lost
-        }
-        break;
-        default: DebugBreak(); break;
-      }
-    }
-    break;
-    default: handleUnknownEvent( ev ); break;
-  }
+  auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+  auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+
+  auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+  auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+  auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
+
+  if ( local_sockaddr == NULL )
+    local_sockaddr = new SocketAddress( 80 );
+  auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, http_request_reader_stage.release(), stage_group->incRef(), new TCPSocketFactory, log );
+
+  return tcp_listener != NULL;
 }
+
+template bool HTTPServer::create<SEDAStageGroup>( auto_Object<EventTarget>, auto_Object<SEDAStageGroup>, auto_Object<SocketAddress>, auto_Object<Log> );
+
+#ifdef YIELD_HAVE_OPENSSL
+
+template <class StageGroupType>
+bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
+                         auto_Object<SSLContext> ssl_context,
+                         auto_Object<StageGroupType> stage_group,
+                         auto_Object<SocketAddress> local_sockaddr,
+                         auto_Object<Log> log )
+{
+  auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+  auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+
+  auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+  auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+  auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
+
+  if ( local_sockaddr == NULL )
+    local_sockaddr = new SocketAddress( 443 );
+  auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, http_request_reader_stage.release(), stage_group->incRef(), new SSLSocketFactory( ssl_context ), log );
+
+  return tcp_listener != NULL;
+}
+
+template bool HTTPServer::create<SEDAStageGroup>( auto_Object<EventTarget>, auto_Object<SSLContext>, auto_Object<SEDAStageGroup>, auto_Object<SocketAddress>, auto_Object<Log> );
+
+#endif
 
 
 // json_input_stream.cpp
@@ -2349,33 +2303,6 @@ void JSONOutputStream::writeStruct( Object* s )
 }
 
 
-// oncrpc_client.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-auto_Object<Request> ONCRPCClient::createProtocolRequest( auto_Object<Request> request )
-{
-  return new ONCRPCRequest( 0x20000000 + _interface->get_tag(), request->get_tag(), _interface->get_tag(), request.release(), get_log() );
-}
-auto_Object<Response> ONCRPCClient::createProtocolResponse( auto_Object<Request> protocol_request )
-{
-  Request* request = static_cast<Request*>( static_cast<ONCRPCRequest*>( protocol_request.get() )->get_body().get() );
-  auto_Object<Response> response = _interface->createResponse( request->get_tag() );
-  if ( response != NULL )
-    return new ONCRPCResponse( _interface, response.release(), get_log() );
-  else
-    return NULL;
-}
-void ONCRPCClient::respond( auto_Object<Request> protocol_request, auto_Object<Response> response )
-{
-  ONCRPCRequest* oncrpc_request = static_cast<ONCRPCRequest*>( protocol_request.get() );
-  Request* request = static_cast<Request*>( oncrpc_request->get_body().get() );
-  if ( response->get_tag() == YIELD_OBJECT_TAG( ONCRPCResponse ) )
-    request->respond( static_cast<Response*>( static_cast<ONCRPCResponse*>( response.get() )->get_body().get() )->incRef() );
-  else
-    request->respond( *response.release() );
-}
-
-
 // oncrpc_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2399,6 +2326,9 @@ ONCRPCRecordInputStream& ONCRPCMessage::get_oncrpc_record_input_stream( InputStr
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, auto_Object<Log> log )
+  : ONCRPCMessage( 0, _interface, NULL, log )
+{ }
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body, auto_Object<Log> log )
   : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body, log ),
     prog( prog ), proc( proc ), vers( vers )
@@ -2446,8 +2376,8 @@ Stream::Status ONCRPCRequest::deserialize( InputStream& input_stream, size_t* )
           oncrpc_record_input_stream.read( verf_auth_body, verf_auth_body_length, NULL );
           delete [] verf_auth_body;
         }
-//        if ( body == NULL && object_factories != NULL )
-//          body = object_factories->createObject( proc );
+        if ( body == NULL && _interface != NULL )
+          body = _interface->createRequest( proc ).release();
         if ( body != NULL )
           xdr_input_stream.readStruct( XDRInputStream::Declaration(), body.get() );
         else
@@ -3115,7 +3045,7 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
       {
         switch ( connect_status )
         {
-        case STREAM_STATUS_OK: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false ); break;
+          case STREAM_STATUS_OK: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false ); break;
           case STREAM_STATUS_WANT_WRITE: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true ); break;
           case STREAM_STATUS_ERROR: break;
           default: DebugBreak(); break;
@@ -3516,38 +3446,370 @@ void SocketAddress::init( const char* hostname, uint16_t port )
 }
 
 
+// ssl_context.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef YIELD_HAVE_OPENSSL
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/pkcs12.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
+#ifdef _WIN32
+#pragma comment( lib, "libeay32.lib" )
+#pragma comment( lib, "ssleay32.lib" )
+#endif
+SSLContext::SSLContext( SSL_METHOD* method )
+{
+  ctx = createSSL_CTX( method );
+}
+SSLContext::SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
+  : pem_private_key_passphrase( pem_private_key_passphrase )
+{
+  ctx = createSSL_CTX( method );
+  if ( SSL_CTX_use_certificate_file( ctx, pem_certificate_file_path, SSL_FILETYPE_PEM ) > 0 )
+  {
+    if ( !pem_private_key_passphrase.empty() )
+    {
+      SSL_CTX_set_default_passwd_cb( ctx, pem_password_callback );
+      SSL_CTX_set_default_passwd_cb_userdata( ctx, this );
+    }
+    if ( SSL_CTX_use_PrivateKey_file( ctx, pem_private_key_file_path, SSL_FILETYPE_PEM ) > 0 )
+      return;
+  }
+  throwOpenSSLException();
+}
+SSLContext::SSLContext( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
+  : pem_private_key_passphrase( pem_private_key_passphrase )
+{
+  ctx = createSSL_CTX( method );
+  BIO* pem_certificate_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_certificate_str.c_str() ) ), static_cast<int>( pem_certificate_str.size() ) );
+  if ( pem_certificate_bio != NULL )
+  {
+    X509* cert = PEM_read_bio_X509( pem_certificate_bio, NULL, pem_password_callback, this );
+    if ( cert != NULL )
+    {
+      SSL_CTX_use_certificate( ctx, cert );
+      BIO* pem_private_key_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_private_key_str.c_str() ) ), static_cast<int>( pem_private_key_str.size() ) );
+      if ( pem_private_key_bio != NULL )
+      {
+        EVP_PKEY* pkey = PEM_read_bio_PrivateKey( pem_private_key_bio, NULL, pem_password_callback, this );
+        if ( pkey != NULL )
+        {
+          SSL_CTX_use_PrivateKey( ctx, pkey );
+          BIO_free( pem_certificate_bio );
+          BIO_free( pem_private_key_bio );
+          return;
+        }
+        BIO_free( pem_private_key_bio );
+      }
+    }
+    BIO_free( pem_certificate_bio );
+  }
+  throwOpenSSLException();
+}
+SSLContext::SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
+{
+  ctx = createSSL_CTX( method );
+  BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
+  if ( bio != NULL )
+  {
+    PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );
+    if ( p12 != NULL )
+    {
+      EVP_PKEY* pkey = NULL;
+      X509* cert = NULL;
+      STACK_OF( X509 )* ca = NULL;
+      if ( PKCS12_parse( p12, pkcs12_passphrase.c_str(), &pkey, &cert, &ca ) )
+      {
+        if ( pkey != NULL && cert != NULL && ca != NULL )
+        {
+          SSL_CTX_use_certificate( ctx, cert );
+          SSL_CTX_use_PrivateKey( ctx, pkey );
+          X509_STORE* store = SSL_CTX_get_cert_store( ctx );
+          for ( int i = 0; i < sk_X509_num( ca ); i++ )
+          {
+            X509* store_cert = sk_X509_value( ca, i );
+            X509_STORE_add_cert( store, store_cert );
+          }
+          BIO_free( bio );
+          return;
+        }
+        else
+        {
+          BIO_free( bio );
+          throw Exception( "invalid PKCS#12 file or passphrase" );
+        }
+      }
+    }
+    BIO_free( bio );
+  }
+  throwOpenSSLException();
+}
+SSLContext::~SSLContext()
+{
+  SSL_CTX_free( ctx );
+}
+SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
+{
+  SSL_library_init();
+  OpenSSL_add_all_algorithms();
+  SSL_CTX* ctx = SSL_CTX_new( method );
+  if ( ctx != NULL )
+  {
+#ifdef SSL_OP_NO_TICKET
+    SSL_CTX_set_options( ctx, SSL_OP_ALL|SSL_OP_NO_TICKET );
+#else
+    SSL_CTX_set_options( ctx, SSL_OP_ALL );
+#endif
+    SSL_CTX_set_verify( ctx, SSL_VERIFY_NONE, NULL );
+    return ctx;
+  }
+  else
+  {
+    throwOpenSSLException();
+    return NULL;
+  }
+}
+int SSLContext::pem_password_callback( char *buf, int size, int, void *userdata )
+{
+  SSLContext* this_ = static_cast<SSLContext*>( userdata );
+  if ( size > static_cast<int>( this_->pem_private_key_passphrase.size() ) )
+    size = static_cast<int>( this_->pem_private_key_passphrase.size() );
+  memcpy_s( buf, size, this_->pem_private_key_passphrase.c_str(), size );
+  return size;
+}
+void SSLContext::throwOpenSSLException()
+{
+  SSL_load_error_strings();
+  throw Exception( ERR_error_string( ERR_get_error(), NULL ) );
+}
+#endif
+
+
+// ssl_socket.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef YIELD_HAVE_OPENSSL
+SSLSocket::SSLSocket( auto_Object<SSLContext> ctx, auto_Object<Log> log )
+  : TCPSocket( log ), ctx( ctx )
+{
+  ssl = SSL_new( ctx->get_ssl_ctx() );
+//      SSL_set_mode( ssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER );
+  init( log );
+}
+SSLSocket::SSLSocket( int domain, SSL& ssl, auto_Object<Log> log )
+  : TCPSocket( domain, SSL_get_fd( &ssl ), log ),
+    ssl( &ssl )
+{
+  ctx = NULL;
+  init( log );
+}
+SSLSocket::~SSLSocket()
+{
+  SSL_free( ssl );
+  delete [] write_buffer;
+}
+auto_Object<TCPSocket> SSLSocket::accept()
+{
+  SSL_set_fd( ssl, *this );
+  int peer_socket = static_cast<int>( TCPSocket::_accept() );
+  if ( peer_socket != -1 )
+  {
+    SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
+    SSL_set_fd( peer_ssl, peer_socket );
+    SSL_set_accept_state( peer_ssl );
+    return new SSLSocket( get_domain(), *peer_ssl, log );
+  }
+  else
+    return NULL;
+}
+Stream::Status SSLSocket::connect( auto_Object<SocketAddress> peer_sockaddr )
+{
+  Stream::Status connect_status = TCPSocket::connect( peer_sockaddr );
+  if ( connect_status == STREAM_STATUS_OK )
+  {
+    SSL_set_fd( ssl, *this );
+    SSL_set_connect_state( ssl );
+  }
+  return connect_status;
+}
+void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
+{
+  std::ostringstream info;
+  int w = where & ~SSL_ST_MASK;
+  if ( ( w & SSL_ST_CONNECT ) == SSL_ST_CONNECT ) info << "SSL_connect:";
+  else if ( ( w & SSL_ST_ACCEPT ) == SSL_ST_ACCEPT ) info << "SSL_accept:";
+  else info << "undefined:";
+  if ( ( where & SSL_CB_LOOP ) == SSL_CB_LOOP )
+    info << SSL_state_string_long( ssl );
+  else if ( ( where & SSL_CB_ALERT ) == SSL_CB_ALERT )
+  {
+    if ( ( where & SSL_CB_READ ) == SSL_CB_READ )
+      info << "read:";
+    else
+      info << "write:";
+    info << "SSL3 alert" << SSL_alert_type_string_long( ret ) << ":" << SSL_alert_desc_string_long( ret );
+  }
+  else if ( ( where & SSL_CB_EXIT ) == SSL_CB_EXIT )
+  {
+    if ( ret == 0 )
+      info << "failed in " << SSL_state_string_long( ssl );
+    else
+      info << "error in " << SSL_state_string_long( ssl );
+  }
+  else
+    return;
+  reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
+}
+void SSLSocket::init( auto_Object<Log> log )
+{
+  write_buffer = write_buffer_p = NULL;
+  write_buffer_len = 0;
+  if ( log != NULL )
+  {
+    SSL_set_app_data( ssl, reinterpret_cast<char*>( this ) );
+    SSL_set_info_callback( ssl, info_callback );
+  }
+}
+Stream::Status SSLSocket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+{
+  int SSL_read_ret = SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
+  if ( SSL_read_ret > 0 )
+  {
+    if ( log != NULL )
+    {
+      Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
+      log_stream << "SSLSocket: read on " << this << ": ";
+      log_stream.write( buffer, static_cast<size_t>( SSL_read_ret ) );
+    }
+    if ( out_bytes_read )
+      *out_bytes_read = static_cast<size_t>( SSL_read_ret );
+    if ( attached_to_fd_event_queue != NULL )
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
+    return STREAM_STATUS_OK;
+  }
+  else
+    return returnSSLStatus();
+}
+Stream::Status SSLSocket::returnSSLStatus()
+{
+  if ( SSL_want_read( ssl ) == 1 )
+  {
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on read on socket #" << this << ".";
+    if ( attached_to_fd_event_queue != NULL )
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, true, false );
+    return STREAM_STATUS_WANT_READ;
+  }
+  if ( SSL_want_write( ssl ) == 1 )
+  {
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on write on " << this << ".";
+    if ( attached_to_fd_event_queue != NULL )
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true );
+    return STREAM_STATUS_WANT_WRITE;
+  }
+  else
+  {
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      log->getStream( Log::LOG_INFO ) << "SSLSocket: lost connection on " << this << ", error = " << Exception::strerror() << ".";
+    return STREAM_STATUS_ERROR;
+  }
+}
+Stream::Status SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  int SSL_write_ret;
+  if ( buffers_count == 1 ) // && buffers[0].iov_len < SSL_MAX_CONTENT_LEN )
+  {
+    SSL_write_ret = SSL_write( ssl, buffers[0].iov_base, static_cast<int>( buffers[0].iov_len ) );
+    if ( SSL_write_ret > 0 && out_bytes_written )
+      *out_bytes_written = static_cast<size_t>( SSL_write_ret );
+  }
+  else // Concatenate buffers into a single write_buffer and write that
+  {
+    if ( write_buffer == NULL )
+    {
+      for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+        write_buffer_len += buffers[buffer_i].iov_len;
+      write_buffer_p = write_buffer = new unsigned char[write_buffer_len];
+      for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+      {
+        memcpy_s( write_buffer_p, buffers[buffer_i].iov_len, buffers[buffer_i].iov_base, buffers[buffer_i].iov_len );
+        write_buffer_p += buffers[buffer_i].iov_len;
+      }
+      write_buffer_p = write_buffer;
+    }
+    size_t total_bytes_written = 0;
+//	      for ( ;; ) // SSL_write multiple times if the buffer is > the max record len
+//        {
+      int SSL_write_len = static_cast<int>( write_buffer_len - static_cast<size_t>( write_buffer_p - write_buffer ) );
+//			if ( SSL_write_len > SSL_MAX_CONTENT_LEN ) SSL_write_len = SSL_MAX_CONTENT_LEN;
+      SSL_write_ret = SSL_write( ssl, reinterpret_cast<unsigned char*>( write_buffer_p ), SSL_write_len );
+      if ( SSL_write_ret > 0 )
+      {
+        write_buffer_p += SSL_write_ret;
+        total_bytes_written += SSL_write_ret;
+        if ( static_cast<size_t>( write_buffer_p - write_buffer ) == write_buffer_len )
+        {
+          delete [] write_buffer;
+          write_buffer_p = write_buffer = NULL;
+          write_buffer_len = 0;
+          if ( out_bytes_written )
+            *out_bytes_written = total_bytes_written;
+          // break;
+        }
+        else
+          DebugBreak(); // continue;
+      }
+//          else
+//            break;
+//        }
+  }
+  if ( SSL_write_ret > 0 )
+  {
+    if ( log != NULL )
+    {
+      Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
+      log_stream << "SSLSocket: write on " << this << ": ";
+      log_stream.write( buffers, buffers_count );
+    }
+    if ( attached_to_fd_event_queue != NULL )
+      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
+    return STREAM_STATUS_OK;
+  }
+  else
+    return returnSSLStatus();
+}
+bool SSLSocket::shutdown()
+{
+  if ( SSL_shutdown( ssl ) != -1 )
+    return TCPSocket::shutdown();
+  else
+    return false;
+}
+#endif
+
+
 // tcp_listener.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-auto_Object<TCPListener> TCPListener::create( auto_Object<StageGroup> stage_group, auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory )
+auto_Object<TCPListener> TCPListener::create( auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<StageGroup> stage_group, auto_Object<TCPSocketFactory> tcp_socket_factory, auto_Object<Log> log )
 {
   auto_Object<TCPListenQueue> tcp_listen_queue = TCPListenQueue::create( local_sockaddr, log, tcp_socket_factory );
   if ( tcp_listen_queue != NULL )
   {
     auto_Object<TCPListener> tcp_listener = new TCPListener( reader_target );
-    auto_Object<Stage> tcp_listener_stage = stage_group->createStage( tcp_listener, tcp_listen_queue );
+    auto_Object<Stage> tcp_listener_stage = stage_group->createStage( tcp_listener->incRef(), 1, tcp_listen_queue->incRef() );
     if ( tcp_listener_stage != NULL )
       return tcp_listener;
   }
-
   return NULL;
 }
-
 void TCPListener::handleEvent( Event& ev )
 {
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( TCPSocket ):
-    {
-      reader_target->send( ev );
-    }
-    break;
-
-    default: this->handleUnknownEvent( ev );
-  }
+  reader_target->send( ev );
 }
 
 
@@ -3927,4 +4189,86 @@ void URI::init( UriUriA& parsed_uri )
   else
     resource = "/";
 }
+
+
+// zlib_output_stream.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef YIELD_HAVE_ZLIB
+#ifdef _WIN32
+#pragma comment( lib, "zlib.lib" )
+#endif
+zlibOutputStream::zlibOutputStream()
+{
+  zstream.zalloc = Z_NULL;
+  zstream.zfree = Z_NULL;
+  zstream.opaque = Z_NULL;
+  out_s = NULL;
+}
+auto_Object<String> zlibOutputStream::serialize( String& s, int level )
+{
+  if ( deflateInit( &zstream, level ) == Z_OK )
+  {
+    zstream.next_out = reinterpret_cast<Bytef*>( zout );
+    zstream.avail_out = sizeof( zout );
+    total_bytes_written = 0;
+    out_s = new String();
+    s.serialize( *this, NULL );
+    int deflate_ret;
+    while ( ( deflate_ret = deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
+    {
+      out_s->append( zout, sizeof( zout ) );
+      zstream.next_out = reinterpret_cast<Bytef*>( zout );
+      zstream.avail_out = sizeof( zout );
+    }
+    if ( deflate_ret == Z_STREAM_END )
+    {
+      if ( ( deflate_ret = deflateEnd( &zstream ) ) == Z_OK )
+      {
+        if ( zstream.avail_out < sizeof( zout ) )
+          out_s->append( zout, sizeof( zout ) - zstream.avail_out );
+        if ( out_s->size() < total_bytes_written ) // i.e. the compressed buffer is smaller than the input buffer(s)
+          return out_s;
+      }
+    }
+    Object::decRef( *out_s );
+  }
+  return NULL;
+}
+Stream::Status zlibOutputStream::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  int deflate_ret = Z_OK;
+  size_t bytes_written = 0;
+  for ( size_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+  {
+    zstream.next_in = reinterpret_cast<Bytef*>( buffers[buffer_i].iov_base );
+    zstream.avail_in = buffers[buffer_i].iov_len;
+    bytes_written += buffers[buffer_i].iov_len;
+    total_bytes_written += buffers[buffer_i].iov_len;
+    while ( ( deflate_ret = deflate( &zstream, Z_NO_FLUSH ) ) == Z_OK )
+    {
+      if ( zstream.avail_out > 0 )
+      {
+        if ( out_bytes_written )
+          *out_bytes_written = bytes_written;
+        return STREAM_STATUS_OK;
+      }
+      else
+      {
+        out_s->append( zout, sizeof( zout ) );
+        zstream.next_out = reinterpret_cast<Bytef*>( zout );
+        zstream.avail_out = sizeof( zout );
+      }
+    }
+  }
+  if ( deflate_ret == Z_OK )
+  {
+    if ( out_bytes_written )
+      *out_bytes_written = bytes_written;
+    return STREAM_STATUS_OK;
+  }
+  else
+    return STREAM_STATUS_ERROR;
+}
+#endif
 

@@ -54,7 +54,7 @@ bool File::flush()
   {
     if ( !latest_osd_write_response.get_new_file_size().empty() )  
     {
-      mrc_proxy->update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+      mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
       latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
     }  
     return true;

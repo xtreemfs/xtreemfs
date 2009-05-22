@@ -25,25 +25,15 @@ struct fd_set;
 #endif
 
 #ifdef YIELD_HAVE_OPENSSL
-#include <openssl/err.h>
-#include <openssl/pem.h>
-#include <openssl/pkcs12.h>
-#include <openssl/rsa.h>
 #include <openssl/ssl.h>
-#include <openssl/x509.h>
-#ifdef _WIN32
-#pragma comment( lib, "libeay32.lib" )
-#pragma comment( lib, "ssleay32.lib" )
 #endif
-#endif
-
 #ifdef YIELD_HAVE_ZLIB
 #ifdef _WIN32
-#pragma comment( lib, "zlib.lib" )
 #undef ZLIB_WINAPI // So zlib doesn't #include windows.h
 #endif
 #include "zlib.h"
 #endif
+
 
 struct addrinfo;
 struct sockaddr;
@@ -65,16 +55,21 @@ namespace YIELD
   class Socket;
   class SocketAddress;
   class SocketFactory;
+#ifdef YIELD_HAVE_OPENSSL
+  class SSLContext;
+  class SSLSocket;
+#endif
   class TCPSocket;
   class TCPSocketFactory;
   class TimerEvent;
   class URI;
 
 
-  class Client : public EventHandler
+  template <class ProtocolRequestType, class ProtocolResponseType>
+  class Client
   {
   public:    
-    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 2 * NS_IN_S;
+    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
     const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = UINT8_MAX;
 
 
@@ -83,28 +78,25 @@ namespace YIELD
     uint8_t get_reconnect_tries_max() const { return reconnect_tries_max; }
     auto_Object<SocketFactory> get_socket_factory() const { return socket_factory; }
 
-    // EventHandler
-    virtual void handleEvent( Event& );
-
   protected:
-    template <class ClientType, class StageGroupType>
-    static auto_Object<ClientType> create( auto_Object<StageGroupType> stage_group, auto_Object<Log> log, const Time& operation_timeout, const URI& peer_uri, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
-
-    Client( auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
+    Client( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
     virtual ~Client();
 
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request ) = 0;
-    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request ) = 0;
-    virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response ) = 0;
+    void handleEvent( Event& );
+
+    virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Request> request ) = 0;
+    virtual auto_Object<ProtocolResponseType> createProtocolResponse( auto_Object<ProtocolRequestType> protocol_request ) = 0;
+    virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ProtocolResponseType> protocol_response ) = 0;
+    virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ExceptionResponse> exception_response ) = 0;
 
   private:
+    auto_Object<FDAndInternalEventQueue> fd_event_queue;
     auto_Object<Log> log;
     Time operation_timeout;
     auto_Object<SocketAddress> peer_sockaddr;
     uint8_t reconnect_tries_max;
     auto_Object<SocketFactory> socket_factory;    
 
-    auto_Object<FDEventQueue> fd_event_queue;
 
 
     class Connection : public Object, public InputStream, public OutputStream
@@ -115,13 +107,13 @@ namespace YIELD
       Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max );
 
       const Time& get_last_activity_time() const { return last_activity_time; }
-      auto_Object<Request> get_protocol_request() const { return protocol_request; }
+      auto_Object<ProtocolRequestType> get_protocol_request() const { return protocol_request; }
       inline State get_state() const { return state; }
-      void set_protocol_request( auto_Object<Request> protocol_request ) { this->protocol_request = protocol_request; }
-      auto_Object<Response> get_protocol_response() const { return protocol_response; }      
+      void set_protocol_request( auto_Object<ProtocolRequestType> protocol_request ) { this->protocol_request = protocol_request; }
+      auto_Object<ProtocolResponseType> get_protocol_response() const { return protocol_response; }      
       auto_Object<Socket> get_socket() const { return _socket; }
       uint8_t get_reconnect_tries_left() const { return reconnect_tries_left; }
-      void set_protocol_response( auto_Object<Response> protocol_response ) { this->protocol_response = protocol_response; }
+      void set_protocol_response( auto_Object<ProtocolResponseType> protocol_response ) { this->protocol_response = protocol_response; }
       void set_reconnect_tries_left( uint8_t reconnect_tries_left ) { this->reconnect_tries_left = reconnect_tries_left; }
       inline void set_state( State state ) { this->state = state; }
 
@@ -133,7 +125,7 @@ namespace YIELD
       void touch() { last_activity_time = Time(); }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( Connection, 208 );
+      YIELD_OBJECT_PROTOTYPES( Connection, 201 );
 
       // InputStream
       YIELD_INPUT_STREAM_PROTOTYPES;
@@ -150,14 +142,64 @@ namespace YIELD
       State state;
       Time last_activity_time;
 
-      auto_Object<Request> protocol_request;
-      auto_Object<Response> protocol_response;
+      auto_Object<ProtocolRequestType> protocol_request;
+      auto_Object<ProtocolResponseType> protocol_response;
     };
 
 
     std::vector<Connection*> connections;
     Connection* createConnection();
     void destroyConnection( Connection* );
+  };
+
+
+  class Server
+  {
+  protected:
+    template <class ProtocolRequestType>
+    class ProtocolRequestReader : public EventHandler
+    {
+    public:
+      // Object
+      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );    
+
+      // EventHandler
+      void handleEvent( Event& );
+
+    protected:      
+      ProtocolRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log )
+        : log( log ), fd_event_queue( fd_event_queue )
+      { }
+
+      virtual ~ProtocolRequestReader() { }
+
+
+      auto_Object<Log> log;
+
+
+      virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Socket> _socket ) = 0;
+      virtual bool sendProtocolRequest( auto_Object<ProtocolRequestType> protocol_request ) = 0;
+
+    private:
+      auto_Object<FDAndInternalEventQueue> fd_event_queue;
+    };
+
+
+    template <class ProtocolResponseType>
+    class ProtocolResponseWriter : public EventHandler
+    {
+    public:
+      ProtocolResponseWriter() { }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );
+
+      // EventHandler
+      void handleEvent( Event& );
+
+    protected:
+      virtual ~ProtocolResponseWriter() { }
+    };
   };
 
 
@@ -173,7 +215,7 @@ namespace YIELD
     inline bool want_read() const { return _want_read; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDEvent, 204 );
+    YIELD_OBJECT_PROTOTYPES( FDEvent, 202 );
 
   private:
     ~FDEvent() { }
@@ -204,7 +246,7 @@ namespace YIELD
     auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDEventQueue, 206 );
+    YIELD_OBJECT_PROTOTYPES( FDEventQueue, 203 );
 
     // EventQueue
     virtual bool enqueue( Event& ); // Discards events
@@ -260,7 +302,7 @@ namespace YIELD
     FDAndInternalEventQueue();
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 207 );
+    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 204 );
 
     // EventQueue
     Event* dequeue();
@@ -340,7 +382,7 @@ namespace YIELD
     virtual bool respond( Response& response ) { return Request::respond( response ); }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPRequest, 209 );
+    YIELD_OBJECT_PROTOTYPES( HTTPRequest, 205 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -362,61 +404,6 @@ namespace YIELD
   };
 
 
-  class HTTPRequestReader : public EventHandler
-  {
-  public:
-    template <class StageGroupType>
-    static auto_Object<HTTPRequestReader> create( auto_Object<StageGroupType> stage_group, auto_Object<EventTarget> http_request_target, auto_Object<EventTarget> http_response_writer_target )
-    {
-      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-      auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue->incRef(), http_request_target, http_response_writer_target );
-      stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, NULL );
-      return http_request_reader;
-    }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPRequestReader, 223 );    
-
-    // EventHandler
-    void handleEvent( Event& );
-
-  private:
-    friend class HTTPResponseWriter;
-
-
-    HTTPRequestReader( auto_Object<FDEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<EventTarget> http_response_writer_target )
-      : fd_event_queue( fd_event_queue ), http_request_target( http_request_target ), http_response_writer_target( http_response_writer_target )
-    { }
-
-    ~HTTPRequestReader() { }
-
-
-    auto_Object<FDEventQueue> fd_event_queue;
-    auto_Object<EventTarget> http_request_target;
-    auto_Object<EventTarget> http_response_writer_target;
-
-
-    class HTTPRequest : public YIELD::HTTPRequest
-    {
-    public:
-      HTTPRequest( auto_Object<TCPSocket> tcp_socket, auto_Object<EventTarget> http_response_writer_target )
-        : tcp_socket( tcp_socket ), http_response_writer_target( http_response_writer_target )
-      { }
-
-      auto_Object<TCPSocket> get_tcp_socket() const { return tcp_socket; }
-
-      // HTTPRequest
-      bool respond( uint16_t status_code );
-      bool respond( uint16_t status_code, auto_Object<> body );
-      bool respond( Response& response );
-
-    private:
-      auto_Object<TCPSocket> tcp_socket;
-      auto_Object<EventTarget> http_response_writer_target;
-    };
-  };
-
-
   class HTTPResponse : public Response, protected RFC822Headers
   {
   public:
@@ -431,7 +418,7 @@ namespace YIELD
     void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 210 );
+    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 206 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = NULL );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_written = NULL );
 
@@ -450,104 +437,132 @@ namespace YIELD
   };
 
 
-  class HTTPResponseWriter : public EventHandler
+  class HTTPClient : public EventHandler, public Client<HTTPRequest, HTTPResponse>
   {
   public:
-    template <class StageGroupType>
-    static auto_Object<HTTPResponseWriter> create( auto_Object<StageGroupType> stage_group )
-    {
-      auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
-      auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, NULL, NULL );
-      return http_response_writer;
-    }
-    
-    // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPResponseWriter, 224 );    
-
-    // EventHandler
-    void handleEvent( Event& );
-
-  private:
-    friend class HTTPRequestReader::HTTPRequest; // Allow it to create HTTPResponses
-
-    HTTPResponseWriter() { } 
-    ~HTTPResponseWriter() { }
-
-
-    class HTTPResponse : public YIELD::HTTPResponse
-    {
-    public:
-      HTTPResponse( auto_Object<TCPSocket> tcp_socket, uint16_t status_code )
-        : YIELD::HTTPResponse( status_code ), tcp_socket( tcp_socket )
-      { }
-
-      HTTPResponse( auto_Object<TCPSocket> tcp_socket, uint16_t status_code, auto_Object<> body )
-        : YIELD::HTTPResponse( status_code, body ), tcp_socket( tcp_socket )
-      { }
-
-      auto_Object<TCPSocket> get_tcp_socket() const { return tcp_socket; }
-
-    private:
-      ~HTTPResponse() { }
-
-      auto_Object<TCPSocket> tcp_socket;
-    };
-  };
-
-
-  class HTTPClient : public Client
-  {
-  public:
-    template <class StageGroupType>
-    static auto_Object<HTTPClient> create( auto_Object<StageGroupType> stage_group, const URI& peer_uri, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<TCPSocketFactory> tcp_socket_factory = NULL )
-    {
-      return Client::create<HTTPClient, StageGroupType>( stage_group, log, operation_timeout, peer_uri, reconnect_tries_max, tcp_socket_factory.release() );
-    }
+    static auto_Object<HTTPClient> create( const URI& absolute_uri, auto_Object<StageGroup> stage_group, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT );
 
     static auto_Object<HTTPResponse> GET( const URI& absolute_uri, auto_Object<Log> log = NULL );
     static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log = NULL );
     static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log = NULL );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPClient, 211 );
+    YIELD_OBJECT_PROTOTYPES( HTTPClient, 207 );
 
-  protected:
-    friend class Client;
-
-    HTTPClient( auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
-    { }
-
-    virtual ~HTTPClient() { }
-
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request );
-    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request );
-    virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response );
+    // EventHandler
+    virtual void handleEvent( Event& ev ) { Client::handleEvent( ev ); }
 
   private:
+    HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
+    virtual ~HTTPClient() { }
+
     static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<> body, auto_Object<Log> log );
 
+    // Client
+    virtual auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Request> request );
+    virtual auto_Object<HTTPResponse> createProtocolResponse( auto_Object<HTTPRequest> http_request );
+    virtual void respond( auto_Object<HTTPRequest> http_request, auto_Object<HTTPResponse> http_response );
+    virtual void respond( auto_Object<HTTPRequest> http_request, auto_Object<ExceptionResponse> exception_response );
+  };
+    
 
+  class HTTPServer : private Server
+  {
+  public:
+    template <class StageGroupType> 
+    static bool create( auto_Object<EventTarget> http_request_target, 
+                        auto_Object<StageGroupType> stage_group,
+                        auto_Object<SocketAddress> local_sockaddr = NULL, // Defaults to *:80
+                        auto_Object<Log> log = NULL );
+
+#ifdef YIELD_HAVE_OPENSSL
+    template <class StageGroupType> 
+    static bool create( auto_Object<EventTarget> http_request_target, 
+                        auto_Object<SSLContext> ssl_context,      
+                        auto_Object<StageGroupType> stage_group,
+                        auto_Object<SocketAddress> local_sockaddr = NULL, // Defaults to *:443
+                        auto_Object<Log> log = NULL );
+#endif
+
+  protected:
     class HTTPRequest : public YIELD::HTTPRequest
     {
     public:
-      HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body = NULL );
+      HTTPRequest( auto_Object<Stage> http_response_writer_stage, auto_Object<Socket> tcp_socket )
+        : http_response_writer_stage( http_response_writer_stage ), tcp_socket( tcp_socket )
+      { }
 
-      // Request
-      bool respond( Response& response );
-      HTTPResponse& waitForHTTPResponse( uint64_t timeout_ns );
+      auto_Object<Socket> get_socket() const { return tcp_socket; }
+
+      // HTTPRequest
+      bool respond( uint16_t status_code )
+      {
+        return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, tcp_socket ) ) );
+      }
+
+      bool respond( uint16_t status_code, auto_Object<> body )
+      {
+        return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, body, tcp_socket ) ) );
+      }
+
+      bool respond( Response& ) { DebugBreak(); return false; }
 
     private:
-      OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > http_response_queue;
+      auto_Object<Stage> http_response_writer_stage;
+      auto_Object<Socket> tcp_socket;
     };
-  };
 
 
-  class HTTPServer
-  {
-  public:
-    template <class StageGroupType>
-    static bool create( auto_Object<StageGroupType> stage_group, auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> http_request_target, auto_Object<Log> log = NULL, auto_Object<TCPSocketFactory> tcp_socket_factory = NULL );
+    class HTTPRequestReader : public ProtocolRequestReader<HTTPRequest>
+    {
+    public:
+      HTTPRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<Stage> http_response_writer_stage )
+        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, NULL ), http_response_writer_stage( http_response_writer_stage ), http_request_target( http_request_target )
+      { }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( HTTPRequestReader, 0 );    
+
+    private:
+      ~HTTPRequestReader() { }
+
+      auto_Object<EventTarget> http_request_target;
+      auto_Object<Stage> http_response_writer_stage;
+
+      // ProtocolRequestReader
+      auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Socket> _socket )
+      {
+        return new HTTPRequest( http_response_writer_stage, _socket );
+      }
+
+      bool sendProtocolRequest( auto_Object<HTTPRequest> http_request )
+      {
+        return http_request_target->send( *http_request.release() );
+      }
+    };
+
+
+    class HTTPResponse : public YIELD::HTTPResponse
+    {
+    public:
+      HTTPResponse( uint16_t status_code, auto_Object<Socket> _socket )
+        : YIELD::HTTPResponse( status_code ), tcp_socket( tcp_socket )
+      { }
+
+      HTTPResponse( uint16_t status_code, auto_Object<> body, auto_Object<Socket> tcp_socket )
+        : YIELD::HTTPResponse( status_code, body ), tcp_socket( tcp_socket )
+      { }
+
+      auto_Object<Socket> get_socket() const { return tcp_socket; }
+
+    private:
+      ~HTTPResponse() { }
+
+      auto_Object<Socket> tcp_socket;
+    };
+
+
+    typedef ProtocolResponseWriter<HTTPResponse> HTTPResponseWriter;
   };
 
 
@@ -608,37 +623,6 @@ namespace YIELD
   };
  
 
-  class ONCRPCClient : public Client
-  {
-  public:
-    template <class StageGroupType>
-    static auto_Object<ONCRPCClient> create( auto_Object<StageGroupType> stage_group, const URI& peer_uri, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
-    {
-      return Client::create<ONCRPCClient, StageGroupType>( stage_group, log, operation_timeout, peer_uri, reconnect_tries_max, socket_factory );
-    }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCClient, 212 );
-
-  protected:
-    friend class Client;
-
-    ONCRPCClient( auto_Object<Interface> _interface, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-      : Client( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory ), _interface( _interface )
-    { }
-
-    virtual ~ONCRPCClient() { }
-
-    // Client
-    virtual auto_Object<Request> createProtocolRequest( auto_Object<Request> request );
-    virtual auto_Object<Response> createProtocolResponse( auto_Object<Request> protocol_request );
-    virtual void respond( auto_Object<Request> protocol_request, auto_Object<Response> response );
-
-
-    auto_Object<Interface> _interface;
-  };
-
-
   class ONCRPCMessage
   {
   public:
@@ -671,6 +655,7 @@ namespace YIELD
   public:
     const static uint32_t AUTH_NONE = 0;
 
+    ONCRPCRequest( auto_Object<Interface> _interface, auto_Object<Log> log = NULL ); // Incoming
     ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body, auto_Object<Log> log = NULL ); // Outgoing
     ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body, auto_Object<Log> log = NULL ); // Outgoing
 
@@ -687,9 +672,10 @@ namespace YIELD
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
-  private:
-    ~ONCRPCRequest() { }
+  protected:
+    virtual ~ONCRPCRequest() { }
 
+  private:
     uint32_t prog, proc, vers, credential_auth_flavor;
     auto_Object<> credential;
   };
@@ -702,13 +688,285 @@ namespace YIELD
     ONCRPCResponse( uint32_t xid, auto_Object<> body, auto_Object<Log> log = NULL ); // Outgoing
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 214 );
+    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
     Stream::Status deserialize( InputStream&, size_t* out_bytes_read = 0 );
     Stream::Status serialize( OutputStream&, size_t* out_bytes_read = 0 );
 
-  private:
-    ~ONCRPCResponse() { }
+  protected:
+    virtual ~ONCRPCResponse() { }
   };
+
+
+  template <class InterfaceType>
+  class ONCRPCClient : public InterfaceType, public Client<ONCRPCRequest, ONCRPCResponse>
+  {
+  public:
+    static auto_Object< ONCRPCClient<InterfaceType> > create( const URI& absolute_uri, auto_Object<StageGroup> stage_group, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
+    {
+      auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( absolute_uri );
+      if ( peer_sockaddr != NULL && peer_sockaddr->get_port() != 0 )
+      {
+        if ( socket_factory == NULL )
+        {
+#ifdef YIELD_HAVE_OPENSSL
+          if ( absolute_uri.get_scheme() == "oncrpcs" )
+            socket_factory = new SSLSocketFactory( new SSLContext( SSLv23_client_method() ) );
+          else
+#endif
+            socket_factory = new TCPSocketFactory;
+        }
+
+        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+        auto_Object< ONCRPCClient<InterfaceType> > oncrpc_client = new ONCRPCClient<InterfaceType>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+        stage_group->createStage( oncrpc_client->incRef(), 1, fd_event_queue->incRef() );
+        return oncrpc_client;
+      }
+      else
+        return NULL;
+    }
+
+    static auto_Object<Response> ONCRPCClient::send( const URI& absolute_uri, auto_Object<Request> request, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
+    {
+      auto_Object<StageGroup> stage_group = new SEDAStageGroup( "ONCRPCClient", 0, NULL, log );
+      auto_Object<ONCRPCClient> oncrpc_client = ONCRPCClient<InterfaceType>::create( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, socket_factory );
+      auto_Object<ONCRPCRequest> oncrpc_request = new ONCRPCRequest( 0x20000000 + oncrpc_client->get_tag(), request->get_tag(), oncrpc_client->get_tag(), request->incRef(), log );
+      auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > oncrpc_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
+      request->set_response_target( oncrpc_response_queue->incRef() );
+      oncrpc_request->set_response_target( oncrpc_response_queue->incRef() );
+      static_cast<EventHandler&>( *oncrpc_client ).send( *oncrpc_request.release() );
+      return static_cast<Response*>( oncrpc_response_queue->dequeue() ); // Dangerous
+    }
+
+    // EventHandler
+    virtual void handleEvent( Event& ev ) { Client::handleEvent( ev ); }
+
+  protected:
+    ONCRPCClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
+      : Client( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+    { }
+
+    virtual ~ONCRPCClient() { }
+
+    // Client
+    virtual auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Request> request )
+    {
+      if ( request->get_tag() == YIELD_OBJECT_TAG( ONCRPCRequest ) )
+        return static_cast<ONCRPCRequest*>( request.release() );
+      else
+        return new ONCRPCRequest( 0x20000000 + InterfaceType::get_tag(), request->get_tag(), InterfaceType::get_tag(), request.release(), get_log() );
+    }
+
+    virtual auto_Object<ONCRPCResponse> createProtocolResponse( auto_Object<ONCRPCRequest> oncrpc_request )
+    {
+      auto_Object<Response> response = InterfaceType::createResponse( static_cast<Request*>( oncrpc_request->get_body().get() )->get_tag() );
+      if ( response != NULL )
+        return new ONCRPCResponse( this->incRef(), response.release(), get_log() );
+      else
+        return NULL;
+    }
+
+    virtual void respond( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<ONCRPCResponse> oncrpc_response )
+    {
+      static_cast<Request*>( oncrpc_request->get_body().get() )->respond( static_cast<Response*>( oncrpc_response->get_body().get() )->incRef() );
+    }
+
+    virtual void respond( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<ExceptionResponse> exception_response )
+    {
+      static_cast<Request*>( oncrpc_request->get_body().get() )->respond( *exception_response.release() );
+    }
+  };
+
+  
+  template <class InterfaceType>
+  class ONCRPCServer : private Server
+  {
+  public:
+    template <class StageGroupType>
+    static bool create( auto_Object<SocketAddress> local_sockaddr, 
+                        auto_Object<StageGroupType> stage_group, 
+                        auto_Object<Log> log = NULL, 
+                        auto_Object<SocketFactory> socket_factory = NULL )
+    {
+      auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+      auto_Object<Stage> oncrpc_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<ONCRPCResponseWriter>( oncrpc_response_writer, 1, NULL, NULL, log ).release();
+
+      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+      auto_Object<ONCRPCRequestReader> oncrpc_request_reader = new ONCRPCRequestReader( fd_event_queue->incRef(), new InterfaceType, log, oncrpc_response_writer_stage );
+      auto_Object<Stage> oncrpc_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<ONCRPCRequestReader, FDAndInternalEventQueue>( oncrpc_request_reader, 1, fd_event_queue, NULL, log );
+
+      if ( socket_factory != NULL && socket_factory->get_tag() == YIELD_OBJECT_TAG( UDPSocketFactory ) )
+      {
+        DebugBreak();
+        return false;
+      }
+      else
+      {    
+        auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, oncrpc_request_reader_stage.release(), stage_group->incRef(), static_cast<TCPSocketFactory*>( socket_factory.release() ), log );
+        return tcp_listener != NULL;    
+      }
+    }
+
+  private:
+    class ONCRPCRequest : public YIELD::ONCRPCRequest
+    {
+    public:
+      ONCRPCRequest( auto_Object<Interface> _interface, auto_Object<Log> log, auto_Object<Socket> _socket )
+        : YIELD::ONCRPCRequest( _interface, log ), _socket( _socket )
+      { }
+
+      auto_Object<Log> get_log() const { return log; }
+      auto_Object<Socket> get_socket() const { return _socket; }
+
+    private:
+      auto_Object<Socket> _socket;
+    };
+
+
+    class ONCRPCResponse : public YIELD::ONCRPCResponse
+    {
+    public:
+      ONCRPCResponse( uint32_t xid, auto_Object<> body, auto_Object<Log> log, auto_Object<Socket> _socket )
+        : YIELD::ONCRPCResponse( xid, body, log ), _socket( _socket )
+      { }
+
+      auto_Object<Socket> get_socket() const { return _socket; }
+
+    private:
+      ~ONCRPCResponse() { }
+
+      auto_Object<Socket> _socket;
+    };
+
+
+    class ONCRPCResponder : public EventTarget
+    {
+    public:
+      ONCRPCResponder( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<Stage> oncrpc_response_writer_stage )
+        : oncrpc_request( oncrpc_request ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
+      { }
+
+      // Object    
+      YIELD_OBJECT_PROTOTYPES( ONCRPCResponder, 0 );
+
+      // EventTarget
+      bool send( Event& ev )
+      {
+        ONCRPCResponse* oncrpc_response = new ONCRPCServer::ONCRPCResponse( oncrpc_request->get_xid(), ev, oncrpc_request->get_log(), oncrpc_request->get_socket() );
+        return oncrpc_response_writer_stage->send( *oncrpc_response );
+      }
+
+    private:
+      auto_Object<ONCRPCRequest> oncrpc_request;
+      auto_Object<Stage> oncrpc_response_writer_stage;
+    };
+
+
+    class ONCRPCRequestReader : public ProtocolRequestReader<ONCRPCRequest>
+    {
+    public:
+      ONCRPCRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Interface> _interface, auto_Object<Log> log, auto_Object<Stage> oncrpc_response_writer_stage )
+        : ProtocolRequestReader<ONCRPCRequest>( fd_event_queue, log ), _interface( _interface ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
+      { }
+
+    private:
+      ~ONCRPCRequestReader() { }
+
+      auto_Object<Interface> _interface;
+      auto_Object<Stage> oncrpc_response_writer_stage;
+
+      // ProtocolRequestReader
+      auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Socket> _socket )
+      {
+        return new ONCRPCRequest( _interface, log, _socket );
+      }
+
+      bool sendProtocolRequest( auto_Object<ONCRPCRequest> oncrpc_request )
+      {
+        Request* body = static_cast<Request*>( oncrpc_request->get_body().release() ); // Dangerous
+        body->set_response_target( new ONCRPCResponder( oncrpc_request, oncrpc_response_writer_stage ) );
+        return _interface->send( *body );
+      }
+    };
+
+
+    typedef ProtocolResponseWriter<ONCRPCResponse> ONCRPCResponseWriter;
+  };
+
+
+  template <class ProtocolRequestType>
+  void Server::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Event& ev )
+  {
+    auto_Object<Socket> _socket;
+    ProtocolRequestType* protocol_request;
+
+    switch ( ev.get_tag() )
+    {
+      case YIELD_OBJECT_TAG( FDEvent ):
+      {
+        FDEvent& fd_event = static_cast<FDEvent&>( ev );
+        protocol_request = static_cast<ProtocolRequestType*>( fd_event.get_context() );
+        _socket = protocol_request->get_socket();
+        Object::decRef( ev );
+      }
+      break; // Drop down to try to deserialize
+
+  #ifdef YIELD_HAVE_OPENSSL
+      case YIELD_OBJECT_TAG( SSLSocket ):
+  #endif
+      case YIELD_OBJECT_TAG( TCPSocket ):
+      case YIELD_OBJECT_TAG( UDPSocket ):
+      {
+        _socket = static_cast<Socket*>( &ev );
+        protocol_request = createProtocolRequest( _socket ).release();
+        _socket->attach( fd_event_queue->incRef(), protocol_request ); // Attach the original reference of protocol_request to the fd_event_queue
+      }
+      break; // Drop down to try to deserialize
+
+      default: handleUnknownEvent( ev ); return;
+    }
+
+    _socket->set_blocking_mode( false );
+    Stream::Status deserialize_status = protocol_request->deserialize( *_socket );
+
+    switch ( deserialize_status )
+    {
+      case Stream::STREAM_STATUS_OK:
+      {
+        sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
+      }
+      break;
+
+      case Stream::STREAM_STATUS_ERROR:
+      {
+        _socket->close(); // Force a detach
+        Object::decRef( *protocol_request ); // The reference that's attached to fd_event_queue
+        // tcp_socket should be dead here, since http_request should have had the last reference to it
+      }
+      break;
+    }
+  }
+
+
+  template <class ProtocolResponseType>
+  void Server::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Event& ev )
+  {
+    switch( ev.get_tag() )
+    {
+      case YIELD_OBJECT_TAG( ProtocolResponseType ):
+      {
+        ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
+        auto_Object<Socket> _socket = protocol_response.get_socket();
+
+        _socket->set_blocking_mode( true );
+        protocol_response.serialize( *_socket );
+        Object::decRef( protocol_response );
+      }
+      break;
+
+      default: handleUnknownEvent( ev ); break;
+    }
+  }
+
 
 
   class SocketAddress : public Object
@@ -733,7 +991,7 @@ namespace YIELD
     bool operator!=( const SocketAddress& other ) const { return !operator==( other ); }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( SocketAddress, 201 );
+    YIELD_OBJECT_PROTOTYPES( SocketAddress, 210 );
 
   private:
     SocketAddress( const SocketAddress& ) { DebugBreak(); } // Prevent copying
@@ -778,6 +1036,9 @@ namespace YIELD
     OutputStream& operator<<( OutputStream& output_stream ) const { output_stream.write( "socket" ); return output_stream; }
     bool set_blocking_mode( bool blocking );
     virtual bool shutdown() { return true; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Socket, 211 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -838,10 +1099,10 @@ namespace YIELD
   class TCPListener : public EventHandler
   {
   public:
-    static auto_Object<TCPListener> create( auto_Object<StageGroup> stage_group, auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<Log> log = NULL, auto_Object<TCPSocketFactory> tcp_socket_factory = NULL );
+    static auto_Object<TCPListener> create( auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<StageGroup> stage_group, auto_Object<TCPSocketFactory> tcp_socket_factory, auto_Object<Log> log = NULL );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TCPListener, 221 );
+    YIELD_OBJECT_PROTOTYPES( TCPListener, 212 );
 
     // EventHandler
     void handleEvent( Event& );
@@ -862,12 +1123,12 @@ namespace YIELD
   public:
     TCPSocket( auto_Object<Log> log = NULL ); // Defaults to domain = AF_INET6
 
-    auto_Object<TCPSocket> accept();
+    virtual auto_Object<TCPSocket> accept();
     virtual bool listen();
     virtual bool shutdown();
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TCPSocket, 202 );
+    YIELD_OBJECT_PROTOTYPES( TCPSocket, 213 );
 
     // OutputStream
     YIELD_OUTPUT_STREAM_PROTOTYPES;
@@ -899,17 +1160,16 @@ namespace YIELD
       : SocketFactory( log )
     { }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( TCPSocketFactory, 203 );
-
-    // SocketFactory
-    auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
+    virtual auto_Object<TCPSocket> createTCPSocket( auto_Object<Log> log = NULL )
     {
       return new TCPSocket( log != NULL ? log : this->log );
     }
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( TCPSocketFactory, 214 );
+
     // SocketFactory
-    auto_Object<TCPSocket> createTCPSocket( auto_Object<Log> log = NULL )
+    auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
     {
       return new TCPSocket( log != NULL ? log : this->log );
     }
@@ -924,107 +1184,10 @@ namespace YIELD
   class SSLContext : public Object
 	{
 	public:
-    SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
-      : pem_private_key_passphrase( pem_private_key_passphrase )
-    {
-      ctx = createSSL_CTX( method );
-
-      if ( SSL_CTX_use_certificate_file( ctx, pem_certificate_file_path, SSL_FILETYPE_PEM ) > 0 )
-      {
-        if ( !pem_private_key_passphrase.empty() )
-        {
-          SSL_CTX_set_default_passwd_cb( ctx, pem_password_callback );
-          SSL_CTX_set_default_passwd_cb_userdata( ctx, this );
-        }
-
-        if ( SSL_CTX_use_PrivateKey_file( ctx, pem_private_key_file_path, SSL_FILETYPE_PEM ) > 0 )
-          return;
-      }
-
-      throwOpenSSLException();
-    }
-
-    SSLContext( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
-      : pem_private_key_passphrase( pem_private_key_passphrase )
-    {
-      ctx = createSSL_CTX( method );
-
-      BIO* pem_certificate_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_certificate_str.c_str() ) ), static_cast<int>( pem_certificate_str.size() ) );
-      if ( pem_certificate_bio != NULL )
-      {
-        X509* cert = PEM_read_bio_X509( pem_certificate_bio, NULL, pem_password_callback, this );
-        if ( cert != NULL )
-        {
-          SSL_CTX_use_certificate( ctx, cert );
-
-          BIO* pem_private_key_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_private_key_str.c_str() ) ), static_cast<int>( pem_private_key_str.size() ) );
-          if ( pem_private_key_bio != NULL )
-          {
-            EVP_PKEY* pkey = PEM_read_bio_PrivateKey( pem_private_key_bio, NULL, pem_password_callback, this );
-            if ( pkey != NULL )
-            {
-              SSL_CTX_use_PrivateKey( ctx, pkey );
-
-              BIO_free( pem_certificate_bio );
-              BIO_free( pem_private_key_bio );
-
-              return;
-            }
-
-            BIO_free( pem_private_key_bio );
-          }
-        }
-
-        BIO_free( pem_certificate_bio );
-      }
-
-      throwOpenSSLException();
-    }
-
-    SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
-    {
-      ctx = createSSL_CTX( method );
-
-      BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
-      if ( bio != NULL )
-      {
-        PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );
-        if ( p12 != NULL )
-        {
-          EVP_PKEY* pkey = NULL;
-          X509* cert = NULL;
-          STACK_OF( X509 )* ca = NULL;
-          if ( PKCS12_parse( p12, pkcs12_passphrase.c_str(), &pkey, &cert, &ca ) )
-          {
-            if ( pkey != NULL && cert != NULL && ca != NULL )
-            {
-              SSL_CTX_use_certificate( ctx, cert );
-              SSL_CTX_use_PrivateKey( ctx, pkey );
-
-              X509_STORE* store = SSL_CTX_get_cert_store( ctx );
-              for ( int i = 0; i < sk_X509_num( ca ); i++ )
-              {
-                X509* store_cert = sk_X509_value( ca, i );
-                X509_STORE_add_cert( store, store_cert );
-              }
-
-              BIO_free( bio );
-
-              return;
-            }
-            else
-            {
-              BIO_free( bio );
-              throw Exception( "invalid PKCS#12 file or passphrase" );
-            }
-          }
-        }
-
-        BIO_free( bio );
-      }
-
-      throwOpenSSLException();
-    }
+    SSLContext( SSL_METHOD* method = SSLv23_client_method() ); // No certificate
+    SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );
+    SSLContext( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase );
+    SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
 
     SSL_CTX* get_ssl_ctx() const { return ctx; }
 
@@ -1032,282 +1195,51 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SSLContext, 215 );
 
   private:
-    ~SSLContext()
-    {
-      SSL_CTX_free( ctx );
-    }
-
+    ~SSLContext();
 
     std::string pem_private_key_passphrase;
 
     SSL_CTX* ctx;
 
 
-    SSL_CTX* createSSL_CTX( SSL_METHOD* method )
-    {
-      SSL_library_init();
-      OpenSSL_add_all_algorithms();
-
-      SSL_CTX* ctx = SSL_CTX_new( method );
-      if ( ctx != NULL )
-      {
-#ifdef SSL_OP_NO_TICKET
-        SSL_CTX_set_options( ctx, SSL_OP_ALL|SSL_OP_NO_TICKET );
-#else
-        SSL_CTX_set_options( ctx, SSL_OP_ALL );
-#endif
-        SSL_CTX_set_verify( ctx, SSL_VERIFY_NONE, NULL );
-        return ctx;
-      }
-      else
-      {
-        throwOpenSSLException();
-        return NULL;
-      }
-    }
-
-    static int pem_password_callback( char *buf, int size, int, void *userdata )
-    {
-      SSLContext* this_ = static_cast<SSLContext*>( userdata );
-      if ( size > static_cast<int>( this_->pem_private_key_passphrase.size() ) )
-        size = static_cast<int>( this_->pem_private_key_passphrase.size() );
-      memcpy_s( buf, size, this_->pem_private_key_passphrase.c_str(), size );
-      return size;
-    }
-
-    void throwOpenSSLException()
-    {
-      SSL_load_error_strings();
-      throw Exception( ERR_error_string( ERR_get_error(), NULL ) );
-    }
+    SSL_CTX* createSSL_CTX( SSL_METHOD* method );
+    static int pem_password_callback( char *buf, int size, int, void *userdata );
+    void throwOpenSSLException();
 	};
 
 
   class SSLSocket : public TCPSocket
   {
   public:
-    SSLSocket( auto_Object<SSLContext> ctx, auto_Object<Log> log = NULL ) // Steals a reference to ctx
-      : TCPSocket( log ), ctx( ctx )
-    {
-      ssl = SSL_new( ctx->get_ssl_ctx() );
-//      SSL_set_mode( ssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER );
-      init( log );
-    }
+    SSLSocket( auto_Object<SSLContext> ctx, auto_Object<Log> log = NULL );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // InputStream
-    Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-    {
-      int SSL_read_ret = SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
-      if ( SSL_read_ret > 0 )
-      {
-        if ( log != NULL )
-        {
-          Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
-          log_stream << "SSLSocket: read on " << this << ": ";
-          log_stream.write( buffer, static_cast<size_t>( SSL_read_ret ) );
-        }
-
-        if ( out_bytes_read )
-          *out_bytes_read = static_cast<size_t>( SSL_read_ret );
-
-        return STREAM_STATUS_OK;
-      }
-      else
-        return returnSSLStatus();
-    }
+    YIELD_INPUT_STREAM_PROTOTYPES;
 
     // OutputStream
-    Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-    {
-      int SSL_write_ret;
-      if ( buffers_count == 1 ) // && buffers[0].iov_len < SSL_MAX_CONTENT_LEN )
-      {
-        SSL_write_ret = SSL_write( ssl, buffers[0].iov_base, static_cast<int>( buffers[0].iov_len ) );
-        if ( SSL_write_ret > 0 && out_bytes_written )
-          *out_bytes_written = static_cast<size_t>( SSL_write_ret );
-      }
-      else // Concatenate buffers into a single write_buffer and write that
-      {
-        if ( write_buffer == NULL )
-        {
-          for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
- 	          write_buffer_len += buffers[buffer_i].iov_len;
-          write_buffer_p = write_buffer = new unsigned char[write_buffer_len];
-          for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-          {
-            memcpy_s( write_buffer_p, buffers[buffer_i].iov_len, buffers[buffer_i].iov_base, buffers[buffer_i].iov_len );
-            write_buffer_p += buffers[buffer_i].iov_len;
-          }
-          write_buffer_p = write_buffer;
-        }
-
-        size_t total_bytes_written = 0;
-//	      for ( ;; ) // SSL_write multiple times if the buffer is > the max record len
-//        {
-          int SSL_write_len = static_cast<int>( write_buffer_len - static_cast<size_t>( write_buffer_p - write_buffer ) );
-    //			if ( SSL_write_len > SSL_MAX_CONTENT_LEN ) SSL_write_len = SSL_MAX_CONTENT_LEN;
-          SSL_write_ret = SSL_write( ssl, reinterpret_cast<unsigned char*>( write_buffer_p ), SSL_write_len );
-          if ( SSL_write_ret > 0 )
-          {
-            write_buffer_p += SSL_write_ret;
-            total_bytes_written += SSL_write_ret;
-
-            if ( static_cast<size_t>( write_buffer_p - write_buffer ) == write_buffer_len )
-            {
-              delete [] write_buffer;
-              write_buffer_p = write_buffer = NULL;
-              write_buffer_len = 0;
-
-              if ( out_bytes_written )
-                *out_bytes_written = total_bytes_written;
-
-              // break;
-            }
-            else
-              DebugBreak(); // continue;
-  	      }
-//          else
-//            break;
-//        }
-      }
-
-      if ( SSL_write_ret > 0 )
-      {
-        if ( log != NULL )
-        {
-          Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
-          log_stream << "SSLSocket: write on " << this << ": ";
-          log_stream.write( buffers, buffers_count );
-        }
-
-        return STREAM_STATUS_OK;
-      }
-      else
-        return returnSSLStatus();
-    }
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
     // TCPSocket
-    auto_Object<SSLSocket> accept()
-    {
-      SSL_set_fd( ssl, *this );
-      int peer_socket = static_cast<int>( TCPSocket::_accept() );
-      if ( peer_socket != -1 )
-      {
-        SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
-        SSL_set_fd( peer_ssl, peer_socket );
-        SSL_set_accept_state( peer_ssl );
-        return new SSLSocket( get_domain(), *peer_ssl, log );
-      }
-      else
-        return NULL;
-    }
-
-    Stream::Status connect( auto_Object<SocketAddress> peer_sockaddr )
-    {
-      Stream::Status connect_status = TCPSocket::connect( peer_sockaddr );
-      if ( connect_status == STREAM_STATUS_OK )
-      {
-        SSL_set_fd( ssl, *this );
-        SSL_set_connect_state( ssl );
-      }
-      return connect_status;
-    }
-
-    bool shutdown()
-    {
-      if ( SSL_shutdown( ssl ) != -1 )
-        return TCPSocket::shutdown();
-      else
-        return false;
-    }
+    auto_Object<TCPSocket> accept();
+    Stream::Status connect( auto_Object<SocketAddress> peer_sockaddr );
+    bool shutdown();
 
   private:
-    SSLSocket( int domain, SSL& ssl, auto_Object<Log> log )
-      : TCPSocket( domain, SSL_get_fd( &ssl ), log ),
-        ssl( &ssl )
-    {
-      ctx = NULL;
-      init( log );
-    }
+    SSLSocket( int domain, SSL& ssl, auto_Object<Log> log );
+    ~SSLSocket();
 
-    ~SSLSocket()
-    {
-      SSL_free( ssl );
-      delete [] write_buffer;
-    }
-
-    void init( auto_Object<Log> log )
-    {
-      write_buffer = write_buffer_p = NULL;
-      write_buffer_len = 0;
-      if ( log != NULL )
-      {
-        SSL_set_app_data( ssl, reinterpret_cast<char*>( this ) );
-        SSL_set_info_callback( ssl, info_callback );
-      }
-    }
 
     auto_Object<SSLContext> ctx;
     SSL* ssl;
     unsigned char *write_buffer, *write_buffer_p; size_t write_buffer_len;
 
 
-    static void info_callback( const SSL* ssl, int where, int ret )
-    {
-      std::ostringstream info;
-
-      int w = where & ~SSL_ST_MASK;
-      if ( ( w & SSL_ST_CONNECT ) == SSL_ST_CONNECT ) info << "SSL_connect:";
-      else if ( ( w & SSL_ST_ACCEPT ) == SSL_ST_ACCEPT ) info << "SSL_accept:";
-      else info << "undefined:";
-
-      if ( ( where & SSL_CB_LOOP ) == SSL_CB_LOOP )
-        info << SSL_state_string_long( ssl );
-      else if ( ( where & SSL_CB_ALERT ) == SSL_CB_ALERT )
-      {
-        if ( ( where & SSL_CB_READ ) == SSL_CB_READ )
-          info << "read:";
-        else
-          info << "write:";
-        info << "SSL3 alert" << SSL_alert_type_string_long( ret ) << ":" << SSL_alert_desc_string_long( ret );
-      }
-      else if ( ( where & SSL_CB_EXIT ) == SSL_CB_EXIT )
-      {
-        if ( ret == 0 )
-          info << "failed in " << SSL_state_string_long( ssl );
-        else
-          info << "error in " << SSL_state_string_long( ssl );
-      }
-      else
-        return;
-
-      reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
-    }
-
-    Stream::Status returnSSLStatus()
-    {
-      if ( SSL_want_read( ssl ) == 1 )
-      {
-        if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-          log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on read on socket #" << this << ".";
-        return STREAM_STATUS_WANT_READ;
-      }
-      if ( SSL_want_write( ssl ) == 1 )
-      {
-        if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-          log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on write on " << this << ".";
-        return STREAM_STATUS_WANT_WRITE;
-      }
-      else
-      {
-        if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-          log->getStream( Log::LOG_INFO ) << "SSLSocket: lost connection on " << this << ", error = " << Exception::strerror() << ".";
-        return STREAM_STATUS_ERROR;
-      }
-    }
+    static void info_callback( const SSL* ssl, int where, int ret );
+    void init( auto_Object<Log> log );
+    Stream::Status returnSSLStatus();
   };
 
 
@@ -1322,13 +1254,13 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SSLSocketFactory, 217 );
 
     // SocketFactory
-    virtual auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
+    auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
     {
       return new SSLSocket( ssl_context, log != NULL ? log : this->log );
     }
 
     // TCPSocketFactory
-    virtual auto_Object<TCPSocket> createTCPSocket( auto_Object<Log> log = NULL )
+    auto_Object<TCPSocket> createTCPSocket( auto_Object<Log> log = NULL )
     {
       return new SSLSocket( ssl_context, log != NULL ? log : this->log );
     }
@@ -1357,7 +1289,7 @@ namespace YIELD
     const Time& get_timeout() const { return timeout; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( TimerEvent, 205 );    
+    YIELD_OBJECT_PROTOTYPES( TimerEvent, 218 );    
 
   private:
     ~TimerEvent() { }
@@ -1376,7 +1308,7 @@ namespace YIELD
 //    bool leaveMulticastGroup( auto_Object<SocketAddress> multicast_group_sockaddr );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( UDPSocket, 218 );
+    YIELD_OBJECT_PROTOTYPES( UDPSocket, 219 );
 
     // InputStream
     YIELD_INPUT_STREAM_PROTOTYPES;
@@ -1394,7 +1326,7 @@ namespace YIELD
     { }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( UDPSocketFactory, 219 );
+    YIELD_OBJECT_PROTOTYPES( UDPSocketFactory, 220 );
 
     // SocketFactory
     auto_Object<Socket> createSocket( auto_Object<Log> log = NULL )
@@ -1420,6 +1352,10 @@ namespace YIELD
     URI( const std::string& uri ) { init( uri.c_str(), uri.size() ); }
     URI( const char* uri, size_t uri_len ) { init( uri, uri_len ); }
 
+    URI( const char* scheme, const char* host, uint16_t port ) // For testing
+      : scheme( scheme ), host( host ), port( port ), resource( "/" )
+    { }    
+
     URI( const char* scheme, const char* host, uint16_t port, const char* resource ) // For testing
       : scheme( scheme ), host( host ), port( port ), resource( resource )
     { }
@@ -1436,7 +1372,7 @@ namespace YIELD
     void set_port( unsigned short port ) { this->port = port; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( URI, 220 );
+    YIELD_OBJECT_PROTOTYPES( URI, 221 );
 
   private:
     URI( UriUriStructA& parsed_uri )
@@ -1469,128 +1405,19 @@ namespace YIELD
   class zlibOutputStream : public OutputStream
   {
   public:
-    zlibOutputStream()
-    {
-      zstream.zalloc = Z_NULL;
-      zstream.zfree = Z_NULL;
-      zstream.opaque = Z_NULL;
-      out_ev = NULL;
-    }
+    zlibOutputStream();
 
-    auto_Object<String> serialize( String& s, int level = Z_BEST_COMPRESSION )
-    {
-      if ( deflateInit( &zstream, level ) == Z_OK )
-      {
-        zstream.next_out = reinterpret_cast<Bytef*>( zout );
-        zstream.avail_out = sizeof( zout );
-        total_bytes_written = 0;
-        out_ev = new String();
-
-        s.serialize( *this, NULL );
-
-        int deflate_ret;
-
-        while ( ( deflate_ret = deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
-        {
-          out_ev->append( zout, sizeof( zout ) );
-          zstream.next_out = reinterpret_cast<Bytef*>( zout );
-          zstream.avail_out = sizeof( zout );
-        }
-
-        if ( deflate_ret == Z_STREAM_END )
-        {
-          if ( ( deflate_ret = deflateEnd( &zstream ) ) == Z_OK )
-          {
-            if ( zstream.avail_out < sizeof( zout ) )
-              out_ev->append( zout, sizeof( zout ) - zstream.avail_out );
-
-            if ( out_ev->size() < total_bytes_written ) // i.e. the compressed buffer is smaller than the input buffer(s)
-              return out_ev;
-          }
-        }
-
-        Object::decRef( *out_ev );
-      }
-
-      return NULL;
-    }
-
-    // OutputStream
-    Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-    {
-      int deflate_ret;
-      size_t bytes_written = 0;
-
-      for ( size_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-      {
-        zstream.next_in = reinterpret_cast<Bytef*>( buffers[buffer_i].iov_base );
-        zstream.avail_in = buffers[buffer_i].iov_len;
-        bytes_written += buffers[buffer_i].iov_len;
-        total_bytes_written += buffers[buffer_i].iov_len;
-
-        while ( ( deflate_ret = deflate( &zstream, Z_NO_FLUSH ) ) == Z_OK )
-        {
-          if ( zstream.avail_out > 0 )
-          {
-            if ( out_bytes_written )
-              *out_bytes_written = bytes_written;
-            return STREAM_STATUS_OK;
-          }
-          else
-          {
-            out_ev->append( zout, sizeof( zout ) );
-            zstream.next_out = reinterpret_cast<Bytef*>( zout );
-            zstream.avail_out = sizeof( zout );
-          }
-        }
-      }
-
-      if ( deflate_ret == Z_OK )
-      {
-        if ( out_bytes_written )
-          *out_bytes_written = bytes_written;
-        return STREAM_STATUS_OK;
-      }
-      else
-        return STREAM_STATUS_ERROR;
-    }
+    auto_Object<String> serialize( String& s, int level = Z_BEST_COMPRESSION );
 
   private:
     z_stream zstream;
     char zout[4096]; size_t total_bytes_written;
-    String* out_ev;
+    String* out_s;
+
+    // OutputStream
+    YIELD_OUTPUT_STREAM_PROTOTYPES;
   };
 #endif
-
-
-  template <class ClientType, class StageGroupType>
-  auto_Object<ClientType> Client::create( auto_Object<StageGroupType> stage_group, auto_Object<Log> log, const Time& operation_timeout, const URI& peer_uri, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-  {
-    auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( peer_uri );
-    if ( peer_sockaddr != NULL )
-    {
-      ClientType* client = new ClientType( log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
-      static_cast<StageGroup*>( stage_group.get() )->createStage<ClientType, FDAndInternalEventQueue>( client->incRef(), new FDAndInternalEventQueue );
-      return client;
-    }
-    else
-      return NULL;
-  }
-
-
-  template <class StageGroupType>
-  bool HTTPServer::create( auto_Object<StageGroupType> stage_group, auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> http_request_target, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory )
-  {
-    auto_Object<HTTPResponseWriter> http_response_writer = HTTPResponseWriter::create( stage_group );
-    auto_Object<HTTPRequestReader> http_request_reader = HTTPRequestReader::create( stage_group, http_request_target, http_response_writer->incRef() );
-    if ( http_request_reader != NULL )
-    {
-      auto_Object<TCPListener> tcp_listener = TCPListener::create( stage_group->incRef(), local_sockaddr, http_request_reader.release(), log );
-      if ( tcp_listener != NULL )
-        return true;
-    }
-    return false;
-  }
 };
 
 #endif

@@ -1,4 +1,4 @@
-// Revision: 1462
+// Revision: 1472
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -90,13 +90,6 @@ SEDAStageGroup::~SEDAStageGroup()
   for ( std::vector<SEDAStageGroupThread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     Object::decRef( **thread_i );
 }
-auto_Object<Stage> SEDAStageGroup::createStage( auto_Object<EventHandler> event_handler, int16_t threads, auto_Object<EventQueue> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log )
-{
-  if ( event_queue == NULL )
-    return createStage<EventHandler>( event_handler, threads, stage_stats_event_target, log );
-  else
-    return createStage<EventHandler, EventQueue>( event_handler, threads, event_queue, stage_stats_event_target, log );
-}
 void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 {
   for ( unsigned short thread_i = 0; thread_i < threads; thread_i++ )
@@ -118,8 +111,8 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 #error
 #endif
 #endif
-StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, EventTarget* stage_stats_event_target, auto_Object<Log> log )
-: name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target ), log( log )
+StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_Object<EventTarget> stage_stats_event_target )
+: name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target )
 {
   if ( limit_physical_processor_set != NULL )
   {
@@ -136,12 +129,6 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
     }
   }
   running_stage_group_thread_tls_key = Thread::createTLSKey();
-  memset( stages, 0, sizeof( stages ) );
-}
-StageGroup::~StageGroup()
-{
-  for ( uint8_t stage_i = 0; stage_i < YIELD_ARCH_STAGES_PER_GROUP_MAX; stage_i++ )
-    Object::decRef( stages[stage_i] );
 }
 
 

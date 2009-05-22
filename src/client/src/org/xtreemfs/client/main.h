@@ -4,9 +4,6 @@
 #ifndef CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
 #define CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
 
-#if !defined(YIELD_HAVE_OPENSSL) && defined(_WIN32)
-#define YIELD_HAVE_OPENSSL 1
-#endif
 #include "yield/main.h"
 
 #include "org/xtreemfs/client.h"
@@ -202,7 +199,7 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );          
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( stage_group, checked_uri, get_log(), operation_timeout, 3, get_socket_factory() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_socket_factory(), stage_group, get_log(), operation_timeout, 3 );
           return proxy;
         }
 

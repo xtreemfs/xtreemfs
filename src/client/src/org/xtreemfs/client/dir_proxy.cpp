@@ -5,18 +5,9 @@
 #include "policy_container.h"
 using namespace org::xtreemfs::client;
 
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
-#include "org/xtreemfs/interfaces/dir_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
 
-
-DIRProxy::DIRProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory )
-  : YIELD::ONCRPCClient( new org::xtreemfs::interfaces::DIRInterface, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+DIRProxy::DIRProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory )
+  : YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
 {
   policies = new PolicyContainer;
 }
@@ -28,13 +19,13 @@ DIRProxy::~DIRProxy()
     YIELD::Object::decRef( *uuid_to_uri_i->second );
 }
 
-YIELD::auto_Object<YIELD::Request> DIRProxy::createProtocolRequest( YIELD::auto_Object<YIELD::Request> request )
+YIELD::auto_Object<YIELD::ONCRPCRequest> DIRProxy::createProtocolRequest( YIELD::auto_Object<YIELD::Request> request )
 {
   YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
   policies->getCurrentUserCredentials( *user_credentials.get() );
-  YIELD::auto_Object<YIELD::Request> oncrpc_request = YIELD::ONCRPCClient::createProtocolRequest( request );
-  static_cast<YIELD::ONCRPCRequest*>( oncrpc_request.get() )->set_credential_auth_flavor( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR );
-  static_cast<YIELD::ONCRPCRequest*>( oncrpc_request.get() )->set_credential( user_credentials.release() );
+  YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = YIELD::ONCRPCClient<DIRInterface>::createProtocolRequest( request );
+  oncrpc_request->set_credential_auth_flavor( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR );
+  oncrpc_request->set_credential( user_credentials.release() );
   return oncrpc_request;
 }
 
@@ -65,7 +56,7 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid
   }
 
   org::xtreemfs::interfaces::AddressMappingSet address_mappings;
-  static_cast<org::xtreemfs::interfaces::DIRInterface&>( *_interface ).xtreemfs_address_mappings_get( uuid, address_mappings, this );
+  xtreemfs_address_mappings_get( uuid, address_mappings );
   if ( !address_mappings.empty() )
   {
     CachedAddressMappingURI* uri = new CachedAddressMappingURI( address_mappings[0].get_uri(), address_mappings[0].get_ttl_s() );
@@ -81,7 +72,7 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid
 YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
 {
   org::xtreemfs::interfaces::ServiceSet services;
-  static_cast<org::xtreemfs::interfaces::DIRInterface&>( *_interface ).xtreemfs_service_get_by_name( volume_name, services, this );
+  xtreemfs_service_get_by_name( volume_name, services );
   if ( !services.empty() )
   {
     for ( org::xtreemfs::interfaces::ServiceSet::const_iterator service_i = services.begin(); service_i != services.end(); service_i++ )

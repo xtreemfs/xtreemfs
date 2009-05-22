@@ -39,7 +39,7 @@ namespace org
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
           org::xtreemfs::interfaces::VolumeSet volumes;
-          mrc_proxy->lsvol( volumes );
+          mrc_proxy->xtreemfs_lsvol( volumes );
 
           for ( org::xtreemfs::interfaces::VolumeSet::const_iterator volume_i = volumes.begin(); volume_i != volumes.end(); volume_i++ )
           {

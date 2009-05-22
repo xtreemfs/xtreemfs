@@ -27,7 +27,7 @@ namespace org
         int _main( int, char** )
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
-          mrc_proxy->rmvol( volume_name );
+          mrc_proxy->xtreemfs_rmvol( volume_name );
           return 0;
         }
 

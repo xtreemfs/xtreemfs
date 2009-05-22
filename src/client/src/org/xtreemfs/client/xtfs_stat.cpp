@@ -64,7 +64,7 @@ namespace org
           org::xtreemfs::interfaces::ReplicaSet replicas;
           try
           {
-            mrc_proxy->replica_list( stbuf.get_file_id(), replicas );
+            mrc_proxy->xtreemfs_replica_list( stbuf.get_file_id(), replicas );
           }
           catch ( YIELD::Exception& )
           { }

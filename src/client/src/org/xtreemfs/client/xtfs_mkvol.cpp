@@ -60,7 +60,7 @@ namespace org
         int _main( int, char** )
         {
           YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
-          mrc_proxy->mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), std::string(), std::string() ) );
+          mrc_proxy->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), std::string(), std::string() ) );
           return 0;
         }
 

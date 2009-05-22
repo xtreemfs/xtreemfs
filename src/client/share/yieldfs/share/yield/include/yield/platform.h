@@ -2902,8 +2902,8 @@ namespace YIELD
   class TestSuite : public std::vector<TestCase*>
   {
   public:
-    TestSuite( const char* = NULL )
-    { }
+    TestSuite() { }
+    TestSuite( const std::string& ) { }
 
     virtual ~TestSuite();
 
@@ -2918,18 +2918,24 @@ namespace YIELD
   class TestCase
   {
   public:
-    TestCase( const char* test_case_name ) : __short_description( test_case_name ) { }
-    TestCase( const char* test_suite_name, const char* test_case_name ) : __short_description( std::string( test_suite_name ) + "_" + std::string( test_case_name ) ) { }
-    TestCase( const char* test_case_name, TestSuite& __test_suite ) : __short_description( test_case_name ) { __test_suite.addTest( *this ); }
+    TestCase( const std::string& test_case_name ) 
+      : short_description( test_case_name ) 
+    { }
+
+    TestCase( const std::string& test_suite_name, const std::string& test_case_name ) 
+      : short_description( test_suite_name + "_" + test_case_name ) 
+    { }
+
+    TestCase( const std::string& test_case_name, TestSuite& __test_suite ) : short_description( test_case_name ) { __test_suite.addTest( *this ); }
     virtual ~TestCase() { }
 
     virtual void setUp() { }
     virtual void runTest() = 0;
     virtual void tearDown() { }
-    virtual const char* shortDescription() { return __short_description.c_str(); }
+    virtual const char* shortDescription() { return short_description.c_str(); }
 
   protected:
-    std::string __short_description;
+    std::string short_description;
   };
 
 

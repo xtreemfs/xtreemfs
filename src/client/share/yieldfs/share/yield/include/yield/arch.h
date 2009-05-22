@@ -209,20 +209,6 @@ namespace YIELD
   };
 
 
-  class Request : public Event
-  {
-  public:
-    virtual bool respond( Response& ) { DebugBreak(); return false; }
-
-    // Object
-    Request& incRef() { return Object::incRef( *this ); }
-
-  protected:
-    Request() { }
-    virtual ~Request() { }
-  };
-
-
   class Response : public Event
   {
   public:
@@ -232,6 +218,36 @@ namespace YIELD
   protected:
     Response() { }
     virtual ~Response() { }
+  };
+
+
+  class Request : public Event
+  {
+  public:
+    virtual bool respond( Response& response ) 
+    { 
+      if ( response_target != NULL )
+        return response_target->send( response );
+      else
+      {
+        Object::decRef( response );
+        DebugBreak();
+        return false;
+      }
+    }
+
+    // Object
+    Request& incRef() { return Object::incRef( *this ); }
+
+    auto_Object<EventTarget> get_response_target() const { return response_target; }
+    void set_response_target( auto_Object<EventTarget> response_target ) { this->response_target = response_target; }
+
+  protected:
+    Request() { }
+    virtual ~Request() { }
+
+  private:
+    auto_Object<EventTarget> response_target;
   };
 
 
@@ -325,7 +341,7 @@ namespace YIELD
   class StageImpl : public Stage//, private StatsEventSource<LockType>
   {
   public:
-    StageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, EventTarget*, auto_Object<Log> log )
+    StageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget>, auto_Object<Log> log )
       : //StatsEventSource<LockType>( 2000, stage_stats_event_target ),
         event_handler( event_handler ), event_queue( event_queue ), log( log )
     {
@@ -521,23 +537,78 @@ namespace YIELD
   class StageGroup : public Object
   {
   public:
-    template <class EventHandlerType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), 1, NULL, NULL, NULL ); }
-    template <class EventHandlerType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), threads, NULL, NULL, NULL ); }
-    template <class EventHandlerType, class EventQueueType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), 1, static_cast<EventQueue*>( event_queue.release() ), NULL, NULL ); }
-    template <class EventHandlerType, class EventQueueType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, auto_Object<Log> log ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), 1, static_cast<EventQueue*>( event_queue.release() ), NULL, log ); }
-    template <class EventHandlerType, class EventQueueType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), threads, static_cast<EventQueue*>( event_queue.release() ), NULL, NULL ); }
-    template <class EventHandlerType, class EventQueueType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, EventTarget& stage_stats_event_target ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), threads, static_cast<EventQueue*>( event_queue.release() ), &stage_stats_event_target, NULL ); }
-    template <class EventHandlerType, class EventQueueType> auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, EventTarget& stage_stats_event_target, auto_Object<Log> log ) { return createStage( static_cast<EventHandler*>( event_handler.release() ), threads, static_cast<EventQueue*>( event_queue.release() ), &stage_stats_event_target, log ); }
+    virtual auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, 
+                                            int16_t threads = 1, 
+                                            auto_Object<EventQueue> event_queue = NULL, 
+                                            auto_Object<EventTarget> stage_stats_event_target = NULL, 
+                                            auto_Object<Log> log = NULL ) = 0;
 
-    inline auto_Object<ProcessorSet> get_limit_physical_processor_set() const { return limit_physical_processor_set; }
-    inline auto_Object<ProcessorSet> get_limit_logical_processor_set() const { return limit_logical_processor_set; }
+    auto_Object<ProcessorSet> get_limit_physical_processor_set() const { return limit_physical_processor_set; }
+    auto_Object<ProcessorSet> get_limit_logical_processor_set() const { return limit_logical_processor_set; }
+    const std::string& get_name() const { return name; }
     unsigned long get_running_stage_group_thread_tls_key() const { return running_stage_group_thread_tls_key; }
     inline StageGroupThread* get_running_stage_group_thread() const { return static_cast<StageGroupThread*>( Thread::getTLS( running_stage_group_thread_tls_key ) ); }
-    inline EventTarget* get_stage_stats_event_target() const { return stage_stats_event_target; }
+
+    // Object
+    StageGroup& incRef() { return Object::incRef( *this ); }
 
   protected:
-    StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set = NULL, EventTarget* stage_stats_event_target = NULL, auto_Object<Log> log = NULL );
-    virtual ~StageGroup();
+    StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_Object<EventTarget> stage_stats_event_target );
+    virtual ~StageGroup() { }
+
+    auto_Object<EventTarget> get_stage_stats_event_target() const { return stage_stats_event_target; }
+
+  private:
+    std::string name;
+    auto_Object<ProcessorSet> limit_physical_processor_set, limit_logical_processor_set;
+    auto_Object<EventTarget> stage_stats_event_target;
+
+    unsigned long running_stage_group_thread_tls_key;
+  };
+
+    
+  template <class StageGroupType> // CRTP
+  class StageGroupImpl : public StageGroup 
+  {
+  public:
+    // Templated createStage's that pass the real EventHandler and EventQueue types to StageImpl to bypass the interfaces
+    template <class EventHandlerType>
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads = 1, auto_Object<EventQueue> event_queue = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    {
+      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, threads, new OneSignalEventQueue<>, stage_stats_event_target, log );
+    }
+
+    template <class EventHandlerType, class EventQueueType>
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    {
+      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, EventQueueType>( event_handler, threads, event_queue, stage_stats_event_target, log );
+    }
+
+    // StageGroup
+    auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t threads = 1, auto_Object<EventQueue> event_queue = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    {
+      if ( event_queue == NULL )
+        return createStage<EventHandler>( event_handler, threads, event_queue, stage_stats_event_target, log );
+      else
+        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, threads, event_queue, stage_stats_event_target, log );
+    }
+
+  protected:
+    StageGroupImpl( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_Object<EventTarget> stage_stats_event_target, auto_Object<Log> log )
+      : StageGroup( name, limit_physical_processor_set, stage_stats_event_target ), log( log )
+    {
+      memset( stages, 0, sizeof( stages ) );
+    }
+
+    virtual ~StageGroupImpl()
+    {
+      for ( uint8_t stage_i = 0; stage_i < YIELD_ARCH_STAGES_PER_GROUP_MAX; stage_i++ )
+        Object::decRef( stages[stage_i] );
+    }
+
+    auto_Object<Log> log;
+
+    Stage* stages[YIELD_ARCH_STAGES_PER_GROUP_MAX];
 
     void addStage( auto_Object<Stage> stage )
     {
@@ -555,18 +626,6 @@ namespace YIELD
     }
 
     auto_Object<Log> get_log() const { return log; }
-    const std::string& get_name() const { return name; }
-
-    virtual auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t threads, auto_Object<EventQueue> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log ) = 0;
-
-  private:
-    std::string name;
-    auto_Object<ProcessorSet> limit_physical_processor_set, limit_logical_processor_set;
-    EventTarget* stage_stats_event_target;
-    auto_Object<Log> log;
-
-    unsigned long running_stage_group_thread_tls_key;
-    Stage* stages[YIELD_ARCH_STAGES_PER_GROUP_MAX];
   };
 
 
@@ -686,22 +745,28 @@ namespace YIELD
   class SEDAStageGroupThread;
 
 
-  class SEDAStageGroup : public StageGroup
+  class SEDAStageGroup : public StageGroupImpl<SEDAStageGroup>
   {
   public:
-    SEDAStageGroup( const char* name, ProcessorSet* limit_physical_processor_set = NULL, EventTarget* stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
-        : StageGroup( name, limit_physical_processor_set, stage_stats_event_target, log )
+    SEDAStageGroup( const char* name, ProcessorSet* limit_physical_processor_set = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+        : StageGroupImpl<SEDAStageGroup>( name, limit_physical_processor_set, stage_stats_event_target, log )
     { }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
 
-    // Templated createStage's that pass the real EventHandler and EventQueue types to StageImpl to bypass the interfaces
-    template <class EventHandlerType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, EventTarget* stage_stats_event_target, auto_Object<Log> log )
-    {
-      return createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, threads, new OneSignalEventQueue<>, stage_stats_event_target, log );
-    }
+  protected:
+    virtual ~SEDAStageGroup();
+
+  private:
+    friend class StageGroupImpl<SEDAStageGroup>;
+
+
+    std::vector<SEDAStageGroupThread*> threads;
+    void startThreads( auto_Object<Stage> stage, int16_t threads );
+
 
     template <class EventHandlerType, class EventQueueType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log )
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target, auto_Object<Log> log )
     {
       if ( threads == -1 )
       {
@@ -729,19 +794,6 @@ namespace YIELD
       return stage;
     }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
-
-    // StageGroup
-    auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t threads, auto_Object<EventQueue> event_queue, EventTarget* stage_stats_event_target, auto_Object<Log> log );
-
-  protected:
-    virtual ~SEDAStageGroup();
-
-  private:
-    void startThreads( auto_Object<Stage> stage, int16_t threads );
-
-    std::vector<SEDAStageGroupThread*> threads;
   };
 };
 

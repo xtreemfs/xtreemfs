@@ -27,7 +27,7 @@ python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIE
 REM Generate project files 
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client
 REM Library projects
-python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\src\interfaces\org\xtreemfs -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib --Dw YIELD_HAVE_OPENSSL -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\src\interfaces\org\xtreemfs -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
 
 REM Binary projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%

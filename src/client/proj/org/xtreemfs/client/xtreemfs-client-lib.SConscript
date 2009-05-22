@@ -58,6 +58,14 @@ except:
 
     Export( "build_env", "build_conf" )
 
+defines = []
+if sys.platform.startswith( "win" ): defines.extend( ["YIELD_HAVE_OPENSSL"] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
+
 include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
@@ -78,7 +86,6 @@ build_env.Library( "../../../../lib/xtreemfs-client", (
     r"../../../../src/org/xtreemfs/client/dir_proxy.cpp",
     r"../../../../src/org/xtreemfs/client/file.cpp",
     r"../../../../src/org/xtreemfs/client/mrc_proxy.cpp",
-    r"../../../../src/org/xtreemfs/client/osd_proxy.cpp",
     r"../../../../src/org/xtreemfs/client/path.cpp",
     r"../../../../src/org/xtreemfs/client/policy_container.cpp",
     r"../../../../src/org/xtreemfs/client/proxy_exception_response.cpp",

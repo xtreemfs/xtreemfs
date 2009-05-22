@@ -42,9 +42,9 @@ Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, YIELD::auto_
   : name( name ), flags( flags ), log( log )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( stage_group, dir_uri, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
+  dir_proxy = DIRProxy::create( dir_uri, socket_factory, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( stage_group, *mrc_uri, log, 5 * NS_IN_S, YIELD::Client::RECONNECT_TRIES_MAX_DEFAULT, socket_factory );
+  mrc_proxy = MRCProxy::create( *mrc_uri, socket_factory, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT );
 }
 
 Volume::~Volume()
@@ -117,13 +117,13 @@ YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid 
 
   if ( osd_proxy == NULL )
   {
-    osd_proxy = OSDProxy::create( stage_group, *osd_uri, dir_proxy->get_log(), dir_proxy->get_operation_timeout(), dir_proxy->get_reconnect_tries_max(), dir_proxy->get_socket_factory() ).release();
+    osd_proxy = OSDProxy::create( *osd_uri, dir_proxy->get_socket_factory(), stage_group, dir_proxy->get_log(), dir_proxy->get_operation_timeout(), dir_proxy->get_reconnect_tries_max() ).release();
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();
   }
 
-  return osd_proxy->incRef();
+  return static_cast<OSDProxy&>( osd_proxy->incRef() );
 }
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
@@ -153,7 +153,7 @@ bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallba
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( listdir )
   {
     org::xtreemfs::interfaces::StringSet names;
-    mrc_proxy->listdir( Path( this->name, path ), names );
+    mrc_proxy->xtreemfs_listdir( Path( this->name, path ), names );
     for ( org::xtreemfs::interfaces::StringSet::const_iterator name_i = names.begin(); name_i != names.end(); name_i++ )
     {
       if ( !callback( *name_i ) )

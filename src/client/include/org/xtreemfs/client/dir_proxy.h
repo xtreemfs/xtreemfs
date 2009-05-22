@@ -6,6 +6,15 @@
 
 #include "org/xtreemfs/client/proxy_exception_response.h"
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+#include "org/xtreemfs/interfaces/dir_interface.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 #include <map>
 #include <string>
 
@@ -14,36 +23,33 @@ namespace org
 {
   namespace xtreemfs
   {
-    namespace interfaces
-    {
-      class DIRInterface;
-    };
-
-
     namespace client
     {
       class PolicyContainer;
 
 
-      class DIRProxy : public YIELD::ONCRPCClient
+      class DIRProxy : public YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>
       {
       public:
         template <class StageGroupType>
-        static YIELD::auto_Object<DIRProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::URI& uri, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
+        static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri, 
+                                                    YIELD::auto_Object<YIELD::SocketFactory> socket_factory,
+                                                    YIELD::auto_Object<StageGroupType> stage_group,                                                     
+                                                    YIELD::auto_Object<YIELD::Log> log = NULL, 
+                                                    const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
+                                                    uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT )
         {
-          return YIELD::Client::create<DIRProxy, StageGroupType>( stage_group, log, operation_timeout, uri, reconnect_tries_max, socket_factory );
+          YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue = new YIELD::FDAndInternalEventQueue;
+          YIELD::auto_Object<DIRProxy> dir_proxy = new DIRProxy( fd_event_queue, log, operation_timeout, new YIELD::SocketAddress( absolute_uri ), reconnect_tries_max, socket_factory );
+          stage_group->createStage( dir_proxy->incRef(), 1, fd_event_queue->incRef() );
+          return dir_proxy;
         }
 
         YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
         YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::DIRProxy, 547158291UL );
-
       private:
-        friend class YIELD::Client;
-
-        DIRProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
+        DIRProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~DIRProxy();
 
 
@@ -76,8 +82,8 @@ namespace org
         YIELD::Mutex uuid_to_uri_cache_lock;
 
 
-        // YIELD::Client
-        YIELD::auto_Object<YIELD::Request> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
+        // YIELD::ONCRPCClient
+        YIELD::auto_Object<YIELD::ONCRPCRequest> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
     };
   };

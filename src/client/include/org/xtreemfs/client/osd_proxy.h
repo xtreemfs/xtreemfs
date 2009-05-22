@@ -6,43 +6,44 @@
 
 #include "org/xtreemfs/client/proxy_exception_response.h"
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+#include "org/xtreemfs/interfaces/osd_interface.h"
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 
 namespace org
 {
   namespace xtreemfs
   {
-    namespace interfaces 
-    { 
-      class FileCredentials;
-      class ObjectData;
-      class OSDInterface; 
-      class OSDWriteResponse;
-    }
-
-
     namespace client
     {
-      class OSDProxy : public YIELD::ONCRPCClient
+      class OSDProxy : public YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>
       {
       public:
         template <class StageGroupType>
-        static YIELD::auto_Object<OSDProxy> create( YIELD::auto_Object<StageGroupType> stage_group, const YIELD::URI& uri, YIELD::auto_Object<YIELD::Log> log = NULL, const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, YIELD::auto_Object<YIELD::SocketFactory> socket_factory = NULL )
+        static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
+                                                    YIELD::auto_Object<YIELD::SocketFactory> socket_factory,
+                                                    YIELD::auto_Object<StageGroupType> stage_group,                                                     
+                                                    YIELD::auto_Object<YIELD::Log> log = NULL, 
+                                                    const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
+                                                    uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT )
         {
-          return YIELD::Client::create<OSDProxy, StageGroupType>( stage_group, log, operation_timeout, uri, reconnect_tries_max, socket_factory );
+          YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue = new YIELD::FDAndInternalEventQueue;
+          YIELD::auto_Object<OSDProxy> osd_proxy = new OSDProxy( fd_event_queue, log, operation_timeout, new YIELD::SocketAddress( absolute_uri ), reconnect_tries_max, socket_factory );
+          stage_group->createStage( osd_proxy->incRef(), 1, fd_event_queue->incRef() );
+          return osd_proxy;
         }
 
-        void read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data );
-        void truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
-        void unlink( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );
-        void write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( org::xtreemfs::client::OSDProxy, 1368936964UL );
-
       private:
-        friend class YIELD::Client;
+        OSDProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory )
+          : YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+        { }
 
-        OSDProxy( YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SocketFactory> socket_factory );
         ~OSDProxy() { }
 
         org::xtreemfs::interfaces::OSDInterface* osd_interface;
