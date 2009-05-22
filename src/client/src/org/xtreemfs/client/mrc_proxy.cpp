@@ -34,7 +34,7 @@ void MRCProxy::chown( const Path& path, int uid, int gid )
 #else
   org::xtreemfs::interfaces::UserCredentials user_credentials;
   policies->getUserCredentialsFrompasswd( uid, gid, user_credentials );
-  chown( path, user_credentials.get_user_id(), user_credentials.get_group_ids()[0] );
+  org::xtreemfs::interfaces::MRCInterface::chown( path, user_credentials.get_user_id(), user_credentials.get_group_ids()[0] );
 #endif
 }
 
