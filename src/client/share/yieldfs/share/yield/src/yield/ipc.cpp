@@ -1,4 +1,4 @@
-// Revision: 1472
+// Revision: 1475
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -280,7 +280,7 @@ Client<ProtocolRequestType, ProtocolResponseType>::Client( auto_Object<FDAndInte
 template <class ProtocolRequestType, class ProtocolResponseType>
 Client<ProtocolRequestType, ProtocolResponseType>::~Client()
 {
-  for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
+  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
     Object::decRef( **connection_i );
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
@@ -294,7 +294,7 @@ typename Client<ProtocolRequestType, ProtocolResponseType>::Connection* Client<P
 template <class ProtocolRequestType, class ProtocolResponseType>
 void Client<ProtocolRequestType, ProtocolResponseType>::destroyConnection( Connection* connection )
 {
-  for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
+  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
   {
     if ( **connection_i == *connection )
     {
@@ -354,7 +354,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
       auto_Object<> timer_event_context = timer_event.get_context();
       if ( timer_event_context == NULL ) // Check connection timeouts
       {
-        std::vector<Connection*>::size_type connection_i = 0;
+        typename std::vector<Connection*>::size_type connection_i = 0;
         for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
         {
           Connection* connection = connections[connection_i];
@@ -389,7 +389,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
       auto_Object<ProtocolRequestType> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
       if ( !connections.empty() )
       {
-        for ( std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
+        for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
         {
           if ( ( *connection_i )->get_state() == Connection::IDLE )
           {
@@ -1202,7 +1202,7 @@ void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<Exc
 auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
 {
   auto_Object<StageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
-  auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log, Client::OPERATION_TIMEOUT_DEFAULT, 3 );
+  auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log, HTTPClient::OPERATION_TIMEOUT_DEFAULT, 3 );
   auto_Object<HTTPRequest> http_request = new HTTPRequest( method, absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
   auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > http_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
@@ -1747,11 +1747,19 @@ bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
                          auto_Object<Log> log )
 {
   auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+#ifdef _WIN32
   auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+#else
+  auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+#endif
 
   auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
   auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+#ifdef _WIN32
   auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
+#else
+  auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
+#endif
 
   if ( local_sockaddr == NULL )
     local_sockaddr = new SocketAddress( 80 );
@@ -1772,11 +1780,19 @@ bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
                          auto_Object<Log> log )
 {
   auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+#ifdef _WIN32
   auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+#else
+  auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+#endif
 
   auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
   auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+#ifdef _WIN32
   auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
+#else
+  auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
+#endif
 
   if ( local_sockaddr == NULL )
     local_sockaddr = new SocketAddress( 443 );

@@ -153,56 +153,6 @@ namespace YIELD
   };
 
 
-  class Server
-  {
-  protected:
-    template <class ProtocolRequestType>
-    class ProtocolRequestReader : public EventHandler
-    {
-    public:
-      // Object
-      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );    
-
-      // EventHandler
-      void handleEvent( Event& );
-
-    protected:      
-      ProtocolRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log )
-        : log( log ), fd_event_queue( fd_event_queue )
-      { }
-
-      virtual ~ProtocolRequestReader() { }
-
-
-      auto_Object<Log> log;
-
-
-      virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Socket> _socket ) = 0;
-      virtual bool sendProtocolRequest( auto_Object<ProtocolRequestType> protocol_request ) = 0;
-
-    private:
-      auto_Object<FDAndInternalEventQueue> fd_event_queue;
-    };
-
-
-    template <class ProtocolResponseType>
-    class ProtocolResponseWriter : public EventHandler
-    {
-    public:
-      ProtocolResponseWriter() { }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );
-
-      // EventHandler
-      void handleEvent( Event& );
-
-    protected:
-      virtual ~ProtocolResponseWriter() { }
-    };
-  };
-
-
   class FDEvent : public Event
   {
   public:
@@ -314,6 +264,56 @@ namespace YIELD
     ~FDAndInternalEventQueue() { }
 
     bool dequeue_blocked;
+  };
+
+
+  class Server
+  {
+  protected:
+    template <class ProtocolRequestType>
+    class ProtocolRequestReader : public EventHandler
+    {
+    public:
+      // Object
+      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );    
+
+      // EventHandler
+      void handleEvent( Event& );
+
+    protected:      
+      ProtocolRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log )
+        : log( log ), fd_event_queue( fd_event_queue )
+      { }
+
+      virtual ~ProtocolRequestReader() { }
+
+
+      auto_Object<Log> log;
+
+
+      virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Socket> _socket ) = 0;
+      virtual bool sendProtocolRequest( auto_Object<ProtocolRequestType> protocol_request ) = 0;
+
+    private:
+      auto_Object<FDAndInternalEventQueue> fd_event_queue;
+    };
+
+
+    template <class ProtocolResponseType>
+    class ProtocolResponseWriter : public EventHandler
+    {
+    public:
+      ProtocolResponseWriter() { }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );
+
+      // EventHandler
+      void handleEvent( Event& );
+
+    protected:
+      virtual ~ProtocolResponseWriter() { }
+    };
   };
 
 
@@ -450,7 +450,7 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( HTTPClient, 207 );
 
     // EventHandler
-    virtual void handleEvent( Event& ev ) { Client::handleEvent( ev ); }
+    virtual void handleEvent( Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
   private:
     HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory );
@@ -517,7 +517,8 @@ namespace YIELD
     {
     public:
       HTTPRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<Stage> http_response_writer_stage )
-        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, NULL ), http_response_writer_stage( http_response_writer_stage ), http_request_target( http_request_target )
+        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, NULL ), http_request_target( http_request_target ), http_response_writer_stage( http_response_writer_stage )
+
       { }
 
       // Object
@@ -701,31 +702,14 @@ namespace YIELD
   class ONCRPCClient : public InterfaceType, public Client<ONCRPCRequest, ONCRPCResponse>
   {
   public:
-    static auto_Object< ONCRPCClient<InterfaceType> > create( const URI& absolute_uri, auto_Object<StageGroup> stage_group, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
-    {
-      auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( absolute_uri );
-      if ( peer_sockaddr != NULL && peer_sockaddr->get_port() != 0 )
-      {
-        if ( socket_factory == NULL )
-        {
-#ifdef YIELD_HAVE_OPENSSL
-          if ( absolute_uri.get_scheme() == "oncrpcs" )
-            socket_factory = new SSLSocketFactory( new SSLContext( SSLv23_client_method() ) );
-          else
-#endif
-            socket_factory = new TCPSocketFactory;
-        }
+    static auto_Object< ONCRPCClient<InterfaceType> > create( const URI& absolute_uri, 
+                                                              auto_Object<StageGroup> stage_group, 
+                                                              auto_Object<Log> log = NULL, 
+                                                              const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
+                                                              uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, 
+                                                              auto_Object<SocketFactory> socket_factory = NULL );
 
-        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-        auto_Object< ONCRPCClient<InterfaceType> > oncrpc_client = new ONCRPCClient<InterfaceType>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
-        stage_group->createStage( oncrpc_client->incRef(), 1, fd_event_queue->incRef() );
-        return oncrpc_client;
-      }
-      else
-        return NULL;
-    }
-
-    static auto_Object<Response> ONCRPCClient::send( const URI& absolute_uri, auto_Object<Request> request, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
+    static auto_Object<Response> send( const URI& absolute_uri, auto_Object<Request> request, auto_Object<Log> log = NULL, const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT, auto_Object<SocketFactory> socket_factory = NULL )
     {
       auto_Object<StageGroup> stage_group = new SEDAStageGroup( "ONCRPCClient", 0, NULL, log );
       auto_Object<ONCRPCClient> oncrpc_client = ONCRPCClient<InterfaceType>::create( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, socket_factory );
@@ -738,11 +722,11 @@ namespace YIELD
     }
 
     // EventHandler
-    virtual void handleEvent( Event& ev ) { Client::handleEvent( ev ); }
+    virtual void handleEvent( Event& ev ) { Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev ); }
 
   protected:
     ONCRPCClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-      : Client( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+      : Client<ONCRPCRequest, ONCRPCResponse>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
     { }
 
     virtual ~ONCRPCClient() { }
@@ -781,30 +765,10 @@ namespace YIELD
   class ONCRPCServer : private Server
   {
   public:
-    template <class StageGroupType>
     static bool create( auto_Object<SocketAddress> local_sockaddr, 
-                        auto_Object<StageGroupType> stage_group, 
+                        auto_Object<StageGroup> stage_group, 
                         auto_Object<Log> log = NULL, 
-                        auto_Object<SocketFactory> socket_factory = NULL )
-    {
-      auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
-      auto_Object<Stage> oncrpc_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<ONCRPCResponseWriter>( oncrpc_response_writer, 1, NULL, NULL, log ).release();
-
-      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-      auto_Object<ONCRPCRequestReader> oncrpc_request_reader = new ONCRPCRequestReader( fd_event_queue->incRef(), new InterfaceType, log, oncrpc_response_writer_stage );
-      auto_Object<Stage> oncrpc_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<ONCRPCRequestReader, FDAndInternalEventQueue>( oncrpc_request_reader, 1, fd_event_queue, NULL, log );
-
-      if ( socket_factory != NULL && socket_factory->get_tag() == YIELD_OBJECT_TAG( UDPSocketFactory ) )
-      {
-        DebugBreak();
-        return false;
-      }
-      else
-      {    
-        auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, oncrpc_request_reader_stage.release(), stage_group->incRef(), static_cast<TCPSocketFactory*>( socket_factory.release() ), log );
-        return tcp_listener != NULL;    
-      }
-    }
+                        auto_Object<SocketFactory> socket_factory = NULL );
 
   private:
     class ONCRPCRequest : public YIELD::ONCRPCRequest
@@ -877,7 +841,7 @@ namespace YIELD
       // ProtocolRequestReader
       auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Socket> _socket )
       {
-        return new ONCRPCRequest( _interface, log, _socket );
+        return new ONCRPCRequest( _interface, this->log, _socket );
       }
 
       bool sendProtocolRequest( auto_Object<ONCRPCRequest> oncrpc_request )
@@ -891,82 +855,6 @@ namespace YIELD
 
     typedef ProtocolResponseWriter<ONCRPCResponse> ONCRPCResponseWriter;
   };
-
-
-  template <class ProtocolRequestType>
-  void Server::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Event& ev )
-  {
-    auto_Object<Socket> _socket;
-    ProtocolRequestType* protocol_request;
-
-    switch ( ev.get_tag() )
-    {
-      case YIELD_OBJECT_TAG( FDEvent ):
-      {
-        FDEvent& fd_event = static_cast<FDEvent&>( ev );
-        protocol_request = static_cast<ProtocolRequestType*>( fd_event.get_context() );
-        _socket = protocol_request->get_socket();
-        Object::decRef( ev );
-      }
-      break; // Drop down to try to deserialize
-
-  #ifdef YIELD_HAVE_OPENSSL
-      case YIELD_OBJECT_TAG( SSLSocket ):
-  #endif
-      case YIELD_OBJECT_TAG( TCPSocket ):
-      case YIELD_OBJECT_TAG( UDPSocket ):
-      {
-        _socket = static_cast<Socket*>( &ev );
-        protocol_request = createProtocolRequest( _socket ).release();
-        _socket->attach( fd_event_queue->incRef(), protocol_request ); // Attach the original reference of protocol_request to the fd_event_queue
-      }
-      break; // Drop down to try to deserialize
-
-      default: handleUnknownEvent( ev ); return;
-    }
-
-    _socket->set_blocking_mode( false );
-    Stream::Status deserialize_status = protocol_request->deserialize( *_socket );
-
-    switch ( deserialize_status )
-    {
-      case Stream::STREAM_STATUS_OK:
-      {
-        sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
-      }
-      break;
-
-      case Stream::STREAM_STATUS_ERROR:
-      {
-        _socket->close(); // Force a detach
-        Object::decRef( *protocol_request ); // The reference that's attached to fd_event_queue
-        // tcp_socket should be dead here, since http_request should have had the last reference to it
-      }
-      break;
-    }
-  }
-
-
-  template <class ProtocolResponseType>
-  void Server::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Event& ev )
-  {
-    switch( ev.get_tag() )
-    {
-      case YIELD_OBJECT_TAG( ProtocolResponseType ):
-      {
-        ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
-        auto_Object<Socket> _socket = protocol_response.get_socket();
-
-        _socket->set_blocking_mode( true );
-        protocol_response.serialize( *_socket );
-        Object::decRef( protocol_response );
-      }
-      break;
-
-      default: handleUnknownEvent( ev ); break;
-    }
-  }
-
 
 
   class SocketAddress : public Object
@@ -1418,6 +1306,140 @@ namespace YIELD
     YIELD_OUTPUT_STREAM_PROTOTYPES;
   };
 #endif
+
+
+   template <class InterfaceType>
+   auto_Object< ONCRPCClient<InterfaceType> > ONCRPCClient<InterfaceType>::create( const URI& absolute_uri, 
+                                                                                   auto_Object<StageGroup> stage_group, 
+                                                                                   auto_Object<Log> log, 
+                                                                                   const Time& operation_timeout, 
+                                                                                   uint8_t reconnect_tries_max, 
+                                                                                   auto_Object<SocketFactory> socket_factory )
+  {
+    auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( absolute_uri );
+    if ( peer_sockaddr != NULL && peer_sockaddr->get_port() != 0 )
+    {
+      if ( socket_factory == NULL )
+      {
+#ifdef YIELD_HAVE_OPENSSL
+        if ( absolute_uri.get_scheme() == "oncrpcs" )
+          socket_factory = new SSLSocketFactory( new SSLContext( SSLv23_client_method() ) );
+        else
+#endif
+          socket_factory = new TCPSocketFactory;
+      }
+
+      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+      auto_Object< ONCRPCClient<InterfaceType> > oncrpc_client = new ONCRPCClient<InterfaceType>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
+      stage_group->createStage( oncrpc_client->incRef(), 1, fd_event_queue->incRef() );
+      return oncrpc_client;
+    }
+    else
+      return NULL;
+  }
+
+
+  template <class ProtocolRequestType>
+  void Server::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Event& ev )
+  {
+    auto_Object<Socket> _socket;
+    ProtocolRequestType* protocol_request;
+
+    switch ( ev.get_tag() )
+    {
+      case YIELD_OBJECT_TAG( FDEvent ):
+      {
+        FDEvent& fd_event = static_cast<FDEvent&>( ev );
+        protocol_request = static_cast<ProtocolRequestType*>( fd_event.get_context() );
+        _socket = protocol_request->get_socket();
+        Object::decRef( ev );
+      }
+      break; // Drop down to try to deserialize
+
+  #ifdef YIELD_HAVE_OPENSSL
+      case YIELD_OBJECT_TAG( SSLSocket ):
+  #endif
+      case YIELD_OBJECT_TAG( TCPSocket ):
+      case YIELD_OBJECT_TAG( UDPSocket ):
+      {
+        _socket = static_cast<Socket*>( &ev );
+        protocol_request = createProtocolRequest( _socket ).release();
+        _socket->attach( fd_event_queue->incRef(), protocol_request ); // Attach the original reference of protocol_request to the fd_event_queue
+      }
+      break; // Drop down to try to deserialize
+
+      default: handleUnknownEvent( ev ); return;
+    }
+
+    _socket->set_blocking_mode( false );
+    Stream::Status deserialize_status = protocol_request->deserialize( *_socket );
+
+    switch ( deserialize_status )
+    {
+      case Stream::STREAM_STATUS_OK:
+      {
+        sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
+      }
+      break;
+
+      case Stream::STREAM_STATUS_ERROR:
+      {
+        _socket->close(); // Force a detach
+        Object::decRef( *protocol_request ); // The reference that's attached to fd_event_queue
+        // tcp_socket should be dead here, since http_request should have had the last reference to it
+      }
+      break;
+
+      default: break;
+    }
+  }
+
+
+  template <class ProtocolResponseType>
+  void Server::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Event& ev )
+  {
+    switch( ev.get_tag() )
+    {
+      case YIELD_OBJECT_TAG( ProtocolResponseType ):
+      {
+        ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
+        auto_Object<Socket> _socket = protocol_response.get_socket();
+
+        _socket->set_blocking_mode( true );
+        protocol_response.serialize( *_socket );
+        Object::decRef( protocol_response );
+      }
+      break;
+
+      default: handleUnknownEvent( ev ); break;
+    }
+  }
+
+
+  template <class InterfaceType>
+  bool ONCRPCServer<InterfaceType>::create( auto_Object<SocketAddress> local_sockaddr, 
+                                                   auto_Object<StageGroup> stage_group, 
+                                                   auto_Object<Log> log, 
+                                                   auto_Object<SocketFactory> socket_factory )
+  {
+    auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+    auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
+
+    auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+    auto_Object<ONCRPCRequestReader> oncrpc_request_reader = new ONCRPCRequestReader( fd_event_queue->incRef(), new InterfaceType, log, oncrpc_response_writer_stage );
+    auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( oncrpc_request_reader->incRef(), 1, fd_event_queue->incRef(), NULL, log );
+
+    if ( socket_factory != NULL && socket_factory->get_tag() == YIELD_OBJECT_TAG( UDPSocketFactory ) )
+    {
+      DebugBreak();
+      return false;
+    }
+    else
+    {    
+      auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, oncrpc_request_reader_stage.release(), stage_group->incRef(), static_cast<TCPSocketFactory*>( socket_factory.release() ), log );
+      return tcp_listener != NULL;    
+    }
+  }
 };
 
 #endif

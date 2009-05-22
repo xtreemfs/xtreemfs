@@ -751,22 +751,9 @@ namespace YIELD
     SEDAStageGroup( const char* name, ProcessorSet* limit_physical_processor_set = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
         : StageGroupImpl<SEDAStageGroup>( name, limit_physical_processor_set, stage_stats_event_target, log )
     { }
-    // Object
-    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
-
-  protected:
-    virtual ~SEDAStageGroup();
-
-  private:
-    friend class StageGroupImpl<SEDAStageGroup>;
-
-
-    std::vector<SEDAStageGroupThread*> threads;
-    void startThreads( auto_Object<Stage> stage, int16_t threads );
-
 
     template <class EventHandlerType, class EventQueueType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target, auto_Object<Log> log )
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
     {
       if ( threads == -1 )
       {
@@ -794,6 +781,15 @@ namespace YIELD
       return stage;
     }
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
+
+  protected:
+    virtual ~SEDAStageGroup();
+
+  private:
+    std::vector<SEDAStageGroupThread*> threads;
+    void startThreads( auto_Object<Stage> stage, int16_t threads );
   };
 };
 
