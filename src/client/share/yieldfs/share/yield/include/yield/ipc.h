@@ -815,7 +815,7 @@ namespace YIELD
       // EventTarget
       bool send( Event& ev )
       {
-        ONCRPCResponse* oncrpc_response = new ONCRPCServer::ONCRPCResponse( oncrpc_request->get_xid(), ev, oncrpc_request->get_log(), oncrpc_request->get_socket() );
+        ONCRPCResponse* oncrpc_response = new ONCRPCResponse( oncrpc_request->get_xid(), ev, oncrpc_request->get_log(), oncrpc_request->get_socket() );
         return oncrpc_response_writer_stage->send( *oncrpc_response );
       }
 
