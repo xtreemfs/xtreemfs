@@ -34,11 +34,11 @@ import java.io.PrintStream;
  */
 public final class OutputUtils {
     
-    public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-        'B', 'C', 'D', 'E', 'F'     };
-
+    public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
+        'D', 'E', 'F'               };
+    
     public static final byte[] fromHex;
-
+    
     static {
         fromHex = new byte[128];
         fromHex['0'] = 0;
@@ -63,7 +63,7 @@ public final class OutputUtils {
         fromHex['e'] = 14;
         fromHex['F'] = 15;
         fromHex['f'] = 15;
-
+        
     }
     
     public static final String byteToHexString(byte b) {
@@ -170,9 +170,10 @@ public final class OutputUtils {
         
         return bytes;
     }
-
+    
     /**
      * Writes an integer as a hex string to sb starting with the LSB.
+     * 
      * @param sb
      * @param value
      */
@@ -186,35 +187,40 @@ public final class OutputUtils {
         sb.append(OutputUtils.trHex[((value >> 24) & 0x0F)]);
         sb.append(OutputUtils.trHex[((value >> 28) & 0x0F)]);
     }
-
+    
     public static void writeHexLong(final StringBuffer sb, final long value) {
-        OutputUtils.writeHexInt(sb,(int) (value & 0xFFFFFFFF));
-        OutputUtils.writeHexInt(sb,(int) (value >> 32));
+        OutputUtils.writeHexInt(sb, (int) (value & 0xFFFFFFFF));
+        OutputUtils.writeHexInt(sb, (int) (value >> 32));
     }
-
+    
     /**
      * Reads an integer from a hex string (starting with the LSB).
+     * 
      * @param str
      * @param position
      * @return
      */
     public static int readHexInt(final String str, int position) {
         int value = OutputUtils.fromHex[str.charAt(position)];
-        value += ((int)OutputUtils.fromHex[str.charAt(position+1)]) << 4;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+2)]) << 8;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+3)]) << 12;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+4)]) << 16;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+5)]) << 20;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+6)]) << 24;
-        value += ((int)OutputUtils.fromHex[str.charAt(position+7)]) << 28;
-
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 1)]) << 4;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 2)]) << 8;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 3)]) << 12;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 4)]) << 16;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 5)]) << 20;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 6)]) << 24;
+        value += ((int) OutputUtils.fromHex[str.charAt(position + 7)]) << 28;
+        
         return value;
     }
-
+    
     public static long readHexLong(final String str, int position) {
-        long value = OutputUtils.readHexInt(str, position);
-        int tmp = OutputUtils.readHexInt(str, position+8);
-        value += ((long)tmp)<< 32;
+        int low = OutputUtils.readHexInt(str, position);
+        int high = OutputUtils.readHexInt(str, position + 8);
+        
+        // calculate the value: left-shift the upper 4 bytes by 32 bit and
+        // append the lower 32 bit
+        long value = ((long) high) << 32 | (((long) low) & 4294967295L);
         return value;
     }
+
 }
