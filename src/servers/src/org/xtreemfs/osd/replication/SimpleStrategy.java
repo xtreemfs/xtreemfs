@@ -29,12 +29,11 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
 /**
- * A simple transfer strategy, which fetches the next object and iterates
- * sequentially through the replicas (like Round-Robin).
- * 
- * 13.10.2008
- * 
- * @author clorenz
+ * A simple transfer strategy, which fetches the next object and iterates sequentially through the replicas
+ * (like Round-Robin).
+ * <br>NOTE: This Strategy does not remember which OSDs it has used before for an object, so it could happen that
+ * it always takes the same OSD for an object. This can result in a infinite loop for this object.
+ * <br>13.10.2008
  */
 public class SimpleStrategy extends TransferStrategy {
     private int indexOfLastUsedOSD = -1;
@@ -63,7 +62,8 @@ public class SimpleStrategy extends TransferStrategy {
             }
         }
 
-        // TODO: handle case, if no OSD could be found for object (=> hole), because nobody will ever notice, that this object is a hole
+        // TODO: handle case, if no OSD could be found for object (=> hole), because nobody will ever notice,
+        // that this object is a hole
         
         // select OSD
         if (objectNo != -1)
@@ -76,7 +76,7 @@ public class SimpleStrategy extends TransferStrategy {
     @Override
     public void selectNextOSD(long objectNo) {
         // prepare
-        super.selectNext();
+        super.selectNextOSD(objectNo);
         // select OSD
         next = selectNextOSDhelper(objectNo);
     }
@@ -88,10 +88,10 @@ public class SimpleStrategy extends TransferStrategy {
 
         // use the next replica relative to the last used replica
         List<ServiceUUID> osds = this.xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
-        for(testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
-            this.indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
-            ServiceUUID osd = osds.get(this.indexOfLastUsedOSD);
-            
+        for (testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
+            indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
+            ServiceUUID osd = osds.get(indexOfLastUsedOSD);
+
             // if OSD is available => end "search"
             if (osdAvailability.isServiceAvailable(osd)) {
                 next.osd = osd;
@@ -101,7 +101,7 @@ public class SimpleStrategy extends TransferStrategy {
             }
         }
         // if no OSD could be found
-        if (osds.size() == 0 || osds.size() == testedOSDs || isHole(objectNo))
+        if (next.osd == null || isHole(objectNo))
             next = null;
         return next;
     }

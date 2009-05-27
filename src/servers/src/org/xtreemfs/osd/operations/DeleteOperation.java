@@ -32,6 +32,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
 import org.xtreemfs.interfaces.utils.Serializable;
@@ -79,7 +80,12 @@ public final class DeleteOperation extends OSDOperation {
         }
 
         if (!isDeleteOnClose) {
-            //file is not open and can be deleted immediately
+            // file is not open and can be deleted immediately
+
+            // cancel replication of file
+            if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))
+                master.getReplicationStage().cancelReplicationForFile(args.getFile_id());
+            
             master.getDeletionStage().deleteObjects(args.getFile_id(), rq, new DeleteObjectsCallback() {
 
                 @Override

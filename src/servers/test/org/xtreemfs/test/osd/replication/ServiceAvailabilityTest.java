@@ -55,7 +55,7 @@ public class ServiceAvailabilityTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(SetupUtils.DEBUG_LEVEL);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         serviceAvailability = new ServiceAvailability(INITIAL_TIMEOUT, MAX_LAST_ACCESS, CLEANUP_INTERVAL);
     }

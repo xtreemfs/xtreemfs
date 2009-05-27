@@ -52,6 +52,8 @@ public class ReplicationStage extends Stage {
 
     public static final int STAGEOP_INTERNAL_OBJECT_FETCHED = 2;
 
+    public static final int STAGEOP_CANCEL_REPLICATION_FOR_FILE = 3;
+
     private OSDRequestDispatcher master;
 
     private ObjectDissemination disseminationLayer;
@@ -83,8 +85,17 @@ public class ReplicationStage extends Stage {
      * Checks the response from a requested replica.
      * Only for internal use. 
      */
-    public void InternalObjectFetched(String fileId, long objectNo, ObjectData data) {
+    public void internalObjectFetched(String fileId, long objectNo, ObjectData data) {
         this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, data }, null,
+                null);
+    }
+
+    /**
+     * Stops replication for file.
+     * Only for internal use. 
+     */
+    public void cancelReplicationForFile(String fileId) {
+        this.enqueueOperation(STAGEOP_CANCEL_REPLICATION_FOR_FILE, new Object[] { fileId }, null,
                 null);
     }
 
@@ -98,6 +109,10 @@ public class ReplicationStage extends Stage {
             }
             case STAGEOP_INTERNAL_OBJECT_FETCHED: {
                 processInternalObjectFetched(rq);
+                break;
+            }
+            case STAGEOP_CANCEL_REPLICATION_FOR_FILE: {
+                processInternalCancelFile(rq);
                 break;
             }
             default:
@@ -141,7 +156,12 @@ public class ReplicationStage extends Stage {
                 BufferPool.free(data.getData());
         }
     }
-    
+
+    private void processInternalCancelFile(StageRequest rq) {
+        String fileId = (String) rq.getArgs()[0];
+        disseminationLayer.cancelFile(fileId);
+    }
+
     @Override
     public void shutdown() {
         super.shutdown();

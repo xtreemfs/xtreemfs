@@ -83,7 +83,7 @@ public class RandomAccessFileTest extends TestCase {
     private final UserCredentials uc;
 
     public RandomAccessFileTest() {
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         groupIDs = new ArrayList(1);
         groupIDs.add("test");
         uc = MRCClient.getCredentials(userID, groupIDs);
@@ -244,6 +244,7 @@ public class RandomAccessFileTest extends TestCase {
         randomAccessFile.setReadOnly(true);
 
         // check
+        assertTrue(randomAccessFile.isReadOnly());
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs().getRepUpdatePolicy());
 
         // try to write something

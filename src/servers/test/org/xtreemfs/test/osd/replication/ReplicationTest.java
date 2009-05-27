@@ -81,6 +81,7 @@ public class ReplicationTest extends TestCase {
     public ReplicationTest() {
         super();
         // Auto-generated constructor stub
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     /**
@@ -89,7 +90,6 @@ public class ReplicationTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(Logging.LEVEL_DEBUG);
 
         this.stripeSize = 128 * 1024; // byte
         this.data = SetupUtils.generateData(stripeSize);
@@ -103,7 +103,7 @@ public class ReplicationTest extends TestCase {
         // startup: DIR
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT });
+                TestEnvironment.Services.OSD_CLIENT });
         testEnv.start();
 
         osds = new OSD[12];
@@ -429,7 +429,7 @@ public class ReplicationTest extends TestCase {
         // reuse test
         testObjectLocalNOTAvailable();
     }
-
+    
     // public void testCorrectFilesize() throws Exception {
     // // write object to replica 1 : OSD 1
     // ServiceUUID osd = xLoc.getOSDsByObject(0).get(0);

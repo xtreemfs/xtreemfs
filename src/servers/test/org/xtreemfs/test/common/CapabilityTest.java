@@ -39,7 +39,7 @@ public class CapabilityTest extends TestCase {
     private TestEnvironment te;
 
     protected void setUp() throws Exception {
-        Logging.start(SetupUtils.DEBUG_LEVEL);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
 
         te = new TestEnvironment(TestEnvironment.Services.TIME_SYNC);

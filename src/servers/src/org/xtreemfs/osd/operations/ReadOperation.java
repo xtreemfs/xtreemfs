@@ -116,7 +116,8 @@ public final class ReadOperation extends OSDOperation {
             }
         } else {
             if (result.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST
-                    && rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
+                    && rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)
+                    && rq.getLocationList().getNumReplicas() > 1) {
                 // read only replication!
                 readReplica(rq, args);
             } else {
@@ -254,20 +255,22 @@ public final class ReadOperation extends OSDOperation {
         } else {
             // TODO: check implementation!
             try {
-                //replication always delivers full objects...
+                // replication always delivers full objects => cut data
                 if (args.getOffset() > 0 || args.getLength() < result.getStripeSize()) {
-                    //cut range from object data
-                    final int availData = result.getData().remaining();
-                    if (availData-args.getOffset() <= 0) {
-                        //offset is beyond available data
-                        BufferPool.free(result.getData());
-                        result.setData(BufferPool.allocate(0));
-                    } else {
-                        if (availData-args.getOffset() >= args.getLength()) {
-                            result.getData().range(args.getOffset(), args.getLength());
+                    if (result.getStatus() == ObjectStatus.EXISTS) {
+                        // cut range from object data
+                        final int availData = result.getData().remaining();
+                        if (availData - args.getOffset() <= 0) {
+                            // offset is beyond available data
+                            BufferPool.free(result.getData());
+                            result.setData(BufferPool.allocate(0));
                         } else {
-                            //less data than requested
-                            result.getData().range(args.getOffset(), availData-args.getOffset());
+                            if (availData - args.getOffset() >= args.getLength()) {
+                                result.getData().range(args.getOffset(), args.getLength());
+                            } else {
+                                // less data than requested
+                                result.getData().range(args.getOffset(), availData - args.getOffset());
+                            }
                         }
                     }
                 }

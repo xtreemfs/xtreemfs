@@ -33,17 +33,14 @@ import org.xtreemfs.common.xloc.XLocations;
 
 /**
  * This class provides the basic functionality needed by the different transfer strategies. One
- * TransferStrategy manages a whole file (all objects of this file). warning: this class is NOT thread-safe
- * 
- * 09.09.2008
- * 
- * @author clorenz
+ * TransferStrategy manages a whole file (all objects of this file).
+ * <br>warning: this class is NOT thread-safe
+ * <br>09.09.2008
  */
 public abstract class TransferStrategy {
     /**
      * Encapsulates the "returned"/chosen values.
-     * 
-     * 12.02.2009
+     * <br>12.02.2009
      */
     public class NextRequest {
         public ServiceUUID osd;
@@ -55,7 +52,7 @@ public abstract class TransferStrategy {
     }
 
     protected String fileID;
-    protected XLocations xLoc; // does not contain current replica
+    protected XLocations xLoc;
 
     /**
      * contains the chosen values for the next replication request
@@ -63,9 +60,9 @@ public abstract class TransferStrategy {
     protected NextRequest next;
 
     /**
-     * contains all objects which must be replicated (e.g. background-replication)
+     * contains all not preferred objects which must be replicated (e.g. background-replication)
      */
-    protected ArrayList<Long> requiredObjects; // maybe additionally current
+    protected ArrayList<Long> requiredObjects;
 
     /**
      * contains all objects which must be replicated first (e.g. client-request)
@@ -78,14 +75,14 @@ public abstract class TransferStrategy {
     protected final ServiceAvailability osdAvailability;
 
     /**
-     * contains a list of possible OSDs for each object used to notice which OSDs were already requested
-     * key: objectNo
+     * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.
+     * <br>key: objectNo
      */
     protected HashMap<Long, List<ServiceUUID>> availableOSDsForObject;
 
     /**
      * contains a list of local available objects for each OSD
-     * key: ServiceUUID of a OSD
+     * <br>key: ServiceUUID of a OSD
      */
 //    protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
 
@@ -103,6 +100,10 @@ public abstract class TransferStrategy {
         this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
 //        this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
         this.next = null;
+    }
+    
+    public void updateXLoc(XLocations xLoc) {
+        this.xLoc = xLoc;
     }
 
     /**
@@ -122,7 +123,7 @@ public abstract class TransferStrategy {
     /**
      * Returns the "result" from selectNext().
      * 
-     * @return null, if selectNext() has not been executed before or no object to fetch exists
+     * @return null, if selectNext() has not been executed before (since getNext() was called last time) or no object to fetch exists
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public NextRequest getNext() {
@@ -206,7 +207,7 @@ public abstract class TransferStrategy {
      * 
      * @param objectNo
      * @return true: it is a hole
-     * false: maybe it is a hole
+     * <br>false: Maybe it is a hole, maybe not. Cannot be said at the moment.
      */
     public boolean isHole(long objectNo){
         if(availableOSDsForObject.containsKey(objectNo))

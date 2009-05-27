@@ -24,18 +24,18 @@
  */
 package org.xtreemfs.osd.replication;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
 /**
  * A simple strategy, which selects objects and replicas randomly.
- * 
- * 08.12.2008
- * 
- * @author clorenz
+ * <br>08.12.2008
  */
 public class RandomStrategy extends TransferStrategy {
     private Random random;
@@ -43,8 +43,7 @@ public class RandomStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public RandomStrategy(String fileId, XLocations xLoc, long filesize,
-            ServiceAvailability osdAvailability) {
+    public RandomStrategy(String fileId, XLocations xLoc, long filesize, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, filesize, osdAvailability);
         this.random = new Random();
     }
@@ -58,10 +57,10 @@ public class RandomStrategy extends TransferStrategy {
 
         // first fetch a preferred object
         if (!this.preferredObjects.isEmpty()) {
-            objectNo = this.preferredObjects.get(getPositiveRandom() % this.preferredObjects.size());
+            objectNo = this.preferredObjects.get(random.nextInt(this.preferredObjects.size()));
         } else { // fetch any object
             if (!this.requiredObjects.isEmpty()) {
-                objectNo = this.requiredObjects.get(getPositiveRandom() % this.requiredObjects.size());
+                objectNo = this.requiredObjects.get(random.nextInt(this.requiredObjects.size()));
             }
         }
 
@@ -76,7 +75,7 @@ public class RandomStrategy extends TransferStrategy {
     @Override
     public void selectNextOSD(long objectNo) {
         // prepare
-        super.selectNext();
+        super.selectNextOSD(objectNo);
         // select OSD
         next = selectNextOSDhelper(objectNo);
     }
@@ -84,12 +83,14 @@ public class RandomStrategy extends TransferStrategy {
     private NextRequest selectNextOSDhelper(long objectNo) {
         NextRequest next = new NextRequest();
         next.objectNo = objectNo;
-        int testedOSDs;
 
-        List<ServiceUUID> osds = this.availableOSDsForObject.get(objectNo);
-        for (testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
+        // to check, if all OSDs have been tested
+        List<ServiceUUID> testedOSDs = new ArrayList<ServiceUUID>(this.availableOSDsForObject.get(objectNo));
+        // FIXME: only for debugging
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
+        while (testedOSDs.size() != 0) {
             // use random OSD
-            ServiceUUID osd = osds.get(getPositiveRandom() % osds.size());
+            ServiceUUID osd = testedOSDs.get(random.nextInt(testedOSDs.size()));
             // if OSD is available => end "search"
             if (osdAvailability.isServiceAvailable(osd)) {
                 next.osd = osd;
@@ -98,45 +99,14 @@ public class RandomStrategy extends TransferStrategy {
                 next.requestObjectList = false;
                 break;
             }
+            // OSD is not available => remove it from list
+            testedOSDs.remove(osd);
+            // FIXME: only for debugging
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "OSD %s is not available", osd.toString());
         }
         // if no OSD could be found
-        if (osds.size() == 0 || osds.size() == testedOSDs || isHole(objectNo))
+        if (next.osd == null)
             next = null;
         return next;
     }
-    
-    /**
-     * returns a random positive integer
-     * 
-     * @return
-     */
-    private int getPositiveRandom() {
-        int result = random.nextInt();
-        return (result > 0) ? result : 0 - result;
-    }
-    
-//  /**
-//  * Removes the OSD from the list that is used for knowing which OSDs could be used for fetching this
-//  * object.
-//  * 
-//  * @param objectID
-//  */
-// public void removeOSDForObject(long objectID, ServiceUUID osd) {
-//     availableOSDsForObject.get(Long.valueOf(objectID)).remove(osd);
-// }
-//
-// /*
-//  * FIXME: internal-handling would be better
-//  */
-// public void removeOSDListForObject(long objectID) {
-//     availableOSDsForObject.remove(Long.valueOf(objectID));
-// }
-//
-// /**
-//  * @return
-//  * @see java.util.ArrayList#isEmpty()
-//  */
-// public boolean isOSDAvailableForObject(long objectNo) {
-//     return !availableOSDsForObject.get(objectNo).isEmpty();
-// }
 }

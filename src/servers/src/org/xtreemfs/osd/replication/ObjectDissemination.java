@@ -58,16 +58,14 @@ import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 
 /**
  * Handles the fetching of replicas.
- * 15.09.2008
- * 
- * @author clorenz
+ * <br>15.09.2008
  */
 public class ObjectDissemination {
     private OSDRequestDispatcher master;
 
     /**
      * Encapsulates important infos about a file
-     * 01.04.2009
+     * <br>01.04.2009
      */
     private static class FileInfo {
         private static class ObjectInfo {
@@ -86,6 +84,11 @@ public class ObjectDissemination {
         Capability cap;
         CowPolicy cow;
         /**
+         * if the file is removed while it will be replicated
+         */
+        boolean cancelled;
+        
+        /**
          * key: objectNo
          */
         private HashMap<Long, ObjectInfo> objectsInProgress;
@@ -97,6 +100,7 @@ public class ObjectDissemination {
             this.xLoc = xLoc;
             this.cap = cap;
             this.cow = cow;
+            this.cancelled = false;
             this.objectsInProgress = new HashMap<Long, ObjectInfo>();
 
             StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
@@ -121,7 +125,9 @@ public class ObjectDissemination {
          * @see java.util.ArrayList#add(java.lang.Object)
          */
         public ObjectInfo add(Long arg0, StageRequest rq) {
-            ObjectInfo info = new ObjectInfo();
+            ObjectInfo info = objectsInProgress.get(arg0);
+            if (info == null)
+                info = new ObjectInfo();
             info.waitingRequests.add(rq);
             objectsInProgress.put(arg0, info);
             return info;
@@ -147,10 +153,19 @@ public class ObjectDissemination {
         public int size() {
             return objectsInProgress.size();
         }
+        
+        public void update(Capability cap, XLocations xLoc, CowPolicy cow) {
+            this.cap = cap;
+            this.cow = cow;
+            if (xLoc.getXLocSet().getVersion() > this.xLoc.getXLocSet().getVersion()) {
+                this.xLoc = xLoc;
+                this.strategy.updateXLoc(xLoc);
+            }
+        }
     }
 
     /**
-     * objects of these files are currently or in future downloading
+     * objects of these files are downloading currently or in future
      * key: fileID
      */
     private HashMap<String, FileInfo> filesInProgress;
@@ -181,18 +196,26 @@ public class ObjectDissemination {
             this.filesInProgress.put(fileID, fileInfo);
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "start replication for file %s",
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "start replication for file %s",
                     fileID);
         }
 
+        // update to newer cap, ...
+        fileInfo.update(capability, xLoc, cow);
+        
         // keep in mind current request
-        fileInfo.add(objectNo, rq);
-        fileInfo.strategy.addObject(objectNo, true);
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "FETCHING OBJECT: %s:%d", fileID,
-                objectNo);
-
-        prepareRequest(fileInfo, objectNo);
+        if(fileInfo.containsKey(objectNo))
+            // propably another request is already fetching this object
+            fileInfo.add(objectNo, rq);
+        else {  
+            fileInfo.add(objectNo, rq);
+            fileInfo.strategy.addObject(objectNo, true);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "FETCHING OBJECT: %s:%d", fileID,
+                    objectNo);
+    
+            prepareRequest(fileInfo, objectNo);
+        }
     }
 
     /**
@@ -204,14 +227,29 @@ public class ObjectDissemination {
         NextRequest next = strategy.getNext();
 
         if (next != null) { // there is something to fetch
+            // FIXME: only for debugging
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "fetch object %s:%d from OSD %s",
+                    fileInfo.fileID, next.objectNo, next.osd);
+
             fileInfo.get(objectNo).lastOSD = next.osd;
             sendFetchObjectRequest(next.objectNo, next.osd, fileInfo.fileID, fileInfo.cap, fileInfo.xLoc);
         } else {
             sendError(fileInfo, objectNo, new OSDException(ErrorCodes.IO_ERROR,
                     "Object does not exist locally and none replica could be fetched.", ""));
-            
-            if (filesInProgress.isEmpty())
-                fileCompleted(fileInfo.fileID);
+
+            // FIXME: only for debugging
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "object %s:%d could not be fetched",
+                    fileInfo.fileID, next.objectNo);
+            System.out.println("For object " + objectNo + " of file " + fileInfo.fileID + " none replica could be fetched.");
+            System.out.println("last object: " + fileInfo.lastObject);
+            System.out.println("capability: " + fileInfo.cap.toString());
+            System.out.println("XLocation: " + fileInfo.xLoc.getReplicas().toString());
+            System.out.println("last OSD: " + fileInfo.get(objectNo).lastOSD);
+            System.out.println("number of waiting requests: " + fileInfo.get(objectNo).waitingRequests.size());
+            System.out.println("objects count: " + fileInfo.strategy.getObjectsCount());
+            System.out.println("is hole?: " + fileInfo.strategy.isHole(objectNo));
+
+            objectCompleted(fileInfo, objectNo);
         }
     }
 
@@ -222,7 +260,7 @@ public class ObjectDissemination {
             Capability capability, XLocations xLoc) {
         try {
             OSDClient client = master.getOSDClient();
-            // FIXME: change this, if using different striping policies
+            // TODO: change this, if using different striping policies
             RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                     fileID, new FileCredentials(xLoc.getXLocSet(), capability.getXCap()), objectNo, 0, 0,
                     xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo));
@@ -232,15 +270,15 @@ public class ObjectDissemination {
                 public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
                     try {
                         ObjectData data = r.get().getData();
-                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, data);
+                        master.getReplicationStage().internalObjectFetched(fileID, objectNo, data);
                     } catch (ONCRPCException e) {
                         // TODO 
                         osdAvailability.setServiceWasNotAvailable(osd);
-                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
+                        master.getReplicationStage().internalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (IOException e) {
                         osdAvailability.setServiceWasNotAvailable(osd);
-                        master.getReplicationStage().InternalObjectFetched(fileID, objectNo, null);
+                        master.getReplicationStage().internalObjectFetched(fileID, objectNo, null);
                         e.printStackTrace();
                     } catch (InterruptedException e) {
                         // ignore 
@@ -260,33 +298,43 @@ public class ObjectDissemination {
      */
     public void objectFetched(String fileID, long objectNo, ObjectData data) {
         FileInfo fileInfo = filesInProgress.get(fileID);
+        assert(fileInfo != null);
+        // FIXME: only for debugging
+        if(fileInfo == null)
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "fileInfo for file %s is null, but must not.", fileID);
 
         if (!data.getInvalid_checksum_on_osd()) {
             // correct checksum
             sendResponses(fileInfo, objectNo, data.getData(), ObjectStatus.EXISTS);
 
-            // write data to disk
-            OSDOperation writeObjectEvent = master.getInternalEvent(EventWriteObject.class);
-            // NOTE: "original" buffer is used
-            writeObjectEvent.startInternalEvent(new Object[] { fileID, objectNo, data.getData(), fileInfo.xLoc,
-                    fileInfo.cow });
-
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "object fetched %s:%d", fileID,
-                    objectNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
+                        "OBJECT FETCHED %s:%d", fileID, objectNo);
 
-            // delete object in maps/lists
-            fileInfo.strategy.removeObject(objectNo);
-            fileInfo.remove(objectNo);
-            if (filesInProgress.isEmpty())
-                fileCompleted(fileID);
+            if (!fileInfo.cancelled) {
+                // write data to disk
+                OSDOperation writeObjectEvent = master.getInternalEvent(EventWriteObject.class);
+                // NOTE: "original" buffer is used
+                writeObjectEvent.startInternalEvent(new Object[] { fileID, objectNo, data.getData(),
+                        fileInfo.xLoc, fileInfo.cow });
+            }
+
+            objectCompleted(fileInfo, objectNo);
         } else {
-            // TODO: save data, if other replicas are less useful
-            
-            // try next replica
-            fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
-            prepareRequest(fileInfo, objectNo);
-            
+            // FIXME: only for debugging
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "fetched object %s:%d has invalid checksum",
+                    fileID, objectNo);
+           // TODO: save data, in case other replicas are less useful
+//            if (!fileInfo.cancelled) {
+                // try next replica
+                fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
+                prepareRequest(fileInfo, objectNo);
+//            } else {
+//                sendError(fileInfo, objectNo, new OSDException(ErrorCodes.IO_ERROR,
+//                        "Object does not exist locally and replication was cancelled.", ""));
+//                
+//                objectCompleted(fileInfo, objectNo);
+//            }
             // free buffer
             BufferPool.free(data.getData());
         }
@@ -297,45 +345,83 @@ public class ObjectDissemination {
      */
     public void objectNotFetched(String fileID, long objectNo) {
         FileInfo fileInfo = filesInProgress.get(fileID);
+        assert(fileInfo != null);
+        // FIXME: only for debugging
+        if(fileInfo == null)
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "fileInfo for file %s is null, but must not.", fileID);
 
         // check if it is a hole
-        // FIXME: change this, if using different striping policies
+        // TODO: change this, if using different striping policies
         if (fileInfo.strategy.isHole(objectNo)) {
             // => hole or error; we assume it is a hole
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "object %s:%d could not be fetched; must be a hole." + fileID, objectNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "OBJECT %s:%d COULD NOT BE FETCHED; MUST BE A HOLE.", fileID, objectNo);
 
             sendResponses(fileInfo, objectNo, null, ObjectStatus.PADDING_OBJECT);
 
-            // delete object in maps/lists
-            fileInfo.strategy.removeObject(objectNo);
-            fileInfo.remove(objectNo);
-            if (filesInProgress.isEmpty())
-                fileCompleted(fileID);
+            objectCompleted(fileInfo, objectNo);
 
             // TODO: remember on this OSD that this object is a hole
         } else {
-            // try next replica
-            fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
-            prepareRequest(fileInfo, objectNo);
+//            if (!fileInfo.cancelled) {
+                // FIXME: only for debugging
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "object %s:%d could not be fetched from OSD %s => try next OSD",
+                        fileInfo.fileID, objectNo, fileInfo.get(objectNo).lastOSD);
+                // try next replica
+                fileInfo.strategy.addObject(objectNo, true); // TODO: preferred or only requested?
+                prepareRequest(fileInfo, objectNo);
+//            } else {
+//                sendError(fileInfo, objectNo, new OSDException(ErrorCodes.IO_ERROR,
+//                        "Object does not exist locally and replication was cancelled.", ""));
+//                
+//                objectCompleted(fileInfo, objectNo);
+//            }
         }
     }
 
     /**
      * Stops replication for this file.
-     * @param fileID
+     */ 
+    public void cancelFile(String fileID) {
+        FileInfo file = filesInProgress.get(fileID);
+        if (file != null)
+            if (!file.isEmpty()) // => probably requests were sent
+                // mark cancelled for deleting later
+                file.cancelled = true;
+            else
+                // delete directly
+                filesInProgress.remove(fileID);
+    }
+
+    /**
+     * removes the object from maps/lists and checks if the replication of all objects of the file is
+     * completed
      * @param fileInfo
+     * @param objectNo
+     */
+    private void objectCompleted(FileInfo fileInfo, long objectNo) {
+        // delete object in maps/lists
+        fileInfo.strategy.removeObject(objectNo);
+        fileInfo.remove(objectNo);
+        if (fileInfo.isEmpty())
+            // nothing is replicating of this file
+            fileCompleted(fileInfo.fileID);
+    }
+
+    /**
+     * @param fileID
      */
     private void fileCompleted(String fileID) {
         // if the last requested object was fetched for this file => remove from map
         filesInProgress.remove(fileID);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "stop replicating file %s", fileID);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s", fileID);
     }
 
     /**
-     * sends the responses to all belonging clients 
+     * sends the responses to all belonging clients
+     * <br>NOTE: data-buffer will not be modified
      */
     private void sendResponses(FileInfo fileInfo, long objectNo, ReusableBuffer data, ObjectStatus status) {
         List<StageRequest> reqs = fileInfo.get(objectNo).waitingRequests;

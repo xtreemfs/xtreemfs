@@ -8,9 +8,11 @@ package org.xtreemfs.test;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -18,13 +20,13 @@ import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
 
@@ -63,8 +65,15 @@ public class TestEnvironment {
         return osdClient;
     }
 
+    /**
+     * returns always the address of the first OSD
+     */
     public InetSocketAddress getOSDAddress() throws UnknownUUIDException {
-        return osd.getConfig().getUUID().getAddress();
+        return osds[0].getConfig().getUUID().getAddress();
+    }
+
+    public InetSocketAddress getOSDAddress(int osdNumber) throws UnknownUUIDException {
+        return osds[osdNumber].getConfig().getUUID().getAddress();
     }
     
     /**
@@ -99,7 +108,7 @@ public class TestEnvironment {
     
     private MRCRequestDispatcher mrc;
 
-    private OSDRequestDispatcher osd;
+    private OSDRequestDispatcher[] osds;
     
     private final List<Services> enabledServs;
     
@@ -158,9 +167,14 @@ public class TestEnvironment {
         }
 
         if (enabledServs.contains(Services.OSD)) {
-            osd = new OSDRequestDispatcher(SetupUtils.createOSD1Config());
-            osd.start();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD running");
+            int osdCount = Collections.frequency(enabledServs, Services.OSD);
+            osds = new OSDRequestDispatcher[osdCount];
+            OSDConfig[] configs = SetupUtils.createMultipleOSDConfigs(osdCount);
+            for (int i = 0; i < configs.length; i++) {
+                osds[i] = new OSDRequestDispatcher(configs[i]);
+                osds[i].start();
+            }
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
         }
         
         if (enabledServs.contains(Services.MRC)) {
@@ -200,7 +214,8 @@ public class TestEnvironment {
 
         if (enabledServs.contains(Services.OSD)) {
             try {
-                osd.shutdown();
+                for (OSDRequestDispatcher osd : osds)
+                    osd.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }

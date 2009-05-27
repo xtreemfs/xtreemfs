@@ -48,6 +48,7 @@ import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
+import org.xtreemfs.test.SetupUtils;
 
 /**
  *
@@ -74,7 +75,7 @@ public class TransferStrategiesTest extends TestCase {
      */
     public TransferStrategiesTest() throws InvalidXLocationsException {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         String file = "1:1";
         cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, "secretPassphrase");

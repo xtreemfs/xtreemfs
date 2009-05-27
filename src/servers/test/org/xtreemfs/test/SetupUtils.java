@@ -58,20 +58,20 @@ public class SetupUtils {
 
     public static boolean          CHECKSUMS_ON     = false;
 
-    public static final int        DEBUG_LEVEL      = Logging.LEVEL_ERROR;
+    public static final int        DEBUG_LEVEL      = Logging.LEVEL_INFO;
 
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Logging.Category.all };
 
-    public static OSDConfig createOSD1Config() throws IOException {
+    private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
-        props.setProperty("object_dir", TEST_DIR + "/osd0");
+        props.setProperty("object_dir", dir);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
-        props.setProperty("listen.port", "33637");
-        props.setProperty("http_port", "30637");
-        // props.setProperty("listen.address", "localhost");
+        props.setProperty("listen.port", "" + port);
+        props.setProperty("http_port", "" + (port-3000));
+        props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -85,125 +85,37 @@ public class SetupUtils {
         props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
-        props.setProperty("uuid", getOSD1UUID().toString());
-        
+        props.setProperty("uuid", getUUID("localhost", port).toString());
+        return props;
+    }
+    
+    public static OSDConfig createOSD1Config() throws IOException {
+        Properties props = createOSDProperties(33637, TEST_DIR + "/osd0");
         return new OSDConfig(props);
     }
     
     public static OSDConfig createOSD2Config() throws IOException {
-        Properties props = new Properties();
-        props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
-        props.setProperty("object_dir", TEST_DIR + "/osd1");
-        props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
-        props.setProperty("listen.port", "33640");
-        props.setProperty("http_port", "30640");
-        // props.setProperty("listen.address", "localhost");
-        props.setProperty("local_clock_renewal", "50");
-        props.setProperty("remote_time_sync", "60000");
-        props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
-        props.setProperty("ssl.service_creds.pw", "passphrase");
-        props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
-        props.setProperty("ssl.trusted_certs.pw", "passphrase");
-        props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
-        props.setProperty("checksums.algorithm", "Adler32");
-        props.setProperty("capability_secret", "secretPassphrase");
-        props.setProperty("uuid", getOSD2UUID().toString());
-        
+        Properties props = createOSDProperties(33640, TEST_DIR + "/osd1");
         return new OSDConfig(props);
     }
     
     public static OSDConfig createOSD3Config() throws IOException {
-        Properties props = new Properties();
-        props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
-        props.setProperty("object_dir", TEST_DIR + "/osd2");
-        props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
-        props.setProperty("listen.port", "33641");
-        props.setProperty("http_port", "30641");
-        props.setProperty("listen.address", "localhost");
-        props.setProperty("local_clock_renewal", "50");
-        props.setProperty("remote_time_sync", "60000");
-        props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
-        props.setProperty("ssl.service_creds.pw", "passphrase");
-        props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
-        props.setProperty("ssl.trusted_certs.pw", "passphrase");
-        props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
-        props.setProperty("checksums.algorithm", "Adler32");
-        props.setProperty("capability_secret", "secretPassphrase");
-        props.setProperty("uuid", getOSD3UUID().toString());
-        
+        Properties props = createOSDProperties(33641, TEST_DIR + "/osd2");
         return new OSDConfig(props);
     }
     
     public static OSDConfig createOSD4Config() throws IOException {
-        Properties props = new Properties();
-        props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
-        props.setProperty("object_dir", TEST_DIR + "/osd3");
-        props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
-        props.setProperty("listen.port", "33642");
-        props.setProperty("http_port", "30642");
-        props.setProperty("listen.address", "localhost");
-        props.setProperty("local_clock_renewal", "50");
-        props.setProperty("remote_time_sync", "60000");
-        props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
-        props.setProperty("ssl.service_creds.pw", "passphrase");
-        props.setProperty("ssl.service_creds.container", "pkcs12");
-        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
-        props.setProperty("ssl.trusted_certs.pw", "passphrase");
-        props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("report_free_space", "true");
-        props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
-        props.setProperty("checksums.algorithm", "Adler32");
-        props.setProperty("capability_secret", "secretPassphrase");
-        props.setProperty("uuid", getOSD4UUID().toString());
-        
+        Properties props = createOSDProperties(33642, TEST_DIR + "/osd3");
         return new OSDConfig(props);
     }
     
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
-        int startPort = 33643;
+        int startPort = 33640;
         
         for (int i = 0; i < configs.length; i++) {
-            Properties props = new Properties();
-            props.setProperty("dir_service.host", "localhost");
-            props.setProperty("dir_service.port", "33638");
-            props.setProperty("object_dir", TEST_DIR + "/osd" + i);
-            props.setProperty("debug.level", "" + DEBUG_LEVEL);
-            props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
-            props.setProperty("listen.port", "" + startPort);
-            props.setProperty("http_port", "" + (startPort-3000));
-            props.setProperty("listen.address", "localhost");
-            props.setProperty("local_clock_renewal", "50");
-            props.setProperty("remote_time_sync", "60000");
-            props.setProperty("ssl.enabled", "" + SSL_ON);
-            props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
-            props.setProperty("ssl.service_creds.pw", "passphrase");
-            props.setProperty("ssl.service_creds.container", "pkcs12");
-            props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
-            props.setProperty("ssl.trusted_certs.pw", "passphrase");
-            props.setProperty("ssl.trusted_certs.container", "jks");
-            props.setProperty("report_free_space", "true");
-            props.setProperty("checksums.enabled", Boolean.toString(CHECKSUMS_ON));
-            props.setProperty("checksums.algorithm", "Adler32");
-            props.setProperty("capability_secret", "secretPassphrase");
-            props.setProperty("uuid", getOSDUUID("localhost", startPort).toString());
+            Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
             configs[i] = new OSDConfig(props);
-            
             startPort++;
         }
         return configs;
@@ -353,7 +265,7 @@ public class SetupUtils {
         UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON);
     }
     
-    private static ServiceUUID getOSDUUID(String listenAddress, int port) {
+    private static ServiceUUID getUUID(String listenAddress, int port) {
         return new ServiceUUID("UUID:" + listenAddress + ":" + port);
     }
     

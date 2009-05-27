@@ -27,14 +27,19 @@ package org.xtreemfs.utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -56,36 +61,71 @@ import org.xtreemfs.mrc.client.MRCClient;
 
 /**
  * A tool to manage your Replicas. File can be marked as read-only, replicas can be added, ...
- * 06.04.2009
+ * <br>06.04.2009
  */
 public class ReplicaManagement {
-    public final static String ADD_REPLICA = "ADD";
-    public final static String REMOVE_REPLICA = "REMOVE";
-    public final static String SET_READ_ONLY = "SET_READ-ONLY";
-    public final static String SET_WRITABLE = "SET_WRITABLE";
-    public final static String IS_READ_ONLY = "IS_READ-ONLY";
-    public final static String LIST_REPLICAS = "LIST_REPLICAS";
+    public final static String      ADD_REPLICA                    = "ADD";
+    public final static String      ADD_AUTOMATIC_REPLICA          = "ADD_AUTO";
+    public final static String      REMOVE_REPLICA                 = "REMOVE";
+    public final static String      REMOVE_AUTOMATIC_REPLICA       = "REMOVE_AUTO";
+    public final static String      SET_READ_ONLY                  = "SET_READ-ONLY";
+    public final static String      SET_WRITABLE                   = "SET_WRITABLE";
+    public final static String      IS_READ_ONLY                   = "IS_READ-ONLY";
+    public final static String      LIST_REPLICAS                  = "LIST_REPLICAS";
+    public final static String      LIST_SUITABLE_OSDS_FOR_REPLICA = "LIST_OSDS";
+    /**
+     * hidden command creates a volume and a file (for names see user input) with some data
+     */
+    public final static String      CREATE_TEST_ENV                = "CREATE_TEST_ENV";
+
+    public final static String      METHOD_RANDOM                  = "random";
+    public final static String      METHOD_DNS                     = "dns";
+
+    private final String            filepath;
+    private RandomAccessFile        file;
+    private MRCClient               mrcClient;
+
+    public final UserCredentials    credentials;
+    public final String             volume;
+    private final InetSocketAddress dirAddress;
+    private final DIRClient         dirClient;
+    private InetSocketAddress       mrcAddress;
+
+    private XLocations              xLoc;
+    private RPCNIOSocketClient      client;
+    private TimeSync                timeSync;
+
+    public static final Pattern IPV4_PATTERN = Pattern.compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
+                                                             + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
+    public static final Pattern IPV6_PATTERN = Pattern.compile("((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
+                                                             + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
+                                                             + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
+                                                             + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
+                                                             + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
+                                                             + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
+                                                             + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
+                                                             + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
+                                                             + "{1,3}+))(/[0-9]+)?", Pattern.CASE_INSENSITIVE);
 
     /**
-     * hidden command
-     * creates a volume (named "test"), dir (named "test") and a file (named "/test/test.txt") with some data
+     * required for METHOD_DNS
+     * <br>13.05.2009
      */
-    public final static String CREATE_TEST_ENV = "CREATE_TEST_ENV";
-    public final static String LIST_SUITABLE_OSDS_FOR_REPLICA = "LIST_OSDS";
+    private static final class UsableOSD implements Comparable {
+        public ServiceUUID osd;
+        public int         match;
 
-    private final String filepath;
-    private RandomAccessFile file;
-    private MRCClient mrcClient;
+        public UsableOSD(ServiceUUID uuid, int match) {
+            this.match = match;
+            this.osd = uuid;
+        }
 
-    public final UserCredentials credentials;
-    public final String volume;
-    private final InetSocketAddress dirAddress;
-    private final DIRClient dirClient;
-    private InetSocketAddress mrcAddress;
-
-    private XLocations xLoc;
-    private RPCNIOSocketClient client;
-    private TimeSync timeSync;
+        @Override
+        public int compareTo(Object o) {
+            UsableOSD other = (UsableOSD) o;
+            return other.match - this.match;
+        }
+    }
 
     /**
      * @throws IOException
@@ -96,7 +136,7 @@ public class ReplicaManagement {
     public ReplicaManagement(InetSocketAddress dirAddress, String volume, String filepath)
             throws Exception {
         try {
-            Logging.start(Logging.LEVEL_ERROR);
+            Logging.start(Logging.LEVEL_ERROR, Category.tool);
             
             this.filepath = filepath;
             this.volume = volume;
@@ -161,7 +201,12 @@ public class ReplicaManagement {
                             + " OSD(s) which should be used for the replica.");
                     System.out.println("# Select the OSD(s) through the prefix-numbers and use ',' as seperator. #");
                     osdNumbers = in.readLine().split(",");
-                    
+
+                    // correct count of OSDs
+                    if (osdNumbers.length != file.getStripingPolicy().getWidth()) {
+                        System.out.println("Please try it again");
+                        continue;
+                    }
                     break;
                 } catch (IOException e) {
                     System.out.println("Please try it again");
@@ -173,12 +218,12 @@ public class ReplicaManagement {
             }
 
             // create list with selected OSDs for replica
-            List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
+            List<ServiceUUID> osds = new ArrayList<ServiceUUID>(file.getStripingPolicy().getWidth());
             for (String osdNumber : osdNumbers) {
-                osds.add(suitableOSDs.get(Integer.parseInt(osdNumber)-1));
+                osds.add(suitableOSDs.get(Integer.parseInt(osdNumber) - 1));
             }
 
-            addReplica(suitableOSDs);
+            addReplica(osds);
         } else
             throw new IOException("File is not marked as read-only.");
     }
@@ -187,6 +232,65 @@ public class ReplicaManagement {
         if (file.isReadOnly()) {
             // at the moment all replicas must have the same StripingPolicy
             file.addReplica(osds, file.getStripingPolicy());
+        } else
+            throw new IOException("File is not marked as read-only.");
+    }
+
+    // automatic
+    public void addReplicaAutomatically(String method) throws Exception {
+        if (file.isReadOnly()) {
+            List<ServiceUUID> suitableOSDs = file.getSuitableOSDsForAReplica();
+            List<ServiceUUID> osds = new ArrayList<ServiceUUID>(file.getStripingPolicy().getWidth());
+
+            // create list with OSDs for replica
+            if (method.equals(METHOD_RANDOM)) {
+                Random random = new Random();
+                int count = 0;
+                while (count < file.getStripingPolicy().getWidth()) {
+                    ServiceUUID nextOSD = suitableOSDs.get(random.nextInt(suitableOSDs.size()));
+                    if (!osds.contains(nextOSD)) {
+                        osds.add(nextOSD);
+                        count++;
+                    }
+                }
+            } else if (method.equals(METHOD_DNS)) {
+                String clientFQDN = InetAddress.getLocalHost().getCanonicalHostName();
+                // if the FQDN cannot be resolved, we get only an IP-address
+                if (IPV4_PATTERN.matcher(clientFQDN).matches() || IPV6_PATTERN.matcher(clientFQDN).matches())
+                    throw new Exception(
+                            "The FQDN of this computer cannot be resolved. Please check your settings.");
+
+                int minPrefix = 0;
+
+                PriorityQueue<UsableOSD> list = new PriorityQueue<UsableOSD>();
+                for (ServiceUUID uuid : suitableOSDs) {
+                    try {
+                        final String osdHostName = uuid.getAddress().getAddress().getCanonicalHostName();
+                        final int minLen = (osdHostName.length() > clientFQDN.length()) ? clientFQDN.length()
+                                : osdHostName.length();
+                        int osdI = osdHostName.length() - 1;
+                        int clientI = clientFQDN.length() - 1;
+                        int match = 0;
+                        for (int i = minLen - 1; i > 0; i--) {
+                            if (osdHostName.charAt(osdI--) != clientFQDN.charAt(clientI--)) {
+                                break;
+                            }
+                            match++;
+                        }
+                        if (match < minPrefix)
+                            continue;
+
+                        list.add(new UsableOSD(uuid, match));
+                    } catch (UnknownUUIDException ex) {
+                    }
+                }
+
+                // from the remaining set, take a subset of OSDs
+                for (int i = 0; i < osds.size(); i++) {
+                    osds.add(list.poll().osd);
+                }
+            }
+            addReplica(osds);
         } else
             throw new IOException("File is not marked as read-only.");
     }
@@ -228,6 +332,20 @@ public class ReplicaManagement {
         if (file.isReadOnly())
             file.removeReplica(osd);
         else
+            throw new IOException("File is not marked as read-only.");
+    }
+
+    // automatic
+    public void removeReplicaAutomatically(String method) throws Exception {
+        if (file.isReadOnly()) {
+            ServiceUUID osd = null;
+            if (method.equals(METHOD_RANDOM)) {
+                Random random = new Random();
+                Replica replica = xLoc.getReplicas().get(random.nextInt(xLoc.getNumReplicas()));
+                osd = replica.getHeadOsd();
+            }
+            file.removeReplica(osd);
+        } else
             throw new IOException("File is not marked as read-only.");
     }
 
@@ -344,6 +462,27 @@ public class ReplicaManagement {
                 } else
                     // interactive mode
                     system.removeReplica();
+            } else if (command.equals(ADD_AUTOMATIC_REPLICA)) {
+                if (args.length > NUMBER_OF_MANDATORY_ARGS) {
+                    String method = args[argNumber++];
+                    if(method.equals(METHOD_RANDOM) || method.equals(METHOD_DNS)) {
+                        system.initialize();
+                        system.addReplicaAutomatically(method);
+                    } else
+                        throw new Exception("wrong method");
+                } else
+                    throw new Exception("no method chosen");
+            } else if (command.equals(REMOVE_AUTOMATIC_REPLICA)) {
+//                if (args.length > NUMBER_OF_MANDATORY_ARGS) {
+//                    String method = args[argNumber++];
+//                    if(method.equals(METHOD_RANDOM) || method.equals(METHOD_DNS)) {
+                        system.initialize();
+                        system.removeReplicaAutomatically(METHOD_RANDOM);
+//                        system.removeReplicaAutomatically(method);
+//                    } else
+//                        throw new Exception("wrong method");
+//                } else
+//                    throw new Exception("no method chosen");
             } else if (command.equals(SET_READ_ONLY)) {
                 system.initialize();
                 system.setReadOnly(true);
@@ -360,9 +499,10 @@ public class ReplicaManagement {
                 system.initialize();
                 system.listSuitableOSDs();
             } else if (command.equals(CREATE_TEST_ENV)) { // hidden command
-                system.createTestEnv();
+                system.createTestEnv(volume, filepath);
             } else {
                 usage();
+                throw new Exception("wrong command");
             }
             
             System.out.println("---------------------------------");
@@ -391,13 +531,15 @@ public class ReplicaManagement {
                 + ": Lists all suitable OSDs for this file, which can be used for a new replica. \n");
         out.append("\t" + ADD_REPLICA + ": An interactive mode for adding a replica.\n");
         out.append("\t" + REMOVE_REPLICA + ": An interactive mode for removing a replica.\n");
-        out.append("\t" + ADD_REPLICA + " [<UUID_of_OSD1 UUID_of_OSD2, ...>]: Adds a replica with these OSDs. "
+        out.append("\t" + ADD_REPLICA + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with these OSDs. "
                 + "The given number of OSDs must be the same as in the striping policy. "
                 + "Use space as seperator.\n");
-        out.append("\t" + REMOVE_REPLICA + " [<UUID_of_head-OSD>]"
+        out.append("\t" + ADD_AUTOMATIC_REPLICA + " " + METHOD_RANDOM + "/" + METHOD_DNS
+                + ": Adds a replica and selects the OSDs automatically according to the chosen method.\n");
+        out.append("\t" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
                 + ": Removes the replica where the given OSD is the head-OSD. \n");
+        out.append("\t" + REMOVE_AUTOMATIC_REPLICA + ": Removes a replica. The replica will be selected randomly.\n");
         System.out.println(out.toString());
-        System.exit(1);
     }
     
     /**
@@ -406,7 +548,7 @@ public class ReplicaManagement {
      * @throws IOException 
      * @throws ONCRPCException 
      */
-    private void createTestEnv() throws ONCRPCException, IOException, InterruptedException{
+    private void createTestEnv(String volume, String filepath) throws ONCRPCException, IOException, InterruptedException{
         ServiceSet sSet;
         // get MRC address
         RPCResponse<ServiceSet> r0 = dirClient.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_MRC);
@@ -421,20 +563,26 @@ public class ReplicaManagement {
         mrcClient = new MRCClient(client, mrcAddress);
 
         // create a volume (no access control)
-        RPCResponse r = mrcClient.mkvol(mrcAddress, credentials, "test",
+        RPCResponse r = mrcClient.mkvol(mrcAddress, credentials, volume,
                 OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(),
                 new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
         r.get();
         r.freeBuffers();
 
-        // create a directories
-        r = mrcClient.mkdir(mrcAddress, credentials, volume + "/test", 0);
-        r.get();
-        r.freeBuffers();
+        // create a directory
+        int index = 0;
+        if(filepath.startsWith("/"))
+            index = 1;
+        while ((index = filepath.indexOf("/", index+1)) != -1) { // dirs
+            String curDir = filepath.substring(0, index);
+            r = mrcClient.mkdir(mrcAddress, credentials, volume + curDir, 0);
+            r.get();
+            r.freeBuffers();
+        }
 
         // create a file
-        r = mrcClient.create(mrcAddress, credentials, volume + "/test/test.txt", 0);
+        r = mrcClient.create(mrcAddress, credentials, volume + filepath, 0);
         r.get();
         r.freeBuffers();
         
@@ -443,7 +591,7 @@ public class ReplicaManagement {
         int length = bytesIn.length;
         ReusableBuffer data = ReusableBuffer.wrap(bytesIn);
         
-        file = new RandomAccessFile("rw", mrcAddress, volume + "/test/test.txt", client , credentials);
+        file = new RandomAccessFile("rw", mrcAddress, volume + filepath, client , credentials);
         file.writeObject(0, 0, data);
     }
 }
