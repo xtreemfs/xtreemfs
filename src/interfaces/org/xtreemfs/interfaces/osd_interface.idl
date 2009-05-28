@@ -30,6 +30,13 @@ module org # 1000
         ObjectData data;
       };
 
+      struct VivaldiCoordinates # 53
+      {
+         double x_coordinate;
+         double y_coordinate;
+         double local_error;
+      };
+
 
       interface OSDInterface # 300
       {
@@ -56,19 +63,18 @@ module org # 1000
       	void xtreemfs_broadcast_gmax( string fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) # 1000;
         ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version) # 103;
 
-	void xtreemfs_cleanup_get_results( out StringSet results ) #109;
-	void xtreemfs_cleanup_is_running( out boolean is_running ) #108;
-	void xtreemfs_cleanup_start( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) #105;
-	void xtreemfs_cleanup_status( out string status ) #107;
-	void xtreemfs_cleanup_stop( ) #106;
+        void xtreemfs_cleanup_get_results( out StringSet results ) #109;
+        void xtreemfs_cleanup_is_running( out boolean is_running ) #108;
+        void xtreemfs_cleanup_start( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) #105;
+        void xtreemfs_cleanup_status( out string status ) #107;
+        void xtreemfs_cleanup_stop() #106;
 	
-
         InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 100;
         uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) #104;
         void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 101;
         InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) # 102;
-        void xtreemfs_shutdown() # 50;      
 	      void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) #1001;
+        void xtreemfs_shutdown() # 50;      
       };
     };
   };
