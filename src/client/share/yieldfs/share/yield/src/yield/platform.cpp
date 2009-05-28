@@ -1,4 +1,4 @@
-// Revision: 1493
+// Revision: 1496
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -2818,6 +2818,22 @@ namespace YIELD
   private:
     Volume::listdirCallback& listdir_callback;
   };
+  class SynclistdirCallback : public Volume::listdirCallback
+  {
+  public:
+    SynclistdirCallback( std::vector<Path>& out_names )
+      : out_names( out_names )
+    { }
+    SynclistdirCallback& operator=( const SynclistdirCallback& ) { return *this; }
+    // Volume::listdirCallback
+    bool operator()( const Path& name )
+    {
+      out_names.push_back( name );
+      return true;
+    }
+  private:
+    std::vector<Path>& out_names;
+  };
 };
 bool Volume::access( const YIELD::Path& path, int amode )
 {
@@ -2890,6 +2906,11 @@ bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_nam
 {
   readdir_to_listdirCallback readdir_callback( callback );
   return readdir( path, match_file_name_prefix, readdir_callback );
+}
+bool Volume::listdir( const Path& path, const Path& match_file_name_prefix, std::vector<Path>& out_names )
+{
+  SynclistdirCallback listdir_callback( out_names );
+  return listdir( path, match_file_name_prefix, listdir_callback );
 }
 bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 {

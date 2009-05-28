@@ -1,8 +1,12 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "policy_container.h"
+#include "org/xtreemfs/client/proxy.h"
+#include "org/xtreemfs/client/dir_proxy.h"
+#include "org/xtreemfs/client/mrc_proxy.h"
+#include "org/xtreemfs/client/osd_proxy.h"
 using namespace org::xtreemfs::client;
+
 
 #ifdef _WIN32
 #include <windows.h>
@@ -19,51 +23,48 @@ using namespace org::xtreemfs::client;
 #endif
 
 
-namespace org
+template <class ProxyType, class InterfaceType>
+Proxy<ProxyType, InterfaceType>::Proxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket )
+  : YIELD::ONCRPCClient<InterfaceType>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, _socket )
 {
-  namespace xtreemfs
+  get_user_credentials_from_passwd = NULL;
+  get_passwd_from_user_credentials = NULL;
+
+  std::vector<YIELD::Path> policy_dir_paths;
+  policy_dir_paths.push_back( "policies" );
+  policy_dir_paths.push_back( "lib" );
+  policy_dir_paths.push_back( YIELD::Path() );
+  YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
+  for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
   {
-    namespace client
+    std::vector<YIELD::Path> file_names;
+    volume->listdir( *policy_dir_path_i, file_names );
+    for ( std::vector<YIELD::Path>::iterator file_name_i = file_names.begin(); file_name_i != file_names.end(); file_name_i++ )
     {
-      class PolicyContainerlistdirCallback : public YIELD::Volume::listdirCallback
+      const std::string& file_name = static_cast<const std::string&>( *file_name_i );      
+      std::string::size_type dll_pos = file_name.find( SHLIBSUFFIX );
+      if ( dll_pos != std::string::npos && dll_pos != 0 && file_name[dll_pos-1] == '.' )
       {
-      public:
-        PolicyContainerlistdirCallback( PolicyContainer& policy_container, const YIELD::Path& root_dir_path )
-          : policy_container( policy_container ), root_dir_path( root_dir_path )
-        { }
-
-        PolicyContainerlistdirCallback& operator=( const PolicyContainerlistdirCallback& ) { return *this; }
-
-        // YIELD::Volume::listdirCallback
-        bool operator()( const YIELD::Path& name )
+        YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( *file_name_i );
+        if ( policy_shared_library != NULL )
         {
-          const std::string& name_str = static_cast<const std::string&>( name );
-          std::string::size_type dll_pos = name_str.find( SHLIBSUFFIX );
-          if ( dll_pos != std::string::npos && dll_pos != 0 && name_str[dll_pos-1] == '.' )
-            policy_container.loadPolicySharedLibrary( root_dir_path + name );
-          return true;
+          get_passwd_from_user_credentials_t get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_shared_library->getFunction( "get_passwd_from_user_credentials" );
+          if ( get_passwd_from_user_credentials )
+            this->get_passwd_from_user_credentials = get_passwd_from_user_credentials;
+
+          get_user_credentials_from_passwd_t get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_shared_library->getFunction( "get_user_credentials_from_passwd" );
+          if ( get_user_credentials_from_passwd )
+            this->get_user_credentials_from_passwd = get_user_credentials_from_passwd;
+
+          policy_shared_libraries.push_back( policy_shared_library.release() );
         }
-
-      private:
-        PolicyContainer& policy_container;
-        YIELD::Path root_dir_path;
-      };
-    };
-  };
-};
-
-
-PolicyContainer::PolicyContainer()
-{
-  this->get_user_credentials_from_passwd = NULL;
-  this->get_passwd_from_user_credentials = NULL;
-
-  loadPolicySharedLibraries( "policies" );
-  loadPolicySharedLibraries( "lib" );
-  loadPolicySharedLibraries( YIELD::Path() );
+      }
+    }
+  }
 }
 
-PolicyContainer::~PolicyContainer()
+template <class ProxyType, class InterfaceType>
+Proxy<ProxyType, InterfaceType>::~Proxy()
 {
   for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
     YIELD::Object::decRef( **policy_shared_library_i );
@@ -83,31 +84,19 @@ PolicyContainer::~PolicyContainer()
   }
 }
 
-void PolicyContainer::loadPolicySharedLibraries( const YIELD::Path& policy_shared_libraries_dir_path )
+template <class ProxyType, class InterfaceType>
+YIELD::auto_Object<YIELD::ONCRPCRequest> Proxy<ProxyType, InterfaceType>::createProtocolRequest( YIELD::auto_Object<YIELD::Request> request )
 {
-  PolicyContainerlistdirCallback listdir_callback( *this, policy_shared_libraries_dir_path );
-  YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
-  volume->listdir( policy_shared_libraries_dir_path, listdir_callback );
+  YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+  getCurrentUserCredentials( *user_credentials.get() );
+  YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = YIELD::ONCRPCClient<InterfaceType>::createProtocolRequest( request );
+  oncrpc_request->set_credential_auth_flavor( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR );
+  oncrpc_request->set_credential( user_credentials.release() );
+  return oncrpc_request;
 }
 
-void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_library_file_path )
-{
-  YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_file_path );
-  if ( policy_shared_library != NULL )
-  {
-    get_passwd_from_user_credentials_t get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_shared_library->getFunction( "get_passwd_from_user_credentials" );
-    if ( get_passwd_from_user_credentials )
-      this->get_passwd_from_user_credentials = get_passwd_from_user_credentials;
-
-    get_user_credentials_from_passwd_t get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_shared_library->getFunction( "get_user_credentials_from_passwd" );
-    if ( get_user_credentials_from_passwd )
-      this->get_user_credentials_from_passwd = get_user_credentials_from_passwd;
-
-    policy_shared_libraries.push_back( policy_shared_library.release() );
-  }
-}
-
-void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
+template <class ProxyType, class InterfaceType>
+void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
 #ifdef _WIN32
   if ( get_user_credentials_from_passwd )
@@ -156,7 +145,8 @@ void PolicyContainer::getCurrentUserCredentials( org::xtreemfs::interfaces::User
 #endif
 }
 
-void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
+template <class ProxyType, class InterfaceType>
+void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
 {
   uint32_t user_id_hash = YIELD::string_hash( user_id.c_str() );
   uint32_t group_id_hash = YIELD::string_hash( group_id.c_str() );
@@ -217,7 +207,8 @@ void PolicyContainer::getpasswdFromUserCredentials( const std::string& user_id, 
   user_id_to_passwd_cache->insert( user_id_hash, new std::pair<int,int>( out_uid, out_gid ) );
 }
 
-void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
+template <class ProxyType, class InterfaceType>
+void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
   YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>* uid_to_user_credentials_cache = passwd_to_user_credentials_cache.find( static_cast<uint32_t>( gid ) );
   if ( uid_to_user_credentials_cache != NULL )
@@ -306,3 +297,7 @@ void PolicyContainer::getUserCredentialsFrompasswd( int uid, int gid, org::xtree
   uid_to_user_credentials_cache->insert( static_cast<uint32_t>( uid ), new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) );
 }
 
+
+template class Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>;
+template class Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>;
+template class Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>;

@@ -108,6 +108,35 @@ namespace org
         org::xtreemfs::interfaces::ObjectData data;
       };
 
+      class VivaldiCoordinates : public YIELD::Object
+      {
+      public:
+        VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
+        VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) : x_coordinate( x_coordinate ), y_coordinate( y_coordinate ), local_error( local_error ) { }
+        virtual ~VivaldiCoordinates() { }
+
+        void set_x_coordinate( double x_coordinate ) { this->x_coordinate = x_coordinate; }
+        double get_x_coordinate() const { return x_coordinate; }
+        void set_y_coordinate( double y_coordinate ) { this->y_coordinate = y_coordinate; }
+        double get_y_coordinate() const { return y_coordinate; }
+        void set_local_error( double local_error ) { this->local_error = local_error; }
+        double get_local_error() const { return local_error; }
+
+        bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( VivaldiCoordinates, 1053 );
+
+        // YIELD::Object
+        void deserialize( YIELD::StructuredInputStream& input_stream ) { x_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "x_coordinate" ) ); y_coordinate = input_stream.readDouble( YIELD::StructuredStream::Declaration( "y_coordinate" ) ); local_error = input_stream.readDouble( YIELD::StructuredStream::Declaration( "local_error" ) ); }
+        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeDouble( YIELD::StructuredStream::Declaration( "x_coordinate" ), x_coordinate ); output_stream.writeDouble( YIELD::StructuredStream::Declaration( "y_coordinate" ), y_coordinate ); output_stream.writeDouble( YIELD::StructuredStream::Declaration( "local_error" ), local_error ); }
+
+      protected:
+        double x_coordinate;
+        double y_coordinate;
+        double local_error;
+      };
+
 
 
       #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS
@@ -217,11 +246,11 @@ namespace org
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) { return xtreemfs_internal_read_local( file_credentials, file_id, object_number, object_version, offset, length, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_internal_read_localRequest> __request( new xtreemfs_internal_read_localRequest( file_credentials, file_id, object_number, object_version, offset, length ) ); YIELD::auto_Object< YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > > __response_queue = new YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); YIELD::auto_Object<xtreemfs_internal_read_localResponse> __response = __response_queue->dequeue_typed<xtreemfs_internal_read_localResponse>( response_timeout_ns ); org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = __response->get__return_value(); return _return_value; }
 
-        virtual void xtreemfs_shutdown() { xtreemfs_shutdown( static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() ); YIELD::auto_Object< YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > > __response_queue = new YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); YIELD::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue_typed<xtreemfs_shutdownResponse>( response_timeout_ns ); }
-
         virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) { xtreemfs_ping( coordinates, remote_coordinates, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_pingRequest> __request( new xtreemfs_pingRequest( coordinates ) ); YIELD::auto_Object< YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > > __response_queue = new YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); YIELD::auto_Object<xtreemfs_pingResponse> __response = __response_queue->dequeue_typed<xtreemfs_pingResponse>( response_timeout_ns ); remote_coordinates = __response->get_remote_coordinates(); }
+
+        virtual void xtreemfs_shutdown() { xtreemfs_shutdown( static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_shutdown( uint64_t response_timeout_ns ) { YIELD::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() ); YIELD::auto_Object< YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > > > __response_queue = new YIELD::OneSignalEventQueue< YIELD::NonBlockingFiniteQueue<YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); YIELD::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue_typed<xtreemfs_shutdownResponse>( response_timeout_ns ); }
 
 
         // Request/response pair definitions for the operations in OSDInterface
@@ -951,32 +980,6 @@ namespace org
           uint64_t length;
         };
 
-        class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
-        {
-        public:
-          xtreemfs_shutdownResponse() { }
-          virtual ~xtreemfs_shutdownResponse() { }
-
-          bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
-
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1350 );
-
-        };
-
-        class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
-        {
-        public:
-          xtreemfs_shutdownRequest() { }
-          virtual ~xtreemfs_shutdownRequest() { }
-
-          bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
-
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1350 );
-
-        };
-
         class xtreemfs_pingResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -1021,6 +1024,32 @@ namespace org
 
         protected:
           org::xtreemfs::interfaces::VivaldiCoordinates coordinates;
+        };
+
+        class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_shutdownResponse() { }
+          virtual ~xtreemfs_shutdownResponse() { }
+
+          bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
+
+          // YIELD::Object
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1350 );
+
+        };
+
+        class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_shutdownRequest() { }
+          virtual ~xtreemfs_shutdownRequest() { }
+
+          bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
+
+          // YIELD::Object
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1350 );
+
         };
 
           class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
@@ -1215,8 +1244,8 @@ namespace org
               case 1404UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
               case 1401UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
               case 1402UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
-              case 1350UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               case 2301UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
+              case 1350UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -1257,8 +1286,8 @@ namespace org
               case 1404: return new xtreemfs_internal_get_file_sizeRequest;
               case 1401: return new xtreemfs_internal_truncateRequest;
               case 1402: return new xtreemfs_internal_read_localRequest;
-              case 1350: return new xtreemfs_shutdownRequest;
               case 2301: return new xtreemfs_pingRequest;
+              case 1350: return new xtreemfs_shutdownRequest;
               default: return NULL;
             }
           }
@@ -1282,8 +1311,8 @@ namespace org
               case 1404: return new xtreemfs_internal_get_file_sizeResponse;
               case 1401: return new xtreemfs_internal_truncateResponse;
               case 1402: return new xtreemfs_internal_read_localResponse;
-              case 1350: return new xtreemfs_shutdownResponse;
               case 2301: return new xtreemfs_pingResponse;
+              case 1350: return new xtreemfs_shutdownResponse;
               default: return NULL;
             }
           }
@@ -1320,8 +1349,8 @@ namespace org
         virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& req ) { YIELD::auto_Object<xtreemfs_internal_get_file_sizeResponse> resp( new xtreemfs_internal_get_file_sizeResponse ); uint64_t _return_value = _xtreemfs_internal_get_file_size( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& req ) { YIELD::auto_Object<xtreemfs_internal_truncateResponse> resp( new xtreemfs_internal_truncateResponse ); org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _xtreemfs_internal_truncate( req.get_file_credentials(), req.get_file_id(), req.get_new_file_size(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req ) { YIELD::auto_Object<xtreemfs_internal_read_localResponse> resp( new xtreemfs_internal_read_localResponse ); org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = _xtreemfs_internal_read_local( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_length() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { YIELD::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& req ) { YIELD::auto_Object<xtreemfs_pingResponse> resp( new xtreemfs_pingResponse ); org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates; _xtreemfs_ping( req.get_coordinates(), remote_coordinates ); resp->set_remote_coordinates( remote_coordinates ); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
+        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { YIELD::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); YIELD::Object::decRef( req ); }
 
       virtual void _read( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, org::xtreemfs::interfaces::ObjectData& object_data ) { }
         virtual void _truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
@@ -1338,8 +1367,8 @@ namespace org
         virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return 0; }
         virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) { return org::xtreemfs::interfaces::InternalReadLocalResponse(); }
-        virtual void _xtreemfs_shutdown() { }
         virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) { }
+        virtual void _xtreemfs_shutdown() { }
       };
 
       // Use this macro in an implementation class to get all of the prototypes for the operations in OSDInterface
@@ -1359,8 +1388,8 @@ namespace org
       virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual void _xtreemfs_internal_truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length );\
-      virtual void _xtreemfs_shutdown();\
-      virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates );
+      virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates );\
+      virtual void _xtreemfs_shutdown();
 
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handlereadRequestRequest( readRequest& req );\
@@ -1378,8 +1407,8 @@ namespace org
       virtual void handlextreemfs_internal_get_file_sizeRequestRequest( xtreemfs_internal_get_file_sizeRequest& req );\
       virtual void handlextreemfs_internal_truncateRequestRequest( xtreemfs_internal_truncateRequest& req );\
       virtual void handlextreemfs_internal_read_localRequestRequest( xtreemfs_internal_read_localRequest& req );\
-      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );\
-      virtual void handlextreemfs_pingRequestRequest( xtreemfs_pingRequest& req );
+      virtual void handlextreemfs_pingRequestRequest( xtreemfs_pingRequest& req );\
+      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );
 
     };
 

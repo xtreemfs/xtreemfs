@@ -4,7 +4,7 @@
 #ifndef _ORG_XTREEMFS_CLIENT_DIR_PROXY_H_
 #define _ORG_XTREEMFS_CLIENT_DIR_PROXY_H_
 
-#include "org/xtreemfs/client/proxy_exception_response.h"
+#include "org/xtreemfs/client/proxy.h"
 
 #ifdef _WIN32
 #pragma warning( push )
@@ -25,30 +25,9 @@ namespace org
   {
     namespace client
     {
-      class PolicyContainer;
-
-
-      class DIRProxy : public YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>
+      class DIRProxy : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
       {
       public:
-        template <class StageGroupType>
-        static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
-                                                    YIELD::auto_Object<StageGroupType> stage_group,
-                                                    YIELD::auto_Object<YIELD::Log> log = NULL,
-                                                    const YIELD::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
-                                                    uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT
-#ifdef YIELD_HAVE_OPENSSL
-                                                    , YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL 
-#endif
-                                                 )
-        {
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max
-#ifdef YIELD_HAVE_OPENSSL
-                                                                                                 , ssl_context 
-#endif
-                                                                                               );
-        }
-
         YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
         YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
 
@@ -57,9 +36,6 @@ namespace org
 
         DIRProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket );
         ~DIRProxy();
-
-
-        PolicyContainer* policies;
 
 
         class CachedAddressMappingURI : public YIELD::URI
@@ -86,10 +62,6 @@ namespace org
 
         std::map<std::string, CachedAddressMappingURI*> uuid_to_uri_cache;
         YIELD::Mutex uuid_to_uri_cache_lock;
-
-
-        // YIELD::ONCRPCClient
-        YIELD::auto_Object<YIELD::ONCRPCRequest> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
     };
   };

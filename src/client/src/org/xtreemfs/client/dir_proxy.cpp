@@ -2,31 +2,17 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/dir_proxy.h"
-#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 
 DIRProxy::DIRProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket )
-  : YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, _socket )
-{
-  policies = new PolicyContainer;
-}
+  : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, _socket )
+{ }
 
 DIRProxy::~DIRProxy()
 {
-  YIELD::Object::decRef( *policies );
   for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
     YIELD::Object::decRef( *uuid_to_uri_i->second );
-}
-
-YIELD::auto_Object<YIELD::ONCRPCRequest> DIRProxy::createProtocolRequest( YIELD::auto_Object<YIELD::Request> request )
-{
-  YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
-  policies->getCurrentUserCredentials( *user_credentials.get() );
-  YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = YIELD::ONCRPCClient<DIRInterface>::createProtocolRequest( request );
-  oncrpc_request->set_credential_auth_flavor( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR );
-  oncrpc_request->set_credential( user_credentials.release() );
-  return oncrpc_request;
 }
 
 YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid )

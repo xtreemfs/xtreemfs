@@ -2991,22 +2991,24 @@ namespace YIELD
     // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
     virtual auto_Object<File> creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
     virtual auto_Object<File> creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
-    virtual bool exists( const YIELD::Path& path );
-    virtual bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
-    virtual bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
+    virtual bool exists( const Path& path );
+    virtual bool listdir( const Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
+    virtual bool listdir( const Path& path, const Path& match_file_name_prefix, listdirCallback& callback );
+    virtual bool listdir( const Path& path, std::vector<Path>& out_names ) { return listdir( path, Path(), out_names ); }
+    virtual bool listdir( const Path& path, const Path& match_file_name_prefix, std::vector<Path>& out_names );
     virtual bool makedirs( const Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); } // Python function name
     virtual bool makedirs( const Path& path, mode_t mode ) { return mktree( path, mode ); }
-    virtual bool mkdir( const YIELD::Path& path ) { return mkdir( path, DEFAULT_DIRECTORY_MODE ); }
-    virtual bool mktree( const YIELD::Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); }
-    virtual bool mktree( const YIELD::Path& path, mode_t mode );
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
+    virtual bool mkdir( const Path& path ) { return mkdir( path, DEFAULT_DIRECTORY_MODE ); }
+    virtual bool mktree( const Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); }
+    virtual bool mktree( const Path& path, mode_t mode );
+    virtual auto_Object<File> open( const Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
+    virtual auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
+    virtual auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
     virtual bool readdir( const Path& path, readdirCallback& callback ) { return readdir( path, Path(), callback ); }
-    virtual bool rmtree( const YIELD::Path& path );
+    virtual bool rmtree( const Path& path );
     virtual auto_Object<Stat> stat( const Path& path ) { return getattr( path ); }
-    virtual bool touch( const YIELD::Path& path ) { return touch( path, File::DEFAULT_MODE ); }
-    virtual bool touch( const YIELD::Path& path, mode_t mode );
+    virtual bool touch( const Path& path ) { return touch( path, File::DEFAULT_MODE ); }
+    virtual bool touch( const Path& path, mode_t mode );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Volume, 15 );
