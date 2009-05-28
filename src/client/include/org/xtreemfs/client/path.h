@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef ORG_XTREEMFS_CLIENT_PATH_H
-#define ORG_XTREEMFS_CLIENT_PATH_H
+#ifndef _ORG_XTREEMFS_CLIENT_PATH_H_
+#define _ORG_XTREEMFS_CLIENT_PATH_H_
 
 #include "yield.h"
 
@@ -28,7 +28,7 @@ namespace org
         const YIELD::Path& get_local_path() const { return local_path; }
         const std::string& get_global_path() const { return global_path; } // Volume + /-separated local path
         size_t size() const { return get_global_path().size(); }
-        
+
       private:
         std::string volume_name;
         YIELD::Path local_path;

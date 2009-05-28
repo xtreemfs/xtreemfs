@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
-#ifndef YIELDFS_H
-#define YIELDFS_H
+#ifndef _YIELDFS_H_
+#define _YIELDFS_H_
 
 #include "yield/platform.h"
 
@@ -65,8 +65,13 @@ namespace yieldfs
     virtual YIELD::Path volname( const YIELD::Path& path ) { return underlying_volume->volname( path ); }
 
   protected:
+    StackableVolume()
+    {
+      underlying_volume = new YIELD::Volume;
+    }
+
     StackableVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
-      : underlying_volume( underlying_volume ), log( NULL )
+      : underlying_volume( underlying_volume )
     { }
 
     StackableVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log )
@@ -82,8 +87,15 @@ namespace yieldfs
   class FileCachingVolume : public StackableVolume
   {
   public:
-    FileCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log = NULL )
+    FileCachingVolume() // For testing
+    { }
+
+    FileCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
       : StackableVolume( underlying_volume )
+    { }
+
+    FileCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log )
+      : StackableVolume( underlying_volume, log )
     { }
 
     // YIELD::Volume
@@ -127,6 +139,7 @@ namespace yieldfs
   class StatCachingVolume : public StackableVolume, private YIELD::HATTrie<CachedStat*>
   {
   public:
+    StatCachingVolume(); // For testing
     StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s );
     StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log, double ttl_s );
 
@@ -136,7 +149,7 @@ namespace yieldfs
     YIELD::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path );
     bool link( const YIELD::Path& old_path, const YIELD::Path& new_path );
     bool mkdir( const YIELD::Path& path, mode_t mode );
-    YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode );
+    YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
     bool readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback );
     bool removexattr( const YIELD::Path& path, const std::string& name );
     bool rename( const YIELD::Path& from_path, const YIELD::Path& to_path );
@@ -168,6 +181,7 @@ namespace yieldfs
   class TracingVolume : public StackableVolume
   {
   public:
+    TracingVolume(); // For testing
     TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume ); // Log to std::cout
     TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log ); // Steals a reference to log
 

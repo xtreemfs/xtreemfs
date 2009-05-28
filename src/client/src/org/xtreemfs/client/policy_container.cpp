@@ -92,8 +92,8 @@ void PolicyContainer::loadPolicySharedLibraries( const YIELD::Path& policy_share
 
 void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_library_file_path )
 {
-  YIELD::SharedLibrary* policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_file_path );
-  if ( policy_shared_library )
+  YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_file_path );
+  if ( policy_shared_library != NULL )
   {
     get_passwd_from_user_credentials_t get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_shared_library->getFunction( "get_passwd_from_user_credentials" );
     if ( get_passwd_from_user_credentials )
@@ -103,7 +103,7 @@ void PolicyContainer::loadPolicySharedLibrary( const YIELD::Path& policy_shared_
     if ( get_user_credentials_from_passwd )
       this->get_user_credentials_from_passwd = get_user_credentials_from_passwd;
 
-    policy_shared_libraries.push_back( policy_shared_library );
+    policy_shared_libraries.push_back( policy_shared_library.release() );
   }
 }
 

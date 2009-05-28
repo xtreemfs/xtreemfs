@@ -1,4 +1,4 @@
-// Revision: 1475
+// Revision: 1494
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -223,319 +223,102 @@ namespace YIELD
 };
 
 
-// tcp_listen_queue.h
+// eventfd_pipe.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-
-namespace YIELD
-{
-  class TCPListenQueue : public FDEventQueue
-  {
-  public:
-    static auto_Object<TCPListenQueue> create( auto_Object<SocketAddress> listen_sockaddr, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory = NULL );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( TCPListenQueue, 222 );
-
-    // EventQueue
-    bool enqueue( Event& );
-    Event* dequeue();
-    Event* dequeue( uint64_t );
-    Event* try_dequeue() { return dequeue( 0 ); }
-
-  private:
-    TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket, auto_Object<Log> log );
-    ~TCPListenQueue() { }
-
-    auto_Object<TCPSocket> listen_tcp_socket;
-    auto_Object<Log> log;
-
-#if !defined(_WIN32) && defined(_DEBUG)
-    bool seen_too_many_open_files;
-#endif
-
-
-    TCPSocket* accept();
-  };
-};
-
-
-// client.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
+#if defined(_WIN32)
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
-#define ETIMEDOUT WSAETIMEDOUT
+#pragma warning( push )
+#elif defined(YIELD_HAVE_LINUX_EVENTFD)
+#include <sys/eventfd.h>
 #endif
-template <class ProtocolRequestType, class ProtocolResponseType>
-Client<ProtocolRequestType, ProtocolResponseType>::Client( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-  : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peer_sockaddr( peer_sockaddr ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
-{ }
-template <class ProtocolRequestType, class ProtocolResponseType>
-Client<ProtocolRequestType, ProtocolResponseType>::~Client()
+auto_Object<EventFDPipe> EventFDPipe::create()
 {
-  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
-    Object::decRef( **connection_i );
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-typename Client<ProtocolRequestType, ProtocolResponseType>::Connection* Client<ProtocolRequestType, ProtocolResponseType>::createConnection()
-{
-  auto_Object<Socket> _socket = socket_factory->createSocket();
-  _socket->set_blocking_mode( false );
-  Connection* connection = new Connection( _socket, reconnect_tries_max );
-  return connection;
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-void Client<ProtocolRequestType, ProtocolResponseType>::destroyConnection( Connection* connection )
-{
-  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
-  {
-    if ( **connection_i == *connection )
-    {
-      uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
-      auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
-      YIELD::Object::decRef( connection );
-      connection_i = connections.erase( connection_i );
-      if ( --reconnect_tries_left > 0 )
-      {
-        connection = createConnection();
-        connection->set_reconnect_tries_left( reconnect_tries_left );
-        if ( protocol_request != NULL )
-        {
-          connection->set_protocol_request( protocol_request );
-          fd_event_queue->timer_create( Time( 1 * NS_IN_S ), connection ); // Wait for a delay to attach, add to connections, and try to connect again
-        }
-      }
-      else
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_ERR ) << "Client: exhausted connection retries to " << peer_sockaddr << ".";
-        if ( protocol_request != NULL )
-        {
-          // We've lost errno here
-#ifdef _WIN32
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+#ifdef YIELD_HAVE_LINUX_EVENTFD
+  int fd = eventfd( 0, 0 );
+  if ( fd != -1 )
+    return new EventFDPipe( fd );
 #else
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+  auto_Object<TCPSocket> listen_socket = TCPSocket::create();
+  if ( listen_socket != NULL &&
+       listen_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
+       listen_socket->listen() )
+  {
+    auto_Object<TCPSocket> write_end = TCPSocket::create();
+    if ( write_end != NULL )
+    {
+      if ( write_end->connect( listen_socket->getsockname() ) == Stream::STREAM_STATUS_OK )
+      {
+        write_end->set_blocking_mode( false );
+        auto_Object<TCPSocket> read_end = listen_socket->accept();
+        if ( read_end != NULL )
+        {
+          read_end->set_blocking_mode( false );
+          return new EventFDPipe( read_end, write_end );
+        }
+      }
+    }
+  }
 #endif
-        }
-      }
-    }
-    else
-      ++connection_i;
-  }
+  return NULL;
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
+#ifdef YIELD_HAVE_LINUX_EVENTFD
+EventFDPipe::EventFDPipe( int fd )
+  : fd( fd )
+{ }
+#else
+EventFDPipe::EventFDPipe( auto_Object<TCPSocket> read_end, auto_Object<TCPSocket> write_end )
+  : read_end( read_end ), write_end( write_end )
+{ }
+#endif
+EventFDPipe::~EventFDPipe()
 {
-  Connection* connection = NULL;
-  uint32_t fd_event_error_code = 0;
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( StageStartupEvent ):
-    case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); return;
-    case YIELD_OBJECT_TAG( FDEvent ):
-    {
-      FDEvent& fd_event = static_cast<FDEvent&>( ev );
-      connection = static_cast<Connection*>( fd_event.get_context() );
-      fd_event_error_code = fd_event.get_error_code();
-      Object::decRef( ev );
-    }
-    break;
-    case YIELD_OBJECT_TAG( TimerEvent ):
-    {
-      TimerEvent& timer_event = static_cast<TimerEvent&>( ev );
-      auto_Object<> timer_event_context = timer_event.get_context();
-      if ( timer_event_context == NULL ) // Check connection timeouts
-      {
-        typename std::vector<Connection*>::size_type connection_i = 0;
-        for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
-        {
-          Connection* connection = connections[connection_i];
-          if ( connection->get_state() != Connection::IDLE )
-          {
-            Time connection_idle_time = Time() - connection->get_last_activity_time();
-            if ( connection_idle_time > operation_timeout )
-            {
-              if ( log != NULL )
-                log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection to " << peer_sockaddr << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
-              destroyConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
-            }
-          }
-        }
-        Object::decRef( ev );
-        return;
-      }
-      else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
-      {
-        connection = static_cast<Connection*>( timer_event_context.release() );
-        connection->get_socket()->attach( fd_event_queue->incRef(), connection );
-        connections.push_back( connection );
-        Object::decRef( ev );
-        // Drop down
-      }
-      else
-        DebugBreak();
-    }
-    break;
-    default:
-    {
-      auto_Object<ProtocolRequestType> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
-      if ( !connections.empty() )
-      {
-        for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
-        {
-          if ( ( *connection_i )->get_state() == Connection::IDLE )
-          {
-            connection = *connection_i;
-            connection->set_state( Connection::WRITING );
-            connection->touch(); // Update last_activity_time
-            break;
-          }
-        }
-      }
-      if ( connection == NULL )
-      {
-        connection = createConnection();
-        connection->get_socket()->attach( fd_event_queue->incRef(), connection );
-        connections.push_back( connection );
-      }
-      connection->set_protocol_request( protocol_request );
-    }
-    break;
-  }
-  if ( fd_event_error_code == 0 )
-  {
-    switch ( connection->get_state() )
-    {
-      case Connection::IDLE:
-      case Connection::CONNECTING:
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to connect to " << peer_sockaddr << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
-        Stream::Status connect_status = connection->connect( peer_sockaddr );
-        if ( connect_status == Stream::STREAM_STATUS_OK ) // Use ifs here instead of a switch to allow simple drop-throughs
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully connected to " << peer_sockaddr << ".";
-          connection->set_state( Connection::WRITING );
-          // Drop down to WRITING
-  	    }
-        else if ( connect_status == Stream::STREAM_STATUS_WANT_WRITE ) // Wait for non-blocking connect() to complete
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: waiting for non-blocking connect() to " << peer_sockaddr << " to complete.";
-          connection->set_state( Connection::CONNECTING );
-          return;
-        }
-        else
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << peer_sockaddr << " failed: " << Exception::strerror();
-          break; // Drop down to try to reconnect
-        }
-      }
-      // No break here, to allow drop down to WRITING
-      case Connection::WRITING:
-      {
-        auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
-        Stream::Status write_status = protocol_request->serialize( *connection );
-        if ( write_status == Stream::STREAM_STATUS_OK )
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully wrote " << protocol_request->get_type_name() << " to " << peer_sockaddr << ".";
-          connection->set_protocol_response( createProtocolResponse( protocol_request ) );
-          connection->set_state( Connection::READING );
-          // Drop down to READING
-        }
-        else if ( write_status == Stream::STREAM_STATUS_WANT_WRITE || write_status == Stream::STREAM_STATUS_WANT_READ )
-          return;
-        else if ( write_status == Stream::STREAM_STATUS_ERROR )
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peer_sockaddr << " on write, error: " << Exception::strerror();
-          break; // Drop down to reconnect
-        }
-        else
-          DebugBreak();
-      }
-      // No break here, to allow drop down to READING
-      case Connection::READING:
-      {
-        auto_Object<ProtocolResponseType> protocol_response = connection->get_protocol_response();
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to read " << protocol_response->get_type_name() << " from " << peer_sockaddr << ".";
-        Stream::Status read_status = protocol_response->deserialize( *connection );
-        if ( read_status == Stream::STREAM_STATUS_OK )
-        {
-          respond( connection->get_protocol_request(), connection->get_protocol_response() );
-          connection->set_protocol_request( NULL );
-          connection->set_protocol_response( NULL );
-          connection->set_state( Connection::IDLE );
-          return; // Done
-        }
-        else if ( read_status == Stream::STREAM_STATUS_WANT_READ || read_status == Stream::STREAM_STATUS_WANT_WRITE )
-          return;
-        else if ( read_status == Stream::STREAM_STATUS_ERROR )
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peer_sockaddr << " on read, error: " << Exception::strerror();
-          break; // Drop down to reconnect
-        }
-        else
-          DebugBreak();
-      }
-      break;
-      default: DebugBreak();
-    }
-  }
-  else if ( log != NULL ) // fd_event_error_code != 0
-    log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << peer_sockaddr << " failed: " << Exception::strerror( fd_event_error_code );
-    // Drop down to reconnect
-  destroyConnection( connection );
+#ifdef YIELD_HAVE_LINUX_EVENTFD
+  ::close( fd );
+#endif
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-Client<ProtocolRequestType, ProtocolResponseType>::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
-  : _socket( _socket ), reconnect_tries_left( reconnect_tries_max )
+void EventFDPipe::clear()
 {
-  state = IDLE;
+#ifdef YIELD_HAVE_LINUX_EVENTFD
+  uint64_t m;
+  ::read( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
+#else
+  char m;
+  read_end->read( &m, sizeof( m ), NULL );
+#endif
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-bool Client<ProtocolRequestType, ProtocolResponseType>::Connection::close()
+#if defined(_WIN32)
+unsigned int EventFDPipe::get_read_end() const
 {
-  return _socket->close();
+  return *read_end;
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::connect( auto_Object<SocketAddress> connect_to_sockaddr )
+unsigned int EventFDPipe::get_write_end() const
 {
-  last_activity_time = Time();
-  return _socket->connect( connect_to_sockaddr );
+  return *write_end;
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+#elif !defined(YIELD_HAVE_LINUX_EVENTFD)
+int EventFDPipe::get_read_end() const
 {
-  last_activity_time = Time();
-  return _socket->read( buffer, buffer_len, out_bytes_read );
+  return *read_end;
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-bool Client<ProtocolRequestType, ProtocolResponseType>::Connection::shutdown()
+int EventFDPipe::get_write_end() const
 {
-  return _socket->shutdown();
+  return *write_end;
 }
-template <class ProtocolRequestType, class ProtocolResponseType>
-Stream::Status Client<ProtocolRequestType, ProtocolResponseType>::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+#endif
+void EventFDPipe::signal()
 {
-  last_activity_time = Time();
-  return _socket->writev( buffers, buffers_count, out_bytes_written );
+#ifdef YIELD_HAVE_LINUX_EVENTFD
+  uint64_t m = 1;
+  ::write( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
+#else
+  char m = 1;
+  write_end->write( &m, sizeof( m ), NULL );
+#endif
 }
-template class Client<HTTPRequest, HTTPResponse>;
-template class Client<ONCRPCRequest, ONCRPCResponse>;
 
 
 // fd_and_internal_event_queue.cpp
@@ -555,11 +338,11 @@ Event* FDAndInternalEventQueue::dequeue()
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
   if ( ev != NULL )
   {
-    dequeue_blocked = false;
+//    dequeue_blocked = false;
     return ev;
   }
   ev = FDEventQueue::dequeue();
-  dequeue_blocked = false;
+//  dequeue_blocked = false;
   if ( ev != NULL )
     return ev;
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
@@ -570,11 +353,11 @@ Event* FDAndInternalEventQueue::dequeue( uint64_t timeout_ns )
   Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
   if ( ev != NULL )
   {
-    dequeue_blocked = false;
+//    dequeue_blocked = false;
     return ev;
   }
   ev = FDEventQueue::dequeue( timeout_ns );
-  dequeue_blocked = false;
+//  dequeue_blocked = false;
   if ( ev )
     return ev;
   return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
@@ -584,6 +367,8 @@ bool FDAndInternalEventQueue::enqueue( Event& ev )
   bool result = NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
   if ( dequeue_blocked )
     FDEventQueue::signal();
+  else
+    DebugBreak();
   return result;
 }
 Event* FDAndInternalEventQueue::try_dequeue()
@@ -626,9 +411,6 @@ Event* FDAndInternalEventQueue::try_dequeue()
 #else
 #include <vector>
 #endif
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-#include <sys/eventfd.h>
-#endif
 #endif
 #include <cstring>
 #include <iostream>
@@ -639,8 +421,6 @@ static bool CompareTimerEvents( const TimerEvent* left, const TimerEvent* right 
 }
 FDEventQueue::FDEventQueue()
 {
-  active_fds = 0;
-  std::make_heap( timers.begin(), timers.end(), CompareTimerEvents );
 #if defined(YIELD_HAVE_LINUX_EPOLL)
   poll_fd = epoll_create( 32768 );
   returned_events = new epoll_event[MAX_EVENTS_PER_POLL];
@@ -658,32 +438,15 @@ FDEventQueue::FDEventQueue()
   except_fds = new fd_set; FD_ZERO( except_fds );
   except_fds_copy = new fd_set; FD_ZERO( except_fds_copy );
 #endif
-#ifdef YIELD_HAVE_LINUX_EVENTFD
-  int signal_eventfd = eventfd( 0, 0 );
-  if ( signal_eventfd != -1 )
+  active_fds = 0;
+  eventfd_pipe = EventFDPipe::create();
+  if ( eventfd_pipe != NULL &&
+       attach( eventfd_pipe->get_read_end(), eventfd_pipe->incRef() ) )
   {
-    signal_read_end = new File( signal_eventfd );
-    if ( attach( *signal_read_end, signal_read_end.get() ) )
-      signal_write_end = signal_read_end;
-    else
-      throw Exception();
+    std::make_heap( timers.begin(), timers.end(), CompareTimerEvents );
   }
   else
     throw Exception();
-#else
-  auto_Object<TCPSocket> signal_listen_socket = new TCPSocket;
-  if ( !signal_listen_socket->bind( new SocketAddress() ) )
-    throw Exception();
-  if ( !signal_listen_socket->listen() )
-    throw Exception();
-  signal_write_end = new TCPSocket;
-  signal_write_end->connect( signal_listen_socket->getsockname() );
-  signal_write_end->set_blocking_mode( false );
-  signal_read_end = signal_listen_socket->accept();
-  signal_read_end->set_blocking_mode( false );
-  if ( !attach( *signal_read_end, signal_read_end.get() ) )
-    throw Exception();
-#endif
 }
 FDEventQueue::~FDEventQueue()
 {
@@ -697,67 +460,81 @@ FDEventQueue::~FDEventQueue()
 #endif
 }
 #ifdef _WIN32
-bool FDEventQueue::attach( unsigned int fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::attach( unsigned int fd, auto_Object<> context, bool enable_read, bool enable_write )
 #else
-bool FDEventQueue::attach( int fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::attach( int fd, auto_Object<> context, bool enable_read, bool enable_write )
 #endif
 {
-#if defined(_WIN32)
   if ( fd_to_context_map.find( fd ) == NULL )
   {
-    fd_to_context_map.insert( fd, context );
+    Object* released_context = context.release();
+#if defined(_WIN32)
     if ( enable_read ) FD_SET( fd, read_fds );
     if ( enable_write ) { FD_SET( fd, write_fds ); FD_SET( fd, except_fds ); }
     next_fd_to_check = fd_to_context_map.begin();
+    fd_to_context_map.insert( fd, released_context );
     return true;
-  }
-  else
-    return false;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
-  struct epoll_event change_event;
-  memset( &change_event, 0, sizeof( change_event ) );
-  change_event.data.ptr = context;
-  change_event.events = 0;
-  if ( enable_read ) change_event.events |= EPOLLIN;
-  if ( enable_write ) change_event.events |= EPOLLOUT;
-  return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
+    struct epoll_event change_event;
+    memset( &change_event, 0, sizeof( change_event ) );
+    change_event.data.ptr = released_context;
+    change_event.events = 0;
+    if ( enable_read ) change_event.events |= EPOLLIN;
+    if ( enable_write ) change_event.events |= EPOLLOUT;
+    if ( epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1 )
+    {
+      fd_to_context_map.insert( fd, released_context );
+      return true;
+    }
+    else
+      return false;
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-  struct kevent change_events[2];
-  EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, context );
-  EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, context );
-  return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
+    struct kevent change_events[2];
+    EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, released_context );
+    EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, released_context );
+    if ( kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1 )
+    {
+      fd_to_context_map.insert( fd, released_context );
+      return true;
+    }
+    else
+      return false;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  if ( enable_read || enable_write )
-  {
-    int events = 0;
-    if ( enable_read ) events |= POLLIN;
-    if ( enable_write ) events |= POLLOUT;
-    return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, context ) != -1;
+    if ( enable_read || enable_write )
+    {
+      int events = 0;
+      if ( enable_read ) events |= POLLIN;
+      if ( enable_write ) events |= POLLOUT;
+      if ( port_associate( poll_fd, PORT_SOURCE_FD, fd, events, released_context ) != -1 )
+      {
+        fd_to_context_map.insert( fd, released_context );
+        return true;
+      }
+      else
+        return false;
+    }
+    else
+      return true;
+#elif !defined(_WIN32)
+    std::vector<struct pllfd::size_type pollfd_i_max = pollfds.size();
+    for ( std::vector<struct pollfd>::size_type pollfd_i = 0; pollfd_i < pollfd_i_max; pollfd_i++ )
+    {
+      if ( pollfds[pollfd_i].fd == fd )
+        return false;
+    }
+    struct pollfd attach_pollfd;
+    attach_pollfd.fd = fd;
+    attach_pollfd.events = 0;
+    if ( enable_read ) attach_pollfd.events |= POLLIN;
+    if ( enable_write ) attach_pollfd.events |= POLLOUT;
+    attach_pollfd.revents = 0;
+    pollfds.push_back( attach_pollfd );
+    fd_to_context_map.insert( fd, released_context );
+    return true;
+#endif
   }
   else
-    return true;
-#elif !defined(_WIN32)
-  std::vector<struct pllfd::size_type pollfd_i_max = pollfds.size();
-  for ( std::vector<struct pollfd>::size_type pollfd_i = 0; pollfd_i < pollfd_i_max; pollfd_i++ )
-  {
-    if ( pollfds[pollfd_i].fd == fd )
-      return false;
-  }
-  struct pollfd attach_pollfd;
-  attach_pollfd.fd = fd;
-  attach_pollfd.events = 0;
-  if ( enable_read ) attach_pollfd.events |= POLLIN;
-  if ( enable_write ) attach_pollfd.events |= POLLOUT;
-  attach_pollfd.revents = 0;
-  pollfds.push_back( attach_pollfd );
-  fd_to_context_map.insert( fd, context );
-  return true;
-#endif
-}
-void FDEventQueue::clearSignal()
-{
-  uint64_t m;
-  signal_read_end->read( reinterpret_cast<char*>( &m ), sizeof( m ) );
+    return toggle( fd, enable_read, enable_write );
 }
 Event* FDEventQueue::dequeue()
 {
@@ -811,28 +588,28 @@ FDEvent* FDEventQueue::dequeueFDEvent()
   {
     active_fds--;
 #if defined(YIELD_HAVE_LINUX_EPOLL)
-    if ( returned_events[active_fds].data.ptr != signal_read_end.get() )
-      return new FDEvent( static_cast<Object*>( returned_events[active_fds].data.ptr ), 0, ( returned_events[active_fds].events & EPOLLIN ) == EPOLLIN );
+    if ( returned_events[active_fds].data.ptr != eventfd_pipe.get() )
+      return new FDEvent( Object::incRef( static_cast<Object*>( returned_events[active_fds].data.ptr ) ), 0, ( returned_events[active_fds].events & EPOLLIN ) == EPOLLIN );
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-    if ( returned_events[active_fds].ident != *signal_read_end )
-      return new FDEvent( returned_events[active_fds].udata ), 0, returned_events[active_fds].filter == EVFILT_READ );
+    if ( returned_events[active_fds].ident != eventfd_pipe->get_read_end() )
+      return new FDEvent( Object::incRef( static_cast<Object*>( returned_events[active_fds].udata ) ), 0, returned_events[active_fds].filter == EVFILT_READ );
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     if ( returned_events[active_fds].portev_source == PORT_SOURCE_FD )
     {
       int fd = returned_events[active_fds].portev_object;
-      if ( fd != *signal_read_end )
+      if ( fd != eventfd_pipe->get_read_end() )
       {
         Object* context = static_cast<Object*>( returned_events[active_fds].portev_user );
         bool want_read = returned_events[active_fds].portev_events & POLLIN ) || ( returned_events[active_fds].portev_events & POLLRDNORM );
         memset( &returned_events[active_fds], 0, sizeof( returned_events[active_fds] ) );
-        return new FDEvent( context, 0, want_read );
+        return new FDEvent( Object::incRef( context ), 0, want_read );
       }
     }
     else
       continue;
 #endif
     // The signal was set
-    clearSignal();
+    eventfd_pipe->clear();
     return NULL;
   }
 #else
@@ -845,9 +622,9 @@ FDEvent* FDEventQueue::dequeueFDEvent()
     if ( FD_ISSET( fd, read_fds_copy ) )
     {
       FD_CLR( fd, read_fds_copy );
-      if ( fd == *signal_read_end )
+      if ( fd == eventfd_pipe->get_read_end() )
       {
-        clearSignal();
+        eventfd_pipe->clear();
         next_fd_to_check++;
         return NULL;
       }
@@ -876,9 +653,8 @@ FDEvent* FDEventQueue::dequeueFDEvent()
       next_fd_to_check++;
       continue;
     }
-    Object* context = fd_to_context_map.find( fd );
     active_fds--;
-    return new FDEvent( context, error_code, want_read );
+    return new FDEvent( Object::incRef( fd_to_context_map.find( fd ) ), error_code, want_read );
   }
 #else
   pollfd_vector::size_type pollfds_size = pollfds.size();
@@ -891,13 +667,13 @@ FDEvent* FDEventQueue::dequeueFDEvent()
       pollfds[next_pollfd_to_check].revents = 0;
       next_pollfd_to_check++;
       active_fds--;
-      if ( fd == *signal_read_end )
+      if ( fd == eventfd_pipe->get_read_end() )
       {
-        clearSignal();
+        eventfd_pipe->clear();
         return NULL;
       }
       else
-        return new FDEvent( fd_to_context_map.find( fd ), 0, want_read );
+        return new FDEvent( Object::incRef( fd_to_context_map.find( fd ) ), 0, want_read );
     }
     else
       next_pollfd_to_check++;
@@ -935,11 +711,11 @@ void FDEventQueue::detach( int fd )
 #endif
 {
   active_fds = 0; // Have to discard all returned events because the fd may be in them and we have to assume its context is now invalid
+  Object::decRef( fd_to_context_map.remove( fd ) );
 #if defined(_WIN32)
   FD_CLR( fd, read_fds ); FD_CLR( fd, read_fds_copy );
   FD_CLR( fd, write_fds ); FD_CLR( fd, write_fds_copy );
   FD_CLR( fd, except_fds ); FD_CLR( fd, except_fds_copy );
-  fd_to_context_map.remove( fd );
   next_fd_to_check = fd_to_context_map.begin();
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
   struct epoll_event change_event; // From the man page: In kernel versions before 2.6.9, the EPOLL_CTL_DEL operation required a non-NULL pointer in event, even though this argument is ignored. Since kernel 2.6.9, event can be specified as NULL when using EPOLL_CTL_DEL.
@@ -1040,11 +816,6 @@ int FDEventQueue::poll( uint64_t timeout_ns )
   return ::poll( &pollfds[0], pollfds.size(), static_cast<int>( timeout_ns / NS_IN_MS ) );
 #endif
 }
-void FDEventQueue::signal()
-{
-  uint64_t m = 1;
-  signal_write_end->write( &m, sizeof( m ), NULL );
-}
 auto_Object<TimerEvent> FDEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
 {
   TimerEvent* timer_event = new TimerEvent( timeout, period, context );
@@ -1053,9 +824,9 @@ auto_Object<TimerEvent> FDEventQueue::timer_create( const Time& timeout, const T
   return timer_event->incRef();
 }
 #ifdef _WIN32
-bool FDEventQueue::toggle( unsigned int fd, Object*, bool enable_read, bool enable_write )
+bool FDEventQueue::toggle( unsigned int fd, bool enable_read, bool enable_write )
 #else
-bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enable_write )
+bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
 #endif
 {
 #if defined(_WIN32)
@@ -1077,13 +848,14 @@ bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enabl
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
   struct epoll_event change_event;
   memset( &change_event, 0, sizeof( change_event ) );
-  change_event.data.ptr = context;
+  change_event.data.ptr = fd_to_context_map.find( fd );
   change_event.events = 0;
   if ( enable_read ) change_event.events |= EPOLLIN;
   if ( enable_write ) change_event.events |= EPOLLOUT;
   return epoll_ctl( poll_fd, EPOLL_CTL_MOD, fd, &change_event ) != -1;
 #elif defined YIELD_HAVE_FREEBSD_KQUEUE
   struct kevent change_events[2];
+  Object* context = fd_to_context_map.find( fd );
   EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, context );
   EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, context );
   return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
@@ -1093,6 +865,7 @@ bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enabl
     int events = 0;
     if ( enable_read ) events |= POLLIN;
     if ( enable_write ) events |= POLLOUT;
+    Object* context = fd_to_context_map.find( fd );
     return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, context ) != -1;
   }
   else
@@ -1139,31 +912,37 @@ bool FDEventQueue::toggle( int fd, Object* context, bool enable_read, bool enabl
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri, auto_Object<StageGroup> stage_group, auto_Object<Log> log, const Time& operation_timeout, uint8_t reconnect_tries_max )
+auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri,
+                                            auto_Object<StageGroup> stage_group,
+                                            auto_Object<Log> log,
+                                            const Time& operation_timeout,
+                                            uint8_t reconnect_tries_max )
 {
   YIELD::URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
-  auto_Object<SocketAddress> peer_sockaddr = new SocketAddress( absolute_uri );
-  if ( peer_sockaddr != NULL )
+  auto_Object<SocketAddress> peername = SocketAddress::create( absolute_uri );
+  if ( peername != NULL )
   {
-    auto_Object<SocketFactory> socket_factory;
+    auto_Object<Socket> _socket;
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" )
-      socket_factory = new SSLSocketFactory( new SSLContext( SSLv23_client_method() ) );
+      _socket = SSLSocket::create( new SSLContext( SSLv23_client_method() ), log ).release();
     else
 #endif
-      socket_factory = new TCPSocketFactory;
-    auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-    auto_Object<HTTPClient> http_client = new HTTPClient( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory );
-    stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef() );
-    return http_client;
+      _socket = TCPSocket::create( log ).release();
+    if ( _socket != NULL )
+    {
+      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+      auto_Object<HTTPClient> http_client = new HTTPClient( fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, _socket );
+      stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef(), NULL, log );
+      return http_client;
+    }
   }
-  else
-    return NULL;
+  return NULL;
 }
-HTTPClient::HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, auto_Object<SocketFactory> socket_factory )
-  : Client<HTTPRequest, HTTPResponse>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, socket_factory )
+HTTPClient::HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<Socket> _socket )
+  : SocketClient<HTTPRequest, HTTPResponse>( fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, _socket )
 { }
 auto_Object<HTTPRequest> HTTPClient::createProtocolRequest( auto_Object<Request> body )
 {
@@ -1737,73 +1516,50 @@ Stream::Status HTTPResponse::serialize( OutputStream& output_stream, size_t* out
 // http_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 template <class StageGroupType>
-bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
-                         auto_Object<StageGroupType> stage_group,
-                         auto_Object<SocketAddress> local_sockaddr,
-                         auto_Object<Log> log )
-{
-  auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
-#ifdef _WIN32
-  auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
-#else
-  auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
-#endif
-
-  auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-  auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
-#ifdef _WIN32
-  auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
-#else
-  auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
-#endif
-
-  if ( local_sockaddr == NULL )
-    local_sockaddr = new SocketAddress( 80 );
-  auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, http_request_reader_stage.release(), stage_group->incRef(), new TCPSocketFactory, log );
-
-  return tcp_listener != NULL;
-}
-
-template bool HTTPServer::create<SEDAStageGroup>( auto_Object<EventTarget>, auto_Object<SEDAStageGroup>, auto_Object<SocketAddress>, auto_Object<Log> );
-
+auto_Object<HTTPServer> HTTPServer::create( const URI& absolute_uri,
+                                            auto_Object<EventTarget> http_request_target,
+                                            auto_Object<StageGroupType> stage_group,
+                                            auto_Object<Log> log
 #ifdef YIELD_HAVE_OPENSSL
-
-template <class StageGroupType>
-bool HTTPServer::create( auto_Object<EventTarget> http_request_target,
-                         auto_Object<SSLContext> ssl_context,
-                         auto_Object<StageGroupType> stage_group,
-                         auto_Object<SocketAddress> local_sockaddr,
-                         auto_Object<Log> log )
+                                            , auto_Object<SSLContext> ssl_context
+#endif
+                                             )
 {
-  auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
-#ifdef _WIN32
-  auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPResponseWriter>( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
-#else
-  auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, auto_Object<EventQueue>( NULL ), NULL, log ).release();
+  auto_Object<SocketAddress> sockname = SocketAddress::create( absolute_uri );
+  if ( sockname != NULL )
+  {
+    auto_Object<TCPListenQueue> tcp_listen_queue;
+#ifdef YIELD_HAVE_OPENSSL
+    if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
+      tcp_listen_queue = SSLListenQueue::create( sockname, ssl_context, log ).release();
+    else
 #endif
-
-  auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-  auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
-#ifdef _WIN32
-  auto_Object<Stage> http_request_reader_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage<HTTPRequestReader, FDAndInternalEventQueue>( http_request_reader, 1, fd_event_queue->incRef(), NULL, log );
-#else
-  auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
-#endif
-
-  if ( local_sockaddr == NULL )
-    local_sockaddr = new SocketAddress( 443 );
-  auto_Object<TCPListener> tcp_listener = TCPListener::create( local_sockaddr, http_request_reader_stage.release(), stage_group->incRef(), new SSLSocketFactory( ssl_context ), log );
-
-  return tcp_listener != NULL;
+      tcp_listen_queue = TCPListenQueue::create( sockname, log );
+    if ( tcp_listen_queue != NULL )
+    {
+      auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+      auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage( http_response_writer, log ).release();
+      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+      auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+      auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
+      http_response_writer->set_protocol_request_reader_stage( http_request_reader_stage );
+      auto_Object<HTTPServer> http_server = new HTTPServer( http_request_reader_stage );
+      stage_group->createStage( http_server, 1, tcp_listen_queue, NULL, log );
+      return http_server;
+    }
+  }
+  return NULL;
 }
-
-template bool HTTPServer::create<SEDAStageGroup>( auto_Object<EventTarget>, auto_Object<SSLContext>, auto_Object<SEDAStageGroup>, auto_Object<SocketAddress>, auto_Object<Log> );
-
+template
+auto_Object<HTTPServer> HTTPServer::create<SEDAStageGroup>( const URI& absolute_uri,
+                                            auto_Object<EventTarget> http_request_target,
+                                            auto_Object<SEDAStageGroup> stage_group,
+                                            auto_Object<Log> log
+#ifdef YIELD_HAVE_OPENSSL
+                                            , auto_Object<SSLContext> ssl_context
 #endif
+                                             );
 
 
 // json_input_stream.cpp
@@ -2587,6 +2343,62 @@ Stream::Status ONCRPCResponse::serialize( OutputStream& output_stream, size_t* o
 }
 
 
+// oncrpc_server.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
+                                                auto_Object<Interface> _interface,
+                                                auto_Object<StageGroup> stage_group,
+                                                auto_Object<Log> log
+#ifdef YIELD_HAVE_OPENSSL
+                                                , auto_Object<SSLContext> ssl_context
+#endif
+                                                )
+{
+  auto_Object<SocketAddress> sockname = SocketAddress::create( absolute_uri );
+  if ( sockname != NULL )
+  {
+    if ( absolute_uri.get_scheme() == "oncrpcu" )
+    {
+      auto_Object<UDPRecvFromQueue> udp_recvfrom_queue = UDPRecvFromQueue::create( sockname, log );
+      if ( udp_recvfrom_queue != NULL )
+      {
+        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+        auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
+        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+        auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
+        oncrpc_response_writer->set_protocol_request_reader_stage( oncrpc_request_reader_stage );
+        auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( oncrpc_request_reader_stage );
+        stage_group->createStage( oncrpc_server->incRef(), 1, udp_recvfrom_queue.release(), NULL, log );
+        return oncrpc_server;
+      }
+    }
+    else
+    {
+      auto_Object<TCPListenQueue> tcp_listen_queue;
+#ifdef YIELD_HAVE_OPENSSL
+      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
+        tcp_listen_queue = SSLListenQueue::create( sockname, ssl_context, log ).release();
+      else
+#endif
+        tcp_listen_queue = TCPListenQueue::create( sockname, log );
+      if ( tcp_listen_queue != NULL )
+      {
+        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+        auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
+        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+        auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
+        oncrpc_response_writer->set_protocol_request_reader_stage( oncrpc_request_reader_stage );
+        auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( oncrpc_request_reader_stage );
+        stage_group->createStage( oncrpc_server->incRef(), 1, tcp_listen_queue.release(), NULL, log );
+        return oncrpc_server;
+      }
+    }
+  }
+  return NULL;
+}
+
+
 // rfc822_headers.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2629,7 +2441,7 @@ void RFC822Headers::copy_iovec( const char* data, size_t len )
 {
   if ( heap_buffer == NULL )
   {
-    if ( ( buffer_p + len - stack_buffer ) > YIELD_IPC_RFC822_HEADERS_STACK_BUFFER_LENGTH )
+    if ( ( buffer_p + len - stack_buffer ) > YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH )
     {
       heap_buffer = new char[len];
       heap_buffer_len = len;
@@ -2892,7 +2704,7 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
   {
-    if ( iovecs_filled < YIELD_IPC_RFC822_HEADERS_STACK_IOVECS_LENGTH )
+    if ( iovecs_filled < YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH )
       stack_iovecs[iovecs_filled] = iovec;
     else
     {
@@ -2912,8 +2724,6 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
 // socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #pragma warning( push )
 #pragma warning( disable: 4995 )
@@ -2921,55 +2731,21 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
 #pragma warning( pop )
 #pragma comment( lib, "ws2_32.lib" )
 #else
-#include <netinet/in.h> // For the IPPROTO_* constants
-#include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
-
-
-Socket::Socket( int domain, int type, int protocol, auto_Object<Log> log )
-  : log( log ), domain( domain ), type( type ), protocol( protocol )
-{
-  _socket = ::socket( domain, type, protocol );
 #ifdef _WIN32
-  if ( domain == AF_INET6 )
-  {
-    if ( _socket != static_cast<unsigned int>( -1 ) )
-    {
-      // Allow dual-stack sockets
-      DWORD ipv6only = 0;
-      setsockopt( _socket, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
-    }
-    else if ( ::WSAGetLastError() == WSAEAFNOSUPPORT )
-    {
-      this->domain = AF_INET;
-      _socket = ::socket( AF_INET, type, protocol );
-    }
-  }
+Socket::Socket( int domain, int type, int protocol, unsigned int _socket, auto_Object<Log> log )
 #else
-  if ( _socket == -1 && domain == AF_INET6 && errno == EAFNOSUPPORT )
-  {
-    this->domain = AF_INET;
-    _socket = ::socket( AF_INET, type, protocol );
-  }
+Socket::Socket( int domain, int type, int protocol, int _socket, auto_Object<Log> log )
 #endif
-
-  blocking_mode = true;
-  fd_event_queue_context = NULL;
-}
-
-bool Socket::attach( auto_Object<FDEventQueue> to_fd_event_queue, Object* fd_event_queue_context )
+  : log( log ), domain( domain ), type( type ), protocol( protocol ), _socket( _socket )
 {
-  if ( to_fd_event_queue->attach( *this, fd_event_queue_context ) )
-  {
-    this->attached_to_fd_event_queue = to_fd_event_queue;
-    this->fd_event_queue_context = fd_event_queue_context;
-    return true;
-  }
-  else
-    return false;
+  blocking_mode = true;
 }
-
+Socket::~Socket()
+{
+  close();
+}
 bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
   for ( ;; )
@@ -2980,7 +2756,6 @@ bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
       if ( ::bind( *this, name, namelen ) != -1 )
         return true;
     }
-
     if ( domain == AF_INET6 &&
 #ifdef _WIN32
         ::WSAGetLastError() == WSAEAFNOSUPPORT )
@@ -2991,25 +2766,24 @@ bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
       close();
       this->domain = AF_INET;
       _socket = ::socket( AF_INET, type, protocol );
-      if ( attached_to_fd_event_queue != NULL )
-        attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
+#ifdef _WIN32
+      if ( _socket == static_cast<unsigned int>( -1 ) ) DebugBreak();
+#else
+      if ( _socket == -1 ) DebugBreak();
+#endif
     }
     else
       return false;
   }
 }
-
 bool Socket::close()
 {
-  if ( attached_to_fd_event_queue != NULL )
-    attached_to_fd_event_queue->detach( *this );
 #ifdef _WIN32
   return ::closesocket( _socket ) != SOCKET_ERROR;
 #else
   return ::close( _socket ) != -1;
 #endif
 }
-
 Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
 {
   for ( ;; )
@@ -3044,30 +2818,15 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
               close();
               domain = AF_INET; // Fall back to IPv4
               _socket = ::socket( domain, type, protocol );
-              if ( attached_to_fd_event_queue != NULL )
-                attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
               continue; // Try to connect again
             }
             else
               connect_status = STREAM_STATUS_ERROR;
           }
           break;
-
           default: connect_status = STREAM_STATUS_ERROR; break;
         }
       }
-
-      if ( attached_to_fd_event_queue != NULL )
-      {
-        switch ( connect_status )
-        {
-          case STREAM_STATUS_OK: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false ); break;
-          case STREAM_STATUS_WANT_WRITE: attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true ); break;
-          case STREAM_STATUS_ERROR: break;
-          default: DebugBreak(); break;
-        }
-      }
-
       return connect_status;
     }
     else if ( domain == AF_INET6 )
@@ -3075,15 +2834,43 @@ Stream::Status Socket::connect( auto_Object<SocketAddress> to_sockaddr )
       close();
       domain = AF_INET; // Fall back to IPv4
       _socket = ::socket( domain, type, protocol );
-      if ( attached_to_fd_event_queue != NULL )
-        attached_to_fd_event_queue->attach( *this, fd_event_queue_context, false, false );
       continue; // Try to connect again
     }
     else
       return STREAM_STATUS_ERROR;
   }
 }
-
+#ifdef _WIN32
+unsigned int Socket::create( int& domain, int type, int protocol )
+#else
+int Socket::create( int& domain, int type, int protocol )
+#endif
+{
+#ifdef _WIN32
+  SOCKET _socket = ::socket( domain, type, protocol );
+  if ( domain == AF_INET6 )
+  {
+    if ( _socket != INVALID_SOCKET )
+    {
+      DWORD ipv6only = 0; // Allow dual-mode sockets
+      setsockopt( _socket, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
+    }
+    else if ( ::WSAGetLastError() == WSAEAFNOSUPPORT )
+    {
+      domain = AF_INET;
+      _socket = ::socket( AF_INET, type, protocol );
+    }
+  }
+#else
+  int _socket = ::socket( AF_INET6, type, protocol );
+  if ( _socket == -1 && errno == EAFNOSUPPORT )
+  {
+    domain = AF_INET;
+    _socket = ::socket( AF_INET, type, protocol );
+  }
+#endif
+  return _socket;
+}
 auto_Object<SocketAddress> Socket::getpeername()
 {
   struct sockaddr_storage peername_sockaddr_storage;
@@ -3094,7 +2881,6 @@ auto_Object<SocketAddress> Socket::getpeername()
   else
     return NULL;
 }
-
 auto_Object<SocketAddress> Socket::getsockname()
 {
   struct sockaddr_storage sockname_sockaddr_storage;
@@ -3105,17 +2891,9 @@ auto_Object<SocketAddress> Socket::getsockname()
   else
     return NULL;
 }
-
 Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
-#if defined(_WIN32)
-  int recv_ret = ::recv( *this, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer..
-#elif defined(__linux)
-  ssize_t recv_ret = ::recv( *this, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  ssize_t recv_ret = ::recv( *this, buffer, buffer_len, 0 );
-#endif
-
+  ssize_t recv_ret = this->recv( buffer, buffer_len );
   if ( recv_ret > 0 )
   {
     if ( log != NULL )
@@ -3124,51 +2902,50 @@ Stream::Status Socket::read( void* buffer, size_t buffer_len, size_t* out_bytes_
       log_stream << "Socket: read " << this << ": ";
       log_stream.write( buffer, buffer_len );
     }
-
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
-
     if ( out_bytes_read )
       *out_bytes_read = static_cast<size_t>( recv_ret );
-
     return STREAM_STATUS_OK;
   }
   else if ( recv_ret == 0 )
   {
     if ( log != NULL )
       log->getStream( Log::LOG_INFO ) << "Socket: lost connection with recv_ret = 0.";
-
 #ifdef _WIN32
     ::WSASetLastError( WSAECONNRESET );
 #else
     errno = ECONNRESET;
 #endif
-
     return STREAM_STATUS_ERROR;
   }
-#ifdef _WIN32
-  else if ( ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSAEINPROGRESS )
-#else
-  else if ( errno == EWOULDBLOCK )
-#endif
+  else if ( want_read() )
   {
     if ( log != NULL )
       log->getStream( Log::LOG_INFO ) << "Socket: would block on read on " << this << ", tried to read buffer_len = " << buffer_len << ".";
-
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, true, false );
-
     return STREAM_STATUS_WANT_READ;
+  }
+  else if ( want_write() )
+  {
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      log->getStream( Log::LOG_INFO ) << "Socket: would block on write on " << this << ", tried to read.";
+    return STREAM_STATUS_WANT_WRITE;
   }
   else
   {
     if ( log != NULL && log->get_level() >= Log::LOG_INFO )
       log->getStream( Log::LOG_INFO ) << "Socket: lost connection on read on " << this << ", error = " << Exception::strerror() << ".";
-
     return STREAM_STATUS_ERROR;
   }
 }
-
+ssize_t Socket::recv( void* buffer, size_t buffer_len )
+{
+#if defined(_WIN32)
+  return ::recv( *this, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer..
+#elif defined(__linux)
+  return ::recv( *this, buffer, buffer_len, MSG_NOSIGNAL );
+#else
+  return ::recv( *this, buffer, buffer_len, 0 );
+#endif
+}
 bool Socket::set_blocking_mode( bool blocking )
 {
 #ifdef _WIN32
@@ -3209,12 +2986,15 @@ bool Socket::set_blocking_mode( bool blocking )
   }
 #endif
 }
-
-Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+ssize_t Socket::send( const struct iovec* buffers, uint32_t buffers_count )
 {
 #ifdef _WIN32
   DWORD dwWrittenLength;
-  int send_ret = ::WSASend( *this, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  ssize_t send_ret = ::WSASend( *this, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  if ( send_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return send_ret;
 #else
   // Use sendmsg instead of writev to pass flags on Linux
   struct msghdr _msghdr;
@@ -3222,11 +3002,15 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
   _msghdr.msg_iov = const_cast<iovec*>( buffers );
   _msghdr.msg_iovlen = buffers_count;
 #ifdef __linux
-  ssize_t send_ret = ::sendmsg( *this, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+  return ::sendmsg( *this, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
 #else
-  ssize_t send_ret = ::sendmsg( *this, &_msghdr, 0 );
+  return ::sendmsg( *this, &_msghdr, 0 );
 #endif
 #endif
+}
+Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  ssize_t send_ret = this->send( buffers, buffers_count );
   if ( send_ret >= 0 )
   {
     if ( log != NULL )
@@ -3235,40 +3019,40 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
       log_stream << "Socket: write on " << this << ": ";
       log_stream.writev( buffers, buffers_count );
     }
-
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
-
     if ( out_bytes_written )
-#ifdef _WIN32
-      *out_bytes_written = static_cast<size_t>( dwWrittenLength );
-#else
       *out_bytes_written = static_cast<size_t>( send_ret );
-#endif
-
     return STREAM_STATUS_OK;
   }
-#ifdef _WIN32
-  else if ( ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSAEINPROGRESS )
-#else
-  else if ( errno == EWOULDBLOCK )
-#endif
+  else if ( want_write() )
   {
     if ( log != NULL && log->get_level() >= Log::LOG_INFO )
       log->getStream( Log::LOG_INFO ) << "Socket: would block on write on " << this << ".";
-
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true );
-
     return STREAM_STATUS_WANT_WRITE;
+  }
+  else if ( want_read() )
+  {
+    if ( log != NULL )
+      log->getStream( Log::LOG_INFO ) << "Socket: would block on read on " << this << ", tried to write.";
+    return STREAM_STATUS_WANT_READ;
   }
   else
   {
     if ( log != NULL && log->get_level() >= Log::LOG_INFO )
       log->getStream( Log::LOG_INFO ) << "Socket: lost connection on write on " << this << ", error = " << Exception::strerror() << ".";
-
     return STREAM_STATUS_ERROR;
   }
+}
+bool Socket::want_read() const
+{
+#ifdef _WIN32
+  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSAEINPROGRESS;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+bool Socket::want_write() const
+{
+  return want_read();
 }
 
 
@@ -3285,28 +3069,29 @@ Stream::Status Socket::writev( const struct iovec* buffers, uint32_t buffers_cou
 #include <netdb.h>
 #include <sys/socket.h>
 #endif
-SocketAddress::SocketAddress()
+SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
+  : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
+{ }
+SocketAddress::SocketAddress( const struct sockaddr_storage& _sockaddr_storage )
 {
-  init( "localhost", 0 ); // Use "localhost" instead of the IPv6 loopback constant to allow for IPv4-only systems
+  addrinfo_list = NULL;
+  this->_sockaddr_storage = new struct sockaddr_storage;
+  memcpy_s( this->_sockaddr_storage, sizeof( *this->_sockaddr_storage ), &_sockaddr_storage, sizeof( _sockaddr_storage ) );
 }
-SocketAddress::SocketAddress( uint16_t port, bool loopback )
+auto_Object<SocketAddress> SocketAddress::create( const URI& uri )
 {
-  if ( loopback )
-    init( "localhost", port ); // Use "localhost" instead of the IPv6 loopback constant to allow for IPv4-only systems
-  else // INADDR_ANY
-    init( NULL, port );
+  if ( uri.get_host() == "*" )
+    return create( NULL, uri.get_port() );
+  else
+    return create( uri.get_host().c_str(), uri.get_port() );
 }
-SocketAddress::SocketAddress( const char* hostname )
+auto_Object<SocketAddress> SocketAddress::create( const char* hostname, uint16_t port )
 {
-  init( hostname, 0 );
-}
-SocketAddress::SocketAddress( const char* hostname, uint16_t port )
-{
-  init( hostname, port );
-}
-SocketAddress::SocketAddress( const URI& uri )
-{
-  init( uri.get_host().c_str(), uri.get_port() );
+  struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
+  if ( addrinfo_list != NULL )
+    return new SocketAddress( *addrinfo_list );
+  else
+    return NULL;
 }
 SocketAddress::~SocketAddress()
 {
@@ -3314,12 +3099,6 @@ SocketAddress::~SocketAddress()
     freeaddrinfo( addrinfo_list );
   else if ( _sockaddr_storage != NULL )
     delete _sockaddr_storage;
-}
-SocketAddress::SocketAddress( const struct sockaddr_storage& _sockaddr_storage )
-{
-  addrinfo_list = NULL;
-  this->_sockaddr_storage = new struct sockaddr_storage;
-  memcpy_s( this->_sockaddr_storage, sizeof( *this->_sockaddr_storage ), &_sockaddr_storage, sizeof( _sockaddr_storage ) );
 }
 bool SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
 {
@@ -3350,6 +3129,22 @@ bool SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockad
   errno = EAFNOSUPPORT;
 #endif
   return false;
+}
+struct addrinfo* SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
+{
+  std::ostringstream servname; // ltoa is not very portable
+  servname << port; // servname = decimal port or service name. Great interface, guys.
+  struct addrinfo addrinfo_hints;
+  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
+  addrinfo_hints.ai_family = AF_UNSPEC;
+  if ( hostname == NULL )
+    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
+  struct addrinfo* addrinfo_list;
+  int getaddrinfo_ret = ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list );
+  if ( getaddrinfo_ret == 0 )
+    return addrinfo_list;
+  else
+    return NULL;
 }
 bool SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
 {
@@ -3437,29 +3232,440 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
   else
     return false;
 }
-void SocketAddress::init( const char* hostname, uint16_t port )
-{
-  std::ostringstream servname; // ltoa is not very portable
-  servname << port; // servname = decimal port or service name. Great interface, guys.
-  struct addrinfo addrinfo_hints;
-  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
-  addrinfo_hints.ai_family = AF_UNSPEC;
-  if ( hostname == NULL )
-    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
-  int getaddrinfo_ret = ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list );
-  if ( getaddrinfo_ret == 0 )
-    _sockaddr_storage = NULL;
-  else
-  {
-    _sockaddr_storage = NULL;
-    addrinfo_list = NULL;
+
+
+// socket_client.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
-    throw Exception( getaddrinfo_ret );
-#else
-    throw Exception( gai_strerror( getaddrinfo_ret ) );
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define ETIMEDOUT WSAETIMEDOUT
 #endif
+template <class ProtocolRequestType, class ProtocolResponseType>
+SocketClient<ProtocolRequestType, ProtocolResponseType>::SocketClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<Socket> _socket )
+  : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max )
+{
+  Connection* connection = new Connection( _socket, reconnect_tries_max );
+  connections.push_back( connection );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+SocketClient<ProtocolRequestType, ProtocolResponseType>::~SocketClient()
+{
+  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
+    Object::decRef( **connection_i );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
+{
+  auto_Object<Connection> connection;
+  uint32_t fd_event_error_code = 0;
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( StageStartupEvent ):
+    case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); return;
+    case YIELD_OBJECT_TAG( FDEvent ):
+    {
+      FDEvent& fd_event = static_cast<FDEvent&>( ev );
+      connection = static_cast<Connection*>( fd_event.get_context().release() );
+      fd_event_error_code = fd_event.get_error_code();
+      Object::decRef( ev );
+    }
+    break;
+    case YIELD_OBJECT_TAG( TimerEvent ):
+    {
+      TimerEvent& timer_event = static_cast<TimerEvent&>( ev );
+      auto_Object<> timer_event_context = timer_event.get_context();
+      if ( timer_event_context == NULL ) // Check connection timeouts
+      {
+        /*
+        typename std::vector<Connection*>::size_type connection_i = 0;
+        for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
+        {
+          Connection* connection = connections[connection_i];
+          if ( connection->get_state() != Connection::IDLE )
+          {
+            Time connection_idle_time = Time() - connection->get_last_activity_time();
+            if ( connection_idle_time > operation_timeout )
+            {
+              if ( log != NULL )
+                log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection to " << peername << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
+              DebugBreak();
+              //destroyConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
+            }
+          }
+        }
+        Object::decRef( ev );
+        return;
+        */
+      }
+      else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
+      {
+        connection = static_cast<Connection*>( timer_event_context.release() );
+        Object::decRef( ev );
+        // Drop down
+      }
+      else
+        DebugBreak();
+    }
+    break;
+    default:
+    {
+      auto_Object<ProtocolRequestType> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
+      for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
+      {
+        if ( ( *connection_i )->get_state() == Connection::IDLE )
+        {
+          connection = ( *connection_i )->incRef();
+          connection->set_state( Connection::CONNECTING );
+          break;
+        }
+      }
+      if ( connection == NULL )
+      {
+        connection = new Connection( connections[0]->get_socket()->clone(), reconnect_tries_max );
+        connections.push_back( &connection->incRef() );
+      }
+      connection->set_protocol_request( protocol_request );
+    }
+    break;
+  }
+  if ( fd_event_error_code == 0 )
+  {
+    switch ( connection->get_state() )
+    {
+      case Connection::IDLE:
+      case Connection::CONNECTING:
+      {
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to connect to " << peername << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
+        Stream::Status connect_status = connection->connect( peername );
+        if ( connect_status == Stream::STREAM_STATUS_OK ) // Use ifs here instead of a switch to allow simple drop-throughs
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully connected to " << peername << ".";
+          fd_event_queue->attach( *connection->get_socket(), connection->incRef() ); // Only attach AFTER connecting, in case the socket has to be re-created
+          connection->set_state( Connection::WRITING );
+          // Drop down to WRITING
+  	    }
+        else if ( connect_status == Stream::STREAM_STATUS_WANT_WRITE ) // Wait for non-blocking connect() to complete
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: waiting for non-blocking connect() to " << peername << " to complete.";
+          fd_event_queue->attach( *connection->get_socket(), connection->incRef(), false, true );
+          connection->set_state( Connection::CONNECTING );
+          return;
+        }
+        else
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << peername << " failed: " << Exception::strerror();
+          break; // Drop down to try to reconnect
+        }
+      }
+      // No break here, to allow drop down to WRITING
+      case Connection::WRITING:
+      {
+        auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
+        Stream::Status write_status = protocol_request->serialize( *connection );
+        if ( write_status == Stream::STREAM_STATUS_OK )
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_INFO ) << "Client: successfully wrote " << protocol_request->get_type_name() << " to " << peername << ".";
+          connection->set_protocol_response( createProtocolResponse( protocol_request ) );
+          connection->set_state( Connection::READING );
+          // Drop down to READING
+        }
+        else if ( write_status == Stream::STREAM_STATUS_WANT_WRITE )
+        {
+          fd_event_queue->toggle( *connection->get_socket(), true, true );
+          return;
+        }
+        else if ( write_status == Stream::STREAM_STATUS_WANT_READ )
+        {
+          fd_event_queue->toggle( *connection->get_socket(), true, false );
+          return;
+        }
+        else if ( write_status == Stream::STREAM_STATUS_ERROR )
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peername << " on write, error: " << Exception::strerror();
+          break; // Drop down to reconnect
+        }
+        else
+          DebugBreak();
+      }
+      // No break here, to allow drop down to READING
+      case Connection::READING:
+      {
+        auto_Object<ProtocolResponseType> protocol_response = connection->get_protocol_response();
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_DEBUG ) << "Client: trying to read " << protocol_response->get_type_name() << " from " << peername << ".";
+        Stream::Status read_status = protocol_response->deserialize( *connection );
+        switch ( read_status )
+        {
+          case Stream::STREAM_STATUS_OK:
+          {
+            respond( connection->get_protocol_request(), connection->get_protocol_response() );
+            connection->set_protocol_request( NULL );
+            connection->set_protocol_response( NULL );
+            fd_event_queue->detach( *connection->get_socket() );
+            connection->set_state( Connection::IDLE );
+          }
+          return;
+          case Stream::STREAM_STATUS_WANT_READ:
+          {
+            fd_event_queue->toggle( *connection->get_socket(), true, false );
+          }
+          return;
+          case Stream::STREAM_STATUS_WANT_WRITE:
+          {
+            fd_event_queue->toggle( *connection->get_socket(), true, true );
+          }
+          return;
+          default:
+          {
+            if ( log != NULL )
+              log->getStream( YIELD::Log::LOG_ERR ) << "Client: lost connection to " << peername << " on read, error: " << Exception::strerror();
+          }
+          break;
+        }
+        break; // Drop down to reconnect
+      }
+      break;
+      default: DebugBreak();
+    }
+  }
+  else if ( log != NULL ) // fd_event_error_code != 0
+    log->getStream( YIELD::Log::LOG_ERR ) << "Client: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << peername << " failed: " << Exception::strerror( fd_event_error_code );
+    // Drop down to reconnect
+  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
+  {
+    if ( **connection_i == *connection )
+    {
+      uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
+      auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
+      if ( --reconnect_tries_left > 0 )
+      {
+        connection->set_reconnect_tries_left( reconnect_tries_left );
+        connection->set_state( Connection::CONNECTING );
+        fd_event_queue->timer_create( Time( 1 * NS_IN_S ), connection->incRef() ); // Wait for a delay to attach, add to connections, and try to connect again
+      }
+      else
+      {
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_ERR ) << "Client: exhausted connection retries to " << peername << ".";
+        if ( protocol_request != NULL )
+        {
+          // We've lost errno here
+#ifdef _WIN32
+          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+#else
+          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
+#endif
+        }
+      }
+    }
+    else
+      ++connection_i;
   }
 }
+template <class ProtocolRequestType, class ProtocolResponseType>
+SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
+  : _socket( _socket ), reconnect_tries_left( reconnect_tries_max )
+{
+  state = IDLE;
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::close()
+{
+  return _socket->close();
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::connect( auto_Object<SocketAddress> connect_to_sockaddr )
+{
+  last_activity_time = Time();
+  _socket->set_blocking_mode( false );
+  return _socket->connect( connect_to_sockaddr );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+{
+  last_activity_time = Time();
+  _socket->set_blocking_mode( false );
+  return _socket->read( buffer, buffer_len, out_bytes_read );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::shutdown()
+{
+  return _socket->shutdown();
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+Stream::Status SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+{
+  last_activity_time = Time();
+  _socket->set_blocking_mode( false );
+  return _socket->writev( buffers, buffers_count, out_bytes_written );
+}
+template class SocketClient<HTTPRequest, HTTPResponse>;
+template class SocketClient<ONCRPCRequest, ONCRPCResponse>;
+
+
+// socket_server.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+void SocketServer::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+#ifdef YIELD_HAVE_OPENSSL
+    case YIELD_OBJECT_TAG( SSLSocket ):
+#endif
+    case YIELD_OBJECT_TAG( TCPSocket ):
+    case YIELD_OBJECT_TAG( UDPSocket ):
+    {
+      protocol_request_reader_stage->send( ev );
+    }
+    break;
+
+    default: handleUnknownEvent( ev );
+  }
+}
+
+template <class ProtocolRequestType>
+void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Event& ev )
+{
+  auto_Object<ProtocolRequestType> protocol_request;
+  auto_Object<Socket> _socket;
+
+
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( FDEvent ):
+    {
+      FDEvent& fd_event = static_cast<FDEvent&>( ev );
+      auto_Object<> context = fd_event.get_context();
+
+      switch ( context->get_tag() )
+      {
+        case YIELD_OBJECT_TAG( ProtocolRequestType ):
+        {
+          protocol_request = static_cast<ProtocolRequestType*>( context.release() );
+          _socket = protocol_request->get_socket();
+          Object::decRef( ev );
+          // Drop down to deserialize
+        }
+        break;
+
+#ifdef YIELD_HAVE_OPENSSL
+        case YIELD_OBJECT_TAG( SSLSocket ):
+#endif
+        case YIELD_OBJECT_TAG( TCPSocket ):
+        case YIELD_OBJECT_TAG( UDPSocket ):
+        {
+          _socket = static_cast<Socket*>( context.release() );
+          fd_event_queue->detach( *_socket );
+          Object::decRef( ev );
+          return;
+        }
+        break;
+
+        default: DebugBreak(); return;
+      }
+    }
+    break;
+
+#ifdef YIELD_HAVE_OPENSSL
+    case YIELD_OBJECT_TAG( SSLSocket ):
+#endif
+    case YIELD_OBJECT_TAG( TCPSocket ):
+    case YIELD_OBJECT_TAG( UDPSocket ):
+    {
+      _socket = static_cast<Socket*>( &ev );
+      protocol_request = createProtocolRequest( _socket );
+      fd_event_queue->detach( *_socket );
+      fd_event_queue->attach( *_socket, protocol_request->incRef(), true );
+    }
+    break; // Drop down to try to deserialize
+
+    default: handleUnknownEvent( ev ); return;
+  }
+
+  _socket->set_blocking_mode( false );
+  Stream::Status deserialize_status = protocol_request->deserialize( *_socket );
+
+  switch ( deserialize_status )
+  {
+    case Stream::STREAM_STATUS_OK:
+    {
+      fd_event_queue->detach( *_socket );
+      fd_event_queue->attach( *_socket, &_socket->incRef(), true );
+      sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
+    }
+    break;
+
+    case Stream::STREAM_STATUS_WANT_READ:
+    {
+      fd_event_queue->toggle( *_socket, true, false );
+    }
+    break;
+
+    case Stream::STREAM_STATUS_WANT_WRITE:
+    {
+      fd_event_queue->toggle( *_socket, true, true );
+    }
+    break;
+
+    case Stream::STREAM_STATUS_ERROR:
+    {
+      fd_event_queue->detach( *_socket );
+      _socket->close();
+      Object::decRef( *protocol_request ); // The reference that's attached to fd_event_queue
+      // tcp_socket should be dead here, since http_request should have had the last reference to it
+    }
+    break;
+
+    default: break;
+  }
+}
+
+
+template class SocketServer::ProtocolRequestReader<HTTPServer::HTTPRequest>;
+template class SocketServer::ProtocolRequestReader<ONCRPCServer::ONCRPCRequest>;
+
+
+template <class ProtocolResponseType>
+void SocketServer::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Event& ev )
+{
+  switch( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( ProtocolResponseType ):
+    {
+      ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
+      auto_Object<Socket> _socket = protocol_response.get_socket();
+
+      _socket->set_blocking_mode( true );
+      protocol_response.serialize( *_socket );
+      Object::decRef( protocol_response );
+
+      if ( protocol_request_reader_stage != NULL &&
+           _socket->get_tag() != YIELD_OBJECT_TAG( UDPSocket ) )
+        protocol_request_reader_stage->send( *_socket.release() );
+    }
+    break;
+
+    default: handleUnknownEvent( ev ); break;
+  }
+}
+
+
+template class SocketServer::ProtocolResponseWriter<HTTPServer::HTTPResponse>;
+template class SocketServer::ProtocolResponseWriter<ONCRPCServer::ONCRPCResponse>;
 
 
 // ssl_context.cpp
@@ -3604,23 +3810,70 @@ void SSLContext::throwOpenSSLException()
 #endif
 
 
+// ssl_listen_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef YIELD_HAVE_OPENSSL
+auto_Object<SSLListenQueue> SSLListenQueue::create( auto_Object<SocketAddress> sockname,
+                                                    auto_Object<SSLContext> ssl_context,
+                                                    auto_Object<Log> log )
+{
+  auto_Object<SSLSocket> listen_ssl_socket = SSLSocket::create( ssl_context, log );
+  if ( listen_ssl_socket != NULL &&
+       listen_ssl_socket->bind( sockname ) &&
+       listen_ssl_socket->listen() )
+    return new SSLListenQueue( listen_ssl_socket, log );
+  else
+    return NULL;
+}
+SSLListenQueue::SSLListenQueue( auto_Object<SSLSocket> listen_ssl_socket, auto_Object<Log> log )
+  : TCPListenQueue( listen_ssl_socket.release(), log )
+{ }
+#endif
+
+
 // ssl_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_OPENSSL
-SSLSocket::SSLSocket( auto_Object<SSLContext> ctx, auto_Object<Log> log )
-  : TCPSocket( log ), ctx( ctx )
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#else
+#include <netinet/in.h> // For the IPPROTO_* constants
+#endif
+auto_Object<SSLSocket> SSLSocket::create( auto_Object<SSLContext> ctx, auto_Object<Log> log )
 {
-  ssl = SSL_new( ctx->get_ssl_ctx() );
-//      SSL_set_mode( ssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER );
-  init( log );
+  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
+  if ( ssl != NULL )
+  {
+    int domain = AF_INET6;
+#ifdef _WIN32
+    SOCKET _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    if ( _socket != INVALID_SOCKET )
+#else
+    int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    if ( _socket != -1 )
+#endif
+      return new SSLSocket( domain, _socket, log, ctx, *ssl );
+  }
+  return NULL;
 }
-SSLSocket::SSLSocket( int domain, SSL& ssl, auto_Object<Log> log )
-  : TCPSocket( domain, SSL_get_fd( &ssl ), log ),
-    ssl( &ssl )
+#ifdef _WIN32
+SSLSocket::SSLSocket( int domain, unsigned int _socket, auto_Object<Log> log, auto_Object<SSLContext> ctx, SSL& ssl )
+#else
+SSLSocket::SSLSocket( int domain, int _socket, auto_Object<Log> log, auto_Object<SSLContext> ctx, SSL& ssl )
+#endif
+  : TCPSocket( domain, _socket, log ), ctx( ctx ), ssl( &ssl )
 {
-  ctx = NULL;
-  init( log );
+  write_buffer = NULL; write_buffer_len = 0;
+  if ( log != NULL )
+  {
+    SSL_set_app_data( this->ssl, reinterpret_cast<char*>( this ) );
+    SSL_set_info_callback( this->ssl, info_callback );
+  }
 }
 SSLSocket::~SSLSocket()
 {
@@ -3636,7 +3889,7 @@ auto_Object<TCPSocket> SSLSocket::accept()
     SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
     SSL_set_fd( peer_ssl, peer_socket );
     SSL_set_accept_state( peer_ssl );
-    return new SSLSocket( get_domain(), *peer_ssl, log );
+    return new SSLSocket( get_domain(), peer_socket, log, ctx, *peer_ssl );
   }
   else
     return NULL;
@@ -3679,124 +3932,39 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
     return;
   reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
 }
-void SSLSocket::init( auto_Object<Log> log )
+ssize_t SSLSocket::recv( void* buffer, size_t buffer_len )
 {
-  write_buffer = write_buffer_p = NULL;
-  write_buffer_len = 0;
-  if ( log != NULL )
-  {
-    SSL_set_app_data( ssl, reinterpret_cast<char*>( this ) );
-    SSL_set_info_callback( ssl, info_callback );
-  }
+  return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
 }
-Stream::Status SSLSocket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+ssize_t SSLSocket::send( const struct iovec* buffers, uint32_t buffers_count )
 {
-  int SSL_read_ret = SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
-  if ( SSL_read_ret > 0 )
-  {
-    if ( log != NULL )
-    {
-      Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
-      log_stream << "SSLSocket: read on " << this << ": ";
-      log_stream.write( buffer, static_cast<size_t>( SSL_read_ret ) );
-    }
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<size_t>( SSL_read_ret );
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return returnSSLStatus();
-}
-Stream::Status SSLSocket::returnSSLStatus()
-{
-  if ( SSL_want_read( ssl ) == 1 )
-  {
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on read on socket #" << this << ".";
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, true, false );
-    return STREAM_STATUS_WANT_READ;
-  }
-  if ( SSL_want_write( ssl ) == 1 )
-  {
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      log->getStream( Log::LOG_INFO ) << "SSLSocket: would block on write on " << this << ".";
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, true );
-    return STREAM_STATUS_WANT_WRITE;
-  }
-  else
-  {
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      log->getStream( Log::LOG_INFO ) << "SSLSocket: lost connection on " << this << ", error = " << Exception::strerror() << ".";
-    return STREAM_STATUS_ERROR;
-  }
-}
-Stream::Status SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-{
-  int SSL_write_ret;
   if ( buffers_count == 1 ) // && buffers[0].iov_len < SSL_MAX_CONTENT_LEN )
-  {
-    SSL_write_ret = SSL_write( ssl, buffers[0].iov_base, static_cast<int>( buffers[0].iov_len ) );
-    if ( SSL_write_ret > 0 && out_bytes_written )
-      *out_bytes_written = static_cast<size_t>( SSL_write_ret );
-  }
+    return SSL_write( ssl, buffers[0].iov_base, static_cast<int>( buffers[0].iov_len ) );
   else // Concatenate buffers into a single write_buffer and write that
   {
     if ( write_buffer == NULL )
     {
       for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
         write_buffer_len += buffers[buffer_i].iov_len;
-      write_buffer_p = write_buffer = new unsigned char[write_buffer_len];
+      write_buffer = new unsigned char[write_buffer_len];
+      unsigned char* write_buffer_p = write_buffer;
       for ( unsigned int buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
       {
         memcpy_s( write_buffer_p, buffers[buffer_i].iov_len, buffers[buffer_i].iov_base, buffers[buffer_i].iov_len );
         write_buffer_p += buffers[buffer_i].iov_len;
       }
-      write_buffer_p = write_buffer;
     }
-    size_t total_bytes_written = 0;
-//	      for ( ;; ) // SSL_write multiple times if the buffer is > the max record len
-//        {
-      int SSL_write_len = static_cast<int>( write_buffer_len - static_cast<size_t>( write_buffer_p - write_buffer ) );
-//			if ( SSL_write_len > SSL_MAX_CONTENT_LEN ) SSL_write_len = SSL_MAX_CONTENT_LEN;
-      SSL_write_ret = SSL_write( ssl, reinterpret_cast<unsigned char*>( write_buffer_p ), SSL_write_len );
-      if ( SSL_write_ret > 0 )
-      {
-        write_buffer_p += SSL_write_ret;
-        total_bytes_written += SSL_write_ret;
-        if ( static_cast<size_t>( write_buffer_p - write_buffer ) == write_buffer_len )
-        {
-          delete [] write_buffer;
-          write_buffer_p = write_buffer = NULL;
-          write_buffer_len = 0;
-          if ( out_bytes_written )
-            *out_bytes_written = total_bytes_written;
-          // break;
-        }
-        else
-          DebugBreak(); // continue;
-      }
-//          else
-//            break;
-//        }
-  }
-  if ( SSL_write_ret > 0 )
-  {
-    if ( log != NULL )
+    int SSL_write_ret = SSL_write( ssl, reinterpret_cast<unsigned char*>( write_buffer ), write_buffer_len );
+    if ( SSL_write_ret > 0 )
     {
-      Log::Stream log_stream = log->getStream( Log::LOG_DEBUG );
-      log_stream << "SSLSocket: write on " << this << ": ";
-      log_stream.write( buffers, buffers_count );
+#ifdef _DEBUG
+      if ( SSL_write_ret != static_cast<int>( write_buffer_len ) ) DebugBreak();
+#endif
+      delete [] write_buffer;
+      write_buffer = NULL; write_buffer_len = 0;
     }
-    if ( attached_to_fd_event_queue != NULL )
-      attached_to_fd_event_queue->toggle( *this, fd_event_queue_context, false, false );
-    return STREAM_STATUS_OK;
+    return SSL_write_ret;
   }
-  else
-    return returnSSLStatus();
 }
 bool SSLSocket::shutdown()
 {
@@ -3805,28 +3973,15 @@ bool SSLSocket::shutdown()
   else
     return false;
 }
+bool SSLSocket::want_read() const
+{
+  return SSL_want_read( ssl ) == 1;
+}
+bool SSLSocket::want_write() const
+{
+  return SSL_want_write( ssl ) == 1;
+}
 #endif
-
-
-// tcp_listener.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-auto_Object<TCPListener> TCPListener::create( auto_Object<SocketAddress> local_sockaddr, auto_Object<EventTarget> reader_target, auto_Object<StageGroup> stage_group, auto_Object<TCPSocketFactory> tcp_socket_factory, auto_Object<Log> log )
-{
-  auto_Object<TCPListenQueue> tcp_listen_queue = TCPListenQueue::create( local_sockaddr, log, tcp_socket_factory );
-  if ( tcp_listen_queue != NULL )
-  {
-    auto_Object<TCPListener> tcp_listener = new TCPListener( reader_target );
-    auto_Object<Stage> tcp_listener_stage = stage_group->createStage( tcp_listener->incRef(), 1, tcp_listen_queue->incRef() );
-    if ( tcp_listener_stage != NULL )
-      return tcp_listener;
-  }
-  return NULL;
-}
-void TCPListener::handleEvent( Event& ev )
-{
-  reader_target->send( ev );
-}
 
 
 // tcp_listen_queue.cpp
@@ -3835,17 +3990,16 @@ void TCPListener::handleEvent( Event& ev )
 #if !defined(_WIN32) && defined(_DEBUG)
 #include <errno.h>
 #endif
-auto_Object<TCPListenQueue> TCPListenQueue::create( auto_Object<SocketAddress> listen_sockaddr, auto_Object<Log> log, auto_Object<TCPSocketFactory> tcp_socket_factory )
+auto_Object<TCPListenQueue> TCPListenQueue::create( auto_Object<SocketAddress> sockname,
+                                                    auto_Object<Log> log )
 {
-  if ( tcp_socket_factory == NULL )
-    tcp_socket_factory = new TCPSocketFactory( log );
-  auto_Object<TCPSocket> listen_tcp_socket = tcp_socket_factory->createTCPSocket( log );
-  if ( listen_tcp_socket->bind( listen_sockaddr ) )
-  {
-    if ( listen_tcp_socket->listen() )
-      return new TCPListenQueue( listen_tcp_socket, log );
-  }
-  return NULL;
+  auto_Object<TCPSocket> listen_tcp_socket = TCPSocket::create( log );
+  if ( listen_tcp_socket != NULL &&
+       listen_tcp_socket->bind( sockname ) &&
+       listen_tcp_socket->listen() )
+    return new TCPListenQueue( listen_tcp_socket, log );
+  else
+    return NULL;
 }
 TCPListenQueue::TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket, auto_Object<Log> log )
   : listen_tcp_socket( listen_tcp_socket ), log( log )
@@ -3919,10 +4073,19 @@ TCPSocket* TCPListenQueue::accept()
 #include <sys/socket.h>
 #endif
 #include <cstring>
-TCPSocket::TCPSocket( auto_Object<Log> log )
-  : Socket( AF_INET6, SOCK_STREAM, IPPROTO_TCP, log )
+auto_Object<TCPSocket> TCPSocket::create( auto_Object<Log> log )
 {
-  partial_write_len = 0;
+  int domain = AF_INET6;
+#ifdef _WIN32
+  SOCKET _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+  if ( _socket != INVALID_SOCKET )
+#else
+  int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+  if ( _socket != -1 )
+#endif
+    return new TCPSocket( domain, _socket, log );
+  else
+    return NULL;
 }
 #ifdef _WIN32
 TCPSocket::TCPSocket( int domain, unsigned int _socket, auto_Object<Log> log )
@@ -3976,13 +4139,12 @@ bool TCPSocket::shutdown()
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
 }
-Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+ssize_t TCPSocket::send( const struct iovec* buffers, uint32_t buffers_count )
 {
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
-  if ( out_bytes_written )
-    *out_bytes_written = 0;
+  ssize_t ret = 0;
   for ( ;; )
   {
     // Recalculate these every time we do a socket writev
@@ -4012,37 +4174,114 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
         }
       }
     }
-    Stream::Status writev_status;
-    size_t temp_bytes_written = 0;
+    ssize_t Socket_send_ret;
     if ( wrote_until_buffer_i_pos == 0 ) // Writing whole buffers
-      writev_status = Socket::writev( &buffers[wrote_until_buffer_i], buffers_count - wrote_until_buffer_i, &temp_bytes_written );
+      Socket_send_ret = Socket::send( &buffers[wrote_until_buffer_i], buffers_count - wrote_until_buffer_i );
     else // Writing part of a buffer
     {
       struct iovec temp_iovec;
       temp_iovec.iov_base = static_cast<char*>( buffers[wrote_until_buffer_i].iov_base ) + wrote_until_buffer_i_pos;
       temp_iovec.iov_len = buffers[wrote_until_buffer_i].iov_len - wrote_until_buffer_i_pos;
-      writev_status = Socket::writev( &temp_iovec, 1, &temp_bytes_written );
+      Socket_send_ret = Socket::send( &temp_iovec, 1 );
     }
-    if ( writev_status == STREAM_STATUS_OK )
+    if ( Socket_send_ret > 0 )
     {
-      if ( out_bytes_written )
-        *out_bytes_written += temp_bytes_written;
-      partial_write_len += temp_bytes_written;
+      ret += Socket_send_ret;
+      partial_write_len += Socket_send_ret;
       if ( partial_write_len == buffers_len )
       {
         partial_write_len = 0;
-        return STREAM_STATUS_OK;
+        return ret;
       }
       else
         continue; // A large write filled the socket buffer, try to write again until we finish or get an error
     }
     else
+      return Socket_send_ret;
+  }
+}
+
+
+// udp_recvfrom_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#if defined(_WIN32)
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#else
+#include <sys/socket.h>
+#endif
+auto_Object<UDPRecvFromQueue> UDPRecvFromQueue::create( auto_Object<SocketAddress> sockname, auto_Object<Log> log )
+{
+  auto_Object<UDPSocket> udp_socket = UDPSocket::create( log );
+  if ( udp_socket != NULL )
+  {
+    int so_reuseaddr = 1;
+    if ( ::setsockopt( *udp_socket, SOL_SOCKET, SO_REUSEADDR, ( char* )&so_reuseaddr, sizeof( so_reuseaddr ) ) != -1 &&
+         udp_socket->bind( sockname ) )
+      return new UDPRecvFromQueue( sockname, udp_socket, log );
+  }
+  return NULL;
+}
+UDPRecvFromQueue::UDPRecvFromQueue( auto_Object<SocketAddress> recvfrom_sockname, auto_Object<UDPSocket> recvfrom_socket, auto_Object<Log> log )
+  : recvfrom_sockname( recvfrom_sockname ), recvfrom_socket( recvfrom_socket ), log( log )
+{
+  this->attach( *recvfrom_socket, NULL );
+}
+bool UDPRecvFromQueue::enqueue( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( StageStartupEvent ):	break;
+    case YIELD_OBJECT_TAG( StageShutdownEvent ): recvfrom_socket->close(); break;
+  }
+  Object::decRef( ev );
+  return true;
+}
+Event* UDPRecvFromQueue::dequeue()
+{
+  return recvfrom();
+}
+Event* UDPRecvFromQueue::dequeue( uint64_t timeout_ns )
+{
+  if ( FDEventQueue::dequeue( timeout_ns ) )
+  {
+#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
+    Event* ev = recvfrom();
+    // The event port automatically dissociates events, so we have to re-associate here
+    toggle( *recvfrom_socket, NULL, true, false );
+    return ev;
+#else
+    return recvfrom();
+#endif
+  }
+  else
+    return NULL;
+}
+UDPSocket* UDPRecvFromQueue::recvfrom()
+{
+  char recvfrom_buffer[1024];
+  struct sockaddr_storage recvfrom_peername;
+  socklen_t recvfrom_peername_len = sizeof( recvfrom_peername );
+  ssize_t recvfrom_ret = ::recvfrom( *recvfrom_socket, recvfrom_buffer, 1024, 0, reinterpret_cast<struct sockaddr*>( &recvfrom_peername ), &recvfrom_peername_len );
+  if ( recvfrom_ret > 0 )
+  {
+    auto_Object<UDPSocket> udp_socket = UDPSocket::create( log );
+    if ( udp_socket != NULL )
     {
-      if ( temp_bytes_written > 0 )
-        DebugBreak();
-      return writev_status;
+      int so_reuseaddr = 1;
+      if ( ::setsockopt( *udp_socket, SOL_SOCKET, SO_REUSEADDR, ( char* )&so_reuseaddr, sizeof( so_reuseaddr ) ) != -1 &&
+           udp_socket->bind( recvfrom_sockname ) && // Need to bind to the address we're doing the recvfrom on so that response sends also come from that address (= allows UDP clients to filter all but the server's responses)
+           udp_socket->connect( new SocketAddress( recvfrom_peername ) ) == Stream::STREAM_STATUS_OK )
+      {
+        udp_socket->set_recv_buffer( recvfrom_buffer, static_cast<size_t>( recvfrom_ret ) );
+        return udp_socket.release();
+      }
     }
   }
+  return NULL;
 }
 
 
@@ -4058,9 +4297,29 @@ Stream::Status TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
-UDPSocket::UDPSocket( auto_Object<Log> log )
-  : Socket( AF_INET6, SOCK_DGRAM, IPPROTO_UDP, log )
-{ }
+auto_Object<UDPSocket> UDPSocket::create( auto_Object<Log> log )
+{
+  int domain = AF_INET;
+#ifdef _WIN32
+  SOCKET _socket = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
+  if ( _socket != INVALID_SOCKET )
+#else
+  int _socket = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
+  if ( _socket != -1 )
+#endif
+    return new UDPSocket( domain, _socket, log );
+  else
+    return NULL;
+}
+#ifdef _WIN32
+UDPSocket::UDPSocket( int domain, unsigned int _socket, auto_Object<Log> log )
+#else
+UDPSocket::UDPSocket( int domain, int _socket, auto_Object<Log> log )
+#endif
+  : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, _socket, log )
+{
+  recv_buffer_len = recv_buffer_remaining = 0;
+}
 //bool UDPSocket::joinMulticastGroup( auto_Object<SocketAddress> multicast_group_sockaddr, bool loopback )
 //{
 //  struct ip_mreq mreq;
@@ -4087,34 +4346,33 @@ UDPSocket::UDPSocket( auto_Object<Log> log )
 //  */
 //  return false;
 //}
-Stream::Status UDPSocket::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+ssize_t UDPSocket::recv( void* buffer, size_t buffer_len )
 {
-  sockaddr_storage recvfrom_sockaddr_storage;
-  socklen_t recvfrom_sockaddr_storage_len = sizeof( recvfrom_sockaddr_storage );
-  int read_ret = ::recvfrom( *this,
-                             static_cast<char*>( buffer ),
-#ifdef _WIN32
-                             static_cast<int>( buffer_len ),
-#else
-                             buffer_len,
-#endif
-                             0,
-                             reinterpret_cast<struct sockaddr*>( &recvfrom_sockaddr_storage ),
-                             &recvfrom_sockaddr_storage_len );
-  if ( read_ret > 0 )
+  if ( recv_buffer_len == 0 )
   {
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<size_t>( read_ret );
-    if ( log != NULL )
-    {
-      log->write( "Socket read: ", Log::LOG_DEBUG );
-      log->write( buffer, static_cast<size_t>( read_ret ), Log::LOG_DEBUG );
-      log->write( "\n", Log::LOG_DEBUG );
-    }
-    return STREAM_STATUS_OK;
+    ssize_t recv_ret = Socket::recv( recv_buffer, 1024 );
+    if ( recv_ret > 0 )
+      recv_buffer_len = recv_buffer_remaining = static_cast<size_t>( recv_ret );
+    else
+      return recv_ret;
+  }
+  if ( buffer_len >= recv_buffer_remaining )
+  {
+    buffer_len = recv_buffer_remaining;
+    memcpy_s( buffer, buffer_len, recv_buffer + recv_buffer_len - recv_buffer_remaining, recv_buffer_remaining );
+    recv_buffer_len = recv_buffer_remaining = 0;
   }
   else
-    return STREAM_STATUS_ERROR;
+  {
+    memcpy_s( buffer, buffer_len, recv_buffer + recv_buffer_len - recv_buffer_remaining, buffer_len );
+    recv_buffer_remaining -= buffer_len;
+  }
+  return buffer_len;
+}
+void UDPSocket::set_recv_buffer( char* recv_buffer, size_t recv_buffer_len )
+{
+  memcpy_s( this->recv_buffer, 1024, recv_buffer, recv_buffer_len );
+  this->recv_buffer_len = recv_buffer_remaining = recv_buffer_len;
 }
 
 
@@ -4205,6 +4463,12 @@ void URI::init( UriUriA& parsed_uri )
   else
     resource = "/";
 }
+URI::operator std::string() const
+{
+  std::ostringstream oss;
+  oss << *this;
+  return oss.str();
+}
 
 
 // zlib_output_stream.cpp
@@ -4212,7 +4476,7 @@ void URI::init( UriUriA& parsed_uri )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_ZLIB
 #ifdef _WIN32
-#pragma comment( lib, "zlib.lib" )
+#pragma comment( lib, "zdll.lib" )
 #endif
 zlibOutputStream::zlibOutputStream()
 {

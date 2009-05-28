@@ -1,16 +1,16 @@
 // Copyright 2003-2008 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef YIELD_ARCH_H
-#define YIELD_ARCH_H
+#ifndef _YIELD_ARCH_H
+#define _YIELD_ARCH_H
 
 #include "yield/platform.h"
 
 
-#define YIELD_ARCH_STAGES_PER_GROUP_MAX 32
+#define YIELD_STAGES_PER_GROUP_MAX 32
 
 #ifdef __sun
-#define YIELD_ARCH_RECORD_PERFCTRS 1
+#define YIELD_RECORD_PERFCTRS 1
 #include <libcpc.h>
 #endif
 
@@ -314,7 +314,7 @@ namespace YIELD
   protected:
     Stage()
     {
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
       last_recorded_cpc_events_time_ns = 0;
       pic0_total = pic1_total = 0;
@@ -325,7 +325,7 @@ namespace YIELD
     virtual ~Stage() { }
 
   private:
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
     friend class StageGroupThread;
     uint64_t pic0_total, pic1_total;
@@ -538,7 +538,7 @@ namespace YIELD
   {
   public:
     virtual auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, 
-                                            int16_t threads = 1, 
+                                            int16_t thread_count = 1, 
                                             auto_Object<EventQueue> event_queue = NULL, 
                                             auto_Object<EventTarget> stage_stats_event_target = NULL, 
                                             auto_Object<Log> log = NULL ) = 0;
@@ -573,24 +573,24 @@ namespace YIELD
   public:
     // Templated createStage's that pass the real EventHandler and EventQueue types to StageImpl to bypass the interfaces
     template <class EventHandlerType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads = 1, auto_Object<EventQueue> event_queue = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count, auto_Object<EventQueue> event_queue, auto_Object<EventTarget> stage_stats_event_target, auto_Object<Log> log )
     {
-      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, threads, new OneSignalEventQueue<>, stage_stats_event_target, log );
+      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, thread_count, new OneSignalEventQueue<>, stage_stats_event_target, log );
     }
 
-    template <class EventHandlerType, class EventQueueType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    template <class EventHandlerType>
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, auto_Object<Log> log )
     {
-      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, EventQueueType>( event_handler, threads, event_queue, stage_stats_event_target, log );
+      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, 1, new OneSignalEventQueue<>, NULL, log );
     }
 
     // StageGroup
-    auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t threads = 1, auto_Object<EventQueue> event_queue = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    auto_Object<Stage> createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1, auto_Object<EventQueue> event_queue = NULL, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
     {
       if ( event_queue == NULL )
-        return createStage<EventHandler>( event_handler, threads, event_queue, stage_stats_event_target, log );
+        return createStage<EventHandler>( event_handler, thread_count, event_queue, stage_stats_event_target, log );
       else
-        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, threads, event_queue, stage_stats_event_target, log );
+        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, thread_count, event_queue, stage_stats_event_target, log );
     }
 
   protected:
@@ -602,18 +602,18 @@ namespace YIELD
 
     virtual ~StageGroupImpl()
     {
-      for ( uint8_t stage_i = 0; stage_i < YIELD_ARCH_STAGES_PER_GROUP_MAX; stage_i++ )
+      for ( uint8_t stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
         Object::decRef( stages[stage_i] );
     }
 
     auto_Object<Log> log;
 
-    Stage* stages[YIELD_ARCH_STAGES_PER_GROUP_MAX];
+    Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
 
     void addStage( auto_Object<Stage> stage )
     {
       unsigned char stage_i;
-      for ( stage_i = 0; stage_i < YIELD_ARCH_STAGES_PER_GROUP_MAX; stage_i++ )
+      for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
       {
         if ( stages[stage_i] == NULL )
         {
@@ -634,24 +634,30 @@ namespace YIELD
   public:
     virtual ~StageGroupThread();
 
-    inline bool shouldRun() const { return should_run; }
-    void stop() { should_run = false; }
+    virtual void stop() = 0;
+
+    // Thread
+    void run();
+    virtual void start();
 
   protected:
     StageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set = NULL, auto_Object<Log> = NULL );
 
 
-    void before_run( const char* thread_name = NULL );
+    bool is_running, should_run;
+
+
+    virtual void _run() = 0;
 
     inline bool visitStage( Stage& stage )
     {
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
       startPerformanceCounterSampling();
 #endif
 
       bool success = stage.visit();
 
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
       stopPerformanceCounterSampling( stage, success );
 #endif
 
@@ -660,13 +666,13 @@ namespace YIELD
 
     inline bool visitStage( Stage& stage, uint64_t timeout_ns )
     {
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
       startPerformanceCounterSampling();
 #endif
 
       bool success = stage.visit( timeout_ns );
 
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
       stopPerformanceCounterSampling( stage, success );
 #endif
 
@@ -678,9 +684,7 @@ namespace YIELD
     auto_Object<ProcessorSet> limit_logical_processor_set;
     auto_Object<Log> log;
 
-    bool should_run;
-
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
     cpc_t* cpc; cpc_set_t* cpc_set;
     int pic0_index, pic1_index;
@@ -753,14 +757,14 @@ namespace YIELD
     { }
 
     template <class EventHandlerType, class EventQueueType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t threads, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget> stage_stats_event_target = NULL, auto_Object<Log> log = NULL )
     {
-      if ( threads == -1 )
+      if ( thread_count == -1 )
       {
         if ( get_limit_physical_processor_set() != NULL )
-          threads = get_limit_physical_processor_set()->count();
+          thread_count = get_limit_physical_processor_set()->count();
         else
-          threads = Machine::getOnlinePhysicalProcessorCount();
+          thread_count = Machine::getOnlinePhysicalProcessorCount();
       }
 
       if ( stage_stats_event_target == NULL )
@@ -776,7 +780,7 @@ namespace YIELD
         stage = new StageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, stage_stats_event_target, log );
 
       this->addStage( stage );
-      startThreads( stage, threads );
+      startThreads( stage, thread_count );
 
       return stage;
     }
@@ -789,7 +793,7 @@ namespace YIELD
 
   private:
     std::vector<SEDAStageGroupThread*> threads;
-    void startThreads( auto_Object<Stage> stage, int16_t threads );
+    void startThreads( auto_Object<Stage> stage, int16_t thread_count );
   };
 };
 

@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef ORG_XTREEMFS_INTERFACES_TYPES_H
-#define ORG_XTREEMFS_INTERFACES_TYPES_H
+#ifndef _ORG_XTREEMFS_INTERFACES_TYPES_H_
+#define _ORG_XTREEMFS_INTERFACES_TYPES_H_
 
 #include "yield/platform.h"
 #include <string>
@@ -103,5 +103,4 @@ namespace org
 
 
 };
-
 #endif

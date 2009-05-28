@@ -10,7 +10,7 @@ set YIELDFS_PATH=%XTREEMFS_CLIENT_PATH%\share\yieldfs
 set YIELD_PATH=%XTREEMFS_PATH%\..\yield
 
 set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
-set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELDFS_PATH%\share\yield\include
+set DEPEND_YIELD_INCLUDE_FLAGS=-I %YIELDFS_PATH%\share\yield\include --Dw YIELD_HAVE_OPENSSL
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %YIELDFS_PATH%\include %DEPEND_YIELD_INCLUDE_FLAGS%
 set DEPEND_YIELDFS_LIB_FLAGS=--lu fuse %DEPEND_YIELD_LIB_FLAGS%
@@ -27,7 +27,7 @@ python %YIELD_PATH%\bin\format_src.py -n "XtreemFS" -l "GPLv2" -s %XTREEMFS_CLIE
 REM Generate project files 
 cd %XTREEMFS_CLIENT_PATH%\proj\org\xtreemfs\client
 REM Library projects
-python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib --Dw YIELD_HAVE_OPENSSL -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\src\interfaces\org\xtreemfs -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
+python %YIELD_PATH%\bin\generate_proj.py -n xtreemfs-client-lib -t lib -s %XTREEMFS_CLIENT_PATH%\src\org -s %YIELDFS_PATH%\src -s %YIELDFS_PATH%\share\yield\src -e "xtfs_*.cpp" -e "xos*" -s %XTREEMFS_CLIENT_PATH%\include\org\xtreemfs -s %XTREEMFS_PATH%\src\interfaces\org\xtreemfs -I %XTREEMFS_CLIENT_PATH%\include -o %XTREEMFS_CLIENT_PATH%\lib\xtreemfs-client %DEPEND_YIELDFS_INCLUDE_FLAGS% %DEPEND_YIELDFS_LIB_FLAGS%
 
 REM Binary projects
 python %YIELD_PATH%\bin\generate_proj.py -n xtfs_lsvol -t exe -s %XTREEMFS_CLIENT_PATH%\src\org\xtreemfs\client\xtfs_lsvol.cpp -o %XTREEMFS_CLIENT_PATH%\bin %DEPEND_XTREEMFS_CLIENT_FLAGS% %DEPEND_GOOGLE_BREAKPAD_FLAGS%

@@ -38,13 +38,13 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, YIELD::auto_Object<YIELD::SocketFactory> socket_factory, uint32_t flags, YIELD::auto_Object<YIELD::Log> log )
-  : name( name ), flags( flags ), log( log )
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+  : name( name ), flags( flags ), log( log ), ssl_context( ssl_context )
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( dir_uri, socket_factory, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT );
+  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, socket_factory, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT );
+  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 }
 
 Volume::~Volume()
@@ -117,7 +117,7 @@ YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid 
 
   if ( osd_proxy == NULL )
   {
-    osd_proxy = OSDProxy::create( *osd_uri, dir_proxy->get_socket_factory(), stage_group, dir_proxy->get_log(), dir_proxy->get_operation_timeout(), dir_proxy->get_reconnect_tries_max() ).release();
+    osd_proxy = OSDProxy::create( *osd_uri, stage_group, log, 5 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();

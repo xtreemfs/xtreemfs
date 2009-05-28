@@ -1,4 +1,4 @@
-// Revision: 1475
+// Revision: 1493
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -7,16 +7,12 @@ using namespace YIELD;
 // event_handler.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 void EventHandler::handleUnknownEvent( Event& ev )
 {
   switch ( ev.get_tag() )
   {
     case YIELD_OBJECT_TAG( StageStartupEvent ):
     case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); break;
-
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " << ev.get_type_name() << std::endl;
@@ -25,7 +21,6 @@ void EventHandler::handleUnknownEvent( Event& ev )
     break;
   }
 }
-
 bool EventHandler::send( Event& ev )
 {
   if ( redirect_to_event_target )
@@ -38,7 +33,6 @@ bool EventHandler::send( Event& ev )
     handleEvent( ev );
     handleEvent_lock.release();
   }
-
   return true;
 }
 
@@ -57,42 +51,43 @@ namespace YIELD
     auto_Object<Stage> get_stage() { return stage; }
     // Object
     YIELD_OBJECT_PROTOTYPES( SEDAStageGroupThread, 0 );
-    // Thread
-    void run()
+    // StageGroupThread
+    void stop()
     {
-      StageGroupThread::before_run( stage->get_stage_name() );
-      stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
-      while ( shouldRun() )
-        visitStage( *stage );
+      should_run = false;
+      auto_Object<StageShutdownEvent> stage_shutdown_event = new StageShutdownEvent;
+      for ( ;; )
+      {
+        stage->send( stage_shutdown_event->incRef() );
+        if ( is_running )
+          Thread::sleep( 50 * NS_IN_MS );
+        else
+          break;
+      }
     }
   private:
     ~SEDAStageGroupThread() { }
     auto_Object<Stage> stage;
+    // StageGroupThread
+    void _run()
+    {
+      Thread::set_name( stage->get_stage_name() );
+      stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
+      while ( should_run )
+        visitStage( *stage );
+    }
   };
 };
 SEDAStageGroup::~SEDAStageGroup()
 {
-  auto_Object<StageShutdownEvent> stage_shutdown_event = new StageShutdownEvent;
   for ( std::vector<SEDAStageGroupThread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
-  {
     ( *thread_i )->stop();
-    for ( ;; )
-    {
-      // Keep sending thread_i StageShutdownEvents until it stops
-      // thread_i may not actually be the thread that processes the event if there are multiple threads dequeueing, which is why we have to keep trying until thread_i stops.
-      ( *thread_i )->get_stage()->send( stage_shutdown_event->incRef() );
-      if ( ( *thread_i )->is_running() )
-        Thread::sleep( 50 * NS_IN_MS );
-      else
-        break;
-    }
-  }
   for ( std::vector<SEDAStageGroupThread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     Object::decRef( **thread_i );
 }
-void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
+void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t thread_count )
 {
-  for ( unsigned short thread_i = 0; thread_i < threads; thread_i++ )
+  for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
   {
     SEDAStageGroupThread* thread = new SEDAStageGroupThread( get_name(), NULL, get_log(), stage );
     thread->start();
@@ -104,13 +99,17 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t threads )
 // stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+
+
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
 #include <cstdlib>
 #else
 #error
 #endif
 #endif
+
+
 StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_Object<EventTarget> stage_stats_event_target )
 : name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target )
 {
@@ -119,6 +118,7 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
     limit_logical_processor_set = new ProcessorSet;
     uint16_t online_physical_processor_count = Machine::getOnlinePhysicalProcessorCount();
     uint16_t logical_processors_per_physical_processor = Machine::getOnlinePhysicalProcessorCount();
+
     for ( uint16_t physical_processor_i = 0; physical_processor_i < online_physical_processor_count; physical_processor_i++ )
     {
       if ( limit_physical_processor_set->isset( physical_processor_i ) )
@@ -128,6 +128,7 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
       }
     }
   }
+
   running_stage_group_thread_tls_key = Thread::createTLSKey();
 }
 
@@ -135,7 +136,7 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
 // stage_group_thread.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
 #include <cstdlib>
 #else
@@ -145,8 +146,9 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
 StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log )
   : stage_group_name( stage_group_name ), limit_logical_processor_set( limit_logical_processor_set ), log( log )
 {
+  is_running = false;
   should_run = true;
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
   if ( ( cpc = cpc_open( CPC_VER_CURRENT ) ) != NULL &&
          ( cpc_set = cpc_set_create( cpc ) ) != NULL )
@@ -178,7 +180,7 @@ StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Ob
 }
 StageGroupThread::~StageGroupThread()
 {
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
   cpc_unbind( cpc, cpc_set );
   cpc_set_destroy( cpc, cpc_set );
@@ -186,23 +188,30 @@ StageGroupThread::~StageGroupThread()
 #endif
 #endif
 }
-void StageGroupThread::before_run( const char* thread_name )
+void StageGroupThread::start()
 {
-  if ( thread_name == NULL )
-    thread_name = stage_group_name.c_str();
-  this->set_name( thread_name );
+  Thread::start();
+  while ( !is_running )
+    Thread::yield();
+}
+void StageGroupThread::run()
+{
+  Thread::setCurrentThreadName( stage_group_name.c_str() );
   if ( log != NULL )
-    log->getStream( Log::LOG_DEBUG ) << stage_group_name << ": starting thread #" << this->get_id() << " (name = " << thread_name;
+    log->getStream( Log::LOG_DEBUG ) << stage_group_name << ": starting thread #" << this->get_id() << ".";
   if ( limit_logical_processor_set != NULL )
   {
     if ( !this->set_processor_affinity( *limit_logical_processor_set ) && log != NULL )
       log->getStream( Log::LOG_DEBUG ) << stage_group_name << "could not set processor affinity of thread #" << this->get_id() << ", error: " << Exception::strerror();
   }
 //  Thread::setTLS( stage_group.get_running_stage_group_thread_tls_key(), this );
-#ifdef YIELD_ARCH_RECORD_PERFCTRS
+#ifdef YIELD_RECORD_PERFCTRS
 #ifdef __sun
   cpc_bind_curlwp( cpc, cpc_set, 0 );
 #endif
 #endif
+  is_running = true;
+  _run();
+  is_running = false;
 }
 

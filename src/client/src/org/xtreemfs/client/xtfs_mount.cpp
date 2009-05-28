@@ -77,7 +77,7 @@ namespace org
             if ( cache_metadata )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
 
-            YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, get_socket_factory(), volume_flags, get_log() );
+            YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_ssl_context() );
 
             // Stack volumes as indicated
             if ( cache_files )

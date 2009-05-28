@@ -28,7 +28,7 @@
                 Name="VCCLCompilerTool"
                 Optimization="0"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
                 RuntimeTypeInfo="false"
@@ -74,7 +74,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
                 EnableFunctionLevelLinking="true"
@@ -118,7 +118,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
                 EnableFunctionLevelLinking="true"

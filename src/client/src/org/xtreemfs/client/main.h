@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
-#define CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H
+#ifndef _CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H_
+#define _CLIENT_SRC_ORG_XTREEMFS_CLIENT_MAIN_H_
 
 #include "yield/main.h"
 
@@ -117,21 +117,17 @@ namespace org
           return log;
         }
 
-        YIELD::auto_Object<YIELD::SocketFactory> get_socket_factory()
+        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
         {
-          if ( socket_factory == NULL )
+          if ( ssl_context == NULL )
           {
-#ifdef YIELD_HAVE_OPENSSL
             if ( !pkcs12_file_path.empty() )
-              socket_factory = new YIELD::SSLSocketFactory( new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase ), get_log() );
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
             else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
-              socket_factory = new YIELD::SSLSocketFactory( new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase ), get_log() );
-            else
-#endif
-              socket_factory = new YIELD::TCPSocketFactory( get_log() );
+              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
           }
 
-          return socket_factory;
+          return ssl_context;
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -189,7 +185,7 @@ namespace org
         YIELD::Time operation_timeout;
 
         YIELD::auto_Object<YIELD::Log> log;
-        YIELD::auto_Object<YIELD::SocketFactory> socket_factory;
+        YIELD::auto_Object<YIELD::SSLContext> ssl_context;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
@@ -198,8 +194,8 @@ namespace org
         {
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
-            checked_uri.set_port( default_port );          
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_socket_factory(), stage_group, get_log(), operation_timeout, 3 );
+            checked_uri.set_port( default_port );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3, get_ssl_context() );
           return proxy;
         }
 

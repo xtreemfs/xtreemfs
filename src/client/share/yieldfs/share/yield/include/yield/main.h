@@ -1,8 +1,8 @@
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef YIELD_MAIN_H
-#define YIELD_MAIN_H
+#ifndef _YIELD_MAIN_H_
+#define _YIELD_MAIN_H_
 
 #include "yield/platform.h"
 
@@ -69,7 +69,7 @@ namespace YIELD
       }
 
       int ret = main( static_cast<int>( argvv.size() ), &argvv[0] );
-      
+
       for ( std::vector<char*>::size_type argvv_i = 1; argvv_i < argvv.size(); argvv_i++ )
         delete [] argvv[argvv_i];
 

@@ -1,13 +1,14 @@
 // Copyright 2003-2008 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef YIELD_PLATFORM_H
-#define YIELD_PLATFORM_H
+#ifndef _YIELD_PLATFORM_H_
+#define _YIELD_PLATFORM_H_
 
 #define __STDC_LIMIT_MACROS
 #ifdef _WIN32
 #include <hash_map>
 #include <msstdint.h>
+typedef int ssize_t;
 extern "C"
 {
   __declspec( dllimport ) void __stdcall DebugBreak();
@@ -179,18 +180,20 @@ TestSuiteName##TestSuiteDest TestSuiteName##TestSuiteDestObj;
 
 #define YIELD_TEST_SUITE( TestSuiteName ) YIELD_TEST_SUITE_EX( TestSuiteName, YIELD::TestSuite )
 
-#define YIELD_TEST_CASE_EX( TestCaseName, TestCaseType, TestSuiteName ) \
+#define YIELD_TEST_CASE_EX( TestSuiteName, TestCaseName, TestCaseType ) \
 extern YIELD::TestSuite& TestSuiteName##TestSuite(); \
-class TestCaseName##Test : public TestCaseType \
+class TestSuiteName##_##TestCaseName##Test : public TestCaseType \
 { \
 public:\
-  TestCaseName##Test() : TestCaseType( #TestCaseName "Test", TestSuiteName##TestSuite() ) { }\
-  void runTest();\
+  TestSuiteName##_##TestCaseName##Test() \
+  : TestCaseType( TestSuiteName##TestSuite(), # TestCaseName ) \
+  { } \
+  void runTest(); \
 };\
-TestCaseName##Test TestCaseName##Test_inst;\
-void TestCaseName##Test::runTest()
+TestSuiteName##_##TestCaseName##Test TestSuiteName##_##TestCaseName##Test_inst;\
+void TestSuiteName##_##TestCaseName##Test::runTest()
 
-#define YIELD_TEST_CASE( TestCaseName, TestSuiteName ) YIELD_TEST_CASE_EX( TestCaseName, YIELD::TestCase, TestSuiteName )
+#define YIELD_TEST_CASE( TestSuiteName, TestCaseName ) YIELD_TEST_CASE_EX( TestSuiteName, TestCaseName, YIELD::TestCase )
 
 #ifdef YIELD_BUILDING_STANDALONE_TEST
 #define YIELD_TEST_MAIN( TestSuiteName ) \
@@ -269,12 +272,22 @@ struct timespec;
 struct timeval;
 
 
+#ifndef _WIN32
+inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
+{
+  memcpy( dest, src, count );
+}
+#endif
+
+
 namespace YIELD
 {
   class Path;
   class Stat;
   class StructuredInputStream;
   class StructuredOutputStream;
+  class TestResult;
+  class TestSuite;
 
 
   static inline int32_t atomic_cas( volatile int32_t* current_value, int32_t new_value, int32_t old_value )
@@ -409,14 +422,6 @@ namespace YIELD
   static inline void DebugBreak()
   {
     *((int*)0) = 0xabadcafe;
-  }
-#endif
-
-
-#ifndef _WIN32
-  inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
-  {
-    memcpy( dest, src, count );
   }
 #endif
 
@@ -2609,8 +2614,7 @@ namespace YIELD
   class SharedLibrary : public Object
   {
   public:
-    static SharedLibrary* open( const Path& file_prefix, const char* argv0 = 0 ); // Returns NULL if the library cannot be loaded
-    SharedLibrary( const Path& file_prefix, const char* argv0 = 0 ); // Throws exceptions if the library cannot be loaded
+    static auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
 
     void* getHandle() { return handle; }
     void* getFunction( const char* function_name ); // Returns NULL instead of throwing exceptions
@@ -2619,10 +2623,8 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SharedLibrary, 11 );
 
   private:
-    SharedLibrary();
+    SharedLibrary( void* handle );
     ~SharedLibrary();
-
-    bool init( const YIELD::Path& file_prefix, const char* argv0 = 0 );
 
     void* handle;
   };
@@ -2865,7 +2867,6 @@ namespace YIELD
     Thread();
 
     unsigned long get_id() const { return id; }
-    inline bool is_running() const { return _is_running; }
     void set_name( const char* name ) { setThreadName( get_id(), name ); }
     bool set_processor_affinity( unsigned short logical_processor_i );
     bool set_processor_affinity( const ProcessorSet& logical_processor_set );
@@ -2886,7 +2887,6 @@ namespace YIELD
 #else
     pthread_t handle;
 #endif
-    bool _is_running;
 
     static void setThreadName( unsigned long, const char* );
 #ifdef _WIN32
@@ -2897,59 +2897,72 @@ namespace YIELD
   };
 
 
-  class TestCase;
-
-  class TestSuite : public std::vector<TestCase*>
-  {
-  public:
-    TestSuite() { }
-    TestSuite( const std::string& ) { }
-
-    virtual ~TestSuite();
-
-    void addTest( TestCase* test_case, bool own_test_case = true ); // for addTest( new ... )
-    void addTest( TestCase& test_case, bool own_test_case = false ); // for addTest( *this )
-
-  private:
-    std::vector<bool> own_test_cases;
-  };
-
-
   class TestCase
   {
   public:
-    TestCase( const std::string& test_case_name ) 
-      : short_description( test_case_name ) 
-    { }
-
-    TestCase( const std::string& test_suite_name, const std::string& test_case_name ) 
-      : short_description( test_suite_name + "_" + test_case_name ) 
-    { }
-
-    TestCase( const std::string& test_case_name, TestSuite& __test_suite ) : short_description( test_case_name ) { __test_suite.addTest( *this ); }
+    TestCase( TestSuite& test_suite, const std::string& name ); 
     virtual ~TestCase() { }
 
     virtual void setUp() { }
-    virtual void runTest() = 0;
+    virtual void runTest() { }
+    virtual void run( TestResult& test_result );
     virtual void tearDown() { }
-    virtual const char* shortDescription() { return short_description.c_str(); }
+    const char* shortDescription() const { return short_description.c_str(); }
 
   protected:
     std::string short_description;
   };
 
 
+  class TestResult
+  {
+  public:
+    TestResult( auto_Object<Log> log )
+      : log( log)
+    { }
+
+    virtual ~TestResult() { }
+
+    auto_Object<Log> get_log() const { return log; }
+
+  private:
+    auto_Object<Log> log;
+  };
+
+
   class TestRunner
   {
   public:
-    int run( TestSuite& test_suite );
+    TestRunner( Log::Level log_level = Log::LOG_NOTICE );
+
+    virtual int run( TestSuite& test_suite );
+
+  private:
+    Log::Level log_level;
+  };
+
+
+  class TestSuite : private std::vector<TestCase*>
+  {
+  public:
+    TestSuite( const std::string& name );
+    virtual ~TestSuite();
+
+    void addTest( TestCase* test_case, bool own_test_case = true ); // for addTest( new ... )
+    void addTest( TestCase& test_case, bool own_test_case = false ); // for addTest( *this )
+    const std::string& get_name() const { return name; }
+    virtual void run( TestResult& test_result );
+
+  private:
+    std::string name;
+
+    std::vector<bool> own_test_cases;
   };
 
 
   class Volume : public Object
   {
-  public:
-    const static mode_t DEFAULT_FILE_MODE = S_IREAD|S_IWRITE;
+  public:    
     const static mode_t DEFAULT_DIRECTORY_MODE = S_IREAD|S_IWRITE|S_IEXEC;
 
 
@@ -2976,7 +2989,7 @@ namespace YIELD
     YIELD_VOLUME_PROTOTYPES;
 
     // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
-    virtual auto_Object<File> creat( const Path& path ) { return creat( path, DEFAULT_FILE_MODE ); }
+    virtual auto_Object<File> creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
     virtual auto_Object<File> creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
     virtual bool exists( const YIELD::Path& path );
     virtual bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
@@ -2986,13 +2999,13 @@ namespace YIELD
     virtual bool mkdir( const YIELD::Path& path ) { return mkdir( path, DEFAULT_DIRECTORY_MODE ); }
     virtual bool mktree( const YIELD::Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); }
     virtual bool mktree( const YIELD::Path& path, mode_t mode );
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path ) { return open( path, O_RDONLY, DEFAULT_FILE_MODE, 0 ); }
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_FILE_MODE, 0 ); }
+    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
+    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
     virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
     virtual bool readdir( const Path& path, readdirCallback& callback ) { return readdir( path, Path(), callback ); }
     virtual bool rmtree( const YIELD::Path& path );
     virtual auto_Object<Stat> stat( const Path& path ) { return getattr( path ); }
-    virtual bool touch( const YIELD::Path& path ) { return touch( path, DEFAULT_FILE_MODE ); }
+    virtual bool touch( const YIELD::Path& path ) { return touch( path, File::DEFAULT_MODE ); }
     virtual bool touch( const YIELD::Path& path, mode_t mode );
 
     // Object

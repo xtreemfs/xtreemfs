@@ -1,4 +1,4 @@
-// Revision: 1475
+// Revision: 1493
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -840,20 +840,15 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 // memory_mapped_file.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
 #else
 #include <sys/mman.h>
 #endif
-
-
 auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
 {
   auto_Object<File> file = File::open( path, flags, mode, attributes );
-
   if ( file != NULL )
   {
     size_t current_file_size;
@@ -873,9 +868,7 @@ auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t
     }
     else
       current_file_size = 0;
-
     auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
-
     if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
       return memory_mapped_file;
     else
@@ -884,7 +877,6 @@ auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t
   else
     return NULL;
 }
-
 MemoryMappedFile::MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags )
   : underlying_file( underlying_file ), open_flags( open_flags )
 {
@@ -894,7 +886,6 @@ MemoryMappedFile::MemoryMappedFile( auto_Object<File> underlying_file, uint32_t 
   size = 0;
   start = NULL;
 }
-
 bool MemoryMappedFile::close()
 {
   if ( start != NULL )
@@ -907,7 +898,6 @@ bool MemoryMappedFile::close()
 #endif
     start = NULL;
   }
-
 #ifdef _WIN32
   if ( mapping != NULL )
   {
@@ -915,10 +905,8 @@ bool MemoryMappedFile::close()
     mapping = NULL;
   }
 #endif
-
   return underlying_file->close();
 }
-
 bool MemoryMappedFile::resize( size_t new_size )
 {
   if ( new_size > 0 )
@@ -929,7 +917,6 @@ bool MemoryMappedFile::resize( size_t new_size )
       if ( UnmapViewOfFile( start ) != TRUE )
         return false;
     }
-
     if ( mapping != NULL )
     {
       if ( CloseHandle( mapping ) != TRUE )
@@ -943,14 +930,12 @@ bool MemoryMappedFile::resize( size_t new_size )
         return false;
     }
 #endif
-
     if ( size == new_size || underlying_file->truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
       if ( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
         map_flags = PAGE_READWRITE;
-
       ULARGE_INTEGER uliNewSize; uliNewSize.QuadPart = new_size;
       mapping = CreateFileMapping( *underlying_file, NULL, map_flags, uliNewSize.HighPart, uliNewSize.LowPart, NULL );
       if ( mapping != NULL )
@@ -958,7 +943,6 @@ bool MemoryMappedFile::resize( size_t new_size )
         map_flags = FILE_MAP_READ;
         if( ( open_flags & O_RDWR ) || ( open_flags & O_WRONLY ) )
           map_flags = FILE_MAP_ALL_ACCESS;
-
         start = static_cast<char*>( MapViewOfFile( mapping, map_flags, 0, 0, 0 ) );
         if ( start != NULL )
         {
@@ -970,7 +954,6 @@ bool MemoryMappedFile::resize( size_t new_size )
       unsigned long mmap_flags = PROT_READ;
       if( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
         mmap_flags |= PROT_WRITE;
-
       void* mmap_ret = mmap( 0, new_size, mmap_flags, MAP_SHARED, *underlying_file, 0 );
       if ( mmap_ret != MAP_FAILED )
       {
@@ -983,10 +966,8 @@ bool MemoryMappedFile::resize( size_t new_size )
   }
   else
     return true;
-
   return false;
 }
-
 bool MemoryMappedFile::sync()
 {
 #ifdef _WIN32
@@ -995,7 +976,6 @@ bool MemoryMappedFile::sync()
   return msync( start, size, MS_SYNC ) == 0;
 #endif
 }
-
 bool MemoryMappedFile::sync( size_t offset, size_t length )
 {
 #ifdef _WIN32
@@ -1004,7 +984,6 @@ bool MemoryMappedFile::sync( size_t offset, size_t length )
   return msync( start + offset, length, MS_SYNC ) == 0;
 #endif
 }
-
 bool MemoryMappedFile::sync( void* ptr, size_t length )
 {
 #if defined(_WIN32)
@@ -1403,9 +1382,13 @@ Path Path::abspath() const
 // pipe.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+
 auto_Object<Pipe> Pipe::create()
 {
 #ifdef _WIN32
@@ -1432,6 +1415,7 @@ auto_Object<Pipe> Pipe::create()
 #endif
   return NULL;
 }
+
 #ifdef _WIN32
 Pipe::Pipe( void* ends[2] )
 #else
@@ -1440,6 +1424,7 @@ Pipe::Pipe( int ends[2] )
 {
   memcpy_s( this->ends, sizeof( this->ends ), ends, sizeof( this->ends ) );
 }
+
 Pipe::~Pipe()
 {
 #ifdef _WIN32
@@ -1450,6 +1435,7 @@ Pipe::~Pipe()
   ::close( ends[1] );
 #endif
 }
+
 Stream::Status Pipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
 #ifdef _WIN32
@@ -1474,6 +1460,7 @@ Stream::Status Pipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_re
     return STREAM_STATUS_ERROR;
 #endif
 }
+
 Stream::Status Pipe::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
 {
 #ifdef _WIN32
@@ -1938,52 +1925,22 @@ void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Recor
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
-SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
-{
-  SharedLibrary* shared_library = new SharedLibrary;
-  if ( shared_library->init( file_prefix, argv0 ) )
-    return shared_library;
-  else
-  {
-    delete shared_library;
-    return NULL;
-  }
-}
-SharedLibrary::SharedLibrary() : handle( NULL )
-{ }
-SharedLibrary::SharedLibrary( const Path& file_prefix, const char* argv0 ) : handle( NULL )
-{
-  if ( !init( file_prefix, argv0 ) )
-    throw Exception();
-}
-SharedLibrary::~SharedLibrary()
-{
-  if ( handle )
-  {
-#ifdef _WIN32
-    FreeLibrary( ( HMODULE )handle );
-#else
-#ifndef _DEBUG
-    dlclose( handle ); // Don't dlclose when debugging, because that causes valgrind to lose symbols
-#endif
-#endif
-  }
-}
-bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
+auto_Object<SharedLibrary> SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 {
   char file_path[PATH_MAX];
+  void* handle;
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
-    return true;
+    return new SharedLibrary( handle );
   else
   {
     snprintf( file_path, PATH_MAX, "lib%c%s.%s", PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
     if ( ( handle = DLOPEN( file_path ) ) != NULL )
-      return true;
+      return new SharedLibrary( handle );
     else
     {
       snprintf( file_path, PATH_MAX, "%s.%s", static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
       if ( ( handle = DLOPEN( file_path ) ) != NULL )
-        return true;
+        return new SharedLibrary( handle );
       else
       {
         if ( argv0 != NULL )
@@ -1993,12 +1950,12 @@ bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
           {
             snprintf( file_path, PATH_MAX, "%.*s%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
             if ( ( handle = DLOPEN( file_path ) ) != NULL )
-              return true;
+              return new SharedLibrary( handle );
             else
             {
               snprintf( file_path, PATH_MAX, "%.*slib%c%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
-                return true;
+                return new SharedLibrary( handle );
             }
             last_slash--;
             while ( *last_slash != PATH_SEPARATOR ) last_slash--;
@@ -2007,7 +1964,23 @@ bool SharedLibrary::init( const Path& file_prefix, const char* argv0 )
       }
     }
   }
-  return false;
+  return NULL;
+}
+SharedLibrary::SharedLibrary( void* handle )
+  : handle( handle )
+{ }
+SharedLibrary::~SharedLibrary()
+{
+  if ( handle != NULL )
+  {
+#ifdef _WIN32
+    FreeLibrary( ( HMODULE )handle );
+#else
+#ifndef _DEBUG
+    dlclose( handle ); // Don't dlclose when debugging, because that causes valgrind to lose symbols
+#endif
+#endif
+  }
 }
 void* SharedLibrary::getFunction( const char* func_name )
 {
@@ -2247,50 +2220,41 @@ Stream::Status String::writev( const struct iovec* buffers, uint32_t buffers_cou
 }
 
 
+// test_case.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TestCase::TestCase( TestSuite& test_suite, const std::string& name )
+  : short_description( test_suite.get_name() + "_" + name )
+{
+  test_suite.addTest( *this );
+}
+void TestCase::run( TestResult& )
+{
+  runTest();
+}
+
+
 // test_runner.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <iostream>
+TestRunner::TestRunner( Log::Level log_level )
+  : log_level( log_level )
+{ }
 int TestRunner::run( TestSuite& test_suite )
 {
-  int ret_code = 0;
-  for ( TestSuite::iterator i = test_suite.begin(); i != test_suite.end(); i++ )
-  {
-    bool called_runTest = false, called_tearDown = false;
-    try
-    {
-      std::cerr << ( *i )->shortDescription();
-      ( *i )->setUp();
-      called_runTest = true;
-      ( *i )->runTest();
-      called_tearDown = true;
-      ( *i )->tearDown();
-      std::cerr << ": passed" << std::endl;
-      continue;
-    }
-    catch ( YIELD::AssertionException& exc )
-    {
-      std::cerr << " failed: " << exc.what() << std::endl;
-    }
-    catch ( std::exception& exc )
-    {
-      std::cerr << " threw unknown exception: " << exc.what() << std::endl;
-    }
-    catch ( ... )
-    {
-      std::cerr << " threw unknown non-exception" << std::endl;
-    }
-    if ( called_runTest && !called_tearDown )
-      try { ( *i )->tearDown(); } catch ( ... ) { }
-    ret_code |= 1;
-  }
-  return ret_code;
+  TestResult* test_result = new TestResult( new Log( std::cout, log_level ) );
+  test_suite.run( *test_result );
+  return 0;
 }
 
 
 // test_suite.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TestSuite::TestSuite( const std::string& name )
+  : name( name )
+{ }
 TestSuite::~TestSuite()
 {
   for ( std::vector<TestCase*>::size_type test_case_i = 0; test_case_i < size(); test_case_i++ )
@@ -2312,13 +2276,45 @@ void TestSuite::addTest( TestCase& test_case, bool own_test_case )
   push_back( &test_case );
   own_test_cases.push_back( own_test_case );
 }
+void TestSuite::run( TestResult& test_result )
+{
+  for ( iterator test_i = begin(); test_i != end(); test_i++ )
+  {
+    Log::Stream test_result_log_stream = test_result.get_log()->getStream();
+    bool called_runTest = false, called_tearDown = false;
+    try
+    {
+      test_result_log_stream << ( *test_i )->shortDescription();
+      ( *test_i )->setUp();
+      called_runTest = true;
+      ( *test_i )->run( test_result );
+      called_tearDown = true;
+      ( *test_i )->tearDown();
+      test_result_log_stream << ": passed";
+      continue;
+    }
+    catch ( YIELD::AssertionException& exc )
+    {
+      test_result_log_stream << " failed: " << exc.what();
+    }
+    catch ( std::exception& exc )
+    {
+      test_result_log_stream << " threw unknown exception: " << exc.what();
+    }
+    catch ( ... )
+    {
+      test_result_log_stream << " threw unknown non-exception";
+    }
+    if ( called_runTest && !called_tearDown )
+      try { ( *test_i )->tearDown(); } catch ( ... ) { }
+   // ret_code |= 1;
+  }
+}
 
 
 // thread.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -2331,8 +2327,6 @@ void TestSuite::addTest( TestCase& test_case, bool own_test_case )
 #include <sys/pset.h>
 #endif
 #endif
-
-
 unsigned long Thread::createTLSKey()
 {
 #ifdef _WIN32
@@ -2343,7 +2337,6 @@ unsigned long Thread::createTLSKey()
   return key;
 #endif
 }
-
 unsigned long Thread::getCurrentThreadId()
 {
 #if defined(_WIN32)
@@ -2356,7 +2349,6 @@ unsigned long Thread::getCurrentThreadId()
   return 0;
 #endif
 }
-
 void* Thread::getTLS( unsigned long key )
 {
 #ifdef _WIN32
@@ -2365,7 +2357,6 @@ void* Thread::getTLS( unsigned long key )
     return pthread_getspecific( key );
 #endif
 }
-
 #ifdef _WIN32
 //
 // Usage: SetThreadName (-1, "MainThread");
@@ -2380,7 +2371,6 @@ typedef struct tagTHREADNAME_INFO
 }
 THREADNAME_INFO;
 #endif
-
 void Thread::setThreadName( unsigned long id, const char* thread_name )
 {
 #ifdef _WIN32
@@ -2389,7 +2379,6 @@ void Thread::setThreadName( unsigned long id, const char* thread_name )
   info.szName = thread_name;
   info.dwThreadID = id;
   info.dwFlags = 0;
-
   __try
   {
       RaiseException( 0x406D1388, 0, sizeof( info ) / sizeof( DWORD ), reinterpret_cast<DWORD*>( &info ) );
@@ -2398,8 +2387,6 @@ void Thread::setThreadName( unsigned long id, const char* thread_name )
   {}
 #endif
 }
-
-
 void Thread::setTLS( unsigned long key, void* value )
 {
 #ifdef _WIN32
@@ -2408,7 +2395,6 @@ void Thread::setTLS( unsigned long key, void* value )
   pthread_setspecific( key, value );
 #endif
 }
-
 void Thread::sleep( uint64_t timeout_ns )
 {
 #ifdef _WIN32
@@ -2418,7 +2404,6 @@ void Thread::sleep( uint64_t timeout_ns )
   nanosleep( &timeout_ts, NULL );
 #endif
 }
-
 void Thread::yield()
 {
 #if defined(_WIN32)
@@ -2431,21 +2416,17 @@ void Thread::yield()
   pthread_yield();
 #endif
 }
-
 Thread::Thread()
 {
   handle = 0;
   id = 0;
-  _is_running = false;
 }
-
 Thread::~Thread()
 {
 #ifdef _WIN32
   if ( handle ) CloseHandle( handle );
 #endif
 }
-
 bool Thread::set_processor_affinity( unsigned short logical_processor_i )
 {
   if ( id != 0 )
@@ -2466,7 +2447,6 @@ bool Thread::set_processor_affinity( unsigned short logical_processor_i )
   else
     return false;
 }
-
 bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
 {
   if ( id != 0 )
@@ -2484,46 +2464,33 @@ bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
   else
     return false;
 }
-
 void Thread::start()
 {
-  if ( !this->_is_running )
-  {
 #ifdef _WIN32
-    handle = CreateThread( NULL, 0, thread_stub, this, NULL, &id );
+  handle = CreateThread( NULL, 0, thread_stub, this, NULL, &id );
 #else
-    pthread_attr_t attr;
-    pthread_attr_init( &attr );
-    pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_DETACHED );
-    pthread_create( &handle, &attr, &thread_stub, ( void* )this );
-    pthread_attr_destroy( &attr );
+  pthread_attr_t attr;
+  pthread_attr_init( &attr );
+  pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_DETACHED );
+  pthread_create( &handle, &attr, &thread_stub, ( void* )this );
+  pthread_attr_destroy( &attr );
 #endif
-  }
 }
-
 #ifdef _WIN32
-unsigned long __stdcall Thread::thread_stub( void* pnt )
+unsigned long __stdcall Thread::thread_stub( void* this_ )
 #else
-void* Thread::thread_stub( void* pnt )
+void* Thread::thread_stub( void* this_ )
 #endif
 {
-  Thread* this_thread = static_cast<Thread*>( pnt );
-  if ( !this_thread->_is_running )
-  {
-    this_thread->_is_running = true;
 #if defined(__linux__)
-    this_thread->id = syscall( SYS_gettid );
+  static_cast<Thread*>( this_ )->id = syscall( SYS_gettid );
 #elif defined(__MACH__)
-    this_thread->id = 0; // ???
+  static_cast<Thread*>( this_ )->id = 0; // ???
 #elif defined(__sun)
-    this_thread->id = thr_self();
+  static_cast<Thread*>( this_ )->id = thr_self();
 #endif
-    this_thread->run();
-    this_thread->_is_running = false;
-    return 0;
-  }
-  else
-    return 0;
+  static_cast<Thread*>( this_ )->run();
+  return 0;
 }
 
 
@@ -3168,7 +3135,7 @@ bool Volume::touch( const Path& path, mode_t mode )
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
-  auto_Object<File> file = Volume::open( path, O_CREAT|O_WRONLY, DEFAULT_FILE_MODE );
+  auto_Object<File> file = Volume::open( path, O_CREAT|O_WRONLY, File::DEFAULT_MODE );
   if ( file!= NULL )
   {
     file->truncate( new_size );

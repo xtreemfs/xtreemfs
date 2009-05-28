@@ -47,7 +47,7 @@ except:
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
         if ARGUMENTS.get( "profile-heap", 0 ): build_env["CCFLAGS"] += "-fno-omit-frame-pointer "; build_env["LIBS"].append( "tcmalloc" )
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
-        else: build_env["CCFLAGS"] += "-g -D_DEBUG "        
+        else: build_env["CCFLAGS"] += "-g -D_DEBUG "
         if ARGUMENTS.get( "shared", 0 ): build_env["CCFLAGS"] += "-fPIC "
         if not ARGUMENTS.get( "with-rtti", 0 ) and sys.platform != "darwin": build_env["CCFLAGS"] += "-fno-rtti " # Disable RTTI by default
 
@@ -60,6 +60,14 @@ except:
         build_env["CCFLAGS"] += "-march=i686 "
 
     Export( "build_env", "build_conf" )
+
+defines = []
+if sys.platform.startswith( "win" ): defines.extend( ["YIELD_HAVE_OPENSSL"] )
+else: defines.extend( [] )
+for define in defines:
+    if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'
+    else: define_switch = "-D" + define
+    if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
 include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
 for include_dir_path in include_dir_paths:

@@ -1,4 +1,4 @@
-// Revision: 133
+// Revision: 136
 
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -613,7 +613,7 @@ namespace yieldfs
       {
         case CREATE_NEW: // Create the file only if it does not exist already
         {
-          file = volume.open( FileName, open_flags|O_CREAT|O_EXCL, YIELD::Volume::DEFAULT_FILE_MODE, file_attributes ).release();
+          file = volume.open( FileName, open_flags|O_CREAT|O_EXCL, YIELD::File::DEFAULT_MODE, file_attributes ).release();
         }
         break;
 
@@ -628,13 +628,13 @@ namespace yieldfs
             }
           }
 
-          file = volume.open( FileName, open_flags|O_CREAT, YIELD::Volume::DEFAULT_FILE_MODE, file_attributes ).release();
+          file = volume.open( FileName, open_flags|O_CREAT, YIELD::File::DEFAULT_MODE, file_attributes ).release();
         }
         break;
 
         case OPEN_ALWAYS: // Open an existing file or create it if it doesn't exist
         {
-          file = volume.open( FileName, open_flags|O_CREAT, YIELD::Volume::DEFAULT_FILE_MODE, file_attributes ).release();
+          file = volume.open( FileName, open_flags|O_CREAT, YIELD::File::DEFAULT_MODE, file_attributes ).release();
         }
         break;
 
@@ -656,7 +656,7 @@ namespace yieldfs
                 return ERROR_SUCCESS;
               }
               else
-                file = volume.open( FileName, open_flags, YIELD::Volume::DEFAULT_FILE_MODE, file_attributes ).release();
+                file = volume.open( FileName, open_flags, YIELD::File::DEFAULT_MODE, file_attributes ).release();
             }
             else
               return -1 * ::GetLastError();
@@ -666,7 +666,7 @@ namespace yieldfs
 
         case TRUNCATE_EXISTING: // Only open an existing file and truncate it
         {
-          file = volume.open( FileName, open_flags|O_TRUNC, YIELD::Volume::DEFAULT_FILE_MODE, file_attributes ).release();
+          file = volume.open( FileName, open_flags|O_TRUNC, YIELD::File::DEFAULT_MODE, file_attributes ).release();
           if ( file != NULL )
             file->truncate( 0 );
         }
@@ -758,7 +758,7 @@ namespace yieldfs
       bool operator()( const YIELD::Path& path, YIELD::auto_Object<YIELD::Stat> stbuf )
       {
         WIN32_FIND_DATA find_data = *stbuf;
-        wcsncpy( find_data.cFileName, path, 260 );
+        wcsncpy_s( find_data.cFileName, 260, path, path.size() );
         FillFindData( &find_data, DokanFileInfo );
         return true;
       }
@@ -1211,7 +1211,7 @@ YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_
     }
     if ( remaining_buffer_len > cached_page->get_data_len() )
     {
-      memcpy( read_to_buffer_p, cached_page->get_data(), cached_page->get_data_len() );
+      memcpy_s( read_to_buffer_p, remaining_buffer_len, cached_page->get_data(), cached_page->get_data_len() );
       read_to_buffer_p += cached_page->get_data_len();
       if ( cached_page->get_data_len() == CACHED_PAGE_SIZE )
       {
@@ -1223,7 +1223,7 @@ YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_
     }
     else
     {
-      memcpy( read_to_buffer_p, cached_page->get_data(), remaining_buffer_len );
+      memcpy_s( read_to_buffer_p, remaining_buffer_len, cached_page->get_data(), remaining_buffer_len );
       read_to_buffer_p += remaining_buffer_len;
       break;
     }
@@ -1297,7 +1297,7 @@ YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t 
       {
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: filling page " << cached_page_i << ".";
-        memcpy( cached_page->get_data(), wrote_to_buffer_p, CACHED_PAGE_SIZE );
+        memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, CACHED_PAGE_SIZE );
         cached_page->set_data_len( CACHED_PAGE_SIZE );
         cached_pages.insert( cached_page_i, cached_page );
         wrote_to_buffer_p += CACHED_PAGE_SIZE;
@@ -1309,7 +1309,7 @@ YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t 
       {
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: partially filling page " << cached_page_i << ".";
-        memcpy( cached_page->get_data(), wrote_to_buffer_p, remaining_buffer_len );
+        memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
         if ( remaining_buffer_len > cached_page->get_data_len() )
           cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
         bytes_written += remaining_buffer_len;
@@ -1470,6 +1470,9 @@ namespace yieldfs
     std::vector<CachedStat*> cached_stats;
   };
 };
+StatCachingVolume::StatCachingVolume()
+: ttl_s( 5 )
+{ }
 StatCachingVolume::StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s )
 : StackableVolume( underlying_volume ), ttl_s( ttl_s )
 { }
@@ -1597,12 +1600,12 @@ bool StatCachingVolume::mkdir( const YIELD::Path& path, mode_t mode )
   evict( getParentDirectoryPath( path ) );
   return underlying_volume->mkdir( path, mode );
 }
-YIELD::auto_Object<YIELD::File> StatCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode )
+YIELD::auto_Object<YIELD::File> StatCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   if ( ( flags & O_CREAT ) == O_CREAT )
     evict( getParentDirectoryPath( path ) );
   evict( path );
-  return underlying_volume->open( path, flags, mode );
+  return underlying_volume->open( path, flags, mode, attributes );
 }
 bool StatCachingVolume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
 {
@@ -1807,6 +1810,12 @@ namespace yieldfs
     YIELD::auto_Object<YIELD::Log> log;
   };
 };
+
+
+TracingVolume::TracingVolume()
+{
+  log = new YIELD::Log( std::cout, YIELD::Log::LOG_INFO );
+}
 
 TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
   : StackableVolume( underlying_volume )
