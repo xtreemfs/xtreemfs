@@ -24,7 +24,11 @@ namespace org
         const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
         const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
 
-        Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL );
+        Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags = 0, YIELD::auto_Object<YIELD::Log> log = NULL
+#ifdef YIELD_HAVE_OPENSSL
+                , YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL 
+#endif
+              );
 
         // Callbacks for File
         uint32_t get_flags() const { return flags; }
@@ -42,7 +46,9 @@ namespace org
         std::string name;
         uint32_t flags;
         YIELD::auto_Object<YIELD::Log> log;
+#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
+#endif
 
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
         YIELD::auto_Object<DIRProxy> dir_proxy;

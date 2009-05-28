@@ -117,6 +117,7 @@ namespace org
           return log;
         }
 
+#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
         {
           if ( ssl_context == NULL )
@@ -129,6 +130,7 @@ namespace org
 
           return ssl_context;
         }
+#endif
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
         {
@@ -185,7 +187,9 @@ namespace org
         YIELD::Time operation_timeout;
 
         YIELD::auto_Object<YIELD::Log> log;
+#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
+#endif
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
@@ -195,7 +199,11 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3
+#ifdef YIELD_HAVE_OPENSSL
+                                                                   , get_ssl_context() 
+#endif
+                                                                 );
           return proxy;
         }
 

@@ -38,13 +38,28 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
-  : name( name ), flags( flags ), log( log ), ssl_context( ssl_context )
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log
+#ifdef YIELD_HAVE_OPENSSL
+                , YIELD::auto_Object<YIELD::SSLContext> ssl_context 
+#endif
+)
+  : name( name ), flags( flags ), log( log )
+#ifdef YIELD_HAVE_OPENSSL
+    , ssl_context( ssl_context )
+#endif
 {
   stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT
+#ifdef YIELD_HAVE_OPENSSL
+                                , ssl_context 
+#endif
+                              );
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT
+#ifdef YIELD_HAVE_OPENSSL
+                                , ssl_context 
+#endif
+                              );
 }
 
 Volume::~Volume()
@@ -117,7 +132,11 @@ YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid 
 
   if ( osd_proxy == NULL )
   {
+#ifdef YIELD_HAVE_OPENSSL
     osd_proxy = OSDProxy::create( *osd_uri, stage_group, log, 5 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
+#else
+    osd_proxy = OSDProxy::create( *osd_uri, stage_group, log, 5 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT ).release();
+#endif
     osd_proxy_cache_lock.acquire();
     osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
     osd_proxy_cache_lock.release();
