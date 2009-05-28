@@ -28,6 +28,24 @@ namespace org
       class DIRProxy : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
       {
       public:
+        template <class StageGroupType>
+        static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
+                                                    YIELD::auto_Object<StageGroupType> stage_group,
+                                                    YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                    const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                    uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::RECONNECT_TRIES_MAX_DEFAULT
+#ifdef YIELD_HAVE_OPENSSL
+                                                    , YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL
+#endif
+                                                  )
+        {
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max
+#ifdef YIELD_HAVE_OPENSSL
+                                                                                  , ssl_context
+#endif
+                                                                                  );
+        }
+
         YIELD::auto_Object<YIELD::URI> getURIFromUUID( const std::string& uuid );
         YIELD::auto_Object<YIELD::URI> getVolumeURIFromVolumeName( const std::string& volume_name );
 
