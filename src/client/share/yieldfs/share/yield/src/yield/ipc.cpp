@@ -1,4 +1,4 @@
-// Revision: 1496
+// Revision: 1499
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -1547,11 +1547,8 @@ template
 auto_Object<HTTPServer> HTTPServer::create<SEDAStageGroup>( const URI& absolute_uri,
                                             auto_Object<EventTarget> http_request_target,
                                             auto_Object<SEDAStageGroup> stage_group,
-                                            auto_Object<Log> log
-#ifdef YIELD_HAVE_OPENSSL
-                                            , auto_Object<SSLContext> ssl_context
-#endif
-                                             );
+                                            auto_Object<Log> log,
+                                            auto_Object<SSLContext> ssl_context );
 
 
 // json_input_stream.cpp

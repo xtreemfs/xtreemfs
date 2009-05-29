@@ -54,8 +54,8 @@ namespace YIELD
   class ONCRPCRecordInputStream;
   class Socket;
   class SocketAddress;
-#ifdef YIELD_HAVE_OPENSSL
   class SSLContext;
+#ifdef YIELD_HAVE_OPENSSL
   class SSLSocket;
 #endif
   class TCPSocket;
@@ -521,11 +521,8 @@ namespace YIELD
     static auto_Object<HTTPServer> create( const URI& absolute_uri,
                                            auto_Object<EventTarget> http_request_target, 
                                            auto_Object<StageGroupType> stage_group,                        
-                                           auto_Object<Log> log = NULL
-#ifdef YIELD_HAVE_OPENSSL
-                                           , auto_Object<SSLContext> ssl_context = NULL                                           
-#endif
-                                          );
+                                           auto_Object<Log> log = NULL, 
+                                           auto_Object<SSLContext> ssl_context = NULL );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
@@ -615,29 +612,6 @@ namespace YIELD
 
     typedef ProtocolResponseWriter<HTTPResponse> HTTPResponseWriter;
   };
-
-
-#ifdef YIELD_HAVE_OPENSSL
-  class HTTPSServer : public HTTPServer
-  {
-  public:
-    template <class StageGroupType> 
-    static auto_Object<HTTPSServer> create( auto_Object<EventTarget> http_request_target, 
-                                            auto_Object<SSLContext> ssl_context,      
-                                            auto_Object<StageGroupType> stage_group,                        
-                                            auto_Object<Log> log = NULL,
-                                            auto_Object<SocketAddress> sockname = NULL // Defaults to *:443 
-                                          );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPSServer, 0 );
-
-  private:
-    HTTPSServer( auto_Object<Stage> http_request_reader_stage ) 
-      : HTTPServer( http_request_reader_stage )
-    { }
-  };
-#endif
 
 
   class JSONValue;
@@ -944,47 +918,6 @@ namespace YIELD
   };
 
 
-#ifdef YIELD_HAVE_OPENSSL
-  class ONCRPCSServer : public ONCRPCServer
-  {
-  public:
-    static auto_Object<ONCRPCSServer> create( auto_Object<Interface> _interface,
-                                              auto_Object<SocketAddress> sockname,
-                                              auto_Object<SSLContext> ssl_context,
-                                              auto_Object<StageGroup> stage_group, 
-                                              auto_Object<Log> log = NULL );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCSServer, 0 );
-
-  private:
-    ONCRPCSServer( auto_Object<Stage> oncrpc_request_reader_stage ) 
-      : ONCRPCServer( oncrpc_request_reader_stage )
-    { }
-  };
-#endif
-
-
-#ifdef YIELD_HAVE_OPENSSL
-  class ONCRPCUServer : public ONCRPCServer
-  {
-  public:
-    static auto_Object<ONCRPCUServer> create( auto_Object<Interface> _interface,
-                                              auto_Object<SocketAddress> sockname,
-                                              auto_Object<StageGroup> stage_group, 
-                                              auto_Object<Log> log = NULL );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCUServer, 0 );
-
-  private:
-    ONCRPCUServer( auto_Object<Stage> oncrpc_request_reader_stage ) 
-      : ONCRPCServer( oncrpc_request_reader_stage )
-    { }
-  };
-#endif
-
-
   class SocketAddress : public Object
   {
   public:
@@ -1164,10 +1097,9 @@ namespace YIELD
   };
 
 
-
   class SSLContext : public Object
-	{
-	public:
+  {
+  public:
 #ifdef YIELD_HAVE_OPENSSL
     SSLContext( SSL_METHOD* method = SSLv23_client_method() ); // No certificate
     SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );

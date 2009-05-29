@@ -38,15 +38,8 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log
-#ifdef YIELD_HAVE_OPENSSL
-                , YIELD::auto_Object<YIELD::SSLContext> ssl_context 
-#endif
-)
-  : name( name ), flags( flags ), log( log )
-#ifdef YIELD_HAVE_OPENSSL
-    , ssl_context( ssl_context )
-#endif
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+  : name( name ), flags( flags ), log( log ), ssl_context( ssl_context )
 {
   YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup( name.c_str() );
   dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );

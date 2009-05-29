@@ -28,9 +28,8 @@ namespace org
         const static uint64_t PING_INTERVAL_DEFAULT = 0; // No pings
 
 
-        template <class StageGroupType>
         static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
-                                                    YIELD::auto_Object<StageGroupType> stage_group,
+                                                    YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     const std::string& uuid,
                                                     YIELD::auto_Object<YIELD::Log> log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,

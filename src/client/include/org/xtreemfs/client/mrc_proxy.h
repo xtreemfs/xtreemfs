@@ -26,9 +26,8 @@ namespace org
       class MRCProxy : public Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
       {
       public:
-        template <class StageGroupType>
         static YIELD::auto_Object<MRCProxy> create( const YIELD::URI& absolute_uri,
-                                                    YIELD::auto_Object<StageGroupType> stage_group,
+                                                    YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     YIELD::auto_Object<YIELD::Log> log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::RECONNECT_TRIES_MAX_DEFAULT,

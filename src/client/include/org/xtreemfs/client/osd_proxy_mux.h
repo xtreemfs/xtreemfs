@@ -46,9 +46,7 @@ namespace org
         YIELD::auto_Object<YIELD::Log> log;
         YIELD::Time operation_timeout;
         uint8_t reconnect_tries_max;
-#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
-#endif
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
         typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;

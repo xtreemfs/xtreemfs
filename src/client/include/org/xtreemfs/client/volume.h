@@ -42,9 +42,7 @@ namespace org
         std::string name;
         uint32_t flags;
         YIELD::auto_Object<YIELD::Log> log;
-#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
-#endif
 
         YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::auto_Object<MRCProxy> mrc_proxy;

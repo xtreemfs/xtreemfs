@@ -2621,7 +2621,7 @@ namespace YIELD
     template <typename FunctionType>
     FunctionType getFunction( const char* function_name, FunctionType missing_function_return_value = NULL )
     {
-      return static_cast<FunctionType>( getFunction( function_name, ( void* )missing_function_return_value ) );
+      return ( FunctionType )getFunction( function_name, ( void* )missing_function_return_value );
     }    
 
     // Object
