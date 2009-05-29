@@ -31,6 +31,9 @@ namespace org
           return osd_proxy_mux;
         }
 
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( OSDProxyMux, 0 );
+
         // YIELD::EventHandler
         void handleEvent( YIELD::Event& );
 

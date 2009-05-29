@@ -39,7 +39,10 @@ namespace org
             for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
             {
               if ( ( *response_i )->get_tag() == YIELD_OBJECT_TAG( YIELD::ExceptionResponse ) )
+              {
                 original_response_target->send( ( *response_i )->incRef() );
+                return true;
+              }
             }
 
             original_response_target->send( responses[0]->incRef() );
@@ -85,6 +88,9 @@ namespace org
           : osd_proxy_mux( osd_proxy_mux ), target_osd_uuid( target_osd_uuid )
         { }
 
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( OSDPingResponseTarget, 0 );
+
         // YIELD::EventTarget
         bool send( YIELD::Event& ev )       
         {
@@ -99,13 +105,7 @@ namespace org
             }
             break;
 
-            case YIELD_OBJECT_TAG( YIELD::ExceptionResponse ):
-            {
-              return osd_proxy_mux->send( ev );            
-            }
-            break;
-
-            default: DebugBreak();
+            default: YIELD::Object::decRef( ev ); return true;
           }
         }
 
@@ -339,10 +339,13 @@ void OSDProxyMux::pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy )
       return;
   }
   else
-    udp_osd_proxy->set_ping_interval( YIELD::Time( 1 * NS_IN_MS ) );
+  {
+    udp_osd_proxy->set_ping_interval( YIELD::Time( static_cast<uint64_t>( 0 ) ) );
+    // return; 
+  }
 
   org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates; // What are these, exactly? The client's coordinates?
   org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest* ping_request = new org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest( vivaldi_coordinates );
-  ping_request->set_response_target( this->incRef() );
+  ping_request->set_response_target( new OSDPingResponseTarget( this->incRef(), udp_osd_proxy->get_uuid() ) );
   static_cast<YIELD::EventTarget*>( udp_osd_proxy.get() )->send( *ping_request );
 }

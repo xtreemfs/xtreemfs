@@ -116,7 +116,7 @@ YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size
       YIELD::String* data = object_data.get_data().get();
       if ( !data->empty() )
       {
-        memcpy_s( rbuf_p, static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), data->c_str(), data->size() );
+        memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), data->c_str(), data->size() );
         rbuf_p += data->size();
         file_offset += data->size();
       }
