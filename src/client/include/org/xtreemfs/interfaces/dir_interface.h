@@ -962,18 +962,18 @@ namespace org
       virtual void _xtreemfs_shutdown();
 
       #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_HANDLEEVENT_PROTOTYPES \
-      virtual void handlextreemfs_address_mappings_getRequestRequest( xtreemfs_address_mappings_getRequest& req );\
-      virtual void handlextreemfs_address_mappings_removeRequestRequest( xtreemfs_address_mappings_removeRequest& req );\
-      virtual void handlextreemfs_address_mappings_setRequestRequest( xtreemfs_address_mappings_setRequest& req );\
-      virtual void handlextreemfs_checkpointRequestRequest( xtreemfs_checkpointRequest& req );\
-      virtual void handlextreemfs_global_time_s_getRequestRequest( xtreemfs_global_time_s_getRequest& req );\
-      virtual void handlextreemfs_service_get_by_typeRequestRequest( xtreemfs_service_get_by_typeRequest& req );\
-      virtual void handlextreemfs_service_get_by_uuidRequestRequest( xtreemfs_service_get_by_uuidRequest& req );\
-      virtual void handlextreemfs_service_get_by_nameRequestRequest( xtreemfs_service_get_by_nameRequest& req );\
-      virtual void handlextreemfs_service_registerRequestRequest( xtreemfs_service_registerRequest& req );\
-      virtual void handlextreemfs_service_deregisterRequestRequest( xtreemfs_service_deregisterRequest& req );\
-      virtual void handlextreemfs_service_offlineRequestRequest( xtreemfs_service_offlineRequest& req );\
-      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );
+      virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& req );\
+      virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& req );\
+      virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& req );\
+      virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req );\
+      virtual void handlextreemfs_global_time_s_getRequest( xtreemfs_global_time_s_getRequest& req );\
+      virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& req );\
+      virtual void handlextreemfs_service_get_by_uuidRequest( xtreemfs_service_get_by_uuidRequest& req );\
+      virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& req );\
+      virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& req );\
+      virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& req );\
+      virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& req );\
+      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );
 
     };
 

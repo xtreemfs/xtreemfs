@@ -31,12 +31,12 @@ namespace org
         File( Volume& parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
         ~File();
 
+
         Volume& parent_volume;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
         YIELD::Path path;
         org::xtreemfs::interfaces::FileCredentials file_credentials;
 
-        YIELD::auto_Object<OSDProxy> get_osd_proxy( uint64_t object_number );
 
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
         void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );

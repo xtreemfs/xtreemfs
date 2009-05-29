@@ -2616,8 +2616,13 @@ namespace YIELD
   public:
     static auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
 
-    void* getHandle() { return handle; }
-    void* getFunction( const char* function_name ); // Returns NULL instead of throwing exceptions
+    void* getFunction( const char* function_name, void* missing_function_return_value = NULL );
+
+    template <typename FunctionType>
+    FunctionType getFunction( const char* function_name, FunctionType missing_function_return_value = NULL )
+    {
+      return static_cast<FunctionType>( getFunction( function_name, ( void* )missing_function_return_value ) );
+    }    
 
     // Object
     YIELD_OBJECT_PROTOTYPES( SharedLibrary, 11 );

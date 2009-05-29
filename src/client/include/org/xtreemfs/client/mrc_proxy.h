@@ -31,17 +31,10 @@ namespace org
                                                     YIELD::auto_Object<StageGroupType> stage_group,
                                                     YIELD::auto_Object<YIELD::Log> log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                    uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::RECONNECT_TRIES_MAX_DEFAULT
-#ifdef YIELD_HAVE_OPENSSL
-                                                    , YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL
-#endif
-                                                  )
+                                                    uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::RECONNECT_TRIES_MAX_DEFAULT,
+                                                    YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
         {
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max
-#ifdef YIELD_HAVE_OPENSSL
-                                                                                  , ssl_context
-#endif
-                                                                                  );
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, ssl_context );
         }
 
         // org::xtreemfs::interfaces::MRCInterface
@@ -52,7 +45,7 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>;
 
-        MRCProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket );
+        MRCProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
         ~MRCProxy() { }
       };
     };

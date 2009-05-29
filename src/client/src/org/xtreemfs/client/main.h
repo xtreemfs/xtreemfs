@@ -80,13 +80,13 @@ namespace org
         Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : YIELD::Main( program_name, program_description, files_usage )
         {
-          stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
-
+#ifdef YIELD_HAVE_OPENSSL
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_PASSPHRASE, "--pass", "--pem-private-key-passphrase", "PEM private key passphrase" );
           addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
+#endif
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           operation_timeout = static_cast<uint64_t>( 5 * NS_IN_S );
@@ -105,11 +105,6 @@ namespace org
           return createProxy<MRCProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
         }
 
-        YIELD::auto_Object<OSDProxy> createOSDProxy( const YIELD::URI& uri )
-        {
-          return createProxy<OSDProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
-        }
-
         YIELD::auto_Object<YIELD::Log> get_log()
         {
           if ( log == NULL )
@@ -117,20 +112,22 @@ namespace org
           return log;
         }
 
-#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
         {
           if ( ssl_context == NULL )
           {
+#ifdef YIELD_HAVE_OPENSSL
             if ( !pkcs12_file_path.empty() )
               ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
             else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
               ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+#else
+            ssl_context = new YIELD::SSLContext;
+#endif
           }
 
           return ssl_context;
         }
-#endif
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
         {
@@ -187,9 +184,7 @@ namespace org
         YIELD::Time operation_timeout;
 
         YIELD::auto_Object<YIELD::Log> log;
-#ifdef YIELD_HAVE_OPENSSL
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
-#endif
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
@@ -199,12 +194,11 @@ namespace org
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3
-#ifdef YIELD_HAVE_OPENSSL
-                                                                   , get_ssl_context() 
-#endif
-                                                                 );
-          return proxy;
+
+          if ( stage_group == NULL )
+            stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
+
+          return ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3, get_ssl_context() );
         }
 
 #ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD

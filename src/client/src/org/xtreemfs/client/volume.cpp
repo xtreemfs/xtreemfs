@@ -48,24 +48,13 @@ Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t fla
     , ssl_context( ssl_context )
 #endif
 {
-  stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT
-#ifdef YIELD_HAVE_OPENSSL
-                                , ssl_context 
-#endif
-                              );
-  YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT
-#ifdef YIELD_HAVE_OPENSSL
-                                , ssl_context 
-#endif
-                              );
-}
+  YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup( name.c_str() );
+  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 
-Volume::~Volume()
-{
-  for ( YIELD::STLHashMap<OSDProxy*>::iterator osd_proxy_i = osd_proxy_cache.begin(); osd_proxy_i != osd_proxy_cache.end(); osd_proxy_i++ )
-    YIELD::Object::decRef( *osd_proxy_i->second );
+  YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+
+  osd_proxy_mux = OSDProxyMux::create( dir_proxy, stage_group, log, 5 * NS_IN_MS, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 }
 
 bool Volume::access( const YIELD::Path& path, int amode )
@@ -119,30 +108,6 @@ YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 #else
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
 #endif
-}
-
-YIELD::auto_Object<OSDProxy> Volume::get_osd_proxy( const std::string& osd_uuid )
-{
-  YIELD::auto_Object<YIELD::URI> osd_uri = dir_proxy->getURIFromUUID( osd_uuid );
-  uint32_t osd_uri_hash = YIELD::string_hash( osd_uri->get_host() ) ^ osd_uri->get_port();
-
-  osd_proxy_cache_lock.acquire();
-  OSDProxy* osd_proxy = osd_proxy_cache.find( osd_uri_hash );
-  osd_proxy_cache_lock.release();
-
-  if ( osd_proxy == NULL )
-  {
-#ifdef YIELD_HAVE_OPENSSL
-    osd_proxy = OSDProxy::create( *osd_uri, stage_group, log, 5 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
-#else
-    osd_proxy = OSDProxy::create( *osd_uri, stage_group, log, 5 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT ).release();
-#endif
-    osd_proxy_cache_lock.acquire();
-    osd_proxy_cache.insert( osd_uri_hash, osd_proxy );
-    osd_proxy_cache_lock.release();
-  }
-
-  return static_cast<OSDProxy&>( osd_proxy->incRef() );
 }
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
@@ -282,9 +247,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
   {
     const org::xtreemfs::interfaces::FileCredentials& file_credentials = file_credentials_set[0];
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
-    const org::xtreemfs::interfaces::ReplicaSet& replicas = file_credentials.get_xlocs().get_replicas();
-    for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
-      get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] )->unlink( file_credentials, file_id );
+    osd_proxy_mux->unlink( file_credentials, file_id );
   }
 }
 

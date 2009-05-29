@@ -178,6 +178,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_mux.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\include\org\xtreemfs\client\path.h"
     >
 </File>
@@ -342,6 +346,10 @@
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy_mux.cpp"
     >
 </File>
 <File

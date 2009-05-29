@@ -1982,19 +1982,18 @@ SharedLibrary::~SharedLibrary()
 #endif
   }
 }
-void* SharedLibrary::getFunction( const char* func_name )
+void* SharedLibrary::getFunction( const char* function_name, void* missing_function_return_value )
 {
-  void* func_handle;
+  void* function_handle;
 #ifdef _WIN32
-  func_handle = GetProcAddress( ( HMODULE )handle, func_name );
+  function_handle = GetProcAddress( ( HMODULE )handle, function_name );
 #else
-  func_handle = dlsym( handle, func_name );
+  function_handle = dlsym( handle, function_name );
 #endif
-  if ( func_handle )
-    return func_handle;
+  if ( function_handle )
+    return function_handle;
   else
-    return NULL;
-//    throw Exception();
+    return missing_function_return_value;
 }
 
 

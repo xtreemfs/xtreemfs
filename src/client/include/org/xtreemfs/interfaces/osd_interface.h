@@ -1392,23 +1392,23 @@ namespace org
       virtual void _xtreemfs_shutdown();
 
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_HANDLEEVENT_PROTOTYPES \
-      virtual void handlereadRequestRequest( readRequest& req );\
-      virtual void handletruncateRequestRequest( truncateRequest& req );\
-      virtual void handleunlinkRequestRequest( unlinkRequest& req );\
-      virtual void handlewriteRequestRequest( writeRequest& req );\
-      virtual void handlextreemfs_broadcast_gmaxRequestRequest( xtreemfs_broadcast_gmaxRequest& req );\
-      virtual void handlextreemfs_check_objectRequestRequest( xtreemfs_check_objectRequest& req );\
-      virtual void handlextreemfs_cleanup_get_resultsRequestRequest( xtreemfs_cleanup_get_resultsRequest& req );\
-      virtual void handlextreemfs_cleanup_is_runningRequestRequest( xtreemfs_cleanup_is_runningRequest& req );\
-      virtual void handlextreemfs_cleanup_startRequestRequest( xtreemfs_cleanup_startRequest& req );\
-      virtual void handlextreemfs_cleanup_statusRequestRequest( xtreemfs_cleanup_statusRequest& req );\
-      virtual void handlextreemfs_cleanup_stopRequestRequest( xtreemfs_cleanup_stopRequest& req );\
-      virtual void handlextreemfs_internal_get_gmaxRequestRequest( xtreemfs_internal_get_gmaxRequest& req );\
-      virtual void handlextreemfs_internal_get_file_sizeRequestRequest( xtreemfs_internal_get_file_sizeRequest& req );\
-      virtual void handlextreemfs_internal_truncateRequestRequest( xtreemfs_internal_truncateRequest& req );\
-      virtual void handlextreemfs_internal_read_localRequestRequest( xtreemfs_internal_read_localRequest& req );\
-      virtual void handlextreemfs_pingRequestRequest( xtreemfs_pingRequest& req );\
-      virtual void handlextreemfs_shutdownRequestRequest( xtreemfs_shutdownRequest& req );
+      virtual void handlereadRequest( readRequest& req );\
+      virtual void handletruncateRequest( truncateRequest& req );\
+      virtual void handleunlinkRequest( unlinkRequest& req );\
+      virtual void handlewriteRequest( writeRequest& req );\
+      virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& req );\
+      virtual void handlextreemfs_check_objectRequest( xtreemfs_check_objectRequest& req );\
+      virtual void handlextreemfs_cleanup_get_resultsRequest( xtreemfs_cleanup_get_resultsRequest& req );\
+      virtual void handlextreemfs_cleanup_is_runningRequest( xtreemfs_cleanup_is_runningRequest& req );\
+      virtual void handlextreemfs_cleanup_startRequest( xtreemfs_cleanup_startRequest& req );\
+      virtual void handlextreemfs_cleanup_statusRequest( xtreemfs_cleanup_statusRequest& req );\
+      virtual void handlextreemfs_cleanup_stopRequest( xtreemfs_cleanup_stopRequest& req );\
+      virtual void handlextreemfs_internal_get_gmaxRequest( xtreemfs_internal_get_gmaxRequest& req );\
+      virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& req );\
+      virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& req );\
+      virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req );\
+      virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& req );\
+      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );
 
     };
 

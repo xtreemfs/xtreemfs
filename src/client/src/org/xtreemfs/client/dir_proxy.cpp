@@ -5,55 +5,56 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket )
-  : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, _socket )
+DIRProxy::DIRProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+  : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, ssl_context )
 { }
 
 DIRProxy::~DIRProxy()
 {
-  for ( std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.begin(); uuid_to_uri_i != uuid_to_uri_cache.end(); uuid_to_uri_i++ )
-    YIELD::Object::decRef( *uuid_to_uri_i->second );
+  for ( std::map<std::string, CachedAddressMappings*>::iterator uuid_to_address_mappings_i = uuid_to_address_mappings_cache.begin(); uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end(); uuid_to_address_mappings_i++ )
+    YIELD::Object::decRef( *uuid_to_address_mappings_i->second );
 }
 
-YIELD::auto_Object<YIELD::URI> DIRProxy::getURIFromUUID( const std::string& uuid )
+YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAddressMappingsFromUUID( const std::string& uuid )
 {
-  if ( uuid_to_uri_cache_lock.try_acquire() )
+  if ( uuid_to_address_mappings_cache_lock.try_acquire() )
   {
-    std::map<std::string, CachedAddressMappingURI*>::iterator uuid_to_uri_i = uuid_to_uri_cache.find( uuid );
-    if ( uuid_to_uri_i != uuid_to_uri_cache.end() )
+    std::map<std::string, CachedAddressMappings*>::iterator uuid_to_address_mappings_i = uuid_to_address_mappings_cache.find( uuid );
+    if ( uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end() )
     {
-      CachedAddressMappingURI* uri = uuid_to_uri_i->second;
-      double uri_age_s = YIELD::Time::getCurrentUnixTimeS()- uri->get_creation_epoch_time_s();
-      if ( uri_age_s < uri->get_ttl_s() )
+      CachedAddressMappings* cached_address_mappings = uuid_to_address_mappings_i->second;
+      uint32_t cached_address_mappings_age_s = ( YIELD::Time()- cached_address_mappings->get_creation_time() ).as_unix_time_s();
+      if ( cached_address_mappings_age_s < cached_address_mappings->get_ttl_s() )
       {
-        uri->incRef();
-        uuid_to_uri_cache_lock.release();
-        return uri;
+        cached_address_mappings->incRef();
+        uuid_to_address_mappings_cache_lock.release();
+        return cached_address_mappings;
       }
       else
       {
-        YIELD::Object::decRef( uri );
-        uuid_to_uri_cache.erase( uuid_to_uri_i );
-        uuid_to_uri_cache_lock.release();
+        YIELD::Object::decRef( cached_address_mappings );
+        uuid_to_address_mappings_cache.erase( uuid_to_address_mappings_i );
+        uuid_to_address_mappings_cache_lock.release();
       }
     }
     else
-      uuid_to_uri_cache_lock.release();
+      uuid_to_address_mappings_cache_lock.release();
   }
-
+  
   org::xtreemfs::interfaces::AddressMappingSet address_mappings;
   xtreemfs_address_mappings_get( uuid, address_mappings );
   if ( !address_mappings.empty() )
   {
-    CachedAddressMappingURI* uri = new CachedAddressMappingURI( address_mappings[0].get_uri(), address_mappings[0].get_ttl_s() );
-    uuid_to_uri_cache_lock.acquire();
-    uuid_to_uri_cache[uuid] = &uri->incRef();
-    uuid_to_uri_cache_lock.release();
-    return uri;
+    CachedAddressMappings* cached_address_mappings = new CachedAddressMappings( address_mappings, address_mappings[0].get_ttl_s() );
+    uuid_to_address_mappings_cache_lock.acquire();
+    uuid_to_address_mappings_cache[uuid] = &cached_address_mappings->incRef();
+    uuid_to_address_mappings_cache_lock.release();    
+    return cached_address_mappings;
   }
   else
-    throw YIELD::Exception( "could not find address mapping for UUID" );
+    throw YIELD::Exception( "could not find address mappings for UUID" );
 }
+
 
 YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
 {
@@ -67,7 +68,27 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::
       for ( org::xtreemfs::interfaces::ServiceDataMap::const_iterator service_data_i = data.begin(); service_data_i != data.end(); service_data_i++ )
       {
         if ( service_data_i->first == "mrc" )
-          return getURIFromUUID( service_data_i->second );
+        {
+          YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> address_mappings = getAddressMappingsFromUUID( service_data_i->second );
+
+          for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
+          {
+            if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
+              return new YIELD::URI( ( *address_mapping_i ).get_uri() );
+          }
+
+          for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
+          {
+            if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+              return new YIELD::URI( ( *address_mapping_i ).get_uri() );
+          }
+
+          for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
+          {
+            if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+              return new YIELD::URI( ( *address_mapping_i ).get_uri() );
+          }
+        }
       }
     }
 
@@ -76,4 +97,3 @@ YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::
   else
     throw YIELD::Exception( "unknown volume" );
 }
-

@@ -15,6 +15,7 @@ namespace org
     {
       const static char* ONCRPC_SCHEME = "oncrpc";
       const static char* ONCRPCS_SCHEME = "oncrpcs";
+      const static char* ONCRPCU_SCHEME = "oncrpcu";
       const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;
       const static char* REPL_UPDATE_PC_NONE = "";
       const static char* REPL_UPDATE_PC_RONLY = "ronly";

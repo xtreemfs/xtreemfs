@@ -24,12 +24,13 @@ namespace YIELD
 
   class Event : public Object
   {
+  public:
+    // Object
+    Event& incRef() { return Object::incRef( *this ); }
+
   protected:
     Event() : enqueued_time_ns( 0 ) { }
     virtual ~Event() { }
-
-    // Object
-    Event& incRef() { return Object::incRef( *this ); }
 
   private:
     template <class, class, class> friend class StageImpl;

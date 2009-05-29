@@ -1,4 +1,4 @@
-// Revision: 1494
+// Revision: 1496
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -916,7 +916,8 @@ auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri,
                                             auto_Object<StageGroup> stage_group,
                                             auto_Object<Log> log,
                                             const Time& operation_timeout,
-                                            uint8_t reconnect_tries_max )
+                                            uint8_t reconnect_tries_max,
+                                            auto_Object<SSLContext> ssl_context )
 {
   YIELD::URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
@@ -924,25 +925,19 @@ auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri,
   auto_Object<SocketAddress> peername = SocketAddress::create( absolute_uri );
   if ( peername != NULL )
   {
-    auto_Object<Socket> _socket;
 #ifdef YIELD_HAVE_OPENSSL
-    if ( absolute_uri.get_scheme() == "https" )
-      _socket = SSLSocket::create( new SSLContext( SSLv23_client_method() ), log ).release();
-    else
+    if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
+      ssl_context = new SSLContext( SSLv23_client_method() );
 #endif
-      _socket = TCPSocket::create( log ).release();
-    if ( _socket != NULL )
-    {
-      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-      auto_Object<HTTPClient> http_client = new HTTPClient( fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, _socket );
-      stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef(), NULL, log );
-      return http_client;
-    }
+    auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
+    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context );
+    stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef(), NULL, log );
+    return http_client;
   }
   return NULL;
 }
-HTTPClient::HTTPClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<Socket> _socket )
-  : SocketClient<HTTPRequest, HTTPResponse>( fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, _socket )
+HTTPClient::HTTPClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
+  : SocketClient<HTTPRequest, HTTPResponse>( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context )
 { }
 auto_Object<HTTPRequest> HTTPClient::createProtocolRequest( auto_Object<Request> body )
 {
@@ -1520,11 +1515,8 @@ template <class StageGroupType>
 auto_Object<HTTPServer> HTTPServer::create( const URI& absolute_uri,
                                             auto_Object<EventTarget> http_request_target,
                                             auto_Object<StageGroupType> stage_group,
-                                            auto_Object<Log> log
-#ifdef YIELD_HAVE_OPENSSL
-                                            , auto_Object<SSLContext> ssl_context
-#endif
-                                             )
+                                            auto_Object<Log> log,
+                                            auto_Object<SSLContext> ssl_context )
 {
   auto_Object<SocketAddress> sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
@@ -2349,11 +2341,8 @@ Stream::Status ONCRPCResponse::serialize( OutputStream& output_stream, size_t* o
 auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
                                                 auto_Object<Interface> _interface,
                                                 auto_Object<StageGroup> stage_group,
-                                                auto_Object<Log> log
-#ifdef YIELD_HAVE_OPENSSL
-                                                , auto_Object<SSLContext> ssl_context
-#endif
-                                                )
+                                                auto_Object<Log> log,
+                                                auto_Object<SSLContext> ssl_context )
 {
   auto_Object<SocketAddress> sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
@@ -3245,11 +3234,10 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class ProtocolRequestType, class ProtocolResponseType>
-SocketClient<ProtocolRequestType, ProtocolResponseType>::SocketClient( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<Socket> _socket )
+SocketClient<ProtocolRequestType, ProtocolResponseType>::SocketClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
   : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max )
 {
-  Connection* connection = new Connection( _socket, reconnect_tries_max );
-  connections.push_back( connection );
+  this->absolute_uri = new URI( absolute_uri );
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
 SocketClient<ProtocolRequestType, ProtocolResponseType>::~SocketClient()
@@ -3325,7 +3313,18 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
       }
       if ( connection == NULL )
       {
-        connection = new Connection( connections[0]->get_socket()->clone(), reconnect_tries_max );
+        auto_Object<Socket> _socket;
+#ifdef YIELD_HAVE_OPENSSL
+        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
+             ssl_context != NULL )
+          _socket = SSLSocket::create( ssl_context, log ).release();
+        else
+#endif
+        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
+          _socket = UDPSocket::create( log ).release();
+        else
+          _socket = TCPSocket::create( log ).release();
+        connection = new Connection( _socket, reconnect_tries_max );
         connections.push_back( &connection->incRef() );
       }
       connection->set_protocol_request( protocol_request );
@@ -3682,6 +3681,8 @@ template class SocketServer::ProtocolResponseWriter<ONCRPCServer::ONCRPCResponse
 #pragma comment( lib, "libeay32.lib" )
 #pragma comment( lib, "ssleay32.lib" )
 #endif
+#endif
+#ifdef YIELD_HAVE_OPENSSL
 SSLContext::SSLContext( SSL_METHOD* method )
 {
   ctx = createSSL_CTX( method );
@@ -3769,10 +3770,17 @@ SSLContext::SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const 
   }
   throwOpenSSLException();
 }
+#else
+SSLContext::SSLContext()
+{ }
+#endif
 SSLContext::~SSLContext()
 {
+#ifdef YIELD_HAVE_OPENSSL
   SSL_CTX_free( ctx );
+#endif
 }
+#ifdef YIELD_HAVE_OPENSSL
 SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
 {
   SSL_library_init();

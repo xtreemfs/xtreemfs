@@ -24,8 +24,8 @@ using namespace org::xtreemfs::client;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::Socket> _socket )
-  : YIELD::ONCRPCClient<InterfaceType>( fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, _socket )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, ssl_context )
 {
   get_user_credentials_from_passwd = NULL;
   get_passwd_from_user_credentials = NULL;
@@ -48,14 +48,8 @@ Proxy<ProxyType, InterfaceType>::Proxy( YIELD::auto_Object<YIELD::FDAndInternalE
         YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( *file_name_i );
         if ( policy_shared_library != NULL )
         {
-          get_passwd_from_user_credentials_t get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_shared_library->getFunction( "get_passwd_from_user_credentials" );
-          if ( get_passwd_from_user_credentials )
-            this->get_passwd_from_user_credentials = get_passwd_from_user_credentials;
-
-          get_user_credentials_from_passwd_t get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_shared_library->getFunction( "get_user_credentials_from_passwd" );
-          if ( get_user_credentials_from_passwd )
-            this->get_user_credentials_from_passwd = get_user_credentials_from_passwd;
-
+          get_passwd_from_user_credentials = policy_shared_library->getFunction( "get_passwd_from_user_credentials", get_passwd_from_user_credentials );
+          get_user_credentials_from_passwd = policy_shared_library->getFunction( "get_user_credentials_from_passwd", get_user_credentials_from_passwd );
           policy_shared_libraries.push_back( policy_shared_library.release() );
         }
       }

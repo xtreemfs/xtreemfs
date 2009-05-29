@@ -6,6 +6,7 @@ module org # 1000
     {
       const string ONCRPC_SCHEME = "oncrpc";
       const string ONCRPCS_SCHEME = "oncrpcs";
+      const string ONCRPCU_SCHEME = "oncrpcu";
       const uint32_t ONCRPC_AUTH_FLAVOR = 1326;
 
       const string REPL_UPDATE_PC_NONE = "";
