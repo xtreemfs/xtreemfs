@@ -1658,7 +1658,7 @@ bool Process::kill()
 #ifdef _WIN32
   return TerminateProcess( hChildProcess, 0 ) == TRUE;
 #else
-  return kill( child_pid, SIGKILL ) == 0;
+  return ::kill( child_pid, SIGKILL ) == 0;
 #endif
 }
 bool Process::poll( int* out_return_code )
@@ -1693,7 +1693,7 @@ bool Process::terminate()
 #ifdef _WIN32
   return TerminateProcess( hChildProcess, 0 ) == TRUE;
 #else
-  return kill( child_pid, SIGTERM ) == 0;
+  return ::kill( child_pid, SIGTERM ) == 0;
 #endif
 }
 int Process::wait()
