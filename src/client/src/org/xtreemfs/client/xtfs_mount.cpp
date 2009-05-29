@@ -43,7 +43,7 @@ namespace org
 
           addOption( XTFS_MOUNT_OPTION_FUSE_OPTION, "-o", NULL, "<fuse_option>" );
 
-          addOption( XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH, "--parent-named-pipe-path", "internal only" );
+          addOption( XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH, "--parent-named-pipe-path", NULL, "internal only" );
         }
 
       private:
@@ -69,6 +69,8 @@ namespace org
         // YIELD::Main
         int _main( int argc, char** argv )
         {
+          int ret = 0;
+
           if ( foreground )
           {
             uint32_t volume_flags = 0;
@@ -116,9 +118,10 @@ namespace org
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
             }
 
+            YIELD::auto_Object<YIELD::NamedPipe> parent_named_pipe; // Outside the if so it stays in scope (and open) while the client is running
             if ( !parent_named_pipe_path.empty() )
             {
-              YIELD::auto_Object<YIELD::NamedPipe> parent_named_pipe = YIELD::NamedPipe::open( parent_named_pipe_path );
+              parent_named_pipe = YIELD::NamedPipe::open( parent_named_pipe_path );
               if ( parent_named_pipe != NULL )
               {
                 int parent_ret = 0;
@@ -128,7 +131,6 @@ namespace org
 
             // Create the FUSE object then run forever in its main()
             YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, fuse_flags, get_log() );
-            int ret;
 #ifdef _WIN32
             ret = fuse->main( mount_point.c_str() );
 #else
@@ -157,26 +159,37 @@ namespace org
 #endif
 
             get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": returning exit code " << ret << ".";
-
-            return ret;
           }
           else // !foreground
           {
             YIELD::Path named_pipe_path( "xtfs_mount" );
             YIELD::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
             std::vector<char*> argvv;
-            for ( int arg_i = 1; arg_i < argc; arg_i++ )
-              argvv.push_back( argv[arg_i] );
             argvv.push_back( const_cast<char*>( "--parent-named-pipe-path" ) );
             argvv.push_back( const_cast<char*>( static_cast<const char*>( named_pipe_path ) ) );
+            for ( int arg_i = 1; arg_i < argc; arg_i++ )
+            {
+              if ( strcmp( argv[arg_i], "-f" ) != 0 )
+                argvv.push_back( argv[arg_i] );
+            }
             argvv.push_back( NULL );
             YIELD::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&argvv[0] );
-            int ret;
-            YIELD::Stream::Status read_status = server_named_pipe->read( &ret, sizeof( ret ) );
-            if ( read_status != YIELD::Stream::STREAM_STATUS_OK )
-              ret = child_process->wait();
-            return ret;
+            if ( child_process != NULL )
+            { 
+              YIELD::Thread::sleep( 100 * NS_IN_MS );
+              if ( !child_process->poll( &ret ) )
+              {
+                YIELD::Stream::Status read_status = server_named_pipe->read( &ret, sizeof( ret ) );
+                if ( read_status != YIELD::Stream::STREAM_STATUS_OK )
+                {
+                  get_log()->getStream( YIELD::Log::LOG_ERR ) << get_program_name() << ": parent xtfs_mount could not read from named pipe to client, error: " << YIELD::Exception::strerror();
+                  ret = 1;
+                }
+              }
+            }
           }
+
+          return ret;
         }
 
         void parseOption( int id, char* arg )

@@ -1,4 +1,4 @@
-// Revision: 1499
+// Revision: 1501
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1548,12 +1548,32 @@ void PrettyPrintOutputStream::writeStruct( const Declaration&, Object& value )
 #if defined(_WIN32)
 #include <windows.h>
 #else
+#include <signal.h>
 #include <sys/wait.h> // For waitpid
 #endif
-auto_Object<Process> Process::create( const Path& executable_file_path )
+auto_Object<Process> Process::create( const Path& command_line )
 {
+#ifdef _WIN32
+  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
+                    child_stdout_pipe = Pipe::create(),
+                    child_stderr_pipe = Pipe::create();
+  STARTUPINFO startup_info;
+  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
+  startup_info.cb = sizeof( STARTUPINFO );
+  startup_info.hStdInput = child_stdin_pipe->get_read_end();
+  startup_info.hStdOutput = child_stdout_pipe->get_write_end();
+  startup_info.hStdError = child_stdout_pipe->get_write_end();
+  startup_info.dwFlags = STARTF_USESTDHANDLES;
+  PROCESS_INFORMATION proc_info;
+  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+  if ( CreateProcess( NULL, const_cast<wchar_t*>( command_line.get_wide_path().c_str() ) , NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
+    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
+  else
+    return NULL;
+#else
   const char* argv[] = { static_cast<const char*>( NULL ) };
-  return create( executable_file_path, argv );
+  return create( command_line, argv );
+#endif
 }
 auto_Object<Process> Process::create( int argc, char** argv )
 {
@@ -1567,23 +1587,23 @@ auto_Object<Process> Process::create( const Path& executable_file_path, const ch
 {
 #ifdef _WIN32
   const std::string& executable_file_path_str = static_cast<const std::string&>( executable_file_path );
-  std::string catted_args;
+  std::string command_line;
   if ( executable_file_path_str.find( ' ' ) == -1 )
-    catted_args.append( executable_file_path_str );
+    command_line.append( executable_file_path_str );
   else
   {
-    catted_args.append( "\"", 1 );
-    catted_args.append( executable_file_path_str );
-    catted_args.append( "\"", 1 );
+    command_line.append( "\"", 1 );
+    command_line.append( executable_file_path_str );
+    command_line.append( "\"", 1 );
   }
   size_t arg_i = 0;
   while ( null_terminated_argv[arg_i] != NULL )
   {
-    catted_args.append( " ", 1 );
-    catted_args.append( null_terminated_argv[arg_i] );
+    command_line.append( " ", 1 );
+    command_line.append( null_terminated_argv[arg_i] );
     arg_i++;
   }
-  return create( executable_file_path, catted_args.c_str() );
+  return create( command_line );
 #else
   auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
                     child_stdout_pipe = Pipe::create(),
@@ -1616,25 +1636,6 @@ auto_Object<Process> Process::create( const Path& executable_file_path, const ch
 #endif
 }
 #ifdef _WIN32
-auto_Object<Process> Process::create( const Path& executable_file_path, const char* catted_args )
-{
-  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
-                    child_stdout_pipe = Pipe::create(),
-                    child_stderr_pipe = Pipe::create();
-  STARTUPINFO startup_info;
-  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
-  startup_info.cb = sizeof( STARTUPINFO );
-  startup_info.hStdInput = child_stdin_pipe->get_read_end();
-  startup_info.hStdOutput = child_stdout_pipe->get_write_end();
-  startup_info.hStdError = child_stdout_pipe->get_write_end();
-  startup_info.dwFlags = STARTF_USESTDHANDLES;
-  PROCESS_INFORMATION proc_info;
-  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-  if ( CreateProcess( executable_file_path, ( LPWSTR )catted_args, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
-    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
-  else
-    return NULL;
-}
 Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe )
   : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
     child_stdin_pipe( child_stdin_pipe ), child_stdout_pipe( child_stdout_pipe ), child_stderr_pipe( child_stderr_pipe )
@@ -1648,10 +1649,16 @@ Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin_pipe, auto_Obje
 Process::~Process()
 {
 #ifdef _WIN32
-  TerminateProcess( hChildProcess, 0 );
-  WaitForSingleObject( hChildProcess, INFINITE );
   CloseHandle( hChildProcess );
   CloseHandle( hChildThread );
+#endif
+}
+bool Process::kill()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return kill( child_pid, SIGKILL ) == 0;
 #endif
 }
 bool Process::poll( int* out_return_code )
@@ -1680,6 +1687,14 @@ Stream::Status Process::read( void* buffer, size_t buffer_len, size_t* out_bytes
 Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read )
 {
   return child_stderr_pipe->read( buffer, buffer_len, out_bytes_read );
+}
+bool Process::terminate()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return kill( child_pid, SIGTERM ) == 0;
+#endif
 }
 int Process::wait()
 {

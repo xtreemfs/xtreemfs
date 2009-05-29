@@ -2404,10 +2404,12 @@ namespace YIELD
   public:
     static auto_Object<Process> create( const Path& executable_file_path ); // No arguments
     static auto_Object<Process> create( int argc, char** argv );    
-    static auto_Object<Process> create( const Path& executable_file_path, const char** null_terminated_argv );
+    static auto_Object<Process> create( const Path& executable_file_path, const char** null_terminated_argv ); // execv style
 
+    bool kill(); // SIGKILL
     bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG, out_return_code can be NULL
-    Stream::Status read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+    Stream::Status read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );    
+    bool terminate(); // SIGTERM
     int wait(); // Calls waitpid() and suspends the calling process until the child exits, use carefully
 
     // Object
@@ -2421,7 +2423,6 @@ namespace YIELD
 
   private:
 #ifdef _WIN32
-    static auto_Object<Process> create( const Path& executable_file_path, const char* catted_args );
     Process( void* hChildProcess, void* hChildThread,       
 #else
     Process( int child_pid, 
