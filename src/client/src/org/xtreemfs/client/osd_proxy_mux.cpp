@@ -124,7 +124,6 @@ OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Ob
   : dir_proxy( dir_proxy ), fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), reconnect_tries_max( reconnect_tries_max ), ssl_context( ssl_context ), stage_group( stage_group )
 {
   get_osd_ping_interval_s = NULL;
-  set_osd_vivaldi_coordinates = NULL;
   select_file_replica = NULL;
 
   std::vector<YIELD::Path> policy_dir_paths;
@@ -146,7 +145,6 @@ OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Ob
         if ( policy_shared_library != NULL )
         {
           get_osd_ping_interval_s = policy_shared_library->getFunction( "get_osd_ping_interval_s", get_osd_ping_interval_s );
-          set_osd_vivaldi_coordinates = policy_shared_library->getFunction( "set_osd_vivaldi_coordinates", set_osd_vivaldi_coordinates );
           select_file_replica = policy_shared_library->getFunction( "select_file_replica", select_file_replica );
           policy_shared_libraries.push_back( policy_shared_library.release() );
         }
@@ -179,10 +177,26 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const org::xtreemfs::i
       const org::xtreemfs::interfaces::StringSet& osd_uuids = file_replica.get_osd_uuids();
       struct file_replica_t& c_file_replica = c_file_replicas[file_replica_i];
       c_file_replica.striping_policy_type = file_replica.get_striping_policy().get_type();
-      c_file_replica.osd_uuids = new char*[osd_uuids.size()];
-      for ( org::xtreemfs::interfaces::StringSet::size_type osd_uuid_i = 0; osd_uuid_i < osd_uuids.size(); osd_uuid_i++ )
-        c_file_replica.osd_uuids[osd_uuid_i] = const_cast<char*>( osd_uuids[osd_uuid_i].c_str() );      
-      c_file_replica.osd_uuids_len = osd_uuids.size();
+      c_file_replica.osds = new osd_t[osd_uuids.size()];
+      c_file_replica.osds_len = osd_uuids.size();
+      for ( org::xtreemfs::interfaces::StringSet::size_type osd_i = 0; osd_i < osd_uuids.size(); osd_i++ )
+      {
+        struct osd_t& c_osd = c_file_replica.osds[osd_i];
+        memset( &c_osd, 0, sizeof( c_osd ) );
+        c_osd.uuid = osd_uuids[osd_i].c_str();
+        OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( osd_uuids[osd_i] );
+        if ( osd_proxies_i != osd_proxies.end() )
+        {
+          OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
+          if ( udp_osd_proxy != NULL )
+          {
+            c_osd.rtt_ms = static_cast<int>( udp_osd_proxy->get_rtt().as_unix_time_ms() );
+            c_osd.x_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_x_coordinate();
+            c_osd.y_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_y_coordinate();
+            c_osd.local_error = udp_osd_proxy->get_vivaldi_coordinates().get_local_error();
+          }
+        }
+      }
     }
 
     int selected_file_replica_i = select_file_replica( file_credentials.get_xcap().get_file_id().c_str(), file_credentials.get_xcap().get_access_mode(), c_file_replicas, file_replicas.size() );
@@ -192,7 +206,7 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const org::xtreemfs::i
       selected_file_replica = &file_replicas[0];
 
     for ( org::xtreemfs::interfaces::ReplicaSet::size_type file_replica_i = 0; file_replica_i < file_replicas.size(); file_replica_i++ )
-      delete [] c_file_replicas[file_replica_i].osd_uuids;
+      delete [] c_file_replicas[file_replica_i].osds;
     delete [] c_file_replicas;
   }
 
@@ -259,15 +273,12 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
     {
       OSDPingResponse& ping_response = static_cast<OSDPingResponse&>( ev );
 
-      if ( set_osd_vivaldi_coordinates )
+      OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( ping_response.get_target_osd_uuid() );
+      if ( osd_proxies_i != osd_proxies.end() )
       {
-        const char* osd_uuid = ping_response.get_target_osd_uuid().c_str();
-        double x = ping_response.get_remote_coordinates().get_x_coordinate(), 
-               y = ping_response.get_remote_coordinates().get_y_coordinate(),
-               local_error = ping_response.get_remote_coordinates().get_local_error();
-        double rtt_s = static_cast<double>( ping_response.get_rtt().as_unix_time_ns() ) / static_cast<double>( NS_IN_S );
-      
-        set_osd_vivaldi_coordinates( osd_uuid, x, y, local_error, rtt_s );
+        OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
+        udp_osd_proxy->set_rtt( ping_response.get_rtt() );
+        udp_osd_proxy->set_vivaldi_coordinates( ping_response.get_remote_coordinates() );
       }
 
       YIELD::Object::decRef( ev );
@@ -344,8 +355,8 @@ void OSDProxyMux::pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy )
     // return; 
   }
 
-  org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates; // What are these, exactly? The client's coordinates?
-  org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest* ping_request = new org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest( vivaldi_coordinates );
+  org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest* ping_request = new org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest;
   ping_request->set_response_target( new OSDPingResponseTarget( this->incRef(), udp_osd_proxy->get_uuid() ) );
+
   static_cast<YIELD::EventTarget*>( udp_osd_proxy.get() )->send( *ping_request );
 }

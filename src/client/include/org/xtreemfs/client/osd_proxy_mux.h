@@ -52,8 +52,8 @@ namespace org
         typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
         OSDProxyMap osd_proxies;
 
+        // Policies callbacks
         get_osd_ping_interval_s_t get_osd_ping_interval_s;
-        set_osd_vivaldi_coordinates_t set_osd_vivaldi_coordinates;
         select_file_replica_t select_file_replica;
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
 

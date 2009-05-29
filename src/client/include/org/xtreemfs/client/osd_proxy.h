@@ -44,9 +44,11 @@ namespace org
         }
 
         const YIELD::Time& get_ping_interval() const { return ping_interval; }
+        const YIELD::Time& get_rtt() const { return rtt; }
         const std::string& get_uuid() const { return uuid; }
         const org::xtreemfs::interfaces::VivaldiCoordinates& get_vivaldi_coordinates() const { return vivaldi_coordinates; }
         void set_ping_interval( const YIELD::Time& ping_interval ) { this->ping_interval = ping_interval; }
+        void set_rtt( const YIELD::Time& rtt ) { this->rtt = rtt; }
         void set_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates& vivaldi_coordinates ) { this->vivaldi_coordinates = vivaldi_coordinates; }
 
         YIELD_OBJECT_PROTOTYPES( OSDProxy, 0 );
@@ -58,7 +60,7 @@ namespace org
         ~OSDProxy() { }
 
         
-        YIELD::Time ping_interval;
+        YIELD::Time ping_interval, rtt;
         std::string uuid;
         org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
 

@@ -1,4 +1,4 @@
-// Revision: 1501
+// Revision: 1503
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -4304,7 +4304,7 @@ UDPSocket* UDPRecvFromQueue::recvfrom()
 #endif
 auto_Object<UDPSocket> UDPSocket::create( auto_Object<Log> log )
 {
-  int domain = AF_INET;
+  int domain = AF_INET6;
 #ifdef _WIN32
   SOCKET _socket = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
   if ( _socket != INVALID_SOCKET )
