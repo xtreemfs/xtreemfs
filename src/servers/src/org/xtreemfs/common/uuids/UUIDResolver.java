@@ -41,6 +41,7 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  * Resolves UUID to InetSocketAddress+Protocol mappings.
@@ -114,8 +115,8 @@ public final class UUIDResolver extends Thread {
                     new Object[0]);
         } else {
             if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDResolver already running!",
-                    new Object[0]);
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                    "UUIDResolver already running!", new Object[0]);
         }
     }
     
@@ -186,7 +187,7 @@ public final class UUIDResolver extends Thread {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                             "matching uuid record found for uuid " + uuid + " with network " + network);
-                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, protocol, endpoint, validUntil);
+                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(protocol, endpoint));
                     cache.put(uuid, e);
                     return e;
                 }
@@ -258,26 +259,36 @@ public final class UUIDResolver extends Thread {
      * @param useSSL
      *            defines the protocol
      */
-    public static void addLocalMapping(String localUUID, int port, boolean useSSL) {
+    public static void addLocalMapping(String localUUID, int port, String protocol) {
         assert (theInstance != null);
         
-        UUIDCacheEntry e = new UUIDCacheEntry(localUUID, (useSSL ? "oncrpcs" : "oncrpc"),
-            new InetSocketAddress("localhost", port), Long.MAX_VALUE);
+        UUIDCacheEntry e = theInstance.cache.get(localUUID);
+        if (e == null)
+            e = new UUIDCacheEntry(localUUID, Long.MAX_VALUE, new Mapping(protocol, new InetSocketAddress(
+                "localhost", port)));
+        else
+            e.addMapping(new Mapping(protocol, new InetSocketAddress("localhost", port)));
         
         e.setSticky(true);
         theInstance.cache.put(localUUID, e);
     }
     
-    public static void addLocalMapping(ServiceUUID uuid, int port, boolean useSSL) {
-        addLocalMapping(uuid.toString(), port, useSSL);
+    public static void addLocalMapping(ServiceUUID uuid, int port, String protocol) {
+        addLocalMapping(uuid.toString(), port, protocol);
     }
-
+    
     public static void addTestMapping(String uuid, String hostname, int port, boolean useSSL) {
         assert (theInstance != null);
-
-        UUIDCacheEntry e = new UUIDCacheEntry(uuid, (useSSL ? "oncrpcs" : "oncrpc"), new InetSocketAddress(
-            hostname, port), Long.MAX_VALUE);
-
+        
+        final String protocol = useSSL ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME;
+        
+        UUIDCacheEntry e = theInstance.cache.get(uuid);
+        if (e == null)
+            e = new UUIDCacheEntry(uuid, Long.MAX_VALUE, new Mapping(protocol, new InetSocketAddress(
+                hostname, port)));
+        else
+            e.addMapping(new Mapping(protocol, new InetSocketAddress(hostname, port)));
+        
         e.setSticky(true);
         theInstance.cache.put(uuid, e);
     }
@@ -307,9 +318,12 @@ public final class UUIDResolver extends Thread {
         for (UUIDCacheEntry e : theInstance.cache.values()) {
             sb.append(e.getUuid());
             sb.append(" -> ");
-            sb.append(e.getProtocol());
-            sb.append(" ");
-            sb.append(e.getResolvedAddr());
+            for (Mapping mapping : e.getMappings()) {
+                sb.append(mapping.protocol);
+                sb.append("://");
+                sb.append(mapping.resolvedAddr);
+                sb.append(" ");
+            }
             if (e.isSticky()) {
                 sb.append(" - STICKY");
             } else {

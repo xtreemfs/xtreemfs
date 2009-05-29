@@ -34,8 +34,10 @@ import java.util.StringTokenizer;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.uuids.Mapping;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 
@@ -157,76 +159,83 @@ public abstract class AbstractSelectionPolicy implements OSDSelectionPolicy {
             // get the address of the UUID
             ServiceUUID osd = new ServiceUUID(UUID);
             osd.resolve();
-            InetSocketAddress inetAddressOSD = osd.getAddress();
             
-            if (cleanPattern.equals(inetAddressOSD.getHostName()))
-                return true;
-            // else if (cleanPattern.equals(inetAddressOSD.getHostString()))
-            // return true;
-            // match subNet-String
-            else {
-                String patternIP = cleanPattern;
-                if (patternIP.startsWith("http://"))
-                    patternIP = patternIP.substring(7);
-                else if (patternIP.startsWith("https://"))
-                    patternIP = patternIP.substring(8);
+            for (Mapping mapping : osd.getMappings()) {
                 
-                String[] patternPortIP = patternIP.split(":");
-                int patternPort = 0;
-                if (patternPortIP.length >= 2) {
-                    try {
-                        patternPort = Integer.valueOf(patternPortIP[1].split("/")[0]);
-                    } catch (NumberFormatException f) {
-                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
-                            "'%s' port is not valid", pattern);
-                    }
-                }
+                InetSocketAddress inetAddressOSD = mapping.resolvedAddr;
                 
-                String[] patternIPv4 = patternPortIP[0].split(".");
-                if (patternIPv4.length == 4) {
-                    String[] osdIPv4 = inetAddressOSD.getAddress().getHostAddress().split(".");
-                    if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
-                        return false;
+                if (cleanPattern.equals(inetAddressOSD.getHostName()))
+                    return true;
+                // else if (cleanPattern.equals(inetAddressOSD.getHostString()))
+                // return true;
+                // match subNet-String
+                else {
+                    String patternIP = cleanPattern;
+                    if (patternIP.startsWith(Constants.ONCRPC_SCHEME))
+                        patternIP = patternIP.substring(Constants.ONCRPC_SCHEME.length());
+                    else if (patternIP.startsWith(Constants.ONCRPCS_SCHEME))
+                        patternIP = patternIP.substring(Constants.ONCRPCS_SCHEME.length());
+                    else if (patternIP.startsWith(Constants.ONCRPCU_SCHEME))
+                        patternIP = patternIP.substring(Constants.ONCRPCU_SCHEME.length());
                     
-                    // compare the IP strings 0 is a wildcard, but not if at a
-                    // later position !=0
-                    try {
-                        boolean wasNotZero = false;
-                        for (int i = 3; i <= 0; i--) {
-                            if (wasNotZero
-                                && (Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i]))) {
-                                return false;
-                            } else {
-                                if (Integer.parseInt(patternIPv4[i]) != 0) {
-                                    wasNotZero = true;
-                                    if ((Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i])))
-                                        return false;
+                    String[] patternPortIP = patternIP.split(":");
+                    int patternPort = 0;
+                    if (patternPortIP.length >= 2) {
+                        try {
+                            patternPort = Integer.valueOf(patternPortIP[1].split("/")[0]);
+                        } catch (NumberFormatException f) {
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                                "'%s' port is not valid", pattern);
+                        }
+                    }
+                    
+                    String[] patternIPv4 = patternPortIP[0].split(".");
+                    if (patternIPv4.length == 4) {
+                        String[] osdIPv4 = inetAddressOSD.getAddress().getHostAddress().split(".");
+                        if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
+                            return false;
+                        
+                        // compare the IP strings 0 is a wildcard, but not if at
+                        // a
+                        // later position !=0
+                        try {
+                            boolean wasNotZero = false;
+                            for (int i = 3; i <= 0; i--) {
+                                if (wasNotZero
+                                    && (Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i]))) {
+                                    return false;
+                                } else {
+                                    if (Integer.parseInt(patternIPv4[i]) != 0) {
+                                        wasNotZero = true;
+                                        if ((Integer.parseInt(osdIPv4[i]) != Integer.parseInt(patternIPv4[i])))
+                                            return false;
+                                    }
                                 }
                             }
+                            return true;
+                        } catch (NumberFormatException e) {
+                            // if not compatible go ignore and jump to the next
+                            // step
                         }
-                        return true;
-                    } catch (NumberFormatException e) {
-                        // if not compatible go ignore and jump to the next step
                     }
-                }
-                
-                try {
-                    URI patternURI = new URI(cleanPattern);
-                    patternPort = patternURI.getPort();
-                    String patternHost = patternURI.getHost();
-                    if (patternHost == null)
-                        throw new URISyntaxException(patternURI.toASCIIString(), "unknown host");
                     
-                    // check the port
-                    if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
-                        return false;
-                    
-                    return true;
-                } catch (URISyntaxException e) {
-                    Logging
-                            .logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
-                                "'%s' is not a valid identifier for an osd or osd-range and will be ignored",
-                                pattern);
+                    try {
+                        URI patternURI = new URI(cleanPattern);
+                        patternPort = patternURI.getPort();
+                        String patternHost = patternURI.getHost();
+                        if (patternHost == null)
+                            throw new URISyntaxException(patternURI.toASCIIString(), "unknown host");
+                        
+                        // check the port
+                        if (patternPort != 0 && patternPort != inetAddressOSD.getPort())
+                            return false;
+                        
+                        return true;
+                    } catch (URISyntaxException e) {
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                            "'%s' is not a valid identifier for an osd or osd-range and will be ignored",
+                            pattern);
+                    }
                 }
             }
         } else {

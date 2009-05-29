@@ -26,30 +26,31 @@ package org.xtreemfs.common.uuids;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ASCIIString;
 
 /**
  * Encapsules the UUID and InetSocketAddress for a service.
+ * 
  * @author bjko
  */
 public final class ServiceUUID implements Serializable, Comparable {
-
-    private final String uuid;
     
-    private InetSocketAddress address;
+    private final String       uuid;
     
-    private String            protocol;
+    private long               validUntil;
     
-    private long              validUntil;
+    private UUIDCacheEntry     cacheEntry;
     
-    private UUIDCacheEntry    cacheEntry;
+    private final UUIDResolver nonSingleton;
     
-    private final UUIDResolver      nonSingleton;
-
     /**
      * Creates a new ServiceUUID.
-     * @param uuid the uuid string
+     * 
+     * @param uuid
+     *            the uuid string
      */
     public ServiceUUID(String uuid) {
         this.uuid = uuid;
@@ -58,8 +59,11 @@ public final class ServiceUUID implements Serializable, Comparable {
     }
     
     /**
-     * Creates a new ServiceUUID with an individual UUIDresolver (rather than the global instance)
-     * @param uuid the uuid string
+     * Creates a new ServiceUUID with an individual UUIDresolver (rather than
+     * the global instance)
+     * 
+     * @param uuid
+     *            the uuid string
      */
     public ServiceUUID(String uuid, UUIDResolver nonSingleton) {
         this.uuid = uuid;
@@ -69,7 +73,9 @@ public final class ServiceUUID implements Serializable, Comparable {
     
     /**
      * Creates a new ServiceUUID.
-     * @param uuid the uuid string.
+     * 
+     * @param uuid
+     *            the uuid string.
      */
     public ServiceUUID(ASCIIString uuid) {
         this(uuid.toString());
@@ -78,8 +84,10 @@ public final class ServiceUUID implements Serializable, Comparable {
     
     /**
      * Resolves the uuid to a InetSocketAddress and protocol.
-     * @throws org.xtreemfs.common.uuids.UnknownUUIDException if the uuid cannot
-     * be resolved (not local, no mapping on DIR).
+     * 
+     * @throws org.xtreemfs.common.uuids.UnknownUUIDException
+     *             if the uuid cannot be resolved (not local, no mapping on
+     *             DIR).
      */
     public void resolve() throws UnknownUUIDException {
         updateMe();
@@ -87,36 +95,38 @@ public final class ServiceUUID implements Serializable, Comparable {
     
     /**
      * Retrieves the InetSocketAddress for the service.
+     * 
      * @return the InetSocketAddress of the service
-     * @throws org.xtreemfs.common.uuids.UnknownUUIDException if the UUID cannot be resolved
+     * @throws org.xtreemfs.common.uuids.UnknownUUIDException
+     *             if the UUID cannot be resolved
      */
-    public InetSocketAddress getAddress() throws UnknownUUIDException {
+    public Mapping[] getMappings() throws UnknownUUIDException {
         if (validUntil > TimeSync.getLocalSystemTime()) {
             cacheEntry.setLastAccess(TimeSync.getLocalSystemTime());
         } else {
             updateMe();
         }
-        return address;
+        
+        return cacheEntry.getMappings();
     }
     
     /**
-     * Retrieves the protocol (hhtp,https) for the service.
-     * @return the protocol of the service
-     * @throws org.xtreemfs.common.uuids.UnknownUUIDException if the UUID cannot be resolved
+     * Returns the first socket address from the list of mappings.
+     * 
+     * @return the socket address associated with the first list entry
+     * @throws org.xtreemfs.common.uuids.UnknownUUIDException
+     *             if the UUID cannot be resolved
      */
-    public String getProtocol() throws UnknownUUIDException {
-        if (validUntil > TimeSync.getLocalSystemTime()) {
-            cacheEntry.setLastAccess(TimeSync.getLocalSystemTime());
-        } else {
-            updateMe();
-        }
-        return protocol;
+    public InetSocketAddress getAddress() throws UnknownUUIDException {
+        return getMappings()[0].resolvedAddr;
     }
     
     /**
      * Returns the full URl of the service.
+     * 
      * @return the URL of the service
-     * @throws org.xtreemfs.common.uuids.UnknownUUIDException if the UUID cannot be resolved
+     * @throws org.xtreemfs.common.uuids.UnknownUUIDException
+     *             if the UUID cannot be resolved
      */
     public String toURL() throws UnknownUUIDException {
         if (validUntil > TimeSync.getLocalSystemTime()) {
@@ -124,42 +134,47 @@ public final class ServiceUUID implements Serializable, Comparable {
         } else {
             updateMe();
         }
-        return protocol+"://"+address.getHostName()+":"+address.getPort();
+        return cacheEntry.toString();
     }
     
     /**
      * Get a details of the UUID mapping.
+     * 
      * @return details of the UUID mapping.
      */
     public String debugString() {
-        return this.uuid+" -> "+this.protocol+" "+this.address+" (still valid for "+((validUntil-TimeSync.getLocalSystemTime())/1000)+"s)";
+        String mappingsStr = cacheEntry == null ? "" : Arrays.toString(cacheEntry.getMappings());
+        return this.uuid + " -> " + mappingsStr + " (still valid for "
+            + ((validUntil - TimeSync.getLocalSystemTime()) / 1000) + "s)";
     }
     
     /**
      * return the UUID string
+     * 
      * @return UUID string
      */
     public String toString() {
         return this.uuid;
     }
-
+    
     @Override
     public boolean equals(Object other) {
         try {
-            final ServiceUUID o = (ServiceUUID)other;
+            final ServiceUUID o = (ServiceUUID) other;
             return this.uuid.equals(o.uuid);
         } catch (ClassCastException ex) {
             return false;
         }
     }
-
+    
     @Override
     public int hashCode() {
         return uuid.hashCode();
     }
-
+    
     /**
      * updates the UUID mapping via UUIDResolver
+     * 
      * @throws org.xtreemfs.common.uuids.UnknownUUIDException
      */
     private void updateMe() throws UnknownUUIDException {
@@ -168,13 +183,12 @@ public final class ServiceUUID implements Serializable, Comparable {
         } else {
             cacheEntry = UUIDResolver.resolve(this.uuid, nonSingleton);
         }
-        this.address = cacheEntry.getResolvedAddr();
+        
         this.validUntil = cacheEntry.getValidUntil();
-        this.protocol = cacheEntry.getProtocol();
     }
-
+    
     @Override
     public int compareTo(Object o) {
-        return uuid.compareTo((String)o);
+        return uuid.compareTo((String) o);
     }
 }

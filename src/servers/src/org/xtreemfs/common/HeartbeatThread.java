@@ -43,6 +43,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -74,8 +75,10 @@ public class HeartbeatThread extends LifeCycleThread {
     
     private final ServiceConfig  config;
     
+    private final boolean        advertiseUDPEndpoints;
+    
     public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
-        ServiceDataGenerator serviceDataGen, ServiceConfig config) {
+        ServiceDataGenerator serviceDataGen, ServiceConfig config, boolean advertiseUDPEndpoints) {
         
         super(name);
         
@@ -83,6 +86,7 @@ public class HeartbeatThread extends LifeCycleThread {
         this.uuid = uuid;
         this.serviceDataGen = serviceDataGen;
         this.config = config;
+        this.advertiseUDPEndpoints = advertiseUDPEndpoints;
     }
     
     public synchronized void shutdown() {
@@ -143,10 +147,17 @@ public class HeartbeatThread extends LifeCycleThread {
             
             // check if a listen.address is set
             if (config.getAddress() == null) {
-                endpoints = NetUtils.getReachableEndpoints(uuid.getAddress().getPort(), uuid.getProtocol());
-                if (endpoints.size() > 0) {
-                    endpoints.get(0).setUuid(uuid.toString());
+                endpoints = NetUtils.getReachableEndpoints(config.getPort(),
+                    config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
+                
+                if (advertiseUDPEndpoints)
+                    endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(),
+                        Constants.ONCRPCU_SCHEME));
+                
+                for (AddressMapping endpoint : endpoints) {
+                    endpoint.setUuid(uuid.toString());
                 }
+                
             } else {
                 // if it is set, we should use that for UUID mapping!
                 endpoints = new AddressMappingSet();
@@ -156,10 +167,15 @@ public class HeartbeatThread extends LifeCycleThread {
                 if (dottedQuad.startsWith("/"))
                     dottedQuad = dottedQuad.substring(1);
                 
-                AddressMapping m = new AddressMapping(uuid.toString(), 0, uuid.getProtocol(), dottedQuad,
-                    uuid.getAddress().getPort(), "*", 3600, uuid.toURL());
+                // add an oncrpc/oncrpcs mapping
+                endpoints.add(new AddressMapping(uuid.toString(), 0,
+                    config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME, dottedQuad,
+                    config.getPort(), "*", 3600, uuid.toURL()));
                 
-                endpoints.add(m);
+                if (advertiseUDPEndpoints)
+                    endpoints.add(new AddressMapping(uuid.toString(), 0, Constants.ONCRPCU_SCHEME,
+                        dottedQuad, config.getPort(), "*", 3600, uuid.toURL()));
+                
             }
             
             if (Logging.isInfo()) {
@@ -263,5 +279,4 @@ public class HeartbeatThread extends LifeCycleThread {
         
         notifyStopped();
     }
-    
 }

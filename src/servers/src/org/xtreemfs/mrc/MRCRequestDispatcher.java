@@ -56,6 +56,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -222,7 +223,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
-            config);
+            config, false);
     }
     
     public void asyncShutdown() {
@@ -253,7 +254,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         clientStage.waitForStartup();
         
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
-        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), config.isUsingSSL());
+        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
+            config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
         
         // TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
         osdMonitor.start();
@@ -340,8 +342,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case UNKNOWN_OPERATION: {
-                rpcRequest.sendException(new ProtocolException(
-                    ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL, ErrNo.EINVAL, error.getErrorMessage()+" "+error.getStackTrace()));
+                rpcRequest.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
+                    ErrNo.EINVAL, error.getErrorMessage() + " " + error.getStackTrace()));
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
                         request.getRPCRequest().getRequestHeader().getTag());

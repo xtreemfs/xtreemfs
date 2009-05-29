@@ -41,6 +41,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
@@ -51,26 +52,27 @@ import org.xtreemfs.osd.OSDConfig;
 public class SetupUtils {
     
     public static final String     TEST_DIR         = "/tmp/xtreemfs-test";
-
+    
     public static final String     CERT_DIR         = "test/certs/";
-
+    
     public static boolean          SSL_ON           = false;
-
+    
     public static boolean          CHECKSUMS_ON     = false;
-
+    
     public static final int        DEBUG_LEVEL      = Logging.LEVEL_INFO;
-
+    
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Logging.Category.all };
-
+    
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", dir);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
+        props.setProperty("debug.categories", ""
+            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "" + port);
-        props.setProperty("http_port", "" + (port-3000));
+        props.setProperty("http_port", "" + (port - 3000));
         props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "50");
         props.setProperty("remote_time_sync", "60000");
@@ -125,7 +127,8 @@ public class SetupUtils {
         Properties props = new Properties();
         props.setProperty("database.dir", TEST_DIR);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
+        props.setProperty("debug.categories", ""
+            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33638");
         props.setProperty("http_port", "30638");
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -148,7 +151,8 @@ public class SetupUtils {
         props.setProperty("database.log", TEST_DIR + "/test-brain0.log");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
+        props.setProperty("debug.categories", ""
+            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33636");
         props.setProperty("http_port", "30636");
         props.setProperty("listen.address", "localhost");
@@ -180,7 +184,8 @@ public class SetupUtils {
         props.setProperty("database.log", TEST_DIR + "/test-brain1.log");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length()-1));
+        props.setProperty("debug.categories", ""
+            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33639");
         props.setProperty("http_port", "30639");
         props.setProperty("listen.address", "localhost");
@@ -257,12 +262,18 @@ public class SetupUtils {
     }
     
     static void localResolver() {
-        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON);
-        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON);
-        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON);
+        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Constants.ONCRPCS_SCHEME
+            : Constants.ONCRPC_SCHEME);
     }
     
     private static ServiceUUID getUUID(String listenAddress, int port) {

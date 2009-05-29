@@ -24,6 +24,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.mrc.utils;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -264,9 +265,9 @@ public class MRCHelper {
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url:
-                return "oncrpc" + (config.isUsingSSL() ? "s" : "") + "://"
-                    + config.getUUID().getAddress().getHostName() + ":"
-                    + config.getUUID().getAddress().getPort() + "/" + path;
+                InetSocketAddress addr = config.getUUID().getAddress();
+                return (config.isUsingSSL() ? Constants.ONCRPC_SCHEME : Constants.ONCRPCS_SCHEME)
+                    + addr.getHostName() + ":" + addr.getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
             case group:
@@ -298,7 +299,7 @@ public class MRCHelper {
                 Map<String, String> osds = new HashMap();
                 for (Service srv : srvs) {
                     ServiceUUID uuid = new ServiceUUID(srv.getUuid());
-                    InetAddress ia = uuid.getAddress().getAddress();
+                    InetAddress ia = uuid.getMappings()[0].resolvedAddr.getAddress();
                     osds.put(uuid.toString(), ia.getCanonicalHostName());
                 }
                 return JSONParser.writeJSON(osds);
@@ -426,12 +427,15 @@ public class MRCHelper {
                     "read-only flag cannot be removed from files with multiple replicas");
             
             // set the update policy string in the X-Locations list to 'read
-            // only replication'
+            // only replication' and mark the first replica as 'full'
             if (file.getXLocList() != null) {
                 XLocList xLoc = file.getXLocList();
                 XLoc[] replicas = new XLoc[xLoc.getReplicaCount()];
                 for (int i = 0; i < replicas.length; i++)
                     replicas[i] = xLoc.getReplica(i);
+                
+                replicas[0].setReplicationFlags(replicas[0].getReplicationFlags()
+                    | Constants.REPL_FLAG_IS_FULL);
                 
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
                     : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());

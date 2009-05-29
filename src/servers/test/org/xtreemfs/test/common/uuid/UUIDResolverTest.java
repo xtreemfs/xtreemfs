@@ -19,6 +19,7 @@ import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -66,7 +67,7 @@ public class UUIDResolverTest extends TestCase {
         testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
                     TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER});
         testEnv.start();
-        UUIDResolver.addLocalMapping("localhost", 32636, false);
+        UUIDResolver.addLocalMapping("localhost", 32636, Constants.ONCRPC_SCHEME);
 
         
     }
@@ -90,7 +91,7 @@ public class UUIDResolverTest extends TestCase {
 
         try {
             ServiceUUID uuid2 = new ServiceUUID("YAGGA YAGGA");
-            uuid2.getAddress();
+            uuid2.getMappings();
             fail("returned result for unknown address mapping");
         } catch (UnknownUUIDException ex) {
             //supi
