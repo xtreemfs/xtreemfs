@@ -124,13 +124,13 @@ public class ReplicationRAFTest extends TestCase {
     private void generateData(int appriximateSize) {
         data = BufferPool.allocate(appriximateSize);
         holes = new TreeSet<Integer>();
-        byte[] zeros = new byte[STRIPE_SIZE];
+        byte[] zeros = new byte[(int) (STRIPE_SIZE * 1.5)];
         Arrays.fill(zeros, (byte) 0);
         
-        while (data.position() < appriximateSize - STRIPE_SIZE) {
+        while (data.position() < appriximateSize - STRIPE_SIZE * 1.5) {
             if (random.nextInt(100) < 70) { // 90% chance
                 // write A piece of data
-                ReusableBuffer tmpData = SetupUtils.generateData(STRIPE_SIZE);
+                ReusableBuffer tmpData = SetupUtils.generateData((int) (STRIPE_SIZE * 1.5));
                 data.put(tmpData);
                 BufferPool.free(tmpData);
             } else { // skip writing => hole
@@ -165,7 +165,7 @@ public class ReplicationRAFTest extends TestCase {
     }
 
     @Test
-    public void testAllAvailableOSDsAreAReplica() throws Exception {
+    public void testSimple() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
                 testEnv.getRpcClient(), userCredentials);
 
@@ -190,10 +190,10 @@ public class ReplicationRAFTest extends TestCase {
         // assert 4 replicas
         assertEquals(4, raf.getXLoc().getNumReplicas());
 
-        readAllAvailableOSDsAreAReplica(raf);
+        readSimple(raf);
     }
 
-    private void readAllAvailableOSDsAreAReplica(RandomAccessFile raf) throws Exception {
+    private void readSimple(RandomAccessFile raf) throws Exception {
         // read data
         for (int reads = 0; reads < 4; reads++) {
             // read and check data => replication
@@ -280,10 +280,9 @@ public class ReplicationRAFTest extends TestCase {
                         RandomAccessFile raf = new RandomAccessFile("r", testEnv.getMRCAddress(), VOLUME_NAME
                                 + "/testfile", testEnv.getRpcClient(), userCredentials);
 
-                        readAllAvailableOSDsAreAReplica(raf);
+                        readSimple(raf);
                         return true;
                     } catch (Exception e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                         fail();
                         return false;
@@ -297,7 +296,7 @@ public class ReplicationRAFTest extends TestCase {
                 assertTrue((Boolean) results[i].get());
             } catch (ExecutionException e) {
                 if(e.getCause() instanceof AssertionFailedError)
-                    e.getCause().printStackTrace();
+//                    e.getCause().printStackTrace();
                     fail(e.getCause().getMessage());
             }
         }

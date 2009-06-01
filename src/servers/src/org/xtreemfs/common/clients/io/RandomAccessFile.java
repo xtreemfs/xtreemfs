@@ -294,17 +294,16 @@ public class RandomAccessFile implements ObjectStore {
                 }
                 break;
             } catch (ONCRPCException ex) {
-                System.out.println(ex.toString());
+//                System.out.println(ex.toString());
                 if (buffer != null)
                     BufferPool.free(buffer);
-                if (((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR
-                        || osds.lastIndexOf(osd) == osds.size() - 1) {
+                if (osds.lastIndexOf(osd) == osds.size() - 1 || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
 //                    ex.printStackTrace();
                     throw new IOException("cannot read object", ex);
                 } else
                     continue;
             } catch (IOException ex) {
-                System.out.println(ex.toString());
+//                System.out.println(ex.toString());
                 if(buffer != null)
                     BufferPool.free(buffer);
                 if (osds.lastIndexOf(osd) == osds.size() - 1) { // last osd in list

@@ -117,4 +117,12 @@ public class Replica {
         }
         return contained;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Replica) {
+            return this.toString().equals(((Replica) obj).toString());
+        } else
+            return false;
+    }
 }

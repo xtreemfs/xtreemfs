@@ -65,7 +65,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final xtreemfs_internal_get_file_sizeRequest args = (xtreemfs_internal_get_file_sizeRequest) rq.getRequestArgs();
 
-        System.out.println("rq: "+args);
+//        System.out.println("rq: "+args);
 
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();

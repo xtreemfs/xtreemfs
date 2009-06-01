@@ -73,7 +73,7 @@ public class ObjectDissemination {
             ServiceUUID lastOSD;
 
             public ObjectInfo() {
-                this.waitingRequests = new ArrayList<StageRequest>();
+                this.waitingRequests = new ArrayList<StageRequest>(2);
             }
         }
 
@@ -155,8 +155,11 @@ public class ObjectDissemination {
         }
         
         public void update(Capability cap, XLocations xLoc, CowPolicy cow) {
-            this.cap = cap;
             this.cow = cow;
+            // if newer
+            if (cap.getExpires() > this.cap.getExpires() || cap.getEpochNo() > this.cap.getEpochNo()) {
+                this.cap = cap;
+            }
             if (xLoc.getXLocSet().getVersion() > this.xLoc.getXLocSet().getVersion()) {
                 this.xLoc = xLoc;
                 this.strategy.updateXLoc(xLoc);
@@ -238,8 +241,8 @@ public class ObjectDissemination {
                     "Object does not exist locally and none replica could be fetched.", ""));
 
             // FIXME: only for debugging
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "object %s:%d could not be fetched",
-                    fileInfo.fileID, next.objectNo);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "object %s:%d could not be fetched",
+                    fileInfo.fileID, objectNo);
             System.out.println("For object " + objectNo + " of file " + fileInfo.fileID + " none replica could be fetched.");
             System.out.println("last object: " + fileInfo.lastObject);
             System.out.println("capability: " + fileInfo.cap.toString());
