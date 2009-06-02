@@ -179,9 +179,10 @@ public class UDPCommunicator extends LifeCycleThread {
 
                             try {
                                 receiver.receiveUDP(new UDPMessage(sender, data));
-                            } catch (Exception ex) {
+                            } catch (Throwable ex) {
                                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                 "received invalid UPD message: "+ex);
+                                BufferPool.free(data);
                             }
                         }
                         // } while (sender != null);
