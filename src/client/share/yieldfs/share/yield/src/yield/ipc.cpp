@@ -1,4 +1,4 @@
-// Revision: 1503
+// Revision: 1504
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -3407,6 +3407,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             respond( connection->get_protocol_request(), connection->get_protocol_response() );
             connection->set_protocol_request( NULL );
             connection->set_protocol_response( NULL );
+            connection->set_reconnect_tries_left( reconnect_tries_max );
             fd_event_queue->detach( *connection->get_socket() );
             connection->set_state( Connection::IDLE );
           }
@@ -3455,6 +3456,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
           log->getStream( YIELD::Log::LOG_ERR ) << "Client: exhausted connection retries to " << peername << ".";
         if ( protocol_request != NULL )
         {
+          connection->set_protocol_request( NULL );
           // We've lost errno here
 #ifdef _WIN32
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
@@ -3462,7 +3464,9 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
 #endif
         }
+        connection->set_state( Connection::IDLE );
       }
+      break;
     }
     else
       ++connection_i;

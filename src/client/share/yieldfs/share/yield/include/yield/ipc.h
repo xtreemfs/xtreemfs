@@ -956,9 +956,10 @@ namespace YIELD
   {
     char nameinfo[1025];
     if ( sockaddr->getnameinfo( nameinfo, 1025, true ) )
-      os << "[" << nameinfo << "]";
+      os << "[" << nameinfo << "]:";
     else
-      os << "[could not resolve socket address]";
+      os << "[could not resolve socket address]:";
+    os << sockaddr->get_port();
     return os;
   }
 
