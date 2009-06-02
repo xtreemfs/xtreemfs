@@ -1,4 +1,4 @@
-// Revision: 1501
+// Revision: 1505
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -23,9 +23,7 @@ void EventHandler::handleUnknownEvent( Event& ev )
 }
 bool EventHandler::send( Event& ev )
 {
-  if ( redirect_to_event_target )
-    return redirect_to_event_target->send( ev );
-  else if ( isThreadSafe() )
+  if ( isThreadSafe() )
     handleEvent( ev );
   else
   {

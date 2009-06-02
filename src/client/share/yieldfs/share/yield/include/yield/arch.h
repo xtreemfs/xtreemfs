@@ -66,10 +66,8 @@ namespace YIELD
     // EventTarget
     bool send( Event& );
 
-    EventTarget* redirect_to_event_target;
-
   protected:
-    EventHandler() : redirect_to_event_target( NULL ) { }
+    EventHandler() { }
     virtual ~EventHandler() { }
 
   private:
@@ -345,8 +343,7 @@ namespace YIELD
     StageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, auto_Object<EventTarget>, auto_Object<Log> log )
       : //StatsEventSource<LockType>( 2000, stage_stats_event_target ),
         event_handler( event_handler ), event_queue( event_queue ), log( log )
-    {
-      event_handler->redirect_to_event_target = this;
+    {      
       event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
       event_queue_full_count = 0;
 

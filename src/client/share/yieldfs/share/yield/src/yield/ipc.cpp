@@ -1,4 +1,4 @@
-// Revision: 1504
+// Revision: 1505
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -820,7 +820,7 @@ auto_Object<TimerEvent> FDEventQueue::timer_create( const Time& timeout, const T
 {
   TimerEvent* timer_event = new TimerEvent( timeout, period, context );
   timers.push_back( timer_event );
-  std::push_heap( timers.begin(), timers.end(), CompareTimerEvents );
+  std::make_heap( timers.begin(), timers.end(), CompareTimerEvents );
   return timer_event->incRef();
 }
 #ifdef _WIN32
@@ -3235,6 +3235,7 @@ SocketClient<ProtocolRequestType, ProtocolResponseType>::SocketClient( const URI
   : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max )
 {
   this->absolute_uri = new URI( absolute_uri );
+  my_stage = NULL;
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
 SocketClient<ProtocolRequestType, ProtocolResponseType>::~SocketClient()
@@ -3250,7 +3251,18 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
   switch ( ev.get_tag() )
   {
     case YIELD_OBJECT_TAG( StageStartupEvent ):
-    case YIELD_OBJECT_TAG( StageShutdownEvent ): Object::decRef( ev ); return;
+    {
+      StageStartupEvent& stage_startup_event = static_cast<StageStartupEvent&>( ev );
+      my_stage = stage_startup_event.get_stage();
+      Object::decRef( ev );
+    }
+    return;
+    case YIELD_OBJECT_TAG( StageShutdownEvent ):
+    {
+      my_stage = NULL;
+      Object::decRef( ev );
+    }
+    return;
     case YIELD_OBJECT_TAG( FDEvent ):
     {
       FDEvent& fd_event = static_cast<FDEvent&>( ev );

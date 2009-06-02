@@ -226,10 +226,14 @@ namespace YIELD
 
     auto_Object<Log> get_log() const { return log; }
 
-    void handleEvent( Event& );
-
     virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ProtocolResponseType> protocol_response ) = 0;
     virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ExceptionResponse> exception_response ) = 0;
+
+    // EventHandler
+    void handleEvent( Event& );
+
+    // EventTarget
+    virtual bool send( Event& ev ) { return my_stage->send( ev ); }
 
   private:
     auto_Object<URI> absolute_uri;
@@ -239,6 +243,8 @@ namespace YIELD
     auto_Object<SocketAddress> peername;
     uint8_t reconnect_tries_max;
     auto_Object<SSLContext> ssl_context;
+
+    auto_Object<Stage> my_stage;
 
 
     class Connection : public Object, public InputStream, public OutputStream
@@ -500,6 +506,9 @@ namespace YIELD
     // EventHandler
     virtual void handleEvent( Event& ev ) { SocketClient<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
+    // EventTarget
+    virtual bool send( Event& ev ) { return SocketClient<HTTPRequest, HTTPResponse>::send( ev ); }
+
   private:
     HTTPClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context );
     virtual ~HTTPClient() { }
@@ -756,26 +765,11 @@ namespace YIELD
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
                                                  uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
                                                  auto_Object<SSLContext> ssl_context = NULL );
-
-    static auto_Object<Response> send( const URI& absolute_uri, 
-                                       auto_Object<Request> request, 
-                                       auto_Object<Log> log = NULL, 
-                                       const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                       uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-                                       auto_Object<SSLContext> ssl_context = NULL )
-    {
-      auto_Object<StageGroup> stage_group = new SEDAStageGroup( "ONCRPCClient", 0, NULL, log );
-      auto_Object<ONCRPCClient> oncrpc_client = ONCRPCClient<InterfaceType>::create< ONCRPCClient<InterfaceType> >( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, ssl_context );
-      auto_Object<ONCRPCRequest> oncrpc_request = new ONCRPCRequest( 0x20000000 + oncrpc_client->get_tag(), request->get_tag(), oncrpc_client->get_tag(), request->incRef(), log );
-      auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > oncrpc_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
-      request->set_response_target( oncrpc_response_queue->incRef() );
-      oncrpc_request->set_response_target( oncrpc_response_queue->incRef() );
-      static_cast<EventHandler&>( *oncrpc_client ).send( *oncrpc_request.release() );
-      return static_cast<Response*>( oncrpc_response_queue->dequeue() ); // Dangerous
-    }
-
     // EventHandler
     virtual void handleEvent( Event& ev ) { SocketClient<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev ); }
+
+    // EventTarget
+    virtual bool send( Event& ev ) { return SocketClient<ONCRPCRequest, ONCRPCResponse>::send( ev ); }
 
   protected:
     ONCRPCClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
