@@ -22,7 +22,7 @@
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.osd.replication;
+package org.xtreemfs.common;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +32,9 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 
 /**
- * It manages the availability for all services. If a service could not accessed it is marked as not available for a
- * period.
- * This class is thread-safe.
+ * It manages the availability for all services. If a service could not accessed it is marked as not available
+ * for a period.<br>
+ * This class is thread-safe.<br>
  * 06.04.2009
  */
 public class ServiceAvailability {
@@ -82,7 +82,7 @@ public class ServiceAvailability {
                         serviceIt.remove();
                 }
                 try {
-                    this.sleep(cleanupInterval);
+                    Thread.sleep(cleanupInterval);
                 } catch (InterruptedException ex) {
                 }
             }

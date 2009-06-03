@@ -33,6 +33,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
@@ -44,34 +45,34 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.replication.RandomStrategy;
-import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.replication.SimpleStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
+import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.test.SetupUtils;
 
 /**
- *
+ * 
  * 18.12.2008
- *
+ * 
  * @author clorenz
  */
 public class TransferStrategiesTest extends TestCase {
-    private Capability cap;
-    private String fileID;
-    private XLocations xLoc;
+    private Capability       cap;
+    private String           fileID;
+    private XLocations       xLoc;
 
     // needed for dummy classes
-    private int stripeSize;
+    private int              stripeSize;
 
     private TransferStrategy strategy;
-    private int osdNumber;
-    private long objectNo;
-    private long filesize;
+    private int              osdNumber;
+    private long             objectNo;
+    private long             filesize;
 
     /**
-     * @throws InvalidXLocationsException 
-     *
+     * @throws InvalidXLocationsException
+     * 
      */
     public TransferStrategiesTest() throws InvalidXLocationsException {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -87,11 +88,12 @@ public class TransferStrategiesTest extends TestCase {
 
         xLoc = createLocations(4, 3);
     }
-    
+
     /*
      * copied from org.xtreemfs.test.osd.replication.ReplicationTest
      */
-    private XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs) throws InvalidXLocationsException {
+    private XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs)
+            throws InvalidXLocationsException {
         assert (numberOfReplicas * numberOfStripedOSDs <= osdNumber);
 
         ReplicaSet replicas = new ReplicaSet();
@@ -101,7 +103,7 @@ public class TransferStrategiesTest extends TestCase {
             int startOSD = replica * numberOfStripedOSDs;
             for (int stripe = 0; stripe < numberOfStripedOSDs; stripe++) {
                 // add available osds
-                osdset.add(new ServiceUUID("UUID:localhost:"+(port++)).toString());
+                osdset.add(new ServiceUUID("UUID:localhost:" + (port++)).toString());
             }
             Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
                     StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
@@ -114,7 +116,7 @@ public class TransferStrategiesTest extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
+        this.strategy = new SimpleStrategy(fileID, xLoc, new ServiceAvailability());
     }
 
     @After
@@ -122,11 +124,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#addRequiredObject(long)}
-     * and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#removeRequiredObject(long)}
-     * .
+     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#addRequiredObject(long)} and
+     * {@link org.xtreemfs.osd.replication.TransferStrategy#removeRequiredObject(long)} .
      */
     @Test
     public void testAddAndRemoveRequiredObject() {
@@ -135,11 +134,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#addPreferredObject(long)}
-     * and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#removePreferredObject(long)}
-     * .
+     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#addPreferredObject(long)} and
+     * {@link org.xtreemfs.osd.replication.TransferStrategy#removePreferredObject(long)} .
      */
     @Test
     public void testAddAndRemovePreferredObject() {
@@ -148,11 +144,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#getRequiredObjectsCount()}
-     * and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#getPreferredObjectsCount()}
-     * .
+     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#getRequiredObjectsCount()} and
+     * {@link org.xtreemfs.osd.replication.TransferStrategy#getPreferredObjectsCount()} .
      */
     @Test
     public void testGetXXXObjectsCount() {
@@ -167,33 +160,33 @@ public class TransferStrategiesTest extends TestCase {
         assertEquals(5, this.strategy.getObjectsCount());
     }
 
-//    @Test
-//    public void testCurrentReplicaNotInReplicaList() {
-//        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
-//        for (int i = 0; i < 5; i++) {
-//            this.strategy.addObject(i, false);
-//        }
-//
-//        for (int i = 0; i < xLoc.getNumReplicas() * xLoc.getLocalReplica().getStripingPolicy().getWidth(); i++) {
-//            this.strategy.selectNext();
-//            NextRequest next = this.strategy.getNext();
-//            if (next != null) {
-//                assertNotSame(xLoc.getLocalReplica().getOSDForObject(objectNo), next.osd);
-//            } else
-//                break;
-//        }
-//        for (int i = 0; i < 20; i++) {
-//            assertTrue(strategy.isHole(i));
-//        }
-//    }
+    // @Test
+    // public void testCurrentReplicaNotInReplicaList() {
+    // this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
+    // for (int i = 0; i < 5; i++) {
+    // this.strategy.addObject(i, false);
+    // }
+    //
+    // for (int i = 0; i < xLoc.getNumReplicas() * xLoc.getLocalReplica().getStripingPolicy().getWidth(); i++)
+    // {
+    // this.strategy.selectNext();
+    // NextRequest next = this.strategy.getNext();
+    // if (next != null) {
+    // assertNotSame(xLoc.getLocalReplica().getOSDForObject(objectNo), next.osd);
+    // } else
+    // break;
+    // }
+    // for (int i = 0; i < 20; i++) {
+    // assertTrue(strategy.isHole(i));
+    // }
+    // }
 
     /**
-     * Test method for
-     * {@link org.xtreemfs.osd.replication.SimpleStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.SimpleStrategy#selectNext()}.
      */
     @Test
     public void testSelectNextForSimpleTransfer() {
-        this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
+        this.strategy = new SimpleStrategy(fileID, xLoc, new ServiceAvailability());
         this.strategy.addObject(1, false);
         this.strategy.addObject(2, false);
         this.strategy.addObject(3, false);
@@ -203,50 +196,53 @@ public class TransferStrategiesTest extends TestCase {
         int replica = 1;
 
         // first request
-        this.strategy.selectNext();
-        NextRequest next = this.strategy.getNext();
-        assertEquals(2, next.objectNo);
-        List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo);
-        assertEquals(osds.get(replica++), next.osd);
-        assertFalse(next.requestObjectList);
+        try {
+            this.strategy.selectNext();
+            NextRequest next = this.strategy.getNext();
+            assertEquals(2, next.objectNo);
+            List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo);
+            assertEquals(osds.get(replica++), next.osd);
+            assertFalse(next.requestObjectList);
 
-        // second request
-        this.strategy.selectNext();
-        next = this.strategy.getNext();
-        assertEquals(1, next.objectNo);
-        osds = xLoc.getOSDsForObject(next.objectNo);
-        assertEquals(osds.get(replica++ % osds.size()), next.osd);
-        assertFalse(next.requestObjectList);
+            // second request
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(1, next.objectNo);
+            osds = xLoc.getOSDsForObject(next.objectNo);
+            assertEquals(osds.get(replica++ % osds.size()), next.osd);
+            assertFalse(next.requestObjectList);
 
-        // third request
-        this.strategy.selectNext();
-        next = this.strategy.getNext();
-        assertEquals(3, next.objectNo);
-        osds = xLoc.getOSDsForObject(next.objectNo);
-        assertEquals(osds.get(replica++ % osds.size()), next.osd);
-        assertFalse(next.requestObjectList);
+            // third request
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(3, next.objectNo);
+            osds = xLoc.getOSDsForObject(next.objectNo);
+            assertEquals(osds.get(replica++ % osds.size()), next.osd);
+            assertFalse(next.requestObjectList);
 
-        // fourth request
-        this.strategy.selectNext();
-        next = this.strategy.getNext();
-        assertEquals(4, next.objectNo);
-        osds = xLoc.getOSDsForObject(next.objectNo);
-        assertEquals(osds.get((replica++ % osds.size()) + 1), next.osd);
-        assertFalse(next.requestObjectList);
+            // fourth request
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(4, next.objectNo);
+            osds = xLoc.getOSDsForObject(next.objectNo);
+            assertEquals(osds.get((replica++ % osds.size()) + 1), next.osd);
+            assertFalse(next.requestObjectList);
 
-        // no more requests possible
-        this.strategy.selectNext();
-        next = this.strategy.getNext();
-        assertNull(next);
+            // no more requests possible
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertNull(next);
+        } catch (TransferStrategyException e) {
+            fail();
+        }
     }
 
     /**
-     * Test method for
-     * {@link org.xtreemfs.osd.replication.RandomStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.RandomStrategy#selectNext()}.
      */
     @Test
     public void testSelectNextForRandomTransfer() {
-        this.strategy = new RandomStrategy(fileID, xLoc, filesize, new ServiceAvailability());
+        this.strategy = new RandomStrategy(fileID, xLoc, new ServiceAvailability());
 
         ArrayList<Long> objectsToRequest = new ArrayList<Long>();
         objectsToRequest.add(Long.valueOf(1));
@@ -261,27 +257,30 @@ public class TransferStrategiesTest extends TestCase {
 
         ArrayList<Long> requestedObjects = new ArrayList<Long>();
 
-        NextRequest next;
-        for (int i = 0; i < objectsToRequest.size(); i++) {
+        try {
+            NextRequest next;
+            for (int i = 0; i < objectsToRequest.size(); i++) {
+                this.strategy.selectNext();
+                next = this.strategy.getNext();
+                requestedObjects.add(Long.valueOf(next.objectNo));
+                boolean contained = false;
+                for (org.xtreemfs.common.xloc.Replica r : xLoc.getReplicas()) {
+                    if (r.getOSDs().contains(next.osd))
+                        contained = true;
+                }
+                assertTrue(contained);
+                assertFalse(next.requestObjectList);
+            }
+
+            for (int i = 0; i < objectsToRequest.size(); i++)
+                assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
+
+            // no more requests possible
             this.strategy.selectNext();
             next = this.strategy.getNext();
-            requestedObjects.add(Long.valueOf(next.objectNo));
-            boolean contained = false;
-            for(org.xtreemfs.common.xloc.Replica r : xLoc.getReplicas()){
-                if(r.getOSDs().contains(next.osd))
-                    contained = true;
-            }
-            assertTrue(contained);
-            assertFalse(next.requestObjectList);
+            assertNull(next);
+        } catch (TransferStrategyException e) {
+            fail();
         }
-
-        for (int i = 0; i < objectsToRequest.size(); i++)
-            assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
-
-        // no more requests possible
-        this.strategy.selectNext();
-        next = this.strategy.getNext();
-        assertNull(next);
     }
-
 }

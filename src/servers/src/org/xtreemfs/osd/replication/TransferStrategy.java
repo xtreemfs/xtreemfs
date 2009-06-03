@@ -27,7 +27,9 @@ package org.xtreemfs.osd.replication;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
@@ -43,12 +45,37 @@ public abstract class TransferStrategy {
      * <br>12.02.2009
      */
     public class NextRequest {
-        public ServiceUUID osd;
-        public long objectNo;
+        public ServiceUUID osd = null;
+        public long objectNo = -1;
         /**
          * if true, the OSD must return a list of all local available objects
          */
-        public boolean requestObjectList;
+        public boolean requestObjectList = false;
+        
+        boolean isAllSet() {
+            return (osd != null) && (objectNo != -1);
+        }
+    }
+    
+    public static class TransferStrategyException extends Exception {
+        public enum ErrorCode {
+            NO_OSD_REACHABLE,
+            NO_OSD_FOUND,
+//            OBJECT_MUST_BE_HOLE            
+        }
+ 
+        private final ErrorCode errorCode;
+        /**
+         * 
+         */
+        public TransferStrategyException(String message, ErrorCode errorCode) {
+            super(message);
+            this.errorCode = errorCode;
+        }
+        
+        public ErrorCode getErrorCode() {
+            return errorCode;
+        }
     }
 
     protected String fileID;
@@ -57,17 +84,17 @@ public abstract class TransferStrategy {
     /**
      * contains the chosen values for the next replication request
      */
-    protected NextRequest next;
+    private NextRequest next;
 
     /**
      * contains all not preferred objects which must be replicated (e.g. background-replication)
      */
-    protected ArrayList<Long> requiredObjects;
+    protected List<Long> requiredObjects;
 
     /**
      * contains all objects which must be replicated first (e.g. client-request)
      */
-    protected ArrayList<Long> preferredObjects; // requested objects
+    protected List<Long> preferredObjects; // requested objects
 
     /**
      * checks if the OSD is available (e.g. network interrupt)
@@ -78,7 +105,7 @@ public abstract class TransferStrategy {
      * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.
      * <br>key: objectNo
      */
-    protected HashMap<Long, List<ServiceUUID>> availableOSDsForObject;
+    protected Map<Long, List<ServiceUUID>> availableOSDsForObject;
 
     /**
      * contains a list of local available objects for each OSD
@@ -89,8 +116,7 @@ public abstract class TransferStrategy {
     /**
      * @param rqDetails
      */
-    protected TransferStrategy(String fileID, XLocations xLoc, long filesize,
-            ServiceAvailability osdAvailability) {
+    protected TransferStrategy(String fileID, XLocations xLoc, ServiceAvailability osdAvailability) {
         super();
         this.xLoc = xLoc;
         this.fileID = fileID;
@@ -109,16 +135,26 @@ public abstract class TransferStrategy {
     /**
      * chooses the next object, which will be replicated
      */
-    public void selectNext() {
-        next = null;
+    public void selectNext() throws TransferStrategyException {
+        this.next = null;
+        NextRequest next = selectNextHook();
+        if (next != null && next.isAllSet())
+            this.next = next;
     }
+
+    protected abstract NextRequest selectNextHook() throws TransferStrategyException;
 
     /**
      * 
      */
-    public void selectNextOSD(long objectID) {
-        next = null;
+    public void selectNextOSD(long objectNo) throws TransferStrategyException {
+        this.next = null;
+        NextRequest next = selectNextOSDHook(objectNo);
+        if (next != null && next.isAllSet())
+            this.next = next;
     }
+
+    protected abstract NextRequest selectNextOSDHook(long objectNo) throws TransferStrategyException;
 
     /**
      * Returns the "result" from selectNext().

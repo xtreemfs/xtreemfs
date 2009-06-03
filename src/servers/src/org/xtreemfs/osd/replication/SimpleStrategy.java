@@ -25,32 +25,30 @@ package org.xtreemfs.osd.replication;
 
 import java.util.List;
 
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
 /**
  * A simple transfer strategy, which fetches the next object and iterates sequentially through the replicas
- * (like Round-Robin).
- * <br>NOTE: This Strategy does not remember which OSDs it has used before for an object, so it could happen that
- * it always takes the same OSD for an object. This can result in a infinite loop for this object.
- * <br>13.10.2008
+ * (like Round-Robin). <br>
+ * NOTE: This Strategy does not remember which OSDs it has used before for an object, so it could happen that
+ * it always takes the same OSD for an object. This can result in a infinite loop for this object. <br>
+ * 13.10.2008
  */
+@Deprecated
 public class SimpleStrategy extends TransferStrategy {
     private int indexOfLastUsedOSD = -1;
 
     /**
      * @param rqDetails
      */
-    public SimpleStrategy(String fileId, XLocations xLoc, long filesize,
-            ServiceAvailability osdAvailability) {
-        super(fileId, xLoc, filesize, osdAvailability);
+    public SimpleStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+        super(fileId, xLoc, osdAvailability);
     }
 
     @Override
-    public void selectNext() {
-        // prepare
-        super.selectNext();
-
+    protected NextRequest selectNextHook() throws TransferStrategyException {
         long objectNo = -1;
 
         // first fetch a preferred object
@@ -64,30 +62,26 @@ public class SimpleStrategy extends TransferStrategy {
 
         // TODO: handle case, if no OSD could be found for object (=> hole), because nobody will ever notice,
         // that this object is a hole
-        
+
         // select OSD
         if (objectNo != -1)
-            next = selectNextOSDhelper(objectNo);
+            return selectNextOSDHook(objectNo);
         else
             // nothing to fetch
-            next = null;
+            return null;
     }
 
     @Override
-    public void selectNextOSD(long objectNo) {
-        // prepare
-        super.selectNextOSD(objectNo);
-        // select OSD
-        next = selectNextOSDhelper(objectNo);
-    }
-
-    private NextRequest selectNextOSDhelper(long objectNo) {
+    protected NextRequest selectNextOSDHook(long objectNo) throws TransferStrategyException {
         NextRequest next = new NextRequest();
         next.objectNo = objectNo;
         int testedOSDs;
 
         // use the next replica relative to the last used replica
         List<ServiceUUID> osds = this.xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
+        if (osds.size() == 0)
+            throw new TransferStrategyException("No OSD could be found for object " + objectNo
+                    + ". It seems to be a hole.", TransferStrategyException.ErrorCode.NO_OSD_FOUND);
         for (testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
             indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
             ServiceUUID osd = osds.get(indexOfLastUsedOSD);
@@ -101,8 +95,10 @@ public class SimpleStrategy extends TransferStrategy {
             }
         }
         // if no OSD could be found
-        if (next.osd == null || isHole(objectNo))
-            next = null;
+        if (next.osd == null || isHole(objectNo)) {
+            throw new TransferStrategyException("At the moment no OSD is reachable for object " + objectNo,
+                    TransferStrategyException.ErrorCode.NO_OSD_REACHABLE);
+        }
         return next;
     }
 }

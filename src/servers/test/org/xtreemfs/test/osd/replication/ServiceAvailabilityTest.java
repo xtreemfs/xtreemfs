@@ -33,9 +33,9 @@ import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.test.SetupUtils;
 
 /**

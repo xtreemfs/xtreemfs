@@ -28,14 +28,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 
 /**
- * A simple strategy, which selects objects and replicas randomly.
- * <br>08.12.2008
+ * A simple strategy, which selects objects and replicas randomly. <br>
+ * 08.12.2008
  */
 public class RandomStrategy extends TransferStrategy {
     private Random random;
@@ -43,16 +44,13 @@ public class RandomStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public RandomStrategy(String fileId, XLocations xLoc, long filesize, ServiceAvailability osdAvailability) {
-        super(fileId, xLoc, filesize, osdAvailability);
+    public RandomStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+        super(fileId, xLoc, osdAvailability);
         this.random = new Random();
     }
 
     @Override
-    public void selectNext() {
-        // prepare
-        super.selectNext();
-
+    protected NextRequest selectNextHook() throws TransferStrategyException {
         long objectNo = -1;
 
         // first fetch a preferred object
@@ -66,28 +64,26 @@ public class RandomStrategy extends TransferStrategy {
 
         // select OSD
         if (objectNo != -1)
-            next = selectNextOSDhelper(objectNo);
+            return selectNextOSDHook(objectNo);
         else
             // nothing to fetch
-            next = null;
+            return null;
     }
 
     @Override
-    public void selectNextOSD(long objectNo) {
-        // prepare
-        super.selectNextOSD(objectNo);
-        // select OSD
-        next = selectNextOSDhelper(objectNo);
-    }
-
-    private NextRequest selectNextOSDhelper(long objectNo) {
+    protected NextRequest selectNextOSDHook(long objectNo) throws TransferStrategyException {
         NextRequest next = new NextRequest();
         next.objectNo = objectNo;
 
         // to check, if all OSDs have been tested
         List<ServiceUUID> testedOSDs = new ArrayList<ServiceUUID>(this.availableOSDsForObject.get(objectNo));
         // FIXME: only for debugging
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
+        if (testedOSDs.size() == 0)
+            throw new TransferStrategyException("No OSD could be found for object " + objectNo
+                    + ". It seems to be a hole.", TransferStrategyException.ErrorCode.NO_OSD_FOUND);
+
         while (testedOSDs.size() != 0) {
             // use random OSD
             ServiceUUID osd = testedOSDs.get(random.nextInt(testedOSDs.size()));
@@ -102,11 +98,14 @@ public class RandomStrategy extends TransferStrategy {
             // OSD is not available => remove it from list
             testedOSDs.remove(osd);
             // FIXME: only for debugging
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "OSD %s is not available", osd.toString());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "OSD %s is not available",
+                    osd.toString());
         }
         // if no OSD could be found
-        if (next.osd == null)
-            next = null;
+        if (next.osd == null) {
+            throw new TransferStrategyException("At the moment no OSD is reachable for object " + objectNo,
+                    TransferStrategyException.ErrorCode.NO_OSD_REACHABLE);
+        }
         return next;
     }
 }

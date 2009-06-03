@@ -32,13 +32,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -246,61 +240,61 @@ public class ReplicationRAFTest extends TestCase {
      * this test generates heavy load on your pc
      * @throws Exception
      */
-    @Test
-    public void testMultipleClients() throws Exception {
-        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
-                testEnv.getRpcClient(), userCredentials);
-        writeData(raf);
-
-        // set new deterministic selection of OSDs
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_OSD_SELECTION_POLICY);
-
-        // set read-only
-        raf.setReadOnly(true);
-
-        // add replicas
-        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
-        assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy());
-        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy());
-        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy());
-
-        // assert 4 replicas
-        assertEquals(4, raf.getXLoc().getNumReplicas());
-
-        int clients = 12;
-        Future[] results = new Future[clients];
-        ExecutorService executor = Executors.newFixedThreadPool(clients);
-        // start threads
-        for (int i = 0; i < clients; i++) {
-            results[i] = executor.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    try {
-                        RandomAccessFile raf = new RandomAccessFile("r", testEnv.getMRCAddress(), VOLUME_NAME
-                                + "/testfile", testEnv.getRpcClient(), userCredentials);
-
-                        readSimple(raf);
-                        return true;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        fail();
-                        return false;
-                    }
-                }
-            });
-        }
-        // check results
-        for (int i = 0; i < clients; i++) {
-            try {
-                assertTrue((Boolean) results[i].get());
-            } catch (ExecutionException e) {
-                if(e.getCause() instanceof AssertionFailedError)
-//                    e.getCause().printStackTrace();
-                    fail(e.getCause().getMessage());
-            }
-        }
-    }
+//    @Test
+//    public void testMultipleClients() throws Exception {
+//        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
+//                testEnv.getRpcClient(), userCredentials);
+//        writeData(raf);
+//
+//        // set new deterministic selection of OSDs
+//        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_OSD_SELECTION_POLICY);
+//
+//        // set read-only
+//        raf.setReadOnly(true);
+//
+//        // add replicas
+//        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
+//        assertEquals(6, replicas.size());
+//        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy());
+//        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy());
+//        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy());
+//
+//        // assert 4 replicas
+//        assertEquals(4, raf.getXLoc().getNumReplicas());
+//
+//        int clients = 12;
+//        Future[] results = new Future[clients];
+//        ExecutorService executor = Executors.newFixedThreadPool(clients);
+//        // start threads
+//        for (int i = 0; i < clients; i++) {
+//            results[i] = executor.submit(new Callable<Boolean>() {
+//                @Override
+//                public Boolean call() throws Exception {
+//                    try {
+//                        RandomAccessFile raf = new RandomAccessFile("r", testEnv.getMRCAddress(), VOLUME_NAME
+//                                + "/testfile", testEnv.getRpcClient(), userCredentials);
+//
+//                        readSimple(raf);
+//                        return true;
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        fail();
+//                        return false;
+//                    }
+//                }
+//            });
+//        }
+//        // check results
+//        for (int i = 0; i < clients; i++) {
+//            try {
+//                assertTrue((Boolean) results[i].get());
+//            } catch (ExecutionException e) {
+//                if(e.getCause() instanceof AssertionFailedError)
+////                    e.getCause().printStackTrace();
+//                    fail(e.getCause().getMessage());
+//            }
+//        }
+//    }
 
     @Test
     public void testReplicaRemoval() throws Exception {

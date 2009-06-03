@@ -34,7 +34,6 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectDissemination;
-import org.xtreemfs.osd.replication.ServiceAvailability;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
 
@@ -58,14 +57,11 @@ public class ReplicationStage extends Stage {
 
     private ObjectDissemination disseminationLayer;
 
-    private final ServiceAvailability serviceAvailability;
-
     public ReplicationStage(OSDRequestDispatcher master) {
         super("OSD Replication Stage");
 
         this.master = master;
-        this.serviceAvailability = new ServiceAvailability();
-        this.disseminationLayer = new ObjectDissemination(master, serviceAvailability);
+        this.disseminationLayer = new ObjectDissemination(master);
     }
 
     /**
@@ -160,11 +156,5 @@ public class ReplicationStage extends Stage {
     private void processInternalCancelFile(StageRequest rq) {
         String fileId = (String) rq.getArgs()[0];
         disseminationLayer.cancelFile(fileId);
-    }
-
-    @Override
-    public void shutdown() {
-        super.shutdown();
-        serviceAvailability.shutdown();
     }
 }
