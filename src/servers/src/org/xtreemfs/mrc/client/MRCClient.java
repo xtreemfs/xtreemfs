@@ -345,7 +345,7 @@ public class MRCClient extends ONCRPCClient {
             public VolumeSet getResult(ReusableBuffer data) {
                 final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
                 resp.deserialize(data);
-                return null;
+                return resp.getVolumes();
             }
         }, credentials);
         return r;
