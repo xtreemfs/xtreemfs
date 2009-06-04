@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.HeartbeatThread;
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -150,7 +151,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
     
     protected final CleanupThread                       cThread;
-    
+
+    /**
+     * reachability of services
+     */
+    private final ServiceAvailability                   serviceAvailability;
+
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
         
         this.config = config;
@@ -195,6 +201,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000);
         rpcClient.setLifeCycleListener(this);
+        
+        // initialize ServiceAvailability
+        this.serviceAvailability = new ServiceAvailability();
         
         // --------------------------
         // initialize internal stages
@@ -380,7 +389,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             rpcServer.waitForShutdown();
             
             rpcClient.waitForShutdown();
-            
+
+            serviceAvailability.shutdown();
+
             udpCom.shutdown();
             preprocStage.shutdown();
             delStage.shutdown();
@@ -648,6 +659,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
     
+    /**
+     * @return the serviceAvailability
+     */
+    public ServiceAvailability getServiceAvailability() {
+        return serviceAvailability;
+    }
+
     public void objectReceived() {
         numObjsRX.incrementAndGet();
     }
