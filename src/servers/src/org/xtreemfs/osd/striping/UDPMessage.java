@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Request;
@@ -66,8 +67,10 @@ public class UDPMessage {
     public UDPMessage(InetSocketAddress address, int xid, int proc, Request payload) {
         requestHeader = new ONCRPCRequestHeader(payload.getTag(),  0 , OSDInterface.getVersion(), payload.getTag());
         responseHeader = null;
+        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(responseHeader.calculateSize()+payload.calculateSize(), true);
         this.address = address;
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);
+        wr.putInt(fragHdr);
         requestHeader.serialize(wr);
         payload.serialize(wr);
         wr.flip();
@@ -81,8 +84,11 @@ public class UDPMessage {
         responseHeader = new ONCRPCResponseHeader(request.getRequestHeader().getXID(),
                 ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
+
+        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(responseHeader.calculateSize()+payload.calculateSize(), true);
         this.address = request.getAddress();
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);
+        wr.putInt(fragHdr);
         responseHeader.serialize(wr);
         payload.serialize(wr);
         wr.flip();
@@ -94,10 +100,9 @@ public class UDPMessage {
     public UDPMessage(InetSocketAddress address, ReusableBuffer payload) throws Exception {
         this.address = address;
         this.payload = payload;
-        payload.position(0);
-        payload.getInt();
+        payload.position(Integer.SIZE/8*2);
         int callType = payload.getInt();
-        payload.position(0);
+        payload.position(Integer.SIZE/8);
         if (callType == XDRUtils.TYPE_CALL) {
             requestHeader = new ONCRPCRequestHeader();
             requestHeader.deserialize(payload);
