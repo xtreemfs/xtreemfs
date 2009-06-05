@@ -58,17 +58,18 @@ import org.xtreemfs.test.SetupUtils;
  * @author clorenz
  */
 public class TransferStrategiesTest extends TestCase {
-    private Capability       cap;
-    private String           fileID;
-    private XLocations       xLoc;
+    private Capability                       cap;
+    private String                           fileID;
+    private XLocations                       xLoc;
+    private org.xtreemfs.common.xloc.Replica localReplica;
 
     // needed for dummy classes
-    private int              stripeSize;
+    private int                              stripeSize;
 
-    private TransferStrategy strategy;
-    private int              osdNumber;
-    private long             objectNo;
-    private long             filesize;
+    private TransferStrategy                 strategy;
+    private int                              osdNumber;
+    private long                             objectNo;
+    private long                             filesize;
 
     /**
      * @throws InvalidXLocationsException
@@ -109,9 +110,13 @@ public class TransferStrategiesTest extends TestCase {
                     StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
             replicas.add(r);
         }
+        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0);
         // set the first replica as current replica
-        return new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0), new ServiceUUID(
-                "UUID:localhost:33640"));
+        XLocations locations = new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0),
+                new ServiceUUID(locSet.getReplicas().get(0).getOsd_uuids().get(0)));
+        localReplica = locations.getLocalReplica();
+        return locations;
+
     }
 
     @Before
@@ -187,45 +192,56 @@ public class TransferStrategiesTest extends TestCase {
     @Test
     public void testSelectNextForSimpleTransfer() {
         this.strategy = new SimpleStrategy(fileID, xLoc, new ServiceAvailability());
-        this.strategy.addObject(1, false);
+        this.strategy.addObject(0, false);
+        this.strategy.addObject(1, true);
         this.strategy.addObject(2, false);
         this.strategy.addObject(3, false);
         this.strategy.addObject(4, false);
         this.strategy.addObject(2, true);
 
-        int replica = 1;
+        int replicaForStripe1 = 0;
+        int replicaForStripe2 = 0;
+        int replicaForStripe3 = 0;
 
-        // first request
         try {
+            // stripe 2 (preferred)
             this.strategy.selectNext();
             NextRequest next = this.strategy.getNext();
-            assertEquals(2, next.objectNo);
-            List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo);
-            assertEquals(osds.get(replica++), next.osd);
+            assertEquals(1, next.objectNo);
+            List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
+            assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
             assertFalse(next.requestObjectList);
 
-            // second request
+            // stripe 3 (preferred)
             this.strategy.selectNext();
             next = this.strategy.getNext();
-            assertEquals(1, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo);
-            assertEquals(osds.get(replica++ % osds.size()), next.osd);
+            assertEquals(2, next.objectNo);
+            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
+            assertEquals(osds.get(replicaForStripe3++ % osds.size()), next.osd);
             assertFalse(next.requestObjectList);
 
-            // third request
+            // stripe 1
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(0, next.objectNo);
+            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
+            assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
+            assertFalse(next.requestObjectList);
+
+            // stripe 1
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(3, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo);
-            assertEquals(osds.get(replica++ % osds.size()), next.osd);
+            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
+            assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
             assertFalse(next.requestObjectList);
 
-            // fourth request
+            // stripe 2
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(4, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo);
-            assertEquals(osds.get((replica++ % osds.size()) + 1), next.osd);
+            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
+            assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
             assertFalse(next.requestObjectList);
 
             // no more requests possible

@@ -260,7 +260,7 @@ public class RandomAccessFileTest extends TestCase {
         replica1 = replica1.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a replica
-        randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy());
+        randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
         
         // check
         assertEquals(2, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
@@ -271,7 +271,7 @@ public class RandomAccessFileTest extends TestCase {
         replica2 = replica2.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a second replica
-        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy());
+        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
         // check
         // check
         assertEquals(3, randomAccessFile.getCredentials().getXlocs().getReplicas().size());

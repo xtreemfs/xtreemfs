@@ -46,6 +46,7 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
@@ -81,11 +82,14 @@ public class ReplicationStressTest {
     public static final int STRIPE_SIZE                               = 128;           // KB
 
     public static final int SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN = 1000 * 60 * 10; // 10 minutes
+    /**
+     * max this number of replicas will be added/remove all at once
+     */
     public static final int MAX_REPLICA_CHURN                         = 4;
-    public static final int HOLE_PROPABILITY                          = 20; // 10% chance
+    public static final int HOLE_PROPABILITY                          = 10; // 10% chance
 
     /**
-     * one instance will be written once and will be modified after this (deep)
+     * one instance will be written once and will be not modified after this (deep)
      */
     public static class FileInfo {
         public final String          filename;
@@ -149,19 +153,15 @@ public class ReplicationStressTest {
      * reader-threads
      */
     public class ReaderThreads implements Runnable {
-        /**
-         * 
-         */
-        public static final int              NUMBER_OF_RANGES = 20;
-        public static final int              SLEEP_TIME       = 1000 * 10; // sleep 10 seconds
+        public static final int                SLEEP_TIME = 1000 * 1; // sleep 1 second
 
-        private final UserCredentials        userCredentials;
-        private final RPCNIOSocketClient     client;
-        private InetSocketAddress            mrcAddress;
-        int                                  threadNo;
+        private final UserCredentials          userCredentials;
+        private final RPCNIOSocketClient       client;
+        private InetSocketAddress              mrcAddress;
+        int                                    threadNo;
 
         private CopyOnWriteArrayList<FileInfo> fileList;
-        private Random                       random;
+        private Random                         random;
 
         public ReaderThreads(int threadNo, InetSocketAddress mrcAddress,
                 CopyOnWriteArrayList<FileInfo> fileList, Random random, UserCredentials userCredentials)
@@ -188,13 +188,16 @@ public class ReplicationStressTest {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, "%s started (waiting)", Thread
                     .currentThread().getName());
 
+            // wait until first file is written
+            try {
+                while (fileList.isEmpty())
+                    Thread.sleep(SLEEP_TIME);
+            } catch (InterruptedException e1) {}
+
             int fileCounter = 0;
             int throughputSum = 0;
             while (!Thread.interrupted()) {
                 try {
-                    while (fileList.isEmpty())
-                        Thread.sleep(SLEEP_TIME);
-
                     // get any file from list
                     FileInfo file = fileList.get(random.nextInt(fileList.size()));
                     throughputSum += readFile(file);
@@ -205,6 +208,9 @@ public class ReplicationStressTest {
                                         .getName(), fileCounter, throughputSum / 100);
                         throughputSum = 0; // reset
                     }
+                    
+                    // sleep some time, so the OSDs will not overload
+                    Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     break;
                 } catch (Exception e) {
@@ -226,7 +232,7 @@ public class ReplicationStressTest {
          * @return throughput
          */
         public int readFile(FileInfo file) throws Exception {
-            int partSize = (int) (PART_SIZE * 5 * random.nextDouble());
+            int partSize = (int) (PART_SIZE * 5 * random.nextDouble()); // random partsize 
             long timeRequiredForReading = 0;
 
             java.io.RandomAccessFile originalFile = null;
@@ -253,11 +259,13 @@ public class ReplicationStressTest {
 
                     // read
                     try {
+                        // monitoring: time (latency/throughput)
                         long timeBefore = System.currentTimeMillis();
                         file.readFromXtreemFS(result, raf, startOffset);
                         timeRequiredForReading += System.currentTimeMillis() - timeBefore;
                     } catch (Exception e) {
-                        // TODO: catch exception, if request is rejected because of change of XLocations version 
+                        // TODO: catch exception, if request is rejected because of change of XLocations version
+                        ReplicationStressTest.containedErrors = true;
                         file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
 
                         System.out.println(e.getMessage());
@@ -273,12 +281,10 @@ public class ReplicationStressTest {
                         continue;
                     }
 
-                    // TODO: monitoring: time (latency)
-
                     // ASSERT the byte-data
                     file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
-
                     if (!Arrays.equals(result, expectedResult)) {
+                        ReplicationStressTest.containedErrors = true;
                         log("Read wrong data.", file, startOffset, startOffset + partSize, filesize,
                                 result, expectedResult);
                     }
@@ -346,27 +352,26 @@ public class ReplicationStressTest {
         }
     }
 
-    public final UserCredentials         userCredentials;
+    public final UserCredentials           userCredentials;
 
-    private final TimeSync               timeSync;
-    private final RPCNIOSocketClient     client;
-    private final DIRClient              dirClient;
-    public MRCClient                     mrcClient;
+    private final TimeSync                 timeSync;
+    private final RPCNIOSocketClient       client;
+    private final DIRClient                dirClient;
+    public MRCClient                       mrcClient;
 
-    private CopyOnWriteArrayList<FileInfo> fileList;
-    private Random                       random;
+    private Random                         random;
+    
+    public static boolean                  containedErrors = false;
 
     /**
      * controller(-thread)
      * 
      * @throws Exception
      */
-    public ReplicationStressTest(InetSocketAddress dirAddress, CopyOnWriteArrayList<FileInfo> fileList,
-            Random random) throws Exception {
+    public ReplicationStressTest(InetSocketAddress dirAddress, Random random) throws Exception {
         Thread.currentThread().setName("WriterThread");
         Logging.start(Logging.LEVEL_DEBUG, Category.test, Category.replication);
 
-        this.fileList = fileList;
         this.random = random;
 
         // user credentials
@@ -546,7 +551,7 @@ public class ReplicationStressTest {
             if(replica.size() >= raf.getStripingPolicy().getWidth()) {
                 Collections.shuffle(replica, random);
                 replica = replica.subList(0, raf.getStripingPolicy().getWidth());
-                raf.addReplica(replica, raf.getStripingPolicy());
+                raf.addReplica(replica, raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
                 added++;
             } else
                 break;
@@ -565,23 +570,29 @@ public class ReplicationStressTest {
         int removed = 0;
         RandomAccessFile raf = new RandomAccessFile("r", mrcClient.getDefaultServerAddress(), VOLUME_NAME
                 + DIR_PATH + fileName, client, userCredentials);
-        Replica originalReplica = raf.getXLoc().getReplica(0);
         for (int i = 0; i < number; i++) {
             // only the original replica is remaining
             if(raf.getXLoc().getReplicas().size() <= 1)
                 break;
 
-            // select any replica, except the first (original)
-            int replicaNumber = random.nextInt(raf.getXLoc().getReplicas().size());
-            replicaNumber = (replicaNumber == 0) ? 1 : replicaNumber;
-            Replica replica = raf.getXLoc().getReplicas().get(replicaNumber);
+            // select any replica, except the replica marked as full
+            Replica replica;
+            do {
+                int replicaNumber = random.nextInt(raf.getXLoc().getReplicas().size());
+//                replicaNumber = (replicaNumber == 0) ? 1 : replicaNumber;
+                replica = raf.getXLoc().getReplicas().get(replicaNumber);
+            } while (replica.isFull());
             
             raf.removeReplica(replica);
             removed++;
         }
-        assert(originalReplica.equals(raf.getXLoc().getReplica(0)));
-        if (!originalReplica.equals(raf.getXLoc().getReplica(0)))
-            throw new Exception("The original replica was deleted. This will cause errors.");
+        boolean containsAtLeastOneFullReplica = false;
+        for(Replica replica : raf.getXLoc().getReplicas()) {
+            containsAtLeastOneFullReplica = replica.isFull() || containsAtLeastOneFullReplica;
+        }
+        assert(containsAtLeastOneFullReplica);
+        if (!containsAtLeastOneFullReplica)
+            throw new Exception("The full replica has been deleted. This will cause errors.");
         
         Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, removed + " replicas removed for file "
                 + fileName + " (number of replicas : " + raf.getXLoc().getNumReplicas() + ")");
@@ -640,7 +651,7 @@ public class ReplicationStressTest {
         // create file list
         CopyOnWriteArrayList<FileInfo> fileList = new CopyOnWriteArrayList<FileInfo>();
 
-        ReplicationStressTest controller = new ReplicationStressTest(dirAddress, fileList, random);
+        ReplicationStressTest controller = new ReplicationStressTest(dirAddress, random);
         controller.initializeVolume(stripeWidth);
 
         Thread[] readerThreads = new Thread[threadNumber]; 
@@ -703,6 +714,12 @@ public class ReplicationStressTest {
             thread.interrupt();
         }
         controller.shutdown();
+        
+        System.out.println("#####################################################################################################");
+        if(ReplicationStressTest.containedErrors)
+            System.out.println("Test contained Errors. See log for details.");
+        else
+            System.out.println("Test quits without Errors. Great!");
     }
 
     public static void usage() {

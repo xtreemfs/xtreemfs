@@ -23,6 +23,7 @@
  */
 package org.xtreemfs.osd.replication;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.xtreemfs.common.ServiceAvailability;
@@ -31,20 +32,30 @@ import org.xtreemfs.common.xloc.XLocations;
 
 /**
  * A simple transfer strategy, which fetches the next object and iterates sequentially through the replicas
- * (like Round-Robin). <br>
- * NOTE: This Strategy does not remember which OSDs it has used before for an object, so it could happen that
- * it always takes the same OSD for an object. This can result in a infinite loop for this object. <br>
+ * (like Round-Robin). It iterates not strictly through the replicas, because it uses different
+ * position-pointers for every stripe. This is necessary, otherwise it could happen some replicas will be
+ * never used, which could cause in an infinite loop.<br>
+ * NOTE: This strategy assumes that all replicas uses the same striping policy (same stripe width). <br>
  * 13.10.2008
  */
-@Deprecated
 public class SimpleStrategy extends TransferStrategy {
-    private int indexOfLastUsedOSD = -1;
+    /**
+     * contains the position (replica) in xLoc list of the next OSD which should be used for this stripe<br>
+     * key: stripe
+     */
+    // TODO: works only if all replicas are using the same striping policy
+    private HashMap<Integer, Integer> nextOSDforObject;
 
     /**
      * @param rqDetails
      */
     public SimpleStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
+        int stripeWidth = xLoc.getLocalReplica().getStripingPolicy().getWidth();
+        this.nextOSDforObject = new HashMap<Integer, Integer>(stripeWidth);
+        // set zero as start position for all stripes
+        for (int i = 0; i < stripeWidth; i++)
+            this.nextOSDforObject.put(i, 0);
     }
 
     @Override
@@ -59,9 +70,6 @@ public class SimpleStrategy extends TransferStrategy {
                 objectNo = this.requiredObjects.get(0);
             }
         }
-
-        // TODO: handle case, if no OSD could be found for object (=> hole), because nobody will ever notice,
-        // that this object is a hole
 
         // select OSD
         if (objectNo != -1)
@@ -80,11 +88,14 @@ public class SimpleStrategy extends TransferStrategy {
         // use the next replica relative to the last used replica
         List<ServiceUUID> osds = this.xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
         if (osds.size() == 0)
-            throw new TransferStrategyException("No OSD could be found for object " + objectNo
-                    + ". It seems to be a hole.", TransferStrategyException.ErrorCode.NO_OSD_FOUND);
+            throw new TransferStrategyException("No OSD could be found for object " + objectNo + ".",
+                    TransferStrategyException.ErrorCode.NO_OSD_FOUND);
+
+        int positionOfNextOSD = getPositionOfNextOSD(objectNo);
+        increasePositionOfOSD(objectNo);
+
         for (testedOSDs = 0; testedOSDs < osds.size(); testedOSDs++) {
-            indexOfLastUsedOSD = ++indexOfLastUsedOSD % osds.size();
-            ServiceUUID osd = osds.get(indexOfLastUsedOSD);
+            ServiceUUID osd = osds.get(positionOfNextOSD);
 
             // if OSD is available => end "search"
             if (osdAvailability.isServiceAvailable(osd)) {
@@ -93,12 +104,36 @@ public class SimpleStrategy extends TransferStrategy {
                 next.requestObjectList = false;
                 break;
             }
+            
+            positionOfNextOSD = (positionOfNextOSD + 1) % osds.size();
         }
         // if no OSD could be found
-        if (next.osd == null || isHole(objectNo)) {
+        if (next.osd == null) {
             throw new TransferStrategyException("At the moment no OSD is reachable for object " + objectNo,
                     TransferStrategyException.ErrorCode.NO_OSD_REACHABLE);
         }
         return next;
+    }
+
+    /**
+     * returns the position of the next using OSD for the stripe of the given object
+     * 
+     * @param objectNo
+     * @return
+     */
+    private int getPositionOfNextOSD(long objectNo) {
+        int stripeWidth = xLoc.getLocalReplica().getStripingPolicy().getWidth();
+        return nextOSDforObject.get((int) (objectNo % stripeWidth));
+    }
+
+    /**
+     * increases the position of the next using OSD for the stripe of the given object
+     * 
+     * @param objectNo
+     */
+    private void increasePositionOfOSD(long objectNo) {
+        int stripeWidth = xLoc.getLocalReplica().getStripingPolicy().getWidth();
+        int oldPosition = nextOSDforObject.get((int) (objectNo % stripeWidth));
+        nextOSDforObject.put((int) (objectNo % stripeWidth), ++oldPosition % xLoc.getNumReplicas());
     }
 }

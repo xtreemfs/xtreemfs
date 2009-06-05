@@ -49,6 +49,7 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
@@ -230,8 +231,9 @@ public class ReplicaManagement {
 
     public void addReplica(List<ServiceUUID> osds) throws Exception {
         if (file.isReadOnly()) {
+            // TODO: let the user choose the replication flags
             // at the moment all replicas must have the same StripingPolicy
-            file.addReplica(osds, file.getStripingPolicy());
+            file.addReplica(osds, file.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
         } else
             throw new IOException("File is not marked as read-only.");
     }

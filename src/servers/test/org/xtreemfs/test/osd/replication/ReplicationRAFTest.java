@@ -46,6 +46,7 @@ import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ObjectData;
@@ -177,9 +178,9 @@ public class ReplicationRAFTest extends TestCase {
         // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy());
-        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy());
-        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy());
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
+        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
+        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
 
         // assert 4 replicas
         assertEquals(4, raf.getXLoc().getNumReplicas());
@@ -311,7 +312,7 @@ public class ReplicationRAFTest extends TestCase {
         // add replica
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy());
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
         assertEquals(2, raf.getXLoc().getNumReplicas());
 
         // read only from replica 2

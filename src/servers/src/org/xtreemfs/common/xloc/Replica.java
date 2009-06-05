@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  *
@@ -62,17 +63,9 @@ public class Replica {
         return osds;
     }
 
-    public int getReplicationFlags() {
-        return replica.getReplication_flags();
-    }
-
     public boolean isStriped() {
         return getStripingPolicy().getWidth() > 1;
     }
-
-/*    public boolean isHeadOsd(ServiceUUID localOSD) {
-        return this.osds.get(0).equals(localOSD);
-    }*/
 
     public ServiceUUID getHeadOsd() {
         return new ServiceUUID(replica.getOsd_uuids().get(0));
@@ -124,5 +117,35 @@ public class Replica {
             return this.toString().equals(((Replica) obj).toString());
         } else
             return false;
+    }
+
+    /**
+     * checks if the given strategy is equals to the set strategy for this replica 
+     * @param strategy
+     * @return
+     */
+    public boolean isStrategy(int strategy) {
+        if ((strategy & replica.getReplication_flags()) == Constants.REPL_FLAG_STRATEGY_SIMPLE)
+            return true;
+        else if ((strategy & replica.getReplication_flags()) == Constants.REPL_FLAG_STRATEGY_RANDOM)
+            return true;
+        else
+            return false;
+    }
+    
+    /**
+     * checks if this replica is marked as being full 
+     * @return
+     */
+    public boolean isFull() {
+        return ((Constants.REPL_FLAG_IS_FULL & replica.getReplication_flags()) == Constants.REPL_FLAG_IS_FULL);
+    }
+
+    /**
+     * checks if this replica should be a full replica or should replicate objects only ondemand
+     * @return true, if ondemand, false if full
+     */
+    public boolean isFilledOnDemand() {
+        return ((Constants.REPL_FLAG_FILL_ON_DEMAND & replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
     }
 }

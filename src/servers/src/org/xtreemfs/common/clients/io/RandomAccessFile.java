@@ -567,9 +567,10 @@ public class RandomAccessFile implements ObjectStore {
      * adds a replica for this file
      * @param osds
      * @param spPolicy
+     * @param replicationFlags TODO
      * @throws Exception
      */
-    public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy) throws Exception {
+    public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy, int replicationFlags) throws Exception {
         XLocations xLoc = new XLocations(fileCredentials.getXlocs());
 
         // check correct parameters
@@ -587,7 +588,7 @@ public class RandomAccessFile implements ObjectStore {
                 osdSet.add(osd.toString());
             }
 
-            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy, 0,
+            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy, replicationFlags,
                     osdSet);
             RPCResponse r = mrcClient.xtreemfs_replica_add(mrcAddress, credentials, fileId, newReplica);
             r.get();

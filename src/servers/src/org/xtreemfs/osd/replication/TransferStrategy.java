@@ -105,7 +105,8 @@ public abstract class TransferStrategy {
      * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.
      * <br>key: objectNo
      */
-    protected Map<Long, List<ServiceUUID>> availableOSDsForObject;
+    // create the list first object is really requested
+    private Map<Long, List<ServiceUUID>> availableOSDsForObject;
 
     /**
      * contains a list of local available objects for each OSD
@@ -167,7 +168,9 @@ public abstract class TransferStrategy {
             // remove object from lists, so it can't be chosen twice
             removeObjectFromList(next.objectNo);
             // remove used OSD for this object, because the OSD will not be used a second time
-            availableOSDsForObject.get(next.objectNo).remove(next.osd);
+            List<ServiceUUID> osds = availableOSDsForObject.get(next.objectNo);
+            if (osds != null)
+                osds.remove(next.osd);
         }
         return next;
     }
@@ -182,8 +185,8 @@ public abstract class TransferStrategy {
      */
     public boolean addObject(long objectNo, boolean preferred) {
         // add existing OSDs containing the object
-        if (!availableOSDsForObject.containsKey(objectNo))
-            availableOSDsForObject.put(objectNo, xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica()));
+//        if (!availableOSDsForObject.containsKey(objectNo))
+//            availableOSDsForObject.put(objectNo, xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica()));
 
         if (preferred) {
             // object must not contained in both lists
@@ -201,6 +204,22 @@ public abstract class TransferStrategy {
                 return requiredObjects.add(objectNo);
         }
         return false;
+    }
+
+    /**
+     * returns a list of available OSDs for the given object
+     * @param objectNo
+     * @return
+     */
+    protected List<ServiceUUID> getAvailableOSDsForObject(long objectNo) {
+        assert (requiredObjects.contains(objectNo) || preferredObjects.contains(objectNo));
+
+        List<ServiceUUID> list = availableOSDsForObject.get(objectNo);
+        if (list == null) {
+            list = xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
+            availableOSDsForObject.put(objectNo, list);
+        }
+        return list;
     }
 
     /**
@@ -238,17 +257,17 @@ public abstract class TransferStrategy {
         return preferredObjects.size() + requiredObjects.size();
     }
 
-    /**
-     * checks if the object is a hole
-     * 
-     * @param objectNo
-     * @return true: it is a hole
-     * <br>false: Maybe it is a hole, maybe not. Cannot be said at the moment.
-     */
-    public boolean isHole(long objectNo){
-        if(availableOSDsForObject.containsKey(objectNo))
-            return (availableOSDsForObject.get(objectNo).size() == 0);
-        else
-            return false;
-    }
+//    /**
+//     * checks if the object is a hole
+//     * 
+//     * @param objectNo
+//     * @return true: it is a hole
+//     * <br>false: Maybe it is a hole, maybe not. Cannot be said at the moment.
+//     */
+//    public boolean isHole(long objectNo){
+//        if(availableOSDsForObject.containsKey(objectNo))
+//            return (availableOSDsForObject.get(objectNo).size() == 0);
+//        else
+//            return false;
+//    }
 }

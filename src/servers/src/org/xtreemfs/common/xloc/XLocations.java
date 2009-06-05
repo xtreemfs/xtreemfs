@@ -90,7 +90,20 @@ public class XLocations {
     public Replica getReplica(int replicaNo) {
         return replicas.get(replicaNo);
     }
-    
+
+    /**
+     * returns replica which contains the given OSD
+     * @param osd
+     * @return null, of no replica contains the given OSD, otherwise the replica
+     */
+    public Replica getReplica(ServiceUUID osd) {
+        for (Replica replica : getReplicas())
+            for (ServiceUUID osd2 : replica.getOSDs())
+                if (osd.equals(osd2))
+                    return replica;
+        return null;
+    }
+
     /**
      * Checks if the given OSD is already used for this file.
      * @param osd

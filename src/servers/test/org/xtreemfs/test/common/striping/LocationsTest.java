@@ -32,6 +32,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.junit.Test;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
@@ -95,6 +96,40 @@ public class LocationsTest extends TestCase {
         assertEquals(loc.getLocalReplica(), loc.getReplica(0));
         assertNotNull(loc.getLocalReplica().getStripingPolicy());
 
+    }
+    
+    @Test
+    public void testCorrectSetOfReplicationFlags() {
+        StringSet osdList = new StringSet();
+        for (ServiceUUID osd : osds) {
+            osdList.add(osd.toString());
+        }
+        StripingPolicy stripingPolicy = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4);
+        org.xtreemfs.common.xloc.Replica r;
+        int replicationFlags = 0;
+        
+        // set none
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        assertFalse(r.isFull());
+        assertFalse(r.isFilledOnDemand());
+        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
+        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
+
+        // set full
+        replicationFlags = Constants.REPL_FLAG_IS_FULL;
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        assertTrue(r.isFull());
+        assertFalse(r.isFilledOnDemand());
+        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
+        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
+
+        // set filledOnDemand and RandomStrategy
+        replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM;
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        assertFalse(r.isFull());
+        assertTrue(r.isFilledOnDemand());
+        assertTrue(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
+        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
     }
 
     public static void main(String[] args) {

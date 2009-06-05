@@ -28,6 +28,7 @@ import java.io.IOException;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.ObjectData;
@@ -80,9 +81,10 @@ public class ReplicationStage extends Stage {
     /**
      * Checks the response from a requested replica.
      * Only for internal use. 
+     * @param usedOSD TODO
      */
-    public void internalObjectFetched(String fileId, long objectNo, ObjectData data) {
-        this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, data }, null,
+    public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data) {
+        this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD, data }, null,
                 null);
     }
 
@@ -141,13 +143,14 @@ public class ReplicationStage extends Stage {
     private void processInternalObjectFetched(StageRequest rq) {
         String fileId = (String) rq.getArgs()[0];
         long objectNo = (Long) rq.getArgs()[1];
-        ObjectData data = (ObjectData) rq.getArgs()[2];
+        final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
+        ObjectData data = (ObjectData) rq.getArgs()[3];
 
         if (data != null && data.getData().limit() != 0)
-            disseminationLayer.objectFetched(fileId, objectNo, data);
+            disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
         else {
             // data could not be fetched
-            disseminationLayer.objectNotFetched(fileId, objectNo);
+            disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
             if(data != null)
                 BufferPool.free(data.getData());
         }

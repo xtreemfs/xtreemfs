@@ -28,6 +28,7 @@ import java.util.HashMap;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
@@ -101,27 +102,36 @@ public class ObjectDissemination {
         }
     }
 
-    public void objectFetched(String fileID, long objectNo, ObjectData data) {
+    /**
+     * process all necessary actions if object was fetched correctly, otherwise triggers new fetch-attempt
+     * @param usedOSD TODO
+     */
+    public void objectFetched(String fileID, long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert(file != null);
 
-        file.objectFetched(objectNo, data);
+        file.objectFetched(objectNo, usedOSD, data);
         
         if (!file.isReplicating())
             fileCompleted(file.fileID);
     }
     
-    public void objectNotFetched(String fileID, long objectNo) {
+    /**
+     * process all necessary actions, because object could not be fetched
+     * @param usedOSD TODO
+     */
+    public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert(file != null);
 
-        file.objectNotFetched(objectNo);
+        file.objectNotFetched(objectNo, usedOSD);
         
         if (!file.isReplicating())
             fileCompleted(file.fileID);        
     }
 
     /**
+     * cleans up maps, lists, ...
      * @param fileID
      */
     private void fileCompleted(String fileID) {
@@ -129,6 +139,8 @@ public class ObjectDissemination {
         filesInProgress.remove(fileID);
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s", fileID);
+        
+        // TODO: save persistent marker that all objects of file are completely replicated, if replica is full replica 
     }
     
     /**

@@ -76,7 +76,7 @@ public class RandomStrategy extends TransferStrategy {
         next.objectNo = objectNo;
 
         // to check, if all OSDs have been tested
-        List<ServiceUUID> testedOSDs = new ArrayList<ServiceUUID>(this.availableOSDsForObject.get(objectNo));
+        List<ServiceUUID> testedOSDs = new ArrayList<ServiceUUID>(this.getAvailableOSDsForObject(objectNo));
         // FIXME: only for debugging
         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                 "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
