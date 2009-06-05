@@ -1,4 +1,4 @@
-// Revision: 138
+// Revision: 140
 
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -440,9 +440,9 @@ namespace yieldfs
 
     static int write( const char* path, const char *wbuf, size_t size, off_t offset, struct fuse_file_info* fi )
     {
-      size_t bytes_written;
-      if ( get_file( fi )->write( wbuf, size, offset, &bytes_written ) == YIELD::Stream::STREAM_STATUS_OK )
-        return static_cast<int>( bytes_written );
+      size_t write_ret = get_file( fi )->write( wbuf, size, offset );
+      if ( write_ret >= 0 )
+        return static_cast<int>( write_ret );
       else
         return -1 * errno;
     }

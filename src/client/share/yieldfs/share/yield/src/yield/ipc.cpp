@@ -1,4 +1,4 @@
-// Revision: 1512
+// Revision: 1514
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -72,6 +72,7 @@ void EventFDPipe::clear()
   read_end->recv( &m, sizeof( m ) );
 #endif
 }
+#ifndef YIELD_HAVE_LINUX_EVENTFD
 int EventFDPipe::get_read_end() const
 {
   return *read_end;
@@ -80,6 +81,7 @@ int EventFDPipe::get_write_end() const
 {
   return *write_end;
 }
+#endif
 void EventFDPipe::signal()
 {
 #ifdef YIELD_HAVE_LINUX_EVENTFD
@@ -1691,7 +1693,7 @@ JSONValue* JSONUnmarshaller::readJSONValue( const Declaration& decl )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body )
-  : xid( xid ), _interface( _interface ), body( body )
+  : body( body ), _interface( _interface ), xid( xid )
 {
   record_fragment_length = 0;
 }
@@ -1785,16 +1787,16 @@ template class ONCRPCMessage<ONCRPCResponse>;
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface )
-  : ONCRPCMessage( 0, _interface, NULL )
+  : ONCRPCMessage<ONCRPCRequest>( 0, _interface, NULL )
 { }
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body )
-  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body )
-  : ONCRPCMessage( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
@@ -1847,10 +1849,10 @@ void ONCRPCRequest::serializeONCRPCRequestResponseHeader( XDRMarshaller& xdr_mar
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 ONCRPCResponse::ONCRPCResponse( auto_Object<Interface> _interface, auto_Object<> body )
-  : ONCRPCMessage( 0, _interface, body )
+  : ONCRPCMessage<ONCRPCResponse>( 0, _interface, body )
 { }
 ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Object<> body )
-  : ONCRPCMessage( xid, NULL, body )
+  : ONCRPCMessage<ONCRPCResponse>( xid, NULL, body )
 { }
 void ONCRPCResponse::deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& xdr_unmarshaller )
 {
@@ -2363,9 +2365,9 @@ bool Socket::connect( auto_Object<SocketAddress> to_sockaddr )
 #else
         switch ( errno )
         {
-          case EISCONN: connect_status = Stream::STREAM_STATUS_OK; break;
+          case EISCONN: return true;
           case EWOULDBLOCK:
-          case EINPROGRESS: connect_status = Stream::STREAM_STATUS_WANT_WRITE; break;
+          case EINPROGRESS: return false;
           case EAFNOSUPPORT:
 #endif
           {
