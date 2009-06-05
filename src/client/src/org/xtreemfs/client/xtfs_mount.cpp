@@ -30,8 +30,8 @@ namespace org
         xtfs_mount()
           : Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
         {
-          addOption( XTFS_MOUNT_OPTION_CACHE_FILES, "--cache-files" );
-          cache_files = false;
+          addOption( XTFS_MOUNT_OPTION_CACHE_DATA, "--cache-data" );
+          cache_data = false;
 
           addOption( XTFS_MOUNT_OPTION_CACHE_METADATA, "--cache-metadata" );
           cache_metadata = false;
@@ -49,7 +49,7 @@ namespace org
       private:
         enum
         {
-          XTFS_MOUNT_OPTION_CACHE_FILES = 10,
+          XTFS_MOUNT_OPTION_CACHE_DATA = 10,
           XTFS_MOUNT_OPTION_CACHE_METADATA = 11,
           XTFS_MOUNT_OPTION_DIRECT_IO = 12,
           XTFS_MOUNT_OPTION_FOREGROUND = 13,
@@ -57,7 +57,7 @@ namespace org
           XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH = 15
         };
 
-        bool cache_files, cache_metadata;
+        bool cache_data, cache_metadata;
         bool direct_io;
         YIELD::auto_Object<YIELD::URI> dir_uri;
         bool foreground;
@@ -74,7 +74,7 @@ namespace org
           if ( foreground )
           {
             uint32_t volume_flags = 0;
-            if ( cache_files )
+            if ( cache_data )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
             if ( cache_metadata )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
@@ -86,15 +86,15 @@ namespace org
                                                                  );
 
             // Stack volumes as indicated
-            if ( cache_files )
+            if ( cache_data )
             {
-              volume = new yieldfs::FileCachingVolume( volume, get_log() );
-              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching files.";
+              volume = new yieldfs::DataCachingVolume( volume, get_log() );
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching data.";
             }
 
             if ( cache_metadata )
             {
-              volume = new yieldfs::StatCachingVolume( volume, get_log(), 5 );
+              volume = new yieldfs::MetadataCachingVolume( volume, get_log(), 5 );
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
             }
 
@@ -195,7 +195,7 @@ namespace org
         {
           switch ( id )
           {
-            case XTFS_MOUNT_OPTION_CACHE_FILES: cache_files = true; break;
+            case XTFS_MOUNT_OPTION_CACHE_DATA: cache_data = true; break;
             case XTFS_MOUNT_OPTION_CACHE_METADATA: cache_metadata = true; break;
             case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
 

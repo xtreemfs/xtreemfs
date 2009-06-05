@@ -1,4 +1,4 @@
-// Revision: 1514
+// Revision: 1515
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -312,6 +312,14 @@ auto_Object<Stat> File::getattr()
     return new Stat( stbuf );
 #endif
   return NULL;
+}
+uint64_t File::get_size()
+{
+  auto_Object<Stat> stbuf = getattr();
+  if ( stbuf != NULL )
+    return stbuf->get_size();
+  else
+    return 0;
 }
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
@@ -1419,13 +1427,13 @@ void PrettyPrinter::writeInt64( const Declaration&, int64_t value )
 {
   os << value << ", ";
 }
-void PrettyPrinter::writeMap( const Declaration&, Object& value )
+void PrettyPrinter::writeMap( const Declaration&, Object& value, size_t )
 {
   os << value.get_type_name() << " (";
   value.marshal( *this );
   os << " ), ";
 }
-void PrettyPrinter::writeSequence( const Declaration&, Object& value )
+void PrettyPrinter::writeSequence( const Declaration&, Object& value, size_t )
 {
   os << "[ ";
   value.marshal( *this );
@@ -3028,9 +3036,9 @@ void XDRMarshaller::writeInt64( const Declaration& decl, int64_t value )
   value = Machine::htonll( value );
   target_ostream.write( reinterpret_cast<const char*>( &value ), 8 );
 }
-void XDRMarshaller::writeMap( const Declaration& decl, Object& value )
+void XDRMarshaller::writeMap( const Declaration& decl, Object& value, size_t key_count )
 {
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  writeInt32( decl, static_cast<int32_t>( key_count ) );
   XDRMarshaller child_xdr_underlying_output_stream( target_ostream, true );
   value.marshal( child_xdr_underlying_output_stream );
 }
@@ -3044,9 +3052,9 @@ void XDRMarshaller::writeString( const Declaration& decl, const char* value, siz
     target_ostream.write( zeros, 4 - ( value_len % 4 ) );
   }
 }
-void XDRMarshaller::writeSequence( const Declaration& decl, Object& value )
+void XDRMarshaller::writeSequence( const Declaration& decl, Object& value, size_t item_count )
 {
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  writeInt32( decl, static_cast<int32_t>( item_count ) );
   value.marshal( *this );
 }
 void XDRMarshaller::writeStruct( const Declaration& decl, Object& value )

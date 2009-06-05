@@ -23,6 +23,13 @@ namespace yieldfs
 
   class StackableFile : public YIELD::File
   {
+  public:
+    const YIELD::Path& get_path() const { return path; }
+
+    // YIELD::File
+    // virtual YIELD::File methods that delegate to underlying_file
+    YIELD_FILE_PROTOTYPES;
+
   protected:
     StackableFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::File> underlying_file, YIELD::auto_Object<YIELD::Log> log )
       : path( path ), underlying_file( underlying_file ), log( log )
@@ -41,28 +48,9 @@ namespace yieldfs
   class StackableVolume : public YIELD::Volume
   {
   public:
-    virtual bool access( const YIELD::Path& path, int amode ) { return underlying_volume->access( path, amode ); }
-    virtual bool chmod( const YIELD::Path& path, mode_t mode ) { return underlying_volume->chmod( path, mode ); }
-    virtual bool chown( const YIELD::Path& path, int32_t uid, int32_t gid ) { return underlying_volume->chown( path, uid, gid ); }
-    virtual YIELD::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ) { return underlying_volume->getattr( path ); }
-    virtual bool getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value ) { return underlying_volume->getxattr( path, name, out_value ); }
-    virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ) { return underlying_volume->link( old_path, new_path ); }
-    virtual bool listxattr( const YIELD::Path& path, std::vector<std::string>& out_names ) { return underlying_volume->listxattr( path, out_names ); }
-    virtual bool mkdir( const YIELD::Path& path, mode_t mode ) { return underlying_volume->mkdir( path, mode ); }
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes ) { return underlying_volume->open( path, flags, mode, attributes ); }
-    virtual bool readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback ) { return underlying_volume->readdir( path, match_file_name_prefix, callback ); }
-    virtual YIELD::auto_Object<YIELD::Path> readlink( const YIELD::Path& path ) { return underlying_volume->readlink( path ); }
-    virtual bool removexattr( const YIELD::Path& path, const std::string& name ) { return underlying_volume->removexattr( path, name ); }
-    virtual bool rename( const YIELD::Path& from_path, const YIELD::Path& to_path ) { return underlying_volume->rename( from_path, to_path ); }
-    virtual bool rmdir( const YIELD::Path& path ) { return underlying_volume->rmdir( path ); }
-    virtual bool setattr( const YIELD::Path& path, uint32_t file_attributes ) { return underlying_volume->setattr( path, file_attributes ); }
-    virtual bool setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags ) { return underlying_volume->setxattr( path, name, value, flags ); }
-    virtual bool statvfs( const YIELD::Path& path, struct statvfs* stvfsbuf ) { return underlying_volume->statvfs( path, stvfsbuf ); }
-    virtual bool symlink( const YIELD::Path& old_path, const YIELD::Path& new_path ) { return underlying_volume->symlink( old_path, new_path ); }
-    virtual bool truncate( const YIELD::Path& path, uint64_t new_size ) { return underlying_volume->truncate( path, new_size ); }
-    virtual bool unlink( const YIELD::Path& path ) { return underlying_volume->unlink( path ); }
-    virtual bool utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime ) { return underlying_volume->utimens( path, atime, mtime, ctime ); }
-    virtual YIELD::Path volname( const YIELD::Path& path ) { return underlying_volume->volname( path ); }
+    // YIELD::Volume
+    // virtual YIELD::Volume methods that delegate to underlying_volume
+    YIELD_VOLUME_PROTOTYPES;
 
   protected:
     StackableVolume()
@@ -84,17 +72,17 @@ namespace yieldfs
   };
 
 
-  class FileCachingVolume : public StackableVolume
+  class DataCachingVolume : public StackableVolume
   {
   public:
-    FileCachingVolume() // For testing
+    DataCachingVolume() // For testing
     { }
 
-    FileCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
+    DataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
       : StackableVolume( underlying_volume )
     { }
 
-    FileCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log )
+    DataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log )
       : StackableVolume( underlying_volume, log )
     { }
 
@@ -102,7 +90,7 @@ namespace yieldfs
     YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
-    virtual ~FileCachingVolume() { }
+    virtual ~DataCachingVolume() { }
   };
 
 
@@ -136,12 +124,12 @@ namespace yieldfs
   };
 
 
-  class StatCachingVolume : public StackableVolume, private YIELD::HATTrie<CachedStat*>
+  class MetadataCachingVolume : public StackableVolume, private YIELD::HATTrie<CachedStat*>
   {
   public:
-    StatCachingVolume(); // For testing
-    StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s );
-    StatCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log, double ttl_s );
+    MetadataCachingVolume(); // For testing
+    MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s );
+    MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log, double ttl_s );
 
     // YIELD::Volume
     bool chmod( const YIELD::Path& path, mode_t mode );
@@ -162,19 +150,21 @@ namespace yieldfs
     bool utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime );
 
   private:
-    friend class StatCachingVolumereaddirCallback;
+    friend class MetadataCachingFile;
+    friend class MetadataCachingVolumereaddirCallback;
 
-    ~StatCachingVolume();
+    ~MetadataCachingVolume();
 
 
     double ttl_s;
 
     YIELD::Mutex lock;
 
-    void evict( const YIELD::Path& path );
-    YIELD::auto_Object<> find( const YIELD::Path& path );
+    YIELD::auto_Object<CachedStat> evict( const YIELD::Path& path );
+    YIELD::auto_Object<CachedStat> find( const YIELD::Path& path );
     YIELD::Path getParentDirectoryPath( const YIELD::Path& );
-    void insert( const YIELD::Path& path, CachedStat* cached_stat );
+    void insert( CachedStat* cached_stat );
+    void updateCachedFileSize( const YIELD::Path& path, uint64_t new_file_size );
   };
 
 

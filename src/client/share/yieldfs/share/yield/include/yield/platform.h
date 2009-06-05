@@ -144,8 +144,8 @@ extern "C"
   virtual void writeBool( const Declaration& decl, bool value ); \
   virtual void writeDouble( const Declaration& decl, double value ); \
   virtual void writeInt64( const Declaration& decl, int64_t value ); \
-  virtual void writeMap( const Declaration& decl, YIELD::Object& value ); \
-  virtual void writeSequence( const Declaration& decl, YIELD::Object& value ); \
+  virtual void writeMap( const Declaration& decl, YIELD::Object& value, size_t key_count ); \
+  virtual void writeSequence( const Declaration& decl, YIELD::Object& value, size_t item_count ); \
   virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
   virtual void writeStruct( const Declaration& decl, YIELD::Object& value );
 
@@ -546,7 +546,6 @@ namespace YIELD
       return *this;
     }
 
-    virtual uint64_t get_size() const { return 0; } // For arrays
     virtual uint32_t get_tag() const = 0;
     virtual const char* get_type_name() const = 0;
     virtual void marshal( Marshaller& ) { }
@@ -978,20 +977,20 @@ namespace YIELD
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
+    virtual uint64_t get_size();
 #ifdef _WIN32
     operator void*() const { return fd; }
 #else
     operator int() const { return fd; }
 #endif    
-
-    YIELD_FILE_PROTOTYPES;
-
     virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
     virtual auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
     virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
+
+    YIELD_FILE_PROTOTYPES;
 
     // Object
     YIELD_OBJECT_PROTOTYPES( File, 1 );
@@ -1730,7 +1729,7 @@ namespace YIELD
 
 //    auto_Object<> get_context() const { return context; }
 //    auto_Object<IOBuffer> get_next_io_buffer() const { return next_io_buffer; }
-    uint64_t get_size() const { return buffer_len; }    
+    size_t get_size() const { return buffer_len; }    
 
     operator struct iovec() const;
     operator void*() const { return buffer; }
@@ -1951,9 +1950,9 @@ namespace YIELD
     virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
     virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
     virtual void writeInt64( const Declaration&, int64_t ) = 0;
-    virtual void writeMap( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writeMap( const Declaration& decl, YIELD::Object& value, size_t key_count ) = 0;
     virtual void writePointer( const Declaration&, void* ) { }
-    virtual void writeSequence( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writeSequence( const Declaration& decl, YIELD::Object& value, size_t item_count ) = 0;
     virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
     virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, UINT16_MAX ) ); }
     virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
@@ -1973,7 +1972,7 @@ namespace YIELD
     static auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
 
     virtual bool close();
-    inline uint64_t get_size() const { return size; }
+    inline size_t get_size() const { return size; }
     inline operator char*() const { return start; }
     inline operator void*() const { return start; }
     bool resize( size_t );
@@ -2536,6 +2535,8 @@ namespace YIELD
     virtual operator BY_HANDLE_FILE_INFORMATION() const;
     virtual operator WIN32_FIND_DATA() const;
 #endif
+
+    void set_size( uint64_t size ) { this->size = size; }
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Stat, 12 );

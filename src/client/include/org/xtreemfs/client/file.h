@@ -24,6 +24,7 @@ namespace org
         File& operator=( const File& ) { return *this; }
 
         YIELD_FILE_PROTOTYPES;
+        virtual uint64_t get_size();
 
       private:
         friend class Volume;

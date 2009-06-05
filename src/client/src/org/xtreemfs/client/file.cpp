@@ -71,6 +71,14 @@ YIELD::auto_Object<YIELD::Stat> File::getattr()
   return parent_volume.getattr( path );
 }
 
+uint64_t File::get_size()
+{
+  if ( !latest_osd_write_response.get_new_file_size().empty() )  
+    return latest_osd_write_response.get_new_file_size()[0].get_size_in_bytes();
+  else
+    return YIELD::File::get_size();
+}
+
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
   return parent_volume.getxattr( path, name, out_value );
@@ -218,7 +226,7 @@ ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint6
     return write( buffers[0].iov_base, buffers[0].iov_len, offset );
   else
   {
-#ifdef _WIN32
+#ifdef _WIN32\
     ::SetLastError( ERROR_NOT_SUPPORTED );
 #else
     errno = ENOTSUP;

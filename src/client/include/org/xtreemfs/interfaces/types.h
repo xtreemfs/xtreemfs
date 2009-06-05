@@ -26,7 +26,6 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( StringSet, 1001 );
-        uint64_t get_size() const { return std::vector<std::string>::size(); }
         void marshal( YIELD::Marshaller& marshaller ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "value" ), value ); push_back( value ); }
       };
@@ -53,8 +52,8 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( UserCredentials, 1002 );
 
-        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "group_ids" ), group_ids ); marshaller.writeString( YIELD::Marshaller::Declaration( "password" ), password ); }
         // YIELD::Object
+        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "group_ids" ), group_ids, group_ids.size() ); marshaller.writeString( YIELD::Marshaller::Declaration( "password" ), password ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "password" ), password ); }
 
       protected:

@@ -725,8 +725,8 @@ namespace YIELD
     ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body );
     virtual ~ONCRPCMessage();
 
-    auto_Object<Interface> _interface;
     auto_Object<> body;
+    auto_Object<Interface> _interface;
 
   private:
     uint32_t xid;

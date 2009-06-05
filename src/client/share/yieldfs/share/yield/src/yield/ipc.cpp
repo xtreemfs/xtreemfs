@@ -1,4 +1,4 @@
-// Revision: 1514
+// Revision: 1515
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -1227,7 +1227,7 @@ void JSONMarshaller::writeInt64( const Declaration& decl, int64_t value )
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeMap( const Declaration& decl, Object& value )
+void JSONMarshaller::writeMap( const Declaration& decl, Object& value, size_t )
 {
   writeDeclaration( decl );
   JSONMarshaller( target_ostream, write_empty_strings, writer, decl ).writeMap( &value );
@@ -1247,7 +1247,7 @@ void JSONMarshaller::writePointer( const Declaration& decl, void* )
   yajl_gen_null( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeSequence( const Declaration& decl, Object& value )
+void JSONMarshaller::writeSequence( const Declaration& decl, Object& value, size_t )
 {
   writeDeclaration( decl );
   JSONMarshaller( target_ostream, write_empty_strings, writer, decl ).writeSequence( &value );
