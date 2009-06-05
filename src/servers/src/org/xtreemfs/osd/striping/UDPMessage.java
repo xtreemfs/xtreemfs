@@ -67,7 +67,7 @@ public class UDPMessage {
     public UDPMessage(InetSocketAddress address, int xid, int proc, Request payload) {
         requestHeader = new ONCRPCRequestHeader(payload.getTag(),  0 , OSDInterface.getVersion(), payload.getTag());
         responseHeader = null;
-        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(responseHeader.calculateSize()+payload.calculateSize(), true);
+        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(requestHeader.calculateSize()+payload.calculateSize(), true);
         this.address = address;
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);
         wr.putInt(fragHdr);
