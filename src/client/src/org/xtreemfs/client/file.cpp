@@ -8,8 +8,11 @@
 using namespace org::xtreemfs::client;
 
 #ifdef _WIN32
+#include <windows.h>
 #pragma warning( push )
 #pragma warning( disable: 4100 )
+#else
+#include <errno.h>
 #endif
 #include "org/xtreemfs/interfaces/osd_interface.h"
 #ifdef _WIN32
@@ -175,15 +178,12 @@ bool File::truncate( uint64_t new_size )
   return false;
 }
 
-ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
+ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( writev )
   {
-    if ( buffers_count != 1 ) 
-      YIELD::DebugBreak();
-
-    const char* wbuf_p = static_cast<const char*>( buffers[0].iov_base );
-    uint64_t file_offset = offset, file_offset_max = offset + buffers[0].iov_len;
+    const char* wbuf_p = static_cast<const char*>( buffer );
+    uint64_t file_offset = offset, file_offset_max = offset + buffer_len;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
     while ( file_offset < file_offset_max )
@@ -210,4 +210,19 @@ ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint6
   }
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( writev );
   return -1;
+}
+
+ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
+{
+  if ( buffers_count == 1 )
+    return write( buffers[0].iov_base, buffers[0].iov_len, offset );
+  else
+  {
+#ifdef _WIN32
+    ::SetLastError( ERROR_NOT_SUPPORTED );
+#else
+    errno = ENOTSUP;
+#endif
+    return -1;
+  }
 }

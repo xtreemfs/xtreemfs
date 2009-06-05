@@ -1,4 +1,4 @@
-// Revision: 137
+// Revision: 138
 
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -1240,6 +1240,70 @@ bool CachedFile::truncate( uint64_t offset )
   flush();
   return underlying_file->truncate( offset );
 }
+ssize_t CachedFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
+{
+  if ( offset % CACHED_PAGE_SIZE != 0 )
+    YIELD::DebugBreak();
+  const char* wrote_to_buffer_p = reinterpret_cast<const char*>( buffer );
+  size_t remaining_buffer_len = buffer_len;
+  ssize_t ret = 0;
+  while ( remaining_buffer_len > 0 )
+  {
+    uint32_t cached_page_i = static_cast<uint32_t>( offset / CACHED_PAGE_SIZE );
+    CachedPage* cached_page = cached_pages.find( cached_page_i );
+    if ( cached_page != NULL )
+    {
+      if ( log != NULL )
+        log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: write hit on page " << cached_page_i << ".";
+    }
+    else
+    {
+      if ( log != NULL )
+        log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: write miss on page " << cached_page_i << ".";
+      cached_page = new CachedPage;
+      if ( remaining_buffer_len < CACHED_PAGE_SIZE ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
+      {
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: writing partial page " << cached_page_i << ", must read from underlying file system.";
+        ssize_t read_ret = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset );
+        if ( read_ret >= 0 )
+          cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
+        else
+        {
+          if ( log != NULL )
+            log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read on page " << cached_page_i << " failed";
+          delete cached_page;
+          return read_ret;
+        }
+      }
+      cached_pages.insert( cached_page_i, cached_page );
+    }
+    cached_page->set_dirty_bit();
+    if ( remaining_buffer_len > CACHED_PAGE_SIZE )
+    {
+      if ( log != NULL )
+        log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: filling page " << cached_page_i << ".";
+      memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, CACHED_PAGE_SIZE );
+      cached_page->set_data_len( CACHED_PAGE_SIZE );
+      cached_pages.insert( cached_page_i, cached_page );
+      wrote_to_buffer_p += CACHED_PAGE_SIZE;
+      remaining_buffer_len -= CACHED_PAGE_SIZE;
+      offset += CACHED_PAGE_SIZE;
+      ret += CACHED_PAGE_SIZE;
+    }
+    else
+    {
+      if ( log != NULL )
+        log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: partially filling page " << cached_page_i << ".";
+      memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
+      if ( remaining_buffer_len > cached_page->get_data_len() )
+        cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
+      ret += remaining_buffer_len;
+      break;
+    }
+  }
+  return ret;
+}
 ssize_t CachedFile::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {
   if ( offset % CACHED_PAGE_SIZE != 0 )
@@ -1247,63 +1311,11 @@ ssize_t CachedFile::writev( const struct iovec* buffers, uint32_t buffers_count,
   ssize_t ret = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
   {
-    char* wrote_to_buffer_p = static_cast<char*>( buffers[buffer_i].iov_base );
-    size_t remaining_buffer_len = buffers[buffer_i].iov_len;
-    while ( remaining_buffer_len > 0 )
-    {
-      uint32_t cached_page_i = static_cast<uint32_t>( offset / CACHED_PAGE_SIZE );
-      CachedPage* cached_page = cached_pages.find( cached_page_i );
-      if ( cached_page != NULL )
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: write hit on page " << cached_page_i << ".";
-      }
-      else
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: write miss on page " << cached_page_i << ".";
-        cached_page = new CachedPage;
-        if ( remaining_buffer_len < CACHED_PAGE_SIZE ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
-        {
-          if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: writing partial page " << cached_page_i << ", must read from underlying file system.";
-          ssize_t read_ret = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset );
-          if ( read_ret >= 0 )
-            cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
-          else
-          {
-            if ( log != NULL )
-              log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read on page " << cached_page_i << " failed";
-            delete cached_page;
-            return read_ret;
-          }
-        }
-        cached_pages.insert( cached_page_i, cached_page );
-      }
-      cached_page->set_dirty_bit();
-      if ( remaining_buffer_len > CACHED_PAGE_SIZE )
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: filling page " << cached_page_i << ".";
-        memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, CACHED_PAGE_SIZE );
-        cached_page->set_data_len( CACHED_PAGE_SIZE );
-        cached_pages.insert( cached_page_i, cached_page );
-        wrote_to_buffer_p += CACHED_PAGE_SIZE;
-        remaining_buffer_len -= CACHED_PAGE_SIZE;
-        offset += CACHED_PAGE_SIZE;
-        ret += CACHED_PAGE_SIZE;
-      }
-      else
-      {
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: partially filling page " << cached_page_i << ".";
-        memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
-        if ( remaining_buffer_len > cached_page->get_data_len() )
-          cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
-        ret += remaining_buffer_len;
-        break;
-      }
-    }
+    ssize_t write_ret = write( buffers[buffer_i].iov_base, buffers[buffer_i].iov_len, offset );
+    if ( write_ret >= 0 )
+      offset += write_ret;
+    else
+      return write_ret;
   }
   return ret;
 }
@@ -1736,6 +1748,11 @@ bool TracingFile::truncate( uint64_t new_size )
 {
   log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: ftruncate( " << path << ", " << new_size << " )";
   return underlying_file->truncate( new_size );
+}
+ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
+{
+  log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: write( " << path << ", wbuf, " << buffer_len << ", " << offset << " )";
+  return underlying_file->write( buffer, buffer_len, offset );
 }
 ssize_t TracingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {

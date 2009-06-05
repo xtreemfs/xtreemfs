@@ -127,17 +127,18 @@ extern "C"
 
 #define YIELD_FILE_PROTOTYPES \
   virtual bool close(); \
-  bool datasync(); \
-  bool flush(); \
+  virtual bool datasync(); \
+  virtual bool flush(); \
   virtual YIELD::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
-  ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
+  virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual bool removexattr( const std::string& name ); \
   virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
-  ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
+  virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
+  virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
 #define YIELD_MARSHALLER_PROTOTYPES \
   virtual void writeBool( const Declaration& decl, bool value ); \
@@ -990,7 +991,6 @@ namespace YIELD
     virtual bool seek( uint64_t offset, unsigned char whence );
     virtual auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
-    virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
     virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
     // Object

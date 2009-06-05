@@ -1,4 +1,4 @@
-// Revision: 1505
+// Revision: 1512
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2935,8 +2935,8 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
               connection->set_protocol_request( NULL );
               connection->set_protocol_response( NULL );
               connection->set_reconnect_tries_left( reconnect_tries_max );
-              fd_event_queue->detach( *connection->get_socket() );
               connection->set_state( Connection::IDLE );
+              fd_event_queue->detach( *connection->get_socket() );
               return;
             }
             else if ( deserialize_ret > 0 )
