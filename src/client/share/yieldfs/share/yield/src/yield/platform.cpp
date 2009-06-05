@@ -1,4 +1,4 @@
-// Revision: 1501
+// Revision: 1505
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -249,169 +249,25 @@ extern off64_t lseek64(int, off64_t, int);
 #endif
 #endif
 #endif
-/*
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
-typedef struct
-{
-#if defined(_WIN32)
-  OVERLAPPED overlapped;
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-  struct aiocb aiocb;
-#endif
-  File::aio_read_completion_routine_t aio_read_completion_routine;
-  void* aio_read_completion_routine_context;
-} aio_read_operation_t;
-typedef struct
-{
-#if defined(_WIN32)
-  OVERLAPPED overlapped;
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-  struct aiocb aiocb;
-#endif
-  File::aio_write_completion_routine_t aio_write_completion_routine;
-  void* aio_write_completion_routine_context;
-} aio_write_operation_t;
-#endif
-*/
-auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
-{
+File::File()
 #ifdef _WIN32
-  DWORD file_access_flags = 0,
-        file_create_flags = 0,
-        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
-  if ( ( flags & O_RDWR ) == O_RDWR )
-    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
-  else if ( ( flags & O_WRONLY ) == O_WRONLY )
-  {
-    file_access_flags |= GENERIC_WRITE;
-    if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= FILE_APPEND_DATA;
-  }
-  else if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
-  else
-    file_access_flags |= GENERIC_READ;
-  if ( ( flags & O_CREAT ) == O_CREAT )
-  {
-    if ( ( flags & O_TRUNC ) == O_TRUNC )
-      file_create_flags = CREATE_ALWAYS;
-    else
-      file_create_flags = OPEN_ALWAYS;
-  }
-  else
-    file_create_flags = OPEN_EXISTING;
-//  if ( ( flags & O_SPARSE ) == O_SPARSE )
-//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
-  if ( ( flags & O_SYNC ) == O_SYNC )
-    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
-  if ( ( flags & O_DIRECT ) == O_DIRECT )
-    file_open_flags |= FILE_FLAG_NO_BUFFERING;
-  if ( ( flags & O_ASYNC ) == O_ASYNC )
-    file_open_flags |= FILE_FLAG_OVERLAPPED;
-  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
-    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
-  if ( fd != INVALID_HANDLE_VALUE )
-  {
-    if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
-    {
-      SetFilePointer( fd, 0, NULL, FILE_BEGIN );
-      SetEndOfFile( fd );
-    }
-    return new File( fd );
-  }
+  : fd( INVALID_HANDLE_VALUE )
 #else
-  int fd = ::open( path, flags, mode );
-  if ( fd != -1 )
-    return new File( fd );
+  : fd( -1 )
 #endif
-  return NULL;
-}
-/*
-int File::aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine_t aio_read_completion_routine, void* aio_read_completion_routine_context )
+{ }
+#ifdef _WIN32
+File::File( void* fd )
+  : fd( fd )
+#else
+File::File( int fd )
+  : fd( fd )
+#endif
+{ }
+File::File( const File& other )
 {
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
-  aio_read_operation_t* aio_read_op = new aio_read_operation_t;
-  memset( aio_read_op, 0, sizeof( *aio_read_op ) );
-  aio_read_op->aio_read_completion_routine = aio_read_completion_routine;
-  aio_read_op->aio_read_completion_routine_context = aio_read_completion_routine_context;
-#if defined(_WIN32)
-  if ( ReadFileEx( fd, buffer, static_cast<DWORD>( buffer_len ), ( LPOVERLAPPED )aio_read_op, ( LPOVERLAPPED_COMPLETION_ROUTINE )overlapped_read_completion ) != 0 )
-    return 0;
-  else
-    return -1;
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-  aio_read_op->aiocb.aio_fildes = fd;
-  aio_read_op->aiocb.aio_buf = buffer;
-  aio_read_op->aiocb.aio_nbytes = buffer_len;
-  aio_read_op->aiocb.aio_offset = 0;
-  aio_read_op->aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
-  aio_read_op->aiocb.aio_sigevent.sigev_notify_function = aio_read_notify;
-  aio_read_op->aiocb.aio_sigevent.sigev_value.sival_ptr = aio_read_op;
-  return ::aio_read( &aio_read_op->aiocb );
-#endif
-#else
   DebugBreak();
-  // TODO: do a normal read
-  return -1;
-#endif
 }
-int File::aio_write( const void* buffer, size_t buffer_len, aio_write_completion_routine_t aio_write_completion_routine, void* aio_write_completion_routine_context )
-{
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
-  aio_write_operation_t* aio_write_op = new aio_write_operation_t;
-  memset( aio_write_op, 0, sizeof( *aio_write_op ) );
-  aio_write_op->aio_write_completion_routine = aio_write_completion_routine;
-  aio_write_op->aio_write_completion_routine_context = aio_write_completion_routine_context;
-#if defined(_WIN32)
-  if ( WriteFileEx( fd, buffer, static_cast<DWORD>( buffer_len ), ( LPOVERLAPPED )aio_write_op, ( LPOVERLAPPED_COMPLETION_ROUTINE )overlapped_write_completion ) != 0 )
-    return 0;
-  else
-    return -1;
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-  aio_write_op->aiocb.aio_fildes = fd;
-  aio_write_op->aiocb.aio_buf = const_cast<void*>( buffer );
-  aio_write_op->aiocb.aio_nbytes = buffer_len;
-  aio_write_op->aiocb.aio_offset = 0;
-  aio_write_op->aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
-  aio_write_op->aiocb.aio_sigevent.sigev_notify_function = aio_write_notify;
-  aio_write_op->aiocb.aio_sigevent.sigev_value.sival_ptr = aio_write_op;
-  return ::aio_write( &aio_write_op->aiocb );
-#endif
-#else
-  DebugBreak();
-  // TODO: do a normal write
-  return -1;
-#endif
-}
-#if defined(_WIN32)
-void __stdcall File::overlapped_read_completion( DWORD dwError, DWORD dwBytesTransferred, LPVOID lpOverlapped )
-{
-  aio_read_operation_t* aio_read_op = reinterpret_cast<aio_read_operation_t*>( lpOverlapped );
-  aio_read_op->aio_read_completion_routine( dwError, dwBytesTransferred, aio_read_op->aio_read_completion_routine_context );
-  delete aio_read_op;
-}
-void __stdcall File::overlapped_write_completion( DWORD dwError, DWORD dwBytesTransferred, LPVOID lpOverlapped )
-{
-  aio_write_operation_t* aio_write_op = reinterpret_cast<aio_write_operation_t*>( lpOverlapped );
-  aio_write_op->aio_write_completion_routine( dwError, dwBytesTransferred, aio_write_op->aio_write_completion_routine_context );
-  delete aio_write_op;
-}
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-void File::aio_read_notify( sigval_t sigval )
-{
-  aio_read_operation_t* aio_read_op = reinterpret_cast<aio_read_operation_t*>( sigval.sival_ptr );
-  aio_read_op->aio_read_completion_routine( static_cast<unsigned long>( aio_error( &aio_read_op->aiocb ) ), static_cast<size_t>( aio_return( &aio_read_op->aiocb ) ), aio_read_op->aio_read_completion_routine_context );
-  delete aio_read_op;
-}
-void File::aio_write_notify( sigval_t sigval )
-{
-  aio_write_operation_t* aio_write_op = reinterpret_cast<aio_write_operation_t*>( sigval.sival_ptr );
-  aio_write_op->aio_write_completion_routine( static_cast<unsigned long>( aio_error( &aio_write_op->aiocb ) ), static_cast<size_t>( aio_return( &aio_write_op->aiocb ) ), aio_write_op->aio_write_completion_routine_context );
-  delete aio_write_op;
-}
-#endif
-*/
 bool File::close()
 {
 #ifdef _WIN32
@@ -498,35 +354,77 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return false;
 #endif
 }
-Stream::Status File::read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read )
+auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+{
+#ifdef _WIN32
+  DWORD file_access_flags = 0,
+        file_create_flags = 0,
+        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
+  if ( ( flags & O_RDWR ) == O_RDWR )
+    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
+  else if ( ( flags & O_WRONLY ) == O_WRONLY )
+  {
+    file_access_flags |= GENERIC_WRITE;
+    if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= FILE_APPEND_DATA;
+  }
+  else if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
+  else
+    file_access_flags |= GENERIC_READ;
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if ( ( flags & O_TRUNC ) == O_TRUNC )
+      file_create_flags = CREATE_ALWAYS;
+    else
+      file_create_flags = OPEN_ALWAYS;
+  }
+  else
+    file_create_flags = OPEN_EXISTING;
+//  if ( ( flags & O_SPARSE ) == O_SPARSE )
+//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
+  if ( ( flags & O_SYNC ) == O_SYNC )
+    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
+  if ( ( flags & O_DIRECT ) == O_DIRECT )
+    file_open_flags |= FILE_FLAG_NO_BUFFERING;
+  if ( ( flags & O_ASYNC ) == O_ASYNC )
+    file_open_flags |= FILE_FLAG_OVERLAPPED;
+  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
+    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
+  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
+  if ( fd != INVALID_HANDLE_VALUE )
+  {
+    if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
+    {
+      SetFilePointer( fd, 0, NULL, FILE_BEGIN );
+      SetEndOfFile( fd );
+    }
+    return new File( fd );
+  }
+#else
+  int fd = ::open( path, flags, mode );
+  if ( fd != -1 )
+    return new File( fd );
+#endif
+  return NULL;
+}
+ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( seek( offset, SEEK_SET ) )
-    return read( buffer, buffer_len, out_bytes_read );
+    return read( buffer, buffer_len );
   else
-    return STREAM_STATUS_ERROR;
+    return -1;
 }
-Stream::Status File::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+ssize_t File::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
   if ( ReadFile( fd, buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = dwBytesRead;
-    return STREAM_STATUS_OK;
-  }
+    return dwBytesRead;
   else
-    return STREAM_STATUS_ERROR;
+    return -1;
 #else
-  ssize_t read_ret = ::read( fd, buffer, buffer_len );
-  if ( read_ret >= 0 )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<uint64_t>( read_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
+  return ::read( fd, buffer, buffer_len );
 #endif
 }
 bool File::removexattr( const std::string& name )
@@ -554,17 +452,8 @@ bool File::seek( uint64_t offset, unsigned char whence )
 #ifdef _WIN32
   ULARGE_INTEGER uliOffset;
   uliOffset.QuadPart = offset;
-  DWORD dwDistanceToMoveLow = SetFilePointer( fd, uliOffset.LowPart, ( PLONG )&uliOffset.HighPart, whence ) != 0;
-  if ( dwDistanceToMoveLow != INVALID_SET_FILE_POINTER )
-  {
-    /*
-    ULARGE_INTEGER uliNewOffset;
-    uliNewOffset.LowPart = dwDistanceToMoveLow;
-    uliNewOffset.HighPart = uliOffset.HighPart;
-    offset = uliNewOffset.Quadpart;
-    */
+  if ( SetFilePointer( fd, uliOffset.LowPart, ( PLONG )&uliOffset.HighPart, whence ) != INVALID_SET_FILE_POINTER )
     return true;
-  }
   else
     return false;
 #else
@@ -589,7 +478,9 @@ bool File::sync()
 bool File::truncate( uint64_t new_size )
 {
 #ifdef _WIN32
-  if ( seek( new_size ) )
+  ULARGE_INTEGER uliNewSize;
+  uliNewSize.QuadPart = new_size;
+  if ( SetFilePointer( fd, uliNewSize.LowPart, ( PLONG )&uliNewSize.HighPart, SEEK_SET ) != INVALID_SET_FILE_POINTER )
     return SetEndOfFile( fd ) != 0;
   else
     return false;
@@ -597,44 +488,107 @@ bool File::truncate( uint64_t new_size )
   return ::ftruncate( fd, new_size ) != -1;
 #endif
 }
-Stream::Status File::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
+ssize_t File::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  DWORD dwBytesWritten;
+  if ( WriteFile( fd, buffer, buffer_len, &dwBytesWritten, NULL ) )
+    return static_cast<ssize_t>( dwBytesWritten );
+  else
+    return -1;
+#else
+  return ::write( fd, buffer, buffer_len );
+#endif
+}
+ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( seek( offset ) )
-    return writev( buffers, buffers_count, out_bytes_written );
+    return write( buffer, buffer_len );
   else
-    return STREAM_STATUS_ERROR;
+    return -1;
 }
-Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
 #ifdef _WIN32
   // WriteFileGather requires the buffers to be aligned on page boundaries and overlapped completion.. not worth the trouble currently.
-  size_t total_bytes_written = 0;
+  ssize_t total_bytes_written = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
   {
     DWORD dwBytesWritten;
     if ( WriteFile( fd, buffers[buffer_i].iov_base, static_cast<DWORD>( buffers[buffer_i].iov_len ), &dwBytesWritten, NULL ) )
       total_bytes_written += dwBytesWritten;
     else
-      return STREAM_STATUS_ERROR;
+      return -1;
   }
-  if ( out_bytes_written )
-    *out_bytes_written = total_bytes_written;
-  return STREAM_STATUS_OK;
+  return total_bytes_written;
 #else
-  ssize_t writev_ret = ::writev( fd, reinterpret_cast<const ::iovec*>( buffers ), buffers_count );
-  if ( writev_ret >= 0 )
-  {
-    if ( out_bytes_written )
-      *out_bytes_written = static_cast<uint64_t>( writev_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
+  return ::writev( fd, reinterpret_cast<const ::iovec*>( buffers ), buffers_count );
 #endif
+}
+ssize_t File::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
+{
+  if ( seek( offset ) )
+    return writev( buffers, buffers_count );
+  else
+    return -1;
 }
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
+
+
+// io_buffer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+IOBuffer::IOBuffer( size_t size )
+{
+  buffer = new uint8_t[size];
+  buffer_len = size;
+  consumed_buffer_len = 0;
+}
+IOBuffer::~IOBuffer()
+{
+  delete [] buffer;
+}
+size_t IOBuffer::consume( void* into_buffer, size_t into_buffer_len )
+{
+  if ( consumed_buffer_len == buffer_len )
+    DebugBreak();
+  if ( buffer_len - consumed_buffer_len < into_buffer_len )
+    into_buffer_len = buffer_len - consumed_buffer_len;
+  memcpy_s( into_buffer, into_buffer_len, buffer + consumed_buffer_len, into_buffer_len );
+  consumed_buffer_len += into_buffer_len;
+  return into_buffer_len;
+}
+size_t IOBuffer::consume( std::string& into_string, size_t into_string_len )
+{
+  if ( consumed_buffer_len == buffer_len )
+    DebugBreak();
+  if ( buffer_len - consumed_buffer_len < into_string_len )
+    into_string_len = buffer_len - consumed_buffer_len;
+  into_string.append( reinterpret_cast<char*>( buffer + consumed_buffer_len ), into_string_len );
+  consumed_buffer_len += into_string_len;
+  return into_string_len;
+}
+IOBuffer::operator struct iovec() const
+{
+  struct iovec _iovec;
+  _iovec.iov_base = buffer;
+  _iovec.iov_len = buffer_len;
+  return _iovec;
+}
+//void IOBuffer::set_next_io_buffer( auto_Object<IOBuffer> next_io_buffer )
+//{
+//  if ( this->next_io_buffer != NULL )
+//    DebugBreak();
+//  this->next_io_buffer = next_io_buffer;
+//}
+void IOBuffer::set_size( size_t size )
+{
+  if ( consumed_buffer_len != 0 )
+    DebugBreak();
+  this->buffer_len = size;
+}
 
 
 // log.cpp
@@ -642,30 +596,34 @@ Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 namespace YIELD
 {
-  class ostreamWrapper : public Object, public OutputStream
+  class FileLog : public Log
   {
   public:
-    ostreamWrapper( std::ostream& os )
-      : os( os )
+    FileLog( auto_Object<File> file, Level level )
+      : Log( level ), file( file )
     { }
-    ostreamWrapper& operator=( const ostreamWrapper& ) { return *this; }
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ostreamWrapper, 0 );
-    // OutputStream
-    Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 )
+    // Log
+    void write( const char* str, size_t str_len )
     {
-      size_t bytes_written = 0;
-      for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-      {
-        os.write( static_cast<char*>( buffers[buffer_i].iov_base ), static_cast<std::streamsize>( buffers[buffer_i].iov_len ) );
-        bytes_written += buffers[buffer_i].iov_len;
-      }
-      if ( out_bytes_written )
-        *out_bytes_written = bytes_written;
-      return STREAM_STATUS_OK;
+      file->write( str, str_len );
     }
   private:
-    std::ostream& os;
+    auto_Object<File> file;
+  };
+  class ostreamLog : public Log
+  {
+  public:
+    ostreamLog( std::ostream& underlying_ostream, Level level )
+      : Log( level ), underlying_ostream( underlying_ostream )
+    { }
+    ostreamLog& operator=( const ostreamLog& ) { return *this; }
+    // Log
+    void write( const char* str, size_t str_len )
+    {
+      underlying_ostream.write( str, str_len );
+    }
+  private:
+    std::ostream& underlying_ostream;
   };
 };
 Log::Stream::Stream( auto_Object<Log> log, Log::Level level )
@@ -700,37 +658,18 @@ Log::Stream::~Stream()
     log->write( stamped_oss.str(), level );
   }
 }
-OutputStream::Status Log::Stream::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+auto_Object<Log> Log::open( std::ostream& underlying_ostream, Level level )
 {
-  if ( level <= log->get_level() )
-  {
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    {
-      char* sanitized_buffer = sanitize( static_cast<const unsigned char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-      oss.write( sanitized_buffer, static_cast<std::streamsize>( buffers[buffer_i].iov_len ) );
-      delete [] sanitized_buffer;
-      if ( out_bytes_written )
-        *out_bytes_written += buffers[buffer_i].iov_len;
-    }
-  }
-  return STREAM_STATUS_OK;
+  return new ostreamLog( underlying_ostream, level );
 }
 auto_Object<Log> Log::open( const Path& file_path, Level level )
 {
   auto_Object<File> file = File::open( file_path, O_CREAT|O_WRONLY|O_APPEND );
   if ( file != NULL )
-    return new Log( std::auto_ptr<OutputStream>( file.release() ), level );
+    return new FileLog( file, level );
   else
     return NULL;
 }
-Log::Log( std::ostream& os, Level level )
-  : level( level )
-{
-  underlying_output_stream.reset( new ostreamWrapper( os ) );
-}
-Log::Log( std::auto_ptr<OutputStream> underlying_output_stream, Level level )
-  : underlying_output_stream( underlying_output_stream ), level( level )
-{ }
 char* Log::sanitize( const unsigned char* str, size_t str_len )
 {
   char *sanitized_str = new char[str_len];
@@ -742,16 +681,6 @@ char* Log::sanitize( const unsigned char* str, size_t str_len )
       sanitized_str[str_i] = '.';
   }
   return sanitized_str;
-}
-void Log::write( const unsigned char* str, size_t str_len )
-{
-  char* sanitized_str = sanitize( str, str_len );
-  OutputStream::write( sanitized_str, str_len );
-  delete [] sanitized_str;
-}
-OutputStream::Status Log::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-{
-  return underlying_output_stream->writev( buffers, buffers_count, out_bytes_written );
 }
 
 
@@ -1118,32 +1047,56 @@ NamedPipe::NamedPipe( auto_Object<File> underlying_file )
   : underlying_file( underlying_file )
 { }
 #endif
-Stream::Status NamedPipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_read  )
-{
 #ifdef _WIN32
-  if ( !connected )
+bool NamedPipe::connect()
+{
+  if ( connected )
+    return true;
+  else
   {
     if ( ConnectNamedPipe( *underlying_file, NULL ) != 0 ||
          GetLastError() == ERROR_PIPE_CONNECTED )
+    {
       connected = true;
+      return true;
+    }
     else
-      return STREAM_STATUS_ERROR;
+      return false;
   }
-#endif
-  return underlying_file->read( buffer, buffer_len, out_bytes_read );
 }
-Stream::Status NamedPipe::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+#endif
+ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
-  if ( !connected )
-  {
-    if ( ConnectNamedPipe( *underlying_file, NULL ) )
-      connected = true;
-    else
-      return STREAM_STATUS_ERROR;
-  }
+  if ( connect() )
+    return underlying_file->read( buffer, buffer_len );
+  else
+    return -1;
+#else
+  return underlying_file->read( buffer, buffer_len );
 #endif
-  return underlying_file->writev( buffers, buffers_count, out_bytes_written );
+}
+ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  if ( connect() )
+    return underlying_file->write( buffer, buffer_len );
+  else
+    return -1;
+#else
+  return underlying_file->write( buffer, buffer_len );
+#endif
+}
+ssize_t NamedPipe::writev( const iovec* buffers, uint32_t buffers_count )
+{
+#ifdef _WIN32
+  if ( connect() )
+    return underlying_file->writev( buffers, buffers_count );
+  else
+    return -1;
+#else
+  return underlying_file->writev( buffers, buffers_count );
+#endif
 }
 #ifdef _WIN32
 #pragma warning( pop )
@@ -1382,13 +1335,9 @@ Path Path::abspath() const
 // pipe.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
-
 auto_Object<Pipe> Pipe::create()
 {
 #ifdef _WIN32
@@ -1415,130 +1364,83 @@ auto_Object<Pipe> Pipe::create()
 #endif
   return NULL;
 }
-
 #ifdef _WIN32
 Pipe::Pipe( void* ends[2] )
 #else
 Pipe::Pipe( int ends[2] )
 #endif
 {
-  memcpy_s( this->ends, sizeof( this->ends ), ends, sizeof( this->ends ) );
+  memcpy_s( this->ends, sizeof( this->ends ), ends, sizeof( ends ) );
 }
-
-Pipe::~Pipe()
-{
-#ifdef _WIN32
-  CloseHandle( ends[0] );
-  CloseHandle( ends[1] );
-#else
-  ::close( ends[0] );
-  ::close( ends[1] );
-#endif
-}
-
-Stream::Status Pipe::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
+ssize_t Pipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
-  if ( ReadFile( ends[0], buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = dwBytesRead;
-    return STREAM_STATUS_OK;
-  }
+  if ( ::ReadFile( ends[0], buffer, buffer_len, &dwBytesRead, NULL ) )
+    return static_cast<ssize_t>( dwBytesRead );
   else
-    return STREAM_STATUS_ERROR;
+    return -1;
 #else
-  ssize_t read_ret = ::read( ends[0], buffer, buffer_len );
-  if ( read_ret >= 0 )
-  {
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<size_t>( read_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
+  return ::read( ends[0], buffer, buffer_len );
 #endif
 }
-
-Stream::Status Pipe::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
+ssize_t Pipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
-  if ( buffers_count == 1 )
-  {
-    DWORD dwBytesWritten;
-    if ( WriteFile( ends[1], buffers[0].iov_base, static_cast<DWORD>( buffers[0].iov_len ), &dwBytesWritten, NULL ) )
-    {
-      if ( out_bytes_written )
-        *out_bytes_written = dwBytesWritten;
-      return STREAM_STATUS_OK;
-    }
-    else
-      return STREAM_STATUS_ERROR;
-  }
+  DWORD dwBytesWritten;
+  if ( ::WriteFile( ends[1], buffer, buffer_len, &dwBytesWritten, NULL ) )
+    return static_cast<ssize_t>( dwBytesWritten );
   else
-  {
-    ::SetLastError( ERROR_NOT_SUPPORTED );
-    return STREAM_STATUS_ERROR;
-  }
+    return -1;
 #else
-  ssize_t writev_ret = ::writev( ends[1], buffers, buffers_count );
-  if ( writev_ret >= 0 )
-  {
-    if ( out_bytes_written )
-      *out_bytes_written = static_cast<size_t>( writev_ret );
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
+  return ::write( ends[1], buffer, buffer_len );
 #endif
 }
 
 
-// pretty_print_output_stream.cpp
+// pretty_printer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-PrettyPrintOutputStream::PrettyPrintOutputStream( OutputStream& underlying_output_stream )
-  : underlying_output_stream( underlying_output_stream )
+PrettyPrinter::PrettyPrinter( std::ostream& os )
+  : os( os )
 { }
-void PrettyPrintOutputStream::writeBool( const Declaration&, bool value )
+void PrettyPrinter::writeBool( const Declaration&, bool value )
 {
-  underlying_output_stream.write( ( ( value ) ? "true, " : "false, " ) );
+  if ( value )
+    os << "true, ";
+  else
+    os << "false, ";
 }
-void PrettyPrintOutputStream::writeDouble( const Declaration&, double value )
+void PrettyPrinter::writeDouble( const Declaration&, double value )
 {
-  std::ostringstream value_oss; value_oss << value << ", ";
-  underlying_output_stream.write( value_oss.str() );
+  os << value << ", ";
 }
-void PrettyPrintOutputStream::writeInt64( const Declaration&, int64_t value )
+void PrettyPrinter::writeInt64( const Declaration&, int64_t value )
 {
-  std::ostringstream value_oss; value_oss << value << ", ";
-  underlying_output_stream.write( value_oss.str() );
+  os << value << ", ";
 }
-void PrettyPrintOutputStream::writeMap( const Declaration&, Object& value )
+void PrettyPrinter::writeMap( const Declaration&, Object& value )
 {
-  underlying_output_stream.write( value.get_type_name() );
-  underlying_output_stream.write( "( " );
-  value.serialize( *this );
-  underlying_output_stream.write( " ), " );
+  os << value.get_type_name() << " (";
+  value.marshal( *this );
+  os << " ), ";
 }
-void PrettyPrintOutputStream::writeSequence( const Declaration&, Object& value )
+void PrettyPrinter::writeSequence( const Declaration&, Object& value )
 {
-  underlying_output_stream.write( "[ " );
-  value.serialize( *this );
-  underlying_output_stream.write( " ], " );
+  os << "[ ";
+  value.marshal( *this );
+  os << " ], ";
 }
-void PrettyPrintOutputStream::writeString( const Declaration&, const char* value, size_t value_len )
+void PrettyPrinter::writeString( const Declaration&, const char* value, size_t value_len )
 {
-  underlying_output_stream.write( value, value_len );
-  underlying_output_stream.write( ", " );
+  os.write( value, value_len );
+  os << ", ";
 }
-void PrettyPrintOutputStream::writeStruct( const Declaration&, Object& value )
+void PrettyPrinter::writeStruct( const Declaration&, Object& value )
 {
-  underlying_output_stream.write( value.get_type_name() );
-  underlying_output_stream.write( "( " );
-  value.serialize( *this );
-  underlying_output_stream.write( " ), " );
+  os << value.get_type_name() << "( ";
+  value.marshal( *this );
+  os << " ), ";
 }
 
 
@@ -1554,20 +1456,21 @@ void PrettyPrintOutputStream::writeStruct( const Declaration&, Object& value )
 auto_Object<Process> Process::create( const Path& command_line )
 {
 #ifdef _WIN32
-  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
-                    child_stdout_pipe = Pipe::create(),
-                    child_stderr_pipe = Pipe::create();
+  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
+  //auto_Object<Pipe> child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
   STARTUPINFO startup_info;
   ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
   startup_info.cb = sizeof( STARTUPINFO );
-  startup_info.hStdInput = child_stdin_pipe->get_read_end();
-  startup_info.hStdOutput = child_stdout_pipe->get_write_end();
-  startup_info.hStdError = child_stdout_pipe->get_write_end();
-  startup_info.dwFlags = STARTF_USESTDHANDLES;
+  //startup_info.hStdInput = *child_stdin->get_input_stream()->get_file();
+  //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
+  //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
+  //startup_info.dwFlags = STARTF_USESTDHANDLES;
   PROCESS_INFORMATION proc_info;
   ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
   if ( CreateProcess( NULL, const_cast<wchar_t*>( command_line.get_wide_path().c_str() ) , NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
-    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
+    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin, child_stdout, child_stderr );
   else
     return NULL;
 #else
@@ -1605,20 +1508,21 @@ auto_Object<Process> Process::create( const Path& executable_file_path, const ch
   }
   return create( command_line );
 #else
-  auto_Object<Pipe> child_stdin_pipe = Pipe::create(),
-                    child_stdout_pipe = Pipe::create(),
-                    child_stderr_pipe = Pipe::create();
+  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
+  //auto_Object<Pipe> child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
   pid_t child_pid = fork();
   if ( child_pid == -1 )
     return NULL;
   else if ( child_pid == 0 ) // Child
   {
-    close( STDIN_FILENO );
-    dup2( child_stdin_pipe->get_read_end(), STDIN_FILENO ); // Set stdin to read end of stdin pipe
-    close( STDOUT_FILENO );
-    dup2( child_stdout_pipe->get_write_end(), STDOUT_FILENO ); // Set stdout to write end of stdout pipe
-    close( STDERR_FILENO );
-    dup2( child_stderr_pipe->get_write_end(), STDERR_FILENO ); // Set stderr to write end of stderr pipe
+    //close( STDIN_FILENO );
+    //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO ); // Set stdin to read end of stdin pipe
+    //close( STDOUT_FILENO );
+    //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO ); // Set stdout to write end of stdout pipe
+    //close( STDERR_FILENO );
+    //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO ); // Set stderr to write end of stderr pipe
     std::vector<char*> argv_with_executable_file_path;
     argv_with_executable_file_path.push_back( const_cast<char*>( static_cast<const char*>( executable_file_path ) ) );
     size_t arg_i = 0;
@@ -1632,18 +1536,18 @@ auto_Object<Process> Process::create( const Path& executable_file_path, const ch
     return NULL;
   }
   else // Parent
-    return new Process( child_pid, child_stdin_pipe, child_stdout_pipe, child_stderr_pipe );
+    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
 #endif
 }
 #ifdef _WIN32
-Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe )
+Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
   : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
-    child_stdin_pipe( child_stdin_pipe ), child_stdout_pipe( child_stdout_pipe ), child_stderr_pipe( child_stderr_pipe )
+    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
 { }
 #else
-Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe )
+Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
   : child_pid( child_pid ),
-    child_stdin_pipe( child_stdin_pipe ), child_stdout_pipe( child_stdout_pipe ), child_stderr_pipe( child_stderr_pipe )
+    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
 { }
 #endif
 Process::~Process()
@@ -1680,14 +1584,6 @@ bool Process::poll( int* out_return_code )
   return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
 #endif
 }
-Stream::Status Process::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-{
-  return child_stdout_pipe->read( buffer, buffer_len, out_bytes_read );
-}
-Stream::Status Process::read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-{
-  return child_stderr_pipe->read( buffer, buffer_len, out_bytes_read );
-}
 bool Process::terminate()
 {
 #ifdef _WIN32
@@ -1710,10 +1606,6 @@ int Process::wait()
   else
     return -1;
 #endif
-}
-Stream::Status Process::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-{
-  return child_stdin_pipe->writev( buffers, buffers_count, out_bytes_written );
 }
 
 
@@ -1844,84 +1736,6 @@ void ProcessorSet::set( uint16_t processor_i )
   if ( psetid == PS_NONE ) pset_create( &psetid );
   pset_assign( psetid, processor_i, NULL );
 #endif
-}
-
-
-// rrd.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-Stream::Status RRD::Record::deserialize( InputStream& input_stream )
-{
-  size_t bytes_read;
-  uint64_t time_uint64;
-  Stream::Status read_status = input_stream.read( &time_uint64, sizeof( time_uint64 ), &bytes_read );
-  if ( read_status == Stream::STREAM_STATUS_OK )
-  {
-    time = time_uint64;
-    return input_stream.read( &value, sizeof( value ), &bytes_read );
-  }
-  else
-    return read_status;
-}
-Stream::Status RRD::Record::serialize( OutputStream& output_stream )
-{
-  uint64_t time_uint64 = time;
-  Stream::Status write_status = output_stream.write( &time_uint64, sizeof( time_uint64 ) );
-  if ( write_status == Stream::STREAM_STATUS_OK )
-    return output_stream.write( &value, sizeof( value ) );
-  else
-    return write_status;
-}
-auto_Object<RRD> RRD::open( const Path& file_path, uint32_t file_open_flags )
-{
-  auto_Object<File> current_file = File::open( file_path, file_open_flags|O_CREAT|O_WRONLY|O_APPEND );
-  if ( current_file != NULL )
-    return new RRD( file_path, current_file );
-  else
-    return NULL;
-}
-RRD::RRD( const Path& current_file_path, auto_Object<File> current_file )
-  : current_file_path( current_file_path ), current_file( current_file )
-{ }
-void RRD::append( double value )
-{
-  Record( value ).serialize( *current_file );
-}
-void RRD::fetch( std::vector<Record>& out_records )
-{
-  auto_Object<File> current_file = File::open( current_file_path );
-  if ( current_file != NULL )
-  {
-    Record record;
-    while ( record.deserialize( *current_file ) )
-      out_records.push_back( record );
-  }
-}
-void RRD::fetch( const Time& start_time, std::vector<Record>& out_records )
-{
-  auto_Object<File> current_file = File::open( current_file_path );
-  if ( current_file != NULL )
-  {
-    Record record;
-    while ( record.deserialize( *current_file ) )
-    {
-      if ( record.get_time() >= start_time )
-        out_records.push_back( record );
-    }
-  }
-}
-void RRD::fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records )
-{
-  auto_Object<File> current_file = File::open( current_file_path );
-  if ( current_file != NULL )
-  {
-    Record record;
-    while ( record.deserialize( *current_file ) )
-    {
-      if ( record.get_time() >= start_time && record.get_time() <= end_time )
-        out_records.push_back( record );
-    }
-  }
 }
 
 
@@ -2172,66 +1986,6 @@ Stat::operator WIN32_FIND_DATA() const
 
 
 // string.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-Stream::Status String::deserialize( InputStream& input_stream, size_t* out_bytes_read )
-{
-  if ( read_pos < size() )
-  {
-    size_t temp_bytes_read;
-    for ( ;; )
-    {
-      Stream::Status status = input_stream.read( const_cast<char*>( c_str() ) + read_pos, size() - read_pos, &temp_bytes_read );
-      if ( status == STREAM_STATUS_OK )
-      {
-        read_pos += temp_bytes_read;
-        if ( read_pos == size() )
-        {
-          read_pos = 0;
-          if ( out_bytes_read )
-            *out_bytes_read = temp_bytes_read;
-          return STREAM_STATUS_OK;
-        }
-      }
-      else
-        return status;
-    }
-  }
-  else
-    return STREAM_STATUS_ERROR;
-}
-Stream::Status String::read( void* buffer, size_t buffer_len, size_t* out_bytes_read )
-{
-  size_t readable_len = size() - read_pos;
-  if ( readable_len > 0 )
-  {
-    if ( buffer_len > readable_len )
-      buffer_len = readable_len;
-    memcpy_s( buffer, buffer_len, c_str()+read_pos, buffer_len );
-    read_pos += buffer_len;
-    if ( out_bytes_read )
-      *out_bytes_read = buffer_len;
-    return STREAM_STATUS_OK;
-  }
-  else
-    return STREAM_STATUS_ERROR;
-}
-Stream::Status String::serialize( OutputStream& output_stream, size_t* out_bytes_written )
-{
-  return output_stream.write( c_str(), size(), out_bytes_written );
-}
-Stream::Status String::writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written )
-{
-  size_t total_buffers_len = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-    total_buffers_len += buffers[buffer_i].iov_len;
-  }
-  if ( out_bytes_written )
-    *out_bytes_written = total_buffers_len;
-  return STREAM_STATUS_OK;
-}
 
 
 // test_case.cpp
@@ -2257,7 +2011,7 @@ TestRunner::TestRunner( Log::Level log_level )
 { }
 int TestRunner::run( TestSuite& test_suite )
 {
-  TestResult* test_result = new TestResult( new Log( std::cout, log_level ) );
+  TestResult* test_result = new TestResult( Log::open( std::cout, log_level ) );
   test_suite.run( *test_result );
   return 0;
 }
@@ -3233,77 +2987,143 @@ Path Volume::volname( const Path& path )
 #endif
 
 
-// xdr_input_stream.cpp
+// xdr_marshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#define XDR_ARRAY_LENGTH_MAX 16 * 1024
-// #define XDR_STRING_LENGTH_MAX 32 * 1024
-XDRInputStream::XDRInputStream( InputStream& underlying_input_stream )
-  : underlying_input_stream( underlying_input_stream )
+XDRMarshaller::XDRMarshaller( std::ostream& target_ostream, bool in_map )
+  : target_ostream( target_ostream ), in_map( in_map )
 { }
-bool XDRInputStream::readBool( const Declaration& decl )
+void XDRMarshaller::beforeWrite( const Declaration& decl )
+{
+  if ( in_map && decl.get_identifier() )
+    Marshaller::writeString( Declaration(), decl.get_identifier() );
+}
+void XDRMarshaller::writeBool( const Declaration& decl, bool value )
+{
+  writeInt32( decl, value ? 1 : 0 );
+}
+void XDRMarshaller::writeDouble( const Declaration& decl, double value )
+{
+  beforeWrite( decl );
+  target_ostream.write( reinterpret_cast<const char*>( &value ), sizeof( value ) );
+}
+void XDRMarshaller::writeFloat( const Declaration& decl, float value )
+{
+  beforeWrite( decl );
+  target_ostream.write( reinterpret_cast<const char*>( &value ), sizeof( value ) );
+}
+void XDRMarshaller::writeInt32( const Declaration& decl, int32_t value )
+{
+  beforeWrite( decl );
+#ifdef __MACH__
+  value = htonl( value );
+#else
+  value = Machine::htonl( value );
+#endif
+  target_ostream.write( reinterpret_cast<const char*>( &value ), 4 );
+}
+void XDRMarshaller::writeInt64( const Declaration& decl, int64_t value )
+{
+  beforeWrite( decl );
+  value = Machine::htonll( value );
+  target_ostream.write( reinterpret_cast<const char*>( &value ), 8 );
+}
+void XDRMarshaller::writeMap( const Declaration& decl, Object& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  XDRMarshaller child_xdr_underlying_output_stream( target_ostream, true );
+  value.marshal( child_xdr_underlying_output_stream );
+}
+void XDRMarshaller::writeString( const Declaration& decl, const char* value, size_t value_len )
+{
+  writeInt32( decl, value_len );
+  target_ostream.write( value, value_len );
+  if ( value_len % 4 != 0 )
+  {
+    static char zeros[] = { 0, 0, 0 };
+    target_ostream.write( zeros, 4 - ( value_len % 4 ) );
+  }
+}
+void XDRMarshaller::writeSequence( const Declaration& decl, Object& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  value.marshal( *this );
+}
+void XDRMarshaller::writeStruct( const Declaration& decl, Object& value )
+{
+  beforeWrite( decl );
+  value.marshal( *this );
+}
+
+
+// xdr_unmarshaller.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+XDRUnmarshaller::XDRUnmarshaller( std::istream& source_istream )
+  : source_istream( source_istream )
+{ }
+bool XDRUnmarshaller::readBool( const Declaration& decl )
 {
   return readInt32( decl ) == 1;
 }
-double XDRInputStream::readDouble( const Declaration& )
+double XDRUnmarshaller::readDouble( const Declaration& )
 {
   double value;
-  underlying_input_stream.read( &value, sizeof( value ) );
+  source_istream.read( reinterpret_cast<char*>( &value ), sizeof( value ) );
   return value;
 }
-float XDRInputStream::readFloat( const Declaration& )
+float XDRUnmarshaller::readFloat( const Declaration& )
 {
   float value;
-  underlying_input_stream.read( &value, sizeof( value ) );
+  source_istream.read( reinterpret_cast<char*>( &value ), sizeof( value ) );
   return value;
 }
-int32_t XDRInputStream::readInt32( const Declaration& )
+int32_t XDRUnmarshaller::readInt32( const Declaration& )
 {
   int32_t value;
-  underlying_input_stream.read( &value, sizeof( value ) );
+  source_istream.read( reinterpret_cast<char*>( &value ), sizeof( value ) );
 #ifdef __MACH__
   return ntohl( value );
 #else
   return Machine::ntohl( value );
 #endif
 }
-int64_t XDRInputStream::readInt64( const Declaration& )
+int64_t XDRUnmarshaller::readInt64( const Declaration& )
 {
   int64_t value;
-  underlying_input_stream.read( &value, sizeof( value ) );
+  source_istream.read( reinterpret_cast<char*>( &value ), sizeof( value ) );
   return Machine::ntohll( value );
 }
-Object* XDRInputStream::readMap( const Declaration& decl, Object* value )
+Object* XDRUnmarshaller::readMap( const Declaration& decl, Object* value )
 {
   if ( value )
   {
     size_t size = readInt32( decl );
     for ( size_t i = 0; i < size; i++ )
-      value->deserialize( *this );
+      value->unmarshal( *this );
   }
   return value;
 }
-Object* XDRInputStream::readSequence( const Declaration& decl, Object* value )
+Object* XDRUnmarshaller::readSequence( const Declaration& decl, Object* value )
 {
   if ( value )
   {
     size_t size = readInt32( decl );
-    if ( size <= XDR_ARRAY_LENGTH_MAX )
+    if ( size <= UINT16_MAX )
     {
       for ( size_t i = 0; i < size; i++ )
-        value->deserialize( *this );
+        value->unmarshal( *this );
     }
     else
       throw Exception( "read array length beyond maximum" );
   }
   return value;
 }
-void XDRInputStream::readString( const Declaration& decl, std::string& str )
+void XDRUnmarshaller::readString( const Declaration& decl, std::string& str )
 {
   size_t str_len = readInt32( decl );
-//  if ( str_len < XDR_STRING_LENGTH_MAX ) // Sanity check
-//  {
-// Bypassing the sanity check, since the XDR_STRING_LENGTH of 32K is too small for file system reads
+  if ( str_len < UINT16_MAX )
+  {
     if ( str_len != 0 )
     {
       size_t padded_str_len = str_len % 4;
@@ -3312,84 +3132,15 @@ void XDRInputStream::readString( const Declaration& decl, std::string& str )
       else
         padded_str_len = str_len + 4 - padded_str_len;
       str.resize( padded_str_len );
-      underlying_input_stream.read( const_cast<char*>( str.c_str() ), padded_str_len );
+      source_istream.read( const_cast<char*>( str.c_str() ), padded_str_len );
       str.resize( str_len );
     }
-//  }
-}
-Object* XDRInputStream::readStruct( const Declaration&, Object* value )
-{
-  if ( value )
-    value->deserialize( *this );
-  return value;
-}
-
-
-// xdr_output_stream.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-XDROutputStream::XDROutputStream( OutputStream& underlying_output_stream, bool in_map )
-  : underlying_output_stream( underlying_output_stream ), in_map( in_map )
-{ }
-void XDROutputStream::beforeWrite( const Declaration& decl )
-{
-  if ( in_map && decl.get_identifier() )
-    StructuredOutputStream::writeString( Declaration(), decl.get_identifier() );
-}
-void XDROutputStream::writeBool( const Declaration& decl, bool value )
-{
-  writeInt32( decl, value ? 1 : 0 );
-}
-void XDROutputStream::writeDouble( const Declaration& decl, double value )
-{
-  beforeWrite( decl );
-  underlying_output_stream.write( &value, sizeof( value ) );
-}
-void XDROutputStream::writeFloat( const Declaration& decl, float value )
-{
-  beforeWrite( decl );
-  underlying_output_stream.write( &value, sizeof( value ) );
-}
-void XDROutputStream::writeInt32( const Declaration& decl, int32_t value )
-{
-  beforeWrite( decl );
-#ifdef __MACH__
-  value = htonl( value );
-#else
-  value = Machine::htonl( value );
-#endif
-  underlying_output_stream.write( &value, 4 );
-}
-void XDROutputStream::writeInt64( const Declaration& decl, int64_t value )
-{
-  beforeWrite( decl );
-  value = Machine::htonll( value );
-  underlying_output_stream.write( &value, 8 );
-}
-void XDROutputStream::writeMap( const Declaration& decl, Object& value )
-{
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-  XDROutputStream child_xdr_underlying_output_stream( underlying_output_stream, true );
-  value.serialize( child_xdr_underlying_output_stream );
-}
-void XDROutputStream::writeString( const Declaration& decl, const char* value, size_t value_len )
-{
-  writeInt32( decl, value_len );
-  underlying_output_stream.write( value, value_len );
-  if ( value_len % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    underlying_output_stream.write( zeros, 4 - ( value_len % 4 ) );
   }
 }
-void XDROutputStream::writeSequence( const Declaration& decl, Object& value )
+Object* XDRUnmarshaller::readStruct( const Declaration&, Object* value )
 {
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-  value.serialize( *this );
-}
-void XDROutputStream::writeStruct( const Declaration& decl, Object& value )
-{
-  beforeWrite( decl );
-  value.serialize( *this );
+  if ( value )
+    value->unmarshal( *this );
+  return value;
 }
 

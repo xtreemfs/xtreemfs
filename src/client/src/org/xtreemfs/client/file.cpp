@@ -94,7 +94,7 @@ void File::processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteRes
   }
 }
 
-YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
+ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( read )
   {
@@ -135,13 +135,10 @@ YIELD::Stream::Status File::read( void* rbuf, size_t size, uint64_t offset, size
         break;
     }
 
-    if ( out_bytes_read )
-      *out_bytes_read = static_cast<size_t>( file_offset - offset );
-
-    return STREAM_STATUS_OK;
+    return static_cast<ssize_t>( file_offset - offset );
   }
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( read );
-  return STREAM_STATUS_ERROR;
+  return -1;
 }
 
 bool File::removexattr( const std::string& name )
@@ -178,7 +175,7 @@ bool File::truncate( uint64_t new_size )
   return false;
 }
 
-YIELD::Stream::Status File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
+ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( writev )
   {
@@ -209,11 +206,8 @@ YIELD::Stream::Status File::writev( const struct iovec* buffers, uint32_t buffer
   //  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
 
-    if ( out_bytes_written )
-      *out_bytes_written = static_cast<size_t>( file_offset - offset );
-
-    return STREAM_STATUS_OK;
+    return static_cast<ssize_t>( file_offset - offset );
   }
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( writev );
-  return STREAM_STATUS_ERROR;
+  return -1;
 }

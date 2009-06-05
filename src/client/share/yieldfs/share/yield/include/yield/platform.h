@@ -127,20 +127,26 @@ extern "C"
 
 #define YIELD_FILE_PROTOTYPES \
   virtual bool close(); \
-  virtual bool datasync(); \
-  virtual bool flush(); \
+  bool datasync(); \
+  bool flush(); \
   virtual YIELD::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
-  virtual Stream::Status read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read ); \
+  ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual bool removexattr( const std::string& name ); \
   virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
-  virtual Stream::Status writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written );
+  ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
-#define YIELD_INPUT_STREAM_PROTOTYPES \
-  virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );
+#define YIELD_MARSHALLER_PROTOTYPES \
+  virtual void writeBool( const Declaration& decl, bool value ); \
+  virtual void writeDouble( const Declaration& decl, double value ); \
+  virtual void writeInt64( const Declaration& decl, int64_t value ); \
+  virtual void writeMap( const Declaration& decl, YIELD::Object& value ); \
+  virtual void writeSequence( const Declaration& decl, YIELD::Object& value ); \
+  virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
+  virtual void writeStruct( const Declaration& decl, YIELD::Object& value );
 
 #define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
     type_name & incRef() { return YIELD::Object::incRef( *this ); } \
@@ -149,27 +155,6 @@ extern "C"
     const char* get_type_name() const { return #type_name; }
 
 #define YIELD_OBJECT_TAG( type ) type::__tag
-
-#define YIELD_OUTPUT_STREAM_PROTOTYPES \
-  virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
-
-#define YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES \
-  virtual bool readBool( const Declaration& decl ); \
-  virtual double readDouble( const Declaration& decl ); \
-  virtual int64_t readInt64( const Declaration& decl ); \
-  virtual Object* readMap( const Declaration& decl, Object* value = NULL ); \
-  virtual Object* readSequence( const Declaration& decl, Object* value = NULL ); \
-  virtual void readString( const Declaration& decl, std::string& ); \
-  virtual Object* readStruct( const Declaration& decl, Object* value = NULL );  
-
-#define YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES \
-  virtual void writeBool( const Declaration& decl, bool value ); \
-  virtual void writeDouble( const Declaration& decl, double value ); \
-  virtual void writeInt64( const Declaration& decl, int64_t value ); \
-  virtual void writeMap( const Declaration& decl, YIELD::Object& value ); \
-  virtual void writeSequence( const Declaration& decl, YIELD::Object& value ); \
-  virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
-  virtual void writeStruct( const Declaration& decl, YIELD::Object& value );
 
 #define YIELD_STRING_HASH_NEXT( c, hash ) hash = hash ^ ( ( hash << 5 ) + ( hash >> 2 ) + c )
 
@@ -201,6 +186,15 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
 #else
 #define YIELD_TEST_MAIN( TestSuiteName )
 #endif
+
+#define YIELD_UNMARSHALLER_PROTOTYPES \
+  virtual bool readBool( const Declaration& decl ); \
+  virtual double readDouble( const Declaration& decl ); \
+  virtual int64_t readInt64( const Declaration& decl ); \
+  virtual Object* readMap( const Declaration& decl, Object* value = NULL ); \
+  virtual Object* readSequence( const Declaration& decl, Object* value = NULL ); \
+  virtual void readString( const Declaration& decl, std::string& ); \
+  virtual Object* readStruct( const Declaration& decl, Object* value = NULL );  
 
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
@@ -282,10 +276,10 @@ inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t coun
 
 namespace YIELD
 {
+  class Marshaller;
   class Path;
   class Stat;
-  class StructuredInputStream;
-  class StructuredOutputStream;
+  class Unmarshaller;
   class TestResult;
   class TestSuite;
 
@@ -503,44 +497,6 @@ namespace YIELD
   };
 
 
-  class Stream
-  {
-  public:
-    enum Status { STREAM_STATUS_ERROR = -1, STREAM_STATUS_OK = 0, STREAM_STATUS_WANT_READ = 1, STREAM_STATUS_WANT_WRITE = 2 };
-
-    virtual ~Stream()
-    { }
-  };
-
-
-  class InputStream : public Stream
-  {
-  public:
-    virtual ~InputStream() { }
-
-    virtual Stream::Status read( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 ) = 0;
-  };
-
-
-  class OutputStream : public Stream
-  {
-  public:
-    const static size_t BUFFER_LEN_MAX = UINT16_MAX;
-
-    virtual ~OutputStream() { }
-
-    OutputStream& operator<<( const char* buffer ) { write( buffer ); return *this; }
-    OutputStream& operator<<( const std::string& buffer ) { write( buffer ); return *this; }
-    OutputStream& operator<<( const struct iovec& buffer ) { write( buffer ); return *this; }
-
-    virtual Stream::Status write( const char* buffer, size_t* out_bytes_written = 0 ) { return write( buffer, strnlen( buffer, BUFFER_LEN_MAX ), out_bytes_written ); }
-    virtual Stream::Status write( const std::string& buffer, size_t* out_bytes_written = 0 ) { return write( buffer.c_str(), buffer.size(), out_bytes_written ); }
-    virtual Stream::Status write( const void* buffer, size_t buffer_len, size_t* out_bytes_written = 0 ) { struct iovec buffers; buffers.iov_base = const_cast<void*>( buffer ); buffers.iov_len = static_cast<size_t>( buffer_len ); return writev( &buffers, 1, out_bytes_written ); }
-    virtual Stream::Status write( const struct iovec& buffer, size_t* out_bytes_written = 0 ) { return writev( &buffer, 1, out_bytes_written ); }
-    virtual Stream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 ) = 0;
-  };
-
-
   class Object
   {      
   public:
@@ -589,13 +545,11 @@ namespace YIELD
       return *this;
     }
 
-    virtual Stream::Status deserialize( InputStream&, size_t* = 0 ) { return Stream::STREAM_STATUS_OK; }
-    virtual void deserialize( StructuredInputStream& ) { }
     virtual uint64_t get_size() const { return 0; } // For arrays
     virtual uint32_t get_tag() const = 0;
     virtual const char* get_type_name() const = 0;
-    virtual Stream::Status serialize( OutputStream&, size_t* = 0 ) { return Stream::STREAM_STATUS_OK; }
-    virtual void serialize( StructuredOutputStream& ) { }
+    virtual void marshal( Marshaller& ) { }
+    virtual void unmarshal( Unmarshaller& ) { }
 
   protected:
     virtual ~Object()
@@ -603,77 +557,6 @@ namespace YIELD
 
   private:
     volatile int32_t refcnt;
-  };
-
-
-  class StructuredStream
-  {
-  public:
-    class Declaration
-    {
-    public:
-      Declaration() : identifier( 0 ), tag( 0 ) { }
-      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
-      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
-
-      const char* get_identifier() const { return identifier; }
-      uint32_t get_tag() const { return tag; }
-
-    private:
-      const char* identifier;
-      uint32_t tag;
-    };
-  };
-
-
-
-  class StructuredInputStream : public StructuredStream
-    {
-  public:
-    virtual ~StructuredInputStream() { }
-
-    virtual bool readBool( const Declaration& ) = 0;
-    virtual double readDouble( const Declaration& ) = 0;
-    virtual float readFloat( const Declaration& decl ) { return static_cast<float>( readDouble( decl ) ); }
-    virtual int8_t readInt8( const Declaration& decl ) { return static_cast<int8_t>( readInt16( decl ) ); }
-    virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
-    virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
-    virtual int64_t readInt64( const Declaration& decl ) = 0;
-    virtual Object* readMap( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual void* readPointer( const Declaration& ) { return 0; }
-    virtual Object* readSequence( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual void readString( const Declaration& decl, std::string& value ) = 0;
-    virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
-    virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
-    virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
-    virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
-  };
-
-
-  class StructuredOutputStream : public StructuredStream
-  {
-  public:
-    virtual ~StructuredOutputStream() { }
-
-    virtual void writeBool( const Declaration&, bool value ) = 0;
-    virtual void writeDouble( const Declaration&, double value ) = 0;
-    virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
-    virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
-    virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
-    virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
-    virtual void writeInt64( const Declaration&, int64_t ) = 0;
-    virtual void writeMap( const Declaration& decl, YIELD::Object& value ) = 0;
-    virtual void writePointer( const Declaration&, void* ) { }
-    virtual void writeSequence( const Declaration& decl, YIELD::Object& value ) = 0;
-    virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, OutputStream::BUFFER_LEN_MAX ) ); }
-    virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
-    virtual void writeStruct( const Declaration& decl, YIELD::Object& value ) = 0;
-    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
-    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
-    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
-    virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
   };
 
 
@@ -759,7 +642,7 @@ namespace YIELD
     auto_Object( ObjectType* object ) : object( object ) { }
     auto_Object( ObjectType& object ) : object( &object ) { }
     auto_Object( const auto_Object<ObjectType>& other ) { object = Object::incRef( other.object ); }
-    ~auto_Object() { if ( object ) Object::decRef( *object ); }
+    ~auto_Object() { Object::decRef( object ); }
 
     inline ObjectType* get() const { return object; }
     auto_Object& operator=( const auto_Object<ObjectType>& other ) { Object::decRef( this->object ); object = Object::incRef( other.object ); return *this; }
@@ -1074,86 +957,57 @@ namespace YIELD
   };
 
 
-  class File : public Object, public InputStream, public OutputStream
+  class File : public Object
   {
   public:
     const static uint32_t DEFAULT_FLAGS = O_RDONLY;
     const static mode_t DEFAULT_MODE = S_IREAD|S_IWRITE;
     const static uint32_t DEFAULT_ATTRIBUTES = 0;
 
+
     // Construct from a platform file descriptor; takes ownership of the descriptor
 #ifdef _WIN32
-    File( void* fd ) : fd( fd ) { }
+    File( void* fd );
 #else
-    File( int fd ) : fd( fd ) { }
+    File( int fd );
 #endif
 
     static auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
     static auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
     static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
 #ifdef _WIN32
     operator void*() const { return fd; }
 #else
     operator int() const { return fd; }
-#endif
+#endif    
 
-     YIELD_FILE_PROTOTYPES;
+    YIELD_FILE_PROTOTYPES;
 
-//    typedef void ( *aio_read_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
-//    typedef void ( *aio_write_completion_routine_t )( unsigned long error_code, size_t buffer_len, void* context );
-//    virtual int aio_read( void* buffer, size_t buffer_len, aio_read_completion_routine_t, void* context );
-//    virtual int aio_write( const void* buffer, size_t buffer_len, aio_write_completion_routine_t, void* context );
-    virtual bool seek( uint64_t offset ); // from the beginning of the file
+    virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
+    virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
     virtual auto_Object<Stat> stat() { return getattr(); }
-
-    virtual Stream::Status write( const void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_written = 0 )
-    {
-      iovec buffers[1];
-      buffers[0].iov_base = static_cast<char*>( const_cast<void*>( buffer ) );
-      buffers[0].iov_len = buffer_len;
-      return writev( buffers, 1, offset, out_bytes_written );
-    }
+    virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
+    virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
+    virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
     // Object
     YIELD_OBJECT_PROTOTYPES( File, 1 );
 
-    // InputStream
-    YIELD_INPUT_STREAM_PROTOTYPES;
-
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;    
-
   protected:
-#ifdef _WIN32
-    File() : fd( ( void* )-1 ) { }
-#else
-    File() : fd( -1 ) { }
-#endif
+    File();
     virtual ~File() { close(); }
 
   private:
-    File( const File& )  // Prevent copying
-    {
-      DebugBreak();
-    }
+    File( const File& ); // Prevent copying
 
 #ifdef _WIN32
     void* fd;
 #else
     int fd;
 #endif
-
-    /*
-#if defined(_WIN32)
-    static void __stdcall overlapped_read_completion( unsigned long, unsigned long, void* );
-    static void __stdcall overlapped_write_completion( unsigned long, unsigned long, void* );
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-    static void aio_read_notify( sigval_t );
-    static void aio_write_notify( sigval_t );
-#endif
-    */
   };
 
 
@@ -1864,7 +1718,39 @@ namespace YIELD
   };
 
 
-  class Log : public Object, public OutputStream
+  class IOBuffer : public Object
+  {
+  public:
+    IOBuffer( size_t size );
+    IOBuffer( size_t size, auto_Object<> context );
+    virtual ~IOBuffer();
+
+    size_t consume( void* into_buffer, size_t into_buffer_len );
+    size_t consume( std::string& into_string, size_t into_string_len );
+
+//    auto_Object<> get_context() const { return context; }
+//    auto_Object<IOBuffer> get_next_io_buffer() const { return next_io_buffer; }
+    uint64_t get_size() const { return buffer_len; }    
+
+    operator struct iovec() const;
+    operator void*() const { return buffer; }
+
+//    void set_context( auto_Object<> context ) { this->context = context; }
+//    void set_next_io_buffer( auto_Object<IOBuffer> );
+    void set_size( size_t size );
+    size_t size() const { return buffer_len; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( IOBuffer, 0 );
+        
+  private:
+    uint8_t* buffer;
+    size_t buffer_len, consumed_buffer_len;
+//    auto_Object<> context;
+//    auto_Object<IOBuffer> next_io_buffer;
+  };
+
+  class Log : public Object
   {
   public:
     // Adapted from syslog levels
@@ -1881,7 +1767,7 @@ namespace YIELD
     };
 
 
-    class Stream : public OutputStream
+    class Stream
     {
     public:
       Stream( const Stream& other );
@@ -1893,10 +1779,7 @@ namespace YIELD
         if ( level <= log->get_level() )
           oss << t;
         return *this;
-      }
-
-      // OutputStream
-      OutputStream::Status writev( const struct iovec* buffers, uint32_t buffers_count, size_t* out_bytes_written = 0 );
+      }      
 
     private:
       friend class Log;
@@ -1910,30 +1793,22 @@ namespace YIELD
     };
 
 
+    static auto_Object<Log> open( std::ostream&, Level level );
     static auto_Object<Log> open( const Path& file_path, Level level );
-    Log( std::ostream&, Level level );
-    Log( std::auto_ptr<OutputStream> underlying_output_stream, Level level );
 
     inline Level get_level() const { return level; }
-    inline OutputStream& get_underlying_output_stream() const { return *underlying_output_stream; }
     Stream getStream() { return Stream( incRef(), level ); }
     Stream getStream( Level level ) { return Stream( incRef(), level ); }
     void set_level( Level level ) { this->level = level; }
 
     inline void write( const char* str, Level level )
     {
-      write( str, strnlen( str, OutputStream::BUFFER_LEN_MAX ), level );
+      write( str, strnlen( str, UINT16_MAX ), level );
     }
 
     inline void write( const std::string& str, Level level )
     {
       write( str.c_str(), str.size(), level );
-    }
-
-    inline void write( const char* str, size_t str_len, Level level )
-    {
-      if ( level <= this->level )
-        OutputStream::write( str, str_len );
     }
 
     inline void write( const void* str, size_t str_len, Level level )
@@ -1943,32 +1818,36 @@ namespace YIELD
 
     inline void write( const unsigned char* str, size_t str_len, Level level )
     {
-      if ( level <= this->level )
-        write( str, str_len );
+      char* sanitized_str = sanitize( str, str_len );
+      write( sanitized_str, str_len, level );
+      delete [] sanitized_str;
     }
 
-    void writev( const iovec* buffers, uint32_t buffers_count, Level level )
+    inline void write( const char* str, size_t str_len, Level level )
     {
+      struct iovec buffers[1];
+      buffers[0].iov_base = ( void* )str;
+      buffers[0].iov_len = str_len;
       if ( level <= this->level )
-        writev( buffers, buffers_count );
+        write( str, str_len );
     }
     
     // Object
     YIELD_OBJECT_PROTOTYPES( Log, 2 );
 
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;
+  protected:
+    Log( Level level )
+      : level( level )
+    { }
+
+    virtual ~Log() { }
+
+    virtual void write( const char* str, size_t str_len ) = 0;
 
   private:
-    ~Log() { }
-
-
-    std::auto_ptr<OutputStream> underlying_output_stream;
     Level level;
 
-
     static char* sanitize( const unsigned char* str, size_t str_len );
-    void write( const unsigned char* str, size_t str_len );
   };
 
 
@@ -2044,6 +1923,48 @@ namespace YIELD
   };
 
 
+  class Marshaller : public Object
+  {
+  public:
+    class Declaration
+    {
+    public:
+      Declaration() : identifier( 0 ), tag( 0 ) { }
+      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
+      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
+
+      const char* get_identifier() const { return identifier; }
+      uint32_t get_tag() const { return tag; }
+
+    private:
+      const char* identifier;
+      uint32_t tag;
+    };
+
+
+    virtual ~Marshaller() { }
+
+    virtual void writeBool( const Declaration&, bool value ) = 0;
+    virtual void writeDouble( const Declaration&, double value ) = 0;
+    virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
+    virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
+    virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
+    virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
+    virtual void writeInt64( const Declaration&, int64_t ) = 0;
+    virtual void writeMap( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writePointer( const Declaration&, void* ) { }
+    virtual void writeSequence( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
+    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, UINT16_MAX ) ); }
+    virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
+    virtual void writeStruct( const Declaration& decl, YIELD::Object& value ) = 0;
+    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
+    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
+    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
+    virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
+  };
+
+
   class MemoryMappedFile : public Object
   {
   public:
@@ -2101,19 +2022,17 @@ namespace YIELD
   };
 
 
-  class NamedPipe : public Object, public InputStream, public OutputStream
+  class NamedPipe : public Object
   {
   public:
-    static auto_Object<NamedPipe> open( const Path& path, uint32_t flags = O_RDWR, mode_t mode = File::DEFAULT_MODE );
+    static auto_Object<NamedPipe> open( const Path& path, uint32_t flags = O_RDWR, mode_t mode = File::DEFAULT_MODE );            
 
+    virtual ssize_t read( void* buffer, size_t buffer_len );
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
+    virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count );
+    
     // Object
-    YIELD_OBJECT_PROTOTYPES( NamedPipe, 4 );
-
-    // InputStream
-    YIELD_INPUT_STREAM_PROTOTYPES;
-
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;
+    YIELD_OBJECT_PROTOTYPES( NamedPipe, 4 );  
 
   private:
 #ifdef WIN32
@@ -2124,8 +2043,10 @@ namespace YIELD
     ~NamedPipe() { }
 
     auto_Object<File> underlying_file;
+
 #ifdef _WIN32
     bool connected;
+    bool connect();
 #endif
   };
 
@@ -2347,27 +2268,16 @@ namespace YIELD
   }
 
 
-  class Pipe : public Object, public InputStream, public OutputStream
+  class Pipe : public Object
   {
   public:
     static auto_Object<Pipe> create();
 
-#ifdef _WIN32
-    void* get_read_end() const { return ends[0]; }
-    void* get_write_end() const { return ends[1]; }
-#else
-    int get_read_end() const { return ends[0]; }
-    int get_write_end() const { return ends[1]; }
-#endif
+    ssize_t read( void* buffer, size_t buffer_len );
+    ssize_t write( const void* buffer, size_t buffer_len );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Pipe, 6 );
-
-    // InputStream
-    YIELD_INPUT_STREAM_PROTOTYPES;
-
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   private:
 #ifdef _WIN32
@@ -2375,7 +2285,7 @@ namespace YIELD
 #else
     Pipe( int ends[2] );
 #endif
-    ~Pipe();
+    ~Pipe() { }
 
 #ifdef _WIN32
     void* ends[2];
@@ -2385,41 +2295,41 @@ namespace YIELD
   };
 
 
-  class PrettyPrintOutputStream : public StructuredOutputStream
+  class PrettyPrinter : public Marshaller
   {
   public:
-    PrettyPrintOutputStream( OutputStream& underlying_output_stream );
-    PrettyPrintOutputStream& operator=( const PrettyPrintOutputStream& ) { return *this; }
+    PrettyPrinter( std::ostream& );
+    PrettyPrinter& operator=( const PrettyPrinter& ) { return *this; }
 
-    // StructuredOutputStream
-    YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
+    // Marshaller
+    YIELD_MARSHALLER_PROTOTYPES;
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( PrettyPrinter, 0 );
 
   private:
-    OutputStream& underlying_output_stream;
+    std::ostream& os;
   };
 
 
-  class Process : public Object, public InputStream, public OutputStream
+  class Process : public Object
   {
   public:
     static auto_Object<Process> create( const Path& executable_file_path ); // No arguments
     static auto_Object<Process> create( int argc, char** argv );    
     static auto_Object<Process> create( const Path& executable_file_path, const char** null_terminated_argv ); // execv style
 
+    auto_Object<Pipe> get_stdin() const { return child_stdin; }
+    auto_Object<Pipe> get_stdout() const { return child_stdout; }
+    auto_Object<Pipe> get_stderr() const { return child_stderr; }
+
     bool kill(); // SIGKILL
-    bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG, out_return_code can be NULL
-    Stream::Status read_stderr( void* buffer, size_t buffer_len, size_t* out_bytes_read = 0 );    
+    bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG, out_return_code can be NULL    
     bool terminate(); // SIGTERM
     int wait(); // Calls waitpid() and suspends the calling process until the child exits, use carefully
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Process, 7 );
-
-    // InputStream
-    YIELD_INPUT_STREAM_PROTOTYPES;
-
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;
 
   private:
 #ifdef _WIN32
@@ -2427,7 +2337,7 @@ namespace YIELD
 #else
     Process( int child_pid, 
 #endif
-      auto_Object<Pipe> child_stdin_pipe, auto_Object<Pipe> child_stdout_pipe, auto_Object<Pipe> child_stderr_pipe );
+      auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr );
 
     ~Process();
 
@@ -2436,7 +2346,7 @@ namespace YIELD
 #else
     int child_pid;
 #endif
-    auto_Object<Pipe> child_stdin_pipe, child_stdout_pipe, child_stderr_pipe;  
+    auto_Object<Pipe> child_stdin, child_stdout, child_stderr;  
   };
 
 
@@ -2470,58 +2380,6 @@ namespace YIELD
 #elif defined(__sun)
     int psetid;
 #endif
-  };
-
-
-  class RRD : public Object
-  {
-  public:
-    class Record : public Object
-    {
-    public:
-      Record()
-        : value( 0 )
-      { }
-
-      Record( double value )
-        : value( value )
-      { }
-
-      Record( const Time& time, double value )
-        : time( time ), value( value )
-      { }
-
-      const Time& get_time() const { return time; }
-      double get_value() const { return value; }
-      operator double() const { return value; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( RRD::Record, 9 );
-      Stream::Status deserialize( InputStream& input_stream );
-      Stream::Status serialize( OutputStream& output_stream );
-
-    private:
-      Time time;
-      double value;
-    };
-
-
-    static auto_Object<RRD> open( const Path& file_path, uint32_t file_open_flags = File::DEFAULT_FLAGS );
-
-    void append( double value );
-    void fetch( std::vector<Record>& out_records );
-    void fetch( const Time& start_time, std::vector<Record>& out_records );
-    void fetch( const Time& start_time, const Time& end_time, std::vector<Record>& out_records );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( RRD, 10 );
-
-  private:
-    RRD( const Path& current_file_path, auto_Object<File> current_file );
-    ~RRD() { }
-
-    Path current_file_path;
-    auto_Object<File> current_file;
   };
 
 
@@ -2822,39 +2680,18 @@ namespace YIELD
   };
 
 
-  class String : public Object, public InputStream, public OutputStream, public std::string
+  class String : public Object, public std::string
   {
   public:
-    String() : hash( 0 ), read_pos( 0 ) { }
-    String( size_t str_len ) : hash( 0 ), read_pos( 0 ) { resize( str_len ); }
-    String( const std::string& str ) : std::string( str ), hash( 0 ), read_pos( 0 ) { }
-    String( const char* str ) : std::string( str ), hash( 0 ), read_pos( 0 ) { }
-    String( const char* str, size_t str_len ) : std::string( str, str_len ), hash( 0 ), read_pos( 0 ) { }
-
-    uint32_t get_hash()
-    {
-      if ( hash == 0 )
-        hash = string_hash( c_str(), size() );
-      return hash;
-    }
+    String() { }
+    String( size_t str_len ) { resize( str_len ); }
+    String( const std::string& str ) : std::string( str ) { }
+    String( const char* str ) : std::string( str ) { }
+    String( const char* str, size_t str_len ) : std::string( str, str_len ) { }
+    virtual ~String() { }
 
     // Object
     YIELD_OBJECT_PROTOTYPES( String, 13 );
-    Stream::Status deserialize( InputStream& input_stream, size_t* out_bytes_read );
-    Stream::Status serialize( OutputStream& output_stream, size_t* out_bytes_written = 0 );
-
-    // InputStream
-    YIELD_INPUT_STREAM_PROTOTYPES;
-
-    // OutputStream
-    YIELD_OUTPUT_STREAM_PROTOTYPES;
-
-  protected:
-    virtual ~String() { }
-
-  private:
-    uint32_t hash;
-    size_t read_pos;
   };
 
 
@@ -2940,6 +2777,7 @@ namespace YIELD
   {
   public:
     TestRunner( Log::Level log_level = Log::LOG_NOTICE );
+    virtual ~TestRunner() { }
 
     virtual int run( TestSuite& test_suite );
 
@@ -2963,6 +2801,46 @@ namespace YIELD
     std::string name;
 
     std::vector<bool> own_test_cases;
+  };
+
+
+  class Unmarshaller : public Object
+  {
+  public:
+    class Declaration
+    {
+    public:
+      Declaration() : identifier( 0 ), tag( 0 ) { }
+      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
+      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
+
+      const char* get_identifier() const { return identifier; }
+      uint32_t get_tag() const { return tag; }
+
+    private:
+      const char* identifier;
+      uint32_t tag;
+    };
+
+
+    virtual ~Unmarshaller() { }
+
+    virtual bool readBool( const Declaration& ) = 0;
+    virtual double readDouble( const Declaration& ) = 0;
+    virtual float readFloat( const Declaration& decl ) { return static_cast<float>( readDouble( decl ) ); }
+    virtual int8_t readInt8( const Declaration& decl ) { return static_cast<int8_t>( readInt16( decl ) ); }
+    virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
+    virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
+    virtual int64_t readInt64( const Declaration& decl ) = 0;
+    virtual Object* readMap( const Declaration& decl, Object* value = NULL ) = 0;
+    virtual void* readPointer( const Declaration& ) { return 0; }
+    virtual Object* readSequence( const Declaration& decl, Object* value = NULL ) = 0;
+    virtual void readString( const Declaration& decl, std::string& value ) = 0;
+    virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
+    virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
+    virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
+    virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
+    virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
   };
 
 
@@ -3024,40 +2902,46 @@ namespace YIELD
   };
 
 
-  class XDRInputStream : public StructuredInputStream
+  class XDRMarshaller : public Marshaller
   {
   public:
-    XDRInputStream( InputStream& underlying_input_stream );
-    XDRInputStream& operator=( const XDRInputStream& ) { return *this; }
+    XDRMarshaller( std::ostream& target_ostream, bool in_map = false );
 
-    // StructuredInputStream
-    YIELD_STRUCTURED_INPUT_STREAM_PROTOTYPES;
-    float readFloat( const Declaration& decl );
-    int32_t readInt32( const Declaration& decl );
+    XDRMarshaller& operator=( const XDRMarshaller& ) { return *this; }
 
-  protected:
-    InputStream& underlying_input_stream;
-  };
-
-
-  class XDROutputStream : public StructuredOutputStream
-  {
-  public:
-    XDROutputStream( OutputStream& underlying_output_stream, bool in_map = false );
-    XDROutputStream& operator=( const XDROutputStream& ) { return *this; }
-
-    // StructuredOutputstream
-    YIELD_STRUCTURED_OUTPUT_STREAM_PROTOTYPES;
+    // Marshaller
+    YIELD_MARSHALLER_PROTOTYPES;
     void writeFloat( const Declaration& decl, float value );
     void writeInt32( const Declaration& decl, int32_t value );
 
-  protected:
-    OutputStream& underlying_output_stream;
-
-    virtual void beforeWrite( const Declaration& decl );
+    // Object
+    YIELD_OBJECT_PROTOTYPES( XDRMarshaller, 0 );
 
   private:
+    std::ostream& target_ostream;
     bool in_map;
+
+    virtual void beforeWrite( const Declaration& decl );
+  };
+
+
+  class XDRUnmarshaller : public Unmarshaller
+  {
+  public:
+    XDRUnmarshaller( std::istream& source_istream );
+
+    XDRUnmarshaller& operator=( const XDRUnmarshaller& ) { return *this; }
+
+    // Unmarshaller
+    YIELD_UNMARSHALLER_PROTOTYPES;
+    float readFloat( const Declaration& decl );
+    int32_t readInt32( const Declaration& decl );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( XDRUnmarshaller, 0 );
+
+  private:
+    std::istream& source_istream;
   };
 };
 

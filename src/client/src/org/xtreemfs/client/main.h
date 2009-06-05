@@ -108,7 +108,7 @@ namespace org
         YIELD::auto_Object<YIELD::Log> get_log()
         {
           if ( log == NULL )
-            log = new YIELD::Log( std::cout, get_log_level() );
+            log = YIELD::Log::open( std::cout, get_log_level() );
           return log;
         }
 

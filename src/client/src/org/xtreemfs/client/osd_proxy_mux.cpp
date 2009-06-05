@@ -285,9 +285,9 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
     }
     break;
 
-    case YIELD_OBJECT_TAG( YIELD::TimerEvent ):
+    case YIELD_OBJECT_TAG( YIELD::FDEventQueue::TimerEvent ):
     {
-      YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::TimerEvent&>( ev ).get_context().release() );
+      YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::FDEventQueue::TimerEvent&>( ev ).get_context().release() );
       pingOSD( udp_osd_proxy );
       YIELD::Object::decRef( ev );
     }

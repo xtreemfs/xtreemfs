@@ -19,6 +19,10 @@ namespace org
       const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;
       const static char* REPL_UPDATE_PC_NONE = "";
       const static char* REPL_UPDATE_PC_RONLY = "ronly";
+      const static uint32_t REPL_FLAG_IS_FULL = 0x0001;
+      const static uint32_t REPL_FLAG_FILL_ON_DEMAND = 0x0002;
+      const static uint32_t REPL_FLAG_STRATEGY_SIMPLE = 0x0004;
+      const static uint32_t REPL_FLAG_STRATEGY_RANDOM = 0x0008;
       const static uint32_t SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
       const static uint32_t SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;
       const static uint32_t SYSTEM_V_FCNTL_H_O_RDWR = 0x0002;

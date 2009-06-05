@@ -179,8 +179,7 @@ namespace org
               YIELD::Thread::sleep( 100 * NS_IN_MS );
               if ( !child_process->poll( &ret ) )
               {
-                YIELD::Stream::Status read_status = server_named_pipe->read( &ret, sizeof( ret ) );
-                if ( read_status != YIELD::Stream::STREAM_STATUS_OK )
+                if ( server_named_pipe->read( &ret, sizeof( ret ) ) != sizeof( ret ) )
                 {
                   get_log()->getStream( YIELD::Log::LOG_ERR ) << get_program_name() << ": parent xtfs_mount could not read from named pipe to client, error: " << YIELD::Exception::strerror();
                   ret = 1;

@@ -1,4 +1,4 @@
-// Revision: 136
+// Revision: 137
 
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -308,9 +308,9 @@ namespace yieldfs
 
     static int read( const char* path, char *rbuf, size_t size, off_t offset, struct fuse_file_info* fi )
     {
-      size_t bytes_read;
-      if ( get_file( fi )->read( rbuf, size, offset, &bytes_read ) == YIELD::Stream::STREAM_STATUS_OK )
-        return static_cast<int>( bytes_read );
+      ssize_t read_ret = get_file( fi )->read( rbuf, size, offset );
+      if ( read_ret >= 0 )
+        return static_cast<int>( read_ret );
       else
         return -1 * errno;
     }
@@ -923,34 +923,30 @@ namespace yieldfs
     {
       YIELD::File* file = get_file( DokanFileInfo );
 
-      size_t bytes_read;
+      ssize_t read_ret;
 
       if ( file )
-      {
-        if ( file->read( Buffer, BufferLength, Offset, &bytes_read ) != YIELD::Stream::STREAM_STATUS_OK )
-          return -1 * ::GetLastError();
-      }
+        read_ret = file->read( Buffer, BufferLength, Offset );
       else
       {
         file = get_volume( DokanFileInfo ).open( FileName, O_RDONLY ).release();
         if ( file != NULL )
         {
-          if ( file->read( Buffer, BufferLength, Offset, &bytes_read ) == YIELD::Stream::STREAM_STATUS_OK )
-            YIELD::Object::decRef( *file );
-          else
-          {
-            YIELD::Object::decRef( *file );
-            return -1 * ::GetLastError();
-          }
+          read_ret = file->read( Buffer, BufferLength, Offset );
+          YIELD::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
       }
 
-      if ( ReadLength )
-        *ReadLength = static_cast<DWORD>( bytes_read );
-
-      return ERROR_SUCCESS;
+      if ( read_ret >= 0 )
+      {
+        if ( ReadLength )
+          *ReadLength = static_cast<DWORD>( read_ret );
+        return ERROR_SUCCESS;
+      }
+      else
+        return -1 * ::GetLastError();
     }
 
     static int DOKAN_CALLBACK
@@ -1029,34 +1025,30 @@ namespace yieldfs
     {
       YIELD::File* file = get_file( DokanFileInfo );
 
-      size_t bytes_written;
+      ssize_t write_ret;
 
       if ( file )
-      {
-        if ( file->write( Buffer, NumberOfBytesToWrite, Offset, &bytes_written ) != YIELD::Stream::STREAM_STATUS_OK )
-          return -1 * ::GetLastError();
-      }
+        write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
       else
       {
         file = get_volume( DokanFileInfo ).open( FileName, O_CREAT|O_WRONLY ).release();
         if ( file != NULL )
         {
-          if ( file->write( Buffer, NumberOfBytesToWrite, Offset, &bytes_written ) == YIELD::Stream::STREAM_STATUS_OK )
-            YIELD::Object::decRef( *file );
-          else
-          {
-            YIELD::Object::decRef( *file );
-            return -1 * ::GetLastError();
-          }
+          write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
+          YIELD::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
       }
 
-      if ( NumberOfBytesWritten )
-        *NumberOfBytesWritten = static_cast<DWORD>( bytes_written );
-
-      return ERROR_SUCCESS;
+      if ( write_ret >= 0 )
+      {
+        if ( NumberOfBytesWritten )
+          *NumberOfBytesWritten = static_cast<DWORD>( write_ret );
+        return ERROR_SUCCESS;
+      }
+      else
+        return -1 * ::GetLastError();
     }
 
   private:
@@ -1150,7 +1142,7 @@ bool CachedFile::flush()
   {
     if ( cached_page_i->second->get_dirty_bit() )
     {
-      underlying_file->write( cached_page_i->second->get_data(), cached_page_i->second->get_data_len(), cached_page_i->first * CACHED_PAGE_SIZE, NULL );
+      underlying_file->write( cached_page_i->second->get_data(), cached_page_i->second->get_data_len(), cached_page_i->first * CACHED_PAGE_SIZE );
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: flushing page " << cached_page_i->first << ".";
     }
@@ -1172,7 +1164,7 @@ bool CachedFile::listxattr( std::vector<std::string>& out_names )
 {
   return underlying_file->listxattr( out_names );
 }
-YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_t offset, size_t* out_bytes_read )
+ssize_t CachedFile::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( offset % CACHED_PAGE_SIZE != 0 )
     YIELD::DebugBreak();
@@ -1192,13 +1184,12 @@ YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read miss on page " << cached_page_i << ".";
       cached_page = new CachedPage;
-      size_t bytes_read;
-      YIELD::Stream::Status read_status = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset, &bytes_read );
-      if ( read_status == STREAM_STATUS_OK )
+      ssize_t read_ret = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset );
+      if ( read_ret >= 0 )
       {
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read " << cached_page->get_data_len() << " bytes into page " << cached_page_i << ".";
-        cached_page->set_data_len( static_cast<uint16_t>( bytes_read ) );
+        cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
         cached_pages.insert( cached_page_i, cached_page );
       }
       else
@@ -1206,7 +1197,7 @@ YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read on page " << cached_page_i << " failed";
         delete cached_page;
-        return read_status;
+        return read_ret;
       }
     }
     if ( remaining_buffer_len > cached_page->get_data_len() )
@@ -1228,9 +1219,7 @@ YIELD::Stream::Status CachedFile::read( void* buffer, size_t buffer_len, uint64_
       break;
     }
   }
-  if ( out_bytes_read )
-    *out_bytes_read = static_cast<size_t>( read_to_buffer_p - static_cast<char*>( buffer ) );
-  return STREAM_STATUS_OK;
+  return static_cast<ssize_t>( read_to_buffer_p - static_cast<char*>( buffer ) );
 }
 bool CachedFile::removexattr( const std::string& name )
 {
@@ -1251,11 +1240,11 @@ bool CachedFile::truncate( uint64_t offset )
   flush();
   return underlying_file->truncate( offset );
 }
-YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
+ssize_t CachedFile::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {
   if ( offset % CACHED_PAGE_SIZE != 0 )
     YIELD::DebugBreak();
-  size_t bytes_written = 0;
+  ssize_t ret = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
   {
     char* wrote_to_buffer_p = static_cast<char*>( buffers[buffer_i].iov_base );
@@ -1278,16 +1267,15 @@ YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t 
         {
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: writing partial page " << cached_page_i << ", must read from underlying file system.";
-          size_t bytes_read;
-          YIELD::Stream::Status read_status = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset, &bytes_read );
-          if ( read_status == STREAM_STATUS_OK )
-            cached_page->set_data_len( static_cast<uint16_t>( bytes_read ) );
+          ssize_t read_ret = underlying_file->read( cached_page->get_data(), CACHED_PAGE_SIZE, offset );
+          if ( read_ret >= 0 )
+            cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
           else
           {
             if ( log != NULL )
               log->getStream( YIELD::Log::LOG_INFO ) << "CachedFile: read on page " << cached_page_i << " failed";
             delete cached_page;
-            return read_status;
+            return read_ret;
           }
         }
         cached_pages.insert( cached_page_i, cached_page );
@@ -1303,7 +1291,7 @@ YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t 
         wrote_to_buffer_p += CACHED_PAGE_SIZE;
         remaining_buffer_len -= CACHED_PAGE_SIZE;
         offset += CACHED_PAGE_SIZE;
-        bytes_written += CACHED_PAGE_SIZE;
+        ret += CACHED_PAGE_SIZE;
       }
       else
       {
@@ -1312,14 +1300,12 @@ YIELD::Stream::Status CachedFile::writev( const struct iovec* buffers, uint32_t 
         memcpy_s( cached_page->get_data(), CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
         if ( remaining_buffer_len > cached_page->get_data_len() )
           cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
-        bytes_written += remaining_buffer_len;
+        ret += remaining_buffer_len;
         break;
       }
     }
   }
-  if ( out_bytes_written )
-    *out_bytes_written = bytes_written;
-  return STREAM_STATUS_OK;
+  return ret;
 }
 
 
@@ -1694,7 +1680,7 @@ TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::Fil
   : StackableFile( path, underlying_file, log )
 {
   if ( this->log == NULL )
-    this->log = new YIELD::Log( std::cout, YIELD::Log::LOG_INFO );
+    this->log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 bool TracingFile::close()
 {
@@ -1726,10 +1712,10 @@ bool TracingFile::listxattr( std::vector<std::string>& out_names )
   log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: flistxattr( " << path << " )";
   return underlying_file->listxattr( out_names );
 }
-YIELD::Stream::Status TracingFile::read( void* rbuf, size_t size, uint64_t offset, size_t* out_bytes_read )
+ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
   log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: read( " << path << ", rbuf, " << size << ", " << offset << " )";
-  return underlying_file->read( rbuf, size, offset, out_bytes_read );
+  return underlying_file->read( rbuf, size, offset );
 }
 bool TracingFile::removexattr( const std::string& name )
 {
@@ -1751,13 +1737,13 @@ bool TracingFile::truncate( uint64_t new_size )
   log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: ftruncate( " << path << ", " << new_size << " )";
   return underlying_file->truncate( new_size );
 }
-YIELD::Stream::Status TracingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset, size_t* out_bytes_written )
+ssize_t TracingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {
   if ( buffers_count == 1 )
     log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: write( " << path << ", wbuf, " << buffers[0].iov_len << ", " << offset << " )";
   else
     log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile: writev( " << path << ", buffers, " << buffers_count << ", " << offset << " )";
-  return underlying_file->writev( buffers, buffers_count, offset, out_bytes_written );
+  return underlying_file->writev( buffers, buffers_count, offset );
 }
 
 
@@ -1814,13 +1800,13 @@ namespace yieldfs
 
 TracingVolume::TracingVolume()
 {
-  log = new YIELD::Log( std::cout, YIELD::Log::LOG_INFO );
+  log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 
 TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
   : StackableVolume( underlying_volume )
 {
-  log = new YIELD::Log( std::cout, YIELD::Log::LOG_INFO );
+  log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 
 TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log )

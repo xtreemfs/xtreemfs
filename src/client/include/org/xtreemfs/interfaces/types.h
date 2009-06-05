@@ -26,9 +26,9 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( StringSet, 1001 );
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { std::string value; input_stream.readString( YIELD::StructuredStream::Declaration( "value" ), value ); push_back( value ); }
         uint64_t get_size() const { return std::vector<std::string>::size(); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "value" ), ( *this )[value_i] ); } }
+        void marshal( YIELD::Marshaller& marshaller ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "value" ), value ); push_back( value ); }
       };
 
       class UserCredentials : public YIELD::Object
@@ -53,9 +53,9 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( UserCredentials, 1002 );
 
+        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "group_ids" ), group_ids ); marshaller.writeString( YIELD::Marshaller::Declaration( "password" ), password ); }
         // YIELD::Object
-        void deserialize( YIELD::StructuredInputStream& input_stream ) { input_stream.readString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); input_stream.readSequence( YIELD::StructuredStream::Declaration( "group_ids" ), &group_ids ); input_stream.readString( YIELD::StructuredStream::Declaration( "password" ), password ); }
-        void serialize( YIELD::StructuredOutputStream& output_stream ) { output_stream.writeString( YIELD::StructuredStream::Declaration( "user_id" ), user_id ); output_stream.writeSequence( YIELD::StructuredStream::Declaration( "group_ids" ), group_ids ); output_stream.writeString( YIELD::StructuredStream::Declaration( "password" ), password ); }
+        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "password" ), password ); }
 
       protected:
         std::string user_id;
