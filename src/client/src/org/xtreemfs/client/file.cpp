@@ -170,7 +170,7 @@ bool File::truncate( uint64_t new_size )
     org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
     parent_volume.get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
     processOSDWriteResponse( osd_write_response );
-  //  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
     return true;
   }
@@ -203,7 +203,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       processOSDWriteResponse( osd_write_response );    
     }
 
-  //  if ( ( get_parent_shared_file().get_parent_volume().get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
 
     return static_cast<ssize_t>( file_offset - offset );
