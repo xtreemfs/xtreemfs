@@ -1,4 +1,4 @@
-// Revision: 1515
+// Revision: 1521
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -1154,7 +1154,7 @@ auto_Object<HTTPServer> HTTPServer::create( const URI& absolute_uri,
       tcp_listen_queue = TCPListenQueue::create( sockname );
     if ( tcp_listen_queue != NULL )
     {
-      auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter;
+      auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter( log );
       auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage( http_response_writer, log ).release();
       auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
       auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
@@ -1935,7 +1935,7 @@ auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
       auto_Object<UDPRecvFromQueue> udp_recvfrom_queue = UDPRecvFromQueue::create( sockname );
       if ( udp_recvfrom_queue != NULL )
       {
-        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter( log );
         auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
         auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
         auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
@@ -1956,7 +1956,7 @@ auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
         tcp_listen_queue = TCPListenQueue::create( sockname );
       if ( tcp_listen_queue != NULL )
       {
-        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter;
+        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter( log );
         auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
         auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
         auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
@@ -2787,7 +2787,6 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
       auto_Object<> timer_event_context = timer_event.get_context();
       if ( timer_event_context == NULL ) // Check connection timeouts
       {
-        /*
         typename std::vector<Connection*>::size_type connection_i = 0;
         for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
         {
@@ -2798,15 +2797,14 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             if ( connection_idle_time > operation_timeout )
             {
               if ( log != NULL )
-                log->getStream( Log::LOG_ERR ) << "SocketClient: connection to " << peername << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
-              DebugBreak();
-              //destroyConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
+                log->getStream( Log::LOG_ERR ) << "SocketClient: connection to " << *absolute_uri << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
+              connection->get_socket()->shutdown();
+              recreateConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
             }
           }
         }
         Object::decRef( ev );
         return;
-        */
       }
       else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
       {
@@ -2832,20 +2830,12 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
           break;
         }
       }
-      if ( connection == NULL )
+      if ( connection != NULL )
+        connection->set_state( Connection::WRITING );
+      else
       {
-        auto_Object<Socket> _socket;
-#ifdef YIELD_HAVE_OPENSSL
-        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
-             ssl_context != NULL )
-          _socket = SSLSocket::create( ssl_context ).release();
-        else
-#endif
-        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
-          _socket = UDPSocket::create().release();
-        else
-          _socket = TCPSocket::create().release();
-        connection = new Connection( _socket, reconnect_tries_max );
+        connection = createConnection();
+        connection->set_state( Connection::CONNECTING );
         connections.push_back( &connection->incRef() );
       }
       connection->set_protocol_request( protocol_request );
@@ -2856,7 +2846,6 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
   {
     switch ( connection->get_state() )
     {
-      case Connection::IDLE:
       case Connection::CONNECTING:
       {
         if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
@@ -2875,13 +2864,13 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             log->getStream( Log::LOG_DEBUG ) << "SocketClient: waiting for non-blocking connect() to " << *absolute_uri << " to complete.";
           fd_event_queue->attach( *connection->get_socket(), connection->incRef(), false, true );
           connection->set_state( Connection::CONNECTING );
-          return;
         }
         else
         {
           if ( log != NULL )
             log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << *absolute_uri << " failed: " << Exception::strerror();
-          break; // Drop down to try to reconnect
+          recreateConnection( connection );
+          return;
         }
       }
       // No break here, to allow drop down to WRITING
@@ -2913,7 +2902,8 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
         {
           if ( log != NULL )
             log->getStream( Log::LOG_ERR ) << "SocketClient: lost connection to " << *absolute_uri << " on write, error: " << Exception::strerror();
-          break; // Drop down to reconnect
+          recreateConnection( connection );
+          return;
         }
       }
       // No break here, to allow drop down to READING
@@ -2938,58 +2928,75 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
               connection->set_protocol_response( NULL );
               connection->set_reconnect_tries_left( reconnect_tries_max );
               connection->set_state( Connection::IDLE );
-              fd_event_queue->detach( *connection->get_socket() );
-              return;
+              fd_event_queue->toggle( *connection->get_socket(), false, false );
             }
             else if ( deserialize_ret > 0 )
               continue;
             else
-              break; // Drop down to reconnect
+              recreateConnection( connection );
           }
           else if ( connection->get_socket()->want_read() )
-          {
             fd_event_queue->toggle( *connection->get_socket(), true, false );
-            return;
-          }
           else if ( connection->get_socket()->want_write() )
-          {
             fd_event_queue->toggle( *connection->get_socket(), true, true );
-            return;
-          }
           else
-          {
- //           if ( log != NULL )
- //             log->getStream( Log::LOG_ERR ) << "SocketClient: lost connection to " << *absolute_uri << " on read, error: " << Exception::strerror();
-            break;
-          }
+            recreateConnection( connection );
+          return;
         }
       }
-      // Drop down to reconnect
+      default: DebugBreak(); return;
     }
   }
   else if ( log != NULL ) // fd_event_error_code != 0
+  {
     log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror( fd_event_error_code );
-    // Drop down to reconnect
+    recreateConnection( connection.release() );
+  }
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+auto_Object<typename SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection> SocketClient<ProtocolRequestType, ProtocolResponseType>::createConnection()
+{
+  auto_Object<Socket> _socket;
+#ifdef YIELD_HAVE_OPENSSL
+  if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
+       ssl_context != NULL )
+    _socket = SSLSocket::create( ssl_context ).release();
+  else
+#endif
+  if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
+    _socket = UDPSocket::create().release();
+  else
+    _socket = TCPSocket::create().release();
+  return new Connection( _socket, reconnect_tries_max );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+void SocketClient<ProtocolRequestType, ProtocolResponseType>::recreateConnection( auto_Object<Connection> connection )
+{
   for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
   {
     if ( **connection_i == *connection )
     {
       uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
       auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
+      fd_event_queue->detach( *connection->get_socket() );
+      connection->get_socket()->close();
+      YIELD::Object::decRef( *connection ); // The reference in connections
       if ( --reconnect_tries_left > 0 )
       {
+        connection = createConnection();
+        *connection_i = &connection->incRef();
+        connection->set_protocol_request( protocol_request );
         connection->set_reconnect_tries_left( reconnect_tries_left );
         connection->set_state( Connection::CONNECTING );
-        fd_event_queue->detach( *connection->get_socket() );
         fd_event_queue->timer_create( Time( 1 * NS_IN_S ), connection->incRef() ); // Wait for a delay to attach, add to connections, and try to connect again
       }
       else
       {
+        connections.erase( connection_i );
         if ( log != NULL )
           log->getStream( Log::LOG_ERR ) << "SocketClient: exhausted connection retries to " << *absolute_uri << ".";
         if ( protocol_request != NULL )
         {
-          connection->set_protocol_request( NULL );
           // We've lost errno here
 #ifdef _WIN32
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
@@ -2997,8 +3004,6 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
           respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
 #endif
         }
-        connection->set_state( Connection::IDLE );
-        fd_event_queue->detach( *connection->get_socket() );
       }
       break;
     }
@@ -3061,7 +3066,6 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
           protocol_request = static_cast<ProtocolRequestType*>( context.release() );
           _socket = protocol_request->get_socket();
           Object::decRef( ev );
-          // Drop down to deserialize
         }
         break;
 
@@ -3100,10 +3104,13 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
       _socket = static_cast<Socket&>( ev );
       protocol_request = createProtocolRequest( _socket );
     }
-    break; // Drop down to deserailize
+    break;
 
     default: handleUnknownEvent( ev ); return;
   }
+
+  if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+    log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": trying to read from socket #" << ( int )*_socket << ".";
 
   auto_Object<IOBuffer> protocol_request_buffer = new IOBuffer( 1024 );
 
@@ -3111,12 +3118,22 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
 
   if ( recv_ret > 0 )
   {
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+    {
+      log->getStream( Log::LOG_INFO ) << get_type_name() << ": read " << recv_ret << " bytes from socket #" << ( int )*_socket << ".";
+      log->write( static_cast<void*>( *protocol_request_buffer ), protocol_request_buffer->size(), Log::LOG_DEBUG );
+      log->write( "\n", Log::LOG_DEBUG );
+    }
+
     protocol_request_buffer->set_size( recv_ret );
 
     ssize_t deserialize_ret = protocol_request->deserialize( protocol_request_buffer );
 
     if ( deserialize_ret == 0 )
     {
+      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": successfully deserialized " << protocol_request->get_type_name() << ".";
+
       fd_event_queue->detach( *_socket );
       fd_event_queue->attach( *_socket, &_socket->incRef(), true );
       sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
@@ -3124,6 +3141,9 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
     }
     else if ( deserialize_ret > 0 )
     {
+      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": partially deserialized " << protocol_request->get_type_name() << ".";
+
       fd_event_queue->toggle( *_socket, true, false );
       return;
     }
@@ -3132,15 +3152,24 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
   {
     if ( _socket->want_read() )
     {
+      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": would block on read on socket #" << ( int )*_socket << ".";
+
       fd_event_queue->toggle( *_socket, true, false );
       return;
     }
     else if ( _socket->want_write() )
     {
+      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": would block on write on socket #" << ( int )*_socket << ".";
+
       fd_event_queue->toggle( *_socket, true, true );
       return;
     }
   }
+
+  if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
+    log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": lost connection while trying to read socket #" <<  ( int )*_socket << ".";
 
   fd_event_queue->detach( *_socket );
   _socket->close();
@@ -3164,12 +3193,24 @@ void SocketServer::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Ev
 
       std::ostringstream protocol_response_ostringstream;
       protocol_response.serialize( protocol_response_ostringstream );
-      _socket->send( protocol_response_ostringstream.str().c_str(), protocol_response_ostringstream.str().size() );
+      ssize_t send_ret = _socket->send( protocol_response_ostringstream.str().c_str(), protocol_response_ostringstream.str().size() );
       Object::decRef( protocol_response );
+
+      if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      {
+        log->getStream( Log::LOG_INFO ) << get_type_name() << ": wrote " << send_ret << " bytes to socket #" << ( int )*_socket << ".";
+        log->write( reinterpret_cast<const unsigned char*>( protocol_response_ostringstream.str().c_str() ), send_ret, Log::LOG_DEBUG );
+        log->write( "\n", Log::LOG_DEBUG );
+      }
 
       if ( protocol_request_reader_stage != NULL &&
            _socket->get_tag() != YIELD_OBJECT_TAG( UDPSocket ) )
-         protocol_request_reader_stage->send( *_socket.release() );
+      {
+        if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+          log->getStream() << get_type_name() << ": sending socket #" << ( int )*_socket << " back to the reader stage.";
+
+        protocol_request_reader_stage->send( *_socket.release() );
+      }
     }
     break;
 

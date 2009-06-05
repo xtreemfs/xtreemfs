@@ -198,7 +198,11 @@ namespace org
           if ( stage_group == NULL )
             stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
 
-          return ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), operation_timeout, 3, get_ssl_context() );
+          if ( proxy != NULL )
+            return proxy;
+          else
+            throw YIELD::Exception();
         }
 
 #ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD

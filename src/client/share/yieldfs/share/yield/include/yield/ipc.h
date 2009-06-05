@@ -300,6 +300,8 @@ namespace YIELD
     };
 
 
+    auto_Object<Connection> createConnection();
+    void recreateConnection( auto_Object<Connection> );
     std::vector<Connection*> connections;
   };
 
@@ -321,7 +323,7 @@ namespace YIELD
     {
     public:
       // Object
-      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );    
+      YIELD_OBJECT_PROTOTYPES( ProtocolRequestReader<ProtocolRequestType>, 0 );    
 
       // EventHandler
       void handleEvent( Event& );
@@ -349,18 +351,22 @@ namespace YIELD
     class ProtocolResponseWriter : public EventHandler
     {
     public:
-      ProtocolResponseWriter() { }
+      ProtocolResponseWriter( auto_Object<Log> log = NULL ) 
+        : log ( log )
+      { }
 
       void set_protocol_request_reader_stage( auto_Object<Stage> protocol_request_reader_stage ) { this->protocol_request_reader_stage = protocol_request_reader_stage; }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( EventHandler, 0 );
+      YIELD_OBJECT_PROTOTYPES( ProtocolResponseWriter<ProtocolResponseType>, 0 );
 
       // EventHandler
       void handleEvent( Event& );
 
     protected:
       virtual ~ProtocolResponseWriter() { }
+
+      auto_Object<Log> log;
 
     private:
       auto_Object<Stage> protocol_request_reader_stage;
