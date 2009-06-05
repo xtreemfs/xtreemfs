@@ -110,6 +110,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( read )
   {
     char* rbuf_p = static_cast<char*>( rbuf );
+    size_t rbuf_size = size;
     uint64_t file_offset = offset, file_offset_max = offset + size;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
@@ -129,16 +130,18 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       {
         memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), data->c_str(), data->size() );
         rbuf_p += data->size();
+        rbuf_size -= data->size();
         file_offset += data->size();
       }
 
       uint32_t zero_padding = object_data.get_zero_padding();
       if ( zero_padding > 0 )
       {
-        if ( zero_padding > size )
-          zero_padding = static_cast<uint32_t>( size );
+        if ( zero_padding > rbuf_size )
+          zero_padding = static_cast<uint32_t>( rbuf_size );
         memset( rbuf_p, 0, zero_padding );
         rbuf_p += zero_padding;
+        rbuf_size -= zero_padding; 
         file_offset += zero_padding;
       }
 
@@ -226,7 +229,7 @@ ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint6
     return write( buffers[0].iov_base, buffers[0].iov_len, offset );
   else
   {
-#ifdef _WIN32\
+#ifdef _WIN32
     ::SetLastError( ERROR_NOT_SUPPORTED );
 #else
     errno = ENOTSUP;

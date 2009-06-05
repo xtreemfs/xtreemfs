@@ -249,8 +249,8 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
 #endif
       if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
         tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, log, 5 * NS_IN_S, OSDProxy::PING_INTERVAL_DEFAULT, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
-      else if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-        udp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, log, 5 * NS_IN_S, OSDProxy::PING_INTERVAL_DEFAULT, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
+//      else if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+//        udp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, log, 5 * NS_IN_S, OSDProxy::PING_INTERVAL_DEFAULT, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context ).release();
     }
 
     if ( tcp_osd_proxy != NULL )
