@@ -103,6 +103,8 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.dir.discovery.DiscoveryUtils;
+import org.xtreemfs.interfaces.DirService;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -161,6 +163,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         this.config = config;
         assert (config.getUUID() != null);
+
+        if (this.config.getDirectoryService().getHostName().equals("autodiscover")) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "trying to discover local XtreemFS DIR service...");
+            DirService dir = DiscoveryUtils.discoverDir(10);
+            if (dir == null) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
+                throw new IOException("no DIR service found via discovery broadcast");
+            }
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "+dir.getAddress()+":"+dir.getPort());
+            config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
+        }
         
         numBytesTX = new AtomicLong();
         numBytesRX = new AtomicLong();

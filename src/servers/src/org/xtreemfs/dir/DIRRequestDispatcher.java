@@ -62,8 +62,10 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import java.net.InetAddress;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.dir.discovery.DiscoveryMessageThread;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 
@@ -99,6 +101,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private volatile boolean                   quit;
     
     private final BabuDB                       database;
+
+    private final DiscoveryMessageThread       discoveryThr;
     
     public static final String                 DB_NAME           = "dirdb";
     
@@ -128,6 +132,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         quit = false;
         
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
+
+        discoveryThr = new DiscoveryMessageThread(InetAddress.getLocalHost().getCanonicalHostName(), config.getPort(),
+                config.isUsingSSL() ? "oncrpc" : "oncrpcs");
+        discoveryThr.setLifeCycleListener(this);
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
@@ -171,6 +179,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         server.start();
         server.waitForStartup();
+
+        discoveryThr.start();
+        discoveryThr.waitForStartup();
     }
     
     public void shutdown() throws Exception {
@@ -178,6 +189,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         server.shutdown();
         server.waitForShutdown();
         database.shutdown();
+
+        discoveryThr.shutdown();
+        discoveryThr.waitForShutdown();
+
         
         this.quit = true;
         this.interrupt();

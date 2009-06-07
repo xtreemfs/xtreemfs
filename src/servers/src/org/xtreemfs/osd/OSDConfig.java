@@ -110,6 +110,10 @@ public class OSDConfig extends ServiceConfig {
     public InetSocketAddress getDirectoryService() {
         return directoryService;
     }
+
+    public void setDirectoryService(InetSocketAddress addr) {
+        this.directoryService = addr;
+    }
     
     public String getObjDir() {
         return objDir;
