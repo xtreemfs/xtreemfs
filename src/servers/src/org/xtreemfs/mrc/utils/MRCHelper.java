@@ -265,8 +265,8 @@ public class MRCHelper {
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url:
-                InetSocketAddress addr = config.getUUID().getAddress();
-                return (config.isUsingSSL() ? Constants.ONCRPC_SCHEME : Constants.ONCRPCS_SCHEME)
+                InetSocketAddress addr = config.getDirectoryService();
+                return (config.isUsingSSL() ? Constants.ONCRPC_SCHEME : Constants.ONCRPCS_SCHEME) + "://"
                     + addr.getHostName() + ":" + addr.getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
