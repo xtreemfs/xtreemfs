@@ -22,12 +22,12 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
  *
  * @author bjko
  */
-public class DiscoveryMessageThread extends LifeCycleThread {
+public class DiscoveryMsgThread extends LifeCycleThread {
 
     private final DirService me;
     private boolean quit;
 
-    public DiscoveryMessageThread(String address, int port, String protocol) {
+    public DiscoveryMsgThread(String address, int port, String protocol) {
         super("DiscovMsgThr");
         me = new DirService(address, port, protocol, DIRInterface.getVersion());
         quit = false;
@@ -42,6 +42,8 @@ public class DiscoveryMessageThread extends LifeCycleThread {
             final DatagramSocket dsock = new DatagramSocket(DIRInterface.DEFAULT_ONCRPC_PORT);
 
             final byte[] data = new byte[2048];
+
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.lifecycle, me, "DiscoveryMessageThread started");
 
             do {
 

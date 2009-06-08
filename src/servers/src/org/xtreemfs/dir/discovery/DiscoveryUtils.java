@@ -53,6 +53,12 @@ public class DiscoveryUtils {
                     }
                 }
             }
+            
+            DatagramPacket pPack = new DatagramPacket(data, 0, InetAddress.getByName("192.168.212.222")
+                    , DIRInterface.DEFAULT_ONCRPC_PORT);
+            dsock.send(pPack);
+
+
 
             for (int i = 0; i < maxWaitSeconds; i++) {
 

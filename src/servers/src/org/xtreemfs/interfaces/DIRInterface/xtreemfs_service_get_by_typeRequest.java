@@ -14,10 +14,10 @@ public class xtreemfs_service_get_by_typeRequest implements org.xtreemfs.interfa
     public static final int TAG = 1106;
 
     
-    public xtreemfs_service_get_by_typeRequest() { type = ServiceType.SERVICE_TYPE_MRC; }
+    public xtreemfs_service_get_by_typeRequest() { type = ServiceType.SERVICE_TYPE_ALL; }
     public xtreemfs_service_get_by_typeRequest( ServiceType type ) { this.type = type; }
-    public xtreemfs_service_get_by_typeRequest( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_MRC; this.deserialize( from_hash_map ); }
-    public xtreemfs_service_get_by_typeRequest( Object[] from_array ) { type = ServiceType.SERVICE_TYPE_MRC;this.deserialize( from_array ); }
+    public xtreemfs_service_get_by_typeRequest( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_ALL; this.deserialize( from_hash_map ); }
+    public xtreemfs_service_get_by_typeRequest( Object[] from_array ) { type = ServiceType.SERVICE_TYPE_ALL;this.deserialize( from_array ); }
 
     public ServiceType getType() { return type; }
     public void setType( ServiceType type ) { this.type = type; }

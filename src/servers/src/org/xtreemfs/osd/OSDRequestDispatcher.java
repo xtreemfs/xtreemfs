@@ -164,7 +164,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         this.config = config;
         assert (config.getUUID() != null);
 
-        if (this.config.getDirectoryService().getHostName().equals("autodiscover")) {
+        if (this.config.getDirectoryService().getHostName().equals(".autodiscover")) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "trying to discover local XtreemFS DIR service...");
             DirService dir = DiscoveryUtils.discoverDir(10);
             if (dir == null) {
@@ -371,7 +371,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.waitForStartup();
             vStage.waitForStartup();
             cThread.waitForStartup();
-            
+
+            heartbeatThread.initialize();
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
             

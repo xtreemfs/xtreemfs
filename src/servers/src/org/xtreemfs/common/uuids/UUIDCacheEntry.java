@@ -96,4 +96,15 @@ class UUIDCacheEntry {
     public void setSticky(boolean sticky) {
         this.sticky = sticky;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Mapping mapping : mappings) {
+            sb.append(mapping.protocol);
+            sb.append("://");
+            sb.append(mapping.resolvedAddr.toString());
+            sb.append(",");
+        }
+        return sb.toString();
+    }
 }

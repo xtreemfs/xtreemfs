@@ -65,7 +65,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.net.InetAddress;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.dir.discovery.DiscoveryMessageThread;
+import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 
@@ -102,7 +102,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     private final BabuDB                       database;
 
-    private final DiscoveryMessageThread       discoveryThr;
+    private final DiscoveryMsgThread       discoveryThr;
     
     public static final String                 DB_NAME           = "dirdb";
     
@@ -133,9 +133,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
 
-        discoveryThr = new DiscoveryMessageThread(InetAddress.getLocalHost().getCanonicalHostName(), config.getPort(),
-                config.isUsingSSL() ? "oncrpc" : "oncrpcs");
-        discoveryThr.setLifeCycleListener(this);
+        if (config.isAutodiscoverEnabled()) {
+            discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config.getPort(),
+                    config.isUsingSSL() ? "oncrpcs" : "oncrpc");
+            discoveryThr.setLifeCycleListener(this);
+        } else {
+            discoveryThr = null;
+        }
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         httpServ.createContext("/", new HttpHandler() {
@@ -180,8 +184,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         server.start();
         server.waitForStartup();
 
-        discoveryThr.start();
-        discoveryThr.waitForStartup();
+        if (discoveryThr != null) {
+            discoveryThr.start();
+            discoveryThr.waitForStartup();
+        }
     }
     
     public void shutdown() throws Exception {
@@ -190,8 +196,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         server.waitForShutdown();
         database.shutdown();
 
-        discoveryThr.shutdown();
-        discoveryThr.waitForShutdown();
+        if (discoveryThr != null) {
+            discoveryThr.shutdown();
+            discoveryThr.waitForShutdown();
+        }
 
         
         this.quit = true;

@@ -3,6 +3,7 @@ package org.xtreemfs.interfaces;
         
 public enum ServiceType 
 {
+    SERVICE_TYPE_ALL( 0 ),
     SERVICE_TYPE_MRC( 1 ),
     SERVICE_TYPE_OSD( 2 ),
     SERVICE_TYPE_VOLUME( 3 );    

@@ -36,6 +36,8 @@ import org.xtreemfs.common.config.ServiceConfig;
 public class DIRConfig extends ServiceConfig {
     
     private String dbDir;
+
+    private boolean autodiscoverEnabled;
     
     /** Creates a new instance of OSDConfig */
     public DIRConfig(String filename) throws IOException {
@@ -52,10 +54,19 @@ public class DIRConfig extends ServiceConfig {
         super.read();
         
         this.dbDir = this.readRequiredString("database.dir");
+
+        this.autodiscoverEnabled = this.readOptionalBoolean("discover", true);
     }
     
     public String getDbDir() {
         return dbDir;
+    }
+
+    /**
+     * @return the autodiscoverEnabled
+     */
+    public boolean isAutodiscoverEnabled() {
+        return autodiscoverEnabled;
     }
     
 }

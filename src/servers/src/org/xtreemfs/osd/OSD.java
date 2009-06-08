@@ -70,7 +70,7 @@ public class OSD {
                             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
                                 "OSD shutdown complete");
                         
-                    } catch (Exception ex) {
+                    } catch (Throwable ex) {
                         ex.printStackTrace();
                     }
                 }
