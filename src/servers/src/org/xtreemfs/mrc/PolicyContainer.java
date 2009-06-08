@@ -55,6 +55,7 @@ import org.xtreemfs.mrc.osdselection.DNSSelectionPolicy;
 import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
 import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
+import org.xtreemfs.mrc.replication.FQDNReplicaSelectionPolicy;
 import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
 import org.xtreemfs.mrc.replication.SimpleReplicaSelectionPolicy;
 import org.xtreemfs.mrc.volumes.VolumeManager;
@@ -73,7 +74,8 @@ public class PolicyContainer {
                                                                    RandomSelectionPolicy.class,
                                                                    ProximitySelectionPolicy.class,
                                                                    DNSSelectionPolicy.class,
-                                                                   SimpleReplicaSelectionPolicy.class };
+                                                                   SimpleReplicaSelectionPolicy.class,
+                                                                   FQDNReplicaSelectionPolicy.class };
         
         private Map<String, Class>           cache;
         
