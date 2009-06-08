@@ -6,6 +6,11 @@ package org.xtreemfs.dir.discovery;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.DatagramChannel;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -39,25 +44,27 @@ public class DiscoveryMsgThread extends LifeCycleThread {
 
         try {
 
-            final DatagramSocket dsock = new DatagramSocket(DIRInterface.DEFAULT_ONCRPC_PORT);
-
-            final byte[] data = new byte[2048];
+            final DatagramChannel channel = DatagramChannel.open();
+            channel.socket().bind(new InetSocketAddress(DIRInterface.DEFAULT_ONCRPC_PORT));
+            channel.configureBlocking(true);
 
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.lifecycle, me, "DiscoveryMessageThread started");
 
+            final ReusableBuffer data = BufferPool.allocate(2048);
+
             do {
 
-                DatagramPacket p = new DatagramPacket(data, data.length);
+                data.position(0);
+                data.limit(data.capacity());
 
-                dsock.receive(p);
+                InetSocketAddress sender = (InetSocketAddress) channel.receive(data.getBuffer());
 
                 try {
-                    ReusableBuffer b = ReusableBuffer.wrap(p.getData(), 0, p.getLength());
-                    b.position(Integer.SIZE / 8);
+                    data.position(Integer.SIZE / 8);
                     ONCRPCRequestHeader hdr = new ONCRPCRequestHeader();
-                    hdr.deserialize(b);
+                    hdr.deserialize(data);
                     xtreemfs_discover_dirRequest rq = new xtreemfs_discover_dirRequest();
-                    rq.deserialize(b);
+                    rq.deserialize(data);
 
 
                     xtreemfs_discover_dirResponse resp = new xtreemfs_discover_dirResponse(me);
@@ -70,14 +77,13 @@ public class DiscoveryMsgThread extends LifeCycleThread {
                     respHdr.serialize(wr);
                     resp.serialize(wr);
                     wr.flip();
-                    byte[] rdata = wr.getBuffers().get(0).array();
+
+                    channel.send(wr.getBuffers().get(0).getBuffer(), sender);
+
                     wr.freeBuffers();
-                    
-                    DatagramPacket rp = new DatagramPacket(rdata, 0, rdata.length, p.getSocketAddress());
-                    dsock.send(rp);
 
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.net, this, "responded to UDP dir discover message from %s", p.getSocketAddress());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.net, this, "responded to UDP dir discover message from %s", sender);
                         
                 } catch (Exception ex) {
                     //bad packet
@@ -87,10 +93,10 @@ public class DiscoveryMsgThread extends LifeCycleThread {
 
             } while (!quit);
 
-            dsock.close();
-
+            channel.close();
         } catch (Exception ex) {
-            notifyCrashed(ex);
+            if (!quit)
+                notifyCrashed(ex);
         }
         notifyStopped();
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.lifecycle, me, "DiscoveryMessageThread shutdown complete");

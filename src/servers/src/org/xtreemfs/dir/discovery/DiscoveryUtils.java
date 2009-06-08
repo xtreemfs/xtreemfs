@@ -34,6 +34,7 @@ public class DiscoveryUtils {
         try {
 
             final DatagramSocket dsock = new DatagramSocket();
+            dsock.setBroadcast(true);
             dsock.setSoTimeout(1000);
 
             final byte[] data = new byte[2048];
@@ -53,10 +54,6 @@ public class DiscoveryUtils {
                     }
                 }
             }
-            
-            DatagramPacket pPack = new DatagramPacket(data, 0, InetAddress.getByName("192.168.212.222")
-                    , DIRInterface.DEFAULT_ONCRPC_PORT);
-            dsock.send(pPack);
 
 
 
