@@ -30,6 +30,8 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
  */
 public class DiscoveryUtils {
 
+    public static final String AUTODISCOVER_HOSTNAME = ".autodiscover";
+
     public static DirService discoverDir(int maxWaitSeconds)  {
         try {
 

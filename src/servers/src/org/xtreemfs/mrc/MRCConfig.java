@@ -111,6 +111,10 @@ public class MRCConfig extends ServiceConfig {
     public InetSocketAddress getDirectoryService() {
         return directoryService;
     }
+
+    public void setDirectoryService(InetSocketAddress addr) {
+        this.directoryService = addr;
+    }
     
     public String getDbLogDir() {
         return dbLogDir;

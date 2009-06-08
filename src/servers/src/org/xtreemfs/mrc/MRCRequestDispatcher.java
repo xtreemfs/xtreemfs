@@ -82,7 +82,9 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
+import org.xtreemfs.interfaces.DirService;
 
 /**
  * 
@@ -125,6 +127,17 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         IllegalAccessException, InstantiationException, DatabaseException {
         
         this.config = config;
+
+        if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "trying to discover local XtreemFS DIR service...");
+            DirService dir = DiscoveryUtils.discoverDir(10);
+            if (dir == null) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
+                throw new IOException("no DIR service found via discovery broadcast");
+            }
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "+dir.getAddress()+":"+dir.getPort());
+            config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
+        }
         
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "use SSL=%b", config.isUsingSSL());
@@ -246,35 +259,43 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         TimeSync.getInstance().shutdown();
     }
     
-    public void startup() throws Exception {
+    public void startup() {
+
+        try {
+            TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
+
+            clientStage.start();
+            clientStage.waitForStartup();
+
+            UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
+            UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
+                config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
+
+            heartbeatThread.initialize();
+            heartbeatThread.start();
+
+            // TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
+            osdMonitor.start();
+            osdMonitor.waitForStartup();
+
+            procStage.start();
+            procStage.waitForStartup();
+
+            volumeManager.init();
+            volumeManager.addVolumeChangeListener(osdMonitor);
+
+            serverStage.start();
+            serverStage.waitForStartup();
         
-        TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
-        
-        clientStage.start();
-        clientStage.waitForStartup();
-        
-        UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
-        UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
-            config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
-        
-        // TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
-        osdMonitor.start();
-        osdMonitor.waitForStartup();
-        
-        procStage.start();
-        procStage.waitForStartup();
-        
-        volumeManager.init();
-        volumeManager.addVolumeChangeListener(osdMonitor);
-        
-        heartbeatThread.start();
-        
-        serverStage.start();
-        serverStage.waitForStartup();
-        
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                "MRC operational, listening on port %d", config.getPort());
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
+                    "MRC operational, listening on port %d", config.getPort());
+
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            System.exit(1);
+        }
     }
     
     public void shutdown() throws Exception {
