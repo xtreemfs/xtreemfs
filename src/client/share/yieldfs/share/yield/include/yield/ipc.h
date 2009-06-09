@@ -59,7 +59,7 @@ virtual ssize_t recv( void* buffer, size_t buffer_len ); \
 virtual ssize_t send( const void* buffer, size_t buffer_len ); \
 virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count ); \
 virtual bool set_blocking_mode( bool blocking ); \
-virtual bool shutdown() { return true; } \
+virtual bool shutdown(); \
 virtual bool want_read() const; \
 virtual bool want_write() const;
 
@@ -674,7 +674,7 @@ namespace YIELD
 
   class JSONValue;
 
-  class JSONMarshaller : public Marshaller
+  class JSONMarshaller : public BufferedMarshaller
   {
   public:
     JSONMarshaller( bool write_empty_strings = true );

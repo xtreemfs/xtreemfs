@@ -1195,7 +1195,7 @@ JSONMarshaller::JSONMarshaller( bool write_empty_strings )
   writer = yajl_gen_alloc( NULL );
 }
 JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const Declaration& root_decl )
-  : Marshaller( parent_json_marshaller ), root_decl( &root_decl ),
+  : BufferedMarshaller( parent_json_marshaller ), root_decl( &root_decl ),
     write_empty_strings( parent_json_marshaller.write_empty_strings ), writer( parent_json_marshaller.writer )
 { }
 JSONMarshaller::~JSONMarshaller()
@@ -1208,7 +1208,7 @@ void JSONMarshaller::flushYAJLBuffer()
   const unsigned char* buffer;
   unsigned int len;
   yajl_gen_get_buf( writer, &buffer, &len );
-  Marshaller::write( buffer, len );
+  BufferedMarshaller::write( buffer, len );
   yajl_gen_clear( writer );
 }
 void JSONMarshaller::write( const Declaration& decl, bool value )
@@ -1216,6 +1216,11 @@ void JSONMarshaller::write( const Declaration& decl, bool value )
   write( decl );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
+}
+void JSONMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
+{
+  write( decl );
+  DebugBreak();
 }
 void JSONMarshaller::write( const Declaration& decl )
 {
@@ -2521,12 +2526,6 @@ ssize_t Socket::send( const void* buffer, size_t buffer_len )
 ssize_t Socket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
 {
 #ifdef _WIN32
-  /*
-  std::string catted_buffers;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    catted_buffers.append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-  return ::send( _socket, catted_buffers.c_str(), catted_buffers.size(), 0 );
-  */
   DWORD dwWrittenLength;
   ssize_t send_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
   if ( send_ret >= 0 )
@@ -2585,6 +2584,10 @@ bool Socket::set_blocking_mode( bool blocking )
       return false;
   }
 #endif
+}
+bool Socket::shutdown()
+{
+  return true;
 }
 bool Socket::want_read() const
 {
@@ -3682,14 +3685,21 @@ TracingSocket::TracingSocket( auto_Object<Socket> underlying_socket, auto_Object
 { }
 bool TracingSocket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
+  std::string to_hostname;
+  if ( to_sockaddr->getnameinfo( to_hostname ) )
+    log->getStream( Log::LOG_INFO ) << "TracingSocket: binding socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->bind( to_sockaddr );
 }
 bool TracingSocket::close()
 {
+  log->getStream( Log::LOG_INFO ) << "TracingSocket: closing socket #" << ( int )*this << ".";
   return underlying_socket->close();
 }
 bool TracingSocket::connect( auto_Object<SocketAddress> to_sockaddr )
 {
+  std::string to_hostname;
+  if ( to_sockaddr->getnameinfo( to_hostname ) )
+    log->getStream( Log::LOG_INFO ) << "TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
 }
 bool TracingSocket::get_blocking_mode() const
@@ -3768,7 +3778,13 @@ ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_co
 }
 bool TracingSocket::set_blocking_mode( bool blocking )
 {
+  log->getStream( Log::LOG_INFO ) << "TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
   return underlying_socket->set_blocking_mode( blocking );
+}
+bool TracingSocket::shutdown()
+{
+  log->getStream( Log::LOG_INFO ) << "TracingSocket: shutting down socket #" << ( int )*this << ".";
+  return underlying_socket->shutdown();
 }
 bool TracingSocket::want_read() const
 {

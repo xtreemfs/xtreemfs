@@ -19,6 +19,43 @@ void Buffer::set_next_buffer( auto_Object<Buffer> next_buffer )
 }
 
 
+// buffered_marshaller.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+void BufferedMarshaller::write( const void* buffer, size_t buffer_len )
+{
+  if ( current_buffer == NULL )
+    current_buffer = first_buffer = new HeapBuffer( buffer_len >= 16 ? buffer_len : 16 );
+  for ( ;; )
+  {
+    size_t put_len = current_buffer->put( buffer, buffer_len );
+    if ( put_len == buffer_len )
+      return;
+    else
+    {
+      buffer_len -= put_len;
+      buffer = static_cast<const uint8_t*>( buffer ) + put_len;
+      auto_Object<Buffer> next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
+      current_buffer->set_next_buffer( next_buffer );
+      current_buffer = next_buffer;
+    }
+  }
+}
+void BufferedMarshaller::write( auto_Object<Buffer> buffer )
+{
+  if ( current_buffer != NULL )
+  {
+    current_buffer->set_next_buffer( buffer );
+    current_buffer = new HeapBuffer( current_buffer->capacity() );
+    while ( buffer->get_next_buffer() != NULL )
+      buffer = buffer->get_next_buffer();
+    buffer->set_next_buffer( current_buffer );
+  }
+  else
+    DebugBreak();
+}
+
+
 // counting_semaphore.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -844,30 +881,6 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 }
 
 
-// marshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void Marshaller::write( const void* buffer, size_t buffer_len )
-{
-  if ( current_buffer == NULL )
-    current_buffer = first_buffer = new HeapBuffer( buffer_len >= 16 ? buffer_len : 16 );
-  for ( ;; )
-  {
-    size_t put_len = current_buffer->put( buffer, buffer_len );
-    if ( put_len == buffer_len )
-      return;
-    else
-    {
-      buffer_len -= put_len;
-      buffer = static_cast<const uint8_t*>( buffer ) + put_len;
-      auto_Object<Buffer> next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
-      current_buffer->set_next_buffer( next_buffer );
-      current_buffer = next_buffer;
-    }
-  }
-}
-
-
 // memory_mapped_file.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1551,6 +1564,9 @@ void PrettyPrinter::write( const Declaration&, bool value )
   else
     os << "false, ";
 }
+
+void PrettyPrinter::write( const Declaration&, auto_Object<Buffer> )
+{ }
 
 void PrettyPrinter::write( const Declaration&, double value )
 {
@@ -3222,14 +3238,26 @@ Path Volume::volname( const Path& path )
 // xdr_marshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void XDRMarshaller::write( const Declaration& decl, bool value )
-{
-  write( decl, value ? 1 : 0 );
-}
 void XDRMarshaller::write( const Declaration& decl )
 {
   if ( !in_map_stack.empty() && in_map_stack.back() && decl.get_identifier() )
     Marshaller::write( Declaration(), decl.get_identifier() );
+}
+void XDRMarshaller::write( const Declaration& decl, bool value )
+{
+  write( decl, value ? 1 : 0 );
+}
+void XDRMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
+{
+  size_t value_size = 0;
+  auto_Object<Buffer> next_buffer = value;
+  while ( next_buffer != NULL )
+  {
+    value_size += next_buffer->size();
+    next_buffer = next_buffer->get_next_buffer();
+  }
+  write( decl, static_cast<int32_t>( value_size ) );
+  BufferedMarshaller::write( value );
 }
 void XDRMarshaller::write( const Declaration& decl, double value )
 {

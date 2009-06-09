@@ -142,6 +142,7 @@ extern "C"
 
 #define YIELD_MARSHALLER_PROTOTYPES \
   virtual void write( const Declaration& decl, bool value ); \
+  virtual void write( const Declaration& decl, auto_Object<Buffer> value ); \
   virtual void write( const Declaration& decl, double value ); \
   virtual void write( const Declaration& decl, int64_t value ); \
   virtual void write( const Declaration& decl, const YIELD::Object& value ); \
@@ -1989,10 +1990,8 @@ namespace YIELD
 
     virtual ~Marshaller() { }
 
-    auto_Object<Buffer> get_buffer() const { return first_buffer; }
-
     virtual void write( const Declaration& decl, bool value ) = 0;
-    virtual void write( const Declaration&, auto_Object<Buffer> ) { }
+    virtual void write( const Declaration& decl, auto_Object<Buffer> value ) = 0;
     virtual void write( const Declaration& decl, float value ) { write( decl, static_cast<double>( value ) ); }
     virtual void write( const Declaration& decl, double value ) = 0;
     virtual void write( const Declaration& decl, int8_t value ) { write( decl, static_cast<int16_t>( value ) ); }
@@ -2009,16 +2008,25 @@ namespace YIELD
     virtual void write( const Declaration& decl, uint16_t value ) { write( decl, static_cast<int16_t>( value ) ); }
     virtual void write( const Declaration& decl, uint32_t value ) { write( decl, static_cast<int32_t>( value ) ); }
     virtual void write( const Declaration& decl, uint64_t value ) { write( decl, static_cast<int64_t>( value ) ); }
+  };
+
+
+  class BufferedMarshaller : public Marshaller
+  {
+  public:
+    auto_Object<Buffer> get_buffer() const { return first_buffer; }
+
 
   protected:
-    Marshaller() 
+    BufferedMarshaller() 
     { }
 
-    Marshaller( Marshaller& parent_marshaller )
-      : current_buffer( parent_marshaller.current_buffer )
+    BufferedMarshaller( BufferedMarshaller& parent_buffered_marshaller )
+      : current_buffer( parent_buffered_marshaller.current_buffer )
     { }
 
-    void write( const void*, size_t );    
+    void write( const void* buffer, size_t buffer_len );    
+    void write( auto_Object<Buffer> buffer );
 
   private:
     auto_Object<Buffer> first_buffer, current_buffer;
@@ -3056,7 +3064,7 @@ namespace YIELD
   };
 
 
-  class XDRMarshaller : public Marshaller
+  class XDRMarshaller : public BufferedMarshaller
   {
   public:
     // Marshaller
@@ -3068,7 +3076,7 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( XDRMarshaller, 0 );
 
   protected:
-    inline void write( const void* buffer, size_t buffer_len ) { Marshaller::write( buffer, buffer_len ); }
+    inline void write( const void* buffer, size_t buffer_len ) { BufferedMarshaller::write( buffer, buffer_len ); }
     virtual void write( const Declaration& decl );
 
   private:
