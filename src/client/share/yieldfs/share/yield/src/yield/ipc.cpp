@@ -1,4 +1,4 @@
-// Revision: 1521
+// Revision: 1528
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -715,15 +715,16 @@ auto_Object<HTTPResponse> HTTPClient::GET( const URI& absolute_uri, auto_Object<
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
+auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, auto_Object<Buffer> body, auto_Object<Log> log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
 auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log )
 {
   auto_Object<File> file = File::open( body_file_path );
-  auto_Object<String> body = new String( static_cast<size_t>( file->getattr()->get_size() ) );
-  file->read( const_cast<char*>( body->c_str() ), body->size(), NULL );
+  size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
+  auto_Object<HeapBuffer> body = new HeapBuffer( file_size );
+  file->read( *body, file_size );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
 void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<HTTPResponse> http_response )
@@ -734,7 +735,7 @@ void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<Exc
 {
   http_request->respond( *exception_response.release() );
 }
-auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<> body, auto_Object<Log> log )
+auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<Buffer> body, auto_Object<Log> log )
 {
   auto_Object<StageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
   auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log, HTTPClient::OPERATION_TIMEOUT_DEFAULT, 3 );
@@ -750,18 +751,22 @@ auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const
 // http_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPMessage::HTTPMessage( auto_Object<> body )
+HTTPMessage::HTTPMessage()
+{
+  http_version = 1;
+}
+HTTPMessage::HTTPMessage( auto_Object<Buffer> body )
   : body( body )
 {
   http_version = 1;
 }
-ssize_t HTTPMessage::deserialize( auto_Object<IOBuffer> io_buffer )
+ssize_t HTTPMessage::deserialize( auto_Object<Buffer> buffer )
 {
   switch ( deserialize_state )
   {
     case DESERIALIZING_HEADERS:
     {
-      ssize_t RFC822Headers_deserialize_ret = RFC822Headers::deserialize( io_buffer );
+      ssize_t RFC822Headers_deserialize_ret = RFC822Headers::deserialize( buffer );
       if ( RFC822Headers_deserialize_ret == 0 )
       {
         if ( strcmp( get_header( "Transfer-Encoding" ), "chunked" ) == 0 )
@@ -779,7 +784,6 @@ ssize_t HTTPMessage::deserialize( auto_Object<IOBuffer> io_buffer )
           }
           else
           {
-            body = new String( content_length );
             deserialize_state = DESERIALIZING_BODY;
             if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
               return 0;
@@ -792,34 +796,33 @@ ssize_t HTTPMessage::deserialize( auto_Object<IOBuffer> io_buffer )
     }
     case DESERIALIZING_BODY:
     {
-      io_buffer->consume( *static_cast<String*>( body.get() ), static_cast<String*>( body.get() )->size() );
+      if ( body == NULL )
+        body = buffer;
+      else
+        DebugBreak(); // Chain buffers
       deserialize_state = DESERIALIZE_DONE;
     }
     case DESERIALIZE_DONE: return 0;
     default: DebugBreak(); return -1;
   }
 }
-void HTTPMessage::serialize( std::ostream& os )
+auto_Object<Buffer> HTTPMessage::serialize()
 {
   // Finalize headers
-  if ( body != NULL &&
-       body->get_tag() == YIELD_OBJECT_TAG( String ) &&
-       get_header( "Content-Length", NULL ) == NULL )
+  if ( body != NULL && get_header( "Content-Length", NULL ) == NULL )
   {
     char content_length_str[32];
 #ifdef _WIN32
-    sprintf_s( content_length_str, 32, "%u", static_cast<String*>( body.get() )->size() );
+    sprintf_s( content_length_str, 32, "%u", body->size() );
 #else
-    snprintf( content_length_str, 32, "%zu", static_cast<String*>( body.get() )->size() );
+    snprintf( content_length_str, 32, "%zu", body->size() );
 #endif
     set_header( "Content-Length", content_length_str );
   }
   set_iovec( "\r\n", 2 );
-  // Serialize headers
-  RFC822Headers::serialize( os );
-  // Serialize body
-  if ( body != NULL && body->get_tag() == YIELD_OBJECT_TAG( String ) )
-    os << static_cast<String&>( *body );
+  auto_Object<Buffer> buffer = RFC822Headers::serialize();
+  buffer->set_next_buffer( body );
+  return buffer;
 }
 
 
@@ -835,17 +838,17 @@ HTTPRequest::HTTPRequest()
   http_version = 1;
   deserialize_state = DESERIALIZING_METHOD;
 }
-HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<> body )
+HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body )
   : HTTPMessage( body )
 {
   init( method, relative_uri, host, body );
 }
-HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body )
+HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<Buffer> body )
   : HTTPMessage( body )
 {
   init( method, absolute_uri.get_resource().c_str(), absolute_uri.get_host().c_str(), body );
 }
-void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, auto_Object<> body )
+void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body )
 {
 #ifdef _WIN32
   strncpy_s( this->method, 16, method, 16 );
@@ -863,7 +866,7 @@ HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
-ssize_t HTTPRequest::deserialize( auto_Object<IOBuffer> io_buffer )
+ssize_t HTTPRequest::deserialize( auto_Object<Buffer> buffer )
 {
   switch ( deserialize_state )
   {
@@ -872,7 +875,7 @@ ssize_t HTTPRequest::deserialize( auto_Object<IOBuffer> io_buffer )
       char* method_p = method + strnlen( method, 16 );
       for ( ;; )
       {
-        if ( io_buffer->consume( method_p, 1 ) == 1 )
+        if ( buffer->get( method_p, 1 ) == 1 )
         {
           if ( *method_p != ' ' )
             method_p++;
@@ -896,7 +899,7 @@ ssize_t HTTPRequest::deserialize( auto_Object<IOBuffer> io_buffer )
       char* uri_p = uri + strnlen( uri, UINT16_MAX );
       for ( ;; )
       {
-        if ( io_buffer->consume( uri_p, 1 ) == 1 )
+        if ( buffer->get( uri_p, 1 ) == 1 )
         {
           if ( *uri_p == ' ' )
           {
@@ -933,7 +936,7 @@ ssize_t HTTPRequest::deserialize( auto_Object<IOBuffer> io_buffer )
       for ( ;; )
       {
         uint8_t test_http_version;
-        if ( io_buffer->consume( &test_http_version, 1 ) == 1 )
+        if ( buffer->get( &test_http_version, 1 ) == 1 )
         {
           if ( test_http_version != '\r' )
           {
@@ -952,25 +955,27 @@ ssize_t HTTPRequest::deserialize( auto_Object<IOBuffer> io_buffer )
       }
     }
     // Fall through
-    default: return HTTPMessage::deserialize( io_buffer );
+    default: return HTTPMessage::deserialize( buffer );
   }
 }
 bool HTTPRequest::respond( uint16_t status_code )
 {
   return respond( *( new HTTPResponse( status_code ) ) );
 }
-bool HTTPRequest::respond( uint16_t status_code, auto_Object<> body )
+bool HTTPRequest::respond( uint16_t status_code, auto_Object<Buffer> body )
 {
   return respond( *( new HTTPResponse( status_code, body ) ) );
 }
-void HTTPRequest::serialize( std::ostream& os )
+auto_Object<Buffer> HTTPRequest::serialize()
 {
-  // METHOD URI HTTP/1.1\r\n
-  os << method << " ";
-  os.write( uri, uri_len );
-  os.write( " HTTP/1.1\r\n", 11 );
-  // Headers, body
-  HTTPMessage::serialize( os );
+  size_t method_len = strnlen( method, 16 );
+  auto_Object<Buffer> buffer = new HeapBuffer( method_len + 1 + uri_len + 11 );
+  buffer->put( method, method_len );
+  buffer->put( " ", 1 );
+  buffer->put( uri, uri_len );
+  buffer->put( " HTTP/1.1\r\n", 11 );
+  buffer->set_next_buffer( HTTPMessage::serialize() );
+  return buffer;
 }
 
 
@@ -988,12 +993,12 @@ HTTPResponse::HTTPResponse( uint16_t status_code )
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
-HTTPResponse::HTTPResponse( uint16_t status_code, auto_Object<> body )
+HTTPResponse::HTTPResponse( uint16_t status_code, auto_Object<Buffer> body )
   : HTTPMessage( body ), status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
 }
-ssize_t HTTPResponse::deserialize( auto_Object<IOBuffer> io_buffer )
+ssize_t HTTPResponse::deserialize( auto_Object<Buffer> buffer )
 {
   switch ( deserialize_state )
   {
@@ -1002,7 +1007,7 @@ ssize_t HTTPResponse::deserialize( auto_Object<IOBuffer> io_buffer )
       for ( ;; )
       {
         uint8_t test_http_version;
-        if ( io_buffer->consume( &test_http_version, 1 ) == 1 )
+        if ( buffer->get( &test_http_version, 1 ) == 1 )
         {
           if ( test_http_version != ' ' )
           {
@@ -1026,7 +1031,7 @@ ssize_t HTTPResponse::deserialize( auto_Object<IOBuffer> io_buffer )
       char* status_code_str_p = status_code_str + strnlen( status_code_str, 3 );
       for ( ;; )
       {
-        if ( io_buffer->consume( status_code_str_p, 1 ) == 1 )
+        if ( buffer->get( status_code_str_p, 1 ) == 1 )
         {
           if ( *status_code_str_p != ' ' )
           {
@@ -1057,7 +1062,7 @@ ssize_t HTTPResponse::deserialize( auto_Object<IOBuffer> io_buffer )
       char c;
       for ( ;; )
       {
-        if ( io_buffer->consume( &c, 1 ) == 1 )
+        if ( buffer->get( &c, 1 ) == 1 )
         {
           if ( c == '\r' )
           {
@@ -1070,10 +1075,10 @@ ssize_t HTTPResponse::deserialize( auto_Object<IOBuffer> io_buffer )
       }
     }
     // Fall through
-    default: return HTTPMessage::deserialize( io_buffer );
+    default: return HTTPMessage::deserialize( buffer );
   }
 }
-void HTTPResponse::serialize( std::ostream& os )
+auto_Object<Buffer> HTTPResponse::serialize()
 {
   const char* status_line;
   size_t status_line_len;
@@ -1124,11 +1129,12 @@ void HTTPResponse::serialize( std::ostream& os )
     case 507: status_line = "HTTP/1.1 507 Insufficient Storage\r\n"; status_line_len = 35; break;
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
-  os.write( status_line, status_line_len );
+  auto_Object<Buffer> buffer = new StringLiteralBuffer( status_line, status_line_len );
   char date[32];
   Time().as_http_date_time( date, 32 );
   set_header( "Date", date );
-  HTTPMessage::serialize( os );
+  buffer->set_next_buffer( HTTPMessage::serialize() );
+  return buffer;
 }
 
 
@@ -1157,7 +1163,7 @@ auto_Object<HTTPServer> HTTPServer::create( const URI& absolute_uri,
       auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter( log );
       auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage( http_response_writer, log ).release();
       auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-      auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage );
+      auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage, log );
       auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
       http_response_writer->set_protocol_request_reader_stage( http_request_reader_stage );
       auto_Object<HTTPServer> http_server = new HTTPServer( http_request_reader_stage );
@@ -1182,14 +1188,15 @@ extern "C"
 {
   #include <yajl.h>
 };
-JSONMarshaller::JSONMarshaller( std::ostream& target_ostream, bool write_empty_strings )
-: target_ostream( target_ostream ), write_empty_strings( write_empty_strings )
+JSONMarshaller::JSONMarshaller( bool write_empty_strings )
+: write_empty_strings( write_empty_strings )
 {
   root_decl = NULL;
   writer = yajl_gen_alloc( NULL );
 }
-JSONMarshaller::JSONMarshaller( std::ostream& target_ostream, bool write_empty_strings, yajl_gen writer, const Declaration& root_decl )
-  : target_ostream( target_ostream ), write_empty_strings( write_empty_strings ), root_decl( &root_decl ), writer( writer )
+JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const Declaration& root_decl )
+  : Marshaller( parent_json_marshaller ), root_decl( &root_decl ),
+    write_empty_strings( parent_json_marshaller.write_empty_strings ), writer( parent_json_marshaller.writer )
 { }
 JSONMarshaller::~JSONMarshaller()
 {
@@ -1201,83 +1208,77 @@ void JSONMarshaller::flushYAJLBuffer()
   const unsigned char* buffer;
   unsigned int len;
   yajl_gen_get_buf( writer, &buffer, &len );
-  target_ostream.write( reinterpret_cast<const char*>( buffer ), len );
+  Marshaller::write( buffer, len );
   yajl_gen_clear( writer );
 }
-void JSONMarshaller::writeBool( const Declaration& decl, bool value )
+void JSONMarshaller::write( const Declaration& decl, bool value )
 {
-  writeDeclaration( decl );
+  write( decl );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeDeclaration( const Declaration& decl )
+void JSONMarshaller::write( const Declaration& decl )
 {
   if ( in_map && decl.get_identifier() )
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( decl.get_identifier() ), static_cast<unsigned int>( strnlen( decl.get_identifier(), UINT16_MAX ) ) );
 }
-void JSONMarshaller::writeDouble( const Declaration& decl, double value )
+void JSONMarshaller::write( const Declaration& decl, double value )
 {
-  writeDeclaration( decl );
+  write( decl );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeInt64( const Declaration& decl, int64_t value )
+void JSONMarshaller::write( const Declaration& decl, int64_t value )
 {
-  writeDeclaration( decl );
+  write( decl );
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeMap( const Declaration& decl, Object& value, size_t )
+void JSONMarshaller::write( const Declaration& decl, const Map& value )
 {
-  writeDeclaration( decl );
-  JSONMarshaller( target_ostream, write_empty_strings, writer, decl ).writeMap( &value );
+  write( decl );
+  JSONMarshaller( *this, decl ).write( &value );
 }
-void JSONMarshaller::writeMap( Object* s )
+void JSONMarshaller::write( const Map* value )
+{
+  write( static_cast<const Object*>( value ) );
+}
+void JSONMarshaller::write( const Declaration& decl, const Object& value )
+{
+  write( decl );
+  JSONMarshaller( *this, decl ).write( &value );
+}
+void JSONMarshaller::write( const Object* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
-  if ( s )
-    s->marshal( *this );
+  if ( value )
+    value->marshal( *this );
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writePointer( const Declaration& decl, void* )
+void JSONMarshaller::write( const Declaration& decl, const Sequence& value )
 {
-  writeDeclaration( decl );
-  yajl_gen_null( writer );
-  flushYAJLBuffer();
+  write( decl );
+  JSONMarshaller( *this, decl ).write( &value );
 }
-void JSONMarshaller::writeSequence( const Declaration& decl, Object& value, size_t )
-{
-  writeDeclaration( decl );
-  JSONMarshaller( target_ostream, write_empty_strings, writer, decl ).writeSequence( &value );
-}
-void JSONMarshaller::writeSequence( Object* s )
+void JSONMarshaller::write( const Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
-  if ( s )
-    s->marshal( *this );
+  if ( value )
+    value->marshal( *this );
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeString( const Declaration& decl, const char* value, size_t value_len )
+void JSONMarshaller::write( const Declaration& decl, const char* value, size_t value_len )
 {
   if ( value_len > 0 || write_empty_strings )
   {
-    writeDeclaration( decl );
+    write( decl );
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( value ), static_cast<unsigned int>( value_len ) );
     flushYAJLBuffer();
   }
-}
-void JSONMarshaller::writeStruct( const Declaration& decl, Object& value )
-{
-  writeDeclaration( decl );
-  JSONMarshaller( target_ostream, write_empty_strings, writer, decl ).writeStruct( &value );
-}
-void JSONMarshaller::writeStruct( Object* s )
-{
-  writeMap( s );
 }
 
 
@@ -1293,7 +1294,7 @@ namespace YIELD
   class JSONValue
   {
   public:
-    JSONValue( auto_Object<String> identifier, bool is_map )
+    JSONValue( auto_Object<StringBuffer> identifier, bool is_map )
       : identifier( identifier ), is_map( is_map )
     {
       parent = child = prev = next = NULL;
@@ -1305,9 +1306,9 @@ namespace YIELD
       delete child;
       delete next;
     }
-    auto_Object<String> identifier;
+    auto_Object<StringBuffer> identifier;
     bool is_map;
-    auto_Object<String> as_string;
+    auto_Object<StringBuffer> as_string;
     union
     {
       double as_double;
@@ -1327,34 +1328,32 @@ namespace YIELD
   class JSONObject : public JSONValue
   {
   public:
-    JSONObject( std::istream& source_istream )
+    JSONObject( auto_Object<Buffer> source_buffer )
     {
       current_json_value = parent_json_value = NULL;
       reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
       next_map_key = NULL; next_map_key_len = 0;
-      unsigned char read_buffer[4096];
-      for ( ;; )
+      while ( source_buffer != NULL )
       {
-        size_t read_len = source_istream.readsome( reinterpret_cast<char*>( read_buffer ), 4096 );
-        if ( source_istream.good() )
+        if ( source_buffer->get_tag() == YIELD_OBJECT_TAG( FixedBuffer ) )
         {
-          switch( yajl_parse( reader, read_buffer, static_cast<unsigned int>( read_len ) ) )
+          const unsigned char* jsonText = static_cast<const unsigned char*>( static_cast<void*>( static_cast<FixedBuffer&>( *source_buffer ) ) );
+          unsigned int jsonTextLength = static_cast<unsigned int>( source_buffer->size() );
+          yajl_status yajl_parse_status = yajl_parse( reader, jsonText, jsonTextLength );
+          if ( yajl_parse_status == yajl_status_ok )
+            return;
+          else
           {
-            case yajl_status_ok: return;
-            case yajl_status_insufficient_data: continue;
-            default:
-            {
-              unsigned char* yajl_error_str = yajl_get_error( reader, 1, read_buffer, static_cast<unsigned int>( read_len ) );
-              std::ostringstream what;
-              what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: " << reinterpret_cast<char*>( yajl_error_str ) << std::endl;
-              yajl_free_error( yajl_error_str );
-              throw Exception( what.str() );
-            }
-            break;
+            unsigned char* yajl_error_str = yajl_get_error( reader, 1, jsonText, jsonTextLength );
+            std::ostringstream what;
+            what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: " << reinterpret_cast<char*>( yajl_error_str ) << std::endl;
+            yajl_free_error( yajl_error_str );
+            throw Exception( what.str() );
           }
         }
         else
-          throw Exception( "error reading source_istream before parsing complete" );
+          DebugBreak();
+        source_buffer = source_buffer->get_next_buffer();
       }
     }
     ~JSONObject()
@@ -1397,7 +1396,7 @@ namespace YIELD
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
       JSONValue& json_value = self->createNextJSONValue();
-      json_value.as_string = new String( reinterpret_cast<const char*>( buffer ), len );
+      json_value.as_string = new StringBuffer( reinterpret_cast<const char*>( buffer ), len );
       return 1;
     }
     static int handle_yajl_start_map( void* _self )
@@ -1445,7 +1444,7 @@ namespace YIELD
     }
     JSONValue& createNextJSONValue( bool is_map = false )
     {
-      auto_Object<String> identifier = next_map_key_len != 0 ? new String( next_map_key, next_map_key_len ) : NULL;
+      auto_Object<StringBuffer> identifier = next_map_key_len != 0 ? new StringBuffer( next_map_key, next_map_key_len ) : NULL;
       next_map_key = NULL; next_map_key_len = 0;
       if ( current_json_value == NULL )
       {
@@ -1490,14 +1489,15 @@ yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
   handle_yajl_start_array,
   handle_yajl_end_array
 };
-JSONUnmarshaller::JSONUnmarshaller( std::istream& source_istream )
+JSONUnmarshaller::JSONUnmarshaller( auto_Object<Buffer> source_buffer )
 {
   root_decl = NULL;
-  root_json_value = new JSONObject( source_istream );
+  root_json_value = new JSONObject( source_buffer );
   next_json_value = root_json_value->child;
 }
 JSONUnmarshaller::JSONUnmarshaller( const Declaration& root_decl, JSONValue& root_json_value )
-  : root_decl( &root_decl ), root_json_value( &root_json_value ),
+  : Unmarshaller( NULL ),
+    root_decl( &root_decl ), root_json_value( &root_json_value ),
     next_json_value( root_json_value.child )
 { }
 JSONUnmarshaller::~JSONUnmarshaller()
@@ -1544,7 +1544,7 @@ int64_t JSONUnmarshaller::readInt64( const Declaration& decl )
   else
     return 0;
 }
-Object* JSONUnmarshaller::readMap( const Declaration& decl, Object* value )
+Map* JSONUnmarshaller::readMap( const Declaration& decl, Map* value )
 {
   if ( value )
   {
@@ -1570,12 +1570,12 @@ Object* JSONUnmarshaller::readMap( const Declaration& decl, Object* value )
   }
   return value;
 }
-void JSONUnmarshaller::readMap( Object& s )
+void JSONUnmarshaller::readMap( Map& value )
 {
   while ( next_json_value )
-    s.unmarshal( *this );
+    value.unmarshal( *this );
 }
-Object* JSONUnmarshaller::readSequence( const Declaration& decl, Object* value )
+Sequence* JSONUnmarshaller::readSequence( const Declaration& decl, Sequence* value )
 {
   if ( value )
   {
@@ -1627,10 +1627,10 @@ Object* JSONUnmarshaller::readStruct( const Declaration& decl, Object* value )
   }
   return value;
 }
-void JSONUnmarshaller::readSequence( Object& s )
+void JSONUnmarshaller::readSequence( Sequence& value )
 {
   while ( next_json_value )
-    s.unmarshal( *this );
+    value.unmarshal( *this );
 }
 void JSONUnmarshaller::readString( const Declaration& decl, std::string& str )
 {
@@ -1695,89 +1695,123 @@ template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body )
   : body( body ), _interface( _interface ), xid( xid )
 {
+  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
   record_fragment_length = 0;
 }
 template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
 { }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Object<IOBuffer> io_buffer )
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Object<Buffer> buffer )
 {
-  if ( record_fragment_length == 0 )
+  switch ( deserialize_state )
   {
-    uint32_t record_fragment_marker = 0;
-    if ( io_buffer->consume( &record_fragment_marker, sizeof( record_fragment_marker ) ) == sizeof( record_fragment_marker ) )
+    case DESERIALIZING_RECORD_FRAGMENT_MARKER:
     {
+      uint32_t record_fragment_marker = 0;
+      size_t record_fragment_marker_filled = buffer->get( &record_fragment_marker, sizeof( record_fragment_marker ) );
+      if ( record_fragment_marker_filled == sizeof( record_fragment_marker ) )
+      {
 #ifdef __MACH__
-      record_fragment_marker = ntohl( record_fragment_marker );
+        record_fragment_marker = ntohl( record_fragment_marker );
 #else
-      record_fragment_marker = Machine::ntohl( record_fragment_marker );
+        record_fragment_marker = Machine::ntohl( record_fragment_marker );
 #endif
-      bool last_record_fragment;
-      if ( record_fragment_marker & ( 1 << 31UL ) )
-      {
-        last_record_fragment = true;
-        record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+        bool last_record_fragment;
+        if ( record_fragment_marker & ( 1 << 31UL ) )
+        {
+          last_record_fragment = true;
+          record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+        }
+        else
+        {
+          last_record_fragment = false;
+          record_fragment_length = record_fragment_marker;
+        }
+        if ( record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+        deserialize_state = DESERIALIZING_RECORD_FRAGMENT;
       }
+      else if ( record_fragment_marker_filled == 0 )
+        return sizeof( record_fragment_marker );
       else
       {
-        last_record_fragment = false;
-        record_fragment_length = record_fragment_marker;
-      }
-      if ( record_fragment_length < 32 * 1024 * 1024 )
-        record_fragment.reserve( record_fragment_length );
-      else
         DebugBreak();
+        return sizeof( record_fragment_marker );
+      }
     }
-    else // Could not read 4-byte record fragment marker
+    // Drop down
+    case DESERIALIZING_RECORD_FRAGMENT:
     {
-      DebugBreak();
-      return sizeof( record_fragment_marker );
-    }
-  }
-  io_buffer->consume( record_fragment, record_fragment_length - record_fragment.size() );
-  if ( record_fragment.size() == record_fragment_length )
-  {
-    std::istringstream record_fragment_istringstream( record_fragment );
-    XDRUnmarshaller xdr_unmarshaller( record_fragment_istringstream );
-    xid = xdr_unmarshaller.readUint32( "xid ");
-    if ( record_fragment_istringstream.good( ) )
-    {
-      static_cast<ONCRPCMessageType*>( this )->deserializeONCRPCRequestResponseHeader( xdr_unmarshaller );
-      if ( record_fragment_istringstream.good() )
+      if ( buffer->size() == record_fragment_length ) // Common case
       {
+        XDRUnmarshaller xdr_unmarshaller( buffer );
+        xid = xdr_unmarshaller.readUint32( "xid ");
+        static_cast<ONCRPCMessageType*>( this )->deserializeONCRPCRequestResponseHeader( xdr_unmarshaller );
         if ( body != NULL )
           xdr_unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
-        else
-          return -1;
+        deserialize_state = DESERIALIZE_DONE;
+        return 0;
       }
       else
-        return -1;
+      {
+        record_fragment_string.reserve( record_fragment_length );
+        deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
+      }
     }
-    return 0;
+    // Drop down
+    case DESERIALIZING_LONG_RECORD_FRAGMENT:
+    {
+      buffer->get( record_fragment_string, record_fragment_length - record_fragment_string.size() );
+      do
+      {
+        if ( record_fragment_string.size() == record_fragment_length )
+        {
+          auto_Object<Buffer> record_fragment_buffer = new HeapBuffer( record_fragment_length );
+          record_fragment_buffer->put( record_fragment_string );
+          XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
+          xid = xdr_unmarshaller.readUint32( "xid ");
+          static_cast<ONCRPCMessageType*>( this )->deserializeONCRPCRequestResponseHeader( xdr_unmarshaller );
+          if ( body != NULL )
+            xdr_unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
+          deserialize_state = DESERIALIZE_DONE;
+          return 0;
+        }
+        else
+          buffer = buffer->get_next_buffer();
+      } while ( buffer != NULL );
+      return record_fragment_length - record_fragment_string.size();
+    }
+    case DESERIALIZE_DONE: return 0;
   }
-  else
-    return record_fragment_length - record_fragment.size();
+  DebugBreak();
+  return -1;
 }
 template <class ONCRPCMessageType>
-void ONCRPCMessage<ONCRPCMessageType>::serialize( std::ostream& os )
+auto_Object<Buffer> ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
-  std::ostringstream xdr_ostringstream;
-  XDRMarshaller xdr_marshaller( xdr_ostringstream );
-  xdr_marshaller.writeUint32( "record_marker", 0 );
-  xdr_marshaller.writeUint32( "xid", get_xid() );
+  XDRMarshaller xdr_marshaller;
+  xdr_marshaller.write( XDRMarshaller::Declaration( "xid" ), static_cast<int32_t>( get_xid() ) );
   static_cast<ONCRPCMessageType*>( this )->serializeONCRPCRequestResponseHeader( xdr_marshaller );
-  xdr_marshaller.writeStruct( XDRMarshaller::Declaration(), *body );
-  std::string xdr_string = xdr_ostringstream.str();
-  uint32_t record_marker = static_cast<uint32_t>( xdr_string.size() - sizeof( record_marker ) );
-  record_marker |= ( 1 << 31 ); // Indicate that this is the last fragment
+  xdr_marshaller.write( XDRMarshaller::Declaration(), *body );
+  auto_Object<Buffer> xdr_buffer = xdr_marshaller.get_buffer();
+  // Calculate the record fragment length from the sizes of all the buffers in the chain
+  uint32_t record_fragment_length = 0;
+  auto_Object<Buffer> next_xdr_buffer = xdr_buffer;
+  while ( next_xdr_buffer != NULL )
+  {
+    record_fragment_length += next_xdr_buffer->size();
+    next_xdr_buffer = next_xdr_buffer->get_next_buffer();
+  }
+  if ( record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+  uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31 ); // Indicate that this is the last fragment
 #ifdef __MACH__
-  record_marker = htonl( record_marker );
+  record_fragment_marker = htonl( record_fragment_marker );
 #else
-  record_marker = Machine::htonl( record_marker );
+  record_fragment_marker = Machine::htonl( record_fragment_marker );
 #endif
-  xdr_string.replace( 0, sizeof( record_marker ), ( const char* )&record_marker, sizeof( record_marker ) );
-  os << xdr_string;
+  auto_Object<Buffer> record_fragment_length_buffer = new StackBuffer<4>( &record_fragment_marker );
+  record_fragment_length_buffer->set_next_buffer( xdr_buffer );
+  return record_fragment_length_buffer;
 }
 template class ONCRPCMessage<ONCRPCRequest>;
 template class ONCRPCMessage<ONCRPCResponse>;
@@ -1825,23 +1859,22 @@ void ONCRPCRequest::deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& xdr
 }
 void ONCRPCRequest::serializeONCRPCRequestResponseHeader( XDRMarshaller& xdr_marshaller )
 {
-  xdr_marshaller.writeUint32( "msg_type", 0 ); // MSG_CALL
-  xdr_marshaller.writeUint32( "rpcvers", 2 );
-  xdr_marshaller.writeUint32( "prog", prog );
-  xdr_marshaller.writeUint32( "vers", vers );
-  xdr_marshaller.writeUint32( "proc", proc );
-  xdr_marshaller.writeUint32( "credential_auth_flavor", credential_auth_flavor );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "msg_type" ), static_cast<int32_t>( 0 ) ); // MSG_CALL
+  xdr_marshaller.write( XDRMarshaller::Declaration( "rpcvers" ), static_cast<int32_t>( 2 ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "prog" ), static_cast<int32_t>( prog ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "vers" ), static_cast<int32_t>( vers ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "proc" ), static_cast<int32_t>( proc ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "credential_auth_flavor" ), static_cast<int32_t>( credential_auth_flavor ) );
   if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
-    xdr_marshaller.writeUint32( "credential_auth_body_length", 0 );
+    xdr_marshaller.write( XDRMarshaller::Declaration( "credential_auth_body_length" ), static_cast<int32_t>( 0 ) );
   else
   {
-    std::ostringstream credential_auth_body_ostringstream;
-    XDRMarshaller credential_auth_body_xdr_marshaller( credential_auth_body_ostringstream );
+    XDRMarshaller credential_auth_body_xdr_marshaller;
     credential->marshal( credential_auth_body_xdr_marshaller );
-    static_cast<Marshaller&>( xdr_marshaller ).writeString( "credential_auth_body", credential_auth_body_ostringstream.str() );
+    static_cast<Marshaller&>( xdr_marshaller ).write( "credential_auth_body", credential_auth_body_xdr_marshaller.get_buffer() );
   }
-  xdr_marshaller.writeUint32( "verf_auth_flavor", AUTH_NONE );
-  xdr_marshaller.writeUint32( "verf_auth_body_length", 0 );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_flavor" ), static_cast<int32_t>( AUTH_NONE ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_body_length" ), static_cast<int32_t>( 0 ) );
 }
 
 
@@ -1907,14 +1940,14 @@ void ONCRPCResponse::deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& xd
 }
 void ONCRPCResponse::serializeONCRPCRequestResponseHeader( XDRMarshaller& xdr_marshaller )
 {
-  xdr_marshaller.writeUint32( "msg_type", 1 ); // MSG_REPLY
-  xdr_marshaller.writeUint32( "reply_stat", 0 ); // MSG_ACCEPTED
-  xdr_marshaller.writeUint32( "verf_auth_flavor", 0 );
-  xdr_marshaller.writeUint32( "verf_auth_body_length", 0 );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "msg_type" ), static_cast<int32_t>( 1 ) ); // MSG_REPLY
+  xdr_marshaller.write( XDRMarshaller::Declaration( "reply_stat" ), static_cast<int32_t>( 0 ) ); // MSG_ACCEPTED
+  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_flavor" ), static_cast<int32_t>( 0 ) );
+  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_body_length" ), static_cast<int32_t>( 0 ) );
   if ( body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
-    xdr_marshaller.writeUint32( "accept_stat", 0 ); // SUCCESS
+    xdr_marshaller.write( XDRMarshaller::Declaration( "accept_stat" ), static_cast<int32_t>( 0 ) ); // SUCCESS
   else
-    xdr_marshaller.writeUint32( "accept_stat", 5 ); // SYSTEM_ERR
+    xdr_marshaller.write( XDRMarshaller::Declaration( "accept_stat" ), static_cast<int32_t>( 5 ) ); // SYSTEM_ERR
 }
 
 
@@ -2043,7 +2076,7 @@ void RFC822Headers::copy_iovec( const char* data, size_t len )
   if ( data[len-1] == 0 ) len--;
   set_iovec( buffer_p_before, len );
 }
-ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
+ssize_t RFC822Headers::deserialize( auto_Object<Buffer> buffer )
 {
   for ( ;; )
   {
@@ -2054,7 +2087,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
         char c;
         for ( ;; )
         {
-          if ( io_buffer->consume( &c, 1 ) == 1 )
+          if ( buffer->get( &c, 1 ) == 1 )
           {
             if ( isspace( c ) )
               continue;
@@ -2074,7 +2107,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
       case DESERIALIZING_HEADER_NAME:
       {
         char c;
-        if ( io_buffer->consume( &c, 1 ) == 1 )
+        if ( buffer->get( &c, 1 ) == 1 )
         {
           switch ( c )
           {
@@ -2087,7 +2120,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
               advanceBufferPointer();
               for ( ;; )
               {
-                if ( io_buffer->consume( buffer_p, 1 ) )
+                if ( buffer->get( buffer_p, 1 ) )
                 {
                   if ( *buffer_p == ':' )
                   {
@@ -2115,7 +2148,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
         char c;
         for ( ;; )
         {
-          if ( io_buffer->consume( &c, 1 ) == 1 )
+          if ( buffer->get( &c, 1 ) == 1 )
           {
             if ( isspace( c ) )
               continue;
@@ -2136,7 +2169,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
       {
         for ( ;; )
         {
-          if ( io_buffer->consume( buffer_p, 1 ) == 1 )
+          if ( buffer->get( buffer_p, 1 ) == 1 )
           {
             if ( *buffer_p == '\r' )
             {
@@ -2158,7 +2191,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
         char c;
         for ( ;; )
         {
-          if ( io_buffer->consume( &c, 1 ) == 1 )
+          if ( buffer->get( &c, 1 ) == 1 )
           {
             if ( c == '\n' )
             {
@@ -2176,7 +2209,7 @@ ssize_t RFC822Headers::deserialize( auto_Object<IOBuffer> io_buffer )
         char c;
         for ( ;; )
         {
-          if ( io_buffer->consume( &c, 1 ) == 1 )
+          if ( buffer->get( &c, 1 ) == 1 )
           {
             if ( c == '\n' )
             {
@@ -2219,11 +2252,9 @@ char* RFC822Headers::get_header( const char* header_name, const char* default_va
   }
   return const_cast<char*>( default_value );
 }
-void RFC822Headers::serialize( std::ostream& os )
+auto_Object<Buffer> RFC822Headers::serialize()
 {
-  struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
-  for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i++ )
-    os.write( static_cast<const char*>( iovecs[iovec_i].iov_base ), iovecs[iovec_i].iov_len );
+  return new GatherBuffer( heap_iovecs != NULL ? heap_iovecs : stack_iovecs, iovecs_filled );
 }
 //void RFC822Headers::set_header( const char* header, size_t header_len )
 //{
@@ -2434,6 +2465,10 @@ int Socket::create( int& domain, int type, int protocol )
     return -1;
 #endif
 }
+bool Socket::get_blocking_mode() const
+{
+  return blocking_mode;
+}
 auto_Object<SocketAddress> Socket::getpeername()
 {
   struct sockaddr_storage peername_sockaddr_storage;
@@ -2453,6 +2488,63 @@ auto_Object<SocketAddress> Socket::getsockname()
     return new SocketAddress( sockname_sockaddr_storage );
   else
     return NULL;
+}
+Socket::operator int() const
+{
+  return _socket;
+}
+ssize_t Socket::recv( void* buffer, size_t buffer_len )
+{
+#if defined(_WIN32)
+  return ::recv( _socket, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer
+#elif defined(__linux)
+  return ::recv( _socket, buffer, buffer_len, MSG_NOSIGNAL );
+#else
+  return ::recv( _socket, buffer, buffer_len, 0 );
+#endif
+}
+ssize_t Socket::send( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  struct iovec buffers[1];
+  buffers[0].iov_base = const_cast<void*>( buffer );
+  buffers[0].iov_len = buffer_len;
+  return sendmsg( buffers, 1 );
+#else
+#ifdef __linux
+  return ::send( _socket, buffer, buffer_len, MSG_NOSIGNAL );
+#else
+  return ::send( _socket, buffer, buffer_len, 0 );
+#endif
+#endif
+}
+ssize_t Socket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
+{
+#ifdef _WIN32
+  /*
+  std::string catted_buffers;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    catted_buffers.append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
+  return ::send( _socket, catted_buffers.c_str(), catted_buffers.size(), 0 );
+  */
+  DWORD dwWrittenLength;
+  ssize_t send_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  if ( send_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return send_ret;
+#else
+  // Use sendmsg instead of writev to pass flags on Linux
+  struct msghdr _msghdr;
+  memset( &_msghdr, 0, sizeof( _msghdr ) );
+  _msghdr.msg_iov = const_cast<iovec*>( buffers );
+  _msghdr.msg_iovlen = buffers_count;
+#ifdef __linux
+  return ::sendmsg( _socket, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+#else
+  return ::sendmsg( _socket, &_msghdr, 0 );
+#endif
+#endif
 }
 bool Socket::set_blocking_mode( bool blocking )
 {
@@ -2494,53 +2586,6 @@ bool Socket::set_blocking_mode( bool blocking )
   }
 #endif
 }
-ssize_t Socket::recv( void* buffer, size_t buffer_len )
-{
-#if defined(_WIN32)
-  return ::recv( _socket, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer
-#elif defined(__linux)
-  return ::recv( _socket, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::recv( _socket, buffer, buffer_len, 0 );
-#endif
-}
-ssize_t Socket::send( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  struct iovec buffers[1];
-  buffers[0].iov_base = const_cast<void*>( buffer );
-  buffers[0].iov_len = buffer_len;
-  return sendmsg( buffers, 1 );
-#else
-#ifdef __linux
-  return ::send( _socket, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::send( _socket, buffer, buffer_len, 0 );
-#endif
-#endif
-}
-ssize_t Socket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
-{
-#ifdef _WIN32
-  DWORD dwWrittenLength;
-  ssize_t send_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
-  if ( send_ret >= 0 )
-    return static_cast<ssize_t>( dwWrittenLength );
-  else
-    return send_ret;
-#else
-  // Use sendmsg instead of writev to pass flags on Linux
-  struct msghdr _msghdr;
-  memset( &_msghdr, 0, sizeof( _msghdr ) );
-  _msghdr.msg_iov = const_cast<iovec*>( buffers );
-  _msghdr.msg_iovlen = buffers_count;
-#ifdef __linux
-  return ::sendmsg( _socket, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
-#else
-  return ::sendmsg( _socket, &_msghdr, 0 );
-#endif
-#endif
-}
 bool Socket::want_read() const
 {
 #ifdef _WIN32
@@ -2548,6 +2593,10 @@ bool Socket::want_read() const
 #else
   return errno == EWOULDBLOCK;
 #endif
+}
+bool Socket::want_write() const
+{
+  return want_read();
 }
 
 
@@ -2868,7 +2917,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
         else
         {
           if ( log != NULL )
-            log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to  " << *absolute_uri << " failed: " << Exception::strerror();
+            log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror();
           recreateConnection( connection );
           return;
         }
@@ -2877,26 +2926,16 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
       case Connection::WRITING:
       {
         auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
-        std::ostringstream protocol_request_ostringstream;
-        protocol_request->serialize( protocol_request_ostringstream );
-        connection->get_socket()->set_blocking_mode( true );
-        if ( connection->get_socket()->send( protocol_request_ostringstream.str().c_str(), protocol_request_ostringstream.str().size() ) > 0 )
+        connection->get_socket()->set_blocking_mode( true ); // Hack
+        auto_Object<Buffer> protocol_request_buffer = protocol_request->serialize();
+        std::vector<struct iovec> protocol_request_iovecs;
+        protocol_request_buffer->as_iovecs( protocol_request_iovecs );
+        if ( connection->get_socket()->sendmsg( &protocol_request_iovecs[0], protocol_request_iovecs.size() ) > 0 )
         {
           if ( log != NULL )
             log->getStream( Log::LOG_INFO ) << "SocketClient: successfully wrote " << protocol_request->get_type_name() << " to " << *absolute_uri << ".";
           connection->set_protocol_response( createProtocolResponse( protocol_request ) );
           connection->set_state( Connection::READING );
-          // Drop down to READING
-        }
-        else if ( connection->get_socket()->want_write() )
-        {
-          fd_event_queue->toggle( *connection->get_socket(), true, true );
-          return;
-        }
-        else if ( connection->get_socket()->want_read() )
-        {
-          fd_event_queue->toggle( *connection->get_socket(), true, false );
-          return;
         }
         else
         {
@@ -2905,6 +2944,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
           recreateConnection( connection );
           return;
         }
+        // Drop down to READING
       }
       // No break here, to allow drop down to READING
       case Connection::READING:
@@ -2915,12 +2955,12 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
         connection->get_socket()->set_blocking_mode( false );
         for ( ;; )
         {
-          auto_Object<IOBuffer> protocol_response_buffer = new IOBuffer( 1024 );
+          auto_Object<HeapBuffer> protocol_response_buffer = new HeapBuffer( 1024 );
           ssize_t recv_ret = connection->get_socket()->recv( *protocol_response_buffer, 1024 );
           if ( recv_ret > 0 )
           {
-            protocol_response_buffer->set_size( recv_ret );
-            ssize_t deserialize_ret = protocol_response->deserialize( protocol_response_buffer);
+            protocol_response_buffer->put( *protocol_response_buffer, recv_ret );
+            ssize_t deserialize_ret = protocol_response->deserialize( protocol_response_buffer->incRef() );
             if ( deserialize_ret == 0 )
             {
               respond( connection->get_protocol_request(), connection->get_protocol_response() );
@@ -2935,12 +2975,17 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             else
               recreateConnection( connection );
           }
-          else if ( connection->get_socket()->want_read() )
-            fd_event_queue->toggle( *connection->get_socket(), true, false );
-          else if ( connection->get_socket()->want_write() )
-            fd_event_queue->toggle( *connection->get_socket(), true, true );
-          else
+          else if ( recv_ret == 0 )
             recreateConnection( connection );
+          else
+          {
+            if ( connection->get_socket()->want_read() )
+              fd_event_queue->toggle( *connection->get_socket(), true, false );
+            else if ( connection->get_socket()->want_write() )
+              fd_event_queue->toggle( *connection->get_socket(), true, true );
+            else
+              recreateConnection( connection );
+          }
           return;
         }
       }
@@ -2967,6 +3012,8 @@ auto_Object<typename SocketClient<ProtocolRequestType, ProtocolResponseType>::Co
     _socket = UDPSocket::create().release();
   else
     _socket = TCPSocket::create().release();
+  if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+    _socket = new TracingSocket( _socket, log );
   return new Connection( _socket, reconnect_tries_max );
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
@@ -3093,6 +3140,8 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
     case YIELD_OBJECT_TAG( TCPSocket ):
     {
       _socket = static_cast<Socket&>( ev );
+      if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *_socket ) != -1 )
+        _socket = new TracingSocket( _socket, log );
       protocol_request = createProtocolRequest( _socket );
       fd_event_queue->detach( *_socket );
       fd_event_queue->attach( *_socket, protocol_request->incRef(), true );
@@ -3102,6 +3151,8 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
     case YIELD_OBJECT_TAG( UDPSocket ):
     {
       _socket = static_cast<Socket&>( ev );
+      if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+        _socket = new TracingSocket( _socket, log );
       protocol_request = createProtocolRequest( _socket );
     }
     break;
@@ -3109,25 +3160,15 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
     default: handleUnknownEvent( ev ); return;
   }
 
-  if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-    log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": trying to read from socket #" << ( int )*_socket << ".";
-
-  auto_Object<IOBuffer> protocol_request_buffer = new IOBuffer( 1024 );
+  auto_Object<HeapBuffer> protocol_request_buffer = new HeapBuffer( 1024 );
 
   ssize_t recv_ret = _socket->recv( *protocol_request_buffer, 1024 );
 
   if ( recv_ret > 0 )
   {
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-    {
-      log->getStream( Log::LOG_INFO ) << get_type_name() << ": read " << recv_ret << " bytes from socket #" << ( int )*_socket << ".";
-      log->write( static_cast<void*>( *protocol_request_buffer ), protocol_request_buffer->size(), Log::LOG_DEBUG );
-      log->write( "\n", Log::LOG_DEBUG );
-    }
+    protocol_request_buffer->put( *protocol_request_buffer, recv_ret );
 
-    protocol_request_buffer->set_size( recv_ret );
-
-    ssize_t deserialize_ret = protocol_request->deserialize( protocol_request_buffer );
+    ssize_t deserialize_ret = protocol_request->deserialize( protocol_request_buffer->incRef() );
 
     if ( deserialize_ret == 0 )
     {
@@ -3152,24 +3193,15 @@ void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Even
   {
     if ( _socket->want_read() )
     {
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": would block on read on socket #" << ( int )*_socket << ".";
-
       fd_event_queue->toggle( *_socket, true, false );
       return;
     }
     else if ( _socket->want_write() )
     {
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": would block on write on socket #" << ( int )*_socket << ".";
-
       fd_event_queue->toggle( *_socket, true, true );
       return;
     }
   }
-
-  if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-    log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": lost connection while trying to read socket #" <<  ( int )*_socket << ".";
 
   fd_event_queue->detach( *_socket );
   _socket->close();
@@ -3191,26 +3223,17 @@ void SocketServer::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Ev
       ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
       auto_Object<Socket> _socket = protocol_response.get_socket();
 
-      std::ostringstream protocol_response_ostringstream;
-      protocol_response.serialize( protocol_response_ostringstream );
-      ssize_t send_ret = _socket->send( protocol_response_ostringstream.str().c_str(), protocol_response_ostringstream.str().size() );
-      Object::decRef( protocol_response );
+      auto_Object<Buffer> protocol_response_buffer = protocol_response.serialize();
+      std::vector<struct iovec> iovecs;
+      protocol_response_buffer->as_iovecs( iovecs );
 
-      if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      {
-        log->getStream( Log::LOG_INFO ) << get_type_name() << ": wrote " << send_ret << " bytes to socket #" << ( int )*_socket << ".";
-        log->write( reinterpret_cast<const unsigned char*>( protocol_response_ostringstream.str().c_str() ), send_ret, Log::LOG_DEBUG );
-        log->write( "\n", Log::LOG_DEBUG );
-      }
+      _socket->sendmsg( &iovecs[0], iovecs.size() );
+
+      Object::decRef( protocol_response );
 
       if ( protocol_request_reader_stage != NULL &&
            _socket->get_tag() != YIELD_OBJECT_TAG( UDPSocket ) )
-      {
-        if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-          log->getStream() << get_type_name() << ": sending socket #" << ( int )*_socket << " back to the reader stage.";
-
         protocol_request_reader_stage->send( *_socket.release() );
-      }
     }
     break;
 
@@ -3647,6 +3670,119 @@ bool TCPSocket::shutdown()
 #else
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
+}
+
+
+// tracing_socket.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TracingSocket::TracingSocket( auto_Object<Socket> underlying_socket, auto_Object<Log> log )
+  : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
+    underlying_socket( underlying_socket ), log( log )
+{ }
+bool TracingSocket::bind( auto_Object<SocketAddress> to_sockaddr )
+{
+  return underlying_socket->bind( to_sockaddr );
+}
+bool TracingSocket::close()
+{
+  return underlying_socket->close();
+}
+bool TracingSocket::connect( auto_Object<SocketAddress> to_sockaddr )
+{
+  return underlying_socket->connect( to_sockaddr );
+}
+bool TracingSocket::get_blocking_mode() const
+{
+  return underlying_socket->get_blocking_mode();
+}
+auto_Object<SocketAddress> TracingSocket::getpeername()
+{
+  return underlying_socket->getpeername();
+}
+auto_Object<SocketAddress> TracingSocket::getsockname()
+{
+  return underlying_socket->getsockname();
+}
+TracingSocket::operator int() const
+{
+  return underlying_socket->operator int();
+}
+ssize_t TracingSocket::recv( void* buffer, size_t buffer_len )
+{
+  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
+  ssize_t recv_ret = underlying_socket->recv( buffer, buffer_len );
+  if ( recv_ret > 0 )
+  {
+    log->getStream( Log::LOG_INFO ) << "TracingSocket: read " << recv_ret << " bytes from socket #" << ( int )*this << ".";
+    log->write( buffer, recv_ret, Log::LOG_DEBUG );
+    log->write( "\n", Log::LOG_DEBUG );
+  }
+  else if ( recv_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
+    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
+  return recv_ret;
+}
+ssize_t TracingSocket::send( const void* buffer, size_t buffer_len )
+{
+  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
+  ssize_t send_ret = underlying_socket->send( buffer, buffer_len );
+  if ( send_ret >= 0 )
+  {
+    log->getStream( Log::LOG_INFO ) << "TracingSocket: wrote " << send_ret << " bytes to socket #" << ( int )*this << ".";
+    log->write( buffer, send_ret, Log::LOG_DEBUG );
+    log->write( "\n", Log::LOG_DEBUG );
+  }
+  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
+    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+  return send_ret;
+}
+ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
+{
+  size_t buffers_len = 0;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    buffers_len += buffers[buffer_i].iov_len;
+  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
+  ssize_t sendmsg_ret = underlying_socket->sendmsg( buffers, buffers_count );
+  if ( sendmsg_ret >= 0 )
+  {
+    size_t temp_sendmsg_ret = sendmsg_ret;
+    log->getStream( Log::LOG_INFO ) << "TracingSocket: wrote " << sendmsg_ret << " bytes to socket #" << ( int )*this << ".";
+    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    {
+      if ( static_cast<ssize_t>( buffers[buffer_i].iov_len ) <= temp_sendmsg_ret )
+      {
+        log->write( buffers[buffer_i].iov_base, buffers[buffer_i].iov_len, Log::LOG_DEBUG );
+        temp_sendmsg_ret -= buffers[buffer_i].iov_len;
+      }
+      else
+      {
+        log->write( buffers[buffer_i].iov_base, temp_sendmsg_ret, Log::LOG_DEBUG );
+        break;
+      }
+    }
+    log->write( "\n", Log::LOG_DEBUG );
+  }
+  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
+    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+  return sendmsg_ret;
+}
+bool TracingSocket::set_blocking_mode( bool blocking )
+{
+  return underlying_socket->set_blocking_mode( blocking );
+}
+bool TracingSocket::want_read() const
+{
+  bool want_read_ret = underlying_socket->want_read();
+  if ( want_read_ret )
+    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: would block on read on socket #" << ( int )*this << ".";
+  return want_read_ret;
+}
+bool TracingSocket::want_write() const
+{
+  bool want_write_ret = underlying_socket->want_write();
+  if ( want_write_ret )
+    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: would block on write on socket #" << ( int )*this << ".";
+  return want_write_ret;
 }
 
 

@@ -47,6 +47,23 @@ typedef struct yajl_gen_t* yajl_gen;
 #define YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH 32
 
 
+#define YIELD_SOCKET_PROTOTYPES \
+virtual bool bind( auto_Object<SocketAddress> to_sockaddr ); \
+virtual bool close(); \
+virtual bool connect( auto_Object<SocketAddress> to_sockaddr ); \
+virtual bool get_blocking_mode() const; \
+virtual auto_Object<SocketAddress> getpeername(); \
+virtual auto_Object<SocketAddress> getsockname(); \
+virtual operator int() const; \
+virtual ssize_t recv( void* buffer, size_t buffer_len ); \
+virtual ssize_t send( const void* buffer, size_t buffer_len ); \
+virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count ); \
+virtual bool set_blocking_mode( bool blocking ); \
+virtual bool shutdown() { return true; } \
+virtual bool want_read() const; \
+virtual bool want_write() const;
+
+
 namespace YIELD
 {
   class FDEventQueue;
@@ -384,7 +401,7 @@ namespace YIELD
     RFC822Headers();
     virtual ~RFC822Headers();
 
-    ssize_t deserialize( auto_Object<IOBuffer> );
+    ssize_t deserialize( auto_Object<Buffer> );
     char* get_header( const char* header_name, const char* default_value="" );
     char* operator[]( const char* header_name ) { return get_header( header_name ); }
     // void set_header( const char* header, size_t header_len ); // Mutable header with name: value in one string, will copy both
@@ -392,7 +409,7 @@ namespace YIELD
     void set_header( const char* header_name, char* header_value ); // Mutable header, will copy value
     void set_header( char* header_name, char* header_value ); // Mutable name and mutable value, will copy both
     void set_header( const std::string& header_name, const std::string& header_value ); // Mutable name and mutable value, will copy both
-    void serialize( std::ostream& );
+    auto_Object<Buffer> serialize();
 
   protected:
     void copy_iovec( const char* data, size_t len );
@@ -429,15 +446,16 @@ namespace YIELD
   class HTTPMessage : public RFC822Headers
   {
   public:
-    auto_Object<> get_body() const { return body; }
+    auto_Object<Buffer> get_body() const { return body; }
     uint8_t get_http_version() const { return http_version; }
 
   protected:
-    HTTPMessage( auto_Object<> body = NULL );
+    HTTPMessage();
+    HTTPMessage( auto_Object<Buffer> body );
     virtual ~HTTPMessage() { }
 
 
-    auto_Object<> body;
+    auto_Object<Buffer> body;
 
     enum 
     {
@@ -453,8 +471,8 @@ namespace YIELD
 
     uint8_t http_version;
 
-    virtual ssize_t deserialize( auto_Object<IOBuffer> );
-    virtual void serialize( std::ostream& );
+    virtual ssize_t deserialize( auto_Object<Buffer> );
+    virtual auto_Object<Buffer> serialize();
   };
 
 
@@ -462,17 +480,17 @@ namespace YIELD
   {
   public:
     HTTPRequest(); // Incoming
-    HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<> body = NULL ); // Outgoing
-    HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<> body = NULL ); // Outgoing
+    HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body = NULL ); // Outgoing
+    HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<Buffer> body = NULL ); // Outgoing
 
-    ssize_t deserialize( auto_Object<IOBuffer> );
+    ssize_t deserialize( auto_Object<Buffer> );
     uint8_t get_http_version() const { return http_version; }
     const char* get_method() const { return method; }
     const char* get_uri() const { return uri; }    
     virtual bool respond( uint16_t status_code );
-    virtual bool respond( uint16_t status_code, auto_Object<Object> body );
+    virtual bool respond( uint16_t status_code, auto_Object<Buffer> body );
     virtual bool respond( Response& response ) { return Request::respond( response ); }
-    void serialize( std::ostream& );
+    auto_Object<Buffer> serialize();
 
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPRequest, 205 );
@@ -483,7 +501,7 @@ namespace YIELD
   private:
     HTTPRequest( const HTTPRequest& ) { DebugBreak(); } // Prevent copying
 
-    void init( const char* method, const char* relative_uri, const char* host, auto_Object<> body );
+    void init( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body );
 
     char method[16];
     char* uri; size_t uri_len;
@@ -495,12 +513,12 @@ namespace YIELD
   public:
     HTTPResponse(); // Incoming
     HTTPResponse( uint16_t status_code ); // Outgoing
-    HTTPResponse( uint16_t status_code, auto_Object<> body ); // Outgoing
+    HTTPResponse( uint16_t status_code, auto_Object<Buffer> body ); // Outgoing
 
-    ssize_t deserialize( auto_Object<IOBuffer> );
+    ssize_t deserialize( auto_Object<Buffer> );
     uint16_t get_status_code() const { return status_code; }
-    void serialize( std::ostream& );
-    void set_body( auto_Object<> body ) { this->body = body; }
+    auto_Object<Buffer> serialize();
+    void set_body( auto_Object<Buffer> body ) { this->body = body; }
     void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
 
     // Object
@@ -528,7 +546,7 @@ namespace YIELD
                                            auto_Object<SSLContext> ssl_context = NULL );
 
     static auto_Object<HTTPResponse> GET( const URI& absolute_uri, auto_Object<Log> log = NULL );
-    static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, auto_Object<> body, auto_Object<Log> log = NULL );
+    static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, auto_Object<Buffer> body, auto_Object<Log> log = NULL );
     static auto_Object<HTTPResponse> PUT( const URI& absolute_uri, const Path& body_file_path, auto_Object<Log> log = NULL );
 
     // Object
@@ -544,7 +562,7 @@ namespace YIELD
     HTTPClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context );
     virtual ~HTTPClient() { }
 
-    static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<> body, auto_Object<Log> log );
+    static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<Buffer> body, auto_Object<Log> log );
 
     // Client
     virtual auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Request> request );
@@ -588,7 +606,7 @@ namespace YIELD
         return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, tcp_socket ) ) );
       }
 
-      bool respond( uint16_t status_code, auto_Object<> body )
+      bool respond( uint16_t status_code, auto_Object<Buffer> body )
       {
         return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, body, tcp_socket ) ) );
       }
@@ -604,8 +622,8 @@ namespace YIELD
     class HTTPRequestReader : public ProtocolRequestReader<HTTPRequest>
     {
     public:
-      HTTPRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<Stage> http_response_writer_stage )
-        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, NULL ), http_request_target( http_request_target ), http_response_writer_stage( http_response_writer_stage )
+      HTTPRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<Stage> http_response_writer_stage, auto_Object<Log> log )
+        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, log ), http_request_target( http_request_target ), http_response_writer_stage( http_response_writer_stage )
       { }
 
       // Object
@@ -637,7 +655,7 @@ namespace YIELD
         : YIELD::HTTPResponse( status_code ), tcp_socket( tcp_socket )
       { }
 
-      HTTPResponse( uint16_t status_code, auto_Object<> body, auto_Object<Socket> tcp_socket )
+      HTTPResponse( uint16_t status_code, auto_Object<Buffer> body, auto_Object<Socket> tcp_socket )
         : YIELD::HTTPResponse( status_code, body ), tcp_socket( tcp_socket )
       { }
 
@@ -659,33 +677,29 @@ namespace YIELD
   class JSONMarshaller : public Marshaller
   {
   public:
-    JSONMarshaller( std::ostream& target_ostream, bool write_empty_strings = true );
+    JSONMarshaller( bool write_empty_strings = true );
     virtual ~JSONMarshaller(); // If the stream is wrapped in map, sequence, etc. then the constructor will append the final } or [, so the underlying output stream should not be deleted before this object!
-
-    JSONMarshaller& operator=( const JSONMarshaller& ) { return *this; }
 
     // Marshaller
     YIELD_MARSHALLER_PROTOTYPES;
-    virtual void writePointer( const Declaration& decl, void* value );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( JSONMarshaller, 0 );
 
   protected:
-    JSONMarshaller( std::ostream& target_ostream, bool write_empty_strings, yajl_gen writer, const Declaration& root_decl );
+    JSONMarshaller( JSONMarshaller& parent_json_marshaller, const Declaration& root_decl );
 
-    virtual void writeDeclaration( const Declaration& );
-    virtual void writeSequence( Object* ); // Can be NULL for empty arrays
-    virtual void writeMap( Object* ); // Can be NULL for empty maps
-    virtual void writeStruct( Object* );
+    virtual void write( const Declaration& );
+    virtual void write( const Map* ); // Can be NULL for empty maps
+    virtual void write( const Object* ); // Can be NULL for empty maps
+    virtual void write( const Sequence* ); // Can be NULL for empty sequences
 
   private:
-    std::ostream& target_ostream;
     bool write_empty_strings;
 
+    bool in_map;
     const Declaration* root_decl; // Mostly for debugging, also used to indicate if this is the root JSONMarshaller
     yajl_gen writer;
-    bool in_map;
 
     void flushYAJLBuffer();
   };
@@ -694,7 +708,7 @@ namespace YIELD
   class JSONUnmarshaller : public Unmarshaller
   {
   public:
-    JSONUnmarshaller( std::istream& source_istream );
+    JSONUnmarshaller( auto_Object<Buffer> source_buffer );
     virtual ~JSONUnmarshaller();
 
     // Unmarshaller
@@ -710,8 +724,8 @@ namespace YIELD
     const Declaration* root_decl;
     JSONValue *root_json_value, *next_json_value;
 
-    void readSequence( Object& );
-    void readMap( Object& );
+    void readMap( Map& );
+    void readSequence( Sequence& );
     void readStruct( Object& );
     JSONValue* readJSONValue( const Declaration& decl );
   };
@@ -724,8 +738,8 @@ namespace YIELD
     auto_Object<> get_body() const { return body; }
     uint32_t get_xid() const { return xid; }
 
-    ssize_t deserialize( auto_Object<IOBuffer> );
-    void serialize( std::ostream& );
+    ssize_t deserialize( auto_Object<Buffer> );
+    auto_Object<Buffer> serialize();
 
   protected:
     ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body );
@@ -735,10 +749,17 @@ namespace YIELD
     auto_Object<Interface> _interface;
 
   private:
-    uint32_t xid;
+    enum 
+    { 
+      DESERIALIZING_RECORD_FRAGMENT_MARKER, 
+      DESERIALIZING_RECORD_FRAGMENT, 
+      DESERIALIZING_LONG_RECORD_FRAGMENT, 
+      DESERIALIZE_DONE 
+    } deserialize_state;
 
     uint32_t record_fragment_length;
-    std::string record_fragment;
+    std::string record_fragment_string;
+    uint32_t xid;
   };
 
 
@@ -994,23 +1015,11 @@ namespace YIELD
   class Socket : public Event
   {
   public:
-    bool bind( auto_Object<SocketAddress> to_sockaddr );
-    virtual bool close();
-    virtual bool connect( auto_Object<SocketAddress> to_sockaddr );
-    bool get_blocking_mode() const { return blocking_mode; }
     int get_domain() const { return domain; }
-    auto_Object<SocketAddress> getpeername();
-    auto_Object<SocketAddress> getsockname();
-    operator int() const { return _socket; }
-    bool operator==( const Socket& other ) const { return this->_socket == other._socket; }
-    std::ostream& operator<<( std::ostream& os ) const { os << "socket #" << static_cast<int>( _socket ); return os; }    
-    virtual ssize_t recv( void* buffer, size_t buffer_len );    
-    virtual ssize_t send( const void* buffer, size_t buffer_len );
-    virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count );
-    bool set_blocking_mode( bool blocking );    
-    virtual bool shutdown() { return true; }
-    virtual bool want_read() const;
-    virtual bool want_write() const { return want_read(); }
+    int get_protocol() const { return protocol; }
+    int get_type() const { return type; }
+    bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
+    YIELD_SOCKET_PROTOTYPES;
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Socket, 211 );
@@ -1121,11 +1130,11 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // Socket
-    ssize_t recv( void* buffer, size_t buffer_len );
-    ssize_t send( const void* buffer, size_t buffer_len );
-    ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count );
-    bool want_read() const;
-    bool want_write() const;
+    virtual ssize_t recv( void* buffer, size_t buffer_len );
+    virtual ssize_t send( const void* buffer, size_t buffer_len );
+    virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count );
+    virtual bool want_read() const;
+    virtual bool want_write() const;
 
     // TCPSocket
     auto_Object<TCPSocket> accept();
@@ -1158,6 +1167,25 @@ namespace YIELD
   };
 
 #endif
+
+  class TracingSocket : public Socket
+  {
+  public:
+    TracingSocket( auto_Object<Socket> underlying_socket, auto_Object<Log> log );
+  
+    // Object
+    virtual uint32_t get_tag() const { return underlying_socket->get_tag(); }
+    const char* get_type_name() const { return underlying_socket->get_type_name(); }
+
+    // Socket
+    YIELD_SOCKET_PROTOTYPES;
+
+  private:
+    ~TracingSocket() { }
+
+    auto_Object<Socket> underlying_socket;
+    auto_Object<Log> log;
+  };
 
 
   class UDPSocket : public Socket

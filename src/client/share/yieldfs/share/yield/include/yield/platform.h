@@ -141,13 +141,13 @@ extern "C"
   virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
 #define YIELD_MARSHALLER_PROTOTYPES \
-  virtual void writeBool( const Declaration& decl, bool value ); \
-  virtual void writeDouble( const Declaration& decl, double value ); \
-  virtual void writeInt64( const Declaration& decl, int64_t value ); \
-  virtual void writeMap( const Declaration& decl, YIELD::Object& value, size_t key_count ); \
-  virtual void writeSequence( const Declaration& decl, YIELD::Object& value, size_t item_count ); \
-  virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
-  virtual void writeStruct( const Declaration& decl, YIELD::Object& value );
+  virtual void write( const Declaration& decl, bool value ); \
+  virtual void write( const Declaration& decl, double value ); \
+  virtual void write( const Declaration& decl, int64_t value ); \
+  virtual void write( const Declaration& decl, const YIELD::Object& value ); \
+  virtual void write( const Declaration& decl, const YIELD::Map& value ); \
+  virtual void write( const Declaration& decl, const YIELD::Sequence& value ); \
+  virtual void write( const Declaration&, const char* value, size_t value_len );
 
 #define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
     type_name & incRef() { return YIELD::Object::incRef( *this ); } \
@@ -192,10 +192,10 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
   virtual bool readBool( const Declaration& decl ); \
   virtual double readDouble( const Declaration& decl ); \
   virtual int64_t readInt64( const Declaration& decl ); \
-  virtual Object* readMap( const Declaration& decl, Object* value = NULL ); \
-  virtual Object* readSequence( const Declaration& decl, Object* value = NULL ); \
+  virtual YIELD::Map* readMap( const Declaration& decl, Map* value = NULL ); \
+  virtual YIELD::Sequence* readSequence( const Declaration& decl, YIELD::Sequence* value = NULL ); \
   virtual void readString( const Declaration& decl, std::string& ); \
-  virtual Object* readStruct( const Declaration& decl, Object* value = NULL );  
+  virtual YIELD::Object* readStruct( const Declaration& decl, YIELD::Object* value = NULL );  
 
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
@@ -277,8 +277,10 @@ inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t coun
 
 namespace YIELD
 {
+  class Map;
   class Marshaller;
   class Path;
+  class Sequence;
   class Stat;
   class Unmarshaller;
   class TestResult;
@@ -548,7 +550,7 @@ namespace YIELD
 
     virtual uint32_t get_tag() const = 0;
     virtual const char* get_type_name() const = 0;
-    virtual void marshal( Marshaller& ) { }
+    virtual void marshal( Marshaller& ) const { }
     virtual void unmarshal( Unmarshaller& ) { }
 
   protected:
@@ -658,6 +660,30 @@ namespace YIELD
 
   private:
     ObjectType* object;
+  };
+
+
+  class Buffer : public Object
+  {
+  public:    
+    virtual ~Buffer() { }
+
+    virtual void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
+    virtual size_t capacity() const = 0;
+    bool empty() const { return size() == 0; }
+    virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
+    virtual size_t get( std::string& into_string, size_t into_string_len ) = 0;
+    auto_Object<Buffer> get_next_buffer() const { return next_buffer; }    
+    size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
+    virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
+    void set_next_buffer( auto_Object<Buffer> next_buffer );
+    virtual size_t size() const = 0;
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Buffer, 0 );
+            
+  private:
+    auto_Object<Buffer> next_buffer;
   };
 
 
@@ -1008,6 +1034,53 @@ namespace YIELD
     int fd;
 #endif
   };
+
+  
+  class FixedBuffer : public Buffer
+  {
+  public:
+    bool operator==( const FixedBuffer& other ) const;
+    operator void*() { return iov.iov_base; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( FixedBuffer, 15 );
+
+    // Buffer
+    size_t get( void* into_buffer, size_t into_buffer_len );
+    size_t get( std::string&, size_t into_string_len );
+    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
+    size_t capacity() const { return _capacity; }
+    virtual size_t put( const void* from_buffer, size_t from_buffer_len );
+    size_t size() const { return iov.iov_len; }
+
+  protected:
+    FixedBuffer( size_t capacity );
+
+    struct iovec iov;
+
+  private:
+    size_t _capacity;
+    size_t _consumed; // Total number of bytes consumed by get()
+  };
+
+
+  class GatherBuffer : public Buffer
+  {
+  public:
+    GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len );
+
+    // Buffer
+    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
+    size_t capacity() const { return size(); }
+    size_t get( void*, size_t ) { DebugBreak(); return 0; }
+    size_t get( std::string&, size_t ) { DebugBreak(); return 0; }
+    size_t put( const void*, size_t ) { DebugBreak(); return 0; }
+    size_t size() const;
+
+  private:
+    const struct iovec* iovecs;
+    uint32_t iovecs_len;
+  };    
 
 
   // Adapted from N. Askitis and J. Zobel, "Cache-conscious collision resolution in string hash tables", 2005.
@@ -1717,37 +1790,13 @@ namespace YIELD
   };
 
 
-  class IOBuffer : public Object
+  class HeapBuffer : public FixedBuffer
   {
   public:
-    IOBuffer( size_t size );
-    IOBuffer( size_t size, auto_Object<> context );
-    virtual ~IOBuffer();
-
-    size_t consume( void* into_buffer, size_t into_buffer_len );
-    size_t consume( std::string& into_string, size_t into_string_len );
-
-//    auto_Object<> get_context() const { return context; }
-//    auto_Object<IOBuffer> get_next_io_buffer() const { return next_io_buffer; }
-    size_t get_size() const { return buffer_len; }    
-
-    operator struct iovec() const;
-    operator void*() const { return buffer; }
-
-//    void set_context( auto_Object<> context ) { this->context = context; }
-//    void set_next_io_buffer( auto_Object<IOBuffer> );
-    void set_size( size_t size );
-    size_t size() const { return buffer_len; }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( IOBuffer, 0 );
-        
-  private:
-    uint8_t* buffer;
-    size_t buffer_len, consumed_buffer_len;
-//    auto_Object<> context;
-//    auto_Object<IOBuffer> next_io_buffer;
+    HeapBuffer( size_t capacity );
+    virtual ~HeapBuffer();
   };
+
 
   class Log : public Object
   {
@@ -1815,18 +1864,10 @@ namespace YIELD
       return write( static_cast<const unsigned char*>( str ), str_len, level );
     }
 
-    inline void write( const unsigned char* str, size_t str_len, Level level )
-    {
-      char* sanitized_str = sanitize( str, str_len );
-      write( sanitized_str, str_len, level );
-      delete [] sanitized_str;
-    }
+    void write( const unsigned char* str, size_t str_len, Level level );
 
     inline void write( const char* str, size_t str_len, Level level )
     {
-      struct iovec buffers[1];
-      buffers[0].iov_base = ( void* )str;
-      buffers[0].iov_len = str_len;
       if ( level <= this->level )
         write( str, str_len );
     }
@@ -1845,8 +1886,6 @@ namespace YIELD
 
   private:
     Level level;
-
-    static char* sanitize( const unsigned char* str, size_t str_len );
   };
 
 
@@ -1922,6 +1961,13 @@ namespace YIELD
   };
 
 
+  class Map : public Object
+  {
+  public:
+    virtual size_t get_size() const = 0;
+  };
+
+
   class Marshaller : public Object
   {
   public:
@@ -1943,24 +1989,39 @@ namespace YIELD
 
     virtual ~Marshaller() { }
 
-    virtual void writeBool( const Declaration&, bool value ) = 0;
-    virtual void writeDouble( const Declaration&, double value ) = 0;
-    virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
-    virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
-    virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
-    virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
-    virtual void writeInt64( const Declaration&, int64_t ) = 0;
-    virtual void writeMap( const Declaration& decl, YIELD::Object& value, size_t key_count ) = 0;
-    virtual void writePointer( const Declaration&, void* ) { }
-    virtual void writeSequence( const Declaration& decl, YIELD::Object& value, size_t item_count ) = 0;
-    virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, UINT16_MAX ) ); }
-    virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
-    virtual void writeStruct( const Declaration& decl, YIELD::Object& value ) = 0;
-    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
-    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
-    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
-    virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
+    auto_Object<Buffer> get_buffer() const { return first_buffer; }
+
+    virtual void write( const Declaration& decl, bool value ) = 0;
+    virtual void write( const Declaration&, auto_Object<Buffer> ) { }
+    virtual void write( const Declaration& decl, float value ) { write( decl, static_cast<double>( value ) ); }
+    virtual void write( const Declaration& decl, double value ) = 0;
+    virtual void write( const Declaration& decl, int8_t value ) { write( decl, static_cast<int16_t>( value ) ); }
+    virtual void write( const Declaration& decl, int16_t value ) { write( decl, static_cast<int32_t>( value ) ); }
+    virtual void write( const Declaration& decl, int32_t value ) { write( decl, static_cast<int64_t>( value ) ); }
+    virtual void write( const Declaration&, int64_t ) = 0;
+    virtual void write( const Declaration& decl, const Map& value ) = 0;
+    virtual void write( const Declaration& decl, const Object& value ) = 0;
+    virtual void write( const Declaration& decl, const Sequence& value ) = 0;
+    virtual void write( const Declaration& decl, const std::string& value ) { write( decl, value.c_str(), value.size() ); }
+    virtual void write( const Declaration& decl, const char* value ) { write( decl, value, strnlen( value, UINT16_MAX ) ); }
+    virtual void write( const Declaration&, const char* value, size_t value_len ) = 0;
+    virtual void write( const Declaration& decl, uint8_t value ) { write( decl, static_cast<int8_t>( value ) ); }
+    virtual void write( const Declaration& decl, uint16_t value ) { write( decl, static_cast<int16_t>( value ) ); }
+    virtual void write( const Declaration& decl, uint32_t value ) { write( decl, static_cast<int32_t>( value ) ); }
+    virtual void write( const Declaration& decl, uint64_t value ) { write( decl, static_cast<int64_t>( value ) ); }
+
+  protected:
+    Marshaller() 
+    { }
+
+    Marshaller( Marshaller& parent_marshaller )
+      : current_buffer( parent_marshaller.current_buffer )
+    { }
+
+    void write( const void*, size_t );    
+
+  private:
+    auto_Object<Buffer> first_buffer, current_buffer;
   };
 
 
@@ -2201,6 +2262,17 @@ namespace YIELD
     inline bool try_acquire() { return true; }
     inline bool timed_acquire( uint64_t ) { return true; }
     inline void release() { }
+  };
+
+
+  class PageAlignedBuffer : public FixedBuffer
+  {
+  public:
+    PageAlignedBuffer( size_t capacity );
+    virtual ~PageAlignedBuffer();
+
+  private:
+    static size_t page_size;
   };
 
 
@@ -2469,6 +2541,13 @@ namespace YIELD
   };
 
 
+  class Sequence : public Object
+  {
+  public:
+    virtual size_t get_size() const = 0;
+  };
+
+
   class SharedLibrary : public Object
   {
   public:
@@ -2490,6 +2569,29 @@ namespace YIELD
     ~SharedLibrary();
 
     void* handle;
+  };
+
+
+  template <size_t Capacity>
+  class StackBuffer : public FixedBuffer
+  {
+  public:
+    StackBuffer()
+      : FixedBuffer( Capacity )
+    {
+      iov.iov_base = _stack_buffer;
+    }
+
+    StackBuffer( const void* from_buffer )
+      : FixedBuffer( Capacity )
+    {
+      iov.iov_base = _stack_buffer;
+      memcpy_s( _stack_buffer, Capacity, from_buffer, Capacity );
+      iov.iov_len = Capacity;
+    }
+
+  private:
+    uint8_t _stack_buffer[Capacity];
   };
 
 
@@ -2681,18 +2783,57 @@ namespace YIELD
   };
 
 
-  class String : public Object, public std::string
+  class StringBuffer : public Buffer
   {
   public:
-    String() { }
-    String( size_t str_len ) { resize( str_len ); }
-    String( const std::string& str ) : std::string( str ) { }
-    String( const char* str ) : std::string( str ) { }
-    String( const char* str, size_t str_len ) : std::string( str, str_len ) { }
-    virtual ~String() { }
+    StringBuffer();
+    StringBuffer( size_t capacity );
+    StringBuffer( const std::string& );
+    StringBuffer( const char* );
+    StringBuffer( const char*, size_t );
+
+    const char* c_str() const { return _string.c_str(); }
+    operator std::string&() { return _string; }
+    operator const std::string&() const { return _string; }
+    bool operator==( const StringBuffer& other ) const { return _string == other._string; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( String, 13 );
+    YIELD_OBJECT_PROTOTYPES( StringBuffer, 13 );
+
+    // Buffer
+    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
+    size_t capacity() const { return _string.capacity(); }
+    size_t get( void* into_buffer, size_t into_buffer_len );
+    size_t get( std::string& into_string, size_t into_string_len );
+    size_t put( const void*, size_t );
+    size_t size() const { return _string.size(); }
+
+  private:
+    std::string _string;
+
+    size_t _consumed;
+  };
+
+
+  class StringLiteralBuffer : public FixedBuffer
+  {
+  public:
+    StringLiteralBuffer( const char* string_literal )
+      : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
+    {
+      iov.iov_base = const_cast<char*>( string_literal );
+      iov.iov_len = capacity();
+    }
+
+    StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
+      : FixedBuffer( string_literal_len )
+    {
+      iov.iov_base = const_cast<char*>( string_literal );
+      iov.iov_len = string_literal_len;
+    }
+
+    // Buffer
+    size_t put( const void*, size_t ) { DebugBreak(); return 0; }
   };
 
 
@@ -2833,15 +2974,27 @@ namespace YIELD
     virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
     virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
     virtual int64_t readInt64( const Declaration& decl ) = 0;
-    virtual Object* readMap( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual void* readPointer( const Declaration& ) { return 0; }
-    virtual Object* readSequence( const Declaration& decl, Object* value = NULL ) = 0;
+    virtual Map* readMap( const Declaration& decl, Map* value = NULL ) = 0;
+    virtual Sequence* readSequence( const Declaration& decl, Sequence* value = NULL ) = 0;
     virtual void readString( const Declaration& decl, std::string& value ) = 0;
     virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
     virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
     virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
     virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
     virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
+
+  protected:
+    Unmarshaller()
+    { }
+
+    Unmarshaller( auto_Object<Buffer> source_buffer )
+        : source_buffer( source_buffer )
+    { }
+
+    void read( void*, size_t );
+
+  private:
+    auto_Object<Buffer> source_buffer;
   };
 
 
@@ -2906,32 +3059,29 @@ namespace YIELD
   class XDRMarshaller : public Marshaller
   {
   public:
-    XDRMarshaller( std::ostream& target_ostream, bool in_map = false );
-
-    XDRMarshaller& operator=( const XDRMarshaller& ) { return *this; }
-
     // Marshaller
     YIELD_MARSHALLER_PROTOTYPES;
-    void writeFloat( const Declaration& decl, float value );
-    void writeInt32( const Declaration& decl, int32_t value );
+    void write( const Declaration& decl, float value );
+    void write( const Declaration& decl, int32_t value );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( XDRMarshaller, 0 );
 
-  private:
-    std::ostream& target_ostream;
-    bool in_map;
+  protected:
+    inline void write( const void* buffer, size_t buffer_len ) { Marshaller::write( buffer, buffer_len ); }
+    virtual void write( const Declaration& decl );
 
-    virtual void beforeWrite( const Declaration& decl );
+  private:
+    std::vector<bool> in_map_stack;
   };
 
 
   class XDRUnmarshaller : public Unmarshaller
   {
   public:
-    XDRUnmarshaller( std::istream& source_istream );
-
-    XDRUnmarshaller& operator=( const XDRUnmarshaller& ) { return *this; }
+    XDRUnmarshaller( auto_Object<Buffer> source_buffer )
+        : Unmarshaller( source_buffer )
+    { }
 
     // Unmarshaller
     YIELD_UNMARSHALLER_PROTOTYPES;
@@ -2940,9 +3090,6 @@ namespace YIELD
 
     // Object
     YIELD_OBJECT_PROTOTYPES( XDRUnmarshaller, 0 );
-
-  private:
-    std::istream& source_istream;
   };
 };
 

@@ -37,7 +37,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( InternalGmax, 1050 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeUint64( YIELD::Marshaller::Declaration( "epoch" ), epoch ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "last_object_id" ), last_object_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "file_size" ), file_size ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "epoch" ), epoch ); marshaller.write( YIELD::Marshaller::Declaration( "last_object_id" ), last_object_id ); marshaller.write( YIELD::Marshaller::Declaration( "file_size" ), file_size ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { epoch = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "epoch" ) ); last_object_id = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "last_object_id" ) ); file_size = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "file_size" ) ); }
 
       protected:
@@ -50,12 +50,12 @@ namespace org
       {
       public:
         ObjectData() : checksum( 0 ), zero_padding( 0 ), invalid_checksum_on_osd( false ) { }
-        ObjectData( YIELD::auto_Object<YIELD::String> data, uint32_t checksum, uint32_t zero_padding, bool invalid_checksum_on_osd ) : data( data ), checksum( checksum ), zero_padding( zero_padding ), invalid_checksum_on_osd( invalid_checksum_on_osd ) { }
+        ObjectData( YIELD::auto_Object<YIELD::StringBuffer> data, uint32_t checksum, uint32_t zero_padding, bool invalid_checksum_on_osd ) : data( data ), checksum( checksum ), zero_padding( zero_padding ), invalid_checksum_on_osd( invalid_checksum_on_osd ) { }
         virtual ~ObjectData() { }
 
-        void set_data( YIELD::String* data ) { this->data.reset( data ); }
-        void set_data( YIELD::auto_Object<YIELD::String> data ) { this->data = data; }
-        YIELD::auto_Object<YIELD::String> get_data() const { return data; }
+        void set_data( YIELD::StringBuffer* data ) { this->data.reset( data ); }
+        void set_data( YIELD::auto_Object<YIELD::StringBuffer> data ) { this->data = data; }
+        YIELD::auto_Object<YIELD::StringBuffer> get_data() const { return data; }
         void set_checksum( uint32_t checksum ) { this->checksum = checksum; }
         uint32_t get_checksum() const { return checksum; }
         void set_zero_padding( uint32_t zero_padding ) { this->zero_padding = zero_padding; }
@@ -69,11 +69,11 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( ObjectData, 1051 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) { if ( data.get() ) marshaller.writeString( YIELD::Marshaller::Declaration( "data" ), *data ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "checksum" ), checksum ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.writeBool( YIELD::Marshaller::Declaration( "invalid_checksum_on_osd" ), invalid_checksum_on_osd ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { if ( data == NULL ) data = new YIELD::String; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "data" ), *data ); checksum = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "checksum" ) ); zero_padding = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "zero_padding" ) ); invalid_checksum_on_osd = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "invalid_checksum_on_osd" ) ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { if ( data.get() ) marshaller.write( YIELD::Marshaller::Declaration( "data" ), *data ); marshaller.write( YIELD::Marshaller::Declaration( "checksum" ), checksum ); marshaller.write( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.write( YIELD::Marshaller::Declaration( "invalid_checksum_on_osd" ), invalid_checksum_on_osd ); }
+        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { if ( data == NULL ) data = new YIELD::StringBuffer; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "data" ), *data ); checksum = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "checksum" ) ); zero_padding = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "zero_padding" ) ); invalid_checksum_on_osd = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "invalid_checksum_on_osd" ) ); }
 
       protected:
-        YIELD::auto_Object<YIELD::String> data;
+        YIELD::auto_Object<YIELD::StringBuffer> data;
         uint32_t checksum;
         uint32_t zero_padding;
         bool invalid_checksum_on_osd;
@@ -99,7 +99,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( InternalReadLocalResponse, 1052 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.writeStruct( YIELD::Marshaller::Declaration( "data" ), data ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); marshaller.write( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.write( YIELD::Marshaller::Declaration( "data" ), data ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "new_file_size" ), &new_file_size ); zero_padding = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "zero_padding" ) ); unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "data" ), &data ); }
 
       protected:
@@ -128,7 +128,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( VivaldiCoordinates, 1053 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeDouble( YIELD::Marshaller::Declaration( "x_coordinate" ), x_coordinate ); marshaller.writeDouble( YIELD::Marshaller::Declaration( "y_coordinate" ), y_coordinate ); marshaller.writeDouble( YIELD::Marshaller::Declaration( "local_error" ), local_error ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "x_coordinate" ), x_coordinate ); marshaller.write( YIELD::Marshaller::Declaration( "y_coordinate" ), y_coordinate ); marshaller.write( YIELD::Marshaller::Declaration( "local_error" ), local_error ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( YIELD::Unmarshaller::Declaration( "x_coordinate" ) ); y_coordinate = unmarshaller.readDouble( YIELD::Unmarshaller::Declaration( "y_coordinate" ) ); local_error = unmarshaller.readDouble( YIELD::Unmarshaller::Declaration( "local_error" ) ); }
 
       protected:
@@ -271,7 +271,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( readResponse, 1301 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "object_data" ), object_data ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "object_data" ), object_data ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "object_data" ), &object_data ); }
 
         protected:
@@ -306,7 +306,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( readRequest, 1301 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "length" ), length ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.write( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.write( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.write( YIELD::Marshaller::Declaration( "length" ), length ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); object_number = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_number" ) ); object_version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_version" ) ); offset = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "offset" ) ); length = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "length" ) ); }
 
         protected:
@@ -334,7 +334,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( truncateResponse, 1302 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "osd_write_response" ), &osd_write_response ); }
 
         protected:
@@ -363,7 +363,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( truncateRequest, 1302 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); new_file_size = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "new_file_size" ) ); }
 
         protected:
@@ -405,7 +405,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( unlinkRequest, 1303 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); }
 
         protected:
@@ -429,7 +429,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( writeResponse, 1304 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "osd_write_response" ), &osd_write_response ); }
 
         protected:
@@ -466,7 +466,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( writeRequest, 1304 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "lease_timeout" ), lease_timeout ); marshaller.writeStruct( YIELD::Marshaller::Declaration( "object_data" ), object_data ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.write( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.write( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.write( YIELD::Marshaller::Declaration( "lease_timeout" ), lease_timeout ); marshaller.write( YIELD::Marshaller::Declaration( "object_data" ), object_data ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); object_number = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_number" ) ); object_version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_version" ) ); offset = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "offset" ) ); lease_timeout = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "lease_timeout" ) ); unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "object_data" ), &object_data ); }
 
         protected:
@@ -516,7 +516,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 2300 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "fileId" ), fileId ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "truncateEpoch" ), truncateEpoch ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "lastObject" ), lastObject ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "fileSize" ), fileSize ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "fileId" ), fileId ); marshaller.write( YIELD::Marshaller::Declaration( "truncateEpoch" ), truncateEpoch ); marshaller.write( YIELD::Marshaller::Declaration( "lastObject" ), lastObject ); marshaller.write( YIELD::Marshaller::Declaration( "fileSize" ), fileSize ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "fileId" ), fileId ); truncateEpoch = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "truncateEpoch" ) ); lastObject = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "lastObject" ) ); fileSize = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "fileSize" ) ); }
 
         protected:
@@ -542,7 +542,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 1403 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "_return_value" ), &_return_value ); }
 
         protected:
@@ -573,7 +573,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 1403 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_version" ), object_version ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.write( YIELD::Marshaller::Declaration( "object_version" ), object_version ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); object_number = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_number" ) ); object_version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_version" ) ); }
 
         protected:
@@ -599,7 +599,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 1409 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeSequence( YIELD::Marshaller::Declaration( "results" ), results, results.size() ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "results" ), results ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "results" ), &results ); }
 
         protected:
@@ -635,7 +635,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 1408 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeBool( YIELD::Marshaller::Declaration( "is_running" ), is_running ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "is_running" ), is_running ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { is_running = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "is_running" ) ); }
 
         protected:
@@ -688,7 +688,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 1405 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeBool( YIELD::Marshaller::Declaration( "remove_zombies" ), remove_zombies ); marshaller.writeBool( YIELD::Marshaller::Declaration( "remove_unavail_volume" ), remove_unavail_volume ); marshaller.writeBool( YIELD::Marshaller::Declaration( "lost_and_found" ), lost_and_found ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "remove_zombies" ), remove_zombies ); marshaller.write( YIELD::Marshaller::Declaration( "remove_unavail_volume" ), remove_unavail_volume ); marshaller.write( YIELD::Marshaller::Declaration( "lost_and_found" ), lost_and_found ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { remove_zombies = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "remove_zombies" ) ); remove_unavail_volume = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "remove_unavail_volume" ) ); lost_and_found = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "lost_and_found" ) ); }
 
         protected:
@@ -715,7 +715,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 1407 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "status" ), status ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "status" ), status ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "status" ), status ); }
 
         protected:
@@ -777,7 +777,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 1400 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "_return_value" ), &_return_value ); }
 
         protected:
@@ -804,7 +804,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 1400 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); }
 
         protected:
@@ -828,7 +828,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 1404 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeUint64( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "_return_value" ) ); }
 
         protected:
@@ -855,7 +855,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 1404 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); }
 
         protected:
@@ -879,7 +879,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 1401 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "osd_write_response" ), &osd_write_response ); }
 
         protected:
@@ -908,7 +908,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 1401 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "new_file_size" ), new_file_size ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); new_file_size = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "new_file_size" ) ); }
 
         protected:
@@ -933,7 +933,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 1402 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "_return_value" ), &_return_value ); }
 
         protected:
@@ -968,7 +968,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 1402 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "length" ), length ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); marshaller.write( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.write( YIELD::Marshaller::Declaration( "object_number" ), object_number ); marshaller.write( YIELD::Marshaller::Declaration( "object_version" ), object_version ); marshaller.write( YIELD::Marshaller::Declaration( "offset" ), offset ); marshaller.write( YIELD::Marshaller::Declaration( "length" ), length ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "file_credentials" ), &file_credentials ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "file_id" ), file_id ); object_number = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_number" ) ); object_version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "object_version" ) ); offset = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "offset" ) ); length = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "length" ) ); }
 
         protected:
@@ -996,7 +996,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 2301 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "remote_coordinates" ), remote_coordinates ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "remote_coordinates" ), remote_coordinates ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "remote_coordinates" ), &remote_coordinates ); }
 
         protected:
@@ -1019,7 +1019,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 2301 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "coordinates" ), coordinates ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "coordinates" ), coordinates ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "coordinates" ), &coordinates ); }
 
         protected:
@@ -1070,7 +1070,7 @@ namespace org
             virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           std::string stack_trace;
@@ -1099,7 +1099,7 @@ namespace org
             virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "error_code" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "error_message" ), error_message ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeUint32( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.writeString( YIELD::Marshaller::Declaration( "error_message" ), error_message ); marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.write( YIELD::Marshaller::Declaration( "error_message" ), error_message ); marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           uint32_t error_code;
@@ -1125,7 +1125,7 @@ namespace org
             virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "error_message" ), error_message ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "error_message" ), error_message ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "error_message" ), error_message ); }
 
         protected:
           std::string error_message;
@@ -1154,7 +1154,7 @@ namespace org
             virtual void throwStackClone() const { throw OSDException( error_code, error_message, stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "error_code" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "error_message" ), error_message ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeUint32( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.writeString( YIELD::Marshaller::Declaration( "error_message" ), error_message ); marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.write( YIELD::Marshaller::Declaration( "error_message" ), error_message ); marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           uint32_t error_code;
@@ -1184,7 +1184,7 @@ namespace org
             virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { accept_stat = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "accept_stat" ) ); error_code = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "error_code" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeUint32( YIELD::Marshaller::Declaration( "accept_stat" ), accept_stat ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "accept_stat" ), accept_stat ); marshaller.write( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           uint32_t accept_stat;
@@ -1210,7 +1210,7 @@ namespace org
             virtual void throwStackClone() const { throw RedirectException( to_uuid); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "to_uuid" ), to_uuid ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "to_uuid" ), to_uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "to_uuid" ), to_uuid ); }
 
         protected:
           std::string to_uuid;

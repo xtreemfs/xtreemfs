@@ -125,7 +125,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       org::xtreemfs::interfaces::ObjectData object_data;
       parent_volume.get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
-      YIELD::String* data = object_data.get_data().get();
+      YIELD::StringBuffer* data = object_data.get_data().get();
       if ( !data->empty() )
       {
         memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), data->c_str(), data->size() );
@@ -204,7 +204,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       uint64_t object_size = file_offset_max - file_offset;
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
-      org::xtreemfs::interfaces::ObjectData object_data( new YIELD::String( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
+      org::xtreemfs::interfaces::ObjectData object_data( new YIELD::StringBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
 
       org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
       parent_volume.get_osd_proxy_mux()->write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, osd_write_response );

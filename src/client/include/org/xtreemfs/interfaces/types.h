@@ -16,7 +16,7 @@ namespace org
     namespace interfaces
     {
 
-      class StringSet : public std::vector<std::string>, public YIELD::Object
+      class StringSet : public YIELD::Sequence, public std::vector<std::string>
       {
       public:
         StringSet() { }
@@ -26,8 +26,11 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( StringSet, 1001 );
-        void marshal( YIELD::Marshaller& marshaller ) { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
+        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.write( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "value" ), value ); push_back( value ); }
+
+        // YIELD::Sequence
+        size_t get_size() const { return size(); }
       };
 
       class UserCredentials : public YIELD::Object
@@ -53,7 +56,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( UserCredentials, 1002 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) { marshaller.writeString( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "group_ids" ), group_ids, group_ids.size() ); marshaller.writeString( YIELD::Marshaller::Declaration( "password" ), password ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.write( YIELD::Marshaller::Declaration( "group_ids" ), group_ids ); marshaller.write( YIELD::Marshaller::Declaration( "password" ), password ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "password" ), password ); }
 
       protected:
