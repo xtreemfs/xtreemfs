@@ -294,7 +294,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                             if (numBytesRead == -1) {
                                 // connection closed
                                 if (Logging.isInfo()) {
-                                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                                         "client closed connection (EOF): %s", channel.socket()
                                                 .getRemoteSocketAddress().toString());
                                 }
@@ -314,13 +314,12 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                         .isLastFragment(fragmentHeaderInt);
                                 
                                 if ((fragmentSize <= 0) || (fragmentSize >= MAX_FRAGMENT_SIZE)) {
-                                    if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                            "invalid fragment size (%d) received, closing connection",
-                                            fragmentSize);
-                                    }
+                                    Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this,
+                                        "invalid fragment size (%d) received, closing connection to client %s",
+                                        fragmentSize,channel.socket()
+                                            .getRemoteSocketAddress().toString());
                                     closeConnection(key);
-                                    break;
+                                    return;
                                 }
                                 final ReusableBuffer fragment = BufferPool.allocate(fragmentSize);
                                 
@@ -362,7 +361,10 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                                             "request received");
                                     pendingRequests++;
-                                    receiveRequest(key, rq, con);
+                                    if (!receiveRequest(key, rq, con)) {
+                                        closeConnection(key);
+                                        return;
+                                    }
                                 }
                             }
                         }
@@ -631,7 +633,14 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         }
     }
     
-    private void receiveRequest(SelectionKey key, ONCRPCRecord record, ClientConnection con) {
+    /**
+     *
+     * @param key
+     * @param record
+     * @param con
+     * @return true on success, false on error
+     */
+    private boolean receiveRequest(SelectionKey key, ONCRPCRecord record, ClientConnection con) {
         try {
             ONCRPCRequest rq = new ONCRPCRequest(record);
             
@@ -640,22 +649,32 @@ public class RPCNIOSocketServer extends LifeCycleThread {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "Invalid RPC version: %d, expected 2", hdr.getRpcVersion());
                 rq.sendGarbageArgs("Invalid RPC version: " + hdr.getRpcVersion() + ", expected 2");
-                return;
+                return true;
             }
             if (hdr.getMessageType() != 0) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "Invalid message type: %d, expected 0", hdr.getRpcVersion());
                 rq.sendGarbageArgs("Invalid message type: " + hdr.getRpcVersion() + ", expected 0");
-                return;
+                return true;
             }
             
             receiver.receiveRecord(rq);
+            return true;
         } catch (IllegalArgumentException ex) {
-            System.out.println("received invalid request header: " + ex);
-            closeConnection(key);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net,this,"invalid ONCRPC header received: "+ex);
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_DEBUG, this,ex);
+            }
+            return false;
+            //closeConnection(key);
         } catch (BufferUnderflowException ex) {
             // close connection if the header cannot be parsed
-            closeConnection(key);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net,this,"invalid ONCRPC header received: "+ex);
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_DEBUG, this,ex);
+            }
+            return false;
+            //closeConnection(key);
         }
     }
     
