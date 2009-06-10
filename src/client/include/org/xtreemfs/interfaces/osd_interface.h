@@ -69,7 +69,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( ObjectData, 1051 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) const { if ( data.get() ) marshaller.write( YIELD::Marshaller::Declaration( "data" ), *data ); marshaller.write( YIELD::Marshaller::Declaration( "checksum" ), checksum ); marshaller.write( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.write( YIELD::Marshaller::Declaration( "invalid_checksum_on_osd" ), invalid_checksum_on_osd ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { if ( data.get() != NULL ) marshaller.write( YIELD::Marshaller::Declaration( "data" ), YIELD::auto_Object<YIELD::Buffer>( data->incRef() ) ); marshaller.write( YIELD::Marshaller::Declaration( "checksum" ), checksum ); marshaller.write( YIELD::Marshaller::Declaration( "zero_padding" ), zero_padding ); marshaller.write( YIELD::Marshaller::Declaration( "invalid_checksum_on_osd" ), invalid_checksum_on_osd ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { if ( data == NULL ) data = new YIELD::StringBuffer; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "data" ), *data ); checksum = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "checksum" ) ); zero_padding = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "zero_padding" ) ); invalid_checksum_on_osd = unmarshaller.readBool( YIELD::Unmarshaller::Declaration( "invalid_checksum_on_osd" ) ); }
 
       protected:

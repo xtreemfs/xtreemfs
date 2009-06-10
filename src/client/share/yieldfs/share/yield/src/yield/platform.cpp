@@ -1,4 +1,4 @@
-// Revision: 1528
+// Revision: 1529
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -3258,6 +3258,11 @@ void XDRMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
   }
   write( decl, static_cast<int32_t>( value_size ) );
   BufferedMarshaller::write( value );
+  if ( value_size % 4 != 0 )
+  {
+    static char zeros[] = { 0, 0, 0 };
+    write( static_cast<const void*>( zeros ), 4 - ( value_size % 4 ) );
+  }
 }
 void XDRMarshaller::write( const Declaration& decl, double value )
 {

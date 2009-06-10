@@ -7,6 +7,8 @@
 #include "org/xtreemfs/client/volume.h"
 using namespace org::xtreemfs::client;
 
+#include <errno.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #pragma warning( push )
@@ -28,6 +30,10 @@ using namespace org::xtreemfs::client;
   { \
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
   } \
+  catch ( std::exception& ) \
+  { \
+    YIELD::Exception::set_errno( EACCES ); \
+  }
 
 
 File::File( Volume& parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
@@ -191,7 +197,7 @@ bool File::truncate( uint64_t new_size )
 
 ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( writev )
+  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( write )
   {
     const char* wbuf_p = static_cast<const char*>( buffer );
     uint64_t file_offset = offset, file_offset_max = offset + buffer_len;
@@ -219,7 +225,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
     return static_cast<ssize_t>( file_offset - offset );
   }
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( writev );
+  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( write );
   return -1;
 }
 
