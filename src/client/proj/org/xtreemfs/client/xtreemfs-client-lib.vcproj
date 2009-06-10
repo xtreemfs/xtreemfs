@@ -333,6 +333,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\dir_proxy.cpp"
     >
 </File>
@@ -342,6 +346,10 @@
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\mrc_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.cpp"
     >
 </File>
 <File

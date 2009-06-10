@@ -37,6 +37,9 @@ namespace org
         // YIELD::EventHandler
         void handleEvent( YIELD::Event& );
 
+        // YIELD::EventTarget
+        virtual bool send( YIELD::Event& ev ) { return fd_event_queue->enqueue( ev ); }
+
       private:
         OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
         ~OSDProxyMux();

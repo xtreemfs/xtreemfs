@@ -2,6 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/osd_proxy_mux.h"
+#include "multi_response_target.h"
 using namespace org::xtreemfs::client;
 
 
@@ -11,55 +12,6 @@ namespace org
   {
     namespace client
     {
-      class OSDtruncateunlinkResponseTarget : public YIELD::EventTarget
-      {
-      public:
-        OSDtruncateunlinkResponseTarget( YIELD::auto_Object<YIELD::EventTarget> original_response_target, org::xtreemfs::interfaces::ReplicaSet::size_type replicas_count )
-          : original_response_target( original_response_target ), replicas_count( replicas_count )
-        { }
-
-        ~OSDtruncateunlinkResponseTarget()
-        {
-          for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
-            YIELD::Object::decRef( **response_i );
-        }
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDtruncateunlinkResponseTarget, 0 );
-        
-        // YIELD::EventTarget
-        bool send( YIELD::Event& ev )
-        {
-          responses_lock.acquire();
-          responses.push_back( &ev );
-          responses_lock.release();
-
-          if ( responses.size() == replicas_count )
-          {
-            for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
-            {
-              if ( ( *response_i )->get_tag() == YIELD_OBJECT_TAG( YIELD::ExceptionResponse ) )
-              {
-                original_response_target->send( ( *response_i )->incRef() );
-                return true;
-              }
-            }
-
-            original_response_target->send( responses[0]->incRef() );
-          }
-
-          return true;
-        }
-
-      private:       
-        YIELD::auto_Object<YIELD::EventTarget> original_response_target;
-        org::xtreemfs::interfaces::ReplicaSet::size_type replicas_count;
-
-        std::vector<YIELD::Event*> responses;
-        YIELD::Mutex responses_lock;
-      };
-
-
       class OSDPingResponse : public YIELD::Response
       {
       public:
@@ -311,7 +263,7 @@ void OSDProxyMux::handletruncateRequest( truncateRequest& req )
   const org::xtreemfs::interfaces::ReplicaSet& replicas = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
-    req.set_response_target( new OSDtruncateunlinkResponseTarget( req.get_response_target(), replicas.size() ) );
+    req.set_response_target( new MultiResponseTarget( replicas.size(),  req.get_response_target() ) );
 
   for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
     static_cast<YIELD::EventTarget*>( getTCPOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() )->send( req.incRef() );
@@ -324,7 +276,7 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
   const org::xtreemfs::interfaces::ReplicaSet& replicas = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
-    req.set_response_target( new OSDtruncateunlinkResponseTarget( req.get_response_target(), replicas.size() ) );
+    req.set_response_target( new MultiResponseTarget( replicas.size(), req.get_response_target() ) );
 
   for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
     static_cast<YIELD::EventTarget*>( getTCPOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() )->send( req.incRef() );

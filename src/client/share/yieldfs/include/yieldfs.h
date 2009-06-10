@@ -131,6 +131,9 @@ namespace yieldfs
     MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s );
     MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Object<YIELD::Log> log, double ttl_s );
 
+    // YIELD::Object
+    YIELD_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
+
     // YIELD::Volume
     bool chmod( const YIELD::Path& path, mode_t mode );
     bool chown( const YIELD::Path& path, int32_t uid, int32_t gid );
@@ -183,7 +186,16 @@ namespace yieldfs
     virtual bool rmtree( const YIELD::Path& path );
 
   private:
+    friend class TracingFile;
+
     ~TracingVolume() { }
+
+    static bool trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& path, bool operation_result );
+    static bool trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& path, mode_t mode, bool operation_result );
+    static bool trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& old_path, const YIELD::Path& new_path, bool operation_result );
+    static bool trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& path, const std::string& xattr_name, bool operation_result );
+    static bool trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& path, size_t size, uint64_t offset, bool operation_result );
+    static bool trace( YIELD::Log::Stream& log_stream, bool operation_result );
   };
 };
 

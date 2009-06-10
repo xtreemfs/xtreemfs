@@ -5,6 +5,7 @@
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy.h"
 #include "org/xtreemfs/client/volume.h"
+#include "multi_response_target.h"
 using namespace org::xtreemfs::client;
 
 #include <errno.h>
@@ -95,22 +96,6 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return parent_volume.listxattr( path, out_names );
 }
 
-void File::processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response )
-{
-  // Newer OSDWriteResponse = higher truncate epoch or same truncate epoch and higher file size
-  if ( !osd_write_response.get_new_file_size().empty() )
-  {
-    if ( latest_osd_write_response.get_new_file_size().empty() )
-      latest_osd_write_response = osd_write_response;
-    else if ( osd_write_response.get_new_file_size()[0].get_truncate_epoch() > latest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() )
-      latest_osd_write_response = osd_write_response;
-    else if ( osd_write_response.get_new_file_size()[0].get_truncate_epoch() == latest_osd_write_response.get_new_file_size()[0].get_truncate_epoch() &&
-              osd_write_response.get_new_file_size()[0].get_size_in_bytes() > latest_osd_write_response.get_new_file_size()[0].get_size_in_bytes() )
-   
-   latest_osd_write_response = osd_write_response;
-  }
-}
-
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( read )
@@ -186,7 +171,8 @@ bool File::truncate( uint64_t new_size )
     file_credentials.set_xcap( truncate_xcap );
     org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
     parent_volume.get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
-    processOSDWriteResponse( osd_write_response );
+    if ( osd_write_response > latest_osd_write_response )
+      latest_osd_write_response = osd_write_response;
     if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
     return true;
@@ -199,9 +185,12 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( write )
   {
+    YIELD::auto_Object< YIELD::OneSignalEventQueue<> > write_response_queue( new YIELD::OneSignalEventQueue<> );
+
     const char* wbuf_p = static_cast<const char*>( buffer );
     uint64_t file_offset = offset, file_offset_max = offset + buffer_len;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
+    size_t expected_write_response_count = 0;
 
     while ( file_offset < file_offset_max )
     {
@@ -211,13 +200,22 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
       org::xtreemfs::interfaces::ObjectData object_data( new YIELD::StringBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
+      org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
-      org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-      parent_volume.get_osd_proxy_mux()->write( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data, osd_write_response );
+      write_request->set_response_target( write_response_queue->incRef() );
+      parent_volume.get_osd_proxy_mux()->send( *write_request );
+      expected_write_response_count++;
 
       wbuf_p += object_size;
       file_offset += object_size;
-      processOSDWriteResponse( osd_write_response );    
+    }
+
+    for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
+    {
+      org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
+      if ( write_response.get_osd_write_response() > latest_osd_write_response )
+        latest_osd_write_response = write_response.get_osd_write_response();
+      YIELD::Object::decRef( write_response );
     }
 
     if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )

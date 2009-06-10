@@ -70,6 +70,22 @@ namespace org
         // YIELD::ONCRPCClient
         YIELD::auto_Object<YIELD::ONCRPCRequest> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
+
+
+      static inline bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right )
+      {
+        if ( left.get_new_file_size().empty() )
+          return false;
+        else if ( right.get_new_file_size().empty() )
+          return true;
+        else if ( left.get_new_file_size()[0].get_truncate_epoch() > right.get_new_file_size()[0].get_truncate_epoch() )
+          return true;
+        else if ( left.get_new_file_size()[0].get_truncate_epoch() == right.get_new_file_size()[0].get_truncate_epoch() &&
+                  left.get_new_file_size()[0].get_size_in_bytes() > right.get_new_file_size()[0].get_size_in_bytes() )
+          return true;
+        else
+          return false;
+      }
     };
   };
 };

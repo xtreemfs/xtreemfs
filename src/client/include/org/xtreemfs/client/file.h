@@ -40,7 +40,6 @@ namespace org
 
 
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
-        void processOSDWriteResponse( const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
       };
     };
   };
