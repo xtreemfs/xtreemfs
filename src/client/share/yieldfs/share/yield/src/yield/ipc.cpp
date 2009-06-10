@@ -1,4 +1,4 @@
-// Revision: 1529
+// Revision: 1531
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -525,7 +525,7 @@ void FDEventQueue::detach( int fd )
 bool FDEventQueue::enqueue( Event& ev )
 {
 #ifdef _DEBUG
-  std::cerr << "FDEventQueue: discarding enqueued event " << ev.get_type_name() << "." << std::endl;
+  std::cerr << "yield::FDEventQueue: discarding enqueued event " << ev.get_type_name() << "." << std::endl;
 #endif
   Object::decRef( ev );
   return true;
@@ -2849,7 +2849,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             if ( connection_idle_time > operation_timeout )
             {
               if ( log != NULL )
-                log->getStream( Log::LOG_ERR ) << "SocketClient: connection to " << *absolute_uri << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
+                log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection to " << *absolute_uri << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
               connection->get_socket()->shutdown();
               recreateConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
             }
@@ -2901,11 +2901,11 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
       case Connection::CONNECTING:
       {
         if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-          log->getStream( Log::LOG_DEBUG ) << "SocketClient: trying to connect to " << *absolute_uri << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
+          log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: trying to connect to " << *absolute_uri << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
         if ( connection->get_socket()->connect( peername ) )
         {
           if ( log != NULL )
-            log->getStream( Log::LOG_INFO ) << "SocketClient: successfully connected to " << *absolute_uri << ".";
+            log->getStream( Log::LOG_INFO ) << "yield::SocketClient: successfully connected to " << *absolute_uri << ".";
           fd_event_queue->attach( *connection->get_socket(), connection->incRef() ); // Only attach AFTER connecting, in case the socket has to be re-created
           connection->set_state( Connection::WRITING );
           // Drop down to WRITING
@@ -2913,14 +2913,14 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
         else if ( connection->get_socket()->want_write() ) // Wait for non-blocking connect() to complete
         {
           if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-            log->getStream( Log::LOG_DEBUG ) << "SocketClient: waiting for non-blocking connect() to " << *absolute_uri << " to complete.";
+            log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: waiting for non-blocking connect() to " << *absolute_uri << " to complete.";
           fd_event_queue->attach( *connection->get_socket(), connection->incRef(), false, true );
           connection->set_state( Connection::CONNECTING );
         }
         else
         {
           if ( log != NULL )
-            log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror();
+            log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror();
           recreateConnection( connection );
           return;
         }
@@ -2936,14 +2936,14 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
         if ( connection->get_socket()->sendmsg( &protocol_request_iovecs[0], protocol_request_iovecs.size() ) > 0 )
         {
           if ( log != NULL )
-            log->getStream( Log::LOG_INFO ) << "SocketClient: successfully wrote " << protocol_request->get_type_name() << " to " << *absolute_uri << ".";
+            log->getStream( Log::LOG_INFO ) << "yield::SocketClient: successfully wrote " << protocol_request->get_type_name() << " to " << *absolute_uri << ".";
           connection->set_protocol_response( createProtocolResponse( protocol_request ) );
           connection->set_state( Connection::READING );
         }
         else
         {
           if ( log != NULL )
-            log->getStream( Log::LOG_ERR ) << "SocketClient: lost connection to " << *absolute_uri << " on write, error: " << Exception::strerror();
+            log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on write, error: " << Exception::strerror() << ".";
           recreateConnection( connection );
           return;
         }
@@ -2954,7 +2954,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
       {
         auto_Object<ProtocolResponseType> protocol_response = connection->get_protocol_response();
         if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-          log->getStream( Log::LOG_DEBUG ) << "SocketClient: trying to read " << protocol_response->get_type_name() << " from " << *absolute_uri << ".";
+          log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: trying to read " << protocol_response->get_type_name() << " from " << *absolute_uri << ".";
         connection->get_socket()->set_blocking_mode( false );
         for ( ;; )
         {
@@ -2979,7 +2979,11 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
               recreateConnection( connection );
           }
           else if ( recv_ret == 0 )
+          {
+            if ( log != NULL )
+              log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on read, ret = 0.";
             recreateConnection( connection );
+          }
           else
           {
             if ( connection->get_socket()->want_read() )
@@ -2987,7 +2991,11 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
             else if ( connection->get_socket()->want_write() )
               fd_event_queue->toggle( *connection->get_socket(), true, true );
             else
+            {
+              if ( log != NULL )
+                log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on read, error: " << Exception::strerror() << ".";
               recreateConnection( connection );
+            }
           }
           return;
         }
@@ -2997,7 +3005,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event
   }
   else if ( log != NULL ) // fd_event_error_code != 0
   {
-    log->getStream( Log::LOG_ERR ) << "SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror( fd_event_error_code );
+    log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror( fd_event_error_code );
     recreateConnection( connection.release() );
   }
 }
@@ -3044,7 +3052,7 @@ void SocketClient<ProtocolRequestType, ProtocolResponseType>::recreateConnection
       {
         connections.erase( connection_i );
         if ( log != NULL )
-          log->getStream( Log::LOG_ERR ) << "SocketClient: exhausted connection retries to " << *absolute_uri << ".";
+          log->getStream( Log::LOG_ERR ) << "yield::SocketClient: exhausted connection retries to " << *absolute_uri << ".";
         if ( protocol_request != NULL )
         {
           // We've lost errno here
@@ -3687,19 +3695,19 @@ bool TracingSocket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
-    log->getStream( Log::LOG_INFO ) << "TracingSocket: binding socket #" << ( int )*this << " to " << to_hostname << ".";
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: binding socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->bind( to_sockaddr );
 }
 bool TracingSocket::close()
 {
-  log->getStream( Log::LOG_INFO ) << "TracingSocket: closing socket #" << ( int )*this << ".";
+  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: closing socket #" << ( int )*this << ".";
   return underlying_socket->close();
 }
 bool TracingSocket::connect( auto_Object<SocketAddress> to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
-    log->getStream( Log::LOG_INFO ) << "TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
 }
 bool TracingSocket::get_blocking_mode() const
@@ -3720,30 +3728,30 @@ TracingSocket::operator int() const
 }
 ssize_t TracingSocket::recv( void* buffer, size_t buffer_len )
 {
-  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
+  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
   ssize_t recv_ret = underlying_socket->recv( buffer, buffer_len );
   if ( recv_ret > 0 )
   {
-    log->getStream( Log::LOG_INFO ) << "TracingSocket: read " << recv_ret << " bytes from socket #" << ( int )*this << ".";
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: read " << recv_ret << " bytes from socket #" << ( int )*this << ".";
     log->write( buffer, recv_ret, Log::LOG_DEBUG );
     log->write( "\n", Log::LOG_DEBUG );
   }
   else if ( recv_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
-    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
   return recv_ret;
 }
 ssize_t TracingSocket::send( const void* buffer, size_t buffer_len )
 {
-  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
+  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
   ssize_t send_ret = underlying_socket->send( buffer, buffer_len );
   if ( send_ret >= 0 )
   {
-    log->getStream( Log::LOG_INFO ) << "TracingSocket: wrote " << send_ret << " bytes to socket #" << ( int )*this << ".";
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << send_ret << " bytes to socket #" << ( int )*this << ".";
     log->write( buffer, send_ret, Log::LOG_DEBUG );
     log->write( "\n", Log::LOG_DEBUG );
   }
   else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
   return send_ret;
 }
 ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
@@ -3751,12 +3759,12 @@ ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_co
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
-  log->getStream( Log::LOG_DEBUG ) << "TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
+  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
   ssize_t sendmsg_ret = underlying_socket->sendmsg( buffers, buffers_count );
   if ( sendmsg_ret >= 0 )
   {
     size_t temp_sendmsg_ret = sendmsg_ret;
-    log->getStream( Log::LOG_INFO ) << "TracingSocket: wrote " << sendmsg_ret << " bytes to socket #" << ( int )*this << ".";
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << sendmsg_ret << " bytes to socket #" << ( int )*this << ".";
     for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     {
       if ( static_cast<ssize_t>( buffers[buffer_i].iov_len ) <= temp_sendmsg_ret )
@@ -3773,31 +3781,31 @@ ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_co
     log->write( "\n", Log::LOG_DEBUG );
   }
   else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
   return sendmsg_ret;
 }
 bool TracingSocket::set_blocking_mode( bool blocking )
 {
-  log->getStream( Log::LOG_INFO ) << "TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
+  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
   return underlying_socket->set_blocking_mode( blocking );
 }
 bool TracingSocket::shutdown()
 {
-  log->getStream( Log::LOG_INFO ) << "TracingSocket: shutting down socket #" << ( int )*this << ".";
+  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: shutting down socket #" << ( int )*this << ".";
   return underlying_socket->shutdown();
 }
 bool TracingSocket::want_read() const
 {
   bool want_read_ret = underlying_socket->want_read();
   if ( want_read_ret )
-    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: would block on read on socket #" << ( int )*this << ".";
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on read on socket #" << ( int )*this << ".";
   return want_read_ret;
 }
 bool TracingSocket::want_write() const
 {
   bool want_write_ret = underlying_socket->want_write();
   if ( want_write_ret )
-    log->getStream( Log::LOG_DEBUG ) << "TracingSocket: would block on write on socket #" << ( int )*this << ".";
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on write on socket #" << ( int )*this << ".";
   return want_write_ret;
 }
 

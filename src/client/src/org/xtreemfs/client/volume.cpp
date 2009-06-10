@@ -330,14 +330,14 @@ bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response )
 {
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
   YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 }
 
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "Volume: caught exception on " << operation_name << ": " << exc.what();
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Volume: caught exception on " << operation_name << ": " << exc.what();
 #ifdef _WIN32
   YIELD::Exception::set_errno( ERROR_ACCESS_DENIED );
 #else

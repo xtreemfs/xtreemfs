@@ -1,4 +1,4 @@
-// Revision: 143
+// Revision: 145
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1937,65 +1937,65 @@ TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::Fil
 }
 bool TracingFile::close()
 {
-  return TracingVolume::trace( log, "TracingFile::close", path, underlying_file->close() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::close", path, underlying_file->close() );
 }
 bool TracingFile::datasync()
 {
-  return TracingVolume::trace( log, "TracingFile::fdatasync", path, underlying_file->datasync() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fdatasync", path, underlying_file->datasync() );
 }
 bool TracingFile::flush()
 {
-  return TracingVolume::trace( log, "TracingFile::fflush", path, underlying_file->flush() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fflush", path, underlying_file->flush() );
 }
 YIELD::auto_Object<YIELD::Stat> TracingFile::getattr()
 {
   YIELD::auto_Object<YIELD::Stat> stbuf = underlying_file->getattr();
-  TracingVolume::trace( log, "TracingFile::fgetattr", path, stbuf != NULL );
+  TracingVolume::trace( log, "yieldfs::TracingFile::fgetattr", path, stbuf != NULL );
   return stbuf;
 }
 bool TracingFile::getxattr( const std::string& name, std::string& out_value )
 {
-  return TracingVolume::trace( log, "TracingFile::fgetxattr", path, name, underlying_file->getxattr( name, out_value ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fgetxattr", path, name, underlying_file->getxattr( name, out_value ) );
 }
 bool TracingFile::listxattr( std::vector<std::string>& out_names )
 {
-  return TracingVolume::trace( log, "TracingFile::flistxattr", path, underlying_file->listxattr( out_names ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::flistxattr", path, underlying_file->listxattr( out_names ) );
 }
 ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
   ssize_t read_ret = underlying_file->read( rbuf, size, offset );
-  TracingVolume::trace( log, "TracingFile::read", path, size, offset, read_ret >= 0 );
+  TracingVolume::trace( log, "yieldfs::TracingFile::read", path, size, offset, read_ret >= 0 );
   return read_ret;
 }
 bool TracingFile::removexattr( const std::string& name )
 {
-  return TracingVolume::trace( log, "TracingFile::fremovexattr", path, name, underlying_file->removexattr( name ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fremovexattr", path, name, underlying_file->removexattr( name ) );
 }
 bool TracingFile::setxattr( const std::string& name, const std::string& value, int flags )
 {
-  return TracingVolume::trace( log, "TracingFile::fsetxattr", path, name, underlying_file->setxattr( name, value, flags ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fsetxattr", path, name, underlying_file->setxattr( name, value, flags ) );
 }
 bool TracingFile::sync()
 {
-  return TracingVolume::trace( log, "TracingFile::fsync", path, underlying_file->sync() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::fsync", path, underlying_file->sync() );
 }
 bool TracingFile::truncate( uint64_t new_size )
 {
-  return TracingVolume::trace( log, "TracingFile::ftruncate", path, 0, new_size, underlying_file->truncate( new_size ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::ftruncate", path, 0, new_size, underlying_file->truncate( new_size ) );
 }
 ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
-  TracingVolume::trace( log, "TracingFile::write", path, buffer_len, offset, write_ret == static_cast<ssize_t>( buffer_len ) );
+  TracingVolume::trace( log, "yieldfs::TracingFile::write", path, buffer_len, offset, write_ret == static_cast<ssize_t>( buffer_len ) );
   return write_ret;
 }
 ssize_t TracingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
 {
   ssize_t writev_ret = underlying_file->writev( buffers, buffers_count, offset );
   if ( buffers_count == 1 )
-    TracingVolume::trace( log, "TracingFile::write", path, buffers[0].iov_len, offset, writev_ret == static_cast<ssize_t>( buffers[0].iov_len ) );
+    TracingVolume::trace( log, "yieldfs::TracingFile::write", path, buffers[0].iov_len, offset, writev_ret == static_cast<ssize_t>( buffers[0].iov_len ) );
   else
-    log->getStream( YIELD::Log::LOG_INFO ) << "TracingFile::writev( " << path << ", buffers, " << buffers_count << ", " << offset << " )";
+    log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::TracingFile::writev( " << path << ", buffers, " << buffers_count << ", " << offset << " )";
   return writev_ret;
 }
 
@@ -2072,65 +2072,65 @@ TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volum
 
 bool TracingVolume::access( const YIELD::Path& path, int amode )
 {
-  return trace( log, "TracingVolume::access", path, amode, underlying_volume->access( path, amode ) );
+  return trace( log, "yieldfs::TracingVolume::access", path, amode, underlying_volume->access( path, amode ) );
 }
 
 bool TracingVolume::chmod( const YIELD::Path& path, mode_t mode )
 {
-  return trace( log, "TracingVolume::chmod", path, mode, underlying_volume->chmod( path, mode ) );
+  return trace( log, "yieldfs::TracingVolume::chmod", path, mode, underlying_volume->chmod( path, mode ) );
 }
 
 bool TracingVolume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
 {
   YIELD::Log::Stream log_stream = log->getStream( YIELD::Log::LOG_INFO );
-  log_stream << "TracingVolume::chown( " << path << ", " << uid << ", " << gid << " )";
+  log_stream << "yieldfs::TracingVolume::chown( " << path << ", " << uid << ", " << gid << " )";
   return trace( log_stream, underlying_volume->chown( path, uid, gid ) );
 }
 
 bool TracingVolume::exists( const YIELD::Path& path )
 {
-  return trace( log, "TracingVolume::exists", path, underlying_volume->exists( path ) );
+  return trace( log, "yieldfs::TracingVolume::exists", path, underlying_volume->exists( path ) );
 }
 
 YIELD::auto_Object<YIELD::Stat> TracingVolume::getattr( const YIELD::Path& path )
 {
   YIELD::auto_Object<YIELD::Stat> stbuf = underlying_volume->getattr( path );
-  trace( log, "TracingVolume::getattr", path, stbuf != NULL );
+  trace( log, "yieldfs::TracingVolume::getattr", path, stbuf != NULL );
   if ( stbuf != NULL )
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "TracingVolume::getattr returning Stat " << static_cast<std::string>( *stbuf ) << ".";
+    log->getStream( YIELD::Log::LOG_DEBUG ) << "yieldfs::TracingVolume::getattr returning Stat " << static_cast<std::string>( *stbuf ) << ".";
   return stbuf;
 }
 
 bool TracingVolume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
-  return trace( log, "TracingVolume::getxattr", path, name, underlying_volume->getxattr( path, name, out_value ) );
+  return trace( log, "yieldfs::TracingVolume::getxattr", path, name, underlying_volume->getxattr( path, name, out_value ) );
 }
 
 bool TracingVolume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
 {
-  return trace( log, "TracingVolume::link", old_path, new_path, underlying_volume->link( old_path, new_path ) );
+  return trace( log, "yieldfs::TracingVolume::link", old_path, new_path, underlying_volume->link( old_path, new_path ) );
 }
 
 bool TracingVolume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
 {
   log->getStream( YIELD::Log::LOG_INFO ) << "TracingVolume: listdir( " << path << ", " << match_file_name_prefix << " )";
   TracingVolumelistdirCallback tracing_volume_listdir_callback( callback, log );
-  return trace( log, "TracingVolume::listdir", path, underlying_volume->listdir( path, match_file_name_prefix, tracing_volume_listdir_callback ) );
+  return trace( log, "yieldfs::TracingVolume::listdir", path, underlying_volume->listdir( path, match_file_name_prefix, tracing_volume_listdir_callback ) );
 }
 
 bool TracingVolume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_names )
 {
-  return trace( log, "TracingVolume::listxattr", path, underlying_volume->listxattr( path, out_names ) );
+  return trace( log, "yieldfs::TracingVolume::listxattr", path, underlying_volume->listxattr( path, out_names ) );
 }
 
 bool TracingVolume::mkdir( const YIELD::Path& path, mode_t mode )
 {
-  return trace( log, "TracingVolume::mkdir", path, mode, underlying_volume->mkdir( path, mode ) );
+  return trace( log, "yieldfs::TracingVolume::mkdir", path, mode, underlying_volume->mkdir( path, mode ) );
 }
 
 bool TracingVolume::mktree( const YIELD::Path& path, mode_t mode )
 {
-  return trace( log, "TracingVolume::mktree", path, mode, underlying_volume->mktree( path, mode ) );
+  return trace( log, "yieldfs::TracingVolume::mktree", path, mode, underlying_volume->mktree( path, mode ) );
 }
 
 YIELD::auto_Object<YIELD::File> TracingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
@@ -2140,7 +2140,7 @@ YIELD::auto_Object<YIELD::File> TracingVolume::open( const YIELD::Path& path, ui
     file = new TracingFile( path, file, log );
 
   YIELD::Log::Stream log_stream = log->getStream( YIELD::Log::LOG_INFO );
-  log_stream << "TracingVolume::open( " << path << ", " << flags << ", " << mode << ", " << attributes << " )";
+  log_stream << "yieldfs::TracingVolume::open( " << path << ", " << flags << ", " << mode << ", " << attributes << " )";
   trace( log_stream, file != NULL );
 
   return file;
@@ -2149,54 +2149,54 @@ YIELD::auto_Object<YIELD::File> TracingVolume::open( const YIELD::Path& path, ui
 bool TracingVolume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
 {
   TracingVolumereaddirCallback tracing_volume_readdir_callback( callback, log );
-  return trace( log, "TracingVolume::readdir", path, underlying_volume->readdir( path, match_file_name_prefix, tracing_volume_readdir_callback ) );
+  return trace( log, "yieldfs::TracingVolume::readdir", path, underlying_volume->readdir( path, match_file_name_prefix, tracing_volume_readdir_callback ) );
 }
 
 YIELD::auto_Object<YIELD::Path> TracingVolume::readlink( const YIELD::Path& path )
 {
   YIELD::auto_Object<YIELD::Path> link_path = underlying_volume->readlink( path );
-  trace( log, "TracingVolume::readlink", path, link_path != NULL );
+  trace( log, "yieldfs::TracingVolume::readlink", path, link_path != NULL );
   return link_path;
 }
 
 bool TracingVolume::removexattr( const YIELD::Path& path, const std::string& name )
 {
-  return trace( log, "TracingVolume::removexattr", path, name, underlying_volume->removexattr( path, name ) );
+  return trace( log, "yieldfs::TracingVolume::removexattr", path, name, underlying_volume->removexattr( path, name ) );
 }
 
 bool TracingVolume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
 {
-  return trace( log, "TracingVolume::rename", from_path, to_path, underlying_volume->rename( from_path, to_path ) );
+  return trace( log, "yieldfs::TracingVolume::rename", from_path, to_path, underlying_volume->rename( from_path, to_path ) );
 }
 
 bool TracingVolume::rmdir( const YIELD::Path& path )
 {
-  return trace( log, "TracingVolume::rmdir", path, underlying_volume->rmdir( path ) );
+  return trace( log, "yieldfs::TracingVolume::rmdir", path, underlying_volume->rmdir( path ) );
 }
 
 bool TracingVolume::rmtree( const YIELD::Path& path )
 {
-  return trace( log, "TracingVolume::rmdir", path, underlying_volume->rmtree( path ) );
+  return trace( log, "yieldfs::TracingVolume::rmdir", path, underlying_volume->rmtree( path ) );
 }
 
 bool TracingVolume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
-  return trace( log, "TracingVolume::setattr", path, file_attributes, underlying_volume->setattr( path, file_attributes ) );
+  return trace( log, "yieldfs::TracingVolume::setattr", path, file_attributes, underlying_volume->setattr( path, file_attributes ) );
 }
 
 bool TracingVolume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int32_t flags )
 {
-  return trace( log, "TracingVolume::setxattr", path, name, underlying_volume->setxattr( path, name, value, flags ) );
+  return trace( log, "yieldfs::TracingVolume::setxattr", path, name, underlying_volume->setxattr( path, name, value, flags ) );
 }
 
 bool TracingVolume::statvfs( const YIELD::Path& path, struct statvfs* buf )
 {
-  return trace( log, "TracingVolume::statvfs", path, underlying_volume->statvfs( path, buf ) );
+  return trace( log, "yieldfs::TracingVolume::statvfs", path, underlying_volume->statvfs( path, buf ) );
 }
 
 bool TracingVolume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 {
-  return trace( log, "TracingVolume::symlink", to_path, from_path, underlying_volume->symlink( to_path, from_path ) );
+  return trace( log, "yieldfs::TracingVolume::symlink", to_path, from_path, underlying_volume->symlink( to_path, from_path ) );
 }
 
 bool TracingVolume::trace( YIELD::auto_Object<YIELD::Log> log, const char* operation_name, const YIELD::Path& path, bool operation_result )
@@ -2246,23 +2246,24 @@ bool TracingVolume::trace( YIELD::Log::Stream& log_stream, bool operation_result
 
 bool TracingVolume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
-  return trace( log, "TracingVolume::truncate", path, 0, new_size, underlying_volume->truncate( path, new_size ) );
+  return trace( log, "yieldfs::TracingVolume::truncate", path, 0, new_size, underlying_volume->truncate( path, new_size ) );
 }
 
 bool TracingVolume::unlink( const YIELD::Path& path )
 {
-  return trace( log, "TracingVolume::unlink", path, underlying_volume->unlink( path ) );
+  return trace( log, "yieldfs::TracingVolume::unlink", path, underlying_volume->unlink( path ) );
 }
 
 bool TracingVolume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
   YIELD::Log::Stream log_stream = log->getStream( YIELD::Log::LOG_INFO );
-  log_stream << "TracingVolume::utimens( " << path << ", " << atime << ", " << mtime << ", " << ctime << " )";
+  log_stream << "yieldfs::TracingVolume::utimens( " << path << ", " << atime << ", " << mtime << ", " << ctime << " )";
   return trace( log_stream, underlying_volume->utimens( path, atime, mtime, ctime ) );
 }
 
 YIELD::Path TracingVolume::volname( const YIELD::Path& path )
 {
+  log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::TracingVolume::volname( " << path << " ) -> success.";
   return underlying_volume->volname( path );
 }
 

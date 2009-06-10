@@ -359,7 +359,7 @@ namespace YIELD
       if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
       {
         std::ostringstream log_str;
-        log_str << "StageImpl: thread #" << Thread::getCurrentThreadId() << " sending " << ev.get_type_name() << " to the " << get_stage_name() << " stage.";
+        log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " sending " << ev.get_type_name() << " to the " << get_stage_name() << " stage.";
         log->getStream( Log::LOG_DEBUG ) << log_str.str();
       }
 
@@ -371,7 +371,7 @@ namespace YIELD
       else
       {
         if ( event_queue_full_count++ < 10 )
-          std::cerr << Time() << ": queue full #" << static_cast<unsigned short>( event_queue_full_count ) << " at " << event_handler->get_type_name() << " stage." << std::endl;
+          std::cerr << "yield::StageImpl: " << Time() << ": queue full #" << static_cast<unsigned short>( event_queue_full_count ) << " at " << event_handler->get_type_name() << " stage." << std::endl;
 
         /*
         StageGroupThread* running_stage_group_thread = stage_group.get_running_stage_group_thread();
