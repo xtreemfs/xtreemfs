@@ -41,6 +41,7 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -151,7 +152,6 @@ public class ReplicatingFile {
                             xLoc, cow });
                 }
 
-                // objectCompleted(objectNo);
                 return true;
             } else {
                 // FIXME: only for debugging
@@ -169,7 +169,6 @@ public class ReplicatingFile {
                 // sendError(ReplicatingFile, objectNo, new OSDException(ErrorCodes.IO_ERROR,
                 // "Object does not exist locally and replication was cancelled.", ""));
                 //                
-                // objectCompleted(ReplicatingFile, objectNo);
                 // }
                 return false;
             }
@@ -177,7 +176,7 @@ public class ReplicatingFile {
 
         /**
          * Checks if it is a hole. Otherwise it tries to use another OSD for fetching.
-         * @param usedOSD TODO
+         * @param usedOSD last used OSD for fetching this object
          * 
          * @return true, if object is completed; false otherwise
          * @throws TransferStrategyException
@@ -187,28 +186,23 @@ public class ReplicatingFile {
             if (xLoc.getReplica(usedOSD).isFull()) {
                 // => hole or error; we assume it is a hole
                 if (hasDataFromEarlierResponses() && hasWaitingRequests()) {
-                    // no hole, but an object where only a replica with a wrong checksum could be found
+                    // no hole, but an object for which only a replica with a wrong checksum could be found
                     sendResponses(data.getData(), ObjectStatus.EXISTS);
 
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
                                 "OBJECT FETCHED %s:%d, but with wrong checksum", fileID, objectNo);
-
-                    // objectCompleted(objectNo);
-                    return true;
                 } else {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "OBJECT %s:%d COULD NOT BE FETCHED; MUST BE A HOLE.", fileID, objectNo);
+                                "OBJECT %s:%d COULD NOT BE FETCHED FROM A FULL REPLICA; MUST BE A HOLE.", fileID, objectNo);
 
                     if (hasWaitingRequests())
                         sendResponses(null, ObjectStatus.PADDING_OBJECT);
 
                     // TODO: remember on this OSD that this object is a hole
-
-                    // objectCompleted(objectNo);
-                    return true;
                 }
+                return true;
             } else {
                 // if (!ReplicatingFile.cancelled) {
                 // FIXME: only for debugging
@@ -283,9 +277,9 @@ public class ReplicatingFile {
     private boolean                          cancelled;
 
     /**
-     * marking THIS replica as to be a full replica (enables background replication)
+     * marks THIS replica as to be a full replica (enables background replication)
      */
-    private boolean                          fullReplica;
+    private boolean                          isFullReplica;
 
     /**
      * manages the OSD availability
@@ -321,13 +315,23 @@ public class ReplicatingFile {
         this.lastObject = sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1);
 
         // create a new strategy
-        // if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE))
-        // strategy = new SimpleStrategy(fileID, xLoc, xLoc.getXLocSet().getRead_only_file_size(),
-        // osdAvailability);
-        // else if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM))
-        strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
-        // else
-        // throw new IllegalArgumentException("Set Replication Strategy not known.");
+        if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE))
+            strategy = new SimpleStrategy(fileID, xLoc, osdAvailability);
+        else if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM))
+            strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
+        else
+            throw new IllegalArgumentException("Set Replication Strategy not known.");
+
+        // check if background replication is required
+        isFullReplica = !xLoc.getLocalReplica().isFilledOnDemand();
+        if (isFullReplica) {
+            // get striping coloumn of local OSD
+            int coloumn = xLoc.getLocalReplica().getOSDs().indexOf(master.getConfig().getUUID());
+            // add all objects (for this OSD) to strategy
+            for (int object = coloumn; object <= lastObject; object += sp.getWidth()) {
+                strategy.addObject(object, false);
+            }
+        }
     }
 
     /**
@@ -441,10 +445,10 @@ public class ReplicatingFile {
                 objectsInProgress.get(next.objectNo).replicateObject();
             }
         } else { // file must be fully replicated (background replication)
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "stop replicating file %s", fileID);
-            assert(objectsInProgress.size() == 0);
+            assert (objectsInProgress.size() == 0);
+//            if (Logging.isDebug())
+//                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+//                        "stop replicating file %s", fileID);
         }
     }
 
@@ -453,7 +457,6 @@ public class ReplicatingFile {
      * @param objectNo
      * @param usedOSD TODO
      * @param data
-     * @return true, if object is completed; false otherwise
      */
     public void objectFetched(long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingObject object = objectsInProgress.get(objectNo);
@@ -461,13 +464,22 @@ public class ReplicatingFile {
 
         try {
             boolean objectCompleted = object.objectFetched(data, usedOSD);
-            if (objectCompleted)
+            if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
+
+                if (isFullReplica) {
+                    // FIXME: only for debugging
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "background replication: replicate next object for file %s", fileID);
+                    replicate(); // background replication
+                }
+            }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
             object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
                     .toString()));
             objectReplicationCompleted(objectNo);
+            // end replicating this file
         }
     }
 
@@ -476,7 +488,6 @@ public class ReplicatingFile {
      * 
      * @param objectNo
      * @param usedOSD TODO
-     * @return true, if object is completed; false otherwise
      */
     public void objectNotFetched(long objectNo, final ServiceUUID usedOSD) {
         ReplicatingObject object = objectsInProgress.get(objectNo);
@@ -484,13 +495,22 @@ public class ReplicatingFile {
 
         try {
             boolean objectCompleted = object.objectNotFetched(usedOSD);
-            if (objectCompleted)
+            if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
+
+                if (isFullReplica) {
+                    // FIXME: only for debugging
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "background replication: replicate next object for file %s", fileID);
+                    replicate(); // background replication
+                }
+            }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
             object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
                     .toString()));
             objectReplicationCompleted(objectNo);
+            // end replicating this file
         }
     }
 
@@ -530,15 +550,14 @@ public class ReplicatingFile {
             public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
                 try {
                     ObjectData data = r.get().getData();
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data, null);
                 } catch (ONCRPCException e) {
-                    // TODO
-                    osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null);
+//                    osdAvailability.setServiceWasNotAvailable(osd);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, (OSDException) e);
                     e.printStackTrace();
                 } catch (IOException e) {
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null);
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     // ignore
@@ -552,8 +571,12 @@ public class ReplicatingFile {
     /**
      * sends an error to all belonging clients (for all objects of the file)
      */
-    public void sendError(Exception error) {
+    public void reportError(Exception error) {
+        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, error.getMessage());
         for (ReplicatingObject object : waitingRequests.values()) {
+            object.sendError(error);
+        }
+        for (ReplicatingObject object : objectsInProgress.values()) {
             object.sendError(error);
         }
     }

@@ -38,6 +38,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
@@ -121,7 +122,7 @@ public class ReplicationTest extends TestCase {
         xLoc = createLocations(4, 3);
     }
 
-    private XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs) {
+    private XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs) throws InvalidXLocationsException {
         assert (numberOfReplicas * numberOfStripedOSDs <= osds.length);
 
         ReplicaSet replicas = new ReplicaSet();
@@ -133,10 +134,26 @@ public class ReplicationTest extends TestCase {
                 osdset.add(configs[startOSD + stripe].getUUID().toString());
             }
             Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()),
+                    0, osdset);
             replicas.add(r);
         }
-        return new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0));
+        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0);
+        // set the first replica as current replica
+        XLocations locations = new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0),
+                new ServiceUUID(locSet.getReplicas().get(0).getOsd_uuids().get(0)));
+        return locations;
+    }
+
+    private void setReplicated(long filesize, int indexOfFullReplica) {
+        // set replication flags
+        for(Replica r : xLoc.getXLocSet().getReplicas())
+            r.setReplication_flags(Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM);
+        // set first replica full
+        xLoc.getXLocSet().getReplicas().get(indexOfFullReplica).setReplication_flags(Constants.REPL_FLAG_IS_FULL);
+        // set read-only and filesize
+        xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
+        xLoc.getXLocSet().setRead_only_file_size(filesize);
     }
 
     /**
@@ -157,11 +174,6 @@ public class ReplicationTest extends TestCase {
         return new ObjectData(data.createViewBuffer(), 0, 0, false);
     }
 
-    private void setReplicated(long filesize) {
-        xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
-        xLoc.getXLocSet().setRead_only_file_size(filesize);
-    }
-
     @Test
     public void testStriped() throws Exception {
         FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
@@ -173,7 +185,7 @@ public class ReplicationTest extends TestCase {
         w.freeBuffers();
 
         // change XLoc
-        setReplicated(data.limit());
+        setReplicated(data.limit(), 2);
 
         // read object from replica 3 (object exists on this OSD) => normal read
         RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(2).getAddress(), fileID,
@@ -239,7 +251,7 @@ public class ReplicationTest extends TestCase {
         w.freeBuffers();
 
         // change XLoc (filesize)
-        setReplicated(stripeSize * 3 + data2.limit());
+        setReplicated(stripeSize * 3 + data2.limit(), 0);
 
         // read object from replica 2
         RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), fileID,
@@ -330,7 +342,7 @@ public class ReplicationTest extends TestCase {
         r.freeBuffers();
 
         // change XLoc
-        setReplicated(getObjectData(this.data).getData().limit());
+        setReplicated(getObjectData(this.data).getData().limit(), 0);
 
         // read data
         RPCResponse<InternalReadLocalResponse> r2 = client.internal_read_local(serverID.getAddress(), fileID,
@@ -384,7 +396,7 @@ public class ReplicationTest extends TestCase {
         r2.freeBuffers();
 
         // change XLoc
-        setReplicated(data.limit() * 2);
+        setReplicated(data.limit() * 2, 0);
 
         // read data
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred,

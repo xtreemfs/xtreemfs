@@ -184,10 +184,6 @@ public abstract class TransferStrategy {
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public boolean addObject(long objectNo, boolean preferred) {
-        // add existing OSDs containing the object
-//        if (!availableOSDsForObject.containsKey(objectNo))
-//            availableOSDsForObject.put(objectNo, xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica()));
-
         if (preferred) {
             // object must not contained in both lists
             if (requiredObjects.contains(objectNo))
@@ -216,6 +212,7 @@ public abstract class TransferStrategy {
 
         List<ServiceUUID> list = availableOSDsForObject.get(objectNo);
         if (list == null) {
+            // add existing OSDs containing the object
             list = xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
             availableOSDsForObject.put(objectNo, list);
         }

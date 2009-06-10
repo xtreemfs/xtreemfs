@@ -35,7 +35,8 @@ import org.xtreemfs.common.xloc.XLocations;
  * (like Round-Robin). It iterates not strictly through the replicas, because it uses different
  * position-pointers for every stripe. This is necessary, otherwise it could happen some replicas will be
  * never used, which could cause in an infinite loop.<br>
- * NOTE: This strategy assumes that all replicas uses the same striping policy (same stripe width). <br>
+ * NOTE: This strategy assumes that all replicas uses the same striping policy (more precisely the same stripe
+ * width). <br>
  * 13.10.2008
  */
 public class SimpleStrategy extends TransferStrategy {

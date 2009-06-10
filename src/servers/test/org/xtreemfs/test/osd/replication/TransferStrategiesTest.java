@@ -116,7 +116,6 @@ public class TransferStrategiesTest extends TestCase {
                 new ServiceUUID(locSet.getReplicas().get(0).getOsd_uuids().get(0)));
         localReplica = locations.getLocalReplica();
         return locations;
-
     }
 
     @Before

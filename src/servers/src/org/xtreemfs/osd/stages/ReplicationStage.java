@@ -32,6 +32,8 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectDissemination;
@@ -82,10 +84,12 @@ public class ReplicationStage extends Stage {
      * Checks the response from a requested replica.
      * Only for internal use. 
      * @param usedOSD TODO
+     * @param error TODO
      */
-    public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data) {
-        this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD, data }, null,
-                null);
+    public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data,
+            OSDException error) {
+        this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD,
+                data, error }, null, null);
     }
 
     /**
@@ -132,7 +136,7 @@ public class ReplicationStage extends Stage {
         CowPolicy cow = (CowPolicy) rq.getArgs()[4];
 
         // if replica exist
-        if (xLoc.getNumReplicas() > 1) {
+        if (xLoc.getNumReplicas() > 1 || !xLoc.getLocalReplica().isFull()) {
             disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
         } else
             // object does not exist locally and no replica exists => hole
@@ -145,14 +149,23 @@ public class ReplicationStage extends Stage {
         long objectNo = (Long) rq.getArgs()[1];
         final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
         ObjectData data = (ObjectData) rq.getArgs()[3];
+        final OSDException error = (OSDException) rq.getArgs()[4];
 
-        if (data != null && data.getData().limit() != 0)
-            disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
-        else {
-            // data could not be fetched
-            disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
-            if(data != null)
-                BufferPool.free(data.getData());
+        if (error != null) {
+            // it could happen the request is rejected, because the XLoc is outdated caused by removing the
+            // replica of this OSD
+            if (((OSDException) error).getError_code() == ErrorCodes.XLOC_OUTDATED)
+                // send client error
+                disseminationLayer.sendError(fileId, error);
+        } else {
+            if (data != null && data.getData().limit() != 0)
+                disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
+            else {
+                // data could not be fetched
+                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
+                if (data != null)
+                    BufferPool.free(data.getData());
+            }
         }
     }
 

@@ -117,7 +117,8 @@ public final class ReadOperation extends OSDOperation {
         } else {
             if (result.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST
                     && rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)
-                    && rq.getLocationList().getNumReplicas() > 1) {
+                    && rq.getLocationList().getNumReplicas() > 1
+                    && !rq.getLocationList().getLocalReplica().isFull()) {
                 // read only replication!
                 readReplica(rq, args);
             } else {

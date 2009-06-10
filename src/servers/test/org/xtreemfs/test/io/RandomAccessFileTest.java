@@ -245,6 +245,7 @@ public class RandomAccessFileTest extends TestCase {
 
         // check
         assertTrue(randomAccessFile.isReadOnly());
+        assertEquals(data.limit(), randomAccessFile.getXLoc().getXLocSet().getRead_only_file_size());
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs().getRepUpdatePolicy());
 
         // try to write something
@@ -271,12 +272,24 @@ public class RandomAccessFileTest extends TestCase {
         replica2 = replica2.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a second replica
-        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
+        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_SIMPLE);
         // check
         // check
         assertEquals(3, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
         // TODO: check if the correct OSDs are in the list as a replica
 
+        
+        // check if replication flags are set correctly
+        List<org.xtreemfs.common.xloc.Replica> replicas = randomAccessFile.getXLoc().getReplicas();
+        assertTrue(replicas.get(0).isFull()); // original should be marked as full
+        assertFalse(replicas.get(1).isFull()); // replica 1 is empty
+        assertFalse(replicas.get(2).isFull()); // replica 2 is empty
+        assertTrue(replicas.get(1).isFilledOnDemand()); // replica 1 should be filled ondemand
+        assertFalse(replicas.get(2).isFilledOnDemand()); // replica 2 should be filled until it is full
+        assertTrue(replicas.get(1).isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM)); // replica 1 is using random strategy
+        assertTrue(replicas.get(2).isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE)); // replica 2 is using simple strategy
+        
+        
         // remove the first replica
         randomAccessFile.removeReplica(replica1.get(0));
         // check

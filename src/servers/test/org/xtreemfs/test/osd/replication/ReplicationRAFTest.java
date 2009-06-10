@@ -44,10 +44,12 @@ import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.StringSet;
@@ -64,8 +66,9 @@ import org.xtreemfs.test.TestEnvironment;
  * 12.05.2009
  */
 public class ReplicationRAFTest extends TestCase {
-    public static final int    STRIPE_SIZE = 1024 * 10;              // 10kb in byte
-    public static final String VOLUME_NAME = "test";
+    public static final int    STRIPE_SIZE      = 1024 * 10;      // 10kb in byte
+    public static final String VOLUME_NAME      = "test";
+    public static int          HOLE_PROBABILITY = 30;             // 30% chance
 
     private ReusableBuffer     data;
     /**
@@ -123,7 +126,7 @@ public class ReplicationRAFTest extends TestCase {
         Arrays.fill(zeros, (byte) 0);
         
         while (data.position() < appriximateSize - STRIPE_SIZE * 1.5) {
-            if (random.nextInt(100) < 70) { // 90% chance
+            if (random.nextInt(100) > HOLE_PROBABILITY) {
                 // write A piece of data
                 ReusableBuffer tmpData = SetupUtils.generateData((int) (STRIPE_SIZE * 1.5));
                 data.put(tmpData);
@@ -169,11 +172,12 @@ public class ReplicationRAFTest extends TestCase {
 
         writeData(raf);
         
-        // set new deterministic selection of OSDs
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_OSD_SELECTION_POLICY);
-
         // set read-only
         raf.setReadOnly(true);
+        assertEquals(data.limit(), raf.getXLoc().getXLocSet().getRead_only_file_size());
+
+        // set new deterministic selection of OSDs
+        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
 
         // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
@@ -196,6 +200,8 @@ public class ReplicationRAFTest extends TestCase {
             raf.seek(0);
             raf.read(resultBuffer, 0, resultBuffer.length);
             assertTrue(Arrays.equals(data.array(), resultBuffer));
+            
+            raf.changeReplicaOrder();
         }
         // read EOF
         for (int reads = 0; reads < 4; reads++) {
@@ -218,6 +224,8 @@ public class ReplicationRAFTest extends TestCase {
             Arrays.fill(expected, (byte) 0);
             assertTrue(Arrays.equals(expected, Arrays.copyOfRange(resultBuffer, STRIPE_SIZE * 2,
                     resultBuffer.length)));
+            
+            raf.changeReplicaOrder();
         }
     }
 
@@ -235,6 +243,106 @@ public class ReplicationRAFTest extends TestCase {
         }
         // write last data
         raf.write(data.array(), startOffset, data.limit() - startOffset);
+    }
+
+    @Test
+    public void testBackgroundReplication() throws Exception {
+        HOLE_PROBABILITY = 0;
+        generateData(1000 * 1000); // ca. 1 MB
+        
+        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
+                testEnv.getRpcClient(), userCredentials);
+    
+        // test needs a stripe width of 2 OSDs
+        assertEquals(2, raf.getStripingPolicy().getWidth());
+    
+        writeData(raf);
+        
+        // set read-only
+        raf.setReadOnly(true);
+        assertEquals(data.limit(), raf.getXLoc().getXLocSet().getRead_only_file_size());
+    
+        // add replicas
+        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
+        assertEquals(6, replicas.size());
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM);
+        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM);
+    
+        // read data only from replica 2
+        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+            @Override
+            public List<Replica> getReplicaOrder(List<Replica> replicas) {
+                List<Replica> list = new ArrayList<Replica>();
+                if(replicas.size() > 1)
+                    list.add(replicas.get(1));
+                else
+                    list.add(replicas.get(0));
+                return list;
+            }
+        });
+        // read data from replica 2 => initiate background replication
+        byte[] resultBuffer = new byte[STRIPE_SIZE * raf.getXLoc().getReplica(0).getStripingPolicy().getWidth()];
+        raf.seek(0);
+        raf.read(resultBuffer, 0, resultBuffer.length);
+    
+        // read data only from replica 3
+        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+            @Override
+            public List<Replica> getReplicaOrder(List<Replica> replicas) {
+                List<Replica> list = new ArrayList<Replica>();
+                if(replicas.size() > 2)
+                    list.add(replicas.get(2));
+                else
+                    list.add(replicas.get(0));
+                return list;
+            }
+        });
+        // read data from replica 3 => initiate background replication
+        resultBuffer = new byte[STRIPE_SIZE * raf.getXLoc().getReplica(0).getStripingPolicy().getWidth()];
+        raf.seek(0);
+        raf.read(resultBuffer, 0, resultBuffer.length);
+    
+        OSDClient osdClient = testEnv.getOSDClient();
+    
+        // wait, so the file could be fully replicated in background
+        Thread.sleep(2000);
+
+        // check, if objects are replicated
+        RPCResponse<InternalReadLocalResponse> r = osdClient
+                .internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(2).getAddress(), raf
+                        .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE);
+        ObjectData oData = r.get().getData();
+        r.freeBuffers();
+        assertEquals(0, oData.getZero_padding());
+        assertEquals(STRIPE_SIZE, oData.getData().capacity());
+
+        r = osdClient.internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(8).getAddress(), raf
+                .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE);
+        oData = r.get().getData();
+        r.freeBuffers();
+        assertEquals(0, oData.getZero_padding());
+        assertEquals(STRIPE_SIZE, oData.getData().capacity());
+
+        r = osdClient.internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(15).getAddress(), raf
+                .getFileId(), raf.getCredentials(), 15, 0, 0, STRIPE_SIZE);
+        oData = r.get().getData();
+        r.freeBuffers();
+        assertEquals(0, oData.getZero_padding());
+        assertEquals(STRIPE_SIZE, oData.getData().capacity());
+
+        r = osdClient.internal_read_local(raf.getXLoc().getReplica(2).getOSDForObject(16).getAddress(), raf
+                .getFileId(), raf.getCredentials(), 16, 0, 0, STRIPE_SIZE);
+        oData = r.get().getData();
+        r.freeBuffers();
+        assertEquals(0, oData.getZero_padding());
+        assertEquals(STRIPE_SIZE, oData.getData().capacity());
+
+        r = osdClient.internal_read_local(raf.getXLoc().getReplica(2).getOSDForObject(37).getAddress(), raf
+                .getFileId(), raf.getCredentials(), 37, 0, 0, STRIPE_SIZE);
+        oData = r.get().getData();
+        r.freeBuffers();
+        assertEquals(0, oData.getZero_padding());
+        assertEquals(STRIPE_SIZE, oData.getData().capacity());
     }
 
     /**
@@ -316,12 +424,14 @@ public class ReplicationRAFTest extends TestCase {
         assertEquals(2, raf.getXLoc().getNumReplicas());
 
         // read only from replica 2
-        raf.setOSDSelectionPolicy(new RandomAccessFile.OSDSelectionPolicy() {
+        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
             @Override
-            public List<ServiceUUID> getOSDorder(List<ServiceUUID> osds) {
-                List<ServiceUUID> list = new ArrayList<ServiceUUID>();
-                // only the second replica should be used
-                list.add(osds.get(1));
+            public List<Replica> getReplicaOrder(List<Replica> replicas) {
+                List<Replica> list = new ArrayList<Replica>();
+                if(replicas.size() > 1)
+                    list.add(replicas.get(1));
+                else
+                    list.add(replicas.get(0));
                 return list;
             }
         });
@@ -356,40 +466,46 @@ public class ReplicationRAFTest extends TestCase {
 
         // NOTE: as long as xLoc cache is not implemented this tests will work
         // wait, so the open-file-table could close the file and delete the data
+        System.out.println("Test is waiting 60s.");
         Thread.sleep(60000);
 
         // check, if objects are deleted on OSDs (only spot check)
-        RPCResponse<ObjectData> r = osdClient.check_object(replicas.get(0).getAddress(), raf.getFileId(),
-                credentials, 0, 0);
-        ObjectData oData = r.get();
+        RPCResponse<InternalReadLocalResponse> r = osdClient.internal_read_local(
+                replicas.get(0).getAddress(), raf.getFileId(), credentials, 0, 0, 0, STRIPE_SIZE);
+        ObjectData oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
-        r = osdClient.check_object(replicas.get(1).getAddress(), raf.getFileId(), credentials, 1, 0);
-        oData = r.get();
+        r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 1, 0,
+                0, STRIPE_SIZE);
+        oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
-        r = osdClient.check_object(replicas.get(0).getAddress(), raf.getFileId(), credentials, 10, 0);
-        oData = r.get();
+        r = osdClient.internal_read_local(replicas.get(0).getAddress(), raf.getFileId(), credentials, 10, 0,
+                0, STRIPE_SIZE);
+        oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
-        r = osdClient.check_object(replicas.get(1).getAddress(), raf.getFileId(), credentials, 11, 0);
-        oData = r.get();
+        r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 11, 0,
+                0, STRIPE_SIZE);
+        oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
-        r = osdClient.check_object(replicas.get(0).getAddress(), raf.getFileId(), credentials, 100, 0);
-        oData = r.get();
+        r = osdClient.internal_read_local(replicas.get(0).getAddress(), raf.getFileId(), credentials, 100, 0,
+                0, STRIPE_SIZE);
+        oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
-        r = osdClient.check_object(replicas.get(1).getAddress(), raf.getFileId(), credentials, 101, 0);
-        oData = r.get();
+        r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 101, 0,
+                0, STRIPE_SIZE);
+        oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
 
         // read and check data on remaining (original) replica
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_OSD_SELECTION_POLICY);
+        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
         raf.seek(0);
         resultBuffer = new byte[data.limit()];
         raf.read(resultBuffer, 0, resultBuffer.length);
         assertTrue(Arrays.equals(data.array(), resultBuffer));
-    }
+    }    
 }

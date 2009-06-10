@@ -80,9 +80,10 @@ public class RandomStrategy extends TransferStrategy {
         // FIXME: only for debugging
         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                 "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
+
         if (testedOSDs.size() == 0)
             throw new TransferStrategyException("No OSD could be found for object " + objectNo
-                    + ". It seems to be a hole.", TransferStrategyException.ErrorCode.NO_OSD_FOUND);
+                    + ". Maybe it is a hole.", TransferStrategyException.ErrorCode.NO_OSD_FOUND);
 
         while (testedOSDs.size() != 0) {
             // use random OSD

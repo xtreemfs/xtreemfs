@@ -88,13 +88,11 @@ public class ObjectDissemination {
                 file.replicate();
             } catch (TransferStrategyException e) {
                 if (e.getErrorCode() == TransferStrategyException.ErrorCode.NO_OSD_FOUND)
-                    file.sendError(new OSDException(ErrorCodes.IO_ERROR,
+                    file.reportError(new OSDException(ErrorCodes.IO_ERROR,
                             "no OSD could be found for fetching an object", e.getStackTrace().toString()));
                 else if (e.getErrorCode() == TransferStrategyException.ErrorCode.NO_OSD_REACHABLE)
-                    file.sendError(new OSDException(ErrorCodes.IO_ERROR,
+                    file.reportError(new OSDException(ErrorCodes.IO_ERROR,
                             "no OSD is reachable for fetching an object", e.getStackTrace().toString()));
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
-                        "stop replicating file %s due to an error", fileID);
             }
 
             if (!file.isReplicating())
@@ -142,7 +140,7 @@ public class ObjectDissemination {
         
         // TODO: save persistent marker that all objects of file are completely replicated, if replica is full replica 
     }
-    
+
     /**
      * Stops replication for this file.
      */ 
@@ -155,5 +153,15 @@ public class ObjectDissemination {
             else
                 // delete directly
                 filesInProgress.remove(fileID);
+    }
+    
+    /**
+     * sends an error to all belonging clients of this file (for all objects)
+     */
+    public void sendError(String fileID, Exception e) {
+        ReplicatingFile file = filesInProgress.get(fileID);
+        assert(file != null);
+
+        file.reportError(e);
     }
 }
