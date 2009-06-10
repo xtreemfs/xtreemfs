@@ -109,7 +109,7 @@ def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_
     database_dir = os.path.join( "data", "dir" )
     open( os.path.join( "config", "dir.config" ), "w+" ).write( """\
 uuid = test-env-DIR
-debug_level = %(debug_level)s
+debug.level = %(debug_level)s
 listen.port = %(DIR_ONCRPC_PORT)u
 http_port = %(DIR_HTTP_PORT)u
 database.dir = %(database_dir)s
@@ -122,7 +122,7 @@ def generate_mrc_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_
     database_dir = os.path.join( "data", "mrc" )
     open( os.path.join( "config", "mrc.config" ), "w+" ).write( """\
 uuid = test-env-MRC
-debug_level = %(debug_level)s
+debug.level = %(debug_level)s
 listen.port = %(MRC_ONCRPC_PORT)u
 http_port = %(MRC_HTTP_PORT)u 
 dir_service.port = %(DIR_ONCRPC_PORT)u
@@ -148,7 +148,7 @@ def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_
     object_dir = os.path.join( "data", "osd" + str( osdnum ) )
     open( os.path.join( "config", "osd" + str( osdnum ) + ".config" ), "w+" ).write( """\
 uuid = test-env-OSD%(osdnum)s
-debug_level = %(debug_level)s
+debug.level = %(debug_level)s
 listen.port = %(listen_port)u
 http_port = %(http_port)u
 dir_service.host = localhost
