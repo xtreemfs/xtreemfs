@@ -42,12 +42,12 @@ Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t fla
   : name( name ), flags( flags ), log( log ), ssl_context( ssl_context )
 {
   YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup( name.c_str() );
-  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 5 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+  dir_proxy = DIRProxy::create( dir_uri, stage_group, log, 10 * NS_IN_S, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 5 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, log, 10 * NS_IN_S, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 
-  osd_proxy_mux = OSDProxyMux::create( dir_proxy, stage_group, log, 5 * NS_IN_MS, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
+  osd_proxy_mux = OSDProxyMux::create( dir_proxy, stage_group, log, 10 * NS_IN_S, OSDProxy::RECONNECT_TRIES_MAX_DEFAULT, ssl_context );
 }
 
 bool Volume::access( const YIELD::Path& path, int amode )
