@@ -298,7 +298,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 try {
                     dmap.put("status_page_url", "http://"
-                        + config.getUUID().getMappings()[0].resolvedAddr.getHostName() + ":"
+                        + config.getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() + ":"
                         + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
                     // should never happen
