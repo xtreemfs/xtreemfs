@@ -16,6 +16,7 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
@@ -52,7 +53,7 @@ public class DummyONCRPCServer {
                                 System.out.println("response size is " + rpcResponse.calculateSize());
                                 rq.sendResponse(rpcResponse);
                             } else {
-                                rq.sendGarbageArgs(null);
+                                rq.sendGarbageArgs(null,new ProtocolException());
                             }
                         } catch (Exception ex) {
                             ex.printStackTrace();

@@ -24,6 +24,7 @@ import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.StringSet;
@@ -78,7 +79,7 @@ public class SimpleRPCClientTest extends TestCase {
                         System.out.println("response size is "+rpcResponse.calculateSize());
                         rq.sendResponse(rpcResponse);
                     } else {
-                        rq.sendGarbageArgs(null);
+                        rq.sendGarbageArgs(null, new ProtocolException());
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();

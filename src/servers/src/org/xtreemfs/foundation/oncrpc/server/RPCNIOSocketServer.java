@@ -52,6 +52,7 @@ import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
 /**
  * 
@@ -648,13 +649,13 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             if (hdr.getRpcVersion() != 2) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "Invalid RPC version: %d, expected 2", hdr.getRpcVersion());
-                rq.sendGarbageArgs("Invalid RPC version: " + hdr.getRpcVersion() + ", expected 2");
+                rq.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH);
                 return true;
             }
             if (hdr.getMessageType() != 0) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "Invalid message type: %d, expected 0", hdr.getRpcVersion());
-                rq.sendGarbageArgs("Invalid message type: " + hdr.getRpcVersion() + ", expected 0");
+                rq.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
                 return true;
             }
             

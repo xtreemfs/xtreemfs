@@ -105,6 +105,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.interfaces.DirService;
+import org.xtreemfs.interfaces.OSDInterface.errnoException;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -546,7 +547,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 }
             });
         } catch (Exception ex) {
-            rq.sendInternalServerError(ex);
+            rq.sendInternalServerError(ex, new errnoException());
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }

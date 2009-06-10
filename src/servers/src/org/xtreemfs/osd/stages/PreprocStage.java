@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.LocationsCache;
 import org.xtreemfs.osd.OSDRequest;
@@ -127,6 +128,11 @@ public class PreprocStage extends Stage {
                 processAuthenticate(request);
             } catch (OSDException ex) {
                 callback.parseComplete(request, ex);
+                if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "authentication of request failed: %s",
+                        ex.getError_message());
+                }
                 return;
             }
         }
@@ -262,6 +268,11 @@ public class PreprocStage extends Stage {
             rq.sendProtocolException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
                 ErrNo.EINVAL, "invalid version requested (requested=" + hdr.getInterfaceVersion() + " avail="
                     + OSDInterface.getVersion() + ")"));
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "invalid version requested (requested=%d avail=%d)",
+                        hdr.getInterfaceVersion(),OSDInterface.getVersion());
+            }
             return false;
         }
         
@@ -271,21 +282,34 @@ public class PreprocStage extends Stage {
             rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
                 ErrNo.EINVAL, "requested operation is not available on this OSD (proc # "
                     + hdr.getProcedure() + ")"));
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "requested operation is not available on this OSD (proc #%d)",
+                        hdr.getProcedure());
+            }
             return false;
         }
         rq.setOperation(op);
         
         try {
-            rq.setRequestArgs(op.parseRPCMessage(rpcRq.getRequestFragment(), rq));
+            final Serializable requestArgs = op.parseRPCMessage(rpcRq.getRequestFragment(), rq);
+            rq.setRequestArgs(requestArgs);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "received request of type %s",requestArgs.getTypeName());
         } catch (InvalidXLocationsException ex) {
             OSDException osdex = new OSDException(ErrorCodes.NOT_IN_XLOC, ex.getMessage(), "");
             rpcRq.sendException(osdex);
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "this OSD is not in the Xloc sent by the client: %s",
+                        ex.getMessage());
+            }
             return false;
         } catch (Throwable ex) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
                         .stackTraceToString(ex));
-            rpcRq.sendGarbageArgs(ex.toString());
+            rpcRq.sendGarbageArgs(ex.toString(), new ProtocolException());
             return false;
         }
         if (Logging.isDebug()) {

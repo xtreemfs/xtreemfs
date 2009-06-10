@@ -257,8 +257,12 @@ public class MRCHelper {
             switch (key) {
             
             case locations:
-                XLocList xLocList = file.getXLocList();
-                return file.isDirectory() ? "" : xLocList == null ? "" : Converter.xLocListToJSON(xLocList);
+                if (file.isDirectory()) {
+                    return "";
+                } else {
+                    XLocList xLocList = file.getXLocList();
+                    return xLocList == null ? "" : Converter.xLocListToJSON(xLocList);
+                }
             case file_id:
                 return volume.getId() + ":" + file.getId();
             case object_type:

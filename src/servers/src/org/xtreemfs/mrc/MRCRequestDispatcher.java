@@ -85,6 +85,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
 import org.xtreemfs.interfaces.DirService;
+import org.xtreemfs.interfaces.MRCInterface.errnoException;
 
 /**
  * 
@@ -191,7 +192,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.put("usedRAM", Long.toString(usedRAM));
                 dmap.put("geoCoordinates", config.getGeoCoordinates());
                 try {
-                    dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getHostName() + ":"
+                    dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getAddress().getHostAddress()+":"
                         + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
                     // should never happen
@@ -343,7 +344,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", error.getErrorMessage(),
                     request.toString());
                 Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendInternalServerError(error.getThrowable());
+                rpcRequest.sendInternalServerError(error.getThrowable(), new errnoException());
                 break;
             }
             case USER_EXCEPTION: {
@@ -355,7 +356,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case INVALID_ARGS: {
-                rpcRequest.sendGarbageArgs(error.getErrorMessage());
+                rpcRequest.sendGarbageArgs(error.getErrorMessage(), new ProtocolException());
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "invalid request arguments");
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, error.getErrorMessage());
@@ -374,7 +375,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             default: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
                 Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendInternalServerError(error.getThrowable());
+                rpcRequest.sendInternalServerError(error.getThrowable(), new errnoException());
                 break;
             }
             }

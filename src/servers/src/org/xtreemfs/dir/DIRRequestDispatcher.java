@@ -330,7 +330,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             op.parseRPCMessage(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendGarbageArgs(ex.toString());
+            rq.sendGarbageArgs(ex.toString(),new ProtocolException());
             return;
         }
         try {
@@ -338,7 +338,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             op.startRequest(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendInternalServerError(ex);
+            rq.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
             return;
         }
     }

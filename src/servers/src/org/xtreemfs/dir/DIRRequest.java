@@ -29,6 +29,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
@@ -60,7 +61,7 @@ public class DIRRequest {
     }
     
     public void sendInternalServerError(Throwable rootCause) {
-        rpcRequest.sendInternalServerError(rootCause);
+        rpcRequest.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
     }
     
     public void sendException(ONCRPCException exception) {

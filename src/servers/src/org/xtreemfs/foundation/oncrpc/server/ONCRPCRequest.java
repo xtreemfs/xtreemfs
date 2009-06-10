@@ -33,6 +33,7 @@ import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -77,23 +78,66 @@ public class ONCRPCRequest {
         serializeAndSendRespondse(response);
     }
 
-    public void sendGarbageArgs(String message) {
+    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.OSDInterface.ProtocolException ex) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                 "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
                         .getClientAddress().toString());
         }
-        wrapAndSendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS,ErrNo.EINVAL, message));
+        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
+        ex.setError_code(ErrNo.EINVAL);
+        ex.setStack_trace(message);
+        wrapAndSendException(ex);
+    }
+
+    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.MRCInterface.ProtocolException ex) {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
+                        .getClientAddress().toString());
+        }
+        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
+        ex.setError_code(ErrNo.EINVAL);
+        ex.setStack_trace(message);
+        wrapAndSendException(ex);
+    }
+
+    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.DIRInterface.ProtocolException ex) {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
+                        .getClientAddress().toString());
+        }
+        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
+        ex.setError_code(ErrNo.EINVAL);
+        ex.setStack_trace(message);
+        wrapAndSendException(ex);
     }
     
-    public void sendInternalServerError(Throwable rootCause) {      
+    public void sendInternalServerError(Throwable rootCause, org.xtreemfs.interfaces.OSDInterface.errnoException ex) {
         final String strace = OutputUtils.stackTraceToString(rootCause);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                 "errnoException: SYSTEM ERR/Internal Server Error sent to client %s", this.record
                         .getConnection().getClientAddress().toString());
         }
-        wrapAndSendException(new errnoException(ErrNo.EIO, "internal server error caused by: "+rootCause, strace));
+        ex.setError_code(ErrNo.EIO);
+        ex.setError_message("internal server error caused by: "+rootCause);
+        ex.setStack_trace(strace);
+        wrapAndSendException(ex);
+    }
+
+    public void sendInternalServerError(Throwable rootCause, org.xtreemfs.interfaces.MRCInterface.errnoException ex) {
+        final String strace = OutputUtils.stackTraceToString(rootCause);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                "errnoException: SYSTEM ERR/Internal Server Error sent to client %s", this.record
+                        .getConnection().getClientAddress().toString());
+        }
+        ex.setError_code(ErrNo.EIO);
+        ex.setError_message("internal server error caused by: "+rootCause);
+        ex.setStack_trace(strace);
+        wrapAndSendException(ex);
     }
 
 
@@ -120,6 +164,25 @@ public class ONCRPCRequest {
         writer.put(serializedResponse);
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
+        record.sendResponse();
+    }
+
+    public void sendErrorCode(int errorCode) {
+        ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
+
+        responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
+            errorCode);
+
+        final int fragmentSize =  responseHeader.calculateSize();
+        assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
+        final boolean isLastFragment = true;
+        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
+        writer.putInt(fragHdr);
+        responseHeader.serialize(writer);;
+        //make ready for sending
+        writer.flip();
+        record.setResponseBuffers(writer.getBuffers());
+
         record.sendResponse();
     }
     
