@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -74,11 +73,11 @@ public class CleanupThread extends LifeCycleThread {
 
     private final HashStorageLayout layout;
 
-    private long filesChecked;
+    private volatile long filesChecked;
 
     private final AtomicLong zombies;
 
-    private long startTime;
+    private volatile long startTime;
     
     private UserCredentials uc;
     
@@ -92,7 +91,9 @@ public class CleanupThread extends LifeCycleThread {
         this.quit = false;
         this.layout = layout;
         this.results = new StringSet();
-        localUUID = master.getConfig().getUUID();
+        this.localUUID = master.getConfig().getUUID();
+        this.startTime = 0L;
+        this.filesChecked = 0L;
     }
 
     public boolean cleanupStart(boolean removeZombies, boolean removeDeadVolumes, boolean lostAndFound, UserCredentials uc) {
@@ -133,13 +134,13 @@ public class CleanupThread extends LifeCycleThread {
 
     public String getStatus() {
         synchronized (this) {
+            String d = DateFormat.getDateInstance().format(new Date(startTime));
+            assert (d != null);
             if (isRunning) {
-                Date d = new Date(startTime);
                 return String.format(STATUS_FORMAT,
-                        filesChecked, zombies.get(), DateFormat.getDateInstance().format(d));
+                        filesChecked, zombies.get(), d);
             } else {
-                Date d = new Date(startTime);
-                return String.format(STOPPED_FORMAT, DateFormat.getDateInstance().format(d));
+                return String.format(STOPPED_FORMAT, d);
             }
         }
 

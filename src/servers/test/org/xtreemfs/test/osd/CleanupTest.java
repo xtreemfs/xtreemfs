@@ -261,6 +261,11 @@ public class CleanupTest extends TestCase {
      * @throws IOException
      */
     private StringSet makeCleanup(boolean restore, boolean deleteVolumes, boolean killZombies) throws InterruptedException, ONCRPCException, IOException{
+        String statF = CleanupThread.getRegex(CleanupThread.STATUS_FORMAT);
+        String stopF = CleanupThread.getRegex(CleanupThread.STOPPED_FORMAT);
+        assertNotNull(statF);
+        assertNotNull(stopF);
+        
         RPCResponse<?> r = null;
         
         // start the cleanUp Operation
@@ -271,21 +276,20 @@ public class CleanupTest extends TestCase {
         boolean isRunning = true;
         do {
             r = env.getOSDClient().internal_cleanup_status(env.getOSDAddress(), "");
-            String stat = (String)r.get();
+            String stat = (String) r.get();
             r.freeBuffers();
-
-            r = env.getOSDClient().internal_cleanup_is_running(env.getOSDAddress(), "");
-            isRunning = (Boolean)r.get();
-            r.freeBuffers();
-            if (isRunning){
-                assertNotNull(stat);
-                assertTrue(stat.matches(CleanupThread.getRegex(CleanupThread.STATUS_FORMAT)));
-                Thread.sleep(250);
-            } else {
-                assertNotNull(stat);
-                assertTrue(stat.matches(CleanupThread.getRegex(CleanupThread.STOPPED_FORMAT)));
+            
+            assertNotNull(stat);
+            try {
+                if (stat.matches(statF))
+                    assertTrue(true);
+            } catch (NullPointerException ne) {
+                assertTrue(stat.matches(stopF));
             }
             
+            r = env.getOSDClient().internal_cleanup_is_running(env.getOSDAddress(), "");
+            isRunning = (Boolean) r.get();
+            r.freeBuffers();
         } while (isRunning);
         
         r = env.getOSDClient().internal_cleanup_get_result(env.getOSDAddress(), "");
