@@ -13,22 +13,20 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     public static final int TAG = 1052;
 
     
-    public InternalReadLocalResponse() { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); }
-    public InternalReadLocalResponse( NewFileSize new_file_size, int zero_padding, ObjectData data ) { this.new_file_size = new_file_size; this.zero_padding = zero_padding; this.data = data; }
-    public InternalReadLocalResponse( Object from_hash_map ) { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData(); this.deserialize( from_hash_map ); }
-    public InternalReadLocalResponse( Object[] from_array ) { new_file_size = new NewFileSize(); zero_padding = 0; data = new ObjectData();this.deserialize( from_array ); }
+    public InternalReadLocalResponse() { data = new ObjectData(); object_list = new ObjectListSet(); }
+    public InternalReadLocalResponse( ObjectData data, ObjectListSet object_list ) { this.data = data; this.object_list = object_list; }
+    public InternalReadLocalResponse( Object from_hash_map ) { data = new ObjectData(); object_list = new ObjectListSet(); this.deserialize( from_hash_map ); }
+    public InternalReadLocalResponse( Object[] from_array ) { data = new ObjectData(); object_list = new ObjectListSet();this.deserialize( from_array ); }
 
-    public NewFileSize getNew_file_size() { return new_file_size; }
-    public void setNew_file_size( NewFileSize new_file_size ) { this.new_file_size = new_file_size; }
-    public int getZero_padding() { return zero_padding; }
-    public void setZero_padding( int zero_padding ) { this.zero_padding = zero_padding; }
     public ObjectData getData() { return data; }
     public void setData( ObjectData data ) { this.data = data; }
+    public ObjectListSet getObject_list() { return object_list; }
+    public void setObject_list( ObjectListSet object_list ) { this.object_list = object_list; }
 
     // Object
     public String toString()
     {
-        return "InternalReadLocalResponse( " + new_file_size.toString() + ", " + Integer.toString( zero_padding ) + ", " + data.toString() + " )";
+        return "InternalReadLocalResponse( " + data.toString() + ", " + object_list.toString() + " )";
     }
 
     // Serializable
@@ -42,54 +40,47 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.new_file_size.deserialize( from_hash_map.get( "new_file_size" ) );
-        this.zero_padding = ( ( Integer )from_hash_map.get( "zero_padding" ) ).intValue();
         this.data.deserialize( from_hash_map.get( "data" ) );
+        this.object_list.deserialize( ( Object[] )from_hash_map.get( "object_list" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.new_file_size.deserialize( from_array[0] );
-        this.zero_padding = ( ( Integer )from_array[1] ).intValue();
-        this.data.deserialize( from_array[2] );        
+        this.data.deserialize( from_array[0] );
+        this.object_list.deserialize( ( Object[] )from_array[1] );        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
-        new_file_size = new NewFileSize(); new_file_size.deserialize( buf );
-        zero_padding = buf.getInt();
         data = new ObjectData(); data.deserialize( buf );
+        object_list = new ObjectListSet(); object_list.deserialize( buf );
     }
 
     public Object serialize()
     {
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "new_file_size", new_file_size.serialize() );
-        to_hash_map.put( "zero_padding", new Integer( zero_padding ) );
         to_hash_map.put( "data", data.serialize() );
+        to_hash_map.put( "object_list", object_list.serialize() );
         return to_hash_map;        
     }
 
     public void serialize( ONCRPCBufferWriter writer ) 
     {
-        new_file_size.serialize( writer );
-        writer.putInt( zero_padding );
         data.serialize( writer );
+        object_list.serialize( writer );
     }
     
     public int calculateSize()
     {
         int my_size = 0;
-        my_size += new_file_size.calculateSize();
-        my_size += ( Integer.SIZE / 8 );
         my_size += data.calculateSize();
+        my_size += object_list.calculateSize();
         return my_size;
     }
 
 
-    private NewFileSize new_file_size;
-    private int zero_padding;
-    private ObjectData data;    
+    private ObjectData data;
+    private ObjectListSet object_list;    
 
 }
 
