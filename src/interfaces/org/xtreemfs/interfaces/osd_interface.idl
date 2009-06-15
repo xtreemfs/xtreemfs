@@ -25,9 +25,17 @@ module org # 1000
 
       struct InternalReadLocalResponse # 52
       {
-        NewFileSize new_file_size;
-        uint32_t zero_padding;
         ObjectData data;
+        // serialized datatype
+        sequence<ObjectList> object_list;
+      };
+
+      struct ObjectList # 55
+      {
+        // serialized datatype
+        buffer object_list;
+        uint32_t object_list_type;
+        boolean isCompletelyFilled;
       };
 
       struct VivaldiCoordinates # 53
@@ -44,6 +52,9 @@ module org # 1000
         const uint32_t DEFAULT_ONCRPC_PORT = 32640;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32640;
         const uint32_t DEFAULT_HTTP_PORT = 30640; 
+
+        const uint32_t OBJECT_LIST_TYPE_JAVA_ARRAYLIST = 1;
+        const uint32_t OBJECT_LIST_TYPE_BLOOM_FILTER = 2;
 
         // Exceptions
         exception ConcurrentModificationException # 6 { string stack_trace; };
@@ -73,7 +84,9 @@ module org # 1000
         uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) #104;
         void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 101;
         InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length ) # 102;
-	      void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) #1001;
+        ObjectsList xtreemfs_internal_get_objects_list( FileCredentials file_credentials, string file_id ) # 110;
+
+        void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) #1001;
         void xtreemfs_shutdown() # 50;      
       };
     };
