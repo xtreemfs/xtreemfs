@@ -25,7 +25,9 @@
 package org.xtreemfs.osd.replication;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.xtreemfs.common.ServiceAvailability;
@@ -42,11 +44,18 @@ public class RandomStrategy extends TransferStrategy {
     private Random random;
 
     /**
+     * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.
+     * <br>key: objectNo
+     */
+    private Map<Long, List<ServiceUUID>> availableOSDsForObject;
+
+    /**
      * @param rqDetails
      */
     public RandomStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
         this.random = new Random();
+        this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
     }
 
     @Override
@@ -108,5 +117,41 @@ public class RandomStrategy extends TransferStrategy {
                     TransferStrategyException.ErrorCode.NO_OSD_REACHABLE);
         }
         return next;
+    }
+
+    /**
+     * returns a list of available OSDs for the given object
+     * @param objectNo
+     * @return
+     */
+    protected List<ServiceUUID> getAvailableOSDsForObject(long objectNo) {
+        assert (requiredObjects.contains(objectNo) || preferredObjects.contains(objectNo));
+    
+        List<ServiceUUID> list = availableOSDsForObject.get(objectNo);
+        if (list == null) {
+            // add existing OSDs containing the object
+            list = xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
+            availableOSDsForObject.put(objectNo, list);
+        }
+        return list;
+    }
+    
+    @Override
+    public NextRequest getNext() {
+        NextRequest next = super.getNext();
+        if (next != null) {
+            // remove used OSD for this object, because the OSD will not be used a second time
+            List<ServiceUUID> osds = availableOSDsForObject.get(next.objectNo);
+            if (osds != null)
+                osds.remove(next.osd);
+        }
+        return next;
+    }
+    
+    @Override
+    public boolean removeObject(long objectNo) {
+        boolean contained = (null != availableOSDsForObject.remove(objectNo));
+        contained = contained || super.removeObjectFromList(objectNo);
+        return contained;
     }
 }

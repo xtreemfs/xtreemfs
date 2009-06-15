@@ -29,6 +29,7 @@ package org.xtreemfs.test.osd;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -74,6 +75,11 @@ public class StorageLayoutTest extends TestCase {
     public void testHashStorageLayoutBasics() throws Exception {
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         basicTests(layout);
+    }
+
+    public void testHashStorageLayoutGetObjectList() throws Exception {
+        HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
+        getObjectListTest(layout);
     }
 
     /**
@@ -130,6 +136,35 @@ public class StorageLayoutTest extends TestCase {
         oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 66,1);
         assertEquals(0, oinfo.getData().capacity());
         BufferPool.free(oinfo.getData());
+    }
+
+    private void getObjectListTest(StorageLayout layout) throws IOException {
+        final String fileId = "ABCDEFG:0001";
+        StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(
+                StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));// new RAID0(64, 1);
+
+        assertFalse(layout.fileExists(fileId));
+        assertEquals(0, layout.getObjectList(fileId).length);
+
+        ReusableBuffer data = BufferPool.allocate(64);
+        for (int i = 0; i < 64; i++) {
+            data.put((byte) (48 + i));
+        }
+
+        // objects to write
+        long objectNos[] = { 0, 2, 4, 8, 10, 12, 20, 24, 32, 44, 46, 48, 50 };
+
+        // write objects
+        for (long objNo : objectNos) {
+            layout.writeObject(fileId, objNo, data.createViewBuffer(), 1, 0, 0, sp, false);
+        }
+        BufferPool.free(data);
+
+        long[] objectList = layout.getObjectList(fileId);
+        // check
+        Arrays.sort(objectNos);
+        Arrays.sort(objectList);
+        assertTrue(Arrays.equals(objectNos, objectList));
     }
 
     public static void main(String[] args) {

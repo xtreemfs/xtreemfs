@@ -516,7 +516,27 @@ public class HashStorageLayout extends StorageLayout {
         rf.writeLong(newTruncateEpoch);
         rf.close();
     }
-    
+
+    @Override
+    public long[] getObjectList(String fileId) {
+        long[] objectList;
+
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        if (fileDir.exists()) {
+            String[] objs = fileDir.list();
+            objectList = new long[objs.length];
+
+            for (int i = 0; i < objs.length; i++) {
+                if (objs[i].startsWith("."))
+                    continue; // ignore special files (metadata, .tepoch)
+                objectList[i] = parseFileName(objs[i]).objNo;
+            }
+        } else
+            objectList = new long[0];
+            
+        return objectList;
+    }
+
     private String generateAbsoluteFilePath(String fileId) {
         return this.storageDir + generateRelativeFilePath(fileId);
     }

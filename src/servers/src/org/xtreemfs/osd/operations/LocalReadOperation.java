@@ -29,8 +29,9 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
-import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
+import org.xtreemfs.interfaces.ObjectListSet;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
@@ -39,6 +40,7 @@ import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
@@ -89,8 +91,8 @@ public final class LocalReadOperation extends OSDOperation {
                 });
     }
 
-    public void postRead(final OSDRequest rq, xtreemfs_internal_read_localRequest args,
-            ObjectInformation result, Exception error) {
+    public void postRead(final OSDRequest rq, final xtreemfs_internal_read_localRequest args,
+            final ObjectInformation result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -98,11 +100,34 @@ public final class LocalReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            readFinish(rq, args, result);
+            if (args.getAttachObjectList()) { // object list is requested
+                master.getStorageStage().getObjectList(args.getFile_id(), rq,
+                        new GetObjectListCallback() {
+                            @Override
+                            public void getObjectListComplete(ObjectList objectList, Exception error) {
+                                postReadObjectList(rq, args, result, objectList, error);
+                            }
+                        });
+            } else
+                readFinish(rq, args, result, null);
         }
     }
-    
-    private void readFinish(OSDRequest rq, xtreemfs_internal_read_localRequest args, ObjectInformation result) {
+
+    public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_read_localRequest args,
+            ObjectInformation data, ObjectList result, Exception error) {
+        if (error != null) {
+            if (error instanceof ONCRPCException) {
+                rq.sendException((ONCRPCException) error);
+            } else {
+                rq.sendInternalServerError(error);
+            }
+        } else {
+            readFinish(rq, args, data, result);
+        }
+    }
+
+    private void readFinish(OSDRequest rq, xtreemfs_internal_read_localRequest args,
+            ObjectInformation result, ObjectList objectList) {
         ObjectData data = null;
         // send raw data
         if (result.getStatus() == ObjectStatus.EXISTS) {
@@ -122,13 +147,16 @@ public final class LocalReadOperation extends OSDOperation {
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
 
-//        System.out.println("resp: " + data);
-        sendResponse(rq, data);
+        // System.out.println("resp: " + data);
+        sendResponse(rq, data, objectList);
     }
 
-    public void sendResponse(OSDRequest rq, ObjectData result) {
-        InternalReadLocalResponse readLocalResponse = new InternalReadLocalResponse(new NewFileSize(0, 0), 0,
-                result); // FIXME: filesize is no longer required
+    public void sendResponse(OSDRequest rq, ObjectData result, ObjectList objectList) {
+        ObjectListSet set = new ObjectListSet();
+        if (objectList != null && objectList.getObject_list().limit() != 0)
+            set.add(objectList);
+
+        InternalReadLocalResponse readLocalResponse = new InternalReadLocalResponse(result, set);
         xtreemfs_internal_read_localResponse response = new xtreemfs_internal_read_localResponse(
                 readLocalResponse);
         rq.sendSuccess(response);

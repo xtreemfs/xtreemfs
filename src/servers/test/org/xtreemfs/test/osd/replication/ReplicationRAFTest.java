@@ -310,35 +310,35 @@ public class ReplicationRAFTest extends TestCase {
         // check, if objects are replicated
         RPCResponse<InternalReadLocalResponse> r = osdClient
                 .internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(2).getAddress(), raf
-                        .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE);
+                        .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE, false);
         ObjectData oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         assertEquals(STRIPE_SIZE, oData.getData().capacity());
 
         r = osdClient.internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(8).getAddress(), raf
-                .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE);
+                .getFileId(), raf.getCredentials(), 8, 0, 0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         assertEquals(STRIPE_SIZE, oData.getData().capacity());
 
         r = osdClient.internal_read_local(raf.getXLoc().getReplica(1).getOSDForObject(15).getAddress(), raf
-                .getFileId(), raf.getCredentials(), 15, 0, 0, STRIPE_SIZE);
+                .getFileId(), raf.getCredentials(), 15, 0, 0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         assertEquals(STRIPE_SIZE, oData.getData().capacity());
 
         r = osdClient.internal_read_local(raf.getXLoc().getReplica(2).getOSDForObject(16).getAddress(), raf
-                .getFileId(), raf.getCredentials(), 16, 0, 0, STRIPE_SIZE);
+                .getFileId(), raf.getCredentials(), 16, 0, 0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         assertEquals(STRIPE_SIZE, oData.getData().capacity());
 
         r = osdClient.internal_read_local(raf.getXLoc().getReplica(2).getOSDForObject(37).getAddress(), raf
-                .getFileId(), raf.getCredentials(), 37, 0, 0, STRIPE_SIZE);
+                .getFileId(), raf.getCredentials(), 37, 0, 0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
@@ -471,32 +471,32 @@ public class ReplicationRAFTest extends TestCase {
 
         // check, if objects are deleted on OSDs (only spot check)
         RPCResponse<InternalReadLocalResponse> r = osdClient.internal_read_local(
-                replicas.get(0).getAddress(), raf.getFileId(), credentials, 0, 0, 0, STRIPE_SIZE);
+                replicas.get(0).getAddress(), raf.getFileId(), credentials, 0, 0, 0, STRIPE_SIZE, false);
         ObjectData oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 1, 0,
-                0, STRIPE_SIZE);
+                0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         r = osdClient.internal_read_local(replicas.get(0).getAddress(), raf.getFileId(), credentials, 10, 0,
-                0, STRIPE_SIZE);
+                0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 11, 0,
-                0, STRIPE_SIZE);
+                0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         r = osdClient.internal_read_local(replicas.get(0).getAddress(), raf.getFileId(), credentials, 100, 0,
-                0, STRIPE_SIZE);
+                0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());
         r = osdClient.internal_read_local(replicas.get(1).getAddress(), raf.getFileId(), credentials, 101, 0,
-                0, STRIPE_SIZE);
+                0, STRIPE_SIZE, false);
         oData = r.get().getData();
         r.freeBuffers();
         assertEquals(0, oData.getZero_padding());

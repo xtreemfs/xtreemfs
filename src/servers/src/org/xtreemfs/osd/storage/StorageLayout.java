@@ -292,4 +292,11 @@ public abstract class StorageLayout {
     public abstract boolean fileExists(String fileId);
 
     public abstract long getFileInfoLoadCount();
+
+    /**
+     * returns a list of all local saved objects of this file
+     * @param fileId
+     * @return null, if file does not exist, otherwise objectList
+     */
+    public abstract long[] getObjectList(String fileId);
 }

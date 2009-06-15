@@ -39,7 +39,7 @@ import org.xtreemfs.common.xloc.XLocations;
  * width). <br>
  * 13.10.2008
  */
-public class SimpleStrategy extends TransferStrategy {
+public class SequencialStrategy extends TransferStrategy {
     /**
      * contains the position (replica) in xLoc list of the next OSD which should be used for this stripe<br>
      * key: stripe
@@ -50,7 +50,7 @@ public class SimpleStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public SimpleStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+    public SequencialStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
         int stripeWidth = xLoc.getLocalReplica().getStripingPolicy().getWidth();
         this.nextOSDforObject = new HashMap<Integer, Integer>(stripeWidth);
@@ -114,6 +114,11 @@ public class SimpleStrategy extends TransferStrategy {
                     TransferStrategyException.ErrorCode.NO_OSD_REACHABLE);
         }
         return next;
+    }
+
+    @Override
+    public boolean removeObject(long objectNo) {
+        return removeObjectFromList(objectNo);
     }
 
     /**

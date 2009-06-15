@@ -316,7 +316,7 @@ public class ReplicatingFile {
 
         // create a new strategy
         if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE))
-            strategy = new SimpleStrategy(fileID, xLoc, osdAvailability);
+            strategy = new SequencialStrategy(fileID, xLoc, osdAvailability);
         else if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM))
             strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
         else
@@ -543,7 +543,7 @@ public class ReplicatingFile {
         // TODO: change this, if using different striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                 fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
-                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo));
+                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), false);
 
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override

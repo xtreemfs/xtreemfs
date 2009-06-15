@@ -36,6 +36,7 @@ import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
@@ -62,6 +63,8 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeReque
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
@@ -196,19 +199,22 @@ public class OSDClient extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<InternalReadLocalResponse> internal_read_local(InetSocketAddress server, String file_id,
-            FileCredentials credentials, long object_number, long object_version,long offset, long length) {
-        xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest(credentials, file_id, object_number, object_version, offset, length);
+    public RPCResponse<InternalReadLocalResponse> internal_read_local(InetSocketAddress server,
+            String file_id, FileCredentials credentials, long object_number, long object_version,
+            long offset, long length, boolean attachObjectList) {
+        xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest(credentials,
+                file_id, object_number, object_version, offset, length, attachObjectList);
 
-        RPCResponse<InternalReadLocalResponse> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<InternalReadLocalResponse>() {
+        RPCResponse<InternalReadLocalResponse> r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder<InternalReadLocalResponse>() {
 
-            @Override
-            public InternalReadLocalResponse getResult(ReusableBuffer data) {
-                xtreemfs_internal_read_localResponse resp = new xtreemfs_internal_read_localResponse();
-                resp.deserialize(data);
-                return resp.getReturnValue();
-            }
-        });
+                    @Override
+                    public InternalReadLocalResponse getResult(ReusableBuffer data) {
+                        xtreemfs_internal_read_localResponse resp = new xtreemfs_internal_read_localResponse();
+                        resp.deserialize(data);
+                        return resp.getReturnValue();
+                    }
+                });
         return r;
     }
 
@@ -338,6 +344,20 @@ public class OSDClient extends ONCRPCClient {
         return r;
     }
 
-    
+    public RPCResponse<ObjectList> internal_getObjectList(InetSocketAddress server,
+            String file_id, FileCredentials credentials) {
+        xtreemfs_internal_get_object_listRequest rq = new xtreemfs_internal_get_object_listRequest(credentials,
+                file_id);
 
+        RPCResponse<ObjectList> r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder<ObjectList>() {
+                    @Override
+                    public ObjectList getResult(ReusableBuffer data) {
+                        xtreemfs_internal_get_object_listResponse resp = new xtreemfs_internal_get_object_listResponse();
+                        resp.deserialize(data);
+                        return resp.getReturnValue();
+                    }
+                });
+        return r;
+    }
 }

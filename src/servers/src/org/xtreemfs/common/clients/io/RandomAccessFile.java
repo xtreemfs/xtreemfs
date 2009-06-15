@@ -716,21 +716,15 @@ public class RandomAccessFile implements ObjectStore {
     public boolean isReadOnly() {
         return isReadOnly;
     }
+    
+    public Replica getCurrentlyUsedReplica() {
+        return replicaOrder.get(0);
+    }
 
     public long noOfObjects() throws Exception {
         // all replicas have the same striping policy (more precisely the same stripesize) at the moment
         return (length() / stripingPolicy.getStripeSizeForObject(0)) + 1;
     }
-
-    /**
-     * uses only the OSDs of the first replica
-     * @return
-     */
-    public ServiceUUID getOSDId(long objectNo) {
-        // FIXME: use more than only the first replica
-        return replicaOrder.get(0).getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
-    }
-
 
     public String getFileId() {
         return fileId;

@@ -50,6 +50,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
@@ -58,12 +59,14 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.OSDInterface.errnoException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
@@ -78,6 +81,7 @@ import org.xtreemfs.osd.operations.CleanupStopOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.GetObjectListOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
@@ -103,9 +107,6 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.dir.discovery.DiscoveryUtils;
-import org.xtreemfs.interfaces.DirService;
-import org.xtreemfs.interfaces.OSDInterface.errnoException;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -611,7 +612,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new CleanupGetResultsOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
+        op = new GetObjectListOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         // --internal events here--
         
         op = new EventCloseFile(this);

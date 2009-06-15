@@ -25,7 +25,9 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.storage;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import org.xtreemfs.common.buffer.BufferPool;
@@ -40,13 +42,16 @@ import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
+import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
@@ -55,20 +60,22 @@ import org.xtreemfs.osd.striping.UDPMessage;
 
 public class StorageThread extends Stage {
     
-    public static final int      STAGEOP_READ_OBJECT   = 1;
-    
-    public static final int      STAGEOP_WRITE_OBJECT  = 2;
-    
-    public static final int      STAGEOP_TRUNCATE      = 3;
-    
-    public static final int      STAGEOP_FLUSH_CACHES  = 4;
-    
-    public static final int      STAGEOP_GMAX_RECEIVED = 5;
-    
-    public static final int      STAGEOP_GET_GMAX      = 6;
-    
-    public static final int      STAGEOP_GET_FILE_SIZE = 7;
-    
+    public static final int      STAGEOP_READ_OBJECT     = 1;
+
+    public static final int      STAGEOP_WRITE_OBJECT    = 2;
+
+    public static final int      STAGEOP_TRUNCATE        = 3;
+
+    public static final int      STAGEOP_FLUSH_CACHES    = 4;
+
+    public static final int      STAGEOP_GMAX_RECEIVED   = 5;
+
+    public static final int      STAGEOP_GET_GMAX        = 6;
+
+    public static final int      STAGEOP_GET_FILE_SIZE   = 7;
+
+    public static final int      STAGEOP_GET_OBJECT_LIST = 8;
+
     private MetadataCache        cache;
     
     private StorageLayout        layout;
@@ -113,6 +120,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_GET_FILE_SIZE:
                 processGetFileSize(method);
+                break;
+            case STAGEOP_GET_OBJECT_LIST:
+                processGetObjectList(method);
                 break;
             }
             
@@ -561,6 +571,35 @@ public class StorageThread extends Stage {
         
     }
     
+    /**
+     * @param method
+     */
+    private void processGetObjectList(StageRequest rq) {
+        final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        
+        long[] objectList = layout.getObjectList(fileId);
+
+        // serialize objectList
+        ReusableBuffer objectListBuffer = null;
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(objectList);
+            oos.flush();
+            oos.close();
+            bos.close();
+            objectListBuffer = ReusableBuffer.wrap(bos.toByteArray());
+        } catch (IOException e) {
+            cback.getObjectListComplete(null, e);
+        }
+        
+        // TODO: set "is complete" flag correctly
+        ObjectList objList = new ObjectList(objectListBuffer, OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY,
+                false);
+        cback.getObjectListComplete(objList, null);
+    }
+
     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
         int oldSize = data.capacity();
         if (!data.enlarge(stripeSize)) {

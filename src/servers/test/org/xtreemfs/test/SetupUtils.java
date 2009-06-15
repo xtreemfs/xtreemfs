@@ -59,9 +59,9 @@ public class SetupUtils {
     
     public static boolean          CHECKSUMS_ON     = false;
     
-    public static final int        DEBUG_LEVEL      = Logging.LEVEL_INFO;
+    public static final int        DEBUG_LEVEL      = Logging.LEVEL_DEBUG;
     
-    public static final Category[] DEBUG_CATEGORIES = new Category[] { Logging.Category.all };
+    public static final Category[] DEBUG_CATEGORIES = new Category[] { Logging.Category.db, Logging.Category.net };
     
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();

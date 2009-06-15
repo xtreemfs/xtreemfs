@@ -45,7 +45,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.replication.RandomStrategy;
-import org.xtreemfs.osd.replication.SimpleStrategy;
+import org.xtreemfs.osd.replication.SequencialStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
@@ -120,7 +120,7 @@ public class TransferStrategiesTest extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        this.strategy = new SimpleStrategy(fileID, xLoc, new ServiceAvailability());
+        this.strategy = new SequencialStrategy(fileID, xLoc, new ServiceAvailability());
     }
 
     @After
@@ -186,11 +186,11 @@ public class TransferStrategiesTest extends TestCase {
     // }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.SimpleStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.SequencialStrategy#selectNext()}.
      */
     @Test
-    public void testSelectNextForSimpleTransfer() {
-        this.strategy = new SimpleStrategy(fileID, xLoc, new ServiceAvailability());
+    public void testSelectNextForSequencialTransfer() {
+        this.strategy = new SequencialStrategy(fileID, xLoc, new ServiceAvailability());
         this.strategy.addObject(0, false);
         this.strategy.addObject(1, true);
         this.strategy.addObject(2, false);

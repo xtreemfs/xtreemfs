@@ -25,9 +25,7 @@ package org.xtreemfs.osd.replication;
  */
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -102,19 +100,6 @@ public abstract class TransferStrategy {
     protected final ServiceAvailability osdAvailability;
 
     /**
-     * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.
-     * <br>key: objectNo
-     */
-    // create the list first object is really requested
-    private Map<Long, List<ServiceUUID>> availableOSDsForObject;
-
-    /**
-     * contains a list of local available objects for each OSD
-     * <br>key: ServiceUUID of a OSD
-     */
-//    protected HashMap<ServiceUUID, List<Long>> availableObjectsOnOSD;
-
-    /**
      * @param rqDetails
      */
     protected TransferStrategy(String fileID, XLocations xLoc, ServiceAvailability osdAvailability) {
@@ -124,7 +109,6 @@ public abstract class TransferStrategy {
         this.requiredObjects = new ArrayList<Long>();
         this.preferredObjects = new ArrayList<Long>();
         this.osdAvailability = osdAvailability;
-        this.availableOSDsForObject = new HashMap<Long, List<ServiceUUID>>();
 //        this.availableObjectsOnOSD = new HashMap<ServiceUUID, List<Long>>();
         this.next = null;
     }
@@ -167,10 +151,6 @@ public abstract class TransferStrategy {
         if (next != null) {
             // remove object from lists, so it can't be chosen twice
             removeObjectFromList(next.objectNo);
-            // remove used OSD for this object, because the OSD will not be used a second time
-            List<ServiceUUID> osds = availableOSDsForObject.get(next.objectNo);
-            if (osds != null)
-                osds.remove(next.osd);
         }
         return next;
     }
@@ -203,24 +183,7 @@ public abstract class TransferStrategy {
     }
 
     /**
-     * returns a list of available OSDs for the given object
-     * @param objectNo
-     * @return
-     */
-    protected List<ServiceUUID> getAvailableOSDsForObject(long objectNo) {
-        assert (requiredObjects.contains(objectNo) || preferredObjects.contains(objectNo));
-
-        List<ServiceUUID> list = availableOSDsForObject.get(objectNo);
-        if (list == null) {
-            // add existing OSDs containing the object
-            list = xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
-            availableOSDsForObject.put(objectNo, list);
-        }
-        return list;
-    }
-
-    /**
-     * removes the objectNo only from the list of replicating objects
+     * removes the objectNo only from the list of replicating objects (called internally)
      * 
      * @param objectNo
      * @return
@@ -239,11 +202,7 @@ public abstract class TransferStrategy {
      * @return
      * @see java.util.ArrayList#remove(java.lang.Object)
      */
-    public boolean removeObject(long objectNo) {
-        boolean contained = (null != availableOSDsForObject.remove(objectNo));
-        contained = contained || removeObjectFromList(objectNo);
-        return contained;
-    }
+    public abstract boolean removeObject(long objectNo);
 
     /**
      * Returns how much objects will be replicated.
@@ -253,18 +212,4 @@ public abstract class TransferStrategy {
     public int getObjectsCount() {
         return preferredObjects.size() + requiredObjects.size();
     }
-
-//    /**
-//     * checks if the object is a hole
-//     * 
-//     * @param objectNo
-//     * @return true: it is a hole
-//     * <br>false: Maybe it is a hole, maybe not. Cannot be said at the moment.
-//     */
-//    public boolean isHole(long objectNo){
-//        if(availableOSDsForObject.containsKey(objectNo))
-//            return (availableOSDsForObject.get(objectNo).size() == 0);
-//        else
-//            return false;
-//    }
 }

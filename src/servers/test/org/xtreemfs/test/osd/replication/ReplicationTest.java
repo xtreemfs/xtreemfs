@@ -24,7 +24,10 @@
  */
 package org.xtreemfs.test.osd.replication;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
@@ -46,11 +49,13 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.client.OSDClient;
@@ -346,17 +351,18 @@ public class ReplicationTest extends TestCase {
 
         // read data
         RPCResponse<InternalReadLocalResponse> r2 = client.internal_read_local(serverID.getAddress(), fileID,
-                fcred, objectNo, 0, 0, stripeSize);
+                fcred, objectNo, 0, 0, stripeSize, false);
         InternalReadLocalResponse resp2 = r2.get();
 
         assertTrue(Arrays.equals(data.array(), resp2.getData().getData().array()));
+        assertEquals(0, resp2.getObject_list().size());
 
         r2.freeBuffers();
         BufferPool.free(resp2.getData().getData());
         
         // read only part of data
         r2 = client.internal_read_local(serverID.getAddress(), fileID,
-                fcred, objectNo, 0, stripeSize/4, stripeSize/2);
+                fcred, objectNo, 0, stripeSize/4, stripeSize/2, true);
         resp2 = r2.get();
 
         int j = stripeSize / 4;
@@ -366,6 +372,15 @@ public class ReplicationTest extends TestCase {
         for (int i = 0; i < responseData.length; i++) {
             assertEquals(dataBytes[j++], responseData[i]);
         }
+        assertEquals(1, resp2.getObject_list().size());
+        
+        // check object list
+        ObjectList objectList = resp2.getObject_list().get(0);
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        long[] list = desirializeObjectList(objectList);
+        assertNotNull(list);
+        assertEquals(1, list.length);
+        assertEquals(objectNo, list[0]);
 
         r2.freeBuffers();
         BufferPool.free(resp2.getData().getData());
@@ -380,9 +395,11 @@ public class ReplicationTest extends TestCase {
 
         // read object, before one has been written
         RPCResponse<InternalReadLocalResponse> r = client.internal_read_local(xLoc.getOSDsForObject(objectNo)
-                .get(0).getAddress(), fileID, fcred, objectNo, 0, 0, stripeSize);
+                .get(0).getAddress(), fileID, fcred, objectNo, 0, 0, stripeSize, true);
         InternalReadLocalResponse resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
+        assertEquals(1, resp.getObject_list().size());
+        assertEquals(0, desirializeObjectList(resp.getObject_list().get(0)).length);
         r.freeBuffers();
 
         // write data
@@ -400,12 +417,12 @@ public class ReplicationTest extends TestCase {
 
         // read data
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred,
-                objectNo, 0, 0, stripeSize);
+                objectNo, 0, 0, stripeSize, false);
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), resp.getData().getData().array()));
         r.freeBuffers();
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID,
-                fcred, objectNo + 2, 0, 0, stripeSize);
+                fcred, objectNo + 2, 0, 0, stripeSize, false);
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), resp.getData().getData().array()));
         r.freeBuffers();
@@ -413,7 +430,7 @@ public class ReplicationTest extends TestCase {
 
         // read higher object than has been written (EOF)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), fileID,
-                fcred, objectNo + 3, 0, 0, stripeSize);
+                fcred, objectNo + 3, 0, 0, stripeSize, false);
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
@@ -421,7 +438,7 @@ public class ReplicationTest extends TestCase {
 
         // read object that has not been written (hole)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID,
-                fcred, objectNo + 1, 0, 0, stripeSize);
+                fcred, objectNo + 1, 0, 0, stripeSize, false);
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
@@ -442,284 +459,70 @@ public class ReplicationTest extends TestCase {
         testObjectLocalNOTAvailable();
     }
     
-    // public void testCorrectFilesize() throws Exception {
-    // // write object to replica 1 : OSD 1
-    // ServiceUUID osd = xLoc.getOSDsByObject(0).get(0);
-    // RPCResponse response = client.put(osd.getAddress(), xLoc, capability, file, 0, data);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    // // write object to replica 1 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(0);
-    // response = client.put(osd.getAddress(), xLoc, capability, file, 1, data);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    //
-    // String fileLength = (1 * stripeSize * 1024 + data.limit()) + "";
-    //
-    // // get correct filesize from replica 1 : OSD 1
-    // osd = xLoc.getOSDsByObject(0).get(0);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get unknown filesize (0) from replica 2 : OSD 1
-    // osd = xLoc.getOSDsByObject(0).get(1);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get unknown filesize (replica cannot know the filesize, because
-    // // nothing has been replicated so far)
-    // assertEquals(0 + "", response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // get unknown filesize (0) from replica 2 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(1);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get unknown filesize (replica cannot know the filesize, because
-    // // nothing has been replicated so far)
-    // assertEquals(0 + "", response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // read object from replica 2 : OSD 1 (object not exists on this OSD)
-    // // => replication
-    // response = client.get(xLoc.getOSDsByObject(0).get(1).getAddress(), this.xLoc,
-    // this.capability, this.file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // assertEquals(this.data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 2 : OSD 1 (just written)
-    // osd = xLoc.getOSDsByObject(0).get(1);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 2 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(1);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize (at least one OSD of this replica knows the
-    // // correct filesize)
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // get unknown filesize (0) from replica 3 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(2);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get unknown filesize (replica cannot know the filesize, because
-    // // nothing has been replicated so far)
-    // assertEquals(0 + "", response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // read object from replica 3 (object not exists on this OSD)
-    // // => replication
-    // response = client.get(xLoc.getOSDsByObject(1).get(2).getAddress(), this.xLoc,
-    // this.capability, this.file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // assertEquals(this.data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 3 : OSD 1
-    // osd = xLoc.getOSDsByObject(0).get(2);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize (at least one OSD of this replica knows the
-    // // correct filesize)
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    // }
-    //
-    // public void testCorrectFilesizeForHole() throws Exception {
-    // // write object to replica 4 : OSD 1
-    // ServiceUUID osd = xLoc.getOSDsByObject(0).get(3);
-    // RPCResponse response = client.put(osd.getAddress(), xLoc, capability, file, 0, data);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    // // write object to replica 4 : OSD 3
-    // osd = xLoc.getOSDsByObject(2).get(3);
-    // response = client.put(osd.getAddress(), xLoc, capability, file, 2, data);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    //
-    // String fileLength = (2 * stripeSize * 1024 + data.limit()) + "";
-    //
-    // // get correct filesize from replica 4 : OSD 3
-    // osd = xLoc.getOSDsByObject(2).get(3);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 2);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 4 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(3);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // read object from replica 2 : OSD 2 (object not exists on this OSD)
-    // // => replication, but it is a hole
-    // response = client.get(xLoc.getOSDsByObject(1).get(1).getAddress(), this.xLoc,
-    // this.capability, this.file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // correct length
-    // assertEquals(this.stripeSize * 1024, response.getBody().limit());
-    // // filled with zeros
-    // for (byte b : response.getBody().array()) {
-    // assertEquals(0, b);
-    // }
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 2 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(1);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // read object from replica 3 : OSD 3 (object not exists on this OSD)
-    // // => replication
-    // response = client.get(xLoc.getOSDsByObject(2).get(2).getAddress(), this.xLoc,
-    // this.capability, this.file, 2);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // assertEquals(data.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 3 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(2);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    //
-    // // get unknown filesize (0) from replica 1 : OSD 1
-    // osd = xLoc.getOSDsByObject(0).get(0);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 0);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get unknown filesize (replica cannot know the filesize, because
-    // // nothing has been replicated so far)
-    // assertEquals(0 + "", response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    // response.freeBuffers();
-    // }
-    //
-    // public void testCorrectFilesizeForEOF() throws Exception {
-    // // write object to replica 3 : OSD 1
-    // ServiceUUID osd = xLoc.getOSDsByObject(0).get(2);
-    // RPCResponse response = client.put(osd.getAddress(), xLoc, capability, file, 0, data);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    //
-    // ReusableBuffer data2 = SetupUtils.generateData(1024 * this.stripeSize / 2);
-    // // write object to replica 3 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(2);
-    // response = client.put(osd.getAddress(), xLoc, capability, file, 1, data2);
-    // response.waitForResponse();
-    // response.freeBuffers();
-    //
-    // String fileLength = (1 * stripeSize * 1024 + data2.limit()) + "";
-    //
-    // // get correct filesize from replica 3 : OSD 3
-    // osd = xLoc.getOSDsByObject(2).get(2);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 2);
-    // response.waitForResponse();
-    //
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    //
-    // // read object from replica 2 : OSD 3 (object not exists on this OSD)
-    // // => replication, but EOF
-    // response = client.get(xLoc.getOSDsByObject(2).get(1).getAddress(), this.xLoc,
-    // this.capability, this.file, 2);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // correct length
-    // assertNull(response.getBody());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 2 : OSD 3
-    // osd = xLoc.getOSDsByObject(2).get(2);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 2);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // // get empty map, because object was not available
-    // assertEquals(HTTPUtils.DATA_TYPE.JSON.toString(), response.getHeaders().getHeader(
-    // HTTPHeaders.HDR_CONTENT_TYPE));
-    //
-    // // read object from replica 1 : OSD 2 (object not exists on this OSD)
-    // // => replication
-    // response = client.get(xLoc.getOSDsByObject(1).get(0).getAddress(), this.xLoc,
-    // this.capability, this.file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // correct length
-    // assertEquals(data2.getBuffer(), response.getBody().getBuffer());
-    // response.freeBuffers();
-    //
-    // // get correct filesize from replica 1 : OSD 2
-    // osd = xLoc.getOSDsByObject(1).get(0);
-    // response = client.readLocalRPC(osd.getAddress(), xLoc, capability, file, 1);
-    // response.waitForResponse();
-    // assertEquals(HTTPUtils.SC_OKAY, response.getStatusCode());
-    // // get correct filesize
-    // assertEquals(fileLength, response.getHeaders().getHeader(HTTPHeaders.HDR_XNEWFILESIZE));
-    // assertEquals(data2.getBuffer(), response.getBody().getBuffer());
-    // }
+    @Test
+    public void testGetObjectList() throws Exception {
+        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+
+        // read data
+        RPCResponse<ObjectList> r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0)
+                .getAddress(), fileID, fcred);
+        ObjectList objectList = r.get();
+        r.freeBuffers();
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        long[] list = desirializeObjectList(objectList);
+        assertEquals(0, list.length);
+
+        // write object to replica 1
+        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                fileID, fcred, objectNo, 0, 0, 0, getObjectData(this.data));
+        OSDWriteResponse wResp = w.get();
+        w.freeBuffers();
+
+        // read data
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
+        objectList = r.get();
+        r.freeBuffers();
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        list = desirializeObjectList(objectList);
+        assertEquals(1, list.length);
+        assertEquals(objectNo, list[0]);
+
+        // write object to replica 1
+        w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred, objectNo + 1, 0,
+                0, 0, getObjectData(this.data));
+        wResp = w.get();
+        w.freeBuffers();
+
+        // write object to replica 1
+        w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred, objectNo + 2, 0,
+                0, 0, getObjectData(this.data));
+        wResp = w.get();
+        w.freeBuffers();
+
+        // read data
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
+        objectList = r.get();
+        r.freeBuffers();
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        list = desirializeObjectList(objectList);
+        assertEquals(3, list.length);
+        Arrays.sort(list);
+        assertTrue(Arrays.binarySearch(list, objectNo) >= 0);
+        assertTrue(Arrays.binarySearch(list, objectNo + 1) >= 0);
+        assertTrue(Arrays.binarySearch(list, objectNo + 2) >= 0);
+    }
+
+    private long[] desirializeObjectList(ObjectList objectList) throws IOException,
+            ClassNotFoundException {
+        long[] list = null;
+        ByteArrayInputStream bis = new ByteArrayInputStream(objectList.getObject_list().array());
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Object o = ois.readObject();
+        ois.close();
+        bis.close();
+
+        // TODO: support more types
+        list = (long[]) o;
+        return list;
+    }
 }
