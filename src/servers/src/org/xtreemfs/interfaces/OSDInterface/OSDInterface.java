@@ -12,7 +12,7 @@ public class OSDInterface
     public static final int DEFAULT_ONCRPC_PORT = 32640;
     public static final int DEFAULT_ONCRPCS_PORT = 32640;
     public static final int DEFAULT_HTTP_PORT = 30640;
-    public static final int OBJECT_LIST_TYPE_JAVA_ARRAYLIST = 1;
+    public static final int OBJECT_LIST_TYPE_JAVA_LONG_ARRAY = 1;
     public static final int OBJECT_LIST_TYPE_BLOOM_FILTER = 2;
 
 

@@ -14,10 +14,10 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     public static final int TAG = 1402;
 
     
-    public xtreemfs_internal_read_localRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; }
-    public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; }
-    public xtreemfs_internal_read_localRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_read_localRequest( Object[] from_array ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0;this.deserialize( from_array ); }
+    public xtreemfs_internal_read_localRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; attachObjectList = false; }
+    public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length, boolean attachObjectList ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.attachObjectList = attachObjectList; }
+    public xtreemfs_internal_read_localRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; attachObjectList = false; this.deserialize( from_hash_map ); }
+    public xtreemfs_internal_read_localRequest( Object[] from_array ) { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; length = 0; attachObjectList = false;this.deserialize( from_array ); }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
@@ -31,11 +31,13 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     public void setOffset( long offset ) { this.offset = offset; }
     public long getLength() { return length; }
     public void setLength( long length ) { this.length = length; }
+    public boolean getAttachObjectList() { return attachObjectList; }
+    public void setAttachObjectList( boolean attachObjectList ) { this.attachObjectList = attachObjectList; }
 
     // Object
     public String toString()
     {
-        return "xtreemfs_internal_read_localRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + " )";
+        return "xtreemfs_internal_read_localRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + ", " + Long.toString( object_number ) + ", " + Long.toString( object_version ) + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + ", " + Boolean.toString( attachObjectList ) + " )";
     }
 
     // Serializable
@@ -55,6 +57,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         this.object_version = ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
         this.offset = ( ( Long )from_hash_map.get( "offset" ) ).longValue();
         this.length = ( ( Long )from_hash_map.get( "length" ) ).longValue();
+        this.attachObjectList = ( ( Boolean )from_hash_map.get( "attachObjectList" ) ).booleanValue();
     }
     
     public void deserialize( Object[] from_array )
@@ -64,7 +67,8 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         this.object_number = ( ( Long )from_array[2] ).longValue();
         this.object_version = ( ( Long )from_array[3] ).longValue();
         this.offset = ( ( Long )from_array[4] ).longValue();
-        this.length = ( ( Long )from_array[5] ).longValue();        
+        this.length = ( ( Long )from_array[5] ).longValue();
+        this.attachObjectList = ( ( Boolean )from_array[6] ).booleanValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
@@ -75,6 +79,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         object_version = buf.getLong();
         offset = buf.getLong();
         length = buf.getLong();
+        attachObjectList = buf.getInt() != 0;
     }
 
     public Object serialize()
@@ -86,6 +91,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         to_hash_map.put( "object_version", new Long( object_version ) );
         to_hash_map.put( "offset", new Long( offset ) );
         to_hash_map.put( "length", new Long( length ) );
+        to_hash_map.put( "attachObjectList", new Boolean( attachObjectList ) );
         return to_hash_map;        
     }
 
@@ -97,6 +103,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         writer.putLong( object_version );
         writer.putLong( offset );
         writer.putLong( length );
+        writer.putInt( attachObjectList ? 1 : 0 );
     }
     
     public int calculateSize()
@@ -108,6 +115,7 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
+        my_size += 4;
         return my_size;
     }
 
@@ -120,7 +128,8 @@ public class xtreemfs_internal_read_localRequest implements org.xtreemfs.interfa
     private long object_number;
     private long object_version;
     private long offset;
-    private long length;    
+    private long length;
+    private boolean attachObjectList;    
 
 }
 
