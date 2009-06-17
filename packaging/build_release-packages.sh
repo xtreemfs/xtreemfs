@@ -39,6 +39,7 @@ CLIENT_WHITE_LIST=(
 	"src/client/SConstruct" ""
 	"src/client/share" "share"
 	"src/client/src" "src"
+        "bin/xtfs_umount" ""
 	"man/man1/xtfs_lsvol.1" "man/man1/xtfs_lsvol.1"
 	"man/man1/xtfs_mkvol.1" "man/man1/xtfs_mkvol.1"
 	"man/man1/xtfs_mount.1" "man/man1/xtfs_mount.1"
