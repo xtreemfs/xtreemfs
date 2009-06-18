@@ -60,31 +60,26 @@ module org # 1000
         const uint32_t DEFAULT_ONCRPC_PORT = 32638;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32638;
         const uint32_t DEFAULT_HTTP_PORT = 30638; 
-
-        // Exceptions
-        exception ConcurrentModificationException # 6 { string stack_trace; };
-        exception InvalidArgumentException # 8 { string error_message; };
-        exception ProtocolException # 9 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
          
         // Operations
         void xtreemfs_address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;
-        void xtreemfs_address_mappings_remove( string uuid ) # 3;
-        uint64_t xtreemfs_address_mappings_set( AddressMappingSet address_mappings ) # 2;
-
-        void xtreemfs_checkpoint() # 50;
-
-      	void xtreemfs_discover_dir( out DirService dir_service) # 52;
-
-        uint64_t xtreemfs_global_time_s_get() # 8;
-
-        void xtreemfs_service_get_by_type( ServiceType type, out ServiceSet services ) #6;
-        void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 7;
+        void xtreemfs_address_mappings_remove( string uuid ) # 2;
+        uint64_t xtreemfs_address_mappings_set( AddressMappingSet address_mappings ) # 3;
+        void xtreemfs_checkpoint() # 4;
+      	void xtreemfs_discover_dir( out DirService dir_service) # 5;
+        uint64_t xtreemfs_global_time_s_get() # 6;
+        void xtreemfs_service_get_by_type( ServiceType type, out ServiceSet services ) #7;
+        void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 8;
 	      void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 9;
-        uint64_t xtreemfs_service_register( Service service ) # 4;
-        void xtreemfs_service_deregister( string uuid ) # 5;
-	      void xtreemfs_service_offline( string uuid ) #10;
+        uint64_t xtreemfs_service_register( Service service ) # 10;
+        void xtreemfs_service_deregister( string uuid ) # 11;
+	      void xtreemfs_service_offline( string uuid ) # 12;
+        void xtreemfs_shutdown() # 13;
 
-        void xtreemfs_shutdown() # 51;
+        // Exceptions
+        exception ConcurrentModificationException # 20 { string stack_trace; };
+        exception InvalidArgumentException # 21 { string error_message; };
+        exception ProtocolException # 22 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
       };
     };
   };

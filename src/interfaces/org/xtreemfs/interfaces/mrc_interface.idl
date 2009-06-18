@@ -69,55 +69,55 @@ module org # 1000
         const uint32_t DEFAULT_ONCRPCS_PORT = 32636;
         const uint32_t DEFAULT_HTTP_PORT = 30636;
 
-        // Exceptions
-        exception ConcurrentModificationException # 6 { string stack_trace; };
-        exception errnoException # 7 { uint32_t error_code; string error_message; string stack_trace; };
-        exception InvalidArgumentException # 8 { string error_message; };
-        exception MRCException # 11 { uint32_t error_code; string error_message; string stack_trace; };
-        exception ProtocolException # 9 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-        exception RedirectException # 10 { string to_uuid; };
-
         // POSIX/FUSE operations
         boolean access( string path, uint32_t mode ) # 1;
         void chmod( string path, uint32_t mode ) # 2;
         void chown( string path, string user_id, string group_id ) # 3;
         void creat( string path, uint32_t mode ) # 4;
-        void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 30;
-        void getattr( string path, out Stat stbuf ) # 5;
-        void getxattr( string path, string name, out string value ) # 6;
-        void link( string target_path, string link_path ) # 7;
-        void listxattr( string path, out StringSet names ) # 8;
-        void mkdir( string path, uint32_t mode ) # 9;
+        void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 5;
+        void getattr( string path, out Stat stbuf ) # 6;
+        void getxattr( string path, string name, out string value ) # 7;
+        void link( string target_path, string link_path ) # 8;
+        void listxattr( string path, out StringSet names ) # 9;
+        void mkdir( string path, uint32_t mode ) # 10;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, out FileCredentials file_credentials ) # 11;
         void readdir( string path, out DirectoryEntrySet directory_entries ) # 12;
         void removexattr( string path, string name ) # 13;
         void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
         void rmdir( string path ) # 15;
-        void setattr( string path, Stat stbuf ) # 17;
-        void setxattr( string path, string name, string value, int flags ) # 18;
-        void statvfs( string volume_name, out StatVFS stbuf ) # 19;
-        void symlink( string target_path, string link_path ) # 20;
-        void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
-        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 22;
+        void setattr( string path, Stat stbuf ) # 16;
+        void setxattr( string path, string name, string value, int flags ) # 17;
+        void statvfs( string volume_name, out StatVFS stbuf ) # 18;
+        void symlink( string target_path, string link_path ) # 19;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 20;
+        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 21;
 
         // XtreemFS-specific operations
-        void xtreemfs_checkpoint() # 51;
-        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 23;
-        void xtreemfs_dump_database( string dump_file ) # 52;
-        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 24;
-        void xtreemfs_internal_debug( string operation, out string result ) # 54;
-        void xtreemfs_lsvol( out VolumeSet volumes ) # 31;
-        void xtreemfs_listdir( string path, out StringSet names ) # 33;
-        void xtreemfs_mkvol( Volume volume ) # 10;
-        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 25;
-        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 26;
-        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 32;
-        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 27;
-        void xtreemfs_restore_database( string dump_file ) #53;
-        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 28;
-        void xtreemfs_rmvol( string volume_name ) # 16;
-        void xtreemfs_shutdown() # 50;
-        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 29;
+        void xtreemfs_checkpoint() # 30;
+        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 31;
+        void xtreemfs_dump_database( string dump_file ) # 32;
+        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 33;
+        void xtreemfs_internal_debug( string operation, out string result ) # 34;
+        void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
+        void xtreemfs_listdir( string path, out StringSet names ) # 36;
+        void xtreemfs_mkvol( Volume volume ) # 37;
+        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
+        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 39;
+        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 40;
+        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 41;
+        void xtreemfs_restore_database( string dump_file ) # 42;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 43;
+        void xtreemfs_rmvol( string volume_name ) # 44;
+        void xtreemfs_shutdown() # 45;
+        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 46;
+
+        // Exceptions
+        exception ConcurrentModificationException # 50 { string stack_trace; };
+        exception errnoException # 51 { uint32_t error_code; string error_message; string stack_trace; };
+        exception InvalidArgumentException # 52 { string error_message; };
+        exception MRCException # 53 { uint32_t error_code; string error_message; string stack_trace; };
+        exception ProtocolException # 54 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
+        exception RedirectException # 55 { string to_uuid; };
       };
     };
   };
