@@ -129,20 +129,21 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           auto_Object<Connection> connection = new Connection( _socket );
           protocol_request->set_connection( connection );
           _socket->set_blocking_mode( false );
-          this->attach( connection, protocol_request->incRef(), false, true );
           bool connect_ret;
           if ( this->haveAIO() )
+          {
+            this->attach( connection, protocol_request->incRef(), false, true );
             connect_ret = _socket->aio_connect( new TCPSocket::AIOConnectControlBlock( protocol_request->incRef(), peername, NULL ) );
+          }
           else
             connect_ret = _socket->connect( peername );
           if ( connect_ret )
           {
-            this->detach( connection );
             _socket->set_blocking_mode( true);
             get_protocol_request_writer_stage()->send( *protocol_request.release() );
           }
           else if ( connection->get_socket()->want_write() )
-            return;
+            this->attach( connection, protocol_request->incRef(), false, true ); // attach AFTER trying to connect, in case the socket was re-created on a fallback from IPv6 to IPv6
           else
           {
             protocol_request->set_connection( NULL );
