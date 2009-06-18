@@ -3387,10 +3387,8 @@ bool Socket::shutdown()
 bool Socket::want_read() const
 {
 #ifdef _WIN32
-//  DWORD dwLastError = ::WSAGetLastError();
   switch ( ::WSAGetLastError() )
   {
-    case WSAEINPROGRESS:
     case WSAEWOULDBLOCK:
     case WSA_IO_PENDING: return true;
     default: return false;
@@ -3401,7 +3399,22 @@ bool Socket::want_read() const
 }
 bool Socket::want_write() const
 {
-  return want_read();
+#ifdef _WIN32
+  switch ( ::WSAGetLastError() )
+  {
+    case WSAEINPROGRESS:
+    case WSAEWOULDBLOCK:
+    case WSA_IO_PENDING: return true;
+    default: return false;
+  }
+#else
+  switch ( errno )
+  {
+    case EINPROGRESS:
+    case EWOULDBLOCK: return true;
+    default: return false;
+  }
+#endif
 }
 ssize_t Socket::write( auto_Object<Buffer> buffer )
 {
