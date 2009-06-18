@@ -1420,6 +1420,12 @@ namespace org
               case 1410: return static_cast<xtreemfs_internal_get_object_listResponse*>( &response );
               case 2301: return static_cast<xtreemfs_pingResponse*>( &response );
               case 1350: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 1306: return static_cast<ConcurrentModificationException*>( &response );
+              case 1307: return static_cast<errnoException*>( &response );
+              case 1308: return static_cast<InvalidArgumentException*>( &response );
+              case 1311: return static_cast<OSDException*>( &response );
+              case 1309: return static_cast<ProtocolException*>( &response );
+              case 1310: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }

@@ -37,7 +37,7 @@ using namespace org::xtreemfs::client;
   }
 
 
-File::File( Volume& parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
 { }
 
@@ -75,7 +75,7 @@ bool File::flush()
 
 YIELD::auto_Object<YIELD::Stat> File::getattr()
 {
-  return parent_volume.getattr( path );
+  return parent_volume->getattr( path );
 }
 
 uint64_t File::get_size()
@@ -88,12 +88,12 @@ uint64_t File::get_size()
 
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
-  return parent_volume.getxattr( path, name, out_value );
+  return parent_volume->getxattr( path, name, out_value );
 }
 
 bool File::listxattr( std::vector<std::string>& out_names )
 {
-  return parent_volume.listxattr( path, out_names );
+  return parent_volume->listxattr( path, out_names );
 }
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
@@ -113,8 +113,20 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
+      parent_volume->get_log()->getStream( YIELD::Log::LOG_INFO ) << 
+        "org::xtreemfs::client::File: reading " << object_size << 
+        " bytes from offset " << object_offset <<
+        " in object number " << object_number << 
+        " of file " << file_credentials.get_xcap().get_file_id() <<
+        ", file offset = " << file_offset << ".";
+
       org::xtreemfs::interfaces::ObjectData object_data;
-      parent_volume.get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
+      parent_volume->get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
+
+      parent_volume->get_log()->getStream( YIELD::Log::LOG_INFO ) << 
+        "org::xtreemfs::client::File: read " << object_data.get_data()->size() <<
+        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
+        " with " << object_data.get_zero_padding() << " bytes of zero padding.";
 
       YIELD::StringBuffer* data = object_data.get_data().get();
       if ( !data->empty() )
@@ -148,12 +160,12 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
 bool File::removexattr( const std::string& name )
 {
-  return parent_volume.removexattr( path, name );
+  return parent_volume->removexattr( path, name );
 }
 
 bool File::setxattr( const std::string& name, const std::string& value, int flags )
 {
-  return parent_volume.setxattr( path, name, value, flags );
+  return parent_volume->setxattr( path, name, value, flags );
 }
 
 bool File::sync()
@@ -170,10 +182,10 @@ bool File::truncate( uint64_t new_size )
     mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
     file_credentials.set_xcap( truncate_xcap );
     org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-    parent_volume.get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
+    parent_volume->get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
     if ( osd_write_response > latest_osd_write_response )
       latest_osd_write_response = osd_write_response;
-    if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
     return true;
   }
@@ -203,7 +215,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
       write_request->set_response_target( write_response_queue->incRef() );
-      parent_volume.get_osd_proxy_mux()->send( *write_request );
+      parent_volume->get_osd_proxy_mux()->send( *write_request );
       expected_write_response_count++;
 
       wbuf_p += object_size;
@@ -218,7 +230,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       YIELD::Object::decRef( write_response );
     }
 
-    if ( ( parent_volume.get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
       flush();
 
     return static_cast<ssize_t>( file_offset - offset );

@@ -606,7 +606,7 @@ namespace org
           bool operator==( const ftruncateResponse& other ) const { return truncate_xcap == other.truncate_xcap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( ftruncateResponse, 1230 );
+          YIELD_OBJECT_PROTOTYPES( ftruncateResponse, 1205 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "truncate_xcap" ), truncate_xcap ); }
@@ -629,7 +629,7 @@ namespace org
           bool operator==( const ftruncateRequest& other ) const { return write_xcap == other.write_xcap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( ftruncateRequest, 1230 );
+          YIELD_OBJECT_PROTOTYPES( ftruncateRequest, 1205 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "write_xcap" ), write_xcap ); }
@@ -652,7 +652,7 @@ namespace org
           bool operator==( const getattrResponse& other ) const { return stbuf == other.stbuf; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getattrResponse, 1205 );
+          YIELD_OBJECT_PROTOTYPES( getattrResponse, 1206 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "stbuf" ), stbuf ); }
@@ -677,7 +677,7 @@ namespace org
           bool operator==( const getattrRequest& other ) const { return path == other.path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getattrRequest, 1205 );
+          YIELD_OBJECT_PROTOTYPES( getattrRequest, 1206 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); }
@@ -702,7 +702,7 @@ namespace org
           bool operator==( const getxattrResponse& other ) const { return value == other.value; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getxattrResponse, 1206 );
+          YIELD_OBJECT_PROTOTYPES( getxattrResponse, 1207 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), value ); }
@@ -730,7 +730,7 @@ namespace org
           bool operator==( const getxattrRequest& other ) const { return path == other.path && name == other.name; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getxattrRequest, 1206 );
+          YIELD_OBJECT_PROTOTYPES( getxattrRequest, 1207 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); marshaller.writeString( YIELD::Marshaller::Declaration( "name" ), name ); }
@@ -750,7 +750,7 @@ namespace org
           bool operator==( const linkResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( linkResponse, 1207 );
+          YIELD_OBJECT_PROTOTYPES( linkResponse, 1208 );
 
         };
 
@@ -772,7 +772,7 @@ namespace org
           bool operator==( const linkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( linkRequest, 1207 );
+          YIELD_OBJECT_PROTOTYPES( linkRequest, 1208 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "target_path" ), target_path ); marshaller.writeString( YIELD::Marshaller::Declaration( "link_path" ), link_path ); }
@@ -796,7 +796,7 @@ namespace org
           bool operator==( const listxattrResponse& other ) const { return names == other.names; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( listxattrResponse, 1208 );
+          YIELD_OBJECT_PROTOTYPES( listxattrResponse, 1209 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "names" ), names ); }
@@ -821,7 +821,7 @@ namespace org
           bool operator==( const listxattrRequest& other ) const { return path == other.path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( listxattrRequest, 1208 );
+          YIELD_OBJECT_PROTOTYPES( listxattrRequest, 1209 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); }
@@ -840,7 +840,7 @@ namespace org
           bool operator==( const mkdirResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( mkdirResponse, 1209 );
+          YIELD_OBJECT_PROTOTYPES( mkdirResponse, 1210 );
 
         };
 
@@ -861,7 +861,7 @@ namespace org
           bool operator==( const mkdirRequest& other ) const { return path == other.path && mode == other.mode; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( mkdirRequest, 1209 );
+          YIELD_OBJECT_PROTOTYPES( mkdirRequest, 1210 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "mode" ), mode ); }
@@ -1118,7 +1118,7 @@ namespace org
           bool operator==( const setattrResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setattrResponse, 1217 );
+          YIELD_OBJECT_PROTOTYPES( setattrResponse, 1216 );
 
         };
 
@@ -1139,7 +1139,7 @@ namespace org
           bool operator==( const setattrRequest& other ) const { return path == other.path && stbuf == other.stbuf; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setattrRequest, 1217 );
+          YIELD_OBJECT_PROTOTYPES( setattrRequest, 1216 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); marshaller.writeStruct( YIELD::Marshaller::Declaration( "stbuf" ), stbuf ); }
@@ -1159,7 +1159,7 @@ namespace org
           bool operator==( const setxattrResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setxattrResponse, 1218 );
+          YIELD_OBJECT_PROTOTYPES( setxattrResponse, 1217 );
 
         };
 
@@ -1186,7 +1186,7 @@ namespace org
           bool operator==( const setxattrRequest& other ) const { return path == other.path && name == other.name && value == other.value && flags == other.flags; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setxattrRequest, 1218 );
+          YIELD_OBJECT_PROTOTYPES( setxattrRequest, 1217 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); marshaller.writeString( YIELD::Marshaller::Declaration( "name" ), name ); marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), value ); marshaller.writeInt32( YIELD::Marshaller::Declaration( "flags" ), flags ); }
@@ -1212,7 +1212,7 @@ namespace org
           bool operator==( const statvfsResponse& other ) const { return stbuf == other.stbuf; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( statvfsResponse, 1219 );
+          YIELD_OBJECT_PROTOTYPES( statvfsResponse, 1218 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "stbuf" ), stbuf ); }
@@ -1237,7 +1237,7 @@ namespace org
           bool operator==( const statvfsRequest& other ) const { return volume_name == other.volume_name; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( statvfsRequest, 1219 );
+          YIELD_OBJECT_PROTOTYPES( statvfsRequest, 1218 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "volume_name" ), volume_name ); }
@@ -1256,7 +1256,7 @@ namespace org
           bool operator==( const symlinkResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( symlinkResponse, 1220 );
+          YIELD_OBJECT_PROTOTYPES( symlinkResponse, 1219 );
 
         };
 
@@ -1278,7 +1278,7 @@ namespace org
           bool operator==( const symlinkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( symlinkRequest, 1220 );
+          YIELD_OBJECT_PROTOTYPES( symlinkRequest, 1219 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "target_path" ), target_path ); marshaller.writeString( YIELD::Marshaller::Declaration( "link_path" ), link_path ); }
@@ -1302,7 +1302,7 @@ namespace org
           bool operator==( const unlinkResponse& other ) const { return file_credentials == other.file_credentials; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( unlinkResponse, 1221 );
+          YIELD_OBJECT_PROTOTYPES( unlinkResponse, 1220 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "file_credentials" ), file_credentials ); }
@@ -1327,7 +1327,7 @@ namespace org
           bool operator==( const unlinkRequest& other ) const { return path == other.path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( unlinkRequest, 1221 );
+          YIELD_OBJECT_PROTOTYPES( unlinkRequest, 1220 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); }
@@ -1346,7 +1346,7 @@ namespace org
           bool operator==( const utimensResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( utimensResponse, 1222 );
+          YIELD_OBJECT_PROTOTYPES( utimensResponse, 1221 );
 
         };
 
@@ -1371,7 +1371,7 @@ namespace org
           bool operator==( const utimensRequest& other ) const { return path == other.path && atime_ns == other.atime_ns && mtime_ns == other.mtime_ns && ctime_ns == other.ctime_ns; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( utimensRequest, 1222 );
+          YIELD_OBJECT_PROTOTYPES( utimensRequest, 1221 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "atime_ns" ), atime_ns ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "mtime_ns" ), mtime_ns ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "ctime_ns" ), ctime_ns ); }
@@ -1393,7 +1393,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 1251 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 1230 );
 
         };
 
@@ -1406,7 +1406,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1251 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1230 );
 
         };
 
@@ -1425,7 +1425,7 @@ namespace org
           bool operator==( const xtreemfs_check_file_existsResponse& other ) const { return bitmap == other.bitmap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 1223 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 1231 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "bitmap" ), bitmap ); }
@@ -1452,7 +1452,7 @@ namespace org
           bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 1223 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 1231 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "volume_id" ), volume_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "file_ids" ), file_ids ); }
@@ -1472,7 +1472,7 @@ namespace org
           bool operator==( const xtreemfs_dump_databaseResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 1252 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 1232 );
 
         };
 
@@ -1491,7 +1491,7 @@ namespace org
           bool operator==( const xtreemfs_dump_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 1252 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 1232 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "dump_file" ), dump_file ); }
@@ -1514,7 +1514,7 @@ namespace org
           bool operator==( const xtreemfs_get_suitable_osdsResponse& other ) const { return osd_uuids == other.osd_uuids; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 1224 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 1233 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "osd_uuids" ), osd_uuids ); }
@@ -1539,7 +1539,7 @@ namespace org
           bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const { return file_id == other.file_id; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 1224 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 1233 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
@@ -1564,7 +1564,7 @@ namespace org
           bool operator==( const xtreemfs_internal_debugResponse& other ) const { return result == other.result; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 1254 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 1234 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "result" ), result ); }
@@ -1589,7 +1589,7 @@ namespace org
           bool operator==( const xtreemfs_internal_debugRequest& other ) const { return operation == other.operation; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 1254 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 1234 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "operation" ), operation ); }
@@ -1612,7 +1612,7 @@ namespace org
           bool operator==( const xtreemfs_lsvolResponse& other ) const { return volumes == other.volumes; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 1231 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 1235 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "volumes" ), volumes ); }
@@ -1631,7 +1631,7 @@ namespace org
           bool operator==( const xtreemfs_lsvolRequest& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 1231 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 1235 );
 
         };
 
@@ -1648,7 +1648,7 @@ namespace org
           bool operator==( const xtreemfs_listdirResponse& other ) const { return names == other.names; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 1233 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 1236 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "names" ), names ); }
@@ -1673,7 +1673,7 @@ namespace org
           bool operator==( const xtreemfs_listdirRequest& other ) const { return path == other.path; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 1233 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 1236 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "path" ), path ); }
@@ -1692,7 +1692,7 @@ namespace org
           bool operator==( const xtreemfs_mkvolResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 1210 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 1237 );
 
         };
 
@@ -1709,7 +1709,7 @@ namespace org
           bool operator==( const xtreemfs_mkvolRequest& other ) const { return volume == other.volume; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 1210 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 1237 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "volume" ), volume ); }
@@ -1732,7 +1732,7 @@ namespace org
           bool operator==( const xtreemfs_renew_capabilityResponse& other ) const { return renewed_xcap == other.renewed_xcap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 1225 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 1238 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "renewed_xcap" ), renewed_xcap ); }
@@ -1755,7 +1755,7 @@ namespace org
           bool operator==( const xtreemfs_renew_capabilityRequest& other ) const { return old_xcap == other.old_xcap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 1225 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 1238 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "old_xcap" ), old_xcap ); }
@@ -1774,7 +1774,7 @@ namespace org
           bool operator==( const xtreemfs_replica_addResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 1226 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 1239 );
 
         };
 
@@ -1795,7 +1795,7 @@ namespace org
           bool operator==( const xtreemfs_replica_addRequest& other ) const { return file_id == other.file_id && new_replica == other.new_replica; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 1226 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 1239 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeStruct( YIELD::Marshaller::Declaration( "new_replica" ), new_replica ); }
@@ -1819,7 +1819,7 @@ namespace org
           bool operator==( const xtreemfs_replica_listResponse& other ) const { return replicas == other.replicas; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 1232 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 1240 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "replicas" ), replicas ); }
@@ -1844,7 +1844,7 @@ namespace org
           bool operator==( const xtreemfs_replica_listRequest& other ) const { return file_id == other.file_id; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 1232 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 1240 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); }
@@ -1867,7 +1867,7 @@ namespace org
           bool operator==( const xtreemfs_replica_removeResponse& other ) const { return delete_xcap == other.delete_xcap; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 1227 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 1241 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "delete_xcap" ), delete_xcap ); }
@@ -1895,7 +1895,7 @@ namespace org
           bool operator==( const xtreemfs_replica_removeRequest& other ) const { return file_id == other.file_id && osd_uuid == other.osd_uuid; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 1227 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 1241 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeString( YIELD::Marshaller::Declaration( "osd_uuid" ), osd_uuid ); }
@@ -1915,7 +1915,7 @@ namespace org
           bool operator==( const xtreemfs_restore_databaseResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 1253 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 1242 );
 
         };
 
@@ -1934,7 +1934,7 @@ namespace org
           bool operator==( const xtreemfs_restore_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 1253 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 1242 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "dump_file" ), dump_file ); }
@@ -1953,7 +1953,7 @@ namespace org
           bool operator==( const xtreemfs_restore_fileResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 1228 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 1243 );
 
         };
 
@@ -1982,7 +1982,7 @@ namespace org
           bool operator==( const xtreemfs_restore_fileRequest& other ) const { return file_path == other.file_path && file_id == other.file_id && file_size == other.file_size && osd_uuid == other.osd_uuid && stripe_size == other.stripe_size; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 1228 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 1243 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "file_path" ), file_path ); marshaller.writeString( YIELD::Marshaller::Declaration( "file_id" ), file_id ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "file_size" ), file_size ); marshaller.writeString( YIELD::Marshaller::Declaration( "osd_uuid" ), osd_uuid ); marshaller.writeInt32( YIELD::Marshaller::Declaration( "stripe_size" ), stripe_size ); }
@@ -2005,7 +2005,7 @@ namespace org
           bool operator==( const xtreemfs_rmvolResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 1216 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 1244 );
 
         };
 
@@ -2024,7 +2024,7 @@ namespace org
           bool operator==( const xtreemfs_rmvolRequest& other ) const { return volume_name == other.volume_name; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 1216 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 1244 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "volume_name" ), volume_name ); }
@@ -2043,7 +2043,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1250 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1245 );
 
         };
 
@@ -2056,7 +2056,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1250 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1245 );
 
         };
 
@@ -2069,7 +2069,7 @@ namespace org
           bool operator==( const xtreemfs_update_file_sizeResponse& ) const { return true; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 1229 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 1246 );
 
         };
 
@@ -2088,7 +2088,7 @@ namespace org
           bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && osd_write_response == other.osd_write_response; }
 
           // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 1229 );
+          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 1246 );
 
           // YIELD::Object
           void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "xcap" ), xcap ); marshaller.writeStruct( YIELD::Marshaller::Declaration( "osd_write_response" ), osd_write_response ); }
@@ -2280,40 +2280,40 @@ namespace org
               case 1202UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
               case 1203UL: handlechownRequest( static_cast<chownRequest&>( ev ) ); return;
               case 1204UL: handlecreatRequest( static_cast<creatRequest&>( ev ) ); return;
-              case 1230UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
-              case 1205UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
-              case 1206UL: handlegetxattrRequest( static_cast<getxattrRequest&>( ev ) ); return;
-              case 1207UL: handlelinkRequest( static_cast<linkRequest&>( ev ) ); return;
-              case 1208UL: handlelistxattrRequest( static_cast<listxattrRequest&>( ev ) ); return;
-              case 1209UL: handlemkdirRequest( static_cast<mkdirRequest&>( ev ) ); return;
+              case 1205UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
+              case 1206UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
+              case 1207UL: handlegetxattrRequest( static_cast<getxattrRequest&>( ev ) ); return;
+              case 1208UL: handlelinkRequest( static_cast<linkRequest&>( ev ) ); return;
+              case 1209UL: handlelistxattrRequest( static_cast<listxattrRequest&>( ev ) ); return;
+              case 1210UL: handlemkdirRequest( static_cast<mkdirRequest&>( ev ) ); return;
               case 1211UL: handleopenRequest( static_cast<openRequest&>( ev ) ); return;
               case 1212UL: handlereaddirRequest( static_cast<readdirRequest&>( ev ) ); return;
               case 1213UL: handleremovexattrRequest( static_cast<removexattrRequest&>( ev ) ); return;
               case 1214UL: handlerenameRequest( static_cast<renameRequest&>( ev ) ); return;
               case 1215UL: handlermdirRequest( static_cast<rmdirRequest&>( ev ) ); return;
-              case 1217UL: handlesetattrRequest( static_cast<setattrRequest&>( ev ) ); return;
-              case 1218UL: handlesetxattrRequest( static_cast<setxattrRequest&>( ev ) ); return;
-              case 1219UL: handlestatvfsRequest( static_cast<statvfsRequest&>( ev ) ); return;
-              case 1220UL: handlesymlinkRequest( static_cast<symlinkRequest&>( ev ) ); return;
-              case 1221UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
-              case 1222UL: handleutimensRequest( static_cast<utimensRequest&>( ev ) ); return;
-              case 1251UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
-              case 1223UL: handlextreemfs_check_file_existsRequest( static_cast<xtreemfs_check_file_existsRequest&>( ev ) ); return;
-              case 1252UL: handlextreemfs_dump_databaseRequest( static_cast<xtreemfs_dump_databaseRequest&>( ev ) ); return;
-              case 1224UL: handlextreemfs_get_suitable_osdsRequest( static_cast<xtreemfs_get_suitable_osdsRequest&>( ev ) ); return;
-              case 1254UL: handlextreemfs_internal_debugRequest( static_cast<xtreemfs_internal_debugRequest&>( ev ) ); return;
-              case 1231UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( ev ) ); return;
-              case 1233UL: handlextreemfs_listdirRequest( static_cast<xtreemfs_listdirRequest&>( ev ) ); return;
-              case 1210UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
-              case 1225UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
-              case 1226UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
-              case 1232UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( ev ) ); return;
-              case 1227UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( ev ) ); return;
-              case 1253UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( ev ) ); return;
-              case 1228UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( ev ) ); return;
-              case 1216UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( ev ) ); return;
-              case 1250UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
-              case 1229UL: handlextreemfs_update_file_sizeRequest( static_cast<xtreemfs_update_file_sizeRequest&>( ev ) ); return;
+              case 1216UL: handlesetattrRequest( static_cast<setattrRequest&>( ev ) ); return;
+              case 1217UL: handlesetxattrRequest( static_cast<setxattrRequest&>( ev ) ); return;
+              case 1218UL: handlestatvfsRequest( static_cast<statvfsRequest&>( ev ) ); return;
+              case 1219UL: handlesymlinkRequest( static_cast<symlinkRequest&>( ev ) ); return;
+              case 1220UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
+              case 1221UL: handleutimensRequest( static_cast<utimensRequest&>( ev ) ); return;
+              case 1230UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
+              case 1231UL: handlextreemfs_check_file_existsRequest( static_cast<xtreemfs_check_file_existsRequest&>( ev ) ); return;
+              case 1232UL: handlextreemfs_dump_databaseRequest( static_cast<xtreemfs_dump_databaseRequest&>( ev ) ); return;
+              case 1233UL: handlextreemfs_get_suitable_osdsRequest( static_cast<xtreemfs_get_suitable_osdsRequest&>( ev ) ); return;
+              case 1234UL: handlextreemfs_internal_debugRequest( static_cast<xtreemfs_internal_debugRequest&>( ev ) ); return;
+              case 1235UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( ev ) ); return;
+              case 1236UL: handlextreemfs_listdirRequest( static_cast<xtreemfs_listdirRequest&>( ev ) ); return;
+              case 1237UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
+              case 1238UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
+              case 1239UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
+              case 1240UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( ev ) ); return;
+              case 1241UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( ev ) ); return;
+              case 1242UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( ev ) ); return;
+              case 1243UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( ev ) ); return;
+              case 1244UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( ev ) ); return;
+              case 1245UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 1246UL: handlextreemfs_update_file_sizeRequest( static_cast<xtreemfs_update_file_sizeRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -2343,40 +2343,40 @@ namespace org
               case 1202: return static_cast<chmodRequest*>( &request );
               case 1203: return static_cast<chownRequest*>( &request );
               case 1204: return static_cast<creatRequest*>( &request );
-              case 1230: return static_cast<ftruncateRequest*>( &request );
-              case 1205: return static_cast<getattrRequest*>( &request );
-              case 1206: return static_cast<getxattrRequest*>( &request );
-              case 1207: return static_cast<linkRequest*>( &request );
-              case 1208: return static_cast<listxattrRequest*>( &request );
-              case 1209: return static_cast<mkdirRequest*>( &request );
+              case 1205: return static_cast<ftruncateRequest*>( &request );
+              case 1206: return static_cast<getattrRequest*>( &request );
+              case 1207: return static_cast<getxattrRequest*>( &request );
+              case 1208: return static_cast<linkRequest*>( &request );
+              case 1209: return static_cast<listxattrRequest*>( &request );
+              case 1210: return static_cast<mkdirRequest*>( &request );
               case 1211: return static_cast<openRequest*>( &request );
               case 1212: return static_cast<readdirRequest*>( &request );
               case 1213: return static_cast<removexattrRequest*>( &request );
               case 1214: return static_cast<renameRequest*>( &request );
               case 1215: return static_cast<rmdirRequest*>( &request );
-              case 1217: return static_cast<setattrRequest*>( &request );
-              case 1218: return static_cast<setxattrRequest*>( &request );
-              case 1219: return static_cast<statvfsRequest*>( &request );
-              case 1220: return static_cast<symlinkRequest*>( &request );
-              case 1221: return static_cast<unlinkRequest*>( &request );
-              case 1222: return static_cast<utimensRequest*>( &request );
-              case 1251: return static_cast<xtreemfs_checkpointRequest*>( &request );
-              case 1223: return static_cast<xtreemfs_check_file_existsRequest*>( &request );
-              case 1252: return static_cast<xtreemfs_dump_databaseRequest*>( &request );
-              case 1224: return static_cast<xtreemfs_get_suitable_osdsRequest*>( &request );
-              case 1254: return static_cast<xtreemfs_internal_debugRequest*>( &request );
-              case 1231: return static_cast<xtreemfs_lsvolRequest*>( &request );
-              case 1233: return static_cast<xtreemfs_listdirRequest*>( &request );
-              case 1210: return static_cast<xtreemfs_mkvolRequest*>( &request );
-              case 1225: return static_cast<xtreemfs_renew_capabilityRequest*>( &request );
-              case 1226: return static_cast<xtreemfs_replica_addRequest*>( &request );
-              case 1232: return static_cast<xtreemfs_replica_listRequest*>( &request );
-              case 1227: return static_cast<xtreemfs_replica_removeRequest*>( &request );
-              case 1253: return static_cast<xtreemfs_restore_databaseRequest*>( &request );
-              case 1228: return static_cast<xtreemfs_restore_fileRequest*>( &request );
-              case 1216: return static_cast<xtreemfs_rmvolRequest*>( &request );
-              case 1250: return static_cast<xtreemfs_shutdownRequest*>( &request );
-              case 1229: return static_cast<xtreemfs_update_file_sizeRequest*>( &request );
+              case 1216: return static_cast<setattrRequest*>( &request );
+              case 1217: return static_cast<setxattrRequest*>( &request );
+              case 1218: return static_cast<statvfsRequest*>( &request );
+              case 1219: return static_cast<symlinkRequest*>( &request );
+              case 1220: return static_cast<unlinkRequest*>( &request );
+              case 1221: return static_cast<utimensRequest*>( &request );
+              case 1230: return static_cast<xtreemfs_checkpointRequest*>( &request );
+              case 1231: return static_cast<xtreemfs_check_file_existsRequest*>( &request );
+              case 1232: return static_cast<xtreemfs_dump_databaseRequest*>( &request );
+              case 1233: return static_cast<xtreemfs_get_suitable_osdsRequest*>( &request );
+              case 1234: return static_cast<xtreemfs_internal_debugRequest*>( &request );
+              case 1235: return static_cast<xtreemfs_lsvolRequest*>( &request );
+              case 1236: return static_cast<xtreemfs_listdirRequest*>( &request );
+              case 1237: return static_cast<xtreemfs_mkvolRequest*>( &request );
+              case 1238: return static_cast<xtreemfs_renew_capabilityRequest*>( &request );
+              case 1239: return static_cast<xtreemfs_replica_addRequest*>( &request );
+              case 1240: return static_cast<xtreemfs_replica_listRequest*>( &request );
+              case 1241: return static_cast<xtreemfs_replica_removeRequest*>( &request );
+              case 1242: return static_cast<xtreemfs_restore_databaseRequest*>( &request );
+              case 1243: return static_cast<xtreemfs_restore_fileRequest*>( &request );
+              case 1244: return static_cast<xtreemfs_rmvolRequest*>( &request );
+              case 1245: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 1246: return static_cast<xtreemfs_update_file_sizeRequest*>( &request );
               default: return NULL;
             }
           }
@@ -2389,40 +2389,46 @@ namespace org
               case 1202: return static_cast<chmodResponse*>( &response );
               case 1203: return static_cast<chownResponse*>( &response );
               case 1204: return static_cast<creatResponse*>( &response );
-              case 1230: return static_cast<ftruncateResponse*>( &response );
-              case 1205: return static_cast<getattrResponse*>( &response );
-              case 1206: return static_cast<getxattrResponse*>( &response );
-              case 1207: return static_cast<linkResponse*>( &response );
-              case 1208: return static_cast<listxattrResponse*>( &response );
-              case 1209: return static_cast<mkdirResponse*>( &response );
+              case 1205: return static_cast<ftruncateResponse*>( &response );
+              case 1206: return static_cast<getattrResponse*>( &response );
+              case 1207: return static_cast<getxattrResponse*>( &response );
+              case 1208: return static_cast<linkResponse*>( &response );
+              case 1209: return static_cast<listxattrResponse*>( &response );
+              case 1210: return static_cast<mkdirResponse*>( &response );
               case 1211: return static_cast<openResponse*>( &response );
               case 1212: return static_cast<readdirResponse*>( &response );
               case 1213: return static_cast<removexattrResponse*>( &response );
               case 1214: return static_cast<renameResponse*>( &response );
               case 1215: return static_cast<rmdirResponse*>( &response );
-              case 1217: return static_cast<setattrResponse*>( &response );
-              case 1218: return static_cast<setxattrResponse*>( &response );
-              case 1219: return static_cast<statvfsResponse*>( &response );
-              case 1220: return static_cast<symlinkResponse*>( &response );
-              case 1221: return static_cast<unlinkResponse*>( &response );
-              case 1222: return static_cast<utimensResponse*>( &response );
-              case 1251: return static_cast<xtreemfs_checkpointResponse*>( &response );
-              case 1223: return static_cast<xtreemfs_check_file_existsResponse*>( &response );
-              case 1252: return static_cast<xtreemfs_dump_databaseResponse*>( &response );
-              case 1224: return static_cast<xtreemfs_get_suitable_osdsResponse*>( &response );
-              case 1254: return static_cast<xtreemfs_internal_debugResponse*>( &response );
-              case 1231: return static_cast<xtreemfs_lsvolResponse*>( &response );
-              case 1233: return static_cast<xtreemfs_listdirResponse*>( &response );
-              case 1210: return static_cast<xtreemfs_mkvolResponse*>( &response );
-              case 1225: return static_cast<xtreemfs_renew_capabilityResponse*>( &response );
-              case 1226: return static_cast<xtreemfs_replica_addResponse*>( &response );
-              case 1232: return static_cast<xtreemfs_replica_listResponse*>( &response );
-              case 1227: return static_cast<xtreemfs_replica_removeResponse*>( &response );
-              case 1253: return static_cast<xtreemfs_restore_databaseResponse*>( &response );
-              case 1228: return static_cast<xtreemfs_restore_fileResponse*>( &response );
-              case 1216: return static_cast<xtreemfs_rmvolResponse*>( &response );
-              case 1250: return static_cast<xtreemfs_shutdownResponse*>( &response );
-              case 1229: return static_cast<xtreemfs_update_file_sizeResponse*>( &response );
+              case 1216: return static_cast<setattrResponse*>( &response );
+              case 1217: return static_cast<setxattrResponse*>( &response );
+              case 1218: return static_cast<statvfsResponse*>( &response );
+              case 1219: return static_cast<symlinkResponse*>( &response );
+              case 1220: return static_cast<unlinkResponse*>( &response );
+              case 1221: return static_cast<utimensResponse*>( &response );
+              case 1230: return static_cast<xtreemfs_checkpointResponse*>( &response );
+              case 1231: return static_cast<xtreemfs_check_file_existsResponse*>( &response );
+              case 1232: return static_cast<xtreemfs_dump_databaseResponse*>( &response );
+              case 1233: return static_cast<xtreemfs_get_suitable_osdsResponse*>( &response );
+              case 1234: return static_cast<xtreemfs_internal_debugResponse*>( &response );
+              case 1235: return static_cast<xtreemfs_lsvolResponse*>( &response );
+              case 1236: return static_cast<xtreemfs_listdirResponse*>( &response );
+              case 1237: return static_cast<xtreemfs_mkvolResponse*>( &response );
+              case 1238: return static_cast<xtreemfs_renew_capabilityResponse*>( &response );
+              case 1239: return static_cast<xtreemfs_replica_addResponse*>( &response );
+              case 1240: return static_cast<xtreemfs_replica_listResponse*>( &response );
+              case 1241: return static_cast<xtreemfs_replica_removeResponse*>( &response );
+              case 1242: return static_cast<xtreemfs_restore_databaseResponse*>( &response );
+              case 1243: return static_cast<xtreemfs_restore_fileResponse*>( &response );
+              case 1244: return static_cast<xtreemfs_rmvolResponse*>( &response );
+              case 1245: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 1246: return static_cast<xtreemfs_update_file_sizeResponse*>( &response );
+              case 1250: return static_cast<ConcurrentModificationException*>( &response );
+              case 1251: return static_cast<errnoException*>( &response );
+              case 1252: return static_cast<InvalidArgumentException*>( &response );
+              case 1253: return static_cast<MRCException*>( &response );
+              case 1254: return static_cast<ProtocolException*>( &response );
+              case 1255: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }
@@ -2435,40 +2441,40 @@ namespace org
               case 1202: return new chmodRequest;
               case 1203: return new chownRequest;
               case 1204: return new creatRequest;
-              case 1230: return new ftruncateRequest;
-              case 1205: return new getattrRequest;
-              case 1206: return new getxattrRequest;
-              case 1207: return new linkRequest;
-              case 1208: return new listxattrRequest;
-              case 1209: return new mkdirRequest;
+              case 1205: return new ftruncateRequest;
+              case 1206: return new getattrRequest;
+              case 1207: return new getxattrRequest;
+              case 1208: return new linkRequest;
+              case 1209: return new listxattrRequest;
+              case 1210: return new mkdirRequest;
               case 1211: return new openRequest;
               case 1212: return new readdirRequest;
               case 1213: return new removexattrRequest;
               case 1214: return new renameRequest;
               case 1215: return new rmdirRequest;
-              case 1217: return new setattrRequest;
-              case 1218: return new setxattrRequest;
-              case 1219: return new statvfsRequest;
-              case 1220: return new symlinkRequest;
-              case 1221: return new unlinkRequest;
-              case 1222: return new utimensRequest;
-              case 1251: return new xtreemfs_checkpointRequest;
-              case 1223: return new xtreemfs_check_file_existsRequest;
-              case 1252: return new xtreemfs_dump_databaseRequest;
-              case 1224: return new xtreemfs_get_suitable_osdsRequest;
-              case 1254: return new xtreemfs_internal_debugRequest;
-              case 1231: return new xtreemfs_lsvolRequest;
-              case 1233: return new xtreemfs_listdirRequest;
-              case 1210: return new xtreemfs_mkvolRequest;
-              case 1225: return new xtreemfs_renew_capabilityRequest;
-              case 1226: return new xtreemfs_replica_addRequest;
-              case 1232: return new xtreemfs_replica_listRequest;
-              case 1227: return new xtreemfs_replica_removeRequest;
-              case 1253: return new xtreemfs_restore_databaseRequest;
-              case 1228: return new xtreemfs_restore_fileRequest;
-              case 1216: return new xtreemfs_rmvolRequest;
-              case 1250: return new xtreemfs_shutdownRequest;
-              case 1229: return new xtreemfs_update_file_sizeRequest;
+              case 1216: return new setattrRequest;
+              case 1217: return new setxattrRequest;
+              case 1218: return new statvfsRequest;
+              case 1219: return new symlinkRequest;
+              case 1220: return new unlinkRequest;
+              case 1221: return new utimensRequest;
+              case 1230: return new xtreemfs_checkpointRequest;
+              case 1231: return new xtreemfs_check_file_existsRequest;
+              case 1232: return new xtreemfs_dump_databaseRequest;
+              case 1233: return new xtreemfs_get_suitable_osdsRequest;
+              case 1234: return new xtreemfs_internal_debugRequest;
+              case 1235: return new xtreemfs_lsvolRequest;
+              case 1236: return new xtreemfs_listdirRequest;
+              case 1237: return new xtreemfs_mkvolRequest;
+              case 1238: return new xtreemfs_renew_capabilityRequest;
+              case 1239: return new xtreemfs_replica_addRequest;
+              case 1240: return new xtreemfs_replica_listRequest;
+              case 1241: return new xtreemfs_replica_removeRequest;
+              case 1242: return new xtreemfs_restore_databaseRequest;
+              case 1243: return new xtreemfs_restore_fileRequest;
+              case 1244: return new xtreemfs_rmvolRequest;
+              case 1245: return new xtreemfs_shutdownRequest;
+              case 1246: return new xtreemfs_update_file_sizeRequest;
               default: return NULL;
             }
           }
@@ -2481,40 +2487,40 @@ namespace org
               case 1202: return new chmodResponse;
               case 1203: return new chownResponse;
               case 1204: return new creatResponse;
-              case 1230: return new ftruncateResponse;
-              case 1205: return new getattrResponse;
-              case 1206: return new getxattrResponse;
-              case 1207: return new linkResponse;
-              case 1208: return new listxattrResponse;
-              case 1209: return new mkdirResponse;
+              case 1205: return new ftruncateResponse;
+              case 1206: return new getattrResponse;
+              case 1207: return new getxattrResponse;
+              case 1208: return new linkResponse;
+              case 1209: return new listxattrResponse;
+              case 1210: return new mkdirResponse;
               case 1211: return new openResponse;
               case 1212: return new readdirResponse;
               case 1213: return new removexattrResponse;
               case 1214: return new renameResponse;
               case 1215: return new rmdirResponse;
-              case 1217: return new setattrResponse;
-              case 1218: return new setxattrResponse;
-              case 1219: return new statvfsResponse;
-              case 1220: return new symlinkResponse;
-              case 1221: return new unlinkResponse;
-              case 1222: return new utimensResponse;
-              case 1251: return new xtreemfs_checkpointResponse;
-              case 1223: return new xtreemfs_check_file_existsResponse;
-              case 1252: return new xtreemfs_dump_databaseResponse;
-              case 1224: return new xtreemfs_get_suitable_osdsResponse;
-              case 1254: return new xtreemfs_internal_debugResponse;
-              case 1231: return new xtreemfs_lsvolResponse;
-              case 1233: return new xtreemfs_listdirResponse;
-              case 1210: return new xtreemfs_mkvolResponse;
-              case 1225: return new xtreemfs_renew_capabilityResponse;
-              case 1226: return new xtreemfs_replica_addResponse;
-              case 1232: return new xtreemfs_replica_listResponse;
-              case 1227: return new xtreemfs_replica_removeResponse;
-              case 1253: return new xtreemfs_restore_databaseResponse;
-              case 1228: return new xtreemfs_restore_fileResponse;
-              case 1216: return new xtreemfs_rmvolResponse;
-              case 1250: return new xtreemfs_shutdownResponse;
-              case 1229: return new xtreemfs_update_file_sizeResponse;
+              case 1216: return new setattrResponse;
+              case 1217: return new setxattrResponse;
+              case 1218: return new statvfsResponse;
+              case 1219: return new symlinkResponse;
+              case 1220: return new unlinkResponse;
+              case 1221: return new utimensResponse;
+              case 1230: return new xtreemfs_checkpointResponse;
+              case 1231: return new xtreemfs_check_file_existsResponse;
+              case 1232: return new xtreemfs_dump_databaseResponse;
+              case 1233: return new xtreemfs_get_suitable_osdsResponse;
+              case 1234: return new xtreemfs_internal_debugResponse;
+              case 1235: return new xtreemfs_lsvolResponse;
+              case 1236: return new xtreemfs_listdirResponse;
+              case 1237: return new xtreemfs_mkvolResponse;
+              case 1238: return new xtreemfs_renew_capabilityResponse;
+              case 1239: return new xtreemfs_replica_addResponse;
+              case 1240: return new xtreemfs_replica_listResponse;
+              case 1241: return new xtreemfs_replica_removeResponse;
+              case 1242: return new xtreemfs_restore_databaseResponse;
+              case 1243: return new xtreemfs_restore_fileResponse;
+              case 1244: return new xtreemfs_rmvolResponse;
+              case 1245: return new xtreemfs_shutdownResponse;
+              case 1246: return new xtreemfs_update_file_sizeResponse;
               default: return NULL;
             }
           }
@@ -2523,12 +2529,12 @@ namespace org
           {
             switch ( tag )
             {
-              case 1206: return new ConcurrentModificationException;
-              case 1207: return new errnoException;
-              case 1208: return new InvalidArgumentException;
-              case 1211: return new MRCException;
-              case 1209: return new ProtocolException;
-              case 1210: return new RedirectException;
+              case 1250: return new ConcurrentModificationException;
+              case 1251: return new errnoException;
+              case 1252: return new InvalidArgumentException;
+              case 1253: return new MRCException;
+              case 1254: return new ProtocolException;
+              case 1255: return new RedirectException;
               default: return NULL;
             }
           }

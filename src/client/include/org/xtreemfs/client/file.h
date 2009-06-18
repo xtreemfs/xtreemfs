@@ -21,23 +21,19 @@ namespace org
       class File : public YIELD::File
       {
       public:
-        File& operator=( const File& ) { return *this; }
-
         YIELD_FILE_PROTOTYPES;
         virtual uint64_t get_size();
 
       private:
         friend class Volume;
 
-        File( Volume& parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+        File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
         ~File();
 
-
-        Volume& parent_volume;
+        YIELD::auto_Object<Volume> parent_volume;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
         YIELD::Path path;
         org::xtreemfs::interfaces::FileCredentials file_credentials;
-
 
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
       };

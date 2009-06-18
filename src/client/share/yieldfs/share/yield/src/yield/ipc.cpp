@@ -1,4 +1,4 @@
-// Revision: 1549
+// Revision: 1551
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -57,37 +57,38 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     {
       FDEventQueue::POLLOUTEvent& pollout_event = static_cast<FDEventQueue::POLLOUTEvent&>( ev );
       auto_Object<> context( pollout_event.get_context() );
-      switch ( context->get_tag() )
+      if ( context->get_tag() == YIELD_OBJECT_TAG( ProtocolRequestType ) ) // Non-blocking connection completed
       {
-        case YIELD_OBJECT_TAG( ProtocolRequestType ): // Non-blocking connection completed
+        auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
+        auto_Object<Connection> connection = protocol_request->get_connection();
+        this->detach( connection );
+        if ( connection->get_socket()->connect( peername ) )
         {
-          auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
-          auto_Object<Connection> connection = protocol_request->get_connection();
-          this->detach( connection );
-          if ( connection->get_socket()->connect( peername ) )
-          {
-            connection->get_socket()->set_blocking_mode( true );
-            get_protocol_request_writer_stage()->send( *protocol_request.release() );
-          }
-          else
-          {
-            protocol_request->set_connection( NULL );
-            protocol_request->respond( *( new ExceptionResponse ) );
-          }
-          Object::decRef( ev );
+          connection->get_socket()->set_blocking_mode( true );
+          get_protocol_request_writer_stage()->send( *protocol_request.release() );
         }
-        break;
-        default:
+        else
         {
-          Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
+          protocol_request->set_connection( NULL );
+          protocol_request->respond( *( new ExceptionResponse ) );
         }
-        break;
+        Object::decRef( ev );
       }
+      else
+        Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
     }
     break;
     case YIELD_OBJECT_TAG( FDEventQueue::POLLERREvent ):
     {
-      DebugBreak();
+      FDEventQueue::POLLERREvent& pollerr_event = static_cast<FDEventQueue::POLLERREvent&>( ev );
+      auto_Object<> context( pollerr_event.get_context() );
+      if ( context->get_tag() == YIELD_OBJECT_TAG( ProtocolRequestType ) ) // Non-blocking connection completed
+      {
+        static_cast<ProtocolRequestType*>( context.get() )->respond( *( new ExceptionResponse( pollerr_event.get_errno() ) ) );
+        Object::decRef( ev );
+      }
+      else
+        Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
     }
     break;
     case YIELD_OBJECT_TAG( FDEventQueue::TimerEvent ):
@@ -2130,6 +2131,11 @@ bool ONCRPCRequest::respond( Response& response )
         {
           Object::decRef( response );
           return interface_request->respond( interface_response->incRef() );
+        }
+        else if ( oncrpc_response_body->get_tag() == YIELD_OBJECT_TAG( ExceptionResponse ) )
+        {
+          Object::decRef( response );
+          return interface_request->respond( static_cast<ExceptionResponse&>( *oncrpc_response_body.release() ) );
         }
       }
       else
