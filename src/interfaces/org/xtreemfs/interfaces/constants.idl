@@ -31,7 +31,3 @@ module org # 1000
     };
   };
 };
-
-int flags = replica.getReplFlags();
-if (flags & Constants.REPL_FLAG_IS_FULL == Constants.REPL_FLAG_IS_FULL)
-  // is full

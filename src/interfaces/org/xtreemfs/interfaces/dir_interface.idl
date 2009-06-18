@@ -27,7 +27,7 @@ module org # 1000
 
       enum ServiceType
       {
-        SERVICE_TYPE_ALL = 0,
+        SERVICE_TYPE_MIXED = 0, // SERVICE_TYPE_ALL is a macro on Win32
         SERVICE_TYPE_MRC = 1,
         SERVICE_TYPE_OSD = 2,
         SERVICE_TYPE_VOLUME = 3
@@ -47,10 +47,10 @@ module org # 1000
 
       struct DirService #35
       {
-	string address;
-	uint16_t port;
-	string protocol;
-	uint32_t interface_version;
+        string address;
+        uint16_t port;
+        string protocol;
+        uint32_t interface_version;
       };
 
 
@@ -73,7 +73,7 @@ module org # 1000
 
         void xtreemfs_checkpoint() # 50;
 
-	void xtreemfs_discover_dir( out DirService dir_service) # 52;
+      	void xtreemfs_discover_dir( out DirService dir_service) # 52;
 
         uint64_t xtreemfs_global_time_s_get() # 8;
 
