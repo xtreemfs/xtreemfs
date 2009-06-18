@@ -264,7 +264,7 @@ public class BabuDBStorageHelper {
         
         // first, determine the collision number
         byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
-        Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(dbName,
+        Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(dbName,
             BabuDBStorageManager.XATTRS_INDEX, prefix);
         
         Entry<byte[], byte[]> next = null;

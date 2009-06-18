@@ -42,7 +42,6 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
@@ -101,7 +100,7 @@ public class DBAdminHelper {
      * @throws DatabaseException
      *             if an error occurs while accessing the database
      */
-    public static void dumpVolume(BufferedWriter xmlWriter, BabuDBStorageManager sMan) throws IOException,
+    public static void dumpVolume(BufferedWriter xmlWriter, StorageManager sMan) throws IOException,
         DatabaseException {
         try {
             dumpDir(xmlWriter, sMan, 1);

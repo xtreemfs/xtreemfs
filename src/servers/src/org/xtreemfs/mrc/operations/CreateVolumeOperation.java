@@ -52,7 +52,7 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
  * @author stender
  */
 public class CreateVolumeOperation extends MRCOperation {
-        
+    
     public CreateVolumeOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -127,7 +127,7 @@ public class CreateVolumeOperation extends MRCOperation {
             ServiceSet response = rpcResponse.get();
             Volume volData = rqArgs.getVolume();
             
-            // check if the volume already exists
+            // check if the volume already exists; if so, return an error
             for (Service reg : response)
                 if (volData.getName().equals(reg.getName())) {
                     String uuid = reg.getUuid();
@@ -135,7 +135,13 @@ public class CreateVolumeOperation extends MRCOperation {
                         + "' already exists in Directory Service, id='" + uuid + "'");
                 }
             
-            // otherwise, register the volume at the Directory Service
+            // create the volume locally
+            master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
+                volData.getName(), (short) volData.getAccess_control_policy().intValue(),
+                (short) volData.getOsd_selection_policy().intValue(), null, rq.getDetails().userId,
+                rq.getDetails().groupIds.get(0), volData.getDefault_striping_policy(), volData.getMode());
+            
+            // register the volume at the Directory Service
             
             ServiceDataMap dmap = new ServiceDataMap();
             dmap.put("mrc", master.getConfig().getUUID().toString());
@@ -173,23 +179,11 @@ public class CreateVolumeOperation extends MRCOperation {
             // thrown when trying to parse the response
             
             rpcResponse.get();
-            Volume volData = rqArgs.getVolume();
-            
-            // create the volume and its database
-            master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
-                volData.getName(), (short) volData.getAccess_control_policy().intValue(),
-                (short) volData.getOsd_selection_policy().intValue(), null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), volData.getDefault_striping_policy(), volData.getMode());
             
             // set the response
             rq.setResponse(new xtreemfs_mkvolResponse());
             finishRequest(rq);
-            
-        } catch (UserException exc) {
-            if (Logging.isDebug())
-                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
+        
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         } finally {
