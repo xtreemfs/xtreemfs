@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_global_time_s_getResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1108;
+    public static final int TAG = 1106;
 
     
     public xtreemfs_global_time_s_getResponse() { returnValue = 0; }
@@ -29,7 +29,7 @@ public class xtreemfs_global_time_s_getResponse implements org.xtreemfs.interfac
     }
 
     // Serializable
-    public int getTag() { return 1108; }
+    public int getTag() { return 1106; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_global_time_s_getResponse"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_checkpointRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1150;
+    public static final int TAG = 1104;
 
     
     public xtreemfs_checkpointRequest() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_checkpointRequest implements org.xtreemfs.interfaces.utils
     }
 
     // Serializable
-    public int getTag() { return 1150; }
+    public int getTag() { return 1104; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_checkpointRequest"; }
 
     public void deserialize( Object from_hash_map )

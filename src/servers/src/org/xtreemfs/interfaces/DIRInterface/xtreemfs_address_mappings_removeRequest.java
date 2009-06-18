@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_address_mappings_removeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1103;
+    public static final int TAG = 1102;
 
     
     public xtreemfs_address_mappings_removeRequest() { uuid = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_address_mappings_removeRequest implements org.xtreemfs.int
     }
 
     // Serializable
-    public int getTag() { return 1103; }
+    public int getTag() { return 1102; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeRequest"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1225;
+    public static final int TAG = 1238;
 
     
     public xtreemfs_renew_capabilityRequest() { old_xcap = new XCap(); }
@@ -29,7 +29,7 @@ public class xtreemfs_renew_capabilityRequest implements org.xtreemfs.interfaces
     }
 
     // Serializable
-    public int getTag() { return 1225; }
+    public int getTag() { return 1238; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest"; }
 
     public void deserialize( Object from_hash_map )

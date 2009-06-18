@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_offlineResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1110;
+    public static final int TAG = 1112;
 
     
     public xtreemfs_service_offlineResponse() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_service_offlineResponse implements org.xtreemfs.interfaces
     }
 
     // Serializable
-    public int getTag() { return 1110; }
+    public int getTag() { return 1112; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
 
     public void deserialize( Object from_hash_map )

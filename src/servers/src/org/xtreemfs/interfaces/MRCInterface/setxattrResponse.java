@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class setxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1218;
+    public static final int TAG = 1217;
 
     
     public setxattrResponse() {  }
@@ -25,7 +25,7 @@ public class setxattrResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1218; }
+    public int getTag() { return 1217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrResponse"; }
 
     public void deserialize( Object from_hash_map )

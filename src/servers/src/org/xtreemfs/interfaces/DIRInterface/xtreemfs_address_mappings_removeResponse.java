@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_address_mappings_removeResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1103;
+    public static final int TAG = 1102;
 
     
     public xtreemfs_address_mappings_removeResponse() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_address_mappings_removeResponse implements org.xtreemfs.in
     }
 
     // Serializable
-    public int getTag() { return 1103; }
+    public int getTag() { return 1102; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeResponse"; }
 
     public void deserialize( Object from_hash_map )

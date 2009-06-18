@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_addRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1226;
+    public static final int TAG = 1239;
 
     
     public xtreemfs_replica_addRequest() { file_id = ""; new_replica = new Replica(); }
@@ -31,7 +31,7 @@ public class xtreemfs_replica_addRequest implements org.xtreemfs.interfaces.util
     }
 
     // Serializable
-    public int getTag() { return 1226; }
+    public int getTag() { return 1239; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }
 
     public void deserialize( Object from_hash_map )

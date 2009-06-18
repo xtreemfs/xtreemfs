@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class linkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1207;
+    public static final int TAG = 1208;
 
     
     public linkRequest() { target_path = ""; link_path = ""; }
@@ -31,7 +31,7 @@ public class linkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1207; }
+    public int getTag() { return 1208; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::linkRequest"; }
 
     public void deserialize( Object from_hash_map )

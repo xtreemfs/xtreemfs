@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class mkdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1209;
+    public static final int TAG = 1210;
 
     
     public mkdirResponse() {  }
@@ -25,7 +25,7 @@ public class mkdirResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1209; }
+    public int getTag() { return 1210; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirResponse"; }
 
     public void deserialize( Object from_hash_map )

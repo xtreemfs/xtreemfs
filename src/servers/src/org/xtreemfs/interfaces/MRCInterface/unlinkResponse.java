@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1221;
+    public static final int TAG = 1220;
 
     
     public unlinkResponse() { file_credentials = new FileCredentialsSet(); }
@@ -29,7 +29,7 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1221; }
+    public int getTag() { return 1220; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_listdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1233;
+    public static final int TAG = 1236;
 
     
     public xtreemfs_listdirResponse() { names = new StringSet(); }
@@ -29,7 +29,7 @@ public class xtreemfs_listdirResponse implements org.xtreemfs.interfaces.utils.R
     }
 
     // Serializable
-    public int getTag() { return 1233; }
+    public int getTag() { return 1236; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirResponse"; }
 
     public void deserialize( Object from_hash_map )

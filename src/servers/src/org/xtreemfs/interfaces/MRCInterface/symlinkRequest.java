@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1220;
+    public static final int TAG = 1219;
 
     
     public symlinkRequest() { target_path = ""; link_path = ""; }
@@ -31,7 +31,7 @@ public class symlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1220; }
+    public int getTag() { return 1219; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }
 
     public void deserialize( Object from_hash_map )

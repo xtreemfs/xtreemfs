@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_shutdownResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1151;
+    public static final int TAG = 1113;
 
     
     public xtreemfs_shutdownResponse() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_shutdownResponse implements org.xtreemfs.interfaces.utils.
     }
 
     // Serializable
-    public int getTag() { return 1151; }
+    public int getTag() { return 1113; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_shutdownResponse"; }
 
     public void deserialize( Object from_hash_map )

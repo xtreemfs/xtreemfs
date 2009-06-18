@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1230;
+    public static final int TAG = 1205;
 
     
     public ftruncateResponse() { truncate_xcap = new XCap(); }
@@ -29,7 +29,7 @@ public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1230; }
+    public int getTag() { return 1205; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
 
     public void deserialize( Object from_hash_map )

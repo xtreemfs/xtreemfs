@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1209;
+    public static final int TAG = 1210;
 
     
     public mkdirRequest() { path = ""; mode = 0; }
@@ -31,7 +31,7 @@ public class mkdirRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1209; }
+    public int getTag() { return 1210; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::mkdirRequest"; }
 
     public void deserialize( Object from_hash_map )

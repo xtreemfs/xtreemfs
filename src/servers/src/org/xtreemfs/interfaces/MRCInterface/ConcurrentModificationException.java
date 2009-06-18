@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 1206;
+    public static final int TAG = 1250;
 
     
     public ConcurrentModificationException() { stack_trace = ""; }
@@ -29,7 +29,7 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     }
 
     // Serializable
-    public int getTag() { return 1206; }
+    public int getTag() { return 1250; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ConcurrentModificationException"; }
 
     public void deserialize( Object from_hash_map )

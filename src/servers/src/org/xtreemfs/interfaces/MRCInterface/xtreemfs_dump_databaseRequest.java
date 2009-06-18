@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_dump_databaseRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1252;
+    public static final int TAG = 1232;
 
     
     public xtreemfs_dump_databaseRequest() { dump_file = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_dump_databaseRequest implements org.xtreemfs.interfaces.ut
     }
 
     // Serializable
-    public int getTag() { return 1252; }
+    public int getTag() { return 1232; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_dump_databaseRequest"; }
 
     public void deserialize( Object from_hash_map )

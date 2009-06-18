@@ -13,10 +13,10 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     public static final int TAG = 1034;
 
     
-    public Service() { type = ServiceType.SERVICE_TYPE_ALL; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); }
+    public Service() { type = ServiceType.SERVICE_TYPE_MIXED; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); }
     public Service( ServiceType type, String uuid, long version, String name, long last_updated_s, ServiceDataMap data ) { this.type = type; this.uuid = uuid; this.version = version; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
-    public Service( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_ALL; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); this.deserialize( from_hash_map ); }
-    public Service( Object[] from_array ) { type = ServiceType.SERVICE_TYPE_ALL; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap();this.deserialize( from_array ); }
+    public Service( Object from_hash_map ) { type = ServiceType.SERVICE_TYPE_MIXED; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); this.deserialize( from_hash_map ); }
+    public Service( Object[] from_array ) { type = ServiceType.SERVICE_TYPE_MIXED; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap();this.deserialize( from_array ); }
 
     public ServiceType getType() { return type; }
     public void setType( ServiceType type ) { this.type = type; }

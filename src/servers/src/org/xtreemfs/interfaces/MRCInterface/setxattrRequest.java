@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1218;
+    public static final int TAG = 1217;
 
     
     public setxattrRequest() { path = ""; name = ""; value = ""; flags = 0; }
@@ -35,7 +35,7 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1218; }
+    public int getTag() { return 1217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
 
     public void deserialize( Object from_hash_map )

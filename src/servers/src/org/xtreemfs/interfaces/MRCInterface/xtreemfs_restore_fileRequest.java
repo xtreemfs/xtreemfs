@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1228;
+    public static final int TAG = 1243;
 
     
     public xtreemfs_restore_fileRequest() { file_path = ""; file_id = ""; file_size = 0; osd_uuid = ""; stripe_size = 0; }
@@ -37,7 +37,7 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Serializable
-    public int getTag() { return 1228; }
+    public int getTag() { return 1243; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest"; }
 
     public void deserialize( Object from_hash_map )

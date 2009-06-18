@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1229;
+    public static final int TAG = 1246;
 
     
     public xtreemfs_update_file_sizeRequest() { xcap = new XCap(); osd_write_response = new OSDWriteResponse(); }
@@ -31,7 +31,7 @@ public class xtreemfs_update_file_sizeRequest implements org.xtreemfs.interfaces
     }
 
     // Serializable
-    public int getTag() { return 1229; }
+    public int getTag() { return 1246; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeRequest"; }
 
     public void deserialize( Object from_hash_map )

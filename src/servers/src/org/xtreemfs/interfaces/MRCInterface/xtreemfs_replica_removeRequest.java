@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1227;
+    public static final int TAG = 1241;
 
     
     public xtreemfs_replica_removeRequest() { file_id = ""; osd_uuid = ""; }
@@ -31,7 +31,7 @@ public class xtreemfs_replica_removeRequest implements org.xtreemfs.interfaces.u
     }
 
     // Serializable
-    public int getTag() { return 1227; }
+    public int getTag() { return 1241; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest"; }
 
     public void deserialize( Object from_hash_map )

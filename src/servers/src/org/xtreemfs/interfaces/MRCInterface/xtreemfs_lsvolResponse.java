@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1231;
+    public static final int TAG = 1235;
 
     
     public xtreemfs_lsvolResponse() { volumes = new VolumeSet(); }
@@ -29,7 +29,7 @@ public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Res
     }
 
     // Serializable
-    public int getTag() { return 1231; }
+    public int getTag() { return 1235; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
 
     public void deserialize( Object from_hash_map )

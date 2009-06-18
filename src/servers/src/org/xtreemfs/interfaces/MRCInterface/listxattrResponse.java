@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1208;
+    public static final int TAG = 1209;
 
     
     public listxattrResponse() { names = new StringSet(); }
@@ -29,7 +29,7 @@ public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1208; }
+    public int getTag() { return 1209; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
 
     public void deserialize( Object from_hash_map )
